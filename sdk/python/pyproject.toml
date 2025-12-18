@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "soorma-core"
+version = "0.1.0"
+description = "The Open Source Foundation for AI Agents. Powered by the DisCo (Distributed Cognition) architecture."
+authors = ["Soorma AI <founders@soorma.ai>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://soorma.ai"
+repository = "https://github.com/soorma-ai/soorma-core"
+keywords = ["ai", "agents", "disco", "distributed-systems", "llm", "orchestration"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+packages = [
+    { include = "soorma" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+# Minimal dependencies for the preview
+pydantic = "^2.0.0" 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
