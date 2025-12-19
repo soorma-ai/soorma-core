@@ -39,7 +39,7 @@ class TestEventEndpoints:
     """Tests for event registry endpoints."""
     
     def test_register_event_endpoint(self, client):
-        """Test POST /api/v1/events endpoint exists and works."""
+        """Test POST /v1/events endpoint exists and works."""
         event_data = {
             "event": {
                 "eventName": "test.event",
@@ -50,7 +50,7 @@ class TestEventEndpoints:
             }
         }
         
-        response = client.post("/api/v1/events", json=event_data)
+        response = client.post("/v1/events", json=event_data)
         assert response.status_code == 200
         data = response.json()
         print(f"Response data: {data}")  # Debug output
@@ -58,8 +58,8 @@ class TestEventEndpoints:
         assert data["eventName"] == "test.event"
     
     def test_get_all_events_endpoint(self, client):
-        """Test GET /api/v1/events endpoint exists."""
-        response = client.get("/api/v1/events")
+        """Test GET /v1/events endpoint exists."""
+        response = client.get("/v1/events")
         assert response.status_code == 200
         data = response.json()
         assert "events" in data
@@ -68,7 +68,7 @@ class TestEventEndpoints:
         assert isinstance(data["count"], int)
     
     def test_query_events_by_topic(self, client):
-        """Test GET /api/v1/events?topic=... endpoint works."""
+        """Test GET /v1/events?topic=... endpoint works."""
         # First register an event
         event_data = {
             "event": {
@@ -78,10 +78,10 @@ class TestEventEndpoints:
                 "payloadSchema": {"type": "object"}
             }
         }
-        client.post("/api/v1/events", json=event_data)
+        client.post("/v1/events", json=event_data)
         
         # Then query by topic
-        response = client.get("/api/v1/events", params={"topic": "business-facts"})
+        response = client.get("/v1/events", params={"topic": "business-facts"})
         assert response.status_code == 200
         data = response.json()
         assert data["count"] >= 1
@@ -90,7 +90,7 @@ class TestEventEndpoints:
         assert "business-facts" in topics
     
     def test_query_event_by_name(self, client):
-        """Test GET /api/v1/events?event_name=... endpoint works."""
+        """Test GET /v1/events?event_name=... endpoint works."""
         # First register an event
         event_data = {
             "event": {
@@ -100,23 +100,22 @@ class TestEventEndpoints:
                 "payloadSchema": {"type": "object"}
             }
         }
-        client.post("/api/v1/events", json=event_data)
+        client.post("/v1/events", json=event_data)
         
         # Then query by name
-        response = client.get("/api/v1/events", params={"event_name": "specific.query.event"})
+        response = client.get("/v1/events", params={"event_name": "specific.query.event"})
         assert response.status_code == 200
         data = response.json()
         assert data["count"] == 1
         assert data["events"][0]["eventName"] == "specific.query.event"
     
     def test_api_path_is_correct(self, client):
-        """Test that /api/v1/events is the correct path (not /api/api/v1/events)."""
-        # This test would have caught the double /api prefix bug!
-        response = client.get("/api/v1/events")
+        """Test that /v1/events is the correct path."""
+        response = client.get("/v1/events")
         assert response.status_code == 200
         
         # Verify incorrect paths return 404
-        response_wrong = client.get("/api/api/v1/events")
+        response_wrong = client.get("/api/v1/events")
         assert response_wrong.status_code == 404
 
 
@@ -124,32 +123,68 @@ class TestAgentEndpoints:
     """Tests for agent registry endpoints."""
     
     def test_register_agent_endpoint(self, client):
-        """Test POST /api/v1/agents endpoint exists and works."""
+        """Test POST /v1/agents endpoint exists and works with SDK format."""
         agent_data = {
-            "agent": {
-                "agentId": "test-agent-v1",
-                "name": "Test Agent",
-                "description": "Test agent",
-                "capabilities": [
-                    {
-                        "taskName": "test_task",
-                        "description": "Test task",
-                        "consumedEvent": "test.event",
-                        "producedEvents": ["test.response"]
-                    }
-                ]
-            }
+            "agent_id": "test-agent-v1",
+            "name": "Test Agent",
+            "agent_type": "worker",
+            "capabilities": ["test_task"],
+            "events_consumed": ["test.event"],
+            "events_produced": ["test.response"],
+            "metadata": {"description": "Test agent"}
         }
         
-        response = client.post("/api/v1/agents", json=agent_data)
+        response = client.post("/v1/agents", json=agent_data)
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         assert data["agentId"] == "test-agent-v1"
     
+    def test_delete_agent_endpoint(self, client):
+        """Test DELETE /v1/agents/{agent_id} endpoint."""
+        # Register first
+        agent_data = {
+            "agent_id": "delete-test-agent",
+            "name": "Delete Test Agent",
+            "agent_type": "worker",
+            "capabilities": ["test_task"],
+            "events_consumed": [],
+            "events_produced": [],
+            "metadata": {}
+        }
+        client.post("/v1/agents", json=agent_data)
+        
+        # Delete
+        response = client.delete("/v1/agents/delete-test-agent")
+        assert response.status_code == 204
+        
+        # Verify gone
+        response = client.get("/v1/agents", params={"agentId": "delete-test-agent"})
+        data = response.json()
+        assert data["count"] == 0
+
+    def test_heartbeat_post_endpoint(self, client):
+        """Test POST /v1/agents/{agent_id}/heartbeat endpoint."""
+        # Register first
+        agent_data = {
+            "agent_id": "heartbeat-test-agent",
+            "name": "Heartbeat Test Agent",
+            "agent_type": "worker",
+            "capabilities": [],
+            "events_consumed": [],
+            "events_produced": [],
+            "metadata": {}
+        }
+        client.post("/v1/agents", json=agent_data)
+        
+        # Heartbeat via POST
+        response = client.post("/v1/agents/heartbeat-test-agent/heartbeat")
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+    
     def test_get_all_agents_endpoint(self, client):
-        """Test GET /api/v1/agents endpoint exists."""
-        response = client.get("/api/v1/agents")
+        """Test GET /v1/agents endpoint exists."""
+        response = client.get("/v1/agents")
         assert response.status_code == 200
         data = response.json()
         assert "agents" in data
@@ -158,50 +193,42 @@ class TestAgentEndpoints:
         assert isinstance(data["count"], int)
     
     def test_query_agents_by_agent_id(self, client):
-        """Test GET /api/v1/agents?agent_id=... endpoint works."""
+        """Test GET /v1/agents?agent_id=... endpoint works."""
         # First register an agent
         agent_data = {
-            "agent": {
-                "agentId": "query-test-agent-v1",
-                "name": "Query Test Agent",
-                "description": "Test agent for queries",
-                "capabilities": [{
-                    "taskName": "query_test",
-                    "description": "Test",
-                    "consumedEvent": "query.test.event",
-                    "producedEvents": ["query.test.response"]
-                }]
-            }
+            "agent_id": "query-test-agent-v1",
+            "name": "Query Test Agent",
+            "agent_type": "worker",
+            "capabilities": ["query_test"],
+            "events_consumed": ["query.test.event"],
+            "events_produced": ["query.test.response"],
+            "metadata": {"description": "Test agent for queries"}
         }
-        client.post("/api/v1/agents", json=agent_data)
+        client.post("/v1/agents", json=agent_data)
         
         # Then query by agent_id
-        response = client.get("/api/v1/agents", params={"agent_id": "query-test-agent-v1"})
+        response = client.get("/v1/agents", params={"agent_id": "query-test-agent-v1"})
         assert response.status_code == 200
         data = response.json()
         assert data["count"] == 1
         assert data["agents"][0]["agentId"] == "query-test-agent-v1"
     
     def test_query_agents_by_consumed_event(self, client):
-        """Test GET /api/v1/agents?consumed_event=... endpoint works."""
+        """Test GET /v1/agents?consumed_event=... endpoint works."""
         # First register an agent
         agent_data = {
-            "agent": {
-                "agentId": "consumer-test-agent-v1",
-                "name": "Consumer Test Agent",
-                "description": "Test agent that consumes events",
-                "capabilities": [{
-                    "taskName": "consume",
-                    "description": "Consumes events",
-                    "consumedEvent": "unique.consumed.event",
-                    "producedEvents": ["result.event"]
-                }]
-            }
+            "agent_id": "consumer-test-agent-v1",
+            "name": "Consumer Test Agent",
+            "agent_type": "worker",
+            "capabilities": ["consume"],
+            "events_consumed": ["unique.consumed.event"],
+            "events_produced": ["result.event"],
+            "metadata": {"description": "Test agent that consumes events"}
         }
-        client.post("/api/v1/agents", json=agent_data)
+        client.post("/v1/agents", json=agent_data)
         
         # Then query by consumed event
-        response = client.get("/api/v1/agents", params={"consumed_event": "unique.consumed.event"})
+        response = client.get("/v1/agents", params={"consumed_event": "unique.consumed.event"})
         assert response.status_code == 200
         data = response.json()
         assert data["count"] >= 1
@@ -214,25 +241,21 @@ class TestAgentEndpoints:
             pytest.fail("Agent not found in results")
     
     def test_query_agents_by_produced_event(self, client):
-        """Test GET /api/v1/agents?produced_event=... endpoint works."""
+        """Test GET /v1/agents?produced_event=... endpoint works."""
         # First register an agent
         agent_data = {
-            "agent": {
-                "agentId": "producer-test-agent-v1",
-                "name": "Producer Test Agent",
-                "description": "Test agent that produces events",
-                "capabilities": [{
-                    "taskName": "produce",
-                    "description": "Produces events",
-                    "consumedEvent": "input.event",
-                    "producedEvents": ["unique.produced.event"]
-                }]
-            }
+            "agent_id": "producer-test-agent-v1",
+            "name": "Producer Test Agent",
+            "agent_type": "worker",
+            "capabilities": ["produce"],
+            "events_consumed": ["input.event"],
+            "events_produced": ["unique.produced.event"],
+            "metadata": {"description": "Test agent that produces events"}
         }
-        client.post("/api/v1/agents", json=agent_data)
+        client.post("/v1/agents", json=agent_data)
         
         # Then query by produced event
-        response = client.get("/api/v1/agents", params={"produced_event": "unique.produced.event"})
+        response = client.get("/v1/agents", params={"produced_event": "unique.produced.event"})
         assert response.status_code == 200
         data = response.json()
         assert data["count"] >= 1
@@ -245,11 +268,10 @@ class TestAgentEndpoints:
             pytest.fail("Agent not found in results")
     
     def test_api_path_is_correct(self, client):
-        """Test that /api/v1/agents is the correct path (not /api/api/v1/agents)."""
-        # This test would have caught the double /api prefix bug!
-        response = client.get("/api/v1/agents")
+        """Test that /v1/agents is the correct path."""
+        response = client.get("/v1/agents")
         assert response.status_code == 200
         
         # Verify incorrect paths return 404
-        response_wrong = client.get("/api/api/v1/agents")
+        response_wrong = client.get("/api/v1/agents")
         assert response_wrong.status_code == 404

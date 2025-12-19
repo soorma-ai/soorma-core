@@ -114,6 +114,29 @@ class AgentRegistryService:
             )
     
     @staticmethod
+    async def delete_agent(
+        db: AsyncSession,
+        agent_id: str
+    ) -> bool:
+        """
+        Delete an agent.
+        
+        Args:
+            db: Database session
+            agent_id: ID of the agent
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        try:
+            success = await agent_crud.delete_agent(db, agent_id)
+            await db.commit()
+            return success
+        except Exception:
+            await db.rollback()
+            raise
+
+    @staticmethod
     async def query_agents(
         db: AsyncSession,
         agent_id: Optional[str] = None,

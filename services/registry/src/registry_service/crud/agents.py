@@ -318,6 +318,30 @@ class AgentCRUD:
         
         return True
     
+    async def delete_agent(
+        self,
+        db: AsyncSession,
+        agent_id: str
+    ) -> bool:
+        """
+        Delete an agent by ID.
+        
+        Args:
+            db: Database session
+            agent_id: ID of the agent
+            
+        Returns:
+            True if agent was found and deleted, False otherwise
+        """
+        agent = await self.get_agent_by_id(db, agent_id, include_expired=True)
+        if not agent:
+            return False
+            
+        invalidate_agent_cache(agent_id)
+        await db.delete(agent)
+        await db.flush()
+        return True
+
     async def get_expired_agents(
         self,
         db: AsyncSession,

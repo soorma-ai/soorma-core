@@ -27,7 +27,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Create non-root user for security
-RUN adduser --disabled-password --gecos "" appuser
+RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
 
 # Copy wheels from builder
 COPY --from=builder /app/wheels /app/wheels
@@ -47,10 +47,13 @@ RUN pip install --no-cache-dir \
     && rm -rf /app/wheels
 
 # Copy alembic config and migrations for database setup
-COPY --from=builder /app/registry/alembic.ini /app/
-COPY --from=builder /app/registry/alembic /app/alembic/
+COPY --chown=appuser:appuser --from=builder /app/registry/alembic.ini /app/
+COPY --chown=appuser:appuser --from=builder /app/registry/alembic /app/alembic/
 
-# Switch to non-root user
+# Copy entrypoint script
+COPY --chown=appuser:appuser services/registry/entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
+
 USER appuser
 
 # Expose port
@@ -60,5 +63,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-# Run the service
-CMD ["uvicorn", "registry_service.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the service via entrypoint to handle migrations
+CMD ["/app/entrypoint.sh"]

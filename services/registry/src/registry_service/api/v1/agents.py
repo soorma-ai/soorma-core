@@ -1,14 +1,17 @@
 """
 API endpoints for agent registry.
 """
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Query, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from soorma_common import (
     AgentRegistrationRequest,
     AgentRegistrationResponse,
     AgentQueryResponse,
+    AgentDefinition,
+    AgentCapability
 )
 from ...services import AgentRegistryService
 from ...core.database import get_db
@@ -16,16 +19,29 @@ from ...core.database import get_db
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
+class SDKAgentRegistrationRequest(BaseModel):
+    """
+    Request model matching the SDK's flat structure.
+    """
+    agent_id: str
+    name: str
+    agent_type: str
+    capabilities: List[str]
+    events_consumed: List[str]
+    events_produced: List[str]
+    metadata: Optional[Dict[str, Any]] = None
+
+
 @router.post("", response_model=AgentRegistrationResponse)
 async def register_agent(
-    request: AgentRegistrationRequest,
+    request: SDKAgentRegistrationRequest,
     db: AsyncSession = Depends(get_db)
 ) -> AgentRegistrationResponse:
     """
     Register or update an agent in the agent registry (upsert operation).
     
     Args:
-        request: Agent registration request with agent definition
+        request: Agent registration request (SDK format)
         db: Database session (injected)
         
     Returns:
@@ -34,7 +50,26 @@ async def register_agent(
     Raises:
         HTTPException: 400 if registration fails
     """
-    response = await AgentRegistryService.register_agent(db, request.agent)
+    # Convert SDK request to AgentDefinition
+    capabilities = []
+    for cap_name in request.capabilities:
+        capabilities.append(AgentCapability(
+            task_name=cap_name,
+            description=f"Capability: {cap_name}",
+            consumed_event="unknown",
+            produced_events=[]
+        ))
+        
+    agent_def = AgentDefinition(
+        agent_id=request.agent_id,
+        name=request.name,
+        description=request.metadata.get("description", "") if request.metadata else "",
+        capabilities=capabilities,
+        consumed_events=request.events_consumed,
+        produced_events=request.events_produced
+    )
+
+    response = await AgentRegistryService.register_agent(db, agent_def)
     
     # If registration failed, return 400 Bad Request
     if not response.success:
@@ -80,6 +115,7 @@ async def query_agents(
     )
 
 
+@router.post("/{agent_id}/heartbeat", response_model=AgentRegistrationResponse)
 @router.put("/{agent_id}/heartbeat", response_model=AgentRegistrationResponse)
 async def refresh_agent_heartbeat(
     agent_id: str,
@@ -97,3 +133,26 @@ async def refresh_agent_heartbeat(
         AgentRegistrationResponse with refresh status
     """
     return await AgentRegistryService.refresh_agent_heartbeat(db, agent_id)
+
+
+@router.delete("/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_agent(
+    agent_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete an agent from the registry.
+    
+    Args:
+        agent_id: ID of the agent to delete
+        db: Database session (injected)
+        
+    Raises:
+        HTTPException: 404 if agent not found
+    """
+    success = await AgentRegistryService.delete_agent(db, agent_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent '{agent_id}' not found"
+        )
