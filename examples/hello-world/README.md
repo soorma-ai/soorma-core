@@ -88,6 +88,22 @@ tool.run()
 
 ## Running the Example
 
+### Prerequisites
+
+From the `soorma-core` root directory:
+
+```bash
+# Create and activate virtual environment (if not already done)
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
+
+# Install SDK from PyPI
+pip install soorma-core
+
+# Build Docker images (first time only)
+soorma dev --build
+```
+
 ### 1. Start the dev infrastructure
 
 ```bash
@@ -100,26 +116,28 @@ This starts:
 
 ### 2. Run each agent in separate terminals
 
+From the `soorma-core` root directory:
+
 **Terminal 1 - Start the Planner:**
 ```bash
-python planner_agent.py
+python examples/hello-world/planner_agent.py
 ```
 
 **Terminal 2 - Start the Worker:**
 ```bash
-python worker_agent.py
+python examples/hello-world/worker_agent.py
 ```
 
 ### 3. Submit a goal
 
 **Terminal 3 - Run the client:**
 ```bash
-python client.py "World"
+python examples/hello-world/client.py "World"
 ```
 
 Or with a custom name:
 ```bash
-python client.py "Alice"
+python examples/hello-world/client.py "Alice"
 ```
 
 ### Expected Output

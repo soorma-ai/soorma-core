@@ -12,13 +12,45 @@ We are currently building the core runtime. This package provides early access t
 
 ## Quick Start
 
-### Installation
+> **Note:** Docker images are not yet published. You must clone the repo and build locally.
+
+### 1. Clone Repository and Build Infrastructure
 
 ```bash
+# Clone the repository (needed for Docker images)
+git clone https://github.com/soorma-ai/soorma-core.git
+cd soorma-core
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install the SDK from PyPI
 pip install soorma-core
+
+# Build infrastructure containers (required first time)
+soorma dev --build
 ```
 
-### Create a New Agent Project
+> 💡 **Alternative:** To install SDK from local source (for development/customization):
+> ```bash
+> pip install -e sdk/python
+> ```
+
+### 2. Run the Hello World Example
+
+```bash
+# Start infrastructure
+soorma dev --infra-only
+
+# In separate terminals:
+python examples/hello-world/planner_agent.py
+python examples/hello-world/worker_agent.py
+python examples/hello-world/tool_agent.py
+python examples/hello-world/client.py
+```
+
+### 3. Create a New Agent Project
 
 ```bash
 # Create a Worker agent (default)
@@ -39,10 +71,17 @@ pip install -e ".[dev]"
 ### Start Local Development
 
 ```bash
-# Start the local Soorma stack (Registry + NATS + Event Service)
+# Start infrastructure and run your agent (auto-detects agent in current directory)
 soorma dev
+```
 
-# In another terminal, run your agent
+Or run infrastructure separately:
+
+```bash
+# Start only infrastructure
+soorma dev --infra-only
+
+# In another terminal, run your agent manually
 python -m my_worker.agent
 ```
 
@@ -184,6 +223,8 @@ async def handler(task: TaskContext, context: PlatformContext):
 
 ## CLI Commands
 
+> **First-time setup:** Run `soorma dev --build --infra-only` to build Docker images before using other commands.
+
 | Command | Description |
 |---------|-------------|
 | `soorma init <name>` | Scaffold a new agent project |
@@ -192,6 +233,7 @@ async def handler(task: TaskContext, context: PlatformContext):
 | `soorma init <name> --type tool` | Create a Tool service |
 | `soorma dev` | Start infra + run agent with hot reload |
 | `soorma dev --build` | Build service images from source first |
+| `soorma dev --build --infra-only` | Build images without running agent (first-time setup) |
 | `soorma dev --infra-only` | Start infra without running agent |
 | `soorma dev --stop` | Stop the development stack |
 | `soorma dev --status` | Show stack status |

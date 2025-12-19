@@ -64,53 +64,68 @@ graph TD
 
 ## ⚡ Quick Start
 
-### 1. Install the SDK
+> **Note:** Docker images are not yet published to GHCR. You must build them locally first.
+
+### 1. Clone Repository and Build Infrastructure
+
 ```bash
+# Clone the repository (needed for Docker images)
+git clone https://github.com/soorma-ai/soorma-core.git
+cd soorma-core
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install the SDK from PyPI
 pip install soorma-core
+
+# Build infrastructure containers (required first time)
+soorma dev --build
 ```
 
-### 2. Define a Worker
-The **DisCo** architecture separates logic (`Worker`) from plumbing (`soorma`).
+> 💡 **Alternative:** To install SDK from local source (for development/customization):
+> ```bash
+> pip install -e sdk/python
+> ```
 
-```python
-from soorma import Worker
+### 2. Run the Hello World Example
 
-# Define a long-lived, event-driven worker
-analyst = Worker(name="MarketAnalyst", capabilities=["analyze_trends"])
+The fastest way to see Soorma in action:
 
-@analyst.on_event("research.requested")
-async def handle(event, context):
-    # 1. Access Shared Memory
-    history = await context.memory.retrieve(tags=["Q3"])
-    
-    # 2. Perform Logic (LangChain, AutoGen, or Raw Python)
-    result = perform_analysis(event.data, history)
-    
-    # 3. Publish Result
-    return {"analysis": result}
-```
-
-### 3. Run Locally
-
-**Option A: Using CLI (Recommended)**
 ```bash
-# Spins up the local Control Plane (Gateway, Registry, NATS) via Docker
+# Start infrastructure (Registry, NATS, Event Service)
+soorma dev --infra-only
+
+# In separate terminals, run the example agents:
+python examples/hello-world/planner_agent.py
+python examples/hello-world/worker_agent.py
+python examples/hello-world/tool_agent.py
+
+# Submit a goal:
+python examples/hello-world/client.py
+```
+
+See the [Hello World Example](./examples/hello-world/README.md) for full details.
+
+### 3. Create Your Own Agent
+
+```bash
+# Scaffold a new agent project
+soorma init my-agent --type worker
+
+cd my-agent
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+# Start infrastructure and run your agent
 soorma dev
 ```
 
-**Option B: Manual Setup**
-
-For full control, run services individually. See [SDK README](./sdk/python/README.md#how-soorma-dev-works) for architecture details.
-
-### 📚 Complete Example
+### 📖 More Examples
 
 For a complete working example demonstrating the **DisCo Trinity** pattern (Planner → Worker → Tool), see the [Hello World Example](./examples/hello-world/README.md).
-
-This example shows:
-- A **Planner** that receives goals and creates tasks
-- A **Worker** that executes tasks using tools
-- A **Tool** that performs specific actions
-- A **Client** that submits goals and receives results
 
 ### 🔧 CLI Reference
 

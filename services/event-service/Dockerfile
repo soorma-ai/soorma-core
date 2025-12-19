@@ -1,5 +1,6 @@
 # Event Service Dockerfile
 # Multi-stage build for minimal image size
+# Build context should be soorma-core root (i.e., soorma-platform/core/)
 
 FROM python:3.11-slim AS builder
 
@@ -8,9 +9,9 @@ WORKDIR /app
 # Install build dependencies
 RUN pip install --no-cache-dir pip --upgrade
 
-# Copy project files
-COPY pyproject.toml README.md ./
-COPY src/ ./src/
+# Copy project files from services/event-service/
+COPY services/event-service/pyproject.toml services/event-service/README.md ./
+COPY services/event-service/src/ ./src/
 
 # Install dependencies
 RUN pip install --no-cache-dir .
@@ -28,7 +29,7 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application source
-COPY src/ ./src/
+COPY services/event-service/src/ ./src/
 
 # Switch to non-root user
 USER appuser
