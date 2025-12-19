@@ -1,0 +1,156 @@
+"""
+Integration tests for agent TTL and heartbeat API endpoints.
+"""
+import pytest
+import time
+from datetime import datetime, timezone, timedelta
+from sqlalchemy import update, select
+
+from registry_service.core.database import AsyncSessionLocal
+from registry_service.crud import agents as agent_crud
+from registry_service.models.agent import AgentTable
+from soorma_common import AgentRegistrationRequest, AgentDefinition, AgentCapability
+
+
+@pytest.fixture
+def sample_agent_request():
+    """Create a sample agent registration request."""
+    agent = AgentDefinition(
+        agent_id="api-test-agent",
+        name="API Test Agent",
+        description="Agent for API testing",
+        capabilities=[
+            AgentCapability(
+                task_name="api_task",
+                description="API task",
+                consumed_event="api.event",
+                produced_events=["api.result"]
+            )
+        ]
+    )
+    return AgentRegistrationRequest(agent=agent)
+
+
+def test_register_agent_sets_heartbeat(client, sample_agent_request):
+    """Test that registering an agent via API sets heartbeat."""
+    # Register agent
+    response = client.post(
+        "/api/v1/agents",
+        json=sample_agent_request.model_dump(by_alias=True)
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    
+    # Query the agent
+    response = client.get(
+        "/api/v1/agents",
+        params={"agentId": "api-test-agent"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] == 1
+
+
+def test_heartbeat_endpoint(client, sample_agent_request):
+    """Test the heartbeat refresh endpoint."""
+    # Register agent
+    client.post(
+        "/api/v1/agents",
+        json=sample_agent_request.model_dump(by_alias=True)
+    )
+    
+    # Wait a tiny bit
+    time.sleep(0.1)
+    
+    # Refresh heartbeat
+    response = client.put("/api/v1/agents/api-test-agent/heartbeat")
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "refreshed successfully" in data["message"]
+
+
+def test_heartbeat_nonexistent_agent(client):
+    """Test heartbeat endpoint with non-existent agent."""
+    response = client.put("/api/v1/agents/nonexistent-agent/heartbeat")
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is False
+    assert "not found" in data["message"]
+
+
+def test_query_with_include_expired_parameter(client, sample_agent_request):
+    """Test querying agents with include_expired parameter."""
+    # Register agent
+    client.post(
+        "/api/v1/agents",
+        json=sample_agent_request.model_dump(by_alias=True)
+    )
+    
+    # Query with include_expired=false (default)
+    response = client.get(
+        "/api/v1/agents",
+        params={"agentId": "api-test-agent", "includeExpired": False}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] == 1
+    
+    # Query with include_expired=true
+    response = client.get(
+        "/api/v1/agents",
+        params={"agentId": "api-test-agent", "includeExpired": True}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] == 1
+
+
+def test_multiple_heartbeat_refreshes(client, sample_agent_request):
+    """Test multiple heartbeat refreshes in sequence."""
+    # Register agent
+    client.post(
+        "/api/v1/agents",
+        json=sample_agent_request.model_dump(by_alias=True)
+    )
+    
+    # Refresh heartbeat multiple times
+    for _ in range(3):
+        time.sleep(0.05)
+        response = client.put("/api/v1/agents/api-test-agent/heartbeat")
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+    
+    # Agent should still be queryable
+    response = client.get(
+        "/api/v1/agents",
+        params={"agentId": "api-test-agent"}
+    )
+    
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
+
+
+def test_heartbeat_idempotency(client, sample_agent_request):
+    """Test that heartbeat refresh is idempotent."""
+    # Register agent
+    client.post(
+        "/api/v1/agents",
+        json=sample_agent_request.model_dump(by_alias=True)
+    )
+    
+    # Refresh heartbeat twice with same result
+    response1 = client.put("/api/v1/agents/api-test-agent/heartbeat")
+    response2 = client.put("/api/v1/agents/api-test-agent/heartbeat")
+    
+    assert response1.status_code == 200
+    assert response2.status_code == 200
+    assert response1.json()["success"] is True
+    assert response2.json()["success"] is True

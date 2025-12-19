@@ -1,0 +1,28 @@
+[project]
+name = "soorma-common"
+version = "0.1.0"
+description = "Common models and DTOs for Soorma platform services"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/soorma_common"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+]
