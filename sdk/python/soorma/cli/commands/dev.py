@@ -58,6 +58,26 @@ services:
       retries: 5
       start_period: 10s
 
+  # Event Service - PubSub Proxy (SSE + REST)
+  event-service:
+    image: ${EVENT_SERVICE_IMAGE:-event-service:latest}
+    container_name: soorma-event-service
+    ports:
+      - "${EVENT_SERVICE_PORT:-8082}:8082"
+    environment:
+      - EVENT_ADAPTER=nats
+      - NATS_URL=nats://nats:4222
+      - DEBUG=false
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
 networks:
   default:
     name: soorma-dev
@@ -118,18 +138,18 @@ SERVICE_DEFINITIONS = {
         "dockerfile": "services/registry/Dockerfile",
         "name": "Registry Service",
     },
+    "event-service": {
+        "local_image": "event-service:latest",
+        "public_image": "ghcr.io/soorma-ai/event-service:latest",
+        "dockerfile": "services/event-service/Dockerfile",
+        "name": "Event Service",
+    },
     # Future services can be added here:
     # "tracker": {
     #     "local_image": "tracker-service:latest",
     #     "public_image": "ghcr.io/soorma-ai/tracker-service:latest",
     #     "dockerfile": "services/tracker/Dockerfile",
     #     "name": "State Tracker",
-    # },
-    # "gateway": {
-    #     "local_image": "gateway-service:latest",
-    #     "public_image": "ghcr.io/soorma-ai/gateway-service:latest",
-    #     "dockerfile": "services/gateway/Dockerfile",
-    #     "name": "API Gateway",
     # },
 }
 
@@ -335,11 +355,13 @@ class AgentRunner:
         self,
         entry_point: Path,
         registry_url: str,
+        event_service_url: str,
         nats_url: str,
         watch: bool = True,
     ):
         self.entry_point = entry_point
         self.registry_url = registry_url
+        self.event_service_url = event_service_url
         self.nats_url = nats_url
         self.watch = watch
         self.process: Optional[subprocess.Popen] = None
@@ -351,6 +373,7 @@ class AgentRunner:
         env = os.environ.copy()
         env.update({
             "SOORMA_REGISTRY_URL": self.registry_url,
+            "SOORMA_EVENT_SERVICE_URL": self.event_service_url,
             "SOORMA_BUS_URL": self.nats_url,
             "SOORMA_NATS_URL": self.nats_url,
             "SOORMA_DEV_MODE": "true",
@@ -511,6 +534,11 @@ def dev_stack(
         "--nats-port",
         help="Port for NATS client connections.",
     ),
+    event_service_port: int = typer.Option(
+        8082,
+        "--event-service-port",
+        help="Port for the Event Service.",
+    ),
     build: bool = typer.Option(
         False,
         "--build",
@@ -604,15 +632,18 @@ def dev_stack(
             typer.echo("once the platform is released.", err=True)
             raise typer.Exit(1)
     
-    # Get registry image for env file
+    # Get service images for env file
     registry_image = service_images.get("registry", "registry-service:latest")
+    event_service_image = service_images.get("event-service", "event-service:latest")
     
-    # Write .env file with custom ports and registry image
+    # Write .env file with custom ports and service images
     env_content = f"""# Soorma Local Development Environment
 NATS_PORT={nats_port}
 NATS_HTTP_PORT=8222
 REGISTRY_PORT={registry_port}
 REGISTRY_IMAGE={registry_image or 'registry-service:latest'}
+EVENT_SERVICE_PORT={event_service_port}
+EVENT_SERVICE_IMAGE={event_service_image or 'event-service:latest'}
 """
     env_file.write_text(env_content)
     
@@ -661,8 +692,9 @@ REGISTRY_IMAGE={registry_image or 'registry-service:latest'}
     
     # Start infrastructure
     typer.echo("📦 Starting infrastructure (Docker)...")
-    typer.echo(f"   Registry: http://localhost:{registry_port}")
-    typer.echo(f"   NATS:     nats://localhost:{nats_port}")
+    typer.echo(f"   Registry:      http://localhost:{registry_port}")
+    typer.echo(f"   Event Service: http://localhost:{event_service_port}")
+    typer.echo(f"   NATS:          nats://localhost:{nats_port}")
     typer.echo("")
     
     # Pull images (quiet mode)
@@ -706,6 +738,7 @@ REGISTRY_IMAGE={registry_image or 'registry-service:latest'}
         typer.echo("")
         typer.echo("To run your agent:")
         typer.echo(f"  export SOORMA_REGISTRY_URL=http://localhost:{registry_port}")
+        typer.echo(f"  export SOORMA_EVENT_SERVICE_URL=http://localhost:{event_service_port}")
         typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
         typer.echo("  python agent.py")
         raise typer.Exit(0)
@@ -725,6 +758,7 @@ REGISTRY_IMAGE={registry_image or 'registry-service:latest'}
     runner = AgentRunner(
         entry_point=entry_point,
         registry_url=f"http://localhost:{registry_port}",
+        event_service_url=f"http://localhost:{event_service_port}",
         nats_url=f"nats://localhost:{nats_port}",
         watch=not no_watch,
     )

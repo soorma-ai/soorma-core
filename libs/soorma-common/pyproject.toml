@@ -26,3 +26,7 @@ packages = ["src/soorma_common"]
 include = [
     "/src",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

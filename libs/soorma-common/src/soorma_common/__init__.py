@@ -18,6 +18,23 @@ from .models import (
     EventQueryResponse,
 )
 
+from .events import (
+    # Event Topics
+    EventTopic,
+    # Event Envelopes
+    EventEnvelope,
+    ActionRequestEvent,
+    ActionResultEvent,
+    BusinessFactEvent,
+    BillingEvent,
+    NotificationEvent,
+    # Event Service DTOs
+    PublishRequest,
+    PublishResponse,
+    SubscribeRequest,
+    StreamConnectionInfo,
+)
+
 __all__ = [
     "BaseDTO",
     # Agent Registry
@@ -33,6 +50,20 @@ __all__ = [
     "EventRegistrationResponse",
     "EventQueryRequest",
     "EventQueryResponse",
+    # Event Topics
+    "EventTopic",
+    # Event Envelopes
+    "EventEnvelope",
+    "ActionRequestEvent",
+    "ActionResultEvent",
+    "BusinessFactEvent",
+    "BillingEvent",
+    "NotificationEvent",
+    # Event Service DTOs
+    "PublishRequest",
+    "PublishResponse",
+    "SubscribeRequest",
+    "StreamConnectionInfo",
 ]
 
 __version__ = "0.1.0"

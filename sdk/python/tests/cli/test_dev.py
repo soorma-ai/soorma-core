@@ -40,6 +40,16 @@ class TestServiceDefinitions:
         assert "dockerfile" in registry
         assert "name" in registry
 
+    def test_event_service_defined(self):
+        """Event service should be properly defined."""
+        assert "event-service" in SERVICE_DEFINITIONS
+        
+        event_service = SERVICE_DEFINITIONS["event-service"]
+        assert event_service["local_image"] == "event-service:latest"
+        assert event_service["public_image"] == "ghcr.io/soorma-ai/event-service:latest"
+        assert event_service["dockerfile"] == "services/event-service/Dockerfile"
+        assert event_service["name"] == "Event Service"
+
     def test_registry_dockerfile_path(self):
         """Registry dockerfile should be relative to soorma-core root."""
         registry = SERVICE_DEFINITIONS["registry"]
