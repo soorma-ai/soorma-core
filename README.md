@@ -91,18 +91,39 @@ async def handle(event, context):
 ```
 
 ### 3. Run Locally
+
+**Option A: Using CLI (Recommended)**
 ```bash
-# Spins up the local Control Plane (Gateway, Registry, NATS)
+# Spins up the local Control Plane (Gateway, Registry, NATS) via Docker
 soorma dev
 ```
+
+**Option B: Manual Setup**
+
+For full control, run services individually. See [SDK README](./sdk/python/README.md#how-soorma-dev-works) for architecture details.
+
+### 📚 Complete Example
+
+For a complete working example demonstrating the **DisCo Trinity** pattern (Planner → Worker → Tool), see the [Hello World Example](./examples/hello-world/README.md).
+
+This example shows:
+- A **Planner** that receives goals and creates tasks
+- A **Worker** that executes tasks using tools
+- A **Tool** that performs specific actions
+- A **Client** that submits goals and receives results
+
+### 🔧 CLI Reference
+
+For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see the [SDK Documentation](./sdk/python/README.md#cli-commands).
 
 ## 📦 Components
 
 | Service | Description | Status |
 | :--- | :--- | :--- |
-| **Gateway** | API Gateway & WebSocket Entrypoint | 🟡 Preview |
+| **Gateway** | API Gateway & SSE Entrypoint | 🟡 Preview |
 | **Registry** | Service Discovery for Agents | 🟡 Preview |
-| **Tracker** | Distributed State Machine | 🟡 Preview |
+| **Event Service** | SSE Event Bus for Agent Choreography | 🟡 Preview |
+| **Tracker** | Distributed State Machine | ⚪ Planned |
 | **Memory** | Vector & Semantic Memory Store | ⚪ Planned |
 
 ## 🤝 Contributing
