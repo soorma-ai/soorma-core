@@ -1,6 +1,6 @@
 [project]
 name = "soorma-event-service"
-version = "0.1.0"
+version = "0.2.0"
 description = "Event Service proxy for Soorma platform - decouples agents from message bus"
 readme = "README.md"
 license = {text = "MIT"}
@@ -13,6 +13,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "httpx>=0.26.0",
+    "soorma-common",
 ]
 
 [project.optional-dependencies]
@@ -45,6 +46,10 @@ include = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore:websockets.legacy is deprecated:DeprecationWarning",
+    "ignore:websockets.server.WebSocketServerProtocol is deprecated:DeprecationWarning",
+]
 
 [tool.ruff]
 line-length = 100

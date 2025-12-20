@@ -9,6 +9,11 @@ WORKDIR /app
 # Install build dependencies
 RUN pip install --no-cache-dir pip --upgrade
 
+# Copy shared libraries
+COPY libs/soorma-common/ libs/soorma-common/
+# Install shared libraries
+RUN pip install --no-cache-dir libs/soorma-common/
+
 # Copy project files from services/event-service/
 COPY services/event-service/pyproject.toml services/event-service/README.md ./
 COPY services/event-service/src/ ./src/

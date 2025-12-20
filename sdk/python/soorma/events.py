@@ -360,7 +360,8 @@ class EventClient:
         await self._ensure_http_client()
         
         topics_param = ",".join(self._subscribed_topics)
-        url = f"{self.event_service_url}/v1/events/stream?topics={topics_param}&agent_id={self.agent_id}"
+        # Pass source as agent_name for load balancing queue groups
+        url = f"{self.event_service_url}/v1/events/stream?topics={topics_param}&agent_id={self.agent_id}&agent_name={self.source}"
         
         logger.info(f"Connecting to SSE stream: {url}")
         

@@ -11,7 +11,8 @@ import os
 os.environ["EVENT_ADAPTER"] = "memory"
 os.environ["DEBUG"] = "true"
 
-from src.main import app, adapter
+from src.main import app
+from src.services.event_manager import event_manager
 
 
 @pytest.fixture
@@ -26,8 +27,11 @@ async def async_client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # Ensure adapter is connected for tests
-        if adapter and not adapter.is_connected:
-            await adapter.connect()
+        # Note: lifespan manager in main.py calls event_manager.initialize()
+        # which connects the adapter. But AsyncClient with lifespan should handle it.
+        # If we need manual control:
+        if not event_manager.adapter or not event_manager.adapter.is_connected:
+             await event_manager.initialize()
         yield ac
 
 
@@ -65,11 +69,12 @@ class TestPublishEndpoint:
     @pytest.mark.asyncio
     async def test_publish_event(self, async_client):
         """Test publishing a valid event."""
+        # Use a valid topic from EventTopic enum (e.g. action-requests)
         event = {
             "event": {
                 "source": "test-agent",
                 "type": "test.event",
-                "topic": "test-topic",
+                "topic": "action-requests",
                 "data": {"key": "value"},
             }
         }
@@ -104,7 +109,7 @@ class TestPublishEndpoint:
             "event": {
                 "source": "test-agent",
                 "type": "test.event",
-                "topic": "test-topic",
+                "topic": "action-requests",
                 "data": {"key": "value"},
                 "correlation_id": "trace-123",
                 "subject": "user:456",

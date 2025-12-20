@@ -38,6 +38,10 @@ class MemoryAdapter(EventAdapter):
         self._subscriptions: Dict[str, Dict[str, Any]] = {}
         # Pattern -> Set of subscription IDs
         self._pattern_subs: Dict[str, Set[str]] = {}
+        # Queue group -> List of subscription IDs (for round-robin)
+        self._queue_groups: Dict[str, List[str]] = {}
+        # Queue group -> Current index (for round-robin)
+        self._queue_group_cursors: Dict[str, int] = {}
     
     async def connect(self) -> None:
         """Mark adapter as connected."""
@@ -77,9 +81,54 @@ class MemoryAdapter(EventAdapter):
             logger.debug(f"No subscribers for topic: {topic}")
             return
         
-        # Deliver to all matching handlers
-        delivery_tasks = []
+        # Group subscriptions by queue group
+        # None key is for subscribers without a queue group (broadcast)
+        grouped_subs: Dict[str | None, List[str]] = {None: []}
+        
         for sub_id in matching_subs:
+            if sub_id in self._subscriptions:
+                q_group = self._subscriptions[sub_id].get("queue_group")
+                if q_group:
+                    if q_group not in grouped_subs:
+                        grouped_subs[q_group] = []
+                    grouped_subs[q_group].append(sub_id)
+                else:
+                    grouped_subs[None].append(sub_id)
+        
+        # Determine final list of subscribers to deliver to
+        final_subs = []
+        
+        # 1. Broadcast to all non-queue-group subscribers
+        final_subs.extend(grouped_subs[None])
+        
+        # 2. Round-robin for each queue group
+        for q_group, sub_ids in grouped_subs.items():
+            if q_group is None:
+                continue
+                
+            # Sort sub_ids to ensure deterministic order for round-robin
+            # (though in memory adapter, order in list is usually insertion order)
+            # We need to pick ONE from this list based on global cursor for this group
+            
+            # Note: The simple cursor approach in __init__ is global per group, 
+            # but here we have a subset of subs that match the topic.
+            # To keep it simple and effective for testing:
+            # We'll use the global cursor to pick the next sub_id from the *available matching* subs.
+            
+            if not sub_ids:
+                continue
+                
+            cursor = self._queue_group_cursors.get(q_group, 0)
+            selected_index = cursor % len(sub_ids)
+            selected_sub = sub_ids[selected_index]
+            final_subs.append(selected_sub)
+            
+            # Advance cursor
+            self._queue_group_cursors[q_group] = cursor + 1
+        
+        # Deliver to selected handlers
+        delivery_tasks = []
+        for sub_id in final_subs:
             if sub_id in self._subscriptions:
                 handler = self._subscriptions[sub_id]["handler"]
                 delivery_tasks.append(self._deliver_message(handler, topic, message))
@@ -96,6 +145,7 @@ class MemoryAdapter(EventAdapter):
         topics: List[str],
         handler: MessageHandler,
         subscription_id: str | None = None,
+        queue_group: str | None = None,
     ) -> str:
         """
         Subscribe to topics with pattern matching support.
@@ -108,6 +158,7 @@ class MemoryAdapter(EventAdapter):
             topics: List of topic patterns
             handler: Async callback function
             subscription_id: Optional subscription identifier
+            queue_group: Optional queue group (ignored in memory adapter)
         
         Returns:
             Subscription ID
@@ -115,11 +166,16 @@ class MemoryAdapter(EventAdapter):
         if not self._connected:
             raise ConnectionError("Memory adapter not connected")
         
+        if queue_group:
+            # logger.warning("Queue groups are not fully supported in MemoryAdapter (broadcast only)")
+            pass
+
         sub_id = subscription_id or str(uuid4())
         
         self._subscriptions[sub_id] = {
             "patterns": topics,
             "handler": handler,
+            "queue_group": queue_group,
         }
         
         # Index patterns for efficient matching
@@ -127,6 +183,13 @@ class MemoryAdapter(EventAdapter):
             if pattern not in self._pattern_subs:
                 self._pattern_subs[pattern] = set()
             self._pattern_subs[pattern].add(sub_id)
+        
+        # Add to queue group if specified
+        if queue_group:
+            if queue_group not in self._queue_groups:
+                self._queue_groups[queue_group] = []
+                self._queue_group_cursors[queue_group] = 0
+            self._queue_groups[queue_group].append(sub_id)
         
         logger.info(f"Subscribed to {topics} (sub_id: {sub_id})")
         return sub_id
@@ -145,6 +208,15 @@ class MemoryAdapter(EventAdapter):
                 self._pattern_subs[pattern].discard(subscription_id)
                 if not self._pattern_subs[pattern]:
                     del self._pattern_subs[pattern]
+        
+        # Remove from queue group
+        queue_group = sub_data.get("queue_group")
+        if queue_group and queue_group in self._queue_groups:
+            if subscription_id in self._queue_groups[queue_group]:
+                self._queue_groups[queue_group].remove(subscription_id)
+                if not self._queue_groups[queue_group]:
+                    del self._queue_groups[queue_group]
+                    del self._queue_group_cursors[queue_group]
         
         logger.info(f"Unsubscribed: {subscription_id}")
     

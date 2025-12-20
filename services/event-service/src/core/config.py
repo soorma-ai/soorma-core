@@ -1,7 +1,7 @@
 """
 Configuration settings for the Event Service.
 """
-from typing import Literal
+from typing import Literal, Optional
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
@@ -30,13 +30,13 @@ class Settings(BaseSettings):
     nats_max_reconnect_attempts: int = -1  # -1 = infinite
     
     # Google Pub/Sub settings (for pubsub adapter)
-    gcp_project_id: str | None = None
+    gcp_project_id: Optional[str] = None
     
     # Kafka settings (for kafka adapter)
     kafka_bootstrap_servers: str = "localhost:9092"
     
     # Redis settings (for distributed subscription state)
-    redis_url: str | None = None
+    redis_url: Optional[str] = None
     
     # Stream settings
     stream_heartbeat_interval: int = 15  # seconds

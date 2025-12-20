@@ -123,6 +123,7 @@ class NatsAdapter(EventAdapter):
         topics: List[str],
         handler: MessageHandler,
         subscription_id: str | None = None,
+        queue_group: str | None = None,
     ) -> str:
         """
         Subscribe to one or more NATS subjects.
@@ -131,6 +132,7 @@ class NatsAdapter(EventAdapter):
             topics: List of topics (supports NATS wildcards: *, >)
             handler: Async callback (topic, message) -> None
             subscription_id: Optional subscription identifier
+            queue_group: Optional queue group for load balancing
         
         Returns:
             Subscription ID
@@ -155,9 +157,21 @@ class NatsAdapter(EventAdapter):
         for topic in topics:
             subject = self._topic_to_subject(topic)
             try:
-                sub = await self._client.subscribe(subject, cb=nats_handler)
+                # Pass queue_group to NATS subscribe if provided
+                # If queue_group is set, NATS will load balance messages across
+                # all subscribers with the same queue group name.
+                sub = await self._client.subscribe(
+                    subject, 
+                    cb=nats_handler, 
+                    queue=queue_group or ""
+                )
                 self._subscriptions[f"{sub_id}:{subject}"] = sub
-                logger.info(f"Subscribed to {subject} (sub_id: {sub_id})")
+                
+                log_msg = f"Subscribed to {subject} (sub_id: {sub_id})"
+                if queue_group:
+                    log_msg += f" [queue: {queue_group}]"
+                logger.info(log_msg)
+                
             except Exception as e:
                 logger.error(f"Failed to subscribe to {subject}: {e}")
                 # Cleanup any successful subscriptions

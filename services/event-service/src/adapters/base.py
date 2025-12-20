@@ -67,6 +67,7 @@ class EventAdapter(ABC):
         topics: List[str],
         handler: MessageHandler,
         subscription_id: str | None = None,
+        queue_group: str | None = None,
     ) -> str:
         """
         Subscribe to one or more topics.
@@ -76,6 +77,9 @@ class EventAdapter(ABC):
                     Supports wildcards (e.g., "research.*", "events.>")
             handler: Async callback function that receives (topic, message)
             subscription_id: Optional identifier for this subscription
+            queue_group: Optional queue group name for load balancing.
+                         If provided, messages will be distributed among subscribers
+                         in the same group.
         
         Returns:
             Subscription ID that can be used to unsubscribe
