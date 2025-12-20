@@ -296,7 +296,7 @@ Client                Planner              Worker              Tool
 
 * [x] **v0.1.0**: Core SDK & CLI (`soorma init`, `soorma dev`)
 * [x] **v0.1.1**: Event Service & DisCo Trinity (Planner, Worker, Tool)
-* [ ] **v0.2.0**: Managed Cloud Deployment (`soorma deploy`)
+* [x] **v0.2.0**: Subscriber Groups & Unified Versioning
 * [ ] **v0.3.0**: Memory Service & State Tracker
 * [ ] **v1.0.0**: Enterprise GA
 
