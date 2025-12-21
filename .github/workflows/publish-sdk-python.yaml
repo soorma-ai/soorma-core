@@ -1,0 +1,278 @@
+# Publish Python SDK to PyPI
+# Triggers when:
+# 1. A new tag matching 'v*' is pushed (e.g., v0.3.0)
+# 2. Manual workflow dispatch
+#
+# Prerequisites:
+# - PyPI API token stored in secrets.PYPI_API_TOKEN
+# - Optional: Test PyPI token in secrets.TEST_PYPI_API_TOKEN
+
+name: Publish Python SDK
+
+on:
+  push:
+    tags:
+      - 'v*'  # e.g., v0.1.0, v1.0.0
+  workflow_dispatch:
+    inputs:
+      publish_to:
+        description: 'Where to publish'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
+      version_override:
+        description: 'Version override (leave empty to use pyproject.toml)'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION: '3.11'
+  SDK_PATH: 'sdk/python'
+  COMMON_PATH: 'libs/soorma-common'
+
+jobs:
+  # Publish Common Libs first
+  publish-common:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatch twine
+
+      - name: Get version
+        id: get_version
+        working-directory: ${{ env.COMMON_PATH }}
+        run: |
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build Common Package
+        working-directory: ${{ env.COMMON_PATH }}
+        run: |
+          hatch build
+          ls -la dist/
+
+      - name: Publish Common to Test PyPI
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_to == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          packages-dir: ${{ env.COMMON_PATH }}/dist/
+          skip-existing: true
+
+      - name: Publish Common to PyPI
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_to == 'pypi')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: ${{ env.COMMON_PATH }}/dist/
+          skip-existing: true
+
+  # Run tests before publishing SDK
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          # Install local common lib for testing
+          poetry add --editable ../../libs/soorma-common
+          poetry install
+
+      - name: Run tests
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry run pytest tests/ -v
+
+  # Build the SDK package
+  build:
+    needs: [test, publish-common]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry build twine
+
+      - name: Get version from tag or input
+        id: get_version
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # Extract version from tag (v0.2.0 -> 0.2.0)
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          elif [ -n "${{ inputs.version_override }}" ]; then
+            echo "version=${{ inputs.version_override }}" >> $GITHUB_OUTPUT
+          else
+            # Get version from pyproject.toml
+            VERSION=$(poetry version -s)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version in pyproject.toml (if tag)
+        if: github.event_name == 'push'
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry version ${{ steps.get_version.outputs.version }}
+
+      - name: Build package
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry build
+          echo "📦 Built packages:"
+          ls -la dist/
+
+      - name: Verify package
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          twine check dist/*
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-sdk-dist
+          path: ${{ env.SDK_PATH }}/dist/
+          retention-days: 5
+
+  # Publish to Test PyPI (for workflow_dispatch with testpypi)
+  publish-testpypi:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_to == 'testpypi'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-sdk-dist
+          path: dist/
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          skip-existing: true
+
+      - name: Summary
+        run: |
+          echo "## 🧪 Published to Test PyPI" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install with:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pip install -i https://test.pypi.org/simple/ soorma-core==${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # Publish to PyPI (for tags or manual pypi selection)
+  publish-pypi:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_to == 'pypi')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-sdk-dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Published to PyPI" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install with:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pip install soorma-core==${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # Create GitHub Release (only for tag pushes)
+  create-release:
+    if: github.event_name == 'push'
+    needs: [build, publish-pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-sdk-dist
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "soorma-core v${{ needs.build.outputs.version }}"
+          body: |
+            ## soorma-core v${{ needs.build.outputs.version }}
+            
+            ### Installation
+            ```bash
+            pip install soorma-core==${{ needs.build.outputs.version }}
+            ```
+            
+            ### What's New
+            See the [CHANGELOG](https://github.com/soorma-ai/soorma-core/blob/main/sdk/python/CHANGELOG.md) for details.
+            
+            ### PyPI
+            https://pypi.org/project/soorma-core/${{ needs.build.outputs.version }}/
+          files: |
+            dist/*
+          draft: false
+          prerelease: ${{ contains(needs.build.outputs.version, 'alpha') || contains(needs.build.outputs.version, 'beta') || contains(needs.build.outputs.version, 'rc') }}

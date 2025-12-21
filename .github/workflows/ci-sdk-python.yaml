@@ -1,0 +1,154 @@
+# CI for Python SDK
+# Runs tests on PRs to main and pushes to main/dev branches
+
+name: Python SDK CI
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'sdk/python/**'
+      - 'libs/soorma-common/**'
+      - '.github/workflows/ci-sdk-python.yaml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sdk/python/**'
+      - 'libs/soorma-common/**'
+      - '.github/workflows/ci-sdk-python.yaml'
+
+env:
+  SDK_PATH: 'sdk/python'
+  COMMON_PATH: 'libs/soorma-common'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Run Ruff linter
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          ruff check soorma/ tests/ --output-format=github
+        continue-on-error: true  # Don't fail build on lint warnings for now
+
+  test-common:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        working-directory: ${{ env.COMMON_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        working-directory: ${{ env.COMMON_PATH }}
+        run: |
+          pytest tests/ -v --tb=short
+
+  test-sdk:
+    runs-on: ubuntu-latest
+    needs: test-common
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          # Install local common lib for testing
+          poetry add --editable ../../libs/soorma-common
+          poetry install
+
+      - name: Run tests
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry run pytest tests/ -v --tb=short
+
+      - name: Test CLI installation
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry run soorma version
+          poetry run soorma --help
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test-common, test-sdk]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry build twine
+
+      - name: Build Common package
+        working-directory: ${{ env.COMMON_PATH }}
+        run: |
+          pip install hatch
+          hatch build
+          echo "📦 Built soorma-common packages:"
+          ls -la dist/
+
+      - name: Build SDK package
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry build
+          echo "📦 Built soorma-core packages:"
+          ls -la dist/
+
+      - name: Verify packages
+        run: |
+          twine check ${{ env.COMMON_PATH }}/dist/*
+          twine check ${{ env.SDK_PATH }}/dist/*
+
+      - name: Install and test packages
+        run: |
+          pip install ${{ env.COMMON_PATH }}/dist/*.whl
+          pip install ${{ env.SDK_PATH }}/dist/*.whl
+          soorma version
+          python -c "from soorma import Agent, event_handler; print('✓ Import successful')"
