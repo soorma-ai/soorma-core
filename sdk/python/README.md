@@ -10,6 +10,10 @@ We are currently building the core runtime. This package provides early access t
 
 **Join the waitlist:** [soorma.ai](https://soorma.ai)
 
+## Prerequisites
+
+- **Python 3.11+** is required.
+
 ## Quick Start
 
 > **Note:** Docker images are not yet published. You must clone the repo and build locally.
@@ -220,6 +224,123 @@ async def handler(task: TaskContext, context: PlatformContext):
 | `context.memory` | Distributed State | `retrieve()`, `store()`, `search()` |
 | `context.bus` | Event Choreography | `publish()`, `subscribe()`, `request()` |
 | `context.tracker` | Observability | `start_plan()`, `emit_progress()`, `complete_task()` |
+
+## Advanced Usage
+
+### Structured Agent Registration
+
+For simple agents, you can pass a list of strings as capabilities. For more control, use `AgentCapability` objects to define schemas and descriptions.
+
+```python
+from soorma import Agent, Context
+from soorma.models import AgentCapability
+
+async def main(context: Context):
+    # Define structured capabilities
+    capabilities = [
+        AgentCapability(
+            name="analyze_sentiment",
+            description="Analyzes the sentiment of a given text",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "Text to analyze"}
+                },
+                "required": ["text"]
+            },
+            output_schema={
+                "type": "object",
+                "properties": {
+                    "score": {"type": "number", "description": "Sentiment score (-1 to 1)"}
+                }
+            }
+        )
+    ]
+
+    # Register with structured capabilities
+    await context.register(
+        name="sentiment-analyzer",
+        capabilities=capabilities
+    )
+
+    # ... rest of agent logic
+```
+
+### Event Registration
+
+You can register custom event schemas that your agent produces or consumes.
+
+```python
+from soorma.models import EventDefinition
+
+async def main(context: Context):
+    # Register a custom event schema
+    await context.registry.register_event(
+        EventDefinition(
+            event_type="analysis.completed",
+            description="Emitted when text analysis is complete",
+            schema={
+                "type": "object",
+                "properties": {
+                    "text_id": {"type": "string"},
+                    "result": {"type": "object"}
+                },
+                "required": ["text_id", "result"]
+            }
+        )
+    )
+```
+
+### AI Integration
+
+The SDK provides specialized tools for AI agents (like LLMs) to interact with the system dynamically.
+
+#### AI Event Toolkit
+
+The `EventToolkit` allows agents to discover events and generate valid payloads without hardcoded DTOs.
+
+```python
+from soorma.ai.event_toolkit import EventToolkit
+
+async with EventToolkit() as toolkit:
+    # 1. Discover events
+    events = await toolkit.discover_events(topic="action-requests")
+    
+    # 2. Get detailed info
+    info = await toolkit.get_event_info("web.search.request")
+    
+    # 3. Create validated payload (handles schema validation)
+    payload = await toolkit.create_payload(
+        "web.search.request",
+        {"query": "AI trends 2025"}
+    )
+```
+
+#### OpenAI Function Calling
+
+You can expose Registry capabilities directly to OpenAI-compatible LLMs using `get_tool_definitions()`.
+
+```python
+from soorma.ai.tools import get_tool_definitions, execute_ai_tool
+import openai
+
+# 1. Get tool definitions
+tools = get_tool_definitions()
+
+# 2. Call LLM
+response = await openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Find events related to search"}],
+    tools=tools
+)
+
+# 3. Execute tool calls
+tool_call = response.choices[0].message.tool_calls[0]
+result = await execute_ai_tool(
+    tool_call.function.name,
+    json.loads(tool_call.function.arguments)
+)
+```
 
 ## CLI Commands
 

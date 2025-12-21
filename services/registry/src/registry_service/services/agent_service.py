@@ -137,6 +137,21 @@ class AgentRegistryService:
             raise
 
     @staticmethod
+    def _deduplicate_by_name(agent_tables: list) -> list:
+        """
+        Deduplicate agents by name, keeping the one with the most recent heartbeat.
+        """
+        grouped = {}
+        for agent in agent_tables:
+            if agent.name not in grouped:
+                grouped[agent.name] = agent
+            else:
+                # Keep the one with the later heartbeat
+                if agent.last_heartbeat > grouped[agent.name].last_heartbeat:
+                    grouped[agent.name] = agent
+        return list(grouped.values())
+
+    @staticmethod
     async def query_agents(
         db: AsyncSession,
         agent_id: Optional[str] = None,
@@ -176,6 +191,9 @@ class AgentRegistryService:
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
                     agent_tables = [a for a in agent_tables if a.last_heartbeat >= expiry_threshold]
+                
+                # Deduplicate by name (show only one instance per agent type)
+                agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
                 agents = [agent_crud.agent_to_dto(a) for a in agent_tables]
             elif consumed_event:
                 agent_tables = await agent_crud.get_agents_by_consumed_event(db, consumed_event)
@@ -183,6 +201,9 @@ class AgentRegistryService:
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
                     agent_tables = [a for a in agent_tables if a.last_heartbeat >= expiry_threshold]
+                
+                # Deduplicate by name
+                agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
                 agents = [agent_crud.agent_to_dto(a) for a in agent_tables]
             elif produced_event:
                 agent_tables = await agent_crud.get_agents_by_produced_event(db, produced_event)
@@ -190,6 +211,9 @@ class AgentRegistryService:
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
                     agent_tables = [a for a in agent_tables if a.last_heartbeat >= expiry_threshold]
+                
+                # Deduplicate by name
+                agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
                 agents = [agent_crud.agent_to_dto(a) for a in agent_tables]
             else:
                 agent_tables = await agent_crud.get_all_agents(
@@ -197,6 +221,8 @@ class AgentRegistryService:
                     include_expired=include_expired,
                     ttl_seconds=ttl_seconds
                 )
+                # Deduplicate by name
+                agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
                 agents = [agent_crud.agent_to_dto(a) for a in agent_tables]
             
             return AgentQueryResponse(

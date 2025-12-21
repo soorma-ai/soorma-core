@@ -62,6 +62,11 @@ graph TD
     Bus --- Memory
 ```
 
+## Prerequisites
+
+- **Python 3.11+** (for SDK and local development)
+- **Docker & Docker Compose** (for running infrastructure)
+
 ## ⚡ Quick Start
 
 > **Note:** Docker images are not yet published to GHCR. You must build them locally first.

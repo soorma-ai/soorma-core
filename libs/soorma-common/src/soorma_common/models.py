@@ -64,8 +64,22 @@ class AgentDefinition(BaseDTO):
 
 
 class AgentRegistrationRequest(BaseDTO):
-    """Request to register a new agent."""
+    """Request to register a new agent (Full/Nested format)."""
     agent: AgentDefinition = Field(..., description="Agent definition to register.")
+
+
+class AgentRegistrationRequestFlat(BaseDTO):
+    """
+    Request model matching the SDK's flat structure.
+    Used by the Registry Service API for simplified registration.
+    """
+    agent_id: str = Field(..., description="Unique identifier for the agent.")
+    name: str = Field(..., description="Human-readable name of the agent.")
+    agent_type: str = Field(..., description="Type of the agent (e.g., 'planner', 'worker').")
+    capabilities: List[str] = Field(..., description="List of capability names.")
+    events_consumed: List[str] = Field(..., description="List of events consumed.")
+    events_produced: List[str] = Field(..., description="List of events produced.")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Optional metadata.")
 
 
 class AgentRegistrationResponse(BaseDTO):

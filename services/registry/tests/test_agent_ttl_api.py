@@ -16,13 +16,21 @@ from soorma_common import AgentRegistrationRequest, AgentDefinition, AgentCapabi
 def sample_agent_request():
     """Create a sample agent registration request (SDK format)."""
     return {
-        "agent_id": "api-test-agent",
-        "name": "API Test Agent",
-        "agent_type": "worker",
-        "capabilities": ["api_task"],
-        "events_consumed": ["api.event"],
-        "events_produced": ["api.result"],
-        "metadata": {"description": "Agent for API testing"}
+        "agent": {
+            "agentId": "api-test-agent",
+            "name": "API Test Agent",
+            "description": "Agent for API testing",
+            "capabilities": [
+                {
+                    "taskName": "api_task",
+                    "description": "API Task",
+                    "consumedEvent": "api.event",
+                    "producedEvents": ["api.result"]
+                }
+            ],
+            "consumedEvents": ["api.event"],
+            "producedEvents": ["api.result"]
+        }
     }
 
 

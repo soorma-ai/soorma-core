@@ -19,29 +19,16 @@ from ...core.database import get_db
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
-class SDKAgentRegistrationRequest(BaseModel):
-    """
-    Request model matching the SDK's flat structure.
-    """
-    agent_id: str
-    name: str
-    agent_type: str
-    capabilities: List[str]
-    events_consumed: List[str]
-    events_produced: List[str]
-    metadata: Optional[Dict[str, Any]] = None
-
-
 @router.post("", response_model=AgentRegistrationResponse)
 async def register_agent(
-    request: SDKAgentRegistrationRequest,
+    request: AgentRegistrationRequest,
     db: AsyncSession = Depends(get_db)
 ) -> AgentRegistrationResponse:
     """
     Register or update an agent in the agent registry (upsert operation).
     
     Args:
-        request: Agent registration request (SDK format)
+        request: Agent registration request (Full structured format)
         db: Database session (injected)
         
     Returns:
@@ -50,26 +37,7 @@ async def register_agent(
     Raises:
         HTTPException: 400 if registration fails
     """
-    # Convert SDK request to AgentDefinition
-    capabilities = []
-    for cap_name in request.capabilities:
-        capabilities.append(AgentCapability(
-            task_name=cap_name,
-            description=f"Capability: {cap_name}",
-            consumed_event="unknown",
-            produced_events=[]
-        ))
-        
-    agent_def = AgentDefinition(
-        agent_id=request.agent_id,
-        name=request.name,
-        description=request.metadata.get("description", "") if request.metadata else "",
-        capabilities=capabilities,
-        consumed_events=request.events_consumed,
-        produced_events=request.events_produced
-    )
-
-    response = await AgentRegistryService.register_agent(db, agent_def)
+    response = await AgentRegistryService.register_agent(db, request.agent)
     
     # If registration failed, return 400 Bad Request
     if not response.success:

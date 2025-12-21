@@ -125,13 +125,21 @@ class TestAgentEndpoints:
     def test_register_agent_endpoint(self, client):
         """Test POST /v1/agents endpoint exists and works with SDK format."""
         agent_data = {
-            "agent_id": "test-agent-v1",
-            "name": "Test Agent",
-            "agent_type": "worker",
-            "capabilities": ["test_task"],
-            "events_consumed": ["test.event"],
-            "events_produced": ["test.response"],
-            "metadata": {"description": "Test agent"}
+            "agent": {
+                "agentId": "test-agent-v1",
+                "name": "Test Agent",
+                "description": "Test agent",
+                "capabilities": [
+                    {
+                        "taskName": "test_task",
+                        "description": "Test Task",
+                        "consumedEvent": "test.event",
+                        "producedEvents": ["test.response"]
+                    }
+                ],
+                "consumedEvents": ["test.event"],
+                "producedEvents": ["test.response"]
+            }
         }
         
         response = client.post("/v1/agents", json=agent_data)
@@ -144,13 +152,21 @@ class TestAgentEndpoints:
         """Test DELETE /v1/agents/{agent_id} endpoint."""
         # Register first
         agent_data = {
-            "agent_id": "delete-test-agent",
-            "name": "Delete Test Agent",
-            "agent_type": "worker",
-            "capabilities": ["test_task"],
-            "events_consumed": [],
-            "events_produced": [],
-            "metadata": {}
+            "agent": {
+                "agentId": "delete-test-agent",
+                "name": "Delete Test Agent",
+                "description": "Delete Test Agent",
+                "capabilities": [
+                    {
+                        "taskName": "test_task",
+                        "description": "Test Task",
+                        "consumedEvent": "test.event",
+                        "producedEvents": ["test.response"]
+                    }
+                ],
+                "consumedEvents": ["test.event"],
+                "producedEvents": ["test.response"]
+            }
         }
         client.post("/v1/agents", json=agent_data)
         
@@ -167,13 +183,14 @@ class TestAgentEndpoints:
         """Test POST /v1/agents/{agent_id}/heartbeat endpoint."""
         # Register first
         agent_data = {
-            "agent_id": "heartbeat-test-agent",
-            "name": "Heartbeat Test Agent",
-            "agent_type": "worker",
-            "capabilities": [],
-            "events_consumed": [],
-            "events_produced": [],
-            "metadata": {}
+            "agent": {
+                "agentId": "heartbeat-test-agent",
+                "name": "Heartbeat Test Agent",
+                "description": "Heartbeat Test Agent",
+                "capabilities": [],
+                "consumedEvents": [],
+                "producedEvents": []
+            }
         }
         client.post("/v1/agents", json=agent_data)
         
@@ -196,13 +213,21 @@ class TestAgentEndpoints:
         """Test GET /v1/agents?agent_id=... endpoint works."""
         # First register an agent
         agent_data = {
-            "agent_id": "query-test-agent-v1",
-            "name": "Query Test Agent",
-            "agent_type": "worker",
-            "capabilities": ["query_test"],
-            "events_consumed": ["query.test.event"],
-            "events_produced": ["query.test.response"],
-            "metadata": {"description": "Test agent for queries"}
+            "agent": {
+                "agentId": "query-test-agent-v1",
+                "name": "Query Test Agent",
+                "description": "Test agent for queries",
+                "capabilities": [
+                    {
+                        "taskName": "query_test",
+                        "description": "Query Test",
+                        "consumedEvent": "query.test.event",
+                        "producedEvents": ["query.test.response"]
+                    }
+                ],
+                "consumedEvents": ["query.test.event"],
+                "producedEvents": ["query.test.response"]
+            }
         }
         client.post("/v1/agents", json=agent_data)
         
@@ -217,13 +242,21 @@ class TestAgentEndpoints:
         """Test GET /v1/agents?consumed_event=... endpoint works."""
         # First register an agent
         agent_data = {
-            "agent_id": "consumer-test-agent-v1",
-            "name": "Consumer Test Agent",
-            "agent_type": "worker",
-            "capabilities": ["consume"],
-            "events_consumed": ["unique.consumed.event"],
-            "events_produced": ["result.event"],
-            "metadata": {"description": "Test agent that consumes events"}
+            "agent": {
+                "agentId": "consumer-test-agent-v1",
+                "name": "Consumer Test Agent",
+                "description": "Test agent that consumes events",
+                "capabilities": [
+                    {
+                        "taskName": "consume",
+                        "description": "Consume Task",
+                        "consumedEvent": "unique.consumed.event",
+                        "producedEvents": ["result.event"]
+                    }
+                ],
+                "consumedEvents": ["unique.consumed.event"],
+                "producedEvents": ["result.event"]
+            }
         }
         client.post("/v1/agents", json=agent_data)
         
@@ -244,13 +277,21 @@ class TestAgentEndpoints:
         """Test GET /v1/agents?produced_event=... endpoint works."""
         # First register an agent
         agent_data = {
-            "agent_id": "producer-test-agent-v1",
-            "name": "Producer Test Agent",
-            "agent_type": "worker",
-            "capabilities": ["produce"],
-            "events_consumed": ["input.event"],
-            "events_produced": ["unique.produced.event"],
-            "metadata": {"description": "Test agent that produces events"}
+            "agent": {
+                "agentId": "producer-test-agent-v1",
+                "name": "Producer Test Agent",
+                "description": "Test agent that produces events",
+                "capabilities": [
+                    {
+                        "taskName": "produce",
+                        "description": "Produce Task",
+                        "consumedEvent": "input.event",
+                        "producedEvents": ["unique.produced.event"]
+                    }
+                ],
+                "consumedEvents": ["input.event"],
+                "producedEvents": ["unique.produced.event"]
+            }
         }
         client.post("/v1/agents", json=agent_data)
         

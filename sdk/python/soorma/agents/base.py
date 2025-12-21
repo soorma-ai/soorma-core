@@ -58,7 +58,7 @@ class AgentConfig:
     agent_type: str  # "agent", "planner", "worker", "tool"
     
     # Capabilities and events
-    capabilities: List[str] = field(default_factory=list)
+    capabilities: List[Any] = field(default_factory=list)  # List[str] or List[AgentCapability]
     events_consumed: List[str] = field(default_factory=list)
     events_produced: List[str] = field(default_factory=list)
     

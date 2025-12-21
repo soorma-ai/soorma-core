@@ -104,7 +104,7 @@ class RegistryClient:
         agent_id: str,
         name: str,
         agent_type: str,
-        capabilities: List[str],
+        capabilities: List[Any],  # Can be str or AgentCapability
         events_consumed: List[str],
         events_produced: List[str],
         metadata: Optional[Dict[str, Any]] = None,
@@ -116,7 +116,7 @@ class RegistryClient:
             agent_id: Unique identifier for the agent
             name: Human-readable name
             agent_type: Type of agent (planner, worker, tool)
-            capabilities: List of capabilities offered
+            capabilities: List of capabilities (strings or AgentCapability objects)
             events_consumed: Event types this agent subscribes to
             events_produced: Event types this agent publishes
             metadata: Optional additional metadata
@@ -125,18 +125,44 @@ class RegistryClient:
             True if registration succeeded
         """
         client = await self._ensure_client()
+        
+        # Convert capabilities to structured format if they are strings
+        structured_capabilities = []
+        for cap in capabilities:
+            if isinstance(cap, str):
+                # Auto-convert string capability to structured
+                structured_capabilities.append({
+                    "taskName": cap,
+                    "description": f"Capability: {cap}",
+                    "consumedEvent": "unknown",
+                    "producedEvents": []
+                })
+            elif hasattr(cap, "model_dump"):
+                # It's a Pydantic model (AgentCapability)
+                structured_capabilities.append(cap.model_dump(by_alias=True))
+            elif isinstance(cap, dict):
+                # Already a dict
+                structured_capabilities.append(cap)
+            else:
+                logger.warning(f"Unknown capability format: {cap}")
+
+        # Construct the full AgentDefinition structure
+        agent_def = {
+            "agentId": agent_id,
+            "name": name,
+            "description": (metadata or {}).get("description", ""),
+            "capabilities": structured_capabilities,
+            "consumedEvents": events_consumed,
+            "producedEvents": events_produced
+        }
+
         try:
+            # Wrap in AgentRegistrationRequest structure
+            request_payload = {"agent": agent_def}
+            
             response = await client.post(
                 f"{self.base_url}/v1/agents",
-                json={
-                    "agent_id": agent_id,
-                    "name": name,
-                    "agent_type": agent_type,
-                    "capabilities": capabilities,
-                    "events_consumed": events_consumed,
-                    "events_produced": events_produced,
-                    "metadata": metadata or {},
-                },
+                json=request_payload,
                 timeout=10.0,
             )
             return response.status_code in (200, 201)
