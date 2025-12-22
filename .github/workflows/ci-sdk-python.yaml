@@ -1,11 +1,11 @@
 # CI for Python SDK
-# Runs tests on PRs to main and pushes to main/dev branches
+# Runs tests on PRs to main and pushes to main branch
 
 name: Python SDK CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
     paths:
       - 'sdk/python/**'
       - 'libs/soorma-common/**'
