@@ -67,7 +67,7 @@ Future versions will add a **Tracker Service** for:
 
 1. **Start Soorma Platform** (Registry + Event Bus):
    ```bash
-   soorma dev
+   soorma dev --infra-only
    ```
 
 2. **Install dependencies**:
@@ -75,9 +75,9 @@ Future versions will add a **Tracker Service** for:
    pip install -r requirements.txt
    ```
 
-3. **Configure LLM** (optional - uses mocks without keys):
+3. **Configure LLM** (required):
    
-   The example supports multiple LLM providers via LiteLLM. Set any one of these API keys:
+   **You MUST have at least one API key** for the agents to function. The example supports multiple LLM providers via LiteLLM. Set any one of these:
    
    ```bash
    # OpenAI (default)
@@ -103,9 +103,21 @@ Future versions will add a **Tracker Service** for:
    
    The agents automatically detect which key is available and use the appropriate model. See `llm_utils.py` for model mappings.
 
-## Running the Example
+## 🚀 Running the Example
 
-Start each agent in a separate terminal:
+**Option A: The Easy Way (One Command)**
+
+Run the magic command to start all agents with one script:
+
+```bash
+bash start.sh
+```
+
+This starts all agents in the background and launches the interactive client. Press `Ctrl+C` to stop everything.
+
+**Option B: The Manual Way (Debug Mode)**
+
+If you want to see logs for each agent separately, open 5 terminals:
 
 ```bash
 # Terminal 1: Researcher
