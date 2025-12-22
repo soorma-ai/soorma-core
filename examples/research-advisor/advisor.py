@@ -8,6 +8,7 @@ from events import (
     DraftRequestPayload, DraftResultPayload
 )
 from capabilities import ADVICE_CAPABILITY
+from llm_utils import get_llm_model, has_any_llm_key
 
 # Create the Advisor Worker
 advisor = Worker(
@@ -58,9 +59,9 @@ async def handle_advice_request(event: dict, context: PlatformContext):
     print("   🤔 Thinking...")
     
     try:
-        if os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY"):
+        if has_any_llm_key():
             response = completion(
-                model="gpt-4.1-nano",
+                model=get_llm_model(),
                 messages=[{"role": "user", "content": prompt}]
             )
             draft_text = response.choices[0].message.content

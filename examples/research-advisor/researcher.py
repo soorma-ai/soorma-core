@@ -9,6 +9,7 @@ from events import (
     ResearchRequestPayload, ResearchResultPayload
 )
 from capabilities import RESEARCH_CAPABILITY
+from llm_utils import get_llm_model, has_any_llm_key
 
 # Create the Researcher Worker
 researcher = Worker(
@@ -45,7 +46,7 @@ async def handle_research_request(event: dict, context: PlatformContext):
     extra_context = request.context
     
     # Check if we should use real search
-    use_real_search = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    use_real_search = has_any_llm_key()
     
     if use_real_search:
         print(f"   🔎 Searching web for: {query_topic}...")
@@ -73,7 +74,7 @@ async def handle_research_request(event: dict, context: PlatformContext):
             
             # Summarize with LLM
             response = completion(
-                model="gpt-4.1-nano",
+                model=get_llm_model(),
                 messages=[{"role": "user", "content": prompt}]
             )
             summary = response.choices[0].message.content

@@ -1,92 +1,165 @@
-# Generic Research & Advice Agent System
+# Research Advisor: Autonomous Choreography with LLM Reasoning
 
-This example demonstrates an advanced "Choreography" pattern using the Soorma SDK.
-It showcases:
-1. **Dynamic Discovery**: The Planner finds workers via the Registry.
-2. **Verification Loop**: A "Fact Checker" agent critiques the "Drafter" agent's output.
-3. **Event Choreography**: All communication happens via the Event Bus.
-4. **LLM Orchestration**: The Planner uses an LLM to decide the next step based on available events.
+This example demonstrates **Autonomous Choreography** using the Soorma Platform and DisCo (Distributed Cognition) protocol. It showcases how AI agents can coordinate complex workflows without hardcoded rules, using LLM reasoning over dynamically discovered event metadata.
 
-For a deep dive into the design, see [ARCHITECTURE.md](ARCHITECTURE.md).
+## Key Concepts
+
+### 🎭 Autonomous Choreography (vs. Orchestration)
+Traditional orchestration hardcodes workflow logic: "after research, do draft, then validate." This is brittle and requires code changes when workflows evolve.
+
+**Autonomous Choreography** takes a different approach:
+- Agents register their capabilities as **events** with rich metadata (description, purpose, schema)
+- A Planner agent **discovers** available events from the Registry at runtime
+- An **LLM reasons** about event metadata to decide the next action
+- The workflow emerges from LLM decisions, not hardcoded rules
+
+### 🧠 LLM Reasoning Engine
+The Planner doesn't contain workflow rules. Instead, it:
+1. Receives a trigger (goal, result, validation)
+2. Queries the Registry for available events
+3. Presents event metadata to an LLM
+4. Lets the LLM decide which event to publish based on:
+   - Event descriptions and purposes
+   - Current workflow state
+   - Progress toward the user's goal
+
+### 🔌 Circuit Breakers
+Autonomous systems can run away (infinite loops, stuck states). This example includes:
+- **Max Actions Limit**: Caps total actions per goal (default: 10)
+- **Vague Result Detection**: Catches when LLM returns meta-descriptions instead of actual content
+
+Future versions will add a **Tracker Service** for:
+- Timeout detection
+- Lost event recovery
+- Human intervention points
+- Workflow observability
 
 ## Architecture
 
-- **AgentOrchestrator (Planner)**: Receives user goals and orchestrates the workflow.
-- **WebResearcher (Worker)**: Performs web research using DuckDuckGo and summarizes findings.
-- **ContentDrafter (Worker)**: Drafts responses based on research using LLM.
-- **FactChecker (Worker)**: Validates content against source material.
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Client    │────▶│   Planner    │────▶│  Registry   │
+│  (Goals)    │     │ (LLM Brain)  │◀────│  (Events)   │
+└─────────────┘     └──────┬───────┘     └─────────────┘
+                           │ discovers & publishes
+                           ▼
+┌──────────────────────────────────────────────────────┐
+│                    Event Bus                         │
+└──────────────────────────────────────────────────────┘
+        │              │              │
+        ▼              ▼              ▼
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│ Researcher  │ │   Advisor   │ │  Validator  │
+│  (Worker)   │ │  (Worker)   │ │  (Worker)   │
+└─────────────┘ └─────────────┘ └─────────────┘
+```
 
-### Event-Driven Architecture
+### Agents
 
-The workflow is no longer a single procedural script. It is a choreography of discrete events.
-- **Planner**: Listens for `GOAL`, `RESEARCH_RESULT`, `ADVICE_RESULT`, `VALIDATION_RESULT`.
-- **Researcher**: Listens for `RESEARCH_REQUEST` -> Emits `RESEARCH_RESULT`.
-- **Drafter**: Listens for `DRAFT_REQUEST` -> Emits `DRAFT_RESULT`.
-- **Validator**: Listens for `VALIDATION_REQUEST` -> Emits `VALIDATION_RESULT`.
+| Agent | Role | Events |
+|-------|------|--------|
+| **Planner** | LLM-powered orchestrator. Discovers events, reasons about next steps | Consumes: goal, results. Produces: requests, fulfilled |
+| **Researcher** | Web search using DuckDuckGo | `research.requested` → `research.completed` |
+| **Advisor** | Drafts responses using LLM | `draft.requested` → `draft.completed` |
+| **Validator** | Fact-checks drafts against research | `validation.requested` → `validation.completed` |
 
 ## Setup
 
-1. Ensure you have the Soorma Platform running (Registry, Redis, etc.).
-2. Install dependencies:
+1. **Start Soorma Platform** (Registry + Event Bus):
+   ```bash
+   soorma dev
+   ```
+
+2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
-   (Note: `soorma-common` and `soorma-sdk` are assumed to be installed in your environment)
 
-## LLM Configuration
+3. **Configure LLM** (optional - uses mocks without keys):
+   
+   The example supports multiple LLM providers via LiteLLM. Set any one of these API keys:
+   
+   ```bash
+   # OpenAI (default)
+   export OPENAI_API_KEY=sk-...
+   
+   # Anthropic
+   export ANTHROPIC_API_KEY=sk-ant-...
+   
+   # Google/Gemini
+   export GOOGLE_API_KEY=...
+   # or
+   export GEMINI_API_KEY=...
+   
+   # Azure OpenAI
+   export AZURE_API_KEY=...
+   
+   # Together AI
+   export TOGETHER_API_KEY=...
+   
+   # Groq
+   export GROQ_API_KEY=...
+   ```
+   
+   The agents automatically detect which key is available and use the appropriate model. See `llm_utils.py` for model mappings.
 
-By default, the agents run in **Mock Mode** using simulated responses. To enable real LLM capabilities (using OpenAI or Anthropic), set the corresponding environment variables before running the agents.
+## Running the Example
 
-- **OpenAI**: `export OPENAI_API_KEY=sk-...`
-- **Anthropic**: `export ANTHROPIC_API_KEY=sk-ant-...`
+Start each agent in a separate terminal:
 
-If these keys are present, the `Planner`, `Drafter`, and `Validator` agents will use `litellm` to generate real responses. The `Researcher` uses `ddgs` for real web search if keys are present.
-
-## Usage
-
-This example uses standalone agents. You need to run each agent in a separate terminal window.
-
-**Terminal 1: Researcher**
 ```bash
-python3 researcher.py
+# Terminal 1: Researcher
+python researcher.py
+
+# Terminal 2: Advisor (Drafter)
+python advisor.py
+
+# Terminal 3: Validator
+python validator.py
+
+# Terminal 4: Planner (LLM Brain)
+python planner.py
+
+# Terminal 5: Client
+python client.py
 ```
 
-**Terminal 2: Drafter**
-```bash
-# Optional: export OPENAI_API_KEY=...
-python3 advisor.py
+## Example Flow
+
+```
+User: "Compare NATS vs Google Pub/Sub for event-driven architecture"
+
+📋 Planner receives GOAL
+   🔍 Discovers 4 events from Registry
+   🤖 LLM reasons: "Need information first. Research event gathers data."
+   📤 Publishes: agent.research.requested
+
+📋 Planner receives RESEARCH RESULT
+   🤖 LLM reasons: "Have research. Draft event creates user response."
+   📤 Publishes: agent.draft.requested
+
+📋 Planner receives DRAFT RESULT  
+   🤖 LLM reasons: "Have draft. Validation event checks accuracy."
+   📤 Publishes: agent.validation.requested
+
+📋 Planner receives VALIDATION RESULT (approved)
+   🤖 LLM reasons: "Draft validated. Goal can be fulfilled."
+   ✅ Completes with validated draft
 ```
 
-**Terminal 3: Validator**
-```bash
-# Optional: export OPENAI_API_KEY=...
-python3 validator.py
-```
+## Known Limitations
 
-**Terminal 4: Planner**
-```bash
-# Optional: export OPENAI_API_KEY=...
-python3 planner.py
-```
+- **No Tracker Service**: Lost events or timeouts are not detected
+- **In-Memory State**: Workflow state is lost on restart  
+- **Single Planner**: No high-availability or load balancing
 
-**Terminal 5: Client (User)**
-```bash
-python3 client.py
-```
+A future example will introduce a **Tracker** agent for observability and reliability.
 
-## Workflow
+## Deep Dive
 
-1. **Client** publishes `agent.goal.submitted`.
-2. **Planner** receives goal, asks LLM, decides to request research.
-3. **Planner** publishes `agent.research.requested`.
-4. **Researcher** receives request, searches web, publishes `agent.research.completed`.
-5. **Planner** receives research, asks LLM, decides to request draft.
-6. **Planner** publishes `agent.draft.requested`.
-7. **Drafter** receives request, drafts response, publishes `agent.draft.completed`.
-8. **Planner** receives draft, asks LLM, decides to request validation.
-9. **Planner** publishes `agent.validation.requested`.
-10. **Validator** receives request, validates, publishes `agent.validation.completed`.
-11. **Planner** receives validation result.
-    - If APPROVED: Publishes `agent.goal.fulfilled`.
-    - If REJECTED: Publishes `agent.draft.requested` (loop back).
-12. **Client** receives `agent.goal.fulfilled` and prints the result.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for:
+- Why we avoid hardcoded workflow rules
+- The DisCo protocol and dynamic discovery
+- Prompt engineering for autonomous agents
+- Circuit breaker implementations
+- Planned Tracker service architecture

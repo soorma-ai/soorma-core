@@ -10,6 +10,7 @@ from events import (
     ValidationRequestPayload, ValidationResultPayload
 )
 from capabilities import VALIDATION_CAPABILITY
+from llm_utils import get_llm_model, has_any_llm_key
 
 # Create the Validator Worker
 validator = Worker(
@@ -57,9 +58,9 @@ async def handle_validation_request(event: dict, context: PlatformContext):
     print("   🧐 Auditing...")
     
     try:
-        if os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY"):
+        if has_any_llm_key():
             response = completion(
-                model="gpt-4.1-nano",
+                model=get_llm_model(),
                 messages=[{"role": "user", "content": prompt}],
                 response_format={"type": "json_object"}
             )

@@ -1,89 +1,231 @@
-# Generic Agent System Architecture
+# Research Advisor: Architecture Deep Dive
 
-This document describes the architecture of the "Generic Research & Advice" example, focusing on how it leverages the Soorma SDK, Event Registry, and LLMs to create a dynamic, event-driven system.
+This document provides technical details on how the Research Advisor implements **Autonomous Choreography**. For a quick overview and setup instructions, see [README.md](README.md).
 
-## Overview
+## Why Avoid Hardcoded Workflow Rules?
 
-The system is designed as a **Choreography of Autonomous Agents**. Unlike a traditional monolithic application or a rigid pipeline, these agents operate independently, reacting to events on a shared bus.
+Traditional agent systems embed workflow logic in code:
 
-### The "Trinity" of Agents
-
-The architecture uses three primary types of agents defined in the Soorma SDK:
-
-1.  **Planner (`AgentOrchestrator`)**: The "brain". It maintains the high-level goal and decides the next step. It does *not* know how to do the work; it only knows how to ask for it.
-2.  **Worker (`WebResearcher`, `ContentDrafter`, `FactChecker`)**: The "doers". They listen for specific requests (events), perform a task (often using an LLM), and publish a result. They are stateless and unaware of the larger workflow.
-3.  **Tool (Implicit)**: The `EventToolkit` acts as a bridge, allowing the Planner to treat the Event Registry as a dynamic tool menu.
-
-## Dynamic Discovery & LLM Integration
-
-One of the key features of this architecture is that the Planner is not hardcoded with a specific workflow. Instead, it uses **Dynamic Discovery**.
-
-### 1. Event Registry as the "Source of Truth"
-All agents register their capabilities (as Events) with the **Registry Service** on startup.
-- `Researcher` registers `agent.research.requested` (Input) and `agent.research.completed` (Output).
-- `Drafter` registers `agent.draft.requested` (Input) and `agent.draft.completed` (Output).
-
-### 2. The `EventToolkit`
-The Planner uses the `EventToolkit` from the SDK to query the Registry.
 ```python
-async with EventToolkit() as toolkit:
-    # "What actions are available to me?"
-    events = await toolkit.discover_events(topic="action-requests")
+# ❌ Hardcoded workflow - brittle, requires code changes
+def handle_research_result():
+    publish("draft.requested")  # Always this, no flexibility
+
+def handle_draft_result():
+    publish("validation.requested")  # Rigid sequence
 ```
 
-The toolkit returns **Structured Metadata** for each event, optimized for LLM consumption:
-- **Event Name**: e.g., `agent.research.requested`
-- **Description**: "Performs web research on a topic."
-- **Schema**: JSON Schema defining required fields (`query`, `context`).
+This approach has problems:
+- **Brittle**: Adding/removing steps requires code changes
+- **No Context Awareness**: Can't adapt to unusual situations
+- **Poor Composability**: Hard to reuse agents in different workflows
 
-### 3. LLM Decision Making
-The Planner constructs a prompt for the LLM that includes:
-- **Current Context**: What has happened so far (e.g., "Goal received", "Research completed").
-- **Available Tools**: The list of discovered events and their descriptions.
+### The Autonomous Choreography Approach
 
-**Prompt Structure:**
-```text
-You are an autonomous agent orchestrator.
-Current Context: {context}
+Instead, we let an LLM reason about what to do next:
 
-Available Events to Publish:
+```python
+# ✅ LLM-driven decisions - flexible, context-aware
+async def handle_any_result(trigger_context):
+    events = await registry.discover_events()  # What can I do?
+    decision = await llm.reason(
+        trigger=trigger_context,
+        state=workflow_state,
+        available_events=events  # Rich metadata
+    )
+    await publish(decision.event, decision.payload)
+```
+
+The LLM reads event metadata (descriptions, purposes, schemas) and reasons:
+> "I have research data. Looking at available events, 'agent.draft.requested' creates responses from research. That's what I need next."
+
+## The DisCo Protocol
+
+DisCo (Distributed Cognition) is the protocol that enables this:
+
+### 1. Events as Capabilities
+Every agent capability is expressed as an **Event Definition**:
+```python
+RESEARCH_REQUEST_EVENT = EventDefinition(
+    event_name="agent.research.requested",
+    description="Request web research on a topic",
+    purpose="Gather information from the web to answer questions",
+    payload_schema=ResearchRequestPayload.model_json_schema()
+)
+```
+
+### 2. Registry as Capability Index
+Agents register their events on startup. The Registry becomes a searchable index of "what can be done" in the system.
+
+### 3. Dynamic Discovery
+The Planner queries the Registry to discover available actions:
+```python
+async with EventToolkit(registry_url) as toolkit:
+    events = await toolkit.discover_actionable_events(topic="action-requests")
+    # Returns: [{name, description, purpose, payload_schema}, ...]
+```
+
+### 4. LLM as Reasoning Engine
+The Planner presents discovered events to an LLM:
+```
+## DISCOVERED AVAILABLE EVENTS
 [
-  {"name": "agent.research.requested", "description": "Performs web research..."},
-  {"name": "agent.draft.requested", "description": "Drafts response..."}
+  {
+    "event_name": "agent.research.requested",
+    "description": "Request web research on a topic",
+    "purpose": "Gather information from the web",
+    "payload_schema": {"query": "string", "context": "string"}
+  },
+  {
+    "event_name": "agent.draft.requested",
+    "description": "Request a draft response based on research",
+    "purpose": "Create user-facing content from research data",
+    "payload_schema": {"user_request": "string", "research_context": "string"}
+  }
 ]
 
-Decide the next logical step.
+## YOUR TASK
+Analyze current state and select the best event to progress toward the goal.
 ```
 
-The LLM reasons about the state and selects the most appropriate event to publish. This allows the workflow to adapt. For example, if the `Validator` rejects a draft, the Planner (via LLM) naturally decides to send it back to the `Drafter` because that's the logical next step given the available tools.
+The LLM reasons about metadata and returns a decision.
 
-## Data Flow & Structured Payloads
+## Prompt Engineering for Autonomous Agents
 
-Communication between agents is strictly typed using **Pydantic Models**.
+The Planner's prompt is carefully structured:
 
-1.  **Definition**: Events are defined as Pydantic models in `events.py`.
-    ```python
-    class ResearchRequestPayload(BaseModel):
-        query: str = Field(..., description="The topic to research")
-        context: Optional[str] = Field(None, description="Context")
-    ```
-2.  **Registration**: These models are converted to JSON Schemas and stored in the Registry.
-3.  **Validation**: When an agent receives an event, the SDK (and Pydantic) validates the payload against the schema. This ensures that the LLM-generated data is structurally correct before it reaches the business logic.
+### 1. Trigger Context
+What just happened - provides immediate context:
+```
+"Research completed. Summary: 'NATS is a lightweight messaging system...'"
+```
 
-## Agent Design Pattern
+### 2. Workflow State
+Accumulated data from previous steps:
+```json
+{
+  "goal": {"goal": "Compare NATS vs Pub/Sub"},
+  "research": {"summary": "..."},
+  "draft": {"draft_text": "..."},
+  "action_history": ["agent.research.requested", "agent.draft.requested"]
+}
+```
 
-Each agent follows a "Listen-Think-Act" loop:
+### 3. Discovered Events
+Event metadata from the Registry (see above).
 
-1.  **Listen**: Subscribe to a specific event topic (e.g., `agent.research.requested`).
-2.  **Think (LLM)**:
-    -   Extract data from the event payload.
-    -   Construct a prompt for the LLM using the payload data.
-    -   (Optional) Use `litellm` to call OpenAI/Anthropic.
-3.  **Act**:
-    -   Parse the LLM response.
-    -   Construct a result Event (e.g., `agent.research.completed`).
-    -   Publish the event back to the bus.
+### 4. Decision Guidelines
+General principles, NOT specific rules:
+```
+- Choose events based on their DESCRIPTION and PURPOSE
+- Progress logically: gather info → process → validate → deliver
+- If validation is available, use it before completing
+```
+
+### 5. Response Format
+Structured output the code can parse:
+```json
+{
+  "action": "publish",
+  "event": "agent.validation.requested",
+  "payload": {"draft_text": "...", "source_text": "..."},
+  "reasoning": "Draft exists, validation event checks accuracy before delivery."
+}
+```
+
+## Avoiding Hardcoded Rules
+
+### ❌ What NOT to Do
+```python
+# Don't hardcode event names in prompts
+prompt = """
+WORKFLOW RULES:
+1. After research, always publish agent.draft.requested
+2. After draft, always publish agent.validation.requested
+"""
+```
+
+### ✅ What TO Do
+```python
+# Let LLM reason from event metadata
+prompt = f"""
+DISCOVERED EVENTS:
+{format_events_for_llm(events)}  # Includes descriptions, purposes
+
+GUIDELINES:
+- Choose based on event descriptions
+- Validate content before delivering to users
+"""
+```
+
+The difference: specific event names come from **discovered metadata**, not hardcoded rules.
+
+## Circuit Breakers: Balancing Autonomy and Safety
+
+Autonomous systems can exhibit problematic behaviors:
+
+### Problem: Runaway Loops
+LLM might get stuck: research → draft → research → draft → ...
+
+### Solution: Action Limits
+```python
+MAX_TOTAL_ACTIONS = 10
+
+if len(action_history) >= MAX_TOTAL_ACTIONS:
+    # Force completion with best available result
+    return {"action": "complete", "result": draft_text or research_summary}
+```
+
+### Problem: Vague Results
+LLM might return meta-descriptions: "The draft is ready" instead of actual content.
+
+### Solution: Content Validation
+```python
+vague_indicators = ["draft is ready", "already prepared", "has been generated"]
+if any(indicator in result.lower() for indicator in vague_indicators):
+    result = workflow_state["draft"]["draft_text"]  # Use actual content
+```
+
+## Future: Tracker Service
+
+Current limitations:
+- **Lost Events**: If an event is dropped, workflow stalls forever
+- **Timeouts**: No detection of slow/stuck workers
+- **No Observability**: Can't see workflow progress externally
+
+### Planned Tracker Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Planner   │────▶│   Tracker   │────▶│  Dashboard  │
+│             │     │  (Monitor)  │     │  (Human UI) │
+└─────────────┘     └──────┬──────┘     └─────────────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   Alerts    │
+                    │  Timeouts   │
+                    │  Retries    │
+                    └─────────────┘
+```
+
+The Tracker will:
+1. **Monitor Progress**: Track workflow state transitions
+2. **Detect Stalls**: Timeout if no progress after N seconds
+3. **Enable Intervention**: Human can unstick or redirect workflows
+4. **Provide Observability**: Dashboard showing active workflows
+
+This balances **autonomy** (LLM makes decisions) with **reliability** (guaranteed completion).
 
 ## Summary
 
-This architecture decouples the "What" (Planner) from the "How" (Workers). By using the Registry and LLMs together, the system becomes self-describing and flexible. The Planner doesn't need to know *how* research is done, only that there is an event it can trigger to get it done.
+| Principle | Implementation |
+|-----------|----------------|
+| **No Hardcoded Workflows** | LLM reasons from event metadata |
+| **Dynamic Discovery** | Query Registry for available events |
+| **Rich Event Metadata** | Descriptions, purposes, schemas |
+| **Context-Aware Decisions** | LLM sees full workflow state |
+| **Safety Limits** | Circuit breakers prevent runaways |
+| **Future Reliability** | Tracker service for observability |
+
+This architecture demonstrates the power of the Soorma Platform and DisCo protocol: agents coordinate complex workflows through emergent behavior, not rigid programming.
