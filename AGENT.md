@@ -7,9 +7,9 @@ This document provides essential context for AI assistants working on the `soorm
 ## 🎯 Quick Start Checklist
 
 Before starting any task:
-1. ✅ Read `README.md` for project overview and getting started guide
-2. ✅ Check the relevant CHANGELOG.md for recent changes
-3. ✅ Understand the DisCo architecture (see below)
+1. ✅ Read `ARCHITECTURE.md` for system design and architectural principles
+2. ✅ Read `README.md` for project overview and getting started guide
+3. ✅ Check the relevant CHANGELOG.md for recent changes
 4. ✅ Follow TDD - write tests for every feature change
 5. ✅ This is an OPEN SOURCE project - everything here is MIT licensed
 
@@ -546,4 +546,4 @@ Based on recent commits and development:
 - Test extensively - bugs in examples hurt adoption
 - Think about developer experience - make it easy and delightful to use
 
-For questions, check existing documentation or examples first. The `research-advisor` example demonstrates most advanced patterns.
+For questions, check `ARCHITECTURE.md` for design principles, existing documentation, or examples first. The `research-advisor` example demonstrates most advanced patterns.
