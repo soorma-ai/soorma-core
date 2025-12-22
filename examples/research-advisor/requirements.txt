@@ -1,3 +1,8 @@
+# Soorma Platform (ensure this is installed or install from local SDK)
+# pip install -e ../../sdk/python
+soorma-core>=0.4.0
+
+# LLM and utilities
 litellm>=1.0.0
 openai>=1.0.0
 pydantic>=2.0.0
