@@ -126,6 +126,48 @@ class EventToolkit:
         # Convert to AI-friendly format
         return [self._format_event_descriptor(e) for e in all_events]
 
+    async def discover_actionable_events(self, topic: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Discover events that are currently consumed by active agents.
+        
+        This filters the universe of events down to only those that will actually
+        trigger an action by a live agent.
+        
+        Args:
+            topic: Optional topic filter
+            
+        Returns:
+            List of event descriptors for actionable events
+        """
+        if not self._client:
+            raise RuntimeError("Toolkit must be used as async context manager")
+            
+        # 1. Get all active agents
+        agents = await self._client.query_agents()
+        
+        # 2. Collect all consumed events
+        consumed_event_names = set()
+        for agent in agents:
+            if agent.consumed_events:
+                consumed_event_names.update(agent.consumed_events)
+                
+        if not consumed_event_names:
+            return []
+            
+        # 3. Get details for these events
+        if topic:
+            all_events = await self._client.get_events_by_topic(topic)
+        else:
+            all_events = await self._client.get_all_events()
+            
+        # 4. Filter and format
+        actionable_events = [
+            e for e in all_events 
+            if e.event_name in consumed_event_names
+        ]
+        
+        return [self._format_event_descriptor(e) for e in actionable_events]
+
     async def get_event_info(self, event_name: str) -> Optional[Dict[str, Any]]:
         """
         Get detailed information about a specific event.

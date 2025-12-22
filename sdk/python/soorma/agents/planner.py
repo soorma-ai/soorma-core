@@ -176,7 +176,7 @@ class Planner(Agent):
         name: str,
         description: str = "",
         version: str = "0.1.0",
-        capabilities: Optional[List[str]] = None,
+        capabilities: Optional[List[Any]] = None,
         **kwargs,
     ):
         """
@@ -186,7 +186,7 @@ class Planner(Agent):
             name: Planner name
             description: What this planner does
             version: Version string
-            capabilities: Planning capabilities offered
+            capabilities: Planning capabilities offered (strings or AgentCapability objects)
             **kwargs: Additional Agent arguments
         """
         # Planners always produce action-requests

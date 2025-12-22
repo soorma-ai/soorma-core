@@ -60,7 +60,7 @@ class RegistryClient:
         """
         request = EventRegistrationRequest(event=event)
         response = await self._client.post(
-            f"{self.base_url}/api/v1/events",
+            f"{self.base_url}/v1/events",
             json=request.model_dump(by_alias=True)
         )
         response.raise_for_status()
@@ -77,7 +77,7 @@ class RegistryClient:
             EventDefinition if found, None otherwise
         """
         response = await self._client.get(
-            f"{self.base_url}/api/v1/events",
+            f"{self.base_url}/v1/events",
             params={"event_name": event_name}
         )
         response.raise_for_status()
@@ -95,7 +95,7 @@ class RegistryClient:
             List of EventDefinitions for the topic
         """
         response = await self._client.get(
-            f"{self.base_url}/api/v1/events",
+            f"{self.base_url}/v1/events",
             params={"topic": topic}
         )
         response.raise_for_status()
@@ -109,7 +109,7 @@ class RegistryClient:
         Returns:
             List of all EventDefinitions
         """
-        response = await self._client.get(f"{self.base_url}/api/v1/events")
+        response = await self._client.get(f"{self.base_url}/v1/events")
         response.raise_for_status()
         result = EventQueryResponse.model_validate(response.json())
         return result.events
@@ -128,7 +128,7 @@ class RegistryClient:
         """
         request = AgentRegistrationRequest(agent=agent)
         response = await self._client.post(
-            f"{self.base_url}/api/v1/agents",
+            f"{self.base_url}/v1/agents",
             json=request.model_dump(by_alias=True)
         )
         response.raise_for_status()
@@ -145,7 +145,7 @@ class RegistryClient:
             AgentDefinition if found, None otherwise
         """
         response = await self._client.get(
-            f"{self.base_url}/api/v1/agents",
+            f"{self.base_url}/v1/agents",
             params={"agent_id": agent_id}
         )
         response.raise_for_status()
@@ -178,7 +178,7 @@ class RegistryClient:
             params["produced_event"] = produced_event
             
         response = await self._client.get(
-            f"{self.base_url}/api/v1/agents",
+            f"{self.base_url}/v1/agents",
             params=params
         )
         response.raise_for_status()

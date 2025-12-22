@@ -169,6 +169,36 @@ class RegistryClient:
         except Exception as e:
             logger.error(f"Registry registration failed: {e}")
             return False
+
+    async def register_event(self, event_definition: Any) -> bool:
+        """
+        Register an event definition.
+        
+        Args:
+            event_definition: EventDefinition object or dict
+            
+        Returns:
+            True if registration succeeded
+        """
+        client = await self._ensure_client()
+        
+        payload = event_definition
+        if hasattr(event_definition, "model_dump"):
+            payload = event_definition.model_dump(by_alias=True)
+            
+        # Wrap in EventRegistrationRequest structure
+        request_payload = {"event": payload}
+            
+        try:
+            response = await client.post(
+                f"{self.base_url}/v1/events",
+                json=request_payload,
+                timeout=10.0,
+            )
+            return response.status_code in (200, 201)
+        except Exception as e:
+            logger.error(f"Event registration failed: {e}")
+            return False
     
     async def deregister(self, agent_id: str) -> bool:
         """
@@ -204,11 +234,15 @@ class RegistryClient:
         client = await self._ensure_client()
         try:
             response = await client.get(
-                f"{self.base_url}/v1/events/schemas/{event_type}",
+                f"{self.base_url}/v1/events",
+                params={"event_name": event_type},
                 timeout=10.0,
             )
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                events = data.get("events", [])
+                if events:
+                    return events[0].get("payload_schema")
             return None
         except Exception as e:
             logger.error(f"Schema query failed: {e}")
