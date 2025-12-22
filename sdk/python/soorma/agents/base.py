@@ -61,6 +61,7 @@ class AgentConfig:
     capabilities: List[Any] = field(default_factory=list)  # List[str] or List[AgentCapability]
     events_consumed: List[str] = field(default_factory=list)
     events_produced: List[str] = field(default_factory=list)
+    event_definitions: List[Any] = field(default_factory=list)  # List[EventDefinition]
     
     # Runtime settings
     heartbeat_interval: float = 30.0  # seconds
@@ -125,9 +126,9 @@ class Agent(ABC):
         description: str = "",
         version: str = "0.1.0",
         agent_type: str = "agent",
-        capabilities: Optional[List[str]] = None,
-        events_consumed: Optional[List[str]] = None,
-        events_produced: Optional[List[str]] = None,
+        capabilities: Optional[List[Any]] = None,
+        events_consumed: Optional[List[Any]] = None,
+        events_produced: Optional[List[Any]] = None,
         agent_id: Optional[str] = None,
         auto_register: bool = True,
     ):
@@ -139,12 +140,53 @@ class Agent(ABC):
             description: What this agent does
             version: Semantic version (default: "0.1.0")
             agent_type: Type of agent ("agent", "planner", "worker", "tool")
-            capabilities: List of capabilities provided
-            events_consumed: Event types this agent subscribes to
-            events_produced: Event types this agent publishes
+            capabilities: List of capabilities provided (strings or AgentCapability objects)
+            events_consumed: Event types this agent subscribes to (strings or EventDefinition objects)
+            events_produced: Event types this agent publishes (strings or EventDefinition objects)
             agent_id: Unique ID (auto-generated if not provided)
             auto_register: Whether to register with Registry on startup
         """
+        # Process events to separate strings and definitions
+        consumed_strings = []
+        produced_strings = []
+        definitions = []
+
+        if events_consumed:
+            for e in events_consumed:
+                if isinstance(e, str):
+                    consumed_strings.append(e)
+                elif hasattr(e, "event_name"):
+                    consumed_strings.append(e.event_name)
+                    definitions.append(e)
+                elif hasattr(e, "event_type"):
+                    consumed_strings.append(e.event_type)
+                    definitions.append(e)
+                elif isinstance(e, dict):
+                    if "event_name" in e:
+                        consumed_strings.append(e["event_name"])
+                        definitions.append(e)
+                    elif "event_type" in e:
+                        consumed_strings.append(e["event_type"])
+                        definitions.append(e)
+
+        if events_produced:
+            for e in events_produced:
+                if isinstance(e, str):
+                    produced_strings.append(e)
+                elif hasattr(e, "event_name"):
+                    produced_strings.append(e.event_name)
+                    definitions.append(e)
+                elif hasattr(e, "event_type"):
+                    produced_strings.append(e.event_type)
+                    definitions.append(e)
+                elif isinstance(e, dict):
+                    if "event_name" in e:
+                        produced_strings.append(e["event_name"])
+                        definitions.append(e)
+                    elif "event_type" in e:
+                        produced_strings.append(e["event_type"])
+                        definitions.append(e)
+
         self.config = AgentConfig(
             agent_id=agent_id or f"{name}-{str(uuid4())[:8]}",
             name=name,
@@ -152,8 +194,9 @@ class Agent(ABC):
             version=version,
             agent_type=agent_type,
             capabilities=capabilities or [],
-            events_consumed=events_consumed or [],
-            events_produced=events_produced or [],
+            events_consumed=consumed_strings,
+            events_produced=produced_strings,
+            event_definitions=definitions,
             auto_register=auto_register,
         )
         
@@ -291,6 +334,18 @@ class Agent(ABC):
             topic=topic,
             correlation_id=correlation_id,
         )
+
+    async def register_event(self, event_definition: Any) -> bool:
+        """
+        Register a custom event schema.
+        
+        Args:
+            event_definition: EventDefinition object or dict
+            
+        Returns:
+            True if registration succeeded
+        """
+        return await self.context.registry.register_event(event_definition)
     
     # =========================================================================
     # Agent Lifecycle
@@ -331,6 +386,14 @@ class Agent(ABC):
         
         logger.info(f"Registering {self.name} with Registry")
         
+        # Register event definitions first
+        for event_def in self.config.event_definitions:
+            try:
+                await self.context.registry.register_event(event_def)
+                logger.debug(f"Registered event definition")
+            except Exception as e:
+                logger.warning(f"Failed to register event definition: {e}")
+
         success = await self.context.registry.register(
             agent_id=self.agent_id,
             name=self.name,

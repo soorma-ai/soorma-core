@@ -58,7 +58,7 @@ async def test_register_event_structured():
     kwargs = call_args[1]
     payload = kwargs["json"]
 
-    assert url == "http://test-registry/api/v1/events"
+    assert url == "http://test-registry/v1/events"
     assert "event" in payload
     event_payload = payload["event"]
     

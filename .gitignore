@@ -1,15 +1,49 @@
-# Python
+# Byte-compiled, optimized, and DLL files
 __pycache__/
-*.py[cod]
-.venv/
-venv/
-dist/
-build/
-*.egg-info/
+*.pyc
+*.pyo
+*.pyd
+*.so
 
-# IDE
+# Soorma local dev environment
+.soorma/
+
+# Distribution and packaging artifacts
+build/
+dist/
+*.egg-info/
+wheels/
+*.egg
+
+# Virtual Environments
+.env
+.venv
+venv/
+ENV/
+env/
+
+# IDE and editor specific files
 .vscode/
 .idea/
 
-# OS
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Operating System specific files
 .DS_Store
+
+# Log files
+*.log
+
+# Temporary files
+*.swp
+*.swo
+*~
+.aider*
+*.bak
+
+# Local database files
+*.db
+*.db-journal

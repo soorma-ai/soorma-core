@@ -130,7 +130,8 @@ soorma dev
 
 ### 📖 More Examples
 
-For a complete working example demonstrating the **DisCo Trinity** pattern (Planner → Worker → Tool), see the [Hello World Example](./examples/hello-world/README.md).
+- **[Hello World](./examples/hello-world/README.md)**: A simple introduction to the **DisCo Trinity** pattern (Planner → Worker → Tool).
+- **[Research Advisor](./examples/research-advisor/README.md)**: An advanced example demonstrating **Dynamic Choreography**, where a Planner agent dynamically discovers and orchestrates Researcher, Drafter, and Validator agents to solve complex multi-step problems.
 
 ### 🔧 CLI Reference
 

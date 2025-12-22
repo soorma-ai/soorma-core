@@ -129,7 +129,7 @@ class Tool(Agent):
         name: str,
         description: str = "",
         version: str = "0.1.0",
-        capabilities: Optional[List[str]] = None,
+        capabilities: Optional[List[Any]] = None,
         **kwargs,
     ):
         """
@@ -139,7 +139,7 @@ class Tool(Agent):
             name: Tool name
             description: What this tool does
             version: Version string
-            capabilities: Operations this tool provides
+            capabilities: Operations this tool provides (strings or AgentCapability objects)
             **kwargs: Additional Agent arguments
         """
         # Tools consume tool.request and produce tool.response
@@ -197,7 +197,19 @@ class Tool(Agent):
             self._operation_handlers[operation] = func
             
             # Add to capabilities if not already there
-            if operation not in self.config.capabilities:
+            exists = False
+            for cap in self.config.capabilities:
+                if isinstance(cap, str) and cap == operation:
+                    exists = True
+                    break
+                elif hasattr(cap, "name") and cap.name == operation:
+                    exists = True
+                    break
+                elif isinstance(cap, dict) and cap.get("taskName") == operation:
+                    exists = True
+                    break
+            
+            if not exists:
                 self.config.capabilities.append(operation)
             
             logger.debug(f"Registered operation handler: {operation}")

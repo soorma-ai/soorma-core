@@ -153,7 +153,7 @@ class Worker(Agent):
         name: str,
         description: str = "",
         version: str = "0.1.0",
-        capabilities: Optional[List[str]] = None,
+        capabilities: Optional[List[Any]] = None,
         **kwargs,
     ):
         """
@@ -163,7 +163,7 @@ class Worker(Agent):
             name: Worker name
             description: What this worker does
             version: Version string
-            capabilities: Task capabilities offered
+            capabilities: Task capabilities offered (strings or AgentCapability objects)
             **kwargs: Additional Agent arguments
         """
         # Workers consume action-requests and produce action-results
