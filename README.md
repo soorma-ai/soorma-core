@@ -36,30 +36,40 @@ We believe the future of AI infrastructure must be:
 Soorma replaces the fragile "Orchestration" pattern (central control) with **Choreography** (event-driven flow).
 
 ```mermaid
-graph TD
-    User[User Client] --> Gateway[API Gateway]
-    Gateway --> Bus((Event Bus / NATS))
+graph TB
+    Client[Client] -->|Publish Event| EventService
     
-    subgraph ControlPlane [Control Plane]
+    subgraph ControlPlane["Control Plane (Infrastructure)"]
         Registry[Registry Service]
-        Tracker[State Tracker]
+        EventService[Event Service]
         Memory[Memory Service]
+        NATS[NATS JetStream]
+        
+        EventService <-->|Internal| NATS
     end
     
-    subgraph DistributedAgents [Distributed Agents]
+    subgraph DistributedAgents["Distributed Agents"]
         Planner[Planner Agent]
         Worker[Worker Agent]
-        Tool[Tool Service]
+        Tool[Tool Agent]
     end
     
-    %% Connections to the Bus
-    Bus --- Planner
-    Bus --- Worker
-    Bus --- Tool
+    %% Agent connections to Control Plane
+    Planner -->|HTTP API| Registry
+    Planner -->|HTTP API + SSE| EventService
+    Planner -->|HTTP API| Memory
     
-    Bus --- Registry
-    Bus --- Tracker
-    Bus --- Memory
+    Worker -->|HTTP API| Registry
+    Worker -->|HTTP API + SSE| EventService
+    Worker -->|HTTP API| Memory
+    
+    Tool -->|HTTP API| Registry
+    Tool -->|HTTP API + SSE| EventService
+    Tool -->|HTTP API| Memory
+    
+    style ControlPlane fill:#e1f5ff
+    style DistributedAgents fill:#fff4e1
+    style NATS fill:#d0d0d0
 ```
 
 ## Prerequisites

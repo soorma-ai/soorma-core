@@ -226,33 +226,32 @@ python agent.py
 
 `soorma dev` implements a **hybrid execution model** for fast iteration:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Developer's Machine                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │         Docker Containers (Infrastructure)          │   │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌────────────┐   │   │
-│   │  │  Registry   │  │    NATS     │  │   Event    │   │   │
-│   │  │  :8000      │  │   :4222     │  │  Service   │   │   │
-│   │  │             │  │             │  │   :8001    │   │   │
-│   │  └─────────────┘  └─────────────┘  └────────────┘   │   │
-│   └─────────────────────────────────────────────────────┘   │
-│                           ▲                                 │
-│                           │ localhost                       │
-│                           ▼                                 │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │         Native Python Process (Your Agent)          │   │
-│   │  ┌─────────────────────────────────────────────┐    │   │
-│   │  │  agent.py  ← Hot Reload on File Change      │    │   │
-│   │  │  • Registers with Registry                  │    │   │
-│   │  │  • Connects to NATS via Event Service       │    │   │
-│   │  │  • Full debugger support (VS Code/PyCharm)  │    │   │
-│   │  └─────────────────────────────────────────────┘    │   │
-│   └─────────────────────────────────────────────────────┘   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph DevMachine["Developer's Machine"]
+        subgraph Docker["Docker Containers (Infrastructure)"]
+            Registry["Registry Service<br/>:8000"]
+            EventService["Event Service<br/>:8001"]
+            Memory["Memory Service<br/>:8002"]
+            NATS["NATS JetStream<br/>:4222"]
+            Postgres["PostgreSQL + pgvector<br/>:5432"]
+            
+            EventService <--> NATS
+            Memory --> Postgres
+        end
+        
+        subgraph Native["Native Python Process (Your Agent)"]
+            Agent["agent.py<br/>• Hot Reload on File Change<br/>• Full debugger support"]
+        end
+        
+        Agent -->|"HTTP API"| Registry
+        Agent -->|"HTTP API + SSE"| EventService
+        Agent -->|"HTTP API"| Memory
+    end
+    
+    style Docker fill:#e1f5ff
+    style Native fill:#fff4e1
+    style Agent fill:#f0f0f0
 ```
 
 **Why this pattern?**
@@ -272,13 +271,16 @@ python agent.py
    ```bash
    export SOORMA_REGISTRY_URL="http://localhost:8000"
    export SOORMA_EVENT_SERVICE_URL="http://localhost:8001"
+   export SOORMA_MEMORY_SERVICE_URL="http://localhost:8002"
    python agent.py
    ```
 
 3. **Services are production-ready but local:**
    - Registry: SQLite database in `~/.soorma/data/`
-   - NATS: In-memory message bus
+   - NATS: JetStream message bus for reliable event delivery
    - Event Service: Proxy to NATS with SSE support
+   - Memory Service: PostgreSQL with pgvector for semantic memory
+   - PostgreSQL: Persistent database for memory service
 
 ### 4.2 The Integration Developer
 
@@ -337,24 +339,30 @@ helm install soorma ./soorma-core
 
 ### 5.1 Event Flow
 
-```
-┌──────────┐       ┌──────────┐       ┌──────────┐
-│  Client  │──────▶│ Planner  │──────▶│ Registry │
-│          │       │          │◀──────│          │
-└──────────┘       └────┬─────┘       └──────────┘
-                        │
-                        │ Discovers & Publishes
-                        ▼
-        ┌──────────────────────────────────┐
-        │         Event Service            │
-        │         (NATS Adapter)           │
-        └──────────────────────────────────┘
-                        │
-         ┌──────────────┼──────────────┐
-         ▼              ▼              ▼
-    ┌─────────┐   ┌─────────┐   ┌─────────┐
-    │Worker A │   │Worker B │   │Worker C │
-    └─────────┘   └─────────┘   └─────────┘
+```mermaid
+graph TB
+    Client[Client] -->|"1. Publish Event (HTTP)"| EventService[Event Service]
+    EventService <-->|"Internal"| NATS[NATS JetStream]
+    
+    EventService -->|"2. SSE Stream"| Planner[Planner Agent]
+    
+    Planner -->|"3. Discover Events"| Registry[Registry Service]
+    Registry -->|"Event Metadata"| Planner
+    
+    Planner -->|"4. Publish Event (HTTP)"| EventService
+    
+    EventService -->|"5. SSE Stream"| WorkerA[Worker Agent A]
+    EventService -->|"5. SSE Stream"| WorkerB[Worker Agent B]
+    EventService -->|"5. SSE Stream"| WorkerC[Worker Agent C]
+    
+    WorkerA -->|"Store/Retrieve"| Memory[Memory Service]
+    WorkerB -->|"Store/Retrieve"| Memory
+    WorkerC -->|"Store/Retrieve"| Memory
+    
+    style EventService fill:#e1f5ff
+    style NATS fill:#d0d0d0
+    style Registry fill:#ffe1e1
+    style Memory fill:#e1ffe1
 ```
 
 ### 5.2 Event Registration
