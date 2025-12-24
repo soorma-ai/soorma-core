@@ -1,72 +1,50 @@
-"""Authentication and tenancy middleware."""
+"""Tenancy middleware for single-tenant mode."""
 
-import jwt
 from typing import Optional
-from fastapi import Request, HTTPException, status
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from memory_service.core.config import settings
 
 
 class TenancyMiddleware(BaseHTTPMiddleware):
-    """Middleware to extract tenant and user context from JWT tokens."""
+    """
+    Middleware for single-tenant mode.
+    
+    In v0.5.0, Memory Service operates in single-tenant mode with no authentication.
+    - tenant_id: Always uses default tenant (single-tenant mode)
+    - user_id: Extracted from query parameters (no auth required)
+    - agent_id: Extracted from query parameters
+    
+    Future: Multi-tenant authentication will be handled by Identity Service.
+    """
 
     async def dispatch(self, request: Request, call_next):
-        """Process request and extract tenant/user context."""
+        """Process request in single-tenant mode."""
         # Skip middleware for health checks and docs
         if request.url.path in ["/health", "/docs", "/openapi.json", "/redoc"]:
             return await call_next(request)
 
-        # Extract tenant_id and user_id
-        tenant_id = None
-        user_id = None
-
-        if settings.is_local_testing:
-            # Local development mode - use default tenant
-            tenant_id = settings.default_tenant_id
-            user_id = settings.default_user_id
-        else:
-            # Production mode - extract from JWT
-            auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Missing or invalid authorization header",
-                )
-
-            token = auth_header.split(" ")[1]
-            try:
-                payload = jwt.decode(
-                    token,
-                    settings.jwt_secret or "",
-                    algorithms=[settings.jwt_algorithm],
-                )
-                tenant_id = payload.get("tenant_id")
-                user_id = payload.get("user_id") or payload.get("sub")
-
-                if not tenant_id or not user_id:
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Token missing tenant_id or user_id",
-                    )
-            except jwt.InvalidTokenError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid token: {str(e)}",
-                )
-
-        # Store in request state
+        # Single-tenant mode - always use default tenant
+        tenant_id = settings.default_tenant_id
+        
+        # Store in request state (user_id will come from query parameters in endpoints)
         request.state.tenant_id = tenant_id
-        request.state.user_id = user_id
 
         return await call_next(request)
 
 
 def get_tenant_id(request: Request) -> str:
-    """Get tenant ID from request state."""
+    """Get tenant ID from request state (always default in single-tenant mode)."""
     return getattr(request.state, "tenant_id", settings.default_tenant_id)
 
 
-def get_user_id(request: Request) -> str:
-    """Get user ID from request state."""
-    return getattr(request.state, "user_id", settings.default_user_id)
+def get_user_id(request: Request) -> Optional[str]:
+    """
+    Get user ID from request state.
+    
+    Note: In v0.5.0, user_id comes from query parameters, not from middleware.
+    This function exists for backward compatibility but returns None.
+    Endpoints should get user_id from query parameters directly.
+    """
+    return getattr(request.state, "user_id", None)

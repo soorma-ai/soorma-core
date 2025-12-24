@@ -39,7 +39,6 @@ class MemoryClient:
         self,
         base_url: str = "http://localhost:8083",
         timeout: float = 30.0,
-        auth_token: Optional[str] = None,
     ):
         """
         Initialize the memory client.
@@ -47,16 +46,15 @@ class MemoryClient:
         Args:
             base_url: Base URL of the memory service (e.g., "http://localhost:8083")
             timeout: HTTP request timeout in seconds
-            auth_token: Optional JWT authentication token for production use
+            
+        Note:
+            v0.5.0 operates in single-tenant, unauthenticated mode.
+            user_id and agent_id must be provided as method parameters.
+            Multi-tenant authentication will be added via Identity Service in future releases.
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        
-        headers = {}
-        if auth_token:
-            headers["Authorization"] = f"Bearer {auth_token}"
-        
-        self._client = httpx.AsyncClient(timeout=timeout, headers=headers)
+        self._client = httpx.AsyncClient(timeout=timeout)
     
     async def close(self):
         """Close the HTTP client."""
@@ -130,6 +128,7 @@ class MemoryClient:
         agent_id: str,
         role: str,
         content: str,
+        user_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> EpisodicMemoryResponse:
         """
@@ -139,6 +138,7 @@ class MemoryClient:
             agent_id: Agent identifier
             role: Role (user, assistant, system, tool)
             content: Interaction content
+            user_id: User identifier (required in single-tenant mode)
             metadata: Optional metadata
             
         Returns:
@@ -154,6 +154,7 @@ class MemoryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/episodic",
             json=data.model_dump(by_alias=True),
+            params={"user_id": user_id},
         )
         response.raise_for_status()
         return EpisodicMemoryResponse.model_validate(response.json())
@@ -161,6 +162,7 @@ class MemoryClient:
     async def get_recent_history(
         self,
         agent_id: str,
+        user_id: str,
         limit: int = 10,
     ) -> List[EpisodicMemoryResponse]:
         """
@@ -168,6 +170,7 @@ class MemoryClient:
         
         Args:
             agent_id: Agent identifier
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum number of results (1-100)
             
         Returns:
@@ -175,7 +178,7 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/episodic/recent",
-            params={"agent_id": agent_id, "limit": limit},
+            params={"agent_id": agent_id, "user_id": user_id, "limit": limit},
         )
         response.raise_for_status()
         return [EpisodicMemoryResponse.model_validate(item) for item in response.json()]
@@ -184,6 +187,7 @@ class MemoryClient:
         self,
         agent_id: str,
         query: str,
+        user_id: str,
         limit: int = 5,
     ) -> List[EpisodicMemoryResponse]:
         """
@@ -192,6 +196,7 @@ class MemoryClient:
         Args:
             agent_id: Agent identifier
             query: Search query
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum number of results (1-50)
             
         Returns:
@@ -199,7 +204,7 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/episodic/search",
-            params={"agent_id": agent_id, "q": query, "limit": limit},
+            params={"agent_id": agent_id, "q": query, "user_id": user_id, "limit": limit},
         )
         response.raise_for_status()
         return [EpisodicMemoryResponse.model_validate(item) for item in response.json()]
@@ -210,6 +215,7 @@ class MemoryClient:
         self,
         agent_id: str,
         context: str,
+        user_id: str,
         limit: int = 3,
     ) -> List[ProceduralMemoryResponse]:
         """
@@ -220,6 +226,7 @@ class MemoryClient:
         Args:
             agent_id: Agent identifier
             context: Task/query context
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum number of results (1-20)
             
         Returns:
@@ -227,7 +234,7 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/procedural/context",
-            params={"agent_id": agent_id, "q": context, "limit": limit},
+            params={"agent_id": agent_id, "q": context, "user_id": user_id, "limit": limit},
         )
         response.raise_for_status()
         return [ProceduralMemoryResponse.model_validate(item) for item in response.json()]

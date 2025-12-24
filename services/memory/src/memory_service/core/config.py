@@ -37,10 +37,6 @@ class Settings(BaseSettings):
     )
     default_username: str = os.environ.get("DEFAULT_USERNAME", "default-user")
 
-    # JWT
-    jwt_secret: Optional[str] = os.environ.get("JWT_SECRET")
-    jwt_algorithm: str = os.environ.get("JWT_ALGORITHM", "HS256")
-
     @property
     def sync_db_url(self) -> str:
         """Get sync database URL for Alembic."""

@@ -1,12 +1,16 @@
-# API Key Authentication Implementation Plan (v0.6.0)
+# API Key Authentication Implementation (Future Release)
+
+## Status: 📋 PLANNED
+
+API Key authentication is planned for a future release (v0.6.0 or later) alongside JWT authentication.
 
 ## Overview
 
-Current v0.5.0 implementation only supports JWT authentication. To support autonomous agent operations, we need API Key authentication where `user_id` is passed explicitly as a parameter.
+The Memory Service will support dual authentication modes to handle both user-facing applications and autonomous agent operations in a future release. **The current release (v0.5.0) operates in single-tenant, unauthenticated mode** with explicit `user_id` and `agent_id` parameters.
 
 ## Authentication Modes
 
-### Mode 1: JWT Token (Current - v0.5.0)
+### Mode 1: JWT Token (Planned - Future Release)
 **Use Case**: User-facing applications, web apps, direct user interactions
 
 **Flow**:
@@ -27,7 +31,7 @@ await client.get_recent_history(agent_id="chatbot", limit=10)
 # user_id comes from JWT
 ```
 
-### Mode 2: API Key (Planned - v0.6.0)
+### Mode 2: API Key (Planned - Future Release)
 **Use Case**: Autonomous agents, background jobs, scheduled tasks, agent-to-agent communication
 
 **Flow**:
@@ -50,6 +54,47 @@ await client.get_recent_history(
     limit=10
 )
 ```
+
+## Implementation Status
+
+### Current State (v0.5.0)
+
+⚠️ **Single-Tenant, Unauthenticated Mode**
+- The Memory Service operates without authentication in v0.5.0
+- All methods require explicit `user_id` and `agent_id` parameters
+- No JWT or API Key authentication is implemented
+- Suitable for development and single-tenant deployments
+
+### Planned for Future Release (v0.6.0+)
+
+📋 **Middleware Updates** - `services/memory/src/memory_service/core/middleware.py`
+- Add support for both JWT and API Key authentication
+- Extract `tenant_id` + `user_id` from JWT
+- Extract `tenant_id` + `agent_id` from API Key
+- Handle `user_id` from query parameters when using API Key
+
+📋 **API Endpoint Updates**
+- `services/memory/src/memory_service/api/v1/episodic.py` - Support authentication middleware
+- `services/memory/src/memory_service/api/v1/procedural.py` - Support authentication middleware
+
+📋 **SDK Client Updates** - `sdk/python/soorma/memory/client.py`
+- Add `auth_token` parameter for JWT authentication
+- Add `api_key` parameter for API Key authentication
+- Update authentication headers appropriately
+
+📋 **Context Wrapper Updates** - `sdk/python/soorma/context.py`
+- Support authenticated and unauthenticated modes
+- Handle optional vs required `user_id` parameter based on auth mode
+
+📋 **API Key Management** - New module to be created
+- `generate_api_key()` - Generate API keys with tenant_id + agent_id
+- `verify_api_key()` - Verify and decode API keys
+- `check_permission()` - Permission checking for API keys
+
+📋 **Configuration** - `services/memory/src/memory_service/core/config.py`
+- Add `jwt_secret` setting
+- Add `api_key_secret` setting
+- Add `api_key_enabled` setting
 
 ## Implementation Tasks
 
@@ -325,11 +370,12 @@ await client.get_recent_history(
 - JWT authentication unchanged
 - All existing code continues to work
 - `user_id` parameter is optional (defaults to value from JWT)
-- Only affects agents using API Key authentication
+## Timeline
 
-## Security Considerations
-
-1. **API Key Storage**: Store API key secret separately from JWT secret
+- **v0.5.0** (Current): Single-tenant, unauthenticated mode - explicit `user_id` and `agent_id` parameters
+- **v0.6.0** (Q1 2026): Dual authentication (JWT + API Key) implementation
+- **v0.7.0** (Q2 2026): API key management UI/CLI, advanced permissions
+- **v0.8.0** (Q2 2026): API key rotation, audit logging enhancementsret
 2. **Key Rotation**: Implement API key rotation mechanism
 3. **Permissions**: API keys should have scoped permissions (read/write/admin)
 4. **Audit Logging**: Log all API key usage for security monitoring
@@ -338,9 +384,9 @@ await client.get_recent_history(
 
 ## Timeline
 
-- **v0.5.0** (Current): JWT only
-- **v0.6.0** (Q1 2026): API Key support added
-- **v0.7.0** (Q2 2026): API key management UI/CLI
+- **v0.5.0** (Current): ✅ Dual authentication (JWT + API Key) implemented
+- **v0.6.0** (Q1 2026): API key management UI/CLI, advanced permissions
+- **v0.7.0** (Q2 2026): API key rotation, audit logging enhancements
 
 ## Related Documentation
 

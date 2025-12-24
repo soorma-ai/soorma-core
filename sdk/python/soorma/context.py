@@ -434,6 +434,7 @@ class MemoryClient:
         agent_id: str,
         role: str,
         content: str,
+        user_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
@@ -443,6 +444,7 @@ class MemoryClient:
             agent_id: Agent identifier
             role: Role (user, assistant, system, tool)
             content: Interaction content
+            user_id: User identifier (required in single-tenant mode)
             metadata: Optional metadata
             
         Returns:
@@ -454,7 +456,7 @@ class MemoryClient:
         
         client = await self._ensure_client()
         try:
-            await client.log_interaction(agent_id, role, content, metadata)
+            await client.log_interaction(agent_id, role, content, user_id, metadata)
             return True
         except Exception as e:
             logger.debug(f"Memory log_interaction failed: {e}")
@@ -464,6 +466,7 @@ class MemoryClient:
     async def get_recent_history(
         self,
         agent_id: str,
+        user_id: str,
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
         """
@@ -471,6 +474,7 @@ class MemoryClient:
         
         Args:
             agent_id: Agent identifier
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum number of results (1-100)
             
         Returns:
@@ -482,7 +486,7 @@ class MemoryClient:
         
         client = await self._ensure_client()
         try:
-            results = await client.get_recent_history(agent_id, limit=limit)
+            results = await client.get_recent_history(agent_id, user_id, limit=limit)
             return [
                 {
                     "id": r.id,
@@ -502,6 +506,7 @@ class MemoryClient:
         self,
         agent_id: str,
         context: str,
+        user_id: str,
         limit: int = 3,
     ) -> List[Dict[str, Any]]:
         """
@@ -510,6 +515,7 @@ class MemoryClient:
         Args:
             agent_id: Agent identifier
             context: Task/query context
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum number of results (1-20)
             
         Returns:
@@ -521,7 +527,7 @@ class MemoryClient:
         
         client = await self._ensure_client()
         try:
-            results = await client.get_relevant_skills(agent_id, context, limit=limit)
+            results = await client.get_relevant_skills(agent_id, context, user_id, limit=limit)
             return [
                 {
                     "id": r.id,
