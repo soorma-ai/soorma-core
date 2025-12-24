@@ -23,7 +23,7 @@ DOCKER_COMPOSE_TEMPLATE = '''# Soorma Local Development Stack
 # Infrastructure runs in Docker, your agent runs on the host
 
 services:
-  # PostgreSQL with pgvector - Database for Memory Service
+  # PostgreSQL with pgvector - Database for Memory & Registry Services
   postgres:
     image: pgvector/pgvector:pg16
     container_name: soorma-postgres
@@ -32,11 +32,13 @@ services:
     environment:
       - POSTGRES_USER=soorma
       - POSTGRES_PASSWORD=soorma
-      - POSTGRES_DB=memory
+      - POSTGRES_DB=postgres
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U soorma -d memory"]
+      test: ["CMD-SHELL", "pg_isready -U soorma"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -63,10 +65,12 @@ services:
     ports:
       - "${REGISTRY_PORT:-8081}:8000"
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:////tmp/registry.db
-      - SYNC_DATABASE_URL=sqlite:////tmp/registry.db
+      - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/registry
+      - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/registry
       - NATS_URL=nats://nats:4222
     depends_on:
+      postgres:
+        condition: service_healthy
       nats:
         condition: service_healthy
     healthcheck:
@@ -125,6 +129,24 @@ volumes:
 networks:
   default:
     name: soorma-dev
+'''
+
+# PostgreSQL initialization script
+# Creates pgvector extension and separate databases for each service
+POSTGRES_INIT_SQL = '''-- Initialize Soorma PostgreSQL Databases
+-- Creates separate databases for each service and enables pgvector extension
+
+-- Create databases for each service
+CREATE DATABASE registry;
+CREATE DATABASE memory;
+
+-- Connect to registry database and enable pgvector
+\\c registry
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Connect to memory database and enable pgvector
+\\c memory
+CREATE EXTENSION IF NOT EXISTS vector;
 '''
 
 
@@ -636,6 +658,12 @@ def dev_stack(
     
     # Write docker-compose.yml
     compose_file.write_text(DOCKER_COMPOSE_TEMPLATE)
+    
+    # Write PostgreSQL initialization script
+    postgres_init_dir = soorma_dir / "postgres-init"
+    postgres_init_dir.mkdir(exist_ok=True)
+    init_sql = postgres_init_dir / "01-init.sql"
+    init_sql.write_text(POSTGRES_INIT_SQL)
     
     # Check for service images (unless just stopping/status/logs)
     service_images = {}
