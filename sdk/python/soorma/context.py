@@ -556,6 +556,12 @@ class MemoryClient:
         # Note: Memory Service doesn't have a delete endpoint yet
         logger.warning("Memory delete not implemented in Memory Service")
         return False
+    
+    async def close(self) -> None:
+        """Close the Memory Service client connection."""
+        if self._client is not None:
+            await self._client.close()
+            self._client = None
 
 
 @dataclass

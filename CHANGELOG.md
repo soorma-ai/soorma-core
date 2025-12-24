@@ -25,8 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - EpisodicMemoryCreate, EpisodicMemoryResponse
   - ProceduralMemoryResponse
   - WorkingMemorySet, WorkingMemoryResponse
+- **SDK - Memory Client**: Full MemoryClient implementation in Python SDK with all CoALA memory types
+- **SDK - Dev CLI**: PostgreSQL + Memory Service added to Docker Compose infrastructure
 - **Services Overview**: Added comprehensive services/README.md documentation
-- **Version Bump**: Updated soorma-common to 0.5.0 across all dependent packages
+
+### Changed
+- **SDK - Dev CLI - Breaking**: Simplified `soorma dev` command
+  - Removed agent execution functionality (AgentRunner, find_agent_entry_point)
+  - Removed `--infra-only`, `--detach`, `--no-watch` flags
+  - Default behavior: start infrastructure only, agents run separately
+  - Added `--start` flag for consistency with `--stop`
+- **Registry Service**: Now uses PostgreSQL instead of SQLite in dev environment
+- **Documentation**: Updated all READMEs and examples for new CLI behavior
+
+### Fixed
+- **Dev CLI**: PostgreSQL healthcheck connection errors
+
+### Version Bumps
+- soorma-common: 0.5.0 across all dependent packages
 
 ## [0.4.0] - 2025-12-21
 
