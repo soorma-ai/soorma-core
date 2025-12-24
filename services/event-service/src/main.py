@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Soorma Event Service",
     description="Event proxy/gateway for the Soorma DisCo platform",
-    version="0.1.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
@@ -82,7 +82,7 @@ async def root() -> Dict[str, str]:
     """Root endpoint with service info."""
     return {
         "service": "soorma-event-service",
-        "version": "0.1.0",
+        "version": "0.5.0",
         "docs": "/docs",
     }
 
