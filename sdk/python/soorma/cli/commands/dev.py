@@ -23,6 +23,24 @@ DOCKER_COMPOSE_TEMPLATE = '''# Soorma Local Development Stack
 # Infrastructure runs in Docker, your agent runs on the host
 
 services:
+  # PostgreSQL with pgvector - Database for Memory Service
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: soorma-postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=soorma
+      - POSTGRES_PASSWORD=soorma
+      - POSTGRES_DB=memory
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soorma -d memory"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # NATS - Event Bus
   nats:
     image: nats:2.10-alpine
@@ -77,6 +95,32 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+
+  # Memory Service - Persistent Memory Layer (CoALA)
+  memory-service:
+    image: ${MEMORY_SERVICE_IMAGE:-memory-service:latest}
+    container_name: soorma-memory
+    ports:
+      - "${MEMORY_SERVICE_PORT:-8083}:8002"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/memory
+      - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/memory
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - IS_LOCAL_TESTING=true
+      - IS_PROD=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  postgres-data:
+    name: soorma-postgres-data
 
 networks:
   default:
@@ -143,6 +187,12 @@ SERVICE_DEFINITIONS = {
         "public_image": "ghcr.io/soorma-ai/event-service:latest",
         "dockerfile": "services/event-service/Dockerfile",
         "name": "Event Service",
+    },
+    "memory-service": {
+        "local_image": "memory-service:latest",
+        "public_image": "ghcr.io/soorma-ai/memory-service:latest",
+        "dockerfile": "services/memory/Dockerfile",
+        "name": "Memory Service",
     },
     # Future services can be added here:
     # "tracker": {
@@ -356,12 +406,14 @@ class AgentRunner:
         entry_point: Path,
         registry_url: str,
         event_service_url: str,
+        memory_service_url: str,
         nats_url: str,
         watch: bool = True,
     ):
         self.entry_point = entry_point
         self.registry_url = registry_url
         self.event_service_url = event_service_url
+        self.memory_service_url = memory_service_url
         self.nats_url = nats_url
         self.watch = watch
         self.process: Optional[subprocess.Popen] = None
@@ -374,6 +426,7 @@ class AgentRunner:
         env.update({
             "SOORMA_REGISTRY_URL": self.registry_url,
             "SOORMA_EVENT_SERVICE_URL": self.event_service_url,
+            "SOORMA_MEMORY_SERVICE_URL": self.memory_service_url,
             "SOORMA_BUS_URL": self.nats_url,
             "SOORMA_NATS_URL": self.nats_url,
             "SOORMA_DEV_MODE": "true",
@@ -539,6 +592,16 @@ def dev_stack(
         "--event-service-port",
         help="Port for the Event Service.",
     ),
+    memory_service_port: int = typer.Option(
+        8083,
+        "--memory-service-port",
+        help="Port for the Memory Service.",
+    ),
+    postgres_port: int = typer.Option(
+        5432,
+        "--postgres-port",
+        help="Port for PostgreSQL database.",
+    ),
     build: bool = typer.Option(
         False,
         "--build",
@@ -635,6 +698,10 @@ def dev_stack(
     # Get service images for env file
     registry_image = service_images.get("registry", "registry-service:latest")
     event_service_image = service_images.get("event-service", "event-service:latest")
+    memory_service_image = service_images.get("memory-service", "memory-service:latest")
+    
+    # Get OpenAI API key from environment
+    openai_api_key = os.environ.get("OPENAI_API_KEY", "")
     
     # Write .env file with custom ports and service images
     env_content = f"""# Soorma Local Development Environment
@@ -644,6 +711,10 @@ REGISTRY_PORT={registry_port}
 REGISTRY_IMAGE={registry_image or 'registry-service:latest'}
 EVENT_SERVICE_PORT={event_service_port}
 EVENT_SERVICE_IMAGE={event_service_image or 'event-service:latest'}
+MEMORY_SERVICE_PORT={memory_service_port}
+MEMORY_SERVICE_IMAGE={memory_service_image or 'memory-service:latest'}
+POSTGRES_PORT={postgres_port}
+OPENAI_API_KEY={openai_api_key}
 """
     env_file.write_text(env_content)
     
@@ -694,7 +765,9 @@ EVENT_SERVICE_IMAGE={event_service_image or 'event-service:latest'}
     typer.echo("📦 Starting infrastructure (Docker)...")
     typer.echo(f"   Registry:      http://localhost:{registry_port}")
     typer.echo(f"   Event Service: http://localhost:{event_service_port}")
+    typer.echo(f"   Memory Service: http://localhost:{memory_service_port}")
     typer.echo(f"   NATS:          nats://localhost:{nats_port}")
+    typer.echo(f"   PostgreSQL:    postgresql://localhost:{postgres_port}")
     typer.echo("")
     
     # Pull images (quiet mode)
@@ -739,6 +812,7 @@ EVENT_SERVICE_IMAGE={event_service_image or 'event-service:latest'}
         typer.echo("To run your agent:")
         typer.echo(f"  export SOORMA_REGISTRY_URL=http://localhost:{registry_port}")
         typer.echo(f"  export SOORMA_EVENT_SERVICE_URL=http://localhost:{event_service_port}")
+        typer.echo(f"  export SOORMA_MEMORY_SERVICE_URL=http://localhost:{memory_service_port}")
         typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
         typer.echo("  python agent.py")
         raise typer.Exit(0)
@@ -759,6 +833,7 @@ EVENT_SERVICE_IMAGE={event_service_image or 'event-service:latest'}
         entry_point=entry_point,
         registry_url=f"http://localhost:{registry_port}",
         event_service_url=f"http://localhost:{event_service_port}",
+        memory_service_url=f"http://localhost:{memory_service_port}",
         nats_url=f"nats://localhost:{nats_port}",
         watch=not no_watch,
     )
