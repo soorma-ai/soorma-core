@@ -209,6 +209,7 @@ class TestMetadataHandling:
         # Schema validation should pass (may fail on DB)
         assert response.status_code != 422
 
+    @pytest.mark.skip(reason="Requires PostgreSQL database")
     def test_semantic_accepts_optional_metadata(self, client):
         """Test semantic memory accepts optional metadata."""
         response = client.post(

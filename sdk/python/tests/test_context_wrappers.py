@@ -161,6 +161,7 @@ class TestMemoryClientWrapper:
             agent_id="agent-1",
             role="assistant",
             content="Completed research task",
+            user_id="test-user",
             metadata={"task_id": "task-1"}
         )
         
@@ -171,6 +172,7 @@ class TestMemoryClientWrapper:
             "agent-1",
             "assistant",
             "Completed research task",
+            "test-user",
             {"task_id": "task-1"}
         )
     
@@ -199,6 +201,7 @@ class TestMemoryClientWrapper:
         # Execute
         results = await wrapper.get_recent_history(
             agent_id="agent-1",
+            user_id="test-user",
             limit=10
         )
         
@@ -206,7 +209,7 @@ class TestMemoryClientWrapper:
         assert len(results) == 1
         assert results[0]["id"] == "ep-1"
         assert results[0]["role"] == "assistant"
-        mock_client.get_recent_history.assert_called_once_with("agent-1", limit=10)
+        mock_client.get_recent_history.assert_called_once_with("agent-1", "test-user", limit=10)
     
     @pytest.mark.asyncio
     async def test_get_relevant_skills_with_service(self):
@@ -234,6 +237,7 @@ class TestMemoryClientWrapper:
         results = await wrapper.get_relevant_skills(
             agent_id="agent-1",
             context="need to analyze data",
+            user_id="test-user",
             limit=3
         )
         
@@ -243,7 +247,7 @@ class TestMemoryClientWrapper:
         assert results[0]["procedure_type"] == "skill"
         assert results[0]["score"] == 0.88
         mock_client.get_relevant_skills.assert_called_once_with(
-            "agent-1", "need to analyze data", limit=3
+            "agent-1", "need to analyze data", "test-user", limit=3
         )
     
     @pytest.mark.asyncio

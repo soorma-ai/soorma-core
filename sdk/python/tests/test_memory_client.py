@@ -108,7 +108,8 @@ async def test_log_interaction(memory_client):
     result = await memory_client.log_interaction(
         agent_id="agent-1",
         role="assistant",
-        content="Test interaction"
+        content="Test interaction",
+        user_id="test-user"
     )
     
     # Verify
@@ -152,7 +153,11 @@ async def test_get_recent_history(memory_client):
     memory_client._client.get = AsyncMock(return_value=mock_response)
     
     # Test
-    results = await memory_client.get_recent_history(agent_id="agent-1", limit=10)
+    results = await memory_client.get_recent_history(
+        agent_id="agent-1",
+        user_id="test-user",
+        limit=10
+    )
     
     # Verify
     assert len(results) == 2
@@ -189,6 +194,7 @@ async def test_search_interactions(memory_client):
     results = await memory_client.search_interactions(
         agent_id="agent-1",
         query="relevant",
+        user_id="test-user",
         limit=5
     )
     
@@ -227,6 +233,7 @@ async def test_get_relevant_skills(memory_client):
     results = await memory_client.get_relevant_skills(
         agent_id="agent-1",
         context="user asks about billing",
+        user_id="test-user",
         limit=3
     )
     
