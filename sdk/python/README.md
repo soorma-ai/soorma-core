@@ -45,9 +45,9 @@ soorma dev --build
 
 ```bash
 # Start infrastructure
-soorma dev --infra-only
+soorma dev
 
-# In separate terminals:
+# In separate terminals, run the agents:
 python examples/hello-world/planner_agent.py
 python examples/hello-world/worker_agent.py
 python examples/hello-world/tool_agent.py
@@ -75,18 +75,27 @@ pip install -e ".[dev]"
 ### Start Local Development
 
 ```bash
-# Start infrastructure and run your agent (auto-detects agent in current directory)
+# Start infrastructure (runs in background)
 soorma dev
+
+# In another terminal, run your agent
+python -m my_worker.agent
 ```
 
-Or run infrastructure separately:
+Infrastructure management:
 
 ```bash
-# Start only infrastructure
-soorma dev --infra-only
+# Start infrastructure (default)
+soorma dev --start
 
-# In another terminal, run your agent manually
-python -m my_worker.agent
+# Check status
+soorma dev --status
+
+# View logs
+soorma dev --logs
+
+# Stop infrastructure
+soorma dev --stop
 ```
 
 ### Deploy to Soorma Cloud
@@ -413,13 +422,31 @@ Client                Planner              Worker              Tool
   │<────────────────────│                    │                   │
 ```
 
+## Documentation
+
+### Core Concepts
+- [Event Architecture](docs/EVENT_ARCHITECTURE.md) - Event-driven agent choreography patterns
+- [Memory Service SDK](docs/MEMORY_SERVICE.md) - CoALA framework memory types and usage
+
+### API Reference
+- **Registry Client**: Service discovery and capability registration
+- **Event Client**: Publish/subscribe event choreography
+- **Memory Client**: Persistent memory for autonomous agents (Semantic, Episodic, Procedural, Working)
+- **Platform Context**: Unified API for all platform services
+
+### Examples
+- [Hello World](../../examples/hello-world/) - Basic multi-agent collaboration
+- [Research Advisor](../../examples/research-advisor/) - Advanced DisCo Trinity with autonomous choreography
+
 ## Roadmap
 
 * [x] **v0.1.0**: Core SDK & CLI (`soorma init`, `soorma dev`)
 * [x] **v0.1.1**: Event Service & DisCo Trinity (Planner, Worker, Tool)
 * [x] **v0.2.0**: Subscriber Groups & Unified Versioning
 * [x] **v0.3.0**: Structured Registration & LLM-friendly Discovery
-* [ ] **v0.4.0**: Memory Service & State Tracker
+* [x] **v0.4.0**: Multi-provider LLM support & Autonomous choreography improvements
+* [x] **v0.5.0**: Memory Service (CoALA framework) & PostgreSQL infrastructure
+* [ ] **v0.6.0**: State Tracker & Workflow observability
 * [ ] **v1.0.0**: Enterprise GA
 
 ## License

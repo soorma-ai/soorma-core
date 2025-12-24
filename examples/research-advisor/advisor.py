@@ -10,6 +10,9 @@ from events import (
 from capabilities import ADVICE_CAPABILITY
 from llm_utils import get_llm_model, has_any_llm_key
 
+# Constants
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+
 # Create the Advisor Worker
 advisor = Worker(
     name="content-drafter",
@@ -45,6 +48,15 @@ async def handle_advice_request(event: dict, context: PlatformContext):
     research_context = request.research_context
     critique = request.critique
     
+    # Log drafting request to episodic memory
+    await context.memory.log_interaction(
+        agent_id="content-drafter",
+        user_id=DEFAULT_USER_ID,
+        role="user",
+        content=f"Draft request for: {user_request} (context: {research_context[:100]}...)",
+        metadata={"event_id": event.get('id'), "has_critique": bool(critique)}
+    )
+    
     prompt = f"""
     You are a helpful assistant.
     User Request: {user_request}
@@ -79,17 +91,27 @@ async def handle_advice_request(event: dict, context: PlatformContext):
         print(f"   ❌ LLM Error: {e}")
         draft_text = "Error generating draft."
 
-    result = DraftResultPayload(
-        draft_text=draft_text,
-        original_request_id=event.get("id")
+    # Log drafted content to episodic memory
+    await context.memory.log_interaction(
+        agent_id="content-drafter",
+        user_id=DEFAULT_USER_ID,
+        role="assistant",
+        content=f"Draft created: {draft_text[:200]}...",
+        metadata={"event_id": event.get('id'), "draft_length": len(draft_text)}
     )
+
+    result_data = {
+        "draft_text": draft_text,
+        "original_request_id": event.get("id"),
+        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+    }
     
     print(f"   📝 Drafted: {draft_text[:50]}...")
     
     await context.bus.publish(
         event_type=ADVICE_RESULT_EVENT.event_name,
         topic=ADVICE_RESULT_EVENT.topic,
-        data=result.model_dump()
+        data=result_data
     )
 
 if __name__ == "__main__":

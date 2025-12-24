@@ -142,3 +142,74 @@ class EventQueryResponse(BaseDTO):
     """Response containing event definitions."""
     events: List[EventDefinition] = Field(..., description="List of event definitions.")
     count: int = Field(..., description="Number of events returned.")
+
+
+# =============================================================================
+# Memory Service DTOs
+# =============================================================================
+
+
+class SemanticMemoryCreate(BaseDTO):
+    """Create semantic memory."""
+    content: str = Field(..., description="Knowledge content")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+
+class SemanticMemoryResponse(BaseDTO):
+    """Semantic memory response."""
+    id: str = Field(..., description="Memory ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    content: str = Field(..., description="Knowledge content")
+    metadata: Dict[str, Any] = Field(..., description="Additional metadata")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+    score: Optional[float] = Field(None, description="Similarity score (for search results)")
+
+
+class EpisodicMemoryCreate(BaseDTO):
+    """Create episodic memory."""
+    agent_id: str = Field(..., description="Agent identifier")
+    role: str = Field(..., description="Role: user, assistant, system, tool")
+    content: str = Field(..., description="Interaction content")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+
+class EpisodicMemoryResponse(BaseDTO):
+    """Episodic memory response."""
+    id: str = Field(..., description="Memory ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    user_id: str = Field(..., description="User ID")
+    agent_id: str = Field(..., description="Agent identifier")
+    role: str = Field(..., description="Role")
+    content: str = Field(..., description="Interaction content")
+    metadata: Dict[str, Any] = Field(..., description="Additional metadata")
+    created_at: str = Field(..., description="Creation timestamp")
+    score: Optional[float] = Field(None, description="Similarity score (for search results)")
+
+
+class ProceduralMemoryResponse(BaseDTO):
+    """Procedural memory response."""
+    id: str = Field(..., description="Memory ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    user_id: str = Field(..., description="User ID")
+    agent_id: str = Field(..., description="Agent identifier")
+    trigger_condition: Optional[str] = Field(None, description="Trigger condition")
+    procedure_type: str = Field(..., description="Procedure type: system_prompt or few_shot_example")
+    content: str = Field(..., description="Procedure content")
+    created_at: str = Field(..., description="Creation timestamp")
+    score: Optional[float] = Field(None, description="Similarity score (for search results)")
+
+
+class WorkingMemorySet(BaseDTO):
+    """Set working memory value."""
+    value: Dict[str, Any] = Field(..., description="State value (JSON)")
+
+
+class WorkingMemoryResponse(BaseDTO):
+    """Working memory response."""
+    id: str = Field(..., description="Memory ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    plan_id: str = Field(..., description="Plan ID")
+    key: str = Field(..., description="State key")
+    value: Dict[str, Any] = Field(..., description="State value")
+    updated_at: str = Field(..., description="Last update timestamp")

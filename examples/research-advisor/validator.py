@@ -12,6 +12,9 @@ from events import (
 from capabilities import VALIDATION_CAPABILITY
 from llm_utils import get_llm_model, has_any_llm_key
 
+# Constants
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+
 # Create the Validator Worker
 validator = Worker(
     name="fact-checker",
@@ -45,6 +48,15 @@ async def handle_validation_request(event: dict, context: PlatformContext):
     
     draft_text = request.draft_text
     source_text = request.source_text
+    
+    # Log validation request to episodic memory
+    await context.memory.log_interaction(
+        agent_id="fact-checker",
+        user_id=DEFAULT_USER_ID,
+        role="user",
+        content=f"Validation request - Draft: {draft_text[:100]}... Source: {source_text[:100]}...",
+        metadata={"event_id": event.get('id')}
+    )
     
     prompt = f"""
     You are a fact checker.
@@ -83,19 +95,29 @@ async def handle_validation_request(event: dict, context: PlatformContext):
         is_valid = False
         critique = f"Validation failed due to error: {e}"
 
-    result = ValidationResultPayload(
-        is_valid=is_valid,
-        critique=critique,
-        original_request_id=event.get("id")
-    )
-    
+    # Log validation result to episodic memory
     status = "APPROVED" if is_valid else "REJECTED"
+    await context.memory.log_interaction(
+        agent_id="fact-checker",
+        user_id=DEFAULT_USER_ID,
+        role="assistant",
+        content=f"Validation {status}: {critique}",
+        metadata={"event_id": event.get('id'), "is_valid": is_valid}
+    )
+
+    result_data = {
+        "is_valid": is_valid,
+        "critique": critique,
+        "original_request_id": event.get("id"),
+        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+    }
+    
     print(f"   {status}: {critique}")
     
     await context.bus.publish(
         event_type=VALIDATION_RESULT_EVENT.event_name,
         topic=VALIDATION_RESULT_EVENT.topic,
-        data=result.model_dump()
+        data=result_data
     )
 
 if __name__ == "__main__":

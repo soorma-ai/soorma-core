@@ -17,6 +17,14 @@ from .models import (
     EventRegistrationResponse,
     EventQueryRequest,
     EventQueryResponse,
+    # Memory Service
+    SemanticMemoryCreate,
+    SemanticMemoryResponse,
+    EpisodicMemoryCreate,
+    EpisodicMemoryResponse,
+    ProceduralMemoryResponse,
+    WorkingMemorySet,
+    WorkingMemoryResponse,
 )
 
 from .events import (
@@ -52,6 +60,14 @@ __all__ = [
     "EventRegistrationResponse",
     "EventQueryRequest",
     "EventQueryResponse",
+    # Memory Service
+    "SemanticMemoryCreate",
+    "SemanticMemoryResponse",
+    "EpisodicMemoryCreate",
+    "EpisodicMemoryResponse",
+    "ProceduralMemoryResponse",
+    "WorkingMemorySet",
+    "WorkingMemoryResponse",
     # Event Topics
     "EventTopic",
     # Event Envelopes
@@ -68,4 +84,4 @@ __all__ = [
     "StreamConnectionInfo",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.5.0"

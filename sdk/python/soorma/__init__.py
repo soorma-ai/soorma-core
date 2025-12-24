@@ -40,7 +40,7 @@ Usage:
     worker.run()
 """
 
-__version__ = "0.3.0"
+__version__ = "0.5.0"
 
 # Core imports
 from .events import EventClient

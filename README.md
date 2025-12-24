@@ -99,8 +99,8 @@ soorma dev --build
 The fastest way to see Soorma in action:
 
 ```bash
-# Start infrastructure (Registry, NATS, Event Service)
-soorma dev --infra-only
+# Start infrastructure (Registry, NATS, Event Service, Memory Service, PostgreSQL)
+soorma dev
 
 # In separate terminals, run the example agents:
 python examples/hello-world/planner_agent.py
@@ -124,8 +124,11 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Start infrastructure and run your agent
+# Start infrastructure
 soorma dev
+
+# In another terminal, run your agent
+python -m my_agent.agent
 ```
 
 ### 📖 More Examples
@@ -142,10 +145,10 @@ For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see th
 | Service | Description | Status |
 | :--- | :--- | :--- |
 | **Gateway** | API Gateway & SSE Entrypoint | 🟡 Preview |
-| **Registry** | Service Discovery for Agents | 🟡 Preview |
-| **Event Service** | SSE Event Bus for Agent Choreography | 🟡 Preview |
+| **Registry** | Service Discovery for Agents | 🟢 v0.5.0 |
+| **Event Service** | SSE Event Bus for Agent Choreography | 🟢 v0.5.0 |
 | **Tracker** | Distributed State Machine | ⚪ Planned |
-| **Memory** | Vector & Semantic Memory Store | ⚪ Planned |
+| **Memory** | Vector & Semantic Memory Store (CoALA) | 🟢 v0.5.0 |
 
 ## 🤝 Contributing
 

@@ -65,9 +65,9 @@ Future versions will add a **Tracker Service** for:
 
 ## Setup
 
-1. **Start Soorma Platform** (Registry + Event Bus):
+1. **Start Soorma Platform** (Registry + Event Bus + Memory + PostgreSQL):
    ```bash
-   soorma dev --infra-only
+   soorma dev
    ```
 
 2. **Install dependencies**:
@@ -138,10 +138,12 @@ python client.py
 
 ## Example Flow
 
+### Single-Turn Interaction
+
 ```
 User: "Compare NATS vs Google Pub/Sub for event-driven architecture"
 
-📋 Planner receives GOAL
+📋 Planner receives GOAL (plan_id: 123e4567...)
    🔍 Discovers 4 events from Registry
    🤖 LLM reasons: "Need information first. Research event gathers data."
    📤 Publishes: agent.research.requested
@@ -159,10 +161,34 @@ User: "Compare NATS vs Google Pub/Sub for event-driven architecture"
    ✅ Completes with validated draft
 ```
 
+### Multi-Turn Conversation (Same Plan)
+
+The client generates a unique `plan_id` at startup and includes it in every goal. This enables:
+- **Context continuity**: Workflow state (research, drafts, validation) persists across interactions
+- **Follow-up questions**: "Now compare their pricing" uses existing research context
+- **Plan isolation**: Each client session is independent
+
+```
+🆔 Client starts with plan_id: 123e4567...
+
+User: "What is NATS messaging?"
+   → Plan 123e4567 completes with answer
+
+User: "How does it compare to Google Pub/Sub?"
+   → Plan 123e4567 retrieves existing research about NATS
+   → LLM can reference previous context
+   
+Restart client → New plan_id: 789abc...
+User: "What is NATS messaging?"
+   → Fresh plan 789abc, no previous context
+```
+
+**To start a new plan**: Simply restart the client. Each client session = one plan.
+
 ## Known Limitations
 
 - **No Tracker Service**: Lost events or timeouts are not detected
-- **In-Memory State**: Workflow state is lost on restart  
+- **Session-based plans**: Workflow state persists within a client session but is lost on restart (stored in Memory Service working memory keyed by plan_id)
 - **Single Planner**: No high-availability or load balancing
 
 A future example will introduce a **Tracker** agent for observability and reliability.

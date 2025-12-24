@@ -26,6 +26,7 @@ import logging
 import os
 
 from .events import EventClient
+from .memory import MemoryClient as MemoryServiceClient
 
 logger = logging.getLogger(__name__)
 
@@ -281,44 +282,51 @@ class MemoryClient:
     """
     Distributed State Management client.
     
-    Powered by: Redis + Vector DB (in production)
+    Powered by: Memory Service (PostgreSQL + pgvector)
     
-    Memory types:
+    Memory types (CoALA framework):
     - Procedural: How to do things (skills, procedures)
-    - Semantic: Facts and knowledge
-    - Episodic: Past experiences and events
-    - Working: Current task context
+    - Semantic: Facts and knowledge (RAG with vector search)
+    - Episodic: Past experiences and events (interaction history)
+    - Working: Current task context (plan-scoped state)
     
     Methods:
         retrieve(): Read shared memory
         store(): Persist agent state
         search(): Semantic memory lookup
-    
-    NOTE: Memory Service is not yet implemented. This client provides
-    a mock implementation that stores data in-memory for development.
+        log_interaction(): Store episodic memory
+        get_recent_history(): Retrieve recent interactions
+        get_relevant_skills(): Fetch procedural memories
     """
-    base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_URL", "http://localhost:8083"))
-    _http_client: Optional[httpx.AsyncClient] = field(default=None, repr=False)
-    # In-memory storage for development (when Memory Service is not available)
-    _local_store: Dict[str, Any] = field(default_factory=dict, repr=False)
-    _use_local: bool = field(default=True, repr=False)  # Use local store by default until service is implemented
+    base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
+    # Fallback in-memory storage for development (when Memory Service is not available)
+    _local_store: Dict[str, Any] = field(default_factory=dict, repr=False, init=False)
+    _use_local: bool = field(default=False, repr=False, init=False)  # Try service first, fallback to local
+    _client: Optional[MemoryServiceClient] = field(default=None, repr=False, init=False)
     
-    async def _ensure_client(self) -> httpx.AsyncClient:
-        if self._http_client is None:
-            self._http_client = httpx.AsyncClient()
-        return self._http_client
+    async def _ensure_client(self) -> MemoryServiceClient:
+        if self._client is None:
+            self._client = MemoryServiceClient(base_url=self.base_url)
+            # Test connection
+            try:
+                await self._client.health()
+                logger.info(f"Connected to Memory Service at {self.base_url}")
+            except Exception as e:
+                logger.warning(f"Memory Service unavailable, using local fallback: {e}")
+                self._use_local = True
+        return self._client
     
-    async def retrieve(self, key: str) -> Optional[Any]:
+    async def retrieve(self, key: str, plan_id: Optional[str] = None) -> Optional[Any]:
         """
-        Read shared memory by key.
+        Read shared memory by key (Working Memory).
         
         Args:
-            key: Memory key (e.g., "vehicle:123", "user:abc")
+            key: Memory key (e.g., "research_summary", "account_id")
+            plan_id: Plan ID for working memory scope (defaults to "default")
             
         Returns:
             Stored value if found, None otherwise
         """
-        # Use local store for development
         if self._use_local:
             value = self._local_store.get(key)
             logger.debug(f"Memory retrieve (local): {key} -> {value is not None}")
@@ -326,23 +334,22 @@ class MemoryClient:
         
         client = await self._ensure_client()
         try:
-            response = await client.get(
-                f"{self.base_url}/v1/memory/{key}",
-                timeout=10.0,
-            )
-            if response.status_code == 200:
-                return response.json().get("value")
-            return None
+            plan = plan_id or "default"
+            result = await client.get_plan_state(plan, key)
+            return result.value
         except Exception as e:
+            if "404" in str(e):
+                return None
             logger.debug(f"Memory retrieve failed, using local: {e}")
+            self._use_local = True
             return self._local_store.get(key)
     
     async def store(
         self,
         key: str,
         value: Any,
+        plan_id: Optional[str] = None,
         memory_type: str = "working",
-        ttl: Optional[int] = None,
     ) -> bool:
         """
         Persist agent state to shared memory.
@@ -350,13 +357,12 @@ class MemoryClient:
         Args:
             key: Memory key
             value: Value to store (will be JSON serialized)
+            plan_id: Plan ID for working memory scope (defaults to "default")
             memory_type: Type of memory (working, semantic, episodic, procedural)
-            ttl: Time-to-live in seconds (optional)
             
         Returns:
             True if store succeeded
         """
-        # Use local store for development
         if self._use_local:
             self._local_store[key] = value
             logger.debug(f"Memory store (local): {key}")
@@ -364,98 +370,204 @@ class MemoryClient:
         
         client = await self._ensure_client()
         try:
-            payload = {
-                "key": key,
-                "value": value,
-                "memory_type": memory_type,
-            }
-            if ttl:
-                payload["ttl"] = ttl
-            
-            response = await client.post(
-                f"{self.base_url}/v1/memory",
-                json=payload,
-                timeout=10.0,
-            )
-            return response.status_code in (200, 201)
+            plan = plan_id or "default"
+            if memory_type == "working":
+                await client.set_plan_state(plan, key, value)
+            elif memory_type == "semantic":
+                content = str(value)
+                await client.store_knowledge(content, metadata={"key": key})
+            else:
+                logger.warning(f"Unsupported memory_type for store(): {memory_type}")
+                return False
+            return True
         except Exception as e:
             logger.debug(f"Memory store failed, using local: {e}")
+            self._use_local = True
             self._local_store[key] = value
             return True
     
     async def search(
         self,
         query: str,
-        memory_type: Optional[str] = None,
-        limit: int = 10,
+        memory_type: str = "semantic",
+        limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
-        Semantic memory lookup.
+        Semantic memory lookup (vector search).
         
         Args:
             query: Natural language search query
-            memory_type: Filter by memory type (optional)
-            limit: Maximum results to return
+            memory_type: Type of memory ("semantic" or "episodic")
+            limit: Maximum results to return (1-50)
             
         Returns:
             List of matching memory entries with similarity scores
         """
-        # Local store doesn't support semantic search
         if self._use_local:
             logger.debug(f"Memory search (local): '{query}' - semantic search not available in dev mode")
             return []
         
         client = await self._ensure_client()
         try:
-            params = {"q": query, "limit": limit}
-            if memory_type:
-                params["type"] = memory_type
-            
-            response = await client.get(
-                f"{self.base_url}/v1/memory/search",
-                params=params,
-                timeout=10.0,
-            )
-            if response.status_code == 200:
-                return response.json()
-            return []
+            if memory_type == "semantic":
+                results = await client.search_knowledge(query, limit=limit)
+                return [
+                    {
+                        "id": r.id,
+                        "content": r.content,
+                        "metadata": r.metadata,
+                        "score": r.score,
+                        "created_at": r.created_at,
+                    }
+                    for r in results
+                ]
+            else:
+                logger.warning(f"Unsupported memory_type for search(): {memory_type}")
+                return []
         except Exception as e:
             logger.debug(f"Memory search failed: {e}")
+            self._use_local = True
             return []
     
-    async def delete(self, key: str) -> bool:
+    async def log_interaction(
+        self,
+        agent_id: str,
+        role: str,
+        content: str,
+        user_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         """
-        Delete a memory entry.
+        Log an interaction to episodic memory.
+        
+        Args:
+            agent_id: Agent identifier
+            role: Role (user, assistant, system, tool)
+            content: Interaction content
+            user_id: User identifier (required in single-tenant mode)
+            metadata: Optional metadata
+            
+        Returns:
+            True if log succeeded
+        """
+        if self._use_local:
+            logger.debug(f"Memory log_interaction (local): {agent_id} - not persisted")
+            return True
+        
+        client = await self._ensure_client()
+        try:
+            await client.log_interaction(agent_id, role, content, user_id, metadata)
+            return True
+        except Exception as e:
+            logger.debug(f"Memory log_interaction failed: {e}")
+            self._use_local = True
+            return False
+    
+    async def get_recent_history(
+        self,
+        agent_id: str,
+        user_id: str,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recent interaction history (context window).
+        
+        Args:
+            agent_id: Agent identifier
+            user_id: User identifier (required in single-tenant mode)
+            limit: Maximum number of results (1-100)
+            
+        Returns:
+            List of recent interactions ordered by recency
+        """
+        if self._use_local:
+            logger.debug(f"Memory get_recent_history (local): {agent_id} - not available in dev mode")
+            return []
+        
+        client = await self._ensure_client()
+        try:
+            results = await client.get_recent_history(agent_id, user_id, limit=limit)
+            return [
+                {
+                    "id": r.id,
+                    "role": r.role,
+                    "content": r.content,
+                    "metadata": r.metadata,
+                    "created_at": r.created_at,
+                }
+                for r in results
+            ]
+        except Exception as e:
+            logger.debug(f"Memory get_recent_history failed: {e}")
+            self._use_local = True
+            return []
+    
+    async def get_relevant_skills(
+        self,
+        agent_id: str,
+        context: str,
+        user_id: str,
+        limit: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get relevant procedural knowledge (skills, prompts, rules).
+        
+        Args:
+            agent_id: Agent identifier
+            context: Task/query context
+            user_id: User identifier (required in single-tenant mode)
+            limit: Maximum number of results (1-20)
+            
+        Returns:
+            List of relevant skills ordered by relevance
+        """
+        if self._use_local:
+            logger.debug(f"Memory get_relevant_skills (local): {agent_id} - not available in dev mode")
+            return []
+        
+        client = await self._ensure_client()
+        try:
+            results = await client.get_relevant_skills(agent_id, context, user_id, limit=limit)
+            return [
+                {
+                    "id": r.id,
+                    "procedure_type": r.procedure_type,
+                    "content": r.content,
+                    "trigger_condition": r.trigger_condition,
+                    "score": r.score,
+                }
+                for r in results
+            ]
+        except Exception as e:
+            logger.debug(f"Memory get_relevant_skills failed: {e}")
+            self._use_local = True
+            return []
+    
+    async def delete(self, key: str, plan_id: Optional[str] = None) -> bool:
+        """
+        Delete a memory entry (Working Memory).
         
         Args:
             key: Memory key to delete
+            plan_id: Plan ID for working memory scope (defaults to "default")
             
         Returns:
             True if deletion succeeded
         """
-        # Use local store for development
         if self._use_local:
             self._local_store.pop(key, None)
             logger.debug(f"Memory delete (local): {key}")
             return True
         
-        client = await self._ensure_client()
-        try:
-            response = await client.delete(
-                f"{self.base_url}/v1/memory/{key}",
-                timeout=10.0,
-            )
-            return response.status_code in (200, 204)
-        except Exception as e:
-            logger.debug(f"Memory delete failed, using local: {e}")
-            self._local_store.pop(key, None)
-            return True
+        # Note: Memory Service doesn't have a delete endpoint yet
+        logger.warning("Memory delete not implemented in Memory Service")
+        return False
     
     async def close(self) -> None:
-        """Close the HTTP client."""
-        if self._http_client:
-            await self._http_client.aclose()
-            self._http_client = None
+        """Close the Memory Service client connection."""
+        if self._client is not None:
+            await self._client.close()
+            self._client = None
 
 
 @dataclass

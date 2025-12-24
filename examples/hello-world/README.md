@@ -107,12 +107,15 @@ soorma dev --build
 ### 1. Start the dev infrastructure
 
 ```bash
-soorma dev --infra-only
+soorma dev
 ```
 
 This starts:
 - Event Service on http://localhost:8082
 - Registry Service on http://localhost:8081
+- Memory Service on http://localhost:8083
+- NATS on nats://localhost:4222
+- PostgreSQL on localhost:5432
 
 ### 2. Run each agent in separate terminals
 

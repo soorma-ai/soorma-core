@@ -51,7 +51,6 @@ class TestHelp:
         result = runner.invoke(app, ["dev", "--help"])
         output = strip_ansi(result.stdout)
         assert result.exit_code == 0
-        assert "--detach" in output
         assert "--stop" in output
         assert "--status" in output
         assert "--build" in output

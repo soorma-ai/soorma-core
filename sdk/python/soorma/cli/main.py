@@ -3,7 +3,7 @@ Soorma CLI - Main entry point.
 
 Commands:
     soorma init <name>  - Scaffold a new agent project
-    soorma dev          - Start local development stack (Registry + NATS)
+    soorma dev          - Start local development infrastructure
     soorma deploy       - Deploy to Soorma Cloud (coming soon)
 """
 
@@ -21,7 +21,7 @@ app = typer.Typer(
 
 # Register commands
 app.command(name="init", help="Scaffold a new agent project.")(init.init_project)
-app.command(name="dev", help="Start local development stack (Registry + NATS).")(dev.dev_stack)
+app.command(name="dev", help="Start local development infrastructure (Docker).")(dev.dev_stack)
 
 
 @app.command()

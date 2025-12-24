@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -13,11 +13,21 @@ COPY libs/soorma-common /app/soorma-common/
 # Copy registry service
 COPY services/registry /app/registry/
 
-# Build soorma-common
+# Build soorma-common (no deps, just the package)
 WORKDIR /app/soorma-common
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
-# Build registry service
+# Build registry service (no deps, just the package)
+WORKDIR /app/registry
+RUN pip wheel --no-deps --wheel-dir /app/wheels .
+
+# Download all dependencies as wheels (excluding the packages we just built)
+RUN pip wheel --wheel-dir /app/wheels . \
+    && rm -f /app/wheels/soorma_common-*.whl /app/wheels/registry_service-*.whl
+
+# Re-add our built packages (ensures we use local versions, not PyPI)
+WORKDIR /app/soorma-common
+RUN pip wheel --no-deps --wheel-dir /app/wheels .
 WORKDIR /app/registry
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
@@ -32,18 +42,9 @@ RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /
 # Copy wheels from builder
 COPY --from=builder /app/wheels /app/wheels
 
-# Install dependencies and the service
-RUN pip install --no-cache-dir \
-    fastapi>=0.104.0 \
-    "uvicorn[standard]>=0.24.0" \
-    "sqlalchemy[asyncio]>=2.0.0" \
-    aiosqlite>=0.19.0 \
-    asyncpg>=0.29.0 \
-    psycopg2-binary>=2.9.0 \
-    alembic>=1.12.0 \
-    pydantic-settings>=2.0.0 \
-    cachetools>=5.0.0 \
-    && pip install --no-cache-dir /app/wheels/*.whl \
+# Install all wheels (packages + dependencies)
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir --no-index --find-links=/app/wheels /app/wheels/soorma_common-*.whl /app/wheels/registry_service-*.whl \
     && rm -rf /app/wheels
 
 # Copy alembic config and migrations for database setup

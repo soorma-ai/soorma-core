@@ -5,6 +5,45 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### Added
+- **Memory Service**: Complete implementation of persistent memory layer for autonomous agents
+  - CoALA (Cognitive Architectures for Language Agents) framework with 4 memory types:
+    - Semantic Memory: Knowledge base with RAG and vector search
+    - Episodic Memory: User/Agent interaction history with temporal recall
+    - Procedural Memory: Dynamic prompts, rules, and skills
+    - Working Memory: Plan-scoped shared state for multi-agent collaboration
+  - PostgreSQL with pgvector for semantic search (HNSW indexes)
+  - Row Level Security (RLS) for native multi-tenancy isolation
+  - Automatic embedding generation via OpenAI API
+  - Local development mode with default tenant
+  - Production-ready JWT authentication middleware
+  - Comprehensive API documentation and architecture design docs
+- **Shared DTOs**: Memory Service DTOs in soorma-common library
+  - SemanticMemoryCreate, SemanticMemoryResponse
+  - EpisodicMemoryCreate, EpisodicMemoryResponse
+  - ProceduralMemoryResponse
+  - WorkingMemorySet, WorkingMemoryResponse
+- **SDK - Memory Client**: Full MemoryClient implementation in Python SDK with all CoALA memory types
+- **SDK - Dev CLI**: PostgreSQL + Memory Service added to Docker Compose infrastructure
+- **Services Overview**: Added comprehensive services/README.md documentation
+
+### Changed
+- **SDK - Dev CLI - Breaking**: Simplified `soorma dev` command
+  - Removed agent execution functionality (AgentRunner, find_agent_entry_point)
+  - Removed `--infra-only`, `--detach`, `--no-watch` flags
+  - Default behavior: start infrastructure only, agents run separately
+  - Added `--start` flag for consistency with `--stop`
+- **Registry Service**: Now uses PostgreSQL instead of SQLite in dev environment
+- **Documentation**: Updated all READMEs and examples for new CLI behavior
+
+### Fixed
+- **Dev CLI**: PostgreSQL healthcheck connection errors
+
+### Version Bumps
+- soorma-common: 0.5.0 across all dependent packages
+
 ## [0.4.0] - 2025-12-21
 
 ### Added

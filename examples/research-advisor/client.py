@@ -1,10 +1,19 @@
 import asyncio
 import sys
+import uuid
 from soorma import EventClient
 from events import GOAL_EVENT, FULFILLED_EVENT
 
 async def interactive_cli():
     """Run an interactive CLI for the Generic Agent System."""
+    
+    # Generate a unique plan_id for this client session
+    # All goals during this session will share the same plan_id for multi-turn conversations
+    # Restart the client to start a fresh plan
+    plan_id = str(uuid.uuid4())
+    print(f"\n🆔 Session Plan ID: {plan_id}")
+    print("   (All interactions in this session share the same plan for context continuity)")
+    print("   (Restart the client to begin a new plan)\n")
     
     client = EventClient(agent_id="client", source="client")
     
@@ -41,10 +50,12 @@ async def interactive_cli():
                 continue
             
             query = {
-                "goal": goal
+                "goal": goal,
+                "plan_id": plan_id  # Include session plan_id for multi-turn context
             }
             
             print(f"\n👤 User Goal: {query['goal']}")
+            print(f"   Plan ID: {plan_id}")
             
             # Reset event for this new request
             request_completed.clear()

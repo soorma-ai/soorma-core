@@ -1,0 +1,36 @@
+# Alembic Migration Scripts
+
+This directory contains database migration scripts managed by Alembic.
+
+## Creating a New Migration
+
+```bash
+# Auto-generate migration from model changes
+alembic revision --autogenerate -m "Description of changes"
+
+# Create empty migration
+alembic revision -m "Description of changes"
+```
+
+## Applying Migrations
+
+```bash
+# Upgrade to latest version
+alembic upgrade head
+
+# Upgrade to specific version
+alembic upgrade <revision>
+
+# Downgrade one version
+alembic downgrade -1
+```
+
+## Migration History
+
+```bash
+# Show current version
+alembic current
+
+# Show migration history
+alembic history
+```
