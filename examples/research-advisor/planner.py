@@ -17,6 +17,9 @@ from events import (
     DraftResultPayload, ValidationResultPayload
 )
 
+# Constants
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+
 # Create the Planner
 planner = Planner(
     name="agent-orchestrator",
@@ -33,12 +36,6 @@ async def startup():
 @planner.on_shutdown
 async def shutdown():
     print(f"\n🛑 {planner.name} shutting down. Goodbye!")
-
-# In-memory state for the demo (in production, use context.memory)
-workflow_state = {
-    "history": [],
-    "current": {}
-}
 
 # Circuit breaker settings
 MAX_TOTAL_ACTIONS = 10  # Maximum actions per goal to prevent infinite loops
@@ -58,16 +55,16 @@ def format_events_for_llm(events: List[dict]) -> str:
     return json.dumps(formatted, indent=2)
 
 
-async def get_next_action(trigger_context: str, workflow_data: dict, available_events: list) -> Dict[str, Any]:
+async def get_next_action(trigger_context: str, workflow_data: dict, available_events: list, context: PlatformContext) -> Dict[str, Any]:
     """
     Asks LLM to decide the next action based on:
     - The trigger context (what just happened)
-    - Current workflow state (accumulated data)
+    - Current workflow state (accumulated data from memory)
     - Available events discovered from registry (with their metadata)
     
     The LLM reasons autonomously based on event descriptions and schemas.
     """
-    current_state = workflow_data.get("current", {})
+    current_state = workflow_data
     action_history = current_state.get("action_history", [])
     
     # Circuit Breaker - prevent infinite loops
@@ -157,7 +154,7 @@ Example for complete (WRONG - do not do this):
         return {"action": "wait", "reasoning": f"LLM error: {e}"}
 
 
-async def execute_decision(decision: dict, available_events: list, context: PlatformContext):
+async def execute_decision(decision: dict, available_events: list, context: PlatformContext, plan_id: str):
     """Execute the LLM's decision - either publish an event or complete the workflow."""
     action = decision.get("action")
     reasoning = decision.get("reasoning", "No reasoning provided")
@@ -165,15 +162,25 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
     print(f"   🤖 LLM Decision: {action}")
     print(f"   🤖 Reasoning: {reasoning}")
     
+    # Log decision to episodic memory
+    await context.memory.log_interaction(
+        agent_id="agent-orchestrator",
+        user_id=DEFAULT_USER_ID,
+        role="assistant",
+        content=f"Decision: {action}. Reasoning: {reasoning}",
+        metadata={"plan_id": plan_id, "action": action}
+    )
+    
     if action == "publish":
         event_name = decision.get("event")
         payload = decision.get("payload", {})
         
-        # Track action in history
-        if 'current' in workflow_state:
-            if 'action_history' not in workflow_state['current']:
-                workflow_state['current']['action_history'] = []
-            workflow_state['current']['action_history'].append(event_name)
+        # Track action in working memory
+        workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
+        action_history = workflow_state.get('action_history', [])
+        action_history.append(event_name)
+        workflow_state['action_history'] = action_history
+        await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
         
         # Find the event definition to get the topic
         target_event = next((e for e in available_events if e["name"] == event_name), None)
@@ -193,10 +200,10 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
     elif action == "complete":
         result = decision.get("result", "")
         
-        # Safeguard: If LLM returned a vague result, use actual content from workflow state
-        current_state = workflow_state.get("current", {})
-        draft_text = current_state.get("draft", {}).get("draft_text", "")
-        research_summary = current_state.get("research", {}).get("summary", "")
+        # Safeguard: If LLM returned a vague result, use actual content from working memory
+        workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
+        draft_text = workflow_state.get("draft", {}).get("draft_text", "")
+        research_summary = workflow_state.get("research", {}).get("summary", "")
         
         # Check if result looks like a meta-description rather than actual content
         vague_indicators = [
@@ -218,6 +225,15 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
         print(f"   ✅ Workflow COMPLETE")
         print(f"   📝 Result: {result[:200]}...")  # Truncate for display
         
+        # Log completion to episodic memory
+        await context.memory.log_interaction(
+            agent_id="agent-orchestrator",
+            user_id=DEFAULT_USER_ID,
+            role="assistant",
+            content=f"Workflow completed. Result: {result[:200]}...",
+            metadata={"plan_id": plan_id, "status": "completed"}
+        )
+        
         # Publish the fulfillment event
         await context.bus.publish(
             event_type=FULFILLED_EVENT.event_name,
@@ -225,11 +241,10 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
             data={"result": result, "source": "Autonomous Orchestrator"}
         )
         
-        # Archive completed workflow
-        if workflow_state.get("current"):
-            workflow_state["current"]["final_result"] = result
-            workflow_state["history"].append(workflow_state["current"])
-            workflow_state["current"] = {}
+        # Archive completed workflow in working memory
+        workflow_state["final_result"] = result
+        workflow_state["status"] = "completed"
+        await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
             
     elif action == "wait":
         print(f"   ⏳ Waiting... ({reasoning})")
@@ -237,8 +252,11 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
         print(f"   ⚠️  Unknown action: {action}")
 
 
-async def discover_and_decide(trigger_context: str, context: PlatformContext):
+async def discover_and_decide(trigger_context: str, context: PlatformContext, plan_id: str):
     """Discover available events and let LLM decide next action."""
+    # Retrieve workflow state from working memory
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
+    
     async with EventToolkit(context.registry.base_url) as toolkit:
         # Discover all actionable events from the registry
         events = await toolkit.discover_actionable_events(topic="action-requests")
@@ -255,8 +273,8 @@ async def discover_and_decide(trigger_context: str, context: PlatformContext):
         
         print(f"   🔍 Discovered {len(events)} events: {[e['name'] for e in events]}")
         
-        decision = await get_next_action(trigger_context, workflow_state, events)
-        await execute_decision(decision, events, context)
+        decision = await get_next_action(trigger_context, workflow_state, events, context)
+        await execute_decision(decision, events, context, plan_id)
 
 
 @planner.on_event(GOAL_EVENT.event_name)
@@ -265,18 +283,28 @@ async def handle_goal(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received GOAL: {event.get('id')}")
     data = event.get("data", {})
     
-    # Archive previous workflow if any
-    if workflow_state.get("current"):
-        workflow_state["history"].append(workflow_state["current"])
+    # Use event ID as plan_id for workflow isolation
+    plan_id = event.get('id')
     
-    # Start new workflow
-    workflow_state['current'] = {
+    # Log goal to episodic memory
+    await context.memory.log_interaction(
+        agent_id="agent-orchestrator",
+        user_id=DEFAULT_USER_ID,
+        role="user",
+        content=data.get('goal', 'Unknown goal'),
+        metadata={"plan_id": plan_id, "event_type": "goal"}
+    )
+    
+    # Initialize workflow state in working memory
+    workflow_state = {
         'goal': data,
-        'action_history': []
+        'action_history': [],
+        'status': 'in_progress'
     }
+    await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
     trigger_context = f"New goal received from user: '{data.get('goal', 'Unknown goal')}'. This is the starting point - analyze available events to determine how to fulfill this goal."
-    await discover_and_decide(trigger_context, context)
+    await discover_and_decide(trigger_context, context, plan_id)
 
 
 @planner.on_event(RESEARCH_RESULT_EVENT.event_name)
@@ -285,13 +313,23 @@ async def handle_research_result(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received RESEARCH RESULT: {event.get('id')}")
     data = event.get("data", {})
     
-    if 'current' not in workflow_state:
-        workflow_state['current'] = {'action_history': []}
-    workflow_state['current']['research'] = data
+    # Extract plan_id from original request
+    plan_id = data.get('original_request_id', event.get('correlation_id', event.get('id')))
+    
+    # Store research in semantic memory for future reference
+    await context.memory.search(  # This will store if not exists
+        query=data.get('summary', ''),
+        memory_type="semantic"
+    )
+    
+    # Update workflow state in working memory
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
+    workflow_state['research'] = data
+    await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
     summary_preview = data.get('summary', '')[:100]
     trigger_context = f"Research completed. Summary: '{summary_preview}...'. Now have research data available. Determine next step to progress toward the goal."
-    await discover_and_decide(trigger_context, context)
+    await discover_and_decide(trigger_context, context, plan_id)
 
 
 @planner.on_event(ADVICE_RESULT_EVENT.event_name)
@@ -300,13 +338,18 @@ async def handle_advice_result(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received DRAFT RESULT: {event.get('id')}")
     data = event.get("data", {})
     
-    if 'current' not in workflow_state:
-        workflow_state['current'] = {'action_history': []}
-    workflow_state['current']['draft'] = data
+    # Extract plan_id from original request
+    plan_id = data.get('original_request_id', event.get('correlation_id', event.get('id')))
+    
+    # Update workflow state in working memory
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
+    workflow_state['draft'] = data
     
     # Clear any previous validation when new draft arrives
-    if 'validation' in workflow_state['current']:
-        del workflow_state['current']['validation']
+    if 'validation' in workflow_state:
+        del workflow_state['validation']
+    
+    await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
     draft_preview = data.get('draft_text', '')[:100]
     trigger_context = f"""Draft completed. Preview: '{draft_preview}...'. 
@@ -314,7 +357,7 @@ async def handle_advice_result(event: dict, context: PlatformContext):
 A draft response is now available in the workflow state. 
 
 IMPORTANT: Before delivering content to users, it should be validated/fact-checked against the source research to ensure accuracy. Look for a validation event in the discovered events that can verify the draft against the research data."""
-    await discover_and_decide(trigger_context, context)
+    await discover_and_decide(trigger_context, context, plan_id)
 
 
 @planner.on_event(VALIDATION_RESULT_EVENT.event_name)
@@ -323,19 +366,32 @@ async def handle_validation_result(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received VALIDATION RESULT: {event.get('id')}")
     data = event.get("data", {})
     
-    if 'current' not in workflow_state:
-        workflow_state['current'] = {'action_history': []}
-    workflow_state['current']['validation'] = data
+    # Extract plan_id from original request
+    plan_id = data.get('original_request_id', event.get('correlation_id', event.get('id')))
+    
+    # Update workflow state in working memory
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
+    workflow_state['validation'] = data
+    await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
     is_valid = data.get("is_valid", False)
     critique = data.get("critique", "No critique provided")
+    
+    # Log validation result to episodic memory
+    await context.memory.log_interaction(
+        agent_id="agent-orchestrator",
+        user_id=DEFAULT_USER_ID,
+        role="system",
+        content=f"Validation {'PASSED' if is_valid else 'FAILED'}. Critique: {critique}",
+        metadata={"plan_id": plan_id, "is_valid": is_valid}
+    )
     
     if is_valid:
         trigger_context = f"Validation PASSED. The draft has been approved. Critique: '{critique}'. The goal can now be fulfilled with the validated draft."
     else:
         trigger_context = f"Validation FAILED. Critique: '{critique}'. The draft needs improvement based on this feedback. Determine how to address the issues."
     
-    await discover_and_decide(trigger_context, context)
+    await discover_and_decide(trigger_context, context, plan_id)
 
 
 if __name__ == "__main__":

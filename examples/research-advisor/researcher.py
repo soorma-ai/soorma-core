@@ -11,6 +11,9 @@ from events import (
 from capabilities import RESEARCH_CAPABILITY
 from llm_utils import get_llm_model, has_any_llm_key
 
+# Constants
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+
 # Create the Researcher Worker
 researcher = Worker(
     name="web-researcher",
@@ -44,6 +47,15 @@ async def handle_research_request(event: dict, context: PlatformContext):
 
     query_topic = request.query
     extra_context = request.context
+    
+    # Log research request to episodic memory
+    await context.memory.log_interaction(
+        agent_id="web-researcher",
+        user_id=DEFAULT_USER_ID,
+        role="user",
+        content=f"Research request: {query_topic} (context: {extra_context})",
+        metadata={"event_id": event.get('id')}
+    )
     
     # Check if we should use real search
     use_real_search = has_any_llm_key()
@@ -89,6 +101,21 @@ async def handle_research_request(event: dict, context: PlatformContext):
         print("   ⚠️ No API keys found. Using mock response.")
         summary = f"Mock research findings for {query_topic}. This is a simulated response."
         source_url = "http://mock-source.com"
+
+    # Store research findings in semantic memory for future reference
+    await context.memory.search(  # Search will implicitly store if using semantic memory
+        query=summary,
+        memory_type="semantic"
+    )
+    
+    # Log research result to episodic memory
+    await context.memory.log_interaction(
+        agent_id="web-researcher",
+        user_id=DEFAULT_USER_ID,
+        role="assistant",
+        content=f"Research completed for '{query_topic}': {summary[:200]}...",
+        metadata={"event_id": event.get('id'), "source_url": source_url}
+    )
 
     # Publish Result
     result_payload = {
