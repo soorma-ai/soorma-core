@@ -38,7 +38,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U soorma"]
+      test: ["CMD-SHELL", "pg_isready -U soorma -d postgres"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -136,9 +136,9 @@ networks:
 POSTGRES_INIT_SQL = '''-- Initialize Soorma PostgreSQL Databases
 -- Creates separate databases for each service and enables pgvector extension
 
--- Create databases for each service
-CREATE DATABASE registry;
-CREATE DATABASE memory;
+-- Create databases for each service (only if they don't exist)
+SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\\gexec
+SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\\gexec
 
 -- Connect to registry database and enable pgvector
 \\c registry
