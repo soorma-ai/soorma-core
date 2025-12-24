@@ -134,6 +134,10 @@ jobs:
           echo "📦 Built soorma-common packages:"
           ls -la dist/
 
+      - name: Install Common package locally
+        run: |
+          pip install ${{ env.COMMON_PATH }}/dist/*.whl
+
       - name: Build SDK package
         working-directory: ${{ env.SDK_PATH }}
         run: |
