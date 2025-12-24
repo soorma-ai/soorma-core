@@ -45,9 +45,9 @@ soorma dev --build
 
 ```bash
 # Start infrastructure
-soorma dev --infra-only
+soorma dev
 
-# In separate terminals:
+# In separate terminals, run the agents:
 python examples/hello-world/planner_agent.py
 python examples/hello-world/worker_agent.py
 python examples/hello-world/tool_agent.py
@@ -75,18 +75,27 @@ pip install -e ".[dev]"
 ### Start Local Development
 
 ```bash
-# Start infrastructure and run your agent (auto-detects agent in current directory)
+# Start infrastructure (runs in background)
 soorma dev
+
+# In another terminal, run your agent
+python -m my_worker.agent
 ```
 
-Or run infrastructure separately:
+Infrastructure management:
 
 ```bash
-# Start only infrastructure
-soorma dev --infra-only
+# Start infrastructure (default)
+soorma dev --start
 
-# In another terminal, run your agent manually
-python -m my_worker.agent
+# Check status
+soorma dev --status
+
+# View logs
+soorma dev --logs
+
+# Stop infrastructure
+soorma dev --stop
 ```
 
 ### Deploy to Soorma Cloud

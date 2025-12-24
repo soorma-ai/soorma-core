@@ -65,9 +65,9 @@ Future versions will add a **Tracker Service** for:
 
 ## Setup
 
-1. **Start Soorma Platform** (Registry + Event Bus):
+1. **Start Soorma Platform** (Registry + Event Bus + Memory + PostgreSQL):
    ```bash
-   soorma dev --infra-only
+   soorma dev
    ```
 
 2. **Install dependencies**:

@@ -1,10 +1,9 @@
 """
 soorma dev - Start local development environment.
 
-Implements the "Infra in Docker, Code on Host" pattern:
-- Infrastructure (Registry, NATS) runs in Docker containers
-- User's agent code runs natively on the host with hot reload
-- Environment variables injected for connectivity
+Implements the "Infra in Docker" pattern:
+- Infrastructure (Registry, Event Service, Memory Service, NATS, PostgreSQL) runs in Docker containers
+- Developers run their agent code separately with injected environment variables
 """
 
 import os
@@ -350,50 +349,6 @@ def get_compose_cmd(compose_cmd: str, compose_file: Path) -> List[str]:
     return base_cmd
 
 
-def find_agent_entry_point() -> Optional[Path]:
-    """
-    Find the agent entry point in the current project.
-    
-    Looks for (in order):
-    1. soorma.yaml config with entry point
-    2. agent.py in package directory
-    3. main.py
-    4. app.py
-    """
-    cwd = Path.cwd()
-    
-    # Check for soorma.yaml config
-    config_file = cwd / "soorma.yaml"
-    if config_file.exists():
-        try:
-            import yaml
-            with open(config_file) as f:
-                config = yaml.safe_load(f)
-                if config and "entry" in config:
-                    entry = cwd / config["entry"]
-                    if entry.exists():
-                        return entry
-        except ImportError:
-            pass  # yaml not installed, skip config
-        except Exception:
-            pass
-    
-    # Look for package with agent.py
-    for item in cwd.iterdir():
-        if item.is_dir() and not item.name.startswith((".", "_")):
-            agent_file = item / "agent.py"
-            if agent_file.exists():
-                return agent_file
-    
-    # Fallback to common entry points
-    for name in ["agent.py", "main.py", "app.py"]:
-        entry = cwd / name
-        if entry.exists():
-            return entry
-    
-    return None
-
-
 def wait_for_infrastructure(registry_port: int, timeout: int = 60) -> bool:
     """Wait for infrastructure to be healthy."""
     import urllib.request
@@ -416,168 +371,11 @@ def wait_for_infrastructure(registry_port: int, timeout: int = 60) -> bool:
     return False
 
 
-class AgentRunner:
-    """
-    Runs the user's agent code with hot reload support.
-    
-    Watches for file changes and restarts the agent process.
-    """
-    
-    def __init__(
-        self,
-        entry_point: Path,
-        registry_url: str,
-        event_service_url: str,
-        memory_service_url: str,
-        nats_url: str,
-        watch: bool = True,
-    ):
-        self.entry_point = entry_point
-        self.registry_url = registry_url
-        self.event_service_url = event_service_url
-        self.memory_service_url = memory_service_url
-        self.nats_url = nats_url
-        self.watch = watch
-        self.process: Optional[subprocess.Popen] = None
-        self.running = False
-        self._file_mtimes: dict = {}
-    
-    def _get_env(self) -> dict:
-        """Get environment variables for the agent process."""
-        env = os.environ.copy()
-        env.update({
-            "SOORMA_REGISTRY_URL": self.registry_url,
-            "SOORMA_EVENT_SERVICE_URL": self.event_service_url,
-            "SOORMA_MEMORY_SERVICE_URL": self.memory_service_url,
-            "SOORMA_BUS_URL": self.nats_url,
-            "SOORMA_NATS_URL": self.nats_url,
-            "SOORMA_DEV_MODE": "true",
-        })
-        return env
-    
-    def _get_watch_files(self) -> List[Path]:
-        """Get list of Python files to watch for changes."""
-        files = []
-        cwd = Path.cwd()
-        
-        # Watch all .py files in the project
-        for py_file in cwd.rglob("*.py"):
-            # Skip hidden dirs, venv, __pycache__, .soorma
-            parts = py_file.parts
-            if any(p.startswith(".") or p == "__pycache__" or p in ("venv", ".venv", "node_modules") for p in parts):
-                continue
-            files.append(py_file)
-        
-        return files
-    
-    def _check_for_changes(self) -> bool:
-        """Check if any watched files have changed."""
-        changed = False
-        
-        for filepath in self._get_watch_files():
-            try:
-                mtime = filepath.stat().st_mtime
-                if filepath in self._file_mtimes:
-                    if mtime > self._file_mtimes[filepath]:
-                        typer.echo(f"   📝 Changed: {filepath.relative_to(Path.cwd())}")
-                        changed = True
-                self._file_mtimes[filepath] = mtime
-            except OSError:
-                pass
-        
-        return changed
-    
-    def _init_file_mtimes(self):
-        """Initialize file modification times."""
-        self._file_mtimes = {}
-        for filepath in self._get_watch_files():
-            try:
-                self._file_mtimes[filepath] = filepath.stat().st_mtime
-            except OSError:
-                pass
-    
-    def start_agent(self):
-        """Start the agent process."""
-        if self.process and self.process.poll() is None:
-            self.stop_agent()
-        
-        typer.echo(f"   🚀 Starting agent: {self.entry_point.name}")
-        
-        self.process = subprocess.Popen(
-            [sys.executable, str(self.entry_point)],
-            env=self._get_env(),
-            cwd=Path.cwd(),
-        )
-    
-    def stop_agent(self):
-        """Stop the agent process."""
-        if self.process:
-            typer.echo("   ⏹️  Stopping agent...")
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
-            self.process = None
-    
-    def restart_agent(self):
-        """Restart the agent process (hot reload)."""
-        typer.echo("")
-        typer.echo("   🔄 Hot reload triggered!")
-        self.stop_agent()
-        time.sleep(0.5)  # Brief pause for cleanup
-        self.start_agent()
-    
-    def run(self):
-        """Run the agent with optional hot reload."""
-        self.running = True
-        self._init_file_mtimes()
-        self.start_agent()
-        
-        if not self.watch:
-            # Just wait for the process
-            try:
-                self.process.wait()
-            except KeyboardInterrupt:
-                self.stop_agent()
-            return
-        
-        # Watch for changes
-        typer.echo("   👀 Watching for file changes...")
-        typer.echo("")
-        
-        try:
-            while self.running:
-                # Check if process crashed
-                if self.process and self.process.poll() is not None:
-                    exit_code = self.process.returncode
-                    if exit_code != 0:
-                        typer.echo(f"   ⚠️  Agent exited with code {exit_code}")
-                        typer.echo("   Waiting for file changes to restart...")
-                
-                # Check for file changes
-                if self._check_for_changes():
-                    self.restart_agent()
-                
-                time.sleep(1)  # Poll interval
-                
-        except KeyboardInterrupt:
-            pass
-        finally:
-            self.stop_agent()
-
-
 def dev_stack(
-    detach: bool = typer.Option(
+    start: bool = typer.Option(
         False,
-        "--detach", "-d",
-        help="Run infrastructure in background only (don't start agent).",
-    ),
-    no_watch: bool = typer.Option(
-        False,
-        "--no-watch",
-        help="Disable hot reload (don't watch for file changes).",
+        "--start",
+        help="Start the infrastructure stack (default behavior).",
     ),
     stop: bool = typer.Option(
         False,
@@ -593,11 +391,6 @@ def dev_stack(
         False,
         "--logs",
         help="Show logs from the infrastructure containers.",
-    ),
-    infra_only: bool = typer.Option(
-        False,
-        "--infra-only",
-        help="Only start infrastructure, don't run the agent.",
     ),
     registry_port: int = typer.Option(
         8081,
@@ -633,20 +426,29 @@ def dev_stack(
     """
     Start the local Soorma development environment.
     
-    This command implements the "Infra in Docker, Code on Host" pattern:
+    This command manages Docker infrastructure for Soorma services:
     
     \b
-    • Infrastructure (Registry, NATS) runs in Docker containers
-    • Your agent code runs natively on your machine
-    • File changes trigger automatic hot reload
-    • No docker build cycle - instant iteration!
+    • Registry Service - Agent & event registration
+    • Event Service - PubSub proxy (SSE + REST)
+    • Memory Service - Persistent memory layer (CoALA)
+    • NATS - Event bus with JetStream
+    • PostgreSQL - Database with pgvector
     
     \b
     Usage:
-      soorma dev           # Start infra + run agent with hot reload
+      soorma dev           # Start infrastructure (default)
+      soorma dev --start   # Explicitly start infrastructure
       soorma dev --build   # Build images first, then start
-      soorma dev --detach  # Start infra only (background)
+      soorma dev --status  # Check status
+      soorma dev --logs    # View logs
       soorma dev --stop    # Stop everything
+    
+    After starting, run your agent separately with these environment variables:
+      SOORMA_REGISTRY_URL=http://localhost:8081
+      SOORMA_EVENT_SERVICE_URL=http://localhost:8082
+      SOORMA_MEMORY_SERVICE_URL=http://localhost:8083
+      SOORMA_NATS_URL=nats://localhost:4222
     """
     # Check Docker availability
     compose_cmd = check_docker()
@@ -770,18 +572,7 @@ OPENAI_API_KEY={openai_api_key}
         subprocess.run(base_cmd + ["logs", "-f"], cwd=soorma_dir)
         raise typer.Exit(0)
     
-    # Find agent entry point (unless infra-only or detach)
-    entry_point = None
-    if not infra_only and not detach:
-        entry_point = find_agent_entry_point()
-        if not entry_point:
-            typer.echo("⚠️  No agent entry point found.", err=True)
-            typer.echo("   Looking for: agent.py, main.py, or app.py", err=True)
-            typer.echo("   Use --infra-only to start infrastructure without an agent.", err=True)
-            typer.echo("")
-            typer.echo("   Tip: Run 'soorma init my-agent' to create a new project.", err=True)
-            raise typer.Exit(1)
-    
+    # Default behavior is to start infrastructure (--start is explicit but not required)
     # Print banner
     typer.echo("")
     typer.echo("╭─────────────────────────────────────────────────────────╮")
@@ -828,56 +619,18 @@ OPENAI_API_KEY={openai_api_key}
     typer.echo("   ✓ Infrastructure ready!")
     typer.echo("")
     
-    # If detach or infra-only, we're done
-    if detach or infra_only:
-        typer.echo("✓ Infrastructure running in background.")
-        typer.echo("")
-        typer.echo("Useful commands:")
-        typer.echo("  soorma dev --status  # Check status")
-        typer.echo("  soorma dev --logs    # View logs")
-        typer.echo("  soorma dev --stop    # Stop stack")
-        typer.echo("")
-        typer.echo("To run your agent:")
-        typer.echo(f"  export SOORMA_REGISTRY_URL=http://localhost:{registry_port}")
-        typer.echo(f"  export SOORMA_EVENT_SERVICE_URL=http://localhost:{event_service_port}")
-        typer.echo(f"  export SOORMA_MEMORY_SERVICE_URL=http://localhost:{memory_service_port}")
-        typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
-        typer.echo("  python agent.py")
-        raise typer.Exit(0)
-    
-    # Run the agent with hot reload
-    typer.echo("🤖 Starting agent (native Python process)...")
-    typer.echo(f"   Entry point: {entry_point.relative_to(Path.cwd())}")
-    if not no_watch:
-        typer.echo("   Hot reload: enabled")
+    # Infrastructure is started - provide instructions for running agents
+    typer.echo("✓ Infrastructure running in background.")
     typer.echo("")
-    typer.echo("─" * 50)
-    typer.echo("Press Ctrl+C to stop")
-    typer.echo("─" * 50)
+    typer.echo("Useful commands:")
+    typer.echo("  soorma dev --status  # Check status")
+    typer.echo("  soorma dev --logs    # View logs")
+    typer.echo("  soorma dev --stop    # Stop stack")
     typer.echo("")
-    
-    # Create and run the agent
-    runner = AgentRunner(
-        entry_point=entry_point,
-        registry_url=f"http://localhost:{registry_port}",
-        event_service_url=f"http://localhost:{event_service_port}",
-        memory_service_url=f"http://localhost:{memory_service_port}",
-        nats_url=f"nats://localhost:{nats_port}",
-        watch=not no_watch,
-    )
-    
-    try:
-        runner.run()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        typer.echo("")
-        typer.echo("🛑 Stopping development environment...")
-        
-        # Stop infrastructure
-        subprocess.run(
-            base_cmd + ["down"],
-            cwd=soorma_dir,
-            capture_output=True,
-        )
-        typer.echo("✓ Done.")
+    typer.echo("To run your agent, set these environment variables:")
+    typer.echo(f"  export SOORMA_REGISTRY_URL=http://localhost:{registry_port}")
+    typer.echo(f"  export SOORMA_EVENT_SERVICE_URL=http://localhost:{event_service_port}")
+    typer.echo(f"  export SOORMA_MEMORY_SERVICE_URL=http://localhost:{memory_service_port}")
+    typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
+    typer.echo("  python agent.py")
+    raise typer.Exit(0)
