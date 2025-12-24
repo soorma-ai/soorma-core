@@ -3,6 +3,7 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy import text
 
 from memory_service.core.config import settings
 
@@ -44,8 +45,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def set_session_context(session: AsyncSession, tenant_id: str, user_id: str) -> None:
     """Set PostgreSQL session variables for RLS."""
     await session.execute(
-        f"SET app.current_tenant = '{tenant_id}'"
+        text(f"SET app.current_tenant = '{tenant_id}'")
     )
     await session.execute(
-        f"SET app.current_user = '{user_id}'"
+        text(f"SET app.current_user = '{user_id}'")
     )
