@@ -102,12 +102,18 @@ The fastest way to see Soorma in action:
 # Start infrastructure (Registry, NATS, Event Service, Memory Service, PostgreSQL)
 soorma dev
 
-# In separate terminals, run the example agents:
+# Run the example (one command):
+cd examples/hello-world
+bash start.sh  # Uses "World" by default
+# Or
+bash start.sh "Alice"  # Custom name
+```
+
+Or run agents manually in separate terminals:
+```bash
 python examples/hello-world/planner_agent.py
 python examples/hello-world/worker_agent.py
 python examples/hello-world/tool_agent.py
-
-# Submit a goal:
 python examples/hello-world/client.py
 ```
 

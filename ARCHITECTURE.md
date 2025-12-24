@@ -15,7 +15,7 @@ This repository (`soorma-core`) contains the **complete open-source foundation**
 | Component | Description |
 | :--- | :--- |
 | **SDK** | Python SDK for building agents (`pip install soorma-core`) |
-| **Services** | Registry, Event Service, and Gateway microservices |
+| **Services** | Registry, Event Service, Memory Service, and Gateway microservices |
 | **Libraries** | Common models and utilities |
 | **Examples** | Working examples demonstrating patterns |
 | **IaC** | Infrastructure as Code for self-hosting |
@@ -70,6 +70,26 @@ The platform provides infrastructure that connects agents:
   - Events are registered with rich metadata (description, purpose, schema)
   - Discovery API for finding available agents and events
   - TTL-based agent lifecycle tracking
+
+#### Memory Service
+* **Tech:** PostgreSQL with pgvector extension (mandatory - not SQLite compatible)
+* **Role:** Unified persistent memory layer implementing CoALA (Cognitive Architectures for Language Agents) framework with enterprise multi-tenancy
+* **Memory Types:**
+  - **Semantic Memory:** Factual knowledge shared across tenant (RAG with HNSW vector search)
+  - **Episodic Memory:** User/Agent interaction history with temporal recall
+  - **Procedural Memory:** Dynamic prompts, rules, and few-shot examples
+  - **Working Memory:** Plan-scoped shared state for multi-agent collaboration
+* **Security:**
+  - Row Level Security (RLS) enforces tenant isolation at database level
+  - Session variables (`app.current_tenant`, `app.current_user`) for policy enforcement
+  - UUID primary keys prevent enumeration attacks
+  - ON DELETE CASCADE for automatic data cleanup
+* **Features:**
+  - Internal embedding generation (OpenAI text-embedding-3-small or local models)
+  - HNSW indexes for sub-millisecond semantic search at scale
+  - JSONB metadata storage for flexible context
+  - Tenant/User replica tables synced from Identity Service for referential integrity
+* **Integration:** Accessed by Planners and Workers via HTTP API or SDK client. Local development uses Docker PostgreSQL with pgvector; production supports managed PostgreSQL instances.
 
 ### 2.3 Autonomous Choreography (Key Innovation)
 
@@ -128,6 +148,9 @@ soorma-core/                    # Open Source Repository (MIT)
 │   │   ├── src/                # FastAPI + NATS adapter
 │   │   └── test/               # Service tests
 │   │
+│   ├── memory/                 # Memory Service (state + embeddings)
+│   │   ├── src/                # Memory service implementation
+│   │   └── test/               # Memory service tests
 │   └── gateway/                # API Gateway (planned)
 │
 ├── examples/                   # Working Example Implementations

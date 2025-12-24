@@ -58,29 +58,29 @@ python -m memory_service.main
 
 ### Semantic Memory (Knowledge Base)
 
-- `POST /api/v1/memory/semantic` - Ingest knowledge chunk
+- `POST /v1/memory/semantic` - Ingest knowledge chunk
   - Body: `{ "content": "text", "metadata": {} }`
   - Automatically generates embeddings
-- `GET /api/v1/memory/semantic/search?q=query&limit=5` - Search knowledge base
+- `GET /v1/memory/semantic/search?q=query&limit=5` - Search knowledge base
   - Returns: Top K relevant knowledge chunks
 
 ### Episodic Memory (Experience)
 
-- `POST /api/v1/memory/episodic` - Log interaction
+- `POST /v1/memory/episodic` - Log interaction
   - Body: `{ "agent_id": "researcher-1", "role": "assistant", "content": "...", "metadata": {} }`
-- `GET /api/v1/memory/episodic/recent?agent_id=X&limit=10` - Recent history (context window)
-- `GET /api/v1/memory/episodic/search?agent_id=X&q=query&limit=5` - Long-term recall
+- `GET /v1/memory/episodic/recent?agent_id=X&limit=10` - Recent history (context window)
+- `GET /v1/memory/episodic/search?agent_id=X&q=query&limit=5` - Long-term recall
 
 ### Procedural Memory (Skills)
 
-- `GET /api/v1/memory/procedural/context?agent_id=X&q=query&limit=3` - Fetch relevant skills
+- `GET /v1/memory/procedural/context?agent_id=X&q=query&limit=3` - Fetch relevant skills
   - Returns: System prompts and few-shot examples matching the query
 
 ### Working Memory (Plan State)
 
-- `PUT /api/v1/memory/working/{plan_id}/{key}` - Set state variable
+- `PUT /v1/memory/working/{plan_id}/{key}` - Set state variable
   - Body: `{ "value": { "any": "json" } }`
-- `GET /api/v1/memory/working/{plan_id}/{key}` - Get state variable
+- `GET /v1/memory/working/{plan_id}/{key}` - Get state variable
 
 ## Configuration
 
@@ -92,7 +92,7 @@ Environment variables:
 | `IS_LOCAL_TESTING` | `true` | Use default tenant for local dev |
 | `DATABASE_URL` | (required) | Async PostgreSQL URL with asyncpg driver |
 | `SYNC_DATABASE_URL` | (derived) | Sync PostgreSQL URL for Alembic |
-| `OPENAI_API_KEY` | (required) | OpenAI API key for embeddings |
+| `OPENAI_API_KEY` | `""` (empty) | OpenAI API key for embeddings. **Note:** Service starts without this, but embedding operations (POST to semantic/episodic endpoints) will fail at runtime. |
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
 | `EMBEDDING_DIMENSIONS` | `1536` | Vector dimensions |
 | `DEFAULT_TENANT_ID` | `00000000-0000-0000-0000-000000000000` | Local dev tenant |

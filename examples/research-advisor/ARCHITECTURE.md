@@ -217,6 +217,198 @@ The Tracker will:
 
 This balances **autonomy** (LLM makes decisions) with **reliability** (guaranteed completion).
 
+---
+
+## Memory Architecture (CoALA Framework)
+
+This example demonstrates proper usage of the **CoALA** (Cognitive Architectures for Language Agents) memory framework with four distinct memory types:
+
+### Memory Type Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Memory Architecture                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐                   │
+│  │ SEMANTIC MEMORY │  │ WORKING MEMORY  │                   │
+│  │  (Knowledge)    │  │  (Plan State)   │                   │
+│  └─────────────────┘  └─────────────────┘                   │
+│         ↓                      ↓                            │
+│   Cross-Plan            Plan-Scoped                         │
+│   Persistent            Temporary                           │
+│                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐                   │
+│  │ EPISODIC MEMORY │  │ PROCEDURAL MEM  │                   │
+│  │  (History)      │  │  (Skills)       │                   │
+│  └─────────────────┘  └─────────────────┘                   │
+│         ↓                      ↓                            │
+│   User/Agent            User/Agent                          │
+│   Scoped                Scoped                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1. Semantic Memory - Cross-Plan Knowledge
+
+**Purpose**: Store facts and knowledge that should be reusable across all workflows.
+
+**Scope**: Global (accessible by any agent, any user, any plan)
+
+**Example in Researcher**:
+```python
+# Store research findings for future reuse
+await context.memory.store_knowledge(
+    content=summary,  # The actual research findings
+    metadata={"query_topic": query_topic, "source_url": source_url}
+)
+```
+
+**Use Case**: 6 months later, a different user asks "What are AI trends?" → Semantic search retrieves this research finding via vector similarity.
+
+**Why not Working Memory?** Working Memory is plan-scoped and deleted after workflow completes.
+
+**Why not Episodic Memory?** Episodic stores "who said what when" - not searchable knowledge.
+
+### 2. Working Memory - Plan-Scoped State
+
+**Purpose**: Store workflow state and intermediate data for the current plan execution.
+
+**Scope**: Plan-scoped (only accessible via `plan_id`, deleted after plan completes)
+
+**Example in Planner**:
+```python
+# Store workflow state for this specific plan
+workflow_state = {
+    "action_history": [...],
+    "research": {"summary": "...", "source_url": "..."},
+    "draft": {"draft_text": "...", "iteration": 1}
+}
+await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
+```
+
+**Use Case**: Planner needs to track what actions have been taken in **this workflow** to avoid loops and make informed decisions.
+
+**Why not Semantic Memory?** This is temporary state, not reusable knowledge.
+
+**Why not Episodic Memory?** This is structured state, not conversation history.
+
+### 3. Episodic Memory - Interaction History
+
+**Purpose**: Store user/agent interaction history for conversation context and audit trails.
+
+**Scope**: User + Agent scoped (tied to `user_id` and `agent_id`)
+
+**Example in Researcher**:
+```python
+# Log what the researcher did
+await context.memory.log_interaction(
+    agent_id="web-researcher",
+    user_id=DEFAULT_USER_ID,
+    role="assistant",
+    content=f"Research completed for '{query_topic}': {summary[:200]}...",
+    metadata={"event_id": event_id}
+)
+```
+
+**Use Case**: "What did the researcher do last week?" or conversation context windows.
+
+**Why not Semantic Memory?** This is about "who did what" not "what facts do we know".
+
+**Why not Working Memory?** This persists beyond plan completion for audit trails.
+
+### 4. Procedural Memory - Skills & Prompts
+
+**Purpose**: Store dynamic prompts, few-shot examples, and agent skills.
+
+**Scope**: User + Agent scoped (personalized behavior)
+
+**Example** (not used in this demo, but available):
+```python
+# Store a personalized skill for this user
+await context.memory.store_skill(
+    agent_id="researcher",
+    user_id=user_id,
+    trigger_condition="research on academic papers",
+    procedure_type="system_prompt",
+    content="Always prioritize peer-reviewed sources"
+)
+```
+
+**Use Case**: Personalize agent behavior per user without changing code.
+
+### Memory Pattern in Research Advisor
+
+```python
+# RESEARCHER WORKER
+async def on_research_request(event, context):
+    # 1. SEMANTIC: Check existing knowledge BEFORE expensive web search
+    existing = await context.memory.search_knowledge(query=topic, limit=3)
+    
+    if existing and len(existing) > 0:
+        # Reuse cached research - avoid duplicate web searches
+        summary = existing[0]['content']
+        url = existing[0]['metadata'].get('source_url', 'Previously researched')
+    else:
+        # No cached knowledge - perform new web search
+        summary, url = await do_web_search(topic)
+        
+        # Store NEW findings only (avoid duplicate storage)
+        await context.memory.store_knowledge(
+            content=summary,
+            metadata={"query_topic": topic, "source_url": url}
+        )
+    
+    # 2. WORKING: Always store in plan-scoped memory (cached or new)
+    await context.memory.store(
+        key=f"research_{topic}",
+        value={"summary": summary, "source_url": url},
+        plan_id=plan_id
+    )
+    
+    # 3. EPISODIC: Log interaction for audit trail
+    await context.memory.log_interaction(
+        agent_id="web-researcher",
+        user_id=user_id,
+        role="assistant",
+        content=f"Research completed: {summary[:200]}..."
+    )
+
+
+# PLANNER AGENT
+async def on_research_result(event, context):
+    # 1. SEMANTIC: Store findings for future discovery
+    await context.memory.store_knowledge(content=summary, metadata={...})
+    
+    # 2. WORKING: Update plan state with full structured data
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id)
+    workflow_state['research'] = full_research_data
+    await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
+    
+    # 3. EPISODIC: Log planner decision
+    await context.memory.log_interaction(
+        agent_id="planner",
+        user_id=user_id,
+        role="assistant",
+        content=f"Decision: Proceeding to draft based on research"
+    )
+```
+
+### Memory Design Principles
+
+1. **Semantic for Facts**: If it's knowledge that should be discoverable later → Semantic
+2. **Working for State**: If it's temporary plan execution state → Working
+3. **Episodic for History**: If it's "who did what when" → Episodic
+4. **Procedural for Skills**: If it's "how to behave" → Procedural
+
+### Benefits of Multi-Memory Architecture
+
+- **Knowledge Reuse**: Research findings persist beyond workflow completion
+- **Plan Isolation**: Each workflow has its own state, no cross-contamination
+- **Auditability**: Full history of agent actions and decisions
+- **Personalization**: Future support for user-specific agent behaviors
+
+---
+
 ## Summary
 
 | Principle | Implementation |

@@ -20,6 +20,26 @@ from events import (
 # Constants
 DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
 
+"""
+Memory Usage Pattern in Planner:
+
+1. SEMANTIC MEMORY (store_knowledge):
+   - Stores facts/findings from worker results for future reuse
+   - Enables cross-plan knowledge retrieval
+   - Example: Store research summaries so future plans can find them
+
+2. WORKING MEMORY (store/retrieve with plan_id):
+   - Stores workflow_state scoped to current plan_id
+   - Contains: action_history, research data, draft data, validation results
+   - Only accessible by this plan - deleted after completion
+   - Critical for maintaining plan execution state
+
+3. EPISODIC MEMORY (log_interaction):
+   - Logs planner decisions and reasoning for audit trail
+   - Shows "what decisions did the planner make"
+   - Scoped to user_id + agent_id for conversation history
+"""
+
 # Create the Planner
 planner = Planner(
     name="agent-orchestrator",
@@ -123,9 +143,10 @@ These events were dynamically discovered from the registry. Each has metadata de
 ## PAYLOAD CONSTRUCTION
 When constructing payloads, carefully examine each event's payload_schema:
 - The "required" array lists which fields are mandatory
-- The "properties" object describes each field
+- The "properties" object describes each field and its purpose
 - Extract values from the workflow_state to populate the payload
 - Ensure ALL required fields are included in your payload
+- For optional fields, read their descriptions carefully - they often explain when to include them
 
 ## RESPONSE FORMAT
 Return a JSON object with:
@@ -343,8 +364,16 @@ async def handle_goal(event: dict, context: PlatformContext):
     # Build trigger context based on whether this is a continuation
     is_continuation = len(workflow_state.get('goals', [])) > 1
     if is_continuation:
-        prev_context = "Previous research/drafts are available in the workflow state as 'previous_research' and 'previous_draft' if needed for context. "
-        trigger_context = f"NEW GOAL in multi-turn conversation: '{data.get('goal', 'Unknown goal')}'. {prev_context}This is a fresh goal that requires new actions - analyze what information is needed to fulfill THIS specific goal."
+        trigger_context = f"""USER INPUT in multi-turn conversation: "{data.get('goal', 'Unknown goal')}"
+
+Previous research/drafts are available in the workflow state as 'previous_research' and 'previous_draft'.
+
+Analyze the user's input to determine if this is:
+- NEW QUESTION: Requires new research or information
+- FEEDBACK/CORRECTION: User is critiquing or correcting the previous response (treat as validation feedback and request revised draft with user's feedback as critique)
+- FOLLOW-UP: Related to previous topic but needs additional context
+
+Choose the appropriate action based on your analysis of the user's intent."""
     else:
         trigger_context = f"New goal received from user: '{data.get('goal', 'Unknown goal')}'. This is the starting point - analyze available events to determine how to fulfill this goal."
     
@@ -360,15 +389,19 @@ async def handle_research_result(event: dict, context: PlatformContext):
     # Extract plan_id - should be propagated from original request
     plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
     
-    # Store research in semantic memory for future reference
-    await context.memory.search(  # This will store if not exists
-        query=data.get('summary', ''),
-        memory_type="semantic"
-    )
+    # 1. SEMANTIC MEMORY: Store research summary for future cross-plan reuse
+    #    Any future workflow can find this via semantic search
+    research_summary = data.get('summary', '')
+    if research_summary:
+        await context.memory.store_knowledge(
+            content=research_summary,
+            metadata={"event_id": event.get('id'), "plan_id": plan_id, "source_url": data.get('source_url')}
+        )
     
-    # Update workflow state in working memory
+    # 2. WORKING MEMORY: Store full structured data in plan-scoped workflow state
+    #    Only this plan's agents can access this - deleted after plan completes
     workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
-    workflow_state['research'] = data
+    workflow_state['research'] = data  # Full research data with all fields
     await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
     summary_preview = data.get('summary', '')[:100]
@@ -433,7 +466,16 @@ async def handle_validation_result(event: dict, context: PlatformContext):
     if is_valid:
         trigger_context = f"Validation PASSED. The draft has been approved. Critique: '{critique}'. The goal can now be fulfilled with the validated draft."
     else:
-        trigger_context = f"Validation FAILED. Critique: '{critique}'. The draft needs improvement based on this feedback. Determine how to address the issues."
+        trigger_context = f"""Validation FAILED. The draft must be revised.
+
+CRITIQUE FROM VALIDATOR: {critique}
+
+REQUIRED ACTION: Request a NEW draft by publishing 'agent.draft.requested' with the following payload:
+- user_request: (from workflow state)
+- research_context: (from workflow state)  
+- critique: "{critique}" (MUST include this so drafter knows what to fix)
+
+DO NOT re-validate the same draft. DO NOT request more research. The drafter needs the critique to fix the issues."""
     
     await discover_and_decide(trigger_context, context, plan_id)
 

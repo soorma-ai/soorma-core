@@ -285,18 +285,28 @@ class MemoryClient:
     Powered by: Memory Service (PostgreSQL + pgvector)
     
     Memory types (CoALA framework):
-    - Procedural: How to do things (skills, procedures)
     - Semantic: Facts and knowledge (RAG with vector search)
     - Episodic: Past experiences and events (interaction history)
+    - Procedural: How to do things (skills, procedures)
     - Working: Current task context (plan-scoped state)
     
     Methods:
-        retrieve(): Read shared memory
-        store(): Persist agent state
-        search(): Semantic memory lookup
-        log_interaction(): Store episodic memory
-        get_recent_history(): Retrieve recent interactions
-        get_relevant_skills(): Fetch procedural memories
+        Semantic Memory:
+            store_knowledge(): Store facts/knowledge with automatic embeddings
+            search_knowledge(): Vector search for relevant knowledge
+        
+        Episodic Memory:
+            log_interaction(): Log agent/user interactions
+            get_recent_history(): Get recent interaction context window
+            search_interactions(): Vector search past interactions
+        
+        Procedural Memory:
+            get_relevant_skills(): Retrieve relevant skills/prompts
+        
+        Working Memory:
+            store(): Set plan-scoped state
+            retrieve(): Get plan-scoped state
+            delete(): Remove plan-scoped state
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
     # Fallback in-memory storage for development (when Memory Service is not available)
@@ -349,16 +359,14 @@ class MemoryClient:
         key: str,
         value: Any,
         plan_id: Optional[str] = None,
-        memory_type: str = "working",
     ) -> bool:
         """
-        Persist agent state to shared memory.
+        Persist plan-scoped state to Working Memory.
         
         Args:
-            key: Memory key
+            key: Memory key (e.g., "research_summary", "account_id")
             value: Value to store (will be JSON serialized)
             plan_id: Plan ID for working memory scope (defaults to "default")
-            memory_type: Type of memory (working, semantic, episodic, procedural)
             
         Returns:
             True if store succeeded
@@ -371,20 +379,78 @@ class MemoryClient:
         client = await self._ensure_client()
         try:
             plan = plan_id or "default"
-            if memory_type == "working":
-                await client.set_plan_state(plan, key, value)
-            elif memory_type == "semantic":
-                content = str(value)
-                await client.store_knowledge(content, metadata={"key": key})
-            else:
-                logger.warning(f"Unsupported memory_type for store(): {memory_type}")
-                return False
+            await client.set_plan_state(plan, key, value)
             return True
         except Exception as e:
             logger.debug(f"Memory store failed, using local: {e}")
             self._use_local = True
             self._local_store[key] = value
             return True
+    
+    async def store_knowledge(
+        self,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
+        """
+        Store knowledge in Semantic Memory with automatic embeddings.
+        
+        Args:
+            content: Knowledge content/facts to store
+            metadata: Optional metadata (source, tags, doc_id, etc.)
+            
+        Returns:
+            Memory ID if successful, None otherwise
+        """
+        if self._use_local:
+            logger.debug(f"Memory store_knowledge (local): semantic memory not available in dev mode")
+            return None
+        
+        client = await self._ensure_client()
+        try:
+            result = await client.store_knowledge(content, metadata=metadata or {})
+            return str(result.id)
+        except Exception as e:
+            logger.debug(f"Memory store_knowledge failed: {e}")
+            self._use_local = True
+            return None
+    
+    async def search_knowledge(
+        self,
+        query: str,
+        limit: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search Semantic Memory using vector similarity.
+        
+        Args:
+            query: Natural language search query
+            limit: Maximum results to return (1-50)
+            
+        Returns:
+            List of matching knowledge entries with similarity scores
+        """
+        if self._use_local:
+            logger.debug(f"Memory search_knowledge (local): semantic search not available in dev mode")
+            return []
+        
+        client = await self._ensure_client()
+        try:
+            results = await client.search_knowledge(query, limit=limit)
+            return [
+                {
+                    "id": r.id,
+                    "content": r.content,
+                    "metadata": r.metadata,
+                    "score": r.score,
+                    "created_at": r.created_at,
+                }
+                for r in results
+            ]
+        except Exception as e:
+            logger.debug(f"Memory search_knowledge failed: {e}")
+            self._use_local = True
+            return []
     
     async def search(
         self,
@@ -393,7 +459,7 @@ class MemoryClient:
         limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
-        Semantic memory lookup (vector search).
+        Generic memory search (DEPRECATED - use search_knowledge() or search_interactions()).
         
         Args:
             query: Natural language search query
@@ -403,29 +469,51 @@ class MemoryClient:
         Returns:
             List of matching memory entries with similarity scores
         """
+        if memory_type == "semantic":
+            return await self.search_knowledge(query, limit=limit)
+        else:
+            logger.warning(f"search() with memory_type='{memory_type}' is deprecated. Use search_knowledge() or search_interactions()")
+            return []
+    
+    async def search_interactions(
+        self,
+        agent_id: str,
+        query: str,
+        user_id: str,
+        limit: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search Episodic Memory using vector similarity (long-term recall).
+        
+        Args:
+            agent_id: Agent identifier
+            query: Natural language search query
+            user_id: User identifier (required in single-tenant mode)
+            limit: Maximum results to return (1-50)
+            
+        Returns:
+            List of matching interaction entries with similarity scores
+        """
         if self._use_local:
-            logger.debug(f"Memory search (local): '{query}' - semantic search not available in dev mode")
+            logger.debug(f"Memory search_interactions (local): not available in dev mode")
             return []
         
         client = await self._ensure_client()
         try:
-            if memory_type == "semantic":
-                results = await client.search_knowledge(query, limit=limit)
-                return [
-                    {
-                        "id": r.id,
-                        "content": r.content,
-                        "metadata": r.metadata,
-                        "score": r.score,
-                        "created_at": r.created_at,
-                    }
-                    for r in results
-                ]
-            else:
-                logger.warning(f"Unsupported memory_type for search(): {memory_type}")
-                return []
+            results = await client.search_interactions(agent_id, query, user_id, limit=limit)
+            return [
+                {
+                    "id": r.id,
+                    "role": r.role,
+                    "content": r.content,
+                    "metadata": r.metadata,
+                    "score": r.score,
+                    "created_at": r.created_at,
+                }
+                for r in results
+            ]
         except Exception as e:
-            logger.debug(f"Memory search failed: {e}")
+            logger.debug(f"Memory search_interactions failed: {e}")
             self._use_local = True
             return []
     
