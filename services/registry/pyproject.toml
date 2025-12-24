@@ -1,6 +1,6 @@
 [project]
 name = "registry-service"
-version = "0.5.0"
+version = "0.5.1"
 description = "Event and Agent Registry Service for Soorma platform"
 readme = "README.md"
 license = {text = "MIT"}

@@ -47,7 +47,15 @@ soorma dev --build
 # Start infrastructure
 soorma dev
 
-# In separate terminals, run the agents:
+# Run the example (one command):
+cd examples/hello-world
+bash start.sh  # Uses "World" by default
+# Or
+bash start.sh "Alice"  # Custom name
+```
+
+Or run agents manually in separate terminals:
+```bash
 python examples/hello-world/planner_agent.py
 python examples/hello-world/worker_agent.py
 python examples/hello-world/tool_agent.py
@@ -76,7 +84,7 @@ pip install -e ".[dev]"
 
 ```bash
 # Start infrastructure (runs in background)
-soorma dev
+soorma dev --build
 
 # In another terminal, run your agent
 python -m my_worker.agent
@@ -211,9 +219,25 @@ async def handler(task: TaskContext, context: PlatformContext):
     # Service Discovery
     tool = await context.registry.find("calculator")
     
-    # Shared Memory
+    # Working Memory (plan-scoped state)
     data = await context.memory.retrieve(f"cache:{task.data['key']}")
     await context.memory.store("result:123", {"value": 42})
+    
+    # Semantic Memory (knowledge base)
+    await context.memory.store_knowledge(
+        "Machine learning is a subset of AI",
+        metadata={"source": "textbook", "chapter": 1}
+    )
+    knowledge = await context.memory.search_knowledge("What is ML?", limit=3)
+    
+    # Episodic Memory (interaction history)
+    await context.memory.log_interaction(
+        agent_id="analyst",
+        role="assistant",
+        content="Analysis complete",
+        user_id=task.user_id
+    )
+    history = await context.memory.get_recent_history("analyst", task.user_id, limit=10)
     
     # Event Publishing
     await context.bus.publish("task.completed", {"result": "done"})
@@ -230,7 +254,7 @@ async def handler(task: TaskContext, context: PlatformContext):
 | Service | Purpose | Methods |
 |---------|---------|---------|
 | `context.registry` | Service Discovery | `find()`, `register()`, `query_schemas()` |
-| `context.memory` | Distributed State | `retrieve()`, `store()`, `search()` |
+| `context.memory` | Distributed State (CoALA) | **Semantic:** `store_knowledge()`, `search_knowledge()` <br> **Episodic:** `log_interaction()`, `get_recent_history()`, `search_interactions()` <br> **Procedural:** `get_relevant_skills()` <br> **Working:** `store()`, `retrieve()`, `delete()` |
 | `context.bus` | Event Choreography | `publish()`, `subscribe()`, `request()` |
 | `context.tracker` | Observability | `start_plan()`, `emit_progress()`, `complete_task()` |
 

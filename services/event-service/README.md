@@ -6,31 +6,31 @@ The Event Service is a smart proxy/gateway that decouples Soorma agents from the
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Agent                                │
+│                         Agent                               │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │           SDK EventClient                            │    │
-│  │  • publish() → POST /v1/events/publish               │    │
-│  │  • subscribe() → GET /v1/events/stream (SSE)         │    │
+│  │           SDK EventClient                           │    │
+│  │  • publish() → POST /v1/events/publish              │    │
+│  │  • subscribe() → GET /v1/events/stream (SSE)        │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Event Service (Proxy)                     │
+│                    Event Service (Proxy)                    │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  FastAPI Endpoints                                   │    │
-│  │  • POST /v1/events/publish                           │    │
-│  │  • GET /v1/events/stream?topics=research.*           │    │
+│  │  FastAPI Endpoints                                  │    │
+│  │  • POST /v1/events/publish                          │    │
+│  │  • GET /v1/events/stream?topics=research.*          │    │
 │  └─────────────────────────────────────────────────────┘    │
-│                              │                               │
-│                              ▼                               │
+│                              │                              │
+│                              ▼                              │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Adapter Interface                                   │    │
-│  │  • publish(topic, message)                           │    │
-│  │  • subscribe(topic, callback)                        │    │
+│  │  Adapter Interface                                  │    │
+│  │  • publish(topic, message)                          │    │
+│  │  • subscribe(topic, callback)                       │    │
 │  └─────────────────────────────────────────────────────┘    │
-│           │                 │                  │             │
-│           ▼                 ▼                  ▼             │
+│           │                 │                 │             │
+│           ▼                 ▼                 ▼             │
 │  ┌────────────┐  ┌────────────────┐  ┌──────────────┐       │
 │  │   NATS     │  │  Google PubSub │  │    Kafka     │       │
 │  │  Adapter   │  │    Adapter     │  │   Adapter    │       │

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-12-24
+
+### Added
+- **Memory Client API**: Clean CoALA-compliant methods for memory operations
+  - `store_knowledge(content, metadata)`: Store facts in Semantic Memory
+  - `search_knowledge(query, limit)`: Vector search with similarity scores
+  - `search_interactions(agent_id, query, user_id, limit)`: Search Episodic Memory
+- **Tests**: 22 new unit tests for memory client wrapper (33 total, 100% coverage)
+- **Documentation**: Updated README with CoALA memory examples and patterns
+
+### Changed
+- **Memory Client API - Breaking**: Simplified `store()` method signature
+  - Removed `memory_type` parameter - now only handles Working Memory
+  - Use type-specific methods (`store_knowledge`, `log_interaction`) for other memory types
+- **Memory Client API - Deprecated**: `search()` method deprecated in favor of `search_knowledge()`
+  - Still functional for backward compatibility, delegates to `search_knowledge()`
+  - Will be removed in version 1.0.0
+
+### Fixed
+- Memory client test coverage improved to 100% for all public methods
+
 ## [0.5.0] - 2025-12-23
 
 ### Added

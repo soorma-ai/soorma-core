@@ -1,6 +1,6 @@
 [project]
 name = "memory-service"
-version = "0.5.0"
+version = "0.5.1"
 description = "Memory Service for Soorma platform - persistent memory layer for autonomous agents"
 readme = "README.md"
 license = {text = "MIT"}

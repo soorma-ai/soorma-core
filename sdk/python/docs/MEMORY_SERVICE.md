@@ -97,16 +97,18 @@ from soorma import PlatformContext
 # Initialize context
 context = PlatformContext()
 
-# Store working memory
+# Working Memory (plan-scoped state)
 await context.memory.store("vehicle_id", "VIN-12345")
-
-# Retrieve working memory
 vehicle_id = await context.memory.retrieve("vehicle_id")
 
-# Search semantic memory
-results = await context.memory.search("How to replace brake pads?", limit=5)
+# Semantic Memory (knowledge base with vector search)
+await context.memory.store_knowledge(
+    content="Brake pads should be replaced every 50,000 miles",
+    metadata={"category": "maintenance"}
+)
+results = await context.memory.search_knowledge("How to replace brake pads?", limit=5)
 
-# Log interaction (requires user_id and agent_id)
+# Episodic Memory (interaction history)
 await context.memory.log_interaction(
     agent_id="assistant",
     user_id="user-123",  # Required parameter
@@ -115,14 +117,20 @@ await context.memory.log_interaction(
     metadata={"session_id": "abc-123"}
 )
 
-# Get recent history (requires agent_id and user_id)
 history = await context.memory.get_recent_history(
     agent_id="assistant",
     user_id="user-123",  # Required parameter
     limit=10
 )
 
-# Get relevant skills (requires agent_id and user_id)
+past_interactions = await context.memory.search_interactions(
+    agent_id="assistant",
+    user_id="user-123",
+    query="weather questions",
+    limit=5
+)
+
+# Procedural Memory (skills and prompts)
 skills = await context.memory.get_relevant_skills(
     agent_id="researcher",
     user_id="user-123",  # Required parameter

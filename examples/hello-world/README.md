@@ -117,13 +117,31 @@ This starts:
 - NATS on nats://localhost:4222
 - PostgreSQL on localhost:5432
 
-### 2. Run each agent in separate terminals
+### 2. Run the example
 
-From the `soorma-core` root directory:
+**Option A: The Easy Way (One Command)**
 
-**Terminal 1 - Start the Planner:**
+Run the magic command to start all agents with one script:
+
 ```bash
-python examples/hello-world/planner_agent.py
+cd examples/hello-world
+bash start.sh
+```
+
+Or with a custom name:
+```bash
+bash start.sh "Alice"
+```
+
+This starts all agents in the background and launches the interactive client. Press `Ctrl+C` to stop everything.
+
+**Option B: The Manual Way (Debug Mode)**
+
+If you want to see logs for each agent separately, open separate terminals:
+
+**Terminal 1 - Start the Tool:**
+```bash
+python examples/hello-world/tool_agent.py
 ```
 
 **Terminal 2 - Start the Worker:**
@@ -131,9 +149,12 @@ python examples/hello-world/planner_agent.py
 python examples/hello-world/worker_agent.py
 ```
 
-### 3. Submit a goal
+**Terminal 3 - Start the Planner:**
+```bash
+python examples/hello-world/planner_agent.py
+```
 
-**Terminal 3 - Run the client:**
+**Terminal 4 - Run the client:**
 ```bash
 python examples/hello-world/client.py "World"
 ```

@@ -110,6 +110,7 @@ Future versions will add a **Tracker Service** for:
 Run the magic command to start all agents with one script:
 
 ```bash
+cd examples/research-advisor
 bash start.sh
 ```
 

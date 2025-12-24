@@ -37,7 +37,7 @@ RESEARCH_RESULT_EVENT = EventDefinition(
 class DraftRequestPayload(BaseModel):
     user_request: str = Field(..., description="The user's original request")
     research_context: str = Field(..., description="Relevant information found by research")
-    critique: Optional[str] = Field(None, description="Critique from previous validation attempt")
+    critique: Optional[str] = Field(None, description="Feedback from validator if draft was previously rejected. Include this when requesting a revised draft so the drafter knows what to fix.")
 
 class DraftResultPayload(BaseModel):
     draft_text: str = Field(..., description="The proposed response or advice")
@@ -46,7 +46,7 @@ class DraftResultPayload(BaseModel):
 ADVICE_REQUEST_EVENT = EventDefinition(
     event_name="agent.draft.requested",
     topic=EventTopic.ACTION_REQUESTS,
-    description="Request to draft a response based on research.",
+    description="Request to draft a response based on research. If revising a rejected draft, include validation critique in the payload.",
     payload_schema=DraftRequestPayload.model_json_schema(),
     response_schema=DraftResultPayload.model_json_schema()
 )

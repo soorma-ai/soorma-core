@@ -87,7 +87,7 @@ uvicorn <service_name>.main:app --reload --port <PORT>
 From the `soorma-core` root:
 
 ```bash
-soorma dev  # Starts all services via SDK CLI
+soorma dev --build  # Builds services from source for bleeding edge
 ```
 
 ## Service Communication

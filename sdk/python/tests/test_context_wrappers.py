@@ -25,6 +25,182 @@ class TestMemoryClientWrapper:
     """Tests for the MemoryClient wrapper in context.py."""
     
     @pytest.mark.asyncio
+    async def test_store_knowledge_with_service(self):
+        """Test store_knowledge() delegates to service client."""
+        # Setup
+        mock_client = AsyncMock(spec=MemoryServiceClient)
+        mock_response = SemanticMemoryResponse(
+            id="sem-123",
+            tenant_id="tenant-1",
+            content="Test knowledge",
+            metadata={"source": "test"},
+            created_at="2025-12-23T10:00:00Z",
+            updated_at="2025-12-23T10:00:00Z",
+            score=None
+        )
+        mock_client.store_knowledge = AsyncMock(return_value=mock_response)
+        
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._client = mock_client
+        wrapper._use_local = False
+        
+        # Execute
+        result = await wrapper.store_knowledge(
+            content="Test knowledge",
+            metadata={"source": "test"}
+        )
+        
+        # Verify
+        assert result == "sem-123"
+        mock_client.store_knowledge.assert_called_once_with(
+            "Test knowledge", metadata={"source": "test"}
+        )
+    
+    @pytest.mark.asyncio
+    async def test_store_knowledge_fallback(self):
+        """Test store_knowledge() returns None in local mode."""
+        # Setup
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._use_local = True
+        
+        # Execute
+        result = await wrapper.store_knowledge("Test knowledge")
+        
+        # Verify
+        assert result is None
+    
+    @pytest.mark.asyncio
+    async def test_search_knowledge_with_service(self):
+        """Test search_knowledge() delegates to service client."""
+        # Setup
+        mock_client = AsyncMock(spec=MemoryServiceClient)
+        mock_memory = SemanticMemoryResponse(
+            id="mem-1",
+            tenant_id="tenant-1",
+            content="Test content",
+            metadata={},
+            created_at="2025-12-23T10:00:00Z",
+            updated_at="2025-12-23T10:00:00Z",
+            score=0.95
+        )
+        mock_client.search_knowledge = AsyncMock(return_value=[mock_memory])
+        
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._client = mock_client
+        wrapper._use_local = False
+        
+        # Execute
+        results = await wrapper.search_knowledge(query="test query", limit=5)
+        
+        # Verify
+        assert len(results) == 1
+        assert results[0]["id"] == "mem-1"
+        assert results[0]["content"] == "Test content"
+        assert results[0]["score"] == 0.95
+        mock_client.search_knowledge.assert_called_once_with("test query", limit=5)
+    
+    @pytest.mark.asyncio
+    async def test_search_knowledge_fallback(self):
+        """Test search_knowledge() returns empty list in local mode."""
+        # Setup
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._use_local = True
+        
+        # Execute
+        results = await wrapper.search_knowledge(query="test query")
+        
+        # Verify
+        assert results == []
+    
+    @pytest.mark.asyncio
+    async def test_search_interactions_with_service(self):
+        """Test search_interactions() delegates to service client."""
+        # Setup
+        mock_client = AsyncMock(spec=MemoryServiceClient)
+        mock_episode = EpisodicMemoryResponse(
+            id="ep-1",
+            tenant_id="tenant-1",
+            user_id="user-1",
+            agent_id="agent-1",
+            role="assistant",
+            content="Relevant interaction",
+            metadata={},
+            created_at="2025-12-23T10:00:00Z",
+            score=0.88
+        )
+        mock_client.search_interactions = AsyncMock(return_value=[mock_episode])
+        
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._client = mock_client
+        wrapper._use_local = False
+        
+        # Execute
+        results = await wrapper.search_interactions(
+            agent_id="agent-1",
+            query="relevant",
+            user_id="test-user",
+            limit=5
+        )
+        
+        # Verify
+        assert len(results) == 1
+        assert results[0]["id"] == "ep-1"
+        assert results[0]["content"] == "Relevant interaction"
+        assert results[0]["score"] == 0.88
+        mock_client.search_interactions.assert_called_once_with(
+            "agent-1", "relevant", "test-user", limit=5
+        )
+    
+    @pytest.mark.asyncio
+    async def test_search_interactions_fallback(self):
+        """Test search_interactions() returns empty list in local mode."""
+        # Setup
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._use_local = True
+        
+        # Execute
+        results = await wrapper.search_interactions(
+            agent_id="agent-1",
+            query="test",
+            user_id="test-user"
+        )
+        
+        # Verify
+        assert results == []
+    
+    @pytest.mark.asyncio
+    async def test_search_deprecated_delegates_to_search_knowledge(self):
+        """Test search() delegates to search_knowledge() for semantic memory."""
+        # Setup
+        mock_client = AsyncMock(spec=MemoryServiceClient)
+        mock_memory = SemanticMemoryResponse(
+            id="mem-1",
+            tenant_id="tenant-1",
+            content="Test content",
+            metadata={},
+            created_at="2025-12-23T10:00:00Z",
+            updated_at="2025-12-23T10:00:00Z",
+            score=0.95
+        )
+        mock_client.search_knowledge = AsyncMock(return_value=[mock_memory])
+        
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._client = mock_client
+        wrapper._use_local = False
+        
+        # Execute
+        results = await wrapper.search(
+            query="test query",
+            memory_type="semantic",
+            limit=5
+        )
+        
+        # Verify
+        assert len(results) == 1
+        assert results[0]["id"] == "mem-1"
+        mock_client.search_knowledge.assert_called_once_with("test query", limit=5)
+    
+    @pytest.mark.asyncio
     async def test_close_with_client(self):
         """Test closing MemoryClient when client exists."""
         # Setup
