@@ -51,10 +51,10 @@ def upgrade() -> None:
     # Enable RLS on users
     op.execute('ALTER TABLE users ENABLE ROW LEVEL SECURITY')
 
-    # Insert default user for local development
+    # Insert default user for local development (same UUID as default tenant for simplicity)
     op.execute("""
         INSERT INTO users (id, tenant_id, username) 
-        VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'default-user')
+        VALUES ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'default-user')
         ON CONFLICT DO NOTHING
     """)
 

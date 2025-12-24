@@ -121,7 +121,8 @@ async def handle_research_request(event: dict, context: PlatformContext):
     result_payload = {
         "summary": summary,
         "source_url": source_url,
-        "original_request_id": event.get("id")
+        "original_request_id": event.get("id"),
+        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
     }
     
     print(f"   📤 Publishing results for: {query_topic}")

@@ -105,18 +105,19 @@ async def handle_validation_request(event: dict, context: PlatformContext):
         metadata={"event_id": event.get('id'), "is_valid": is_valid}
     )
 
-    result = ValidationResultPayload(
-        is_valid=is_valid,
-        critique=critique,
-        original_request_id=event.get("id")
-    )
+    result_data = {
+        "is_valid": is_valid,
+        "critique": critique,
+        "original_request_id": event.get("id"),
+        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+    }
     
     print(f"   {status}: {critique}")
     
     await context.bus.publish(
         event_type=VALIDATION_RESULT_EVENT.event_name,
         topic=VALIDATION_RESULT_EVENT.topic,
-        data=result.model_dump()
+        data=result_data
     )
 
 if __name__ == "__main__":

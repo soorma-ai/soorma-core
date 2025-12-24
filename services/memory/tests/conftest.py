@@ -2,6 +2,7 @@
 
 import pytest
 import asyncio
+import os
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
@@ -48,3 +49,15 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
         await session.rollback()
+
+
+@pytest.fixture(autouse=True)
+def mock_env_vars(monkeypatch):
+    """Mock environment variables for testing."""
+    # Set test environment variables
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-api-key")
+    monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+    
+    # Prevent actual OpenAI API calls
+    monkeypatch.setenv("TESTING", "true")

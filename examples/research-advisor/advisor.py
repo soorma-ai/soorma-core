@@ -100,17 +100,18 @@ async def handle_advice_request(event: dict, context: PlatformContext):
         metadata={"event_id": event.get('id'), "draft_length": len(draft_text)}
     )
 
-    result = DraftResultPayload(
-        draft_text=draft_text,
-        original_request_id=event.get("id")
-    )
+    result_data = {
+        "draft_text": draft_text,
+        "original_request_id": event.get("id"),
+        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+    }
     
     print(f"   📝 Drafted: {draft_text[:50]}...")
     
     await context.bus.publish(
         event_type=ADVICE_RESULT_EVENT.event_name,
         topic=ADVICE_RESULT_EVENT.topic,
-        data=result.model_dump()
+        data=result_data
     )
 
 if __name__ == "__main__":

@@ -67,17 +67,20 @@ async def get_next_action(trigger_context: str, workflow_data: dict, available_e
     current_state = workflow_data
     action_history = current_state.get("action_history", [])
     
-    # Circuit Breaker - prevent infinite loops
-    if len(action_history) >= MAX_TOTAL_ACTIONS:
-        print(f"   🔌 Circuit Breaker: Max actions ({MAX_TOTAL_ACTIONS}) reached. Forcing completion.")
+    # Circuit Breaker - prevent infinite loops per goal
+    # Use current_goal_actions for multi-turn support (resets per new goal)
+    current_goal_actions = current_state.get("current_goal_actions", 0)
+    if current_goal_actions >= MAX_TOTAL_ACTIONS:
+        print(f"   🔌 Circuit Breaker: Max actions ({MAX_TOTAL_ACTIONS}) reached for current goal. Forcing completion.")
         # Try to return best available result
         draft_text = current_state.get("draft", {}).get("draft_text")
         research_summary = current_state.get("research", {}).get("summary")
-        result = draft_text or research_summary or "Process completed (max actions reached)."
+        previous_draft = current_state.get("previous_draft", {}).get("draft_text")
+        result = draft_text or research_summary or previous_draft or "Process completed (max actions reached)."
         return {
             "action": "complete",
             "result": result,
-            "reasoning": "Circuit breaker: maximum actions reached."
+            "reasoning": "Circuit breaker: maximum actions reached for current goal."
         }
 
     if not (os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")):
@@ -112,11 +115,17 @@ These events were dynamically discovered from the registry. Each has metadata de
 
 ## DECISION GUIDELINES
 - Choose events based on their DESCRIPTION and PURPOSE - they tell you what each event does
-- Match payload fields using data available in the workflow state
 - Progress logically: gather information → process/draft it → validate/fact-check → deliver results
 - IMPORTANT: If there is a validation/fact-checking event available, use it BEFORE completing - accuracy matters!
 - Only mark as "complete" AFTER validation has passed, or if no validation event is available
 - Do NOT repeat the same action if it won't provide new information
+
+## PAYLOAD CONSTRUCTION
+When constructing payloads, carefully examine each event's payload_schema:
+- The "required" array lists which fields are mandatory
+- The "properties" object describes each field
+- Extract values from the workflow_state to populate the payload
+- Ensure ALL required fields are included in your payload
 
 ## RESPONSE FORMAT
 Return a JSON object with:
@@ -175,18 +184,26 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
         event_name = decision.get("event")
         payload = decision.get("payload", {})
         
+        # Inject plan_id into payload for correlation tracking
+        # This allows result handlers to correlate responses back to the original workflow
+        payload['plan_id'] = plan_id
+        
         # Track action in working memory
         workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
         action_history = workflow_state.get('action_history', [])
         action_history.append(event_name)
         workflow_state['action_history'] = action_history
+        
+        # Increment current goal action counter for circuit breaker
+        workflow_state['current_goal_actions'] = workflow_state.get('current_goal_actions', 0) + 1
+        
         await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
         
         # Find the event definition to get the topic
         target_event = next((e for e in available_events if e["name"] == event_name), None)
         
         if target_event:
-            print(f"   📤 Publishing: {event_name}")
+            print(f"   📤 Publishing: {event_name} (plan_id: {plan_id})")
             print(f"   📦 Payload: {json.dumps(payload, indent=2)[:200]}...")  # Truncate for display
             await context.bus.publish(
                 event_type=event_name,
@@ -200,27 +217,20 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
     elif action == "complete":
         result = decision.get("result", "")
         
-        # Safeguard: If LLM returned a vague result, use actual content from working memory
+        # Always prefer actual content from working memory over LLM's result field
+        # The LLM's "result" might be reasoning/explanation, not the actual content
         workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
         draft_text = workflow_state.get("draft", {}).get("draft_text", "")
         research_summary = workflow_state.get("research", {}).get("summary", "")
         
-        # Check if result looks like a meta-description rather than actual content
-        vague_indicators = [
-            "draft is ready", "draft is prepared", "draft response is", 
-            "already prepared", "has been generated", "is complete",
-            "next step", "deliver this", "fulfill your"
-        ]
-        is_vague = any(indicator in result.lower() for indicator in vague_indicators)
-        
-        if is_vague or len(result) < 100:
-            # Use actual content instead
-            if draft_text:
-                print(f"   🔄 Using actual draft_text instead of LLM summary")
-                result = draft_text
-            elif research_summary:
-                print(f"   🔄 Using actual research summary instead of LLM summary")
-                result = research_summary
+        # Use actual content if available
+        if draft_text:
+            print(f"   📄 Using draft_text from workflow state")
+            result = draft_text
+        elif research_summary:
+            print(f"   📄 Using research summary from workflow state")
+            result = research_summary
+        # Otherwise fall back to LLM's result field (empty state)
         
         print(f"   ✅ Workflow COMPLETE")
         print(f"   📝 Result: {result[:200]}...")  # Truncate for display
@@ -238,7 +248,7 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
         await context.bus.publish(
             event_type=FULFILLED_EVENT.event_name,
             topic=FULFILLED_EVENT.topic,
-            data={"result": result, "source": "Autonomous Orchestrator"}
+            data={"result": result, "source": "Autonomous Orchestrator", "plan_id": plan_id}
         )
         
         # Archive completed workflow in working memory
@@ -279,12 +289,14 @@ async def discover_and_decide(trigger_context: str, context: PlatformContext, pl
 
 @planner.on_event(GOAL_EVENT.event_name)
 async def handle_goal(event: dict, context: PlatformContext):
-    """Handle new goal - start fresh workflow."""
+    """Handle new goal - can be part of multi-turn conversation."""
     print(f"\n📋 Planner received GOAL: {event.get('id')}")
     data = event.get("data", {})
     
-    # Use event ID as plan_id for workflow isolation
-    plan_id = event.get('id')
+    # Extract plan_id from goal payload (client provides for multi-turn conversations)
+    # Fallback to event ID for backward compatibility
+    plan_id = data.get('plan_id', event.get('id'))
+    print(f"   Using plan_id: {plan_id}")
     
     # Log goal to episodic memory
     await context.memory.log_interaction(
@@ -295,15 +307,47 @@ async def handle_goal(event: dict, context: PlatformContext):
         metadata={"plan_id": plan_id, "event_type": "goal"}
     )
     
-    # Initialize workflow state in working memory
-    workflow_state = {
-        'goal': data,
-        'action_history': [],
-        'status': 'in_progress'
-    }
+    # Retrieve existing workflow state (for multi-turn) or initialize new one
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id)
+    
+    if workflow_state:
+        print(f"   📚 Continuing existing plan with {len(workflow_state.get('action_history', []))} previous actions")
+        # Add new goal to history
+        workflow_state.setdefault('goals', []).append(data.get('goal'))
+        
+        # Reset action counter for new goal (circuit breaker)
+        workflow_state['current_goal_actions'] = 0
+        
+        # Clear draft and validation state for the new goal
+        # Keep research in context (may be relevant) but mark it as from previous goal
+        if 'draft' in workflow_state:
+            workflow_state['previous_draft'] = workflow_state.pop('draft')
+        if 'validation' in workflow_state:
+            del workflow_state['validation']
+        if 'research' in workflow_state:
+            workflow_state['previous_research'] = workflow_state.pop('research')
+    else:
+        print(f"   🆕 Starting new plan")
+        # Initialize fresh workflow state
+        workflow_state = {
+            'goals': [data.get('goal')],
+            'action_history': [],
+            'current_goal_actions': 0,  # Circuit breaker per goal
+            'status': 'in_progress'
+        }
+    
+    # Store the current goal
+    workflow_state['current_goal'] = data.get('goal')
     await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
-    trigger_context = f"New goal received from user: '{data.get('goal', 'Unknown goal')}'. This is the starting point - analyze available events to determine how to fulfill this goal."
+    # Build trigger context based on whether this is a continuation
+    is_continuation = len(workflow_state.get('goals', [])) > 1
+    if is_continuation:
+        prev_context = "Previous research/drafts are available in the workflow state as 'previous_research' and 'previous_draft' if needed for context. "
+        trigger_context = f"NEW GOAL in multi-turn conversation: '{data.get('goal', 'Unknown goal')}'. {prev_context}This is a fresh goal that requires new actions - analyze what information is needed to fulfill THIS specific goal."
+    else:
+        trigger_context = f"New goal received from user: '{data.get('goal', 'Unknown goal')}'. This is the starting point - analyze available events to determine how to fulfill this goal."
+    
     await discover_and_decide(trigger_context, context, plan_id)
 
 
@@ -313,8 +357,8 @@ async def handle_research_result(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received RESEARCH RESULT: {event.get('id')}")
     data = event.get("data", {})
     
-    # Extract plan_id from original request
-    plan_id = data.get('original_request_id', event.get('correlation_id', event.get('id')))
+    # Extract plan_id - should be propagated from original request
+    plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
     
     # Store research in semantic memory for future reference
     await context.memory.search(  # This will store if not exists
@@ -338,8 +382,8 @@ async def handle_advice_result(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received DRAFT RESULT: {event.get('id')}")
     data = event.get("data", {})
     
-    # Extract plan_id from original request
-    plan_id = data.get('original_request_id', event.get('correlation_id', event.get('id')))
+    # Extract plan_id - should be propagated from original request
+    plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
     
     # Update workflow state in working memory
     workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
@@ -366,8 +410,8 @@ async def handle_validation_result(event: dict, context: PlatformContext):
     print(f"\n📋 Planner received VALIDATION RESULT: {event.get('id')}")
     data = event.get("data", {})
     
-    # Extract plan_id from original request
-    plan_id = data.get('original_request_id', event.get('correlation_id', event.get('id')))
+    # Extract plan_id - should be propagated from original request
+    plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
     
     # Update workflow state in working memory
     workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}

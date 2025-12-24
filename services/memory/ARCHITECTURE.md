@@ -281,3 +281,49 @@ SET app.current_user = '<extracted_or_default_uuid>';
 - **Security (Anti-Enumeration):** Prevents attackers from guessing valid resource IDs (e.g., accessing tenant 101 after seeing tenant 100), adding a critical layer of defense-in-depth for multi-tenant isolation.
 - **Distributed Generation:** Allows the application layer and SDKs to generate IDs before database insertion, enabling better request tracing and distributed ID management.
 - **Write Distribution:** Random UUIDs distribute write operations evenly across the database index, preventing "hot spots" that occur with linearly incrementing keys in high-throughput systems.
+
+### 8.4 PostgreSQL Session Variables for RLS
+
+**Decision:** Use PostgreSQL custom configuration parameters (`app.current_tenant` and `app.current_user`) to pass security context into Row Level Security (RLS) policies.
+
+**Implementation:**
+
+Before each database query, the middleware executes:
+
+```sql
+SET app.current_tenant = '<tenant_uuid>';
+SET app.current_user = '<user_uuid>';
+```
+
+RLS policies then reference these values using `current_setting()`:
+
+```sql
+CREATE POLICY tenant_isolation_policy ON semantic_memory
+    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+
+CREATE POLICY user_agent_isolation ON episodic_memory
+    USING (
+        tenant_id = current_setting('app.current_tenant')::UUID 
+        AND user_id = current_setting('app.current_user')::UUID
+    );
+```
+
+**Rationale:**
+
+- **Database-Level Security:** RLS enforcement happens at the PostgreSQL engine level, not in application code. Even SQL injection attacks or application bugs cannot bypass tenant isolation—the database physically restricts row visibility based on the session variables.
+
+- **Zero Application Overhead:** Once session variables are set, no additional logic is needed in queries. Developers can write simple `SELECT * FROM episodic_memory` and the database automatically filters results to only authorized rows.
+
+- **Transparency:** Application code doesn't need to remember to add `WHERE tenant_id = ?` clauses to every query. The security layer is invisible to business logic, reducing cognitive load and preventing mistakes.
+
+- **Performance:** Session variables avoid the need for JOIN operations in permission checks. The database can use these values directly in index scans, making RLS policies nearly as fast as queries without security constraints.
+
+**Security Properties:**
+
+1. **Defense in Depth:** Even if authentication middleware fails to set session variables correctly, the RLS policy will block access (queries will return zero rows or fail).
+
+2. **Immutability Within Transaction:** Session variables persist for the duration of the database connection/transaction but reset automatically when the connection returns to the pool, preventing cross-request contamination.
+
+3. **Audit Trail:** All queries execute within the context of specific tenant/user IDs, enabling database-level audit logging if needed.
+
+**Code Reference:** See `services/memory/src/memory_service/core/database.py` (`set_session_context()`) and `services/memory/src/memory_service/core/middleware.py` for implementation details.

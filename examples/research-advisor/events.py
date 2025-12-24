@@ -92,10 +92,12 @@ VALIDATION_RESULT_EVENT = EventDefinition(
 
 class GoalPayload(BaseModel):
     goal: str = Field(..., description="The user's high-level goal or question")
+    plan_id: str = Field(..., description="Unique identifier for this conversation/plan. Client generates at startup for multi-turn interactions.")
 
 class FulfilledPayload(BaseModel):
     result: str = Field(..., description="The final answer or result")
     source: str = Field(..., description="Source of the information")
+    plan_id: str = Field(..., description="The plan_id from the original goal")
 
 GOAL_EVENT = EventDefinition(
     event_name="agent.goal.submitted",
