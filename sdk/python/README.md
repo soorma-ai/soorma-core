@@ -422,13 +422,31 @@ Client                Planner              Worker              Tool
   │<────────────────────│                    │                   │
 ```
 
+## Documentation
+
+### Core Concepts
+- [Event Architecture](docs/EVENT_ARCHITECTURE.md) - Event-driven agent choreography patterns
+- [Memory Service SDK](docs/MEMORY_SERVICE.md) - CoALA framework memory types and usage
+
+### API Reference
+- **Registry Client**: Service discovery and capability registration
+- **Event Client**: Publish/subscribe event choreography
+- **Memory Client**: Persistent memory for autonomous agents (Semantic, Episodic, Procedural, Working)
+- **Platform Context**: Unified API for all platform services
+
+### Examples
+- [Hello World](../../examples/hello-world/) - Basic multi-agent collaboration
+- [Research Advisor](../../examples/research-advisor/) - Advanced DisCo Trinity with autonomous choreography
+
 ## Roadmap
 
 * [x] **v0.1.0**: Core SDK & CLI (`soorma init`, `soorma dev`)
 * [x] **v0.1.1**: Event Service & DisCo Trinity (Planner, Worker, Tool)
 * [x] **v0.2.0**: Subscriber Groups & Unified Versioning
 * [x] **v0.3.0**: Structured Registration & LLM-friendly Discovery
-* [ ] **v0.4.0**: Memory Service & State Tracker
+* [x] **v0.4.0**: Multi-provider LLM support & Autonomous choreography improvements
+* [x] **v0.5.0**: Memory Service (CoALA framework) & PostgreSQL infrastructure
+* [ ] **v0.6.0**: State Tracker & Workflow observability
 * [ ] **v1.0.0**: Enterprise GA
 
 ## License
