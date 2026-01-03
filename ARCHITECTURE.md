@@ -202,8 +202,8 @@ We optimize for three user journeys:
 
 | Command | Description |
 |---------|-------------|
+| `soorma dev --build` | Builds local infrastructure (Registry + NATS + Memory + Event Service) |
 | `soorma init <name>` | Scaffolds a new agent project with boilerplate |
-| `soorma dev` | Starts local infrastructure (Registry + NATS + Event Service) |
 | `soorma deploy` | Deploys to Soorma Cloud (planned) |
 
 **Typical Workflow:**
@@ -211,12 +211,13 @@ We optimize for three user journeys:
 # 1. Install the SDK
 pip install soorma-core
 
-# 2. Create a new agent project
+# 2. Build local infrastructure
+export OPENAI_API_KEY=your_key_here
+soorma dev --build
+
+# 3. Create a new agent project
 soorma init my-agent
 cd my-agent
-
-# 3. Develop locally with live infrastructure
-soorma dev
 
 # 4. Your agent code runs natively, connects to Docker services
 python agent.py
@@ -269,18 +270,18 @@ graph TB
 
 2. **Your agent runs natively with environment variables:**
    ```bash
-   export SOORMA_REGISTRY_URL="http://localhost:8000"
-   export SOORMA_EVENT_SERVICE_URL="http://localhost:8001"
-   export SOORMA_MEMORY_SERVICE_URL="http://localhost:8002"
+   export SOORMA_REGISTRY_URL="http://localhost:8081"
+   export SOORMA_EVENT_SERVICE_URL="http://localhost:8082"
+   export SOORMA_MEMORY_SERVICE_URL="http://localhost:8083"
    python agent.py
    ```
 
-3. **Services are production-ready but local:**
-   - Registry: SQLite database in `~/.soorma/data/`
+3. **Services are production-ready running on local docker:**
+   - Registry Service: Agent and Event registry
    - NATS: JetStream message bus for reliable event delivery
    - Event Service: Proxy to NATS with SSE support
    - Memory Service: PostgreSQL with pgvector for semantic memory
-   - PostgreSQL: Persistent database for memory service
+   - PostgreSQL: Persistent database for services
 
 ### 4.2 The Integration Developer
 
@@ -536,10 +537,10 @@ Future Tracker service will:
 ### 9.1 Local Development
 
 ```bash
-soorma dev  # Starts all services in Docker
+soorma dev --build # Build and starts all services in Docker
 ```
 
-### 9.2 Single Server (Docker Compose)
+### 9.2 Single Server Docker Compose (Planned)
 
 ```bash
 cd iac/docker-compose
@@ -547,8 +548,9 @@ docker compose -f production.yml up -d
 ```
 
 Services:
-- Registry: Port 8000
-- Event Service: Port 8001
+- Registry Service: Port 8000
+- Memory Service: Port 8002
+- Event Service: Port 8082
 - NATS: Port 4222
 - Postgres: Port 5432 (optional)
 
@@ -612,10 +614,10 @@ git push origin feat/my-feature
 
 ## 11. Roadmap
 
-### Current (v0.4.0)
+### Current
 ✅ Core SDK with Agent primitives
 
-✅ Registry and Event Service
+✅ Registry, Memory and Event Service
 
 ✅ Dynamic event discovery
 
@@ -625,14 +627,13 @@ git push origin feat/my-feature
 
 ✅ Circuit breakers and safety features
 
-### Near Term (v0.5.0)
+### Near Term
 - [ ] State Tracker service
-- [ ] Memory service (vector DB integration)
 - [ ] Enhanced CLI (deployment, monitoring)
 - [ ] More examples (code generation, data analysis)
 - [ ] Performance optimizations
 
-### Future (v1.0.0)
+### Future
 - [ ] Production-ready Kubernetes deployment
 - [ ] Advanced observability (OpenTelemetry)
 - [ ] Multi-language SDK support
