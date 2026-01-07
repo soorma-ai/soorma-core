@@ -28,10 +28,14 @@ soorma-core/              ← Public open-source repository (MIT License)
 ├── services/             ← Open source microservices
 │   ├── registry/         ← Agent & Event registry service
 │   ├── event-service/    ← Event bus proxy/adapter
+│   ├── memory/           ← Memory service (CoALA framework)
 │   └── gateway/          ← API gateway (planned)
 ├── examples/             ← Example AI agent implementations
-│   ├── hello-world/      ← Basic agent example
-│   └── research-advisor/ ← Advanced autonomous choreography example
+│   ├── README.md         ← Complete learning path and pattern catalog
+│   ├── 01-hello-world/   ← Basic Worker pattern (event handling)
+│   ├── 02-events-simple/ ← Simple pub/sub pattern
+│   ├── 03-events-structured/ ← Structured events with EventDefinition
+│   └── research-advisor/ ← Advanced autonomous choreography
 └── iac/                  ← Infrastructure as Code (Terraform/Helm)
 ```
 
@@ -101,8 +105,10 @@ Soorma implements event-driven agent choreography:
 
 | Service | Tech | Role |
 |---------|------|------|
-| Event Service | FastAPI + NATS | Event bus proxy/adapter |
 | Registry | FastAPI + SQLite/Postgres | Agent/Event discovery & registration |
+| Event Service | FastAPI + NATS JetStream | Event bus proxy/adapter for pub/sub |
+| Memory Service | FastAPI + PostgreSQL + pgvector | CoALA memory (Semantic, Working, Episodic) |
+| Gateway | FastAPI | API Gateway & SSE Entrypoint (planned) |
 
 ### Development Pattern
 

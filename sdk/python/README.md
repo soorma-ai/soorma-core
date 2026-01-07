@@ -44,22 +44,15 @@ soorma dev --build
 ### 2. Run the Hello World Example
 
 ```bash
-# Start infrastructure
+# Terminal 1: Start infrastructure
 soorma dev
 
-# Run the example (one command):
-cd examples/hello-world
-bash start.sh  # Uses "World" by default
-# Or
-bash start.sh "Alice"  # Custom name
-```
+# Terminal 2: Start the worker
+cd examples/01-hello-world
+bash start.sh
 
-Or run agents manually in separate terminals:
-```bash
-python examples/hello-world/planner_agent.py
-python examples/hello-world/worker_agent.py
-python examples/hello-world/tool_agent.py
-python examples/hello-world/client.py
+# Terminal 3: Send a request
+python client.py Alice
 ```
 
 ### 3. Create a New Agent Project
@@ -400,24 +393,24 @@ result = await execute_ai_tool(
 The CLI implements an **"Infra in Docker, Code on Host"** pattern for optimal DX:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Your Machine                             │
-├─────────────────────────────────────────────────────────────┤
-│  Docker Containers (Infrastructure)                         │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────┐              │
-│  │ Registry │  │   NATS   │  │ Event Service │              │
-│  │  :8081   │  │  :4222   │  │    :8082      │              │
-│  └──────────┘  └──────────┘  └───────────────┘              │
-│        ▲            ▲               ▲                       │
-│        └────── localhost ───────────┘                       │
-│                     ▲                                       │
-│  ┌──────────────────┴──────────────────┐                    │
-│  │    Native Python (Your Agent)       │                    │
-│  │  • Hot reload on file change        │                    │
-│  │  • Full debugger support            │                    │
-│  │  • Auto-connects to Event Service   │                    │
-│  └─────────────────────────────────────┘                    │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│                         Your Machine                               │
+├────────────────────────────────────────────────────────────────────┤
+│  Docker Containers (Infrastructure)                                │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  ┌────────────────┐ │
+│  │ Registry │  │   NATS   │  │ Event Service │  │ Memory Service │ │
+│  │  :8000   │  │  :4222   │  │     :8001     │  │     :8002      │ │
+│  └──────────┘  └──────────┘  └───────────────┘  └────────────────┘ │
+│        ▲            ▲               ▲                   ▲          │
+│        └────────────── localhost ───────────────────────┘          │
+│                          ▲                                         │
+│  ┌───────────────────────┴───────────────────┐                     │
+│  │    Native Python (Your Agent)             │                     │
+│  │  • Hot reload on file change              │                     │
+│  │  • Full debugger support                  │                     │
+│  │  • Auto-connects to all services          │                     │
+│  └───────────────────────────────────────────┘                     │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 **Benefits:**
@@ -459,8 +452,8 @@ Client                Planner              Worker              Tool
 - **Platform Context**: Unified API for all platform services
 
 ### Examples
-- [Hello World](../../examples/hello-world/) - Basic multi-agent collaboration
-- [Research Advisor](../../examples/research-advisor/) - Advanced DisCo Trinity with autonomous choreography
+
+See the **[Examples Guide](../../examples/README.md)** for a complete catalog of examples with a progressive learning path.
 
 ## Roadmap
 

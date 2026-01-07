@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created `docs/TOPICS.md` documenting all 8 Soorma topics with usage guidance and decision tree
   - Updated `docs/EVENT_PATTERNS.md` with topics section
 
+### Removed
+- **Old examples/**: Removed legacy `examples/hello-world/` directory (replaced by `examples/01-hello-world/`)
+  - `01-hello-world/` is now a simple Worker pattern example focused on event handling basics and DX
+  - All documentation now references `01-hello-world` consistently
+  - Updated README.md, SDK README, ARCHITECTURE.md to accurately describe the example
+
 ### Changed
 - **ARCHITECTURE.md**: Refactored to focus exclusively on platform services
   - Removed developer experience sections (moved to DEVELOPER_GUIDE.md)

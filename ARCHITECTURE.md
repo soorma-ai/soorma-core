@@ -177,9 +177,15 @@ soorma-core/                    # Open Source Repository (MIT)
 │   └── gateway/                # API Gateway (planned)
 │
 ├── examples/                   # Working Example Implementations
-│   ├── hello-world/            # Basic agent example
+│   ├── README.md               # Complete learning path and catalog
+│   ├── 01-hello-world/         # Basic Worker pattern
 │   │   ├── README.md
-│   │   └── *.py                # Agent implementations
+│   │   ├── worker.py           # Simple event-handling worker
+│   │   ├── client.py           # Example client
+│   │   └── start.sh            # Launch script
+│   │
+│   ├── 02-events-simple/       # Pub/sub pattern
+│   ├── 03-events-structured/   # Structured events with EventDefinition
 │   │
 │   └── research-advisor/       # Advanced autonomous choreography
 │       ├── ARCHITECTURE.md     # Pattern deep dive
@@ -245,62 +251,42 @@ graph TB
 
 ### 4.2 Topics
 
-Soorma uses fixed topics for routing events:
+Soorma uses **8 fixed topics** for routing events. Topics are stable, well-defined channels that organize event flow.
 
-| Topic | Purpose | Example Events |
-|-------|---------|----------------|
-| `action-requests` | Agent action requests | `ticket.route`, `content.research` |
-| `action-results` | Action completion results | `ticket.routed`, `research.completed` |
-| `business-facts` | Domain events | `order.created`, `user.registered` |
-| `system-events` | Platform events | `agent.started`, `workflow.failed` |
-| `notification-events` | User notifications | `email.send`, `slack.notify` |
-| `billing-events` | Billing/usage tracking | `usage.recorded`, `invoice.generated` |
-| `plan-events` | Workflow orchestration | `plan.created`, `step.completed` |
-| `task-events` | Task assignments | `task.assigned`, `task.completed` |
+**See [docs/TOPICS.md](docs/TOPICS.md) for the complete topics reference.**
 
-See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md) for detailed event patterns.
+**See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md) for event-driven patterns and usage.**
 
 ### 4.3 Event Registration
 
-Events are defined as EventDefinition objects with Pydantic models:
+Agents declare events they consume and produce using EventDefinition objects. The SDK automatically registers these with the Registry.
 
 ```python
-from pydantic import BaseModel, Field
 from soorma_common import EventDefinition, EventTopic
-
-class ProcessDataPayload(BaseModel):
-    data_id: str = Field(..., description="Unique identifier")
-    operation: str = Field(..., description="Operation to perform")
 
 PROCESS_EVENT = EventDefinition(
     event_name="data.process.requested",
     topic=EventTopic.ACTION_REQUESTS,
     description="Request to process data",
-    payload_schema=ProcessDataPayload.model_json_schema()
+    payload_schema={...}  # Pydantic schema
 )
 
 worker = Worker(
     name="processor",
-    events_consumed=[PROCESS_EVENT],  # SDK auto-registers
+    events_consumed=[PROCESS_EVENT],
     events_produced=[...]
 )
 ```
 
+**See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md) for complete examples and patterns.**
+
 ### 4.4 Dynamic Discovery
 
-Agents discover capabilities at runtime:
+Agents can discover available events at runtime from the Registry, enabling dynamic workflows and LLM-based event selection.
 
-```python
-from soorma.ai.event_toolkit import EventToolkit
+**See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md#event-discovery) for discovery API and examples.**
 
-async with EventToolkit(registry_url) as toolkit:
-    events = await toolkit.discover_actionable_events(
-        topic="action-requests"
-    )
-    # Returns events with rich metadata for LLM reasoning
-```
-
-See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) for Autonomous Choreography pattern.
+**See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) for Autonomous Choreography pattern.**
 
 ---
 
