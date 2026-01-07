@@ -303,80 +303,9 @@ async def start_saga(event, context):
 
 ---
 
-## Memory Patterns
-
-### Semantic Memory (RAG)
-
-**Use when:** Store and retrieve knowledge
-
-**Example:** [04-memory-semantic](../examples/04-memory-semantic/) (coming in Phase 3)
-
-```python
-# Store knowledge with embeddings
-await context.memory.store(
-    key="product_docs",
-    data={"content": "..."},
-    embedding_text="Product documentation about features",
-    memory_type="semantic"
-)
-
-# Search by semantic similarity
-results = await context.memory.search(
-    query="How do I configure authentication?",
-    memory_type="semantic",
-    top_k=5
-)
-```
-
-**Best for:** Documentation, FAQs, knowledge bases
-
-### Working Memory (Plan State)
-
-**Use when:** Share state across agents in a workflow
-
-**Example:** [05-memory-working](../examples/05-memory-working/) (coming in Phase 3)
-
-```python
-from soorma.workflow import WorkflowState
-
-# In planner
-state = WorkflowState(context, plan_id)
-await state.set("research_data", {...})
-
-# In worker (same plan_id)
-state = WorkflowState(context, plan_id)
-research = await state.get("research_data")
-```
-
-**Best for:** Workflow coordination, intermediate results
-
-### Episodic Memory (Conversation History)
-
-**Use when:** Remember past interactions
-
-**Example:** [06-memory-episodic](../examples/06-memory-episodic/) (coming in Phase 3)
-
-```python
-# Log conversation turn
-await context.memory.store(
-    key=f"conversation_{user_id}",
-    data={"user": "...", "assistant": "..."},
-    memory_type="episodic",
-    tags=["conversation", user_id]
-)
-
-# Retrieve history
-history = await context.memory.retrieve_all(
-    tags=["conversation", user_id],
-    memory_type="episodic"
-)
-```
-
-**Best for:** Chatbots, customer support, follow-up handling
-
----
-
 ## Choosing a Pattern
+
+### Agent Orchestration Patterns
 
 | Your Requirement | Use This Pattern |
 |------------------|------------------|
@@ -384,9 +313,15 @@ history = await context.memory.retrieve_all(
 | Multi-step with known sequence | Trinity Pattern |
 | Complex, adaptive workflow | Autonomous Choreography |
 | Distributed transaction | Saga Pattern |
-| Store/retrieve facts | Semantic Memory |
-| Workflow state sharing | Working Memory |
-| Conversation history | Episodic Memory |
+
+### Memory Patterns
+
+For memory-related decisions, see [Memory Patterns](./MEMORY_PATTERNS.md):
+- **Semantic Memory** - Long-term knowledge storage (RAG)
+- **Working Memory** - Plan-scoped shared state
+- **Episodic Memory** - Conversation history
+
+The Memory Patterns guide includes comprehensive examples, comparison tables, and decision trees.
 
 ---
 
