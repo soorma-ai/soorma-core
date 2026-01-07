@@ -1,7 +1,10 @@
-# Soorma Core Architecture & Developer Guide
+# Soorma Core Platform Architecture
 
 **Context for AI Assistants (Copilot, Cursor):**
-This document defines the architectural principles, directory structure, and design philosophy of the `soorma-core` open-source repository. Use this as the primary reference when developing agents, contributing to the platform, or understanding the system design.
+This document defines the platform architecture, services, and infrastructure of the `soorma-core` open-source repository.
+
+**For Developer Experience:** See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)  
+**For Agent Patterns:** See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)
 
 ---
 
@@ -24,36 +27,12 @@ This repository (`soorma-core`) contains the **complete open-source foundation**
 
 ---
 
-## 2. The DisCo Architecture (Distributed Cognition)
+## 2. Platform Services
 
-Soorma implements the **DisCo** pattern, enabling AI agents to coordinate through event-driven choreography rather than hardcoded workflows.
+Soorma provides infrastructure services that connect agents through event-driven choreography.
 
-### 2.1 The "Trinity" of Agent Types
+### 2.1 Event Service (Message Bus)
 
-Developers using Soorma implement three types of agents:
-
-1.  **Planner:** 
-    - Strategic reasoning engine
-    - Orchestrates workflows by reasoning about events
-    - Discovers capabilities dynamically from the Registry
-    - Uses LLM to decide next actions based on event metadata
-
-2.  **Worker:** 
-    - Domain-specific cognitive node (e.g., Researcher, Coder, Analyst)
-    - Reacts to specific event types
-    - Produces results as events for other agents
-    - Stateless and autonomous
-
-3.  **Tool:** 
-    - Atomic, stateless capability (e.g., Calculator, API Search)
-    - Extends agent capabilities with deterministic functions
-    - Can be discovered and invoked dynamically
-
-### 2.2 The "Nervous System" (Control Plane)
-
-The platform provides infrastructure that connects agents:
-
-#### Event Service (Bus)
 * **Tech:** NATS JetStream with FastAPI proxy
 * **Pattern:** Async Pub/Sub with "At-Least-Once" delivery
 * **Role:** Choreography backbone - agents publish events, subscribe to topics
@@ -61,56 +40,100 @@ The platform provides infrastructure that connects agents:
   - SSE streaming for real-time event consumption
   - Queue groups for load balancing
   - Topic-based routing
+  - Persistent message storage (JetStream)
 
-#### Registry Service
-* **Tech:** FastAPI + SQLite (dev) / Postgres (prod)
+**Event Flow:**
+```mermaid
+graph TB
+    Agent1[Agent 1] -->|Publish| EventService[Event Service]
+    EventService <-->|Internal| NATS[NATS JetStream]
+    EventService -->|SSE Stream| Agent2[Agent 2]
+    EventService -->|SSE Stream| Agent3[Agent 3]
+    EventService -->|SSE Stream| Agent4[Agent 4]
+    
+    style EventService fill:#e1f5ff
+    style NATS fill:#d0d0d0
+```
+
+### 2.2 Registry Service
+
+* **Tech:** FastAPI + SQLite (dev) / PostgreSQL (prod)
 * **Role:** Service Discovery and capability registration
 * **Features:**
-  - Agents register their capabilities on startup
-  - Events are registered with rich metadata (description, purpose, schema)
+  - Agents register capabilities on startup
+  - Events registered with rich metadata (description, purpose, schema)
   - Discovery API for finding available agents and events
   - TTL-based agent lifecycle tracking
+  - Health checks and status monitoring
 
-#### Memory Service
-* **Tech:** PostgreSQL with pgvector extension (mandatory - not SQLite compatible)
-* **Role:** Unified persistent memory layer implementing CoALA (Cognitive Architectures for Language Agents) framework with enterprise multi-tenancy
+**Registration Flow:**
+```python
+from soorma import Worker
+from soorma_common import EventDefinition, EventTopic
+
+PROCESS_EVENT = EventDefinition(
+    event_name="data.process.requested",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Request to process data",
+    payload_schema={...}
+)
+
+worker = Worker(
+    name="processor",
+    events_consumed=[PROCESS_EVENT],
+    events_produced=[...]
+)
+# SDK automatically registers agent and events
+```
+
+### 2.3 Memory Service
+
+* **Tech:** PostgreSQL with pgvector extension (mandatory)
+* **Role:** Unified persistent memory layer implementing CoALA framework
 * **Memory Types:**
-  - **Semantic Memory:** Factual knowledge shared across tenant (RAG with HNSW vector search)
-  - **Episodic Memory:** User/Agent interaction history with temporal recall
-  - **Procedural Memory:** Dynamic prompts, rules, and few-shot examples
-  - **Working Memory:** Plan-scoped shared state for multi-agent collaboration
+  - **Semantic Memory:** Factual knowledge (RAG with HNSW vector search)
+  - **Episodic Memory:** User/Agent interaction history
+  - **Procedural Memory:** Dynamic prompts and rules
+  - **Working Memory:** Plan-scoped shared state (PostgreSQL-backed, Redis planned)
+
 * **Security:**
-  - Row Level Security (RLS) enforces tenant isolation at database level
-  - Session variables (`app.current_tenant`, `app.current_user`) for policy enforcement
-  - UUID primary keys prevent enumeration attacks
-  - ON DELETE CASCADE for automatic data cleanup
+  - Row Level Security (RLS) enforces tenant isolation
+  - Session variables for policy enforcement
+  - UUID primary keys prevent enumeration
+  - ON DELETE CASCADE for automatic cleanup
+
 * **Features:**
-  - Internal embedding generation (OpenAI text-embedding-3-small or local models)
-  - HNSW indexes for sub-millisecond semantic search at scale
-  - JSONB metadata storage for flexible context
-  - Tenant/User replica tables synced from Identity Service for referential integrity
-* **Integration:** Accessed by Planners and Workers via HTTP API or SDK client. Local development uses Docker PostgreSQL with pgvector; production supports managed PostgreSQL instances.
+  - Internal embedding generation (OpenAI or local models)
+  - HNSW indexes for sub-millisecond search
+  - JSONB metadata storage
+  - Multi-tenant architecture
 
-### 2.3 Autonomous Choreography (Key Innovation)
+**Memory API:**
+```python
+# Semantic Memory (knowledge storage)
+await context.memory.store_knowledge(content, metadata)
+results = await context.memory.search_knowledge(query, limit)
 
-Traditional agent systems hardcode workflow logic: "after step A, do step B." This is brittle.
+# Working Memory (workflow coordination)
+await context.memory.store(key, value, plan_id)
+value = await context.memory.retrieve(key, plan_id)
 
-**Soorma's Approach:**
-1. **Registration:** Agents register events they consume/produce with the Registry
-2. **Discovery:** Planner queries Registry to find available events at runtime
-3. **Reasoning:** LLM analyzes event metadata (descriptions, purposes, schemas)
-4. **Decision:** LLM selects the appropriate event and constructs the payload
-5. **Execution:** Event is published, triggering the next agent in the workflow
+# Episodic Memory (conversation history)
+await context.memory.log_interaction(agent_id, role, content, user_id)
+history = await context.memory.get_recent_history(agent_id, user_id, limit)
+```
 
-**Result:** Workflows emerge from agent decisions, not predefined sequences.
+See [docs/MEMORY_PATTERNS.md](docs/MEMORY_PATTERNS.md) for detailed usage patterns.
 
-**Benefits:**
-- Add new agents without changing orchestration code
-- Agents adapt to available capabilities dynamically
-- LLM reasons about best path based on context
-- No hardcoded workflow rules to maintain
+### 2.4 Gateway (Planned)
 
-**Example:** See `examples/research-advisor/` for a complete implementation.
+* **Tech:** FastAPI
+* **Role:** Unified API gateway for all services
+* **Features:**
+  - Authentication and authorization
+  - Rate limiting
+  - Request routing
+  - API versioning
 
 ---
 
@@ -190,154 +213,9 @@ soorma-core/                    # Open Source Repository (MIT)
 
 ---
 
-## 4. Developer Experience (DX)
+## 4. Event-Driven Architecture
 
-We optimize for three user journeys:
-
-### 4.1 The Solo Creator (Zero to Agent)
-
-**Install:** `pip install soorma-core`
-
-**CLI:** The `soorma` command is bundled in the SDK.
-
-| Command | Description |
-|---------|-------------|
-| `soorma init <name>` | Scaffolds a new agent project with boilerplate |
-| `soorma dev` | Starts local infrastructure (Registry + NATS + Event Service) |
-| `soorma deploy` | Deploys to Soorma Cloud (planned) |
-
-**Typical Workflow:**
-```bash
-# 1. Install the SDK
-pip install soorma-core
-
-# 2. Create a new agent project
-soorma init my-agent
-cd my-agent
-
-# 3. Develop locally with live infrastructure
-soorma dev
-
-# 4. Your agent code runs natively, connects to Docker services
-python agent.py
-```
-
-#### The "Infra in Docker, Code on Host" Pattern
-
-`soorma dev` implements a **hybrid execution model** for fast iteration:
-
-```mermaid
-graph TB
-    subgraph DevMachine["Developer's Machine"]
-        subgraph Docker["Docker Containers (Infrastructure)"]
-            Registry["Registry Service<br/>:8000"]
-            EventService["Event Service<br/>:8001"]
-            Memory["Memory Service<br/>:8002"]
-            NATS["NATS JetStream<br/>:4222"]
-            Postgres["PostgreSQL + pgvector<br/>:5432"]
-            
-            EventService <--> NATS
-            Memory --> Postgres
-        end
-        
-        subgraph Native["Native Python Process (Your Agent)"]
-            Agent["agent.py<br/>• Hot Reload on File Change<br/>• Full debugger support"]
-        end
-        
-        Agent -->|"HTTP API"| Registry
-        Agent -->|"HTTP API + SSE"| EventService
-        Agent -->|"HTTP API"| Memory
-    end
-    
-    style Docker fill:#e1f5ff
-    style Native fill:#fff4e1
-    style Agent fill:#f0f0f0
-```
-
-**Why this pattern?**
-1. **Fast Iteration:** Change `agent.py`, save, instant effect. No `docker build` cycle.
-2. **Debuggability:** Attach debugger directly to your agent code.
-3. **Production Parity:** Infrastructure is containerized, identical to production.
-4. **No Port Conflicts:** Services use standard ports (8000, 8001, 4222).
-
-**How it works:**
-
-1. **`soorma dev` starts Docker Compose stack:**
-   ```bash
-   docker compose -f ~/.soorma/docker-compose.yml up -d
-   ```
-
-2. **Your agent runs natively with environment variables:**
-   ```bash
-   export SOORMA_REGISTRY_URL="http://localhost:8000"
-   export SOORMA_EVENT_SERVICE_URL="http://localhost:8001"
-   export SOORMA_MEMORY_SERVICE_URL="http://localhost:8002"
-   python agent.py
-   ```
-
-3. **Services are production-ready but local:**
-   - Registry: SQLite database in `~/.soorma/data/`
-   - NATS: JetStream message bus for reliable event delivery
-   - Event Service: Proxy to NATS with SSE support
-   - Memory Service: PostgreSQL with pgvector for semantic memory
-   - PostgreSQL: Persistent database for memory service
-
-### 4.2 The Integration Developer
-
-* Integrates `soorma-core` into existing Python applications
-* Uses the SDK programmatically without the CLI
-* Offloads cognitive tasks to Soorma agents
-* Connects to existing infrastructure
-
-**Example:**
-```python
-from soorma import Worker
-from soorma.context import PlatformContext
-
-# Create a worker agent
-worker = Worker(
-    name="data-processor",
-    description="Processes data events",
-    capabilities=["data-processing"]
-)
-
-@worker.on_event("data.received")
-async def process_data(event: dict, context: PlatformContext):
-    # Your processing logic
-    await context.bus.publish(
-        event_type="data.processed",
-        topic="results",
-        data={"result": "..."}
-    )
-
-# Run the worker
-worker.run()
-```
-
-### 4.3 The Self-Hoster
-
-* Deploys the full platform to their own infrastructure
-* Uses Docker Compose for simple deployments
-* Kubernetes/Helm for production (planned)
-* Full control over data and infrastructure
-
-**Deploy with Docker Compose:**
-```bash
-cd iac/docker-compose
-docker compose -f production.yml up -d
-```
-
-**Deploy to Kubernetes (planned):**
-```bash
-cd iac/helm
-helm install soorma ./soorma-core
-```
-
----
-
-## 5. Event-Driven Patterns
-
-### 5.1 Event Flow
+### 4.1 Event Flow
 
 ```mermaid
 graph TB
@@ -365,181 +243,78 @@ graph TB
     style Memory fill:#e1ffe1
 ```
 
-### 5.2 Event Registration
+### 4.2 Topics
 
-When an agent starts, it registers events with the Registry:
+Soorma uses fixed topics for routing events:
+
+| Topic | Purpose | Example Events |
+|-------|---------|----------------|
+| `action-requests` | Agent action requests | `ticket.route`, `content.research` |
+| `action-results` | Action completion results | `ticket.routed`, `research.completed` |
+| `business-facts` | Domain events | `order.created`, `user.registered` |
+| `system-events` | Platform events | `agent.started`, `workflow.failed` |
+| `notification-events` | User notifications | `email.send`, `slack.notify` |
+| `billing-events` | Billing/usage tracking | `usage.recorded`, `invoice.generated` |
+| `plan-events` | Workflow orchestration | `plan.created`, `step.completed` |
+| `task-events` | Task assignments | `task.assigned`, `task.completed` |
+
+See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md) for detailed event patterns.
+
+### 4.3 Event Registration
+
+Events are defined as EventDefinition objects with Pydantic models:
 
 ```python
-from soorma import Worker
-from soorma.models import EventDefinition
+from pydantic import BaseModel, Field
+from soorma_common import EventDefinition, EventTopic
+
+class ProcessDataPayload(BaseModel):
+    data_id: str = Field(..., description="Unique identifier")
+    operation: str = Field(..., description="Operation to perform")
 
 PROCESS_EVENT = EventDefinition(
     event_name="data.process.requested",
+    topic=EventTopic.ACTION_REQUESTS,
     description="Request to process data",
-    purpose="Analyze and transform input data",
-    topic="action-requests",
-    payload_schema={...}
+    payload_schema=ProcessDataPayload.model_json_schema()
 )
 
 worker = Worker(
     name="processor",
-    events_consumed=[PROCESS_EVENT],
+    events_consumed=[PROCESS_EVENT],  # SDK auto-registers
     events_produced=[...]
 )
 ```
 
-### 5.3 Dynamic Discovery
+### 4.4 Dynamic Discovery
 
-The Planner discovers events at runtime:
+Agents discover capabilities at runtime:
 
 ```python
 from soorma.ai.event_toolkit import EventToolkit
 
 async with EventToolkit(registry_url) as toolkit:
-    # Discover all actionable events
     events = await toolkit.discover_actionable_events(
         topic="action-requests"
     )
-    
-    # Returns: [{name, description, purpose, schema}, ...]
+    # Returns events with rich metadata for LLM reasoning
 ```
 
-### 5.4 LLM-Driven Decisions
-
-The Planner uses LLM to reason about events:
-
-```python
-prompt = f"""
-Available Events:
-{format_events(events)}
-
-Current State:
-{workflow_state}
-
-Decide the next action to progress toward the goal.
-"""
-
-response = await llm.reason(prompt)
-# LLM returns: {"event": "data.process.requested", "payload": {...}}
-```
+See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) for Autonomous Choreography pattern.
 
 ---
 
-## 6. Multi-Provider LLM Support
+## 5. Deployment Options
 
-Soorma examples demonstrate provider-agnostic LLM integration via LiteLLM:
-
-**Supported Providers:**
-- OpenAI (GPT-4, GPT-4o, etc.)
-- Anthropic (Claude 3, etc.)
-- Google (Gemini)
-- Azure OpenAI
-- Together AI
-- Groq
-- Any LiteLLM-compatible provider
-
-**Pattern:**
-```python
-from llm_utils import get_llm_model, has_any_llm_key
-
-if has_any_llm_key():
-    model = get_llm_model()  # Auto-detects from env vars
-    response = completion(model=model, messages=[...])
-```
-
-See `examples/research-advisor/llm_utils.py` for implementation.
-
----
-
-## 7. Testing Strategy
-
-### 7.1 SDK Tests
+### 5.1 Local Development
 
 ```bash
-cd sdk/python
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_registry_client.py -v
-
-# With coverage
-pytest tests/ --cov=soorma --cov-report=html
+soorma dev --build  # Builds and starts all services in Docker
 ```
 
-### 7.2 Service Tests
+See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for complete development workflow.
 
-```bash
-cd services/registry
-pytest test/ -v
-
-cd services/event-service
-pytest test/ -v
-```
-
-### 7.3 Integration Tests
-
-Test agents with real services:
-```python
-@pytest.fixture
-async def test_stack():
-    """Start test stack with Docker."""
-    subprocess.run(["soorma", "dev"], check=True)
-    yield
-    # Cleanup
-```
-
-### 7.4 Example Tests
-
-Examples should be executable and tested:
-```bash
-cd examples/research-advisor
-python -m pytest test_planner.py -v
-```
-
----
-
-## 8. Circuit Breakers & Safety
-
-Autonomous systems need safeguards. Soorma implements circuit breakers:
-
-### 8.1 Action Limits
-
-Prevent infinite loops:
-```python
-MAX_TOTAL_ACTIONS = 10
-
-if len(action_history) >= MAX_TOTAL_ACTIONS:
-    return force_completion()
-```
-
-### 8.2 Vague Result Detection
-
-Catch when LLM returns meta-descriptions instead of content:
-```python
-vague_indicators = ["draft is ready", "already prepared"]
-if any(indicator in result.lower() for indicator in vague_indicators):
-    result = workflow_state["draft"]["draft_text"]  # Use actual content
-```
-
-### 8.3 Timeout Handling (Planned)
-
-Future Tracker service will:
-- Detect stalled workflows
-- Retry failed events
-- Enable human intervention
-- Provide observability dashboards
-
----
-
-## 9. Deployment Options
-
-### 9.1 Local Development
-
-```bash
-soorma dev  # Starts all services in Docker
-```
-
-### 9.2 Single Server (Docker Compose)
+### 5.2 Single Server Docker Compose (Planned)
 
 ```bash
 cd iac/docker-compose
@@ -547,18 +322,19 @@ docker compose -f production.yml up -d
 ```
 
 Services:
-- Registry: Port 8000
-- Event Service: Port 8001
+- Registry Service: Port 8000
+- Memory Service: Port 8002
+- Event Service: Port 8082
 - NATS: Port 4222
-- Postgres: Port 5432 (optional)
+- PostgreSQL: Port 5432
 
-### 9.3 Kubernetes (Planned)
+### 5.3 Kubernetes (Planned)
 
 ```bash
 helm install soorma ./iac/helm/soorma-core
 ```
 
-### 9.4 Cloud Managed (Planned)
+### 5.4 Cloud Managed (Planned)
 
 Deploy to Soorma Cloud:
 ```bash
@@ -567,11 +343,11 @@ soorma deploy --target cloud
 
 ---
 
-## 10. Contributing
+## 6. Contributing
 
 We welcome contributions! See key areas:
 
-### 10.1 Priority Areas
+### 6.1 Priority Areas
 
 1. **SDK Enhancements:** New agent primitives, utilities
 2. **Service Improvements:** Performance, reliability, features
@@ -579,7 +355,7 @@ We welcome contributions! See key areas:
 4. **Documentation:** Guides, tutorials, API docs
 5. **Testing:** Increase coverage, add integration tests
 
-### 10.2 Development Workflow
+### 6.2 Development Workflow
 
 ```bash
 # Fork the repo and clone
@@ -599,7 +375,9 @@ git commit -m "feat(sdk): add new capability"
 git push origin feat/my-feature
 ```
 
-### 10.3 Code Review Checklist
+See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for testing guidelines.
+
+### 6.3 Code Review Checklist
 
 - [ ] Tests pass (`pytest tests/ -v`)
 - [ ] Code follows style guide (Ruff clean)
@@ -610,12 +388,12 @@ git push origin feat/my-feature
 
 ---
 
-## 11. Roadmap
+## 7. Roadmap
 
-### Current (v0.4.0)
+### Current
 ✅ Core SDK with Agent primitives
 
-✅ Registry and Event Service
+✅ Registry, Memory and Event Service
 
 ✅ Dynamic event discovery
 
@@ -625,14 +403,13 @@ git push origin feat/my-feature
 
 ✅ Circuit breakers and safety features
 
-### Near Term (v0.5.0)
+### Near Term
 - [ ] State Tracker service
-- [ ] Memory service (vector DB integration)
 - [ ] Enhanced CLI (deployment, monitoring)
 - [ ] More examples (code generation, data analysis)
 - [ ] Performance optimizations
 
-### Future (v1.0.0)
+### Future
 - [ ] Production-ready Kubernetes deployment
 - [ ] Advanced observability (OpenTelemetry)
 - [ ] Multi-language SDK support
@@ -641,27 +418,32 @@ git push origin feat/my-feature
 
 ---
 
-## 12. Philosophy & Design Principles
+## 8. Philosophy & Design Principles
 
-### 12.1 Simplicity Over Complexity
+### 8.1 Simplicity Over Complexity
 Favor clear, simple solutions over clever, complex ones. Make common tasks easy.
 
-### 12.2 Developer Experience First
+### 8.2 Developer Experience First
 Every decision prioritizes the developer using Soorma. Fast feedback loops, clear errors, excellent docs.
 
-### 12.3 Autonomous Over Orchestrated
+### 8.3 Autonomous Over Orchestrated
 Agents should coordinate through events and reasoning, not hardcoded workflows.
 
-### 12.4 Open Over Closed
+### 8.4 Open Over Closed
 Open source by default. Extensible. No lock-in. Standard protocols.
 
-### 12.5 Production-Ready
+### 8.5 Production-Ready
 Not just demos. Real reliability, observability, and scalability from day one.
 
 ---
 
-**Questions?** Check `AGENT.md` for AI assistant instructions or `README.md` for getting started.
+**Related Documentation:**
+- [Developer Guide](docs/DEVELOPER_GUIDE.md) - Developer experience and workflows
+- [Design Patterns](docs/DESIGN_PATTERNS.md) - Agent orchestration patterns
+- [Event Patterns](docs/EVENT_PATTERNS.md) - Event-driven communication
+- [Memory Patterns](docs/MEMORY_PATTERNS.md) - Memory types and usage
+- [Examples](examples/) - Working implementations
 
-**Examples?** See `examples/research-advisor/` for advanced patterns in action.
+**Getting Started:** See [README.md](README.md) for installation and quick start.
 
-**Contributing?** We'd love your help! See section 10 above.
+**AI Assistants:** See [AGENT.md](AGENT.md) for instructions on using this codebase with AI tools.
