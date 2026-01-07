@@ -154,6 +154,8 @@ class Worker(Agent):
         description: str = "",
         version: str = "0.1.0",
         capabilities: Optional[List[Any]] = None,
+        events_consumed: Optional[List[str]] = None,
+        events_produced: Optional[List[str]] = None,
         **kwargs,
     ):
         """
@@ -164,14 +166,16 @@ class Worker(Agent):
             description: What this worker does
             version: Version string
             capabilities: Task capabilities offered (strings or AgentCapability objects)
+            events_consumed: List of event types this worker consumes
+            events_produced: List of event types this worker produces
             **kwargs: Additional Agent arguments
         """
-        # Workers consume action-requests and produce action-results
-        events_consumed = kwargs.pop("events_consumed", [])
+        # Workers consume action-requests and produce action-results by default
+        events_consumed = list(events_consumed or [])
         if "action.request" not in events_consumed:
             events_consumed.append("action.request")
         
-        events_produced = kwargs.pop("events_produced", [])
+        events_produced = list(events_produced or [])
         if "action.result" not in events_produced:
             events_produced.append("action.result")
         
