@@ -152,6 +152,15 @@ python -m my_agent.agent
 - **[Hello World](./examples/hello-world/README.md)**: A simple introduction to the **DisCo Trinity** pattern (Planner → Worker → Tool).
 - **[Research Advisor](./examples/research-advisor/README.md)**: An advanced example demonstrating **Dynamic Choreography**, where a Planner agent dynamically discovers and orchestrates Researcher, Drafter, and Validator agents to solve complex multi-step problems.
 
+## 📚 Documentation
+
+- **[Architecture](./ARCHITECTURE.md)** - Platform services, event architecture, deployment options
+- **[Developer Guide](./docs/DEVELOPER_GUIDE.md)** - DX workflows, testing, debugging, multi-provider LLM support
+- **[Design Patterns](./docs/DESIGN_PATTERNS.md)** - Agent patterns, autonomous choreography, circuit breakers
+- **[Event Patterns](./docs/EVENT_PATTERNS.md)** - Event-driven communication, topics, structured events
+- **[Memory Patterns](./docs/MEMORY_PATTERNS.md)** - CoALA memory types (Semantic, Working, Episodic)
+- **[Examples Guide](./examples/README.md)** - Progressive learning path and pattern catalog
+
 ### 🔧 CLI Reference
 
 For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see the [SDK Documentation](./sdk/python/README.md#cli-commands).

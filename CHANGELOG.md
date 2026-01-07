@@ -5,6 +5,69 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Documentation Restructure**: Separated concerns into focused documents
+  - Created `docs/DEVELOPER_GUIDE.md` with developer experience patterns and workflows
+  - Created `docs/DESIGN_PATTERNS.md` with Autonomous Choreography and Circuit Breakers
+  - Created `docs/MEMORY_PATTERNS.md` with CoALA memory types and usage patterns
+  - Created `docs/EVENT_PATTERNS.md` with event-driven communication patterns
+  - All docs now cross-reference each other appropriately
+- **Examples Refactor (Phase 1)**: Foundation examples with progressive learning path
+  - Created `examples/README.md` with comprehensive learning path and pattern catalog
+  - Updated `01-hello-world/` to use correct topics (action-requests/action-results)
+  - Updated `02-events-simple/` to use correct topics (business-facts)
+  - Refactored `03-events-structured/` with EventDefinition pattern and SDK auto-registration
+  - Split LLM utilities into `llm_utils.py` (educational boilerplate) and `ticket_router.py` (agent logic)
+  - Created `docs/TOPICS.md` documenting all 8 Soorma topics with usage guidance and decision tree
+  - Updated `docs/EVENT_PATTERNS.md` with topics section
+
+### Changed
+- **ARCHITECTURE.md**: Refactored to focus exclusively on platform services
+  - Removed developer experience sections (moved to DEVELOPER_GUIDE.md)
+  - Removed agent patterns (moved to DESIGN_PATTERNS.md)
+  - Removed testing strategy (moved to DEVELOPER_GUIDE.md)
+  - Now focused on: Platform Services, Event Architecture, Deployment, Contributing
+- **DESIGN_PATTERNS.md**: Enhanced with key architectural concepts
+  - Added comprehensive "Autonomous Choreography" section explaining registration → discovery → reasoning → decision → execution flow
+  - Added "Circuit Breakers & Safety" section with action limits, vague result detection, and timeout handling
+- **MEMORY_PATTERNS.md**: Updated all examples to match actual SDK implementation
+  - Fixed Semantic Memory to use `store_knowledge()` and `search_knowledge()`
+  - Fixed Episodic Memory to use `log_interaction()`, `get_recent_history()`, `search_interactions()`
+  - Fixed Working Memory characteristics (PostgreSQL-backed, not in-memory)
+  - Updated anti-patterns with correct method signatures
+- **DEVELOPER_GUIDE.md**: Comprehensive developer experience documentation
+  - Corrected all service ports to 8000/8001/8002 (from incorrect 8081/8082/8083)
+  - Updated Integration Developer example to use EventDefinition pattern with proper topics
+  - Changed LLM examples to reference 03-events-structured (from research-advisor)
+  - Fixed VS Code launch.json and curl commands with correct ports
+- **AI_ASSISTANT_GUIDE.md**: Updated to match current patterns
+  - Fixed 03-events-structured prompts to show EventDefinition pattern with Pydantic models
+  - Emphasized SDK auto-registration (no manual registry_setup.py needed)
+  - Removed incorrect registry_setup.py references
+  - Added EventTopic enum usage in examples
+- **03-events-structured**: Migrated from dict-based events to EventDefinition pattern
+  - Created Pydantic payload models for all 6 support routing events
+  - Workers now pass EventDefinition objects to events_consumed/events_produced
+  - SDK automatically registers events on agent startup (no manual registration needed)
+  - Removed `registry_setup.py` - superseded by SDK auto-registration
+  - Removed `llm_event_selector.py` - split into `llm_utils.py` + `ticket_router.py`
+
+### Fixed
+- **All Documentation**: Corrected service ports across all docs
+  - Registry Service: Port 8000 (was incorrectly shown as 8081)
+  - Event Service: Port 8001 (was incorrectly shown as 8082)
+  - Memory Service: Port 8002 (was incorrectly shown as 8083)
+- **All Examples**: Corrected topic usage to match Soorma's 8 fixed topics
+  - Examples were using arbitrary topics ("requests", "orders", "tickets", "results")
+  - Now using proper EventTopic enum values from soorma_common
+  - All EventClient.connect() calls now include topics parameter
+- **Memory Patterns**: Fixed all API method calls to match actual SDK implementation
+  - Corrected semantic memory methods (store_knowledge vs store with memory_type)
+  - Corrected episodic memory methods (log_interaction vs store)
+  - Updated working memory description (Redis planned, currently PostgreSQL)
+
 ## [0.5.1] - 2025-12-24
 
 ### Added

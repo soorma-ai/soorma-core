@@ -119,6 +119,148 @@ async def handle(event, context):
 - When requirements change frequently
 - Research, exploration, and creative tasks
 
+---
+
+## Autonomous Choreography (Key Innovation)
+
+Traditional agent systems hardcode workflow logic: "after step A, do step B." This is brittle and requires code changes when workflows evolve.
+
+### The Soorma Approach
+
+**1. Registration**
+Agents register events they consume/produce with the Registry, including rich metadata:
+```python
+from soorma_common import EventDefinition, EventTopic
+
+RESEARCH_EVENT = EventDefinition(
+    event_name="content.research",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Research a topic and gather information",
+    payload_schema={...}
+)
+```
+
+**2. Discovery**
+Planner queries Registry to find available events at runtime:
+```python
+from soorma.ai.event_toolkit import EventToolkit
+
+events = await toolkit.discover_actionable_events(
+    topic="action-requests"
+)
+# Returns all events with metadata
+```
+
+**3. Reasoning**
+LLM analyzes event metadata to understand capabilities:
+```python
+prompt = f"""
+Available Events:
+{format_events(events)}
+
+Current State:
+{workflow_state}
+
+Goal: {user_goal}
+
+Decide the next action to progress toward the goal.
+"""
+```
+
+**4. Decision**
+LLM selects appropriate event and constructs payload:
+```python
+response = await llm.reason(prompt)
+# Returns: {"event": "content.research", "payload": {...}}
+```
+
+**5. Execution**
+Event is published, triggering the next agent:
+```python
+await context.bus.publish(
+    event_type=response["event"],
+    topic="action-requests",
+    data=response["payload"]
+)
+```
+
+### Benefits
+
+- **Dynamic Adaptation:** Add new agents without changing orchestration code
+- **Runtime Discovery:** Agents discover capabilities as they become available
+- **LLM Reasoning:** System adapts to context and chooses optimal path
+- **No Hardcoding:** Workflows emerge from agent decisions, not predefined rules
+- **Evolutionary:** System improves as you add more specialized agents
+
+### Example
+
+See [examples/research-advisor](../examples/research-advisor/) for complete implementation.
+
+---
+
+## Circuit Breakers & Safety
+
+Autonomous systems need safeguards to prevent runaway behavior.
+
+### Action Limits
+
+Prevent infinite loops by limiting total actions:
+
+```python
+MAX_TOTAL_ACTIONS = 10
+
+if len(action_history) >= MAX_TOTAL_ACTIONS:
+    logger.warning("Action limit reached, forcing completion")
+    return force_completion()
+```
+
+**Implementation:**
+- Track every action (event published) in workflow state
+- Set reasonable limits based on workflow complexity
+- Force graceful completion when limit reached
+- Log warning for debugging
+
+### Vague Result Detection
+
+Catch when LLM returns meta-descriptions instead of actual content:
+
+```python
+vague_indicators = ["draft is ready", "already prepared", "content is complete"]
+
+if any(indicator in result.lower() for indicator in vague_indicators):
+    # Use actual content from working memory instead
+    result = workflow_state["draft"]["draft_text"]
+```
+
+**Why needed:**
+- LLMs sometimes say "content is ready" instead of returning content
+- Prevents publishing empty or meta results
+- Ensures quality control on outputs
+
+### Timeout Handling (Planned)
+
+Future State Tracker service will provide:
+- Detect stalled workflows (no progress in N minutes)
+- Automatic retry of failed events
+- Human intervention triggers
+- Observability dashboards
+- Workflow replay capabilities
+
+### Best Practices
+
+✅ **Do:**
+- Set action limits appropriate for your workflow
+- Log all circuit breaker activations
+- Test edge cases (infinite loops, failures)
+- Monitor workflow completion rates
+- Implement graceful degradation
+
+❌ **Don't:**
+- Remove circuit breakers "because they're annoying"
+- Set limits too high (defeats purpose)
+- Ignore circuit breaker warnings in logs
+- Assume LLMs always behave perfectly
+
 **Note:** Implementation details (ChoreographyPlanner SDK class, Plan state machine) will be defined in Phase 4. See [refactor plan](../EXAMPLES_REFACTOR_PLAN.md) for roadmap.
 
 ---
@@ -250,6 +392,8 @@ history = await context.memory.retrieve_all(
 
 ## Related Documentation
 
+- [Architecture](../ARCHITECTURE.md) - Platform services and infrastructure
+- [Developer Guide](./DEVELOPER_GUIDE.md) - Development workflows and testing
 - [Event Patterns](./EVENT_PATTERNS.md) - Event-driven communication
 - [Memory Patterns](./MEMORY_PATTERNS.md) - Memory usage guide
 - [Examples](../examples/) - Working implementations
