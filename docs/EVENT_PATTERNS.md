@@ -19,17 +19,7 @@ Events are the primary communication mechanism in Soorma. They enable:
 
 **⚠️ Important:** Soorma uses a fixed set of well-defined topics. You cannot use arbitrary topic names.
 
-All events must be published to one of these topics:
-- `action-requests` - Request another agent to perform an action
-- `action-results` - Report results from completing an action
-- `business-facts` - Announce business domain events
-- `system-events` - Platform lifecycle events
-- `notification-events` - User-facing notifications
-- `billing-events` - Usage and cost tracking
-- `plan-events` - Plan lifecycle tracking
-- `task-events` - Task lifecycle within plans
-
-**See [TOPICS.md](TOPICS.md) for detailed guidance on which topic to use.**
+**See [TOPICS.md](TOPICS.md) for the complete list of topics and detailed guidance on which topic to use.**
 
 ---
 
@@ -152,20 +142,9 @@ This enables:
 
 ### Topics
 
-Topics organize events into logical channels:
+Topics organize events into logical channels. Soorma provides 8 fixed topics for routing events.
 
-| Topic | Purpose | Example Events |
-|-------|---------|----------------|
-| `action-requests` | Request action from another agent | `ticket.route.tier1`, `web.search` |
-| `action-results` | Report completion of actions | `tool.response`, `action.complete` |
-| `business-facts` | Business domain events | `order.placed`, `ticket.created`, `inventory.changed` |
-| `system-events` | Platform lifecycle events | `agent.started`, `service.health` |
-| `notification-events` | User-facing notifications | `email.send`, `sms.send` |
-| `billing-events` | Usage and cost tracking | `usage.recorded`, `invoice.generated` |
-| `plan-events` | Plan lifecycle | `plan.created`, `plan.completed` |
-| `task-events` | Task lifecycle | `task.assigned`, `task.completed` |
-
-**See [TOPICS.md](TOPICS.md) for detailed guidance on selecting the right topic.**
+**See [TOPICS.md](TOPICS.md) for the complete topics reference, including purpose, example events, and selection guidance.**
 
 ---
 
@@ -298,9 +277,11 @@ This enables:
 
 ## Related Documentation
 
+- [Topics](./TOPICS.md) - Complete topics reference and selection guide
 - [Design Patterns](./DESIGN_PATTERNS.md) - Agent orchestration patterns
+- [Event Architecture](../sdk/python/docs/EVENT_ARCHITECTURE.md) - SDK internals, decorator mapping, topic derivation
+- [Architecture](../ARCHITECTURE.md) - Platform overview
 - [Examples](../examples/) - Working code examples
-- [Architecture](../ARCHITECTURE.md) - Event Service implementation
 
 ---
 

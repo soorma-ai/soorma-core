@@ -109,25 +109,18 @@ soorma dev --build
 The fastest way to see Soorma in action:
 
 ```bash
-# Start infrastructure (Registry, NATS, Event Service, Memory Service, PostgreSQL)
+# Terminal 1: Start infrastructure (Registry, NATS, Event Service, Memory Service, PostgreSQL)
 soorma dev
 
-# Run the example (one command):
-cd examples/hello-world
-bash start.sh  # Uses "World" by default
-# Or
-bash start.sh "Alice"  # Custom name
+# Terminal 2: Start the worker
+cd examples/01-hello-world
+bash start.sh
+
+# Terminal 3: Send a request
+python client.py Alice
 ```
 
-Or run agents manually in separate terminals:
-```bash
-python examples/hello-world/planner_agent.py
-python examples/hello-world/worker_agent.py
-python examples/hello-world/tool_agent.py
-python examples/hello-world/client.py
-```
-
-See the [Hello World Example](./examples/hello-world/README.md) for full details.
+See the [Hello World Example](./examples/01-hello-world/README.md) for full details.
 
 ### 3. Create Your Own Agent
 
@@ -140,6 +133,9 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
+# Implement your agent logic (use examples with Copilot/Cursor)
+# See docs/AI_ASSISTANT_GUIDE.md for AI-assisted development patterns
+
 # Start infrastructure
 soorma dev
 
@@ -149,8 +145,7 @@ python -m my_agent.agent
 
 ### 📖 More Examples
 
-- **[Hello World](./examples/hello-world/README.md)**: A simple introduction to the **DisCo Trinity** pattern (Planner → Worker → Tool).
-- **[Research Advisor](./examples/research-advisor/README.md)**: An advanced example demonstrating **Dynamic Choreography**, where a Planner agent dynamically discovers and orchestrates Researcher, Drafter, and Validator agents to solve complex multi-step problems.
+See the **[Examples Guide](./examples/README.md)** for a complete catalog of examples with a progressive learning path.
 
 ## 📚 Documentation
 
@@ -159,6 +154,7 @@ python -m my_agent.agent
 - **[Design Patterns](./docs/DESIGN_PATTERNS.md)** - Agent patterns, autonomous choreography, circuit breakers
 - **[Event Patterns](./docs/EVENT_PATTERNS.md)** - Event-driven communication, topics, structured events
 - **[Memory Patterns](./docs/MEMORY_PATTERNS.md)** - CoALA memory types (Semantic, Working, Episodic)
+- **[AI Assistant Guide](./docs/AI_ASSISTANT_GUIDE.md)** - Using examples with Copilot/Cursor for rapid development
 - **[Examples Guide](./examples/README.md)** - Progressive learning path and pattern catalog
 
 ### 🔧 CLI Reference

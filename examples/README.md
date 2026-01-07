@@ -8,22 +8,6 @@ This directory contains progressively more complex examples demonstrating Soorma
 
 **Looking for something specific?** See the [Pattern Catalog](#pattern-catalog) below.
 
-### ⚠️ Important: Topics
-
-Soorma uses a **fixed set of well-defined topics** for event-driven communication. You cannot use arbitrary topic names like "orders", "tickets", or "requests".
-
-Valid topics:
-- `action-requests` / `action-results` - Agent coordination
-- `business-facts` - Domain events (orders, inventory, etc.)
-- `system-events` - Platform lifecycle
-- `notification-events` - User notifications
-- `billing-events` - Usage tracking
-- `plan-events` / `task-events` - Workflow orchestration
-
-**See [TOPICS.md](../docs/TOPICS.md) for detailed guidance.**
-
----
-
 ## 📚 Learning Path
 
 ### Foundations

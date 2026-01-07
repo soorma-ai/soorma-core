@@ -45,13 +45,18 @@ pip install soorma-core
 export OPENAI_API_KEY=your_key_here
 soorma dev --build
 
-# 3. Create a new agent project
+# 3. Create a new agent project (scaffolding)
 soorma init my-agent
 cd my-agent
 
-# 4. Your agent code runs natively, connects to Docker services
+# 4. Implement agent logic with AI assistance
+# See AI Assistant Guide for using examples with Copilot/Cursor
+
+# 5. Your agent code runs natively, connects to Docker services
 python agent.py
 ```
+
+> 💡 **AI-Assisted Development:** Use `soorma init` to generate scaffolding, then leverage examples with GitHub Copilot or Cursor to implement your agent logic. See the **[AI Assistant Guide](./AI_ASSISTANT_GUIDE.md)** for effective prompting patterns and workflows.
 
 ### 1.4 The "Infra in Docker, Code on Host" Pattern
 
@@ -442,11 +447,16 @@ See [examples/03-events-structured/llm_utils.py](../examples/03-events-structure
 ### 7.1 Creating a New Agent
 
 ```bash
-# Initialize project
+# Initialize project (generates scaffolding)
 soorma init my-agent
 cd my-agent
 
-# Edit agent code
+# Implement agent logic with AI assistance
+# Reference examples in Copilot/Cursor prompts:
+#   "Create a worker like examples/01-hello-world that handles order.created events"
+# See docs/AI_ASSISTANT_GUIDE.md for more patterns
+
+# Edit agent code (with or without AI assistance)
 vim agent.py
 
 # Run locally
@@ -499,6 +509,7 @@ docker compose -f production.yml up -d
 - [Design Patterns](./DESIGN_PATTERNS.md) - Agent orchestration patterns
 - [Event Patterns](./EVENT_PATTERNS.md) - Event-driven communication patterns
 - [Memory Patterns](./MEMORY_PATTERNS.md) - Memory types and usage
+- [AI Assistant Guide](./AI_ASSISTANT_GUIDE.md) - Using examples with Copilot/Cursor for rapid development
 - [Examples](../examples/) - Working implementations
 
 ---
