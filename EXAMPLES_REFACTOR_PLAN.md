@@ -203,6 +203,88 @@ async with EventToolkit(context.registry.base_url) as toolkit:
     selected_event, payload = toolkit.parse_llm_selection(llm_response, events)
 ```
 
+### 4.4 LLM Event Selection Utilities
+
+> **Background**: Examples `03-events-structured` and `research-advisor` contain ~100+ lines of similar boilerplate for:
+> - Discovering events from Registry
+> - Formatting events for LLM prompts  
+> - Calling LLM with structured prompts
+> - Validating LLM-selected events
+> - Publishing selected events
+>
+> This code should move to SDK utilities with customizable templates.
+
+```python
+# Current (boilerplate in examples/03-events-structured/llm_event_selector.py)
+async def discover_routing_events(context) -> list[dict]:
+    async with EventToolkit(context.registry.base_url) as toolkit:
+        events = await toolkit.discover_actionable_events(topic="action-requests")
+        return events
+
+def format_events_for_llm(events: list[dict]) -> str:
+    formatted = []
+    for i, event in enumerate(events, 1):
+        metadata = event.get("metadata", {})
+        formatted.append(f"{i}. **{event['name']}**\n   Description: {event['description']}\n")
+    return "\n".join(formatted)
+
+async def select_event_with_llm(data: dict, events: list[dict]) -> dict:
+    prompt = f"""Analyze and select best event..."""
+    response = completion(model=model, messages=[...])
+    return json.loads(response.choices[0].message.content)
+
+# Proposed (SDK utilities)
+from soorma.ai import EventSelector
+
+# Agent provides domain-specific prompt template
+ROUTING_PROMPT = """
+You are a support ticket router. Analyze the ticket and select routing.
+
+TICKET: {{ticket_data}}
+
+AVAILABLE ROUTES: {{events}}
+
+Select the best routing event and explain why.
+"""
+
+selector = EventSelector(
+    context=context,
+    topic="action-requests",
+    prompt_template=ROUTING_PROMPT,  # Agent customization point
+    model=os.getenv("LLM_MODEL", "gpt-4o-mini")
+)
+
+@worker.on_event("ticket.created")
+async def route_ticket(event, context):
+    # SDK handles: discovery, formatting, LLM call, validation
+    decision = await selector.select_event(
+        state={"ticket_data": event.data},
+        filters={"category": "routing"}  # Optional event filtering
+    )
+    
+    # SDK validates event exists before publishing
+    await selector.publish_decision(decision, context)
+```
+
+**Benefits**:
+- **Reduces boilerplate**: ~150 lines → ~20 lines in examples
+- **Customizable**: Agents specify domain logic via prompt templates
+- **Type-safe**: Returns structured `EventDecision` (not raw dict)
+- **Validated**: SDK ensures LLM can't hallucinate non-existent events
+- **Maintained**: Bug fixes benefit all agents using pattern
+- **Consistent**: Same LLM selection pattern across all agents
+
+**EventDecision Type**:
+```python
+from pydantic import BaseModel
+
+class EventDecision(BaseModel):
+    event_name: str          # Validated against discovered events
+    payload: dict[str, Any]  # Validated against event schema
+    reasoning: str           # LLM explanation for audit
+    confidence: float        # Optional: LLM confidence score
+```
+
 ---
 
 ## 5. Documentation Restructure
@@ -240,11 +322,18 @@ async with EventToolkit(context.registry.base_url) as toolkit:
 
 ## 6. Action Items
 
-### Phase 1: Foundation Examples (Week 1)
-- [ ] Create `examples/README.md` with learning path overview
-- [ ] Extract and simplify `01-hello-world/` (remove unnecessary complexity)
-- [ ] Create `02-events-simple/` (pub/sub without LLM)
-- [ ] Create `03-events-structured/` (events with rich metadata for LLM)
+### Phase 1: Foundation Examples ✅ COMPLETED
+- [x] Create `examples/README.md` with learning path overview
+- [x] Update `01-hello-world/` to use correct topics (action-requests/action-results)
+- [x] Update `02-events-simple/` to use correct topics (business-facts for domain events)
+- [x] Refactor `03-events-structured/` with EventDefinition pattern:
+  - [x] Created `events.py` with Pydantic models and EventDefinition objects
+  - [x] Split into `llm_utils.py` (educational boilerplate) and `ticket_router.py` (agent logic)
+  - [x] Removed `registry_setup.py` (SDK auto-registration)
+  - [x] Updated README with EventDefinition pattern documentation
+- [x] Created `docs/TOPICS.md` documenting all 8 Soorma topics
+- [x] Updated `docs/EVENT_PATTERNS.md` with topics section
+- [x] Updated all example READMEs to reflect correct topics and patterns
 
 ### Phase 2: SDK Primitives (Week 1 - parallelize with Phase 1)
 > **Rationale:** Build SDK helpers first so examples can use them cleanly. Avoids "write it hard way then refactor" double work.
@@ -399,6 +488,48 @@ Brief explanation of when to use this pattern.
 - `trace_id` in `PlannerDecision` enables correlation across distributed agents
 - State Tracker documentation will be separate (observability focus)
 
+### Plan Abstraction (State Machine)
+**Status:** Design phase - to be implemented with State Tracker
+
+The `Plan` concept will represent a dynamically generated state machine for workflow tracking:
+
+```python
+# Conceptual design (not yet implemented)
+class Plan:
+    """State machine representing workflow execution."""
+    plan_id: str
+    goal: str
+    state: PlanState  # ACTIVE, COMPLETED, FAILED, PAUSED
+    steps: List[PlanStep]  # Generated by LLM reasoning
+    current_step: int
+    metadata: Dict[str, Any]
+    
+# Generated by Planner based on:
+# 1. Goal description
+# 2. Discovered events/capabilities from Registry
+# 3. LLM reasoning about optimal workflow
+# 4. Historical patterns (from memory)
+
+# State Tracker will:
+# - Persist plan state
+# - Track step execution
+# - Enable observability ("what is this plan doing?")
+# - Support pause/resume
+# - Provide audit trail
+```
+
+**Design Principles:**
+- Plans are LLM-generated, not hardcoded
+- Steps adapt to available capabilities
+- State machine enables pause/resume
+- Integration with Working Memory for step data
+- Observable via State Tracker UI
+
+**Will be defined during Phase 4/5 when implementing:**
+- `08-planner-worker-basic` example
+- State Tracker service
+- Plan lifecycle events (plan.created, plan.step_completed, etc.)
+
 ---
 
 ## Changelog
@@ -413,3 +544,4 @@ Brief explanation of when to use this pattern.
 | 2026-01-06 | Renamed `09-autonomous-choreography/` → `09-app-research-advisor/` (pattern vs application) |
 | 2026-01-06 | Added `trace_id` + `plan_id` to `PlannerDecision` for State Tracker correlation |
 | 2026-01-06 | Added State Tracker placeholder hooks to Phase 2 SDK primitives |
+| 2026-01-06 | **Phase 1 COMPLETED**: Foundation examples refactored with correct topics and EventDefinition pattern |

@@ -1,0 +1,259 @@
+# Design Patterns
+
+**Status:** 📝 Draft  
+**Last Updated:** January 6, 2026
+
+This document describes agent design patterns in Soorma.
+
+---
+
+## Overview
+
+Soorma agents can be organized using various patterns depending on your use case. This guide helps you choose the right pattern for your needs.
+
+---
+
+## Pattern Catalog
+
+### 1. Worker Pattern
+
+**Use when:** Simple reactive agents that respond to events
+
+**Complexity:** ⭐ Beginner
+
+**Example:** [01-hello-world](../examples/01-hello-world/)
+
+```python
+from soorma import Worker
+
+worker = Worker(name="my-worker", capabilities=["greeting"])
+
+@worker.on_event("greeting.request")
+async def handle(event, context):
+    # Process event
+    await context.bus.publish("greeting.response", ...)
+```
+
+**Characteristics:**
+- Stateless or manages own state
+- Reacts to events
+- No coordination with other agents
+- Simple to implement and understand
+
+**Best for:**
+- Data processing pipelines
+- Notifications and alerts
+- Simple CRUD operations
+- Webhook handlers
+
+---
+
+### 2. Trinity Pattern (Planner-Worker-Tool)
+
+**Use when:** Goal-driven task decomposition with clear steps
+
+**Complexity:** ⭐⭐ Intermediate
+
+**Example:** [08-planner-worker-basic](../examples/08-planner-worker-basic/) (coming in Phase 4)
+
+**Architecture:**
+- **Planner:** Decomposes goals into actionable steps
+- **Worker:** Executes specific tasks/capabilities
+- **Tool:** Provides reusable, stateless operations
+
+**Characteristics:**
+- Clear separation of concerns (strategy vs execution vs utilities)
+- Planner handles workflow orchestration
+- Workers handle domain-specific execution
+- Tools provide shared, reusable capabilities
+- Explicit task coordination
+
+**Best for:**
+- Multi-step workflows with predictable patterns
+- Task assignment to specialized workers
+- Reusable operations that multiple agents need
+- When control flow is well-understood
+- Applications requiring auditability and observability
+
+**Note:** The Plan abstraction (state machine for workflow tracking) will be defined with the State Tracker service. See refactor plan for details.
+
+---
+
+### 3. Autonomous Choreography Pattern
+
+**Use when:** Complex, adaptive workflows where LLM decides next steps
+
+**Complexity:** ⭐⭐⭐ Advanced
+
+**Example:** [09-app-research-advisor](../examples/09-app-research-advisor/) (coming in Phase 4)
+
+**How it works:**
+1. Planner receives goal event (e.g., `research.goal`)
+2. LLM discovers available events from Registry
+3. LLM reasons about next action based on:
+   - Current goal and context
+   - Workflow state (from Working Memory)
+   - Available capabilities (discovered events)
+   - Previous actions taken
+4. Planner publishes chosen event (e.g., `web.search.request`)
+5. Worker responds with results event (e.g., `web.search.complete`)
+6. Planner receives results, reasons about next step, repeats
+
+**Event-driven flow:**
+- No loops - each step is triggered by incoming events
+- State tracked in Working Memory and Plan (state machine)
+- Circuit breaker (max actions) prevents runaway workflows
+- LLM adapts based on results from each step
+
+**Characteristics:**
+- No predefined workflow - LLM decides dynamically
+- Events discovered at runtime from Registry
+- Self-adapting to available capabilities
+- Fully event-driven (no while loops)
+- Circuit breaker prevents infinite action sequences
+
+**Best for:**
+- Unpredictable workflows where steps depend on intermediate results
+- Complex decision trees with many possible paths
+- Adaptive systems that evolve with available capabilities
+- When requirements change frequently
+- Research, exploration, and creative tasks
+
+**Note:** Implementation details (ChoreographyPlanner SDK class, Plan state machine) will be defined in Phase 4. See [refactor plan](../EXAMPLES_REFACTOR_PLAN.md) for roadmap.
+
+---
+
+### 4. Saga Pattern (Distributed Transactions)
+
+**Use when:** Multi-step transactions that need rollback
+
+**Complexity:** ⭐⭐⭐ Advanced
+
+**Example:** Coming in future release
+
+```python
+# Coordinator tracks saga state
+@worker.on_event("order.create")
+async def start_saga(event, context):
+    saga_id = generate_id()
+    
+    # Step 1: Reserve inventory
+    await publish("inventory.reserve", saga_id=saga_id)
+    
+    # If any step fails, compensate
+    @worker.on_event("inventory.failed")
+    async def compensate(event, context):
+        # Undo previous steps
+        await publish("order.cancel", saga_id=saga_id)
+```
+
+**Characteristics:**
+- Manages distributed transactions
+- Compensation logic for failures
+- State tracking across services
+- Eventually consistent
+
+**Best for:**
+- Order processing
+- Booking systems
+- Financial transactions
+- Multi-service updates
+
+---
+
+## Memory Patterns
+
+### Semantic Memory (RAG)
+
+**Use when:** Store and retrieve knowledge
+
+**Example:** [04-memory-semantic](../examples/04-memory-semantic/) (coming in Phase 3)
+
+```python
+# Store knowledge with embeddings
+await context.memory.store(
+    key="product_docs",
+    data={"content": "..."},
+    embedding_text="Product documentation about features",
+    memory_type="semantic"
+)
+
+# Search by semantic similarity
+results = await context.memory.search(
+    query="How do I configure authentication?",
+    memory_type="semantic",
+    top_k=5
+)
+```
+
+**Best for:** Documentation, FAQs, knowledge bases
+
+### Working Memory (Plan State)
+
+**Use when:** Share state across agents in a workflow
+
+**Example:** [05-memory-working](../examples/05-memory-working/) (coming in Phase 3)
+
+```python
+from soorma.workflow import WorkflowState
+
+# In planner
+state = WorkflowState(context, plan_id)
+await state.set("research_data", {...})
+
+# In worker (same plan_id)
+state = WorkflowState(context, plan_id)
+research = await state.get("research_data")
+```
+
+**Best for:** Workflow coordination, intermediate results
+
+### Episodic Memory (Conversation History)
+
+**Use when:** Remember past interactions
+
+**Example:** [06-memory-episodic](../examples/06-memory-episodic/) (coming in Phase 3)
+
+```python
+# Log conversation turn
+await context.memory.store(
+    key=f"conversation_{user_id}",
+    data={"user": "...", "assistant": "..."},
+    memory_type="episodic",
+    tags=["conversation", user_id]
+)
+
+# Retrieve history
+history = await context.memory.retrieve_all(
+    tags=["conversation", user_id],
+    memory_type="episodic"
+)
+```
+
+**Best for:** Chatbots, customer support, follow-up handling
+
+---
+
+## Choosing a Pattern
+
+| Your Requirement | Use This Pattern |
+|------------------|------------------|
+| Simple event reaction | Worker Pattern |
+| Multi-step with known sequence | Trinity Pattern |
+| Complex, adaptive workflow | Autonomous Choreography |
+| Distributed transaction | Saga Pattern |
+| Store/retrieve facts | Semantic Memory |
+| Workflow state sharing | Working Memory |
+| Conversation history | Episodic Memory |
+
+---
+
+## Related Documentation
+
+- [Event Patterns](./EVENT_PATTERNS.md) - Event-driven communication
+- [Memory Patterns](./MEMORY_PATTERNS.md) - Memory usage guide
+- [Examples](../examples/) - Working implementations
+
+---
+
+**Status Note:** This document will be expanded as more patterns are implemented in examples.
