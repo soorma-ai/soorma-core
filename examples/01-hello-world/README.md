@@ -150,7 +150,7 @@ Expected output:
 ## Next Steps
 
 - **[02-events-simple](../02-events-simple/)** - Learn more about event publishing and subscribing patterns
-- **[08-planner-worker-basic](../08-planner-worker-basic/)** - See the full Trinity pattern with Planner, Worker, and Tool agents
+- **08-planner-worker-basic (coming soon)** - See the full Trinity pattern with Planner, Worker, and Tool agents
 
 ---
 
