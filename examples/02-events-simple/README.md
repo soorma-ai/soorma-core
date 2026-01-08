@@ -221,8 +221,8 @@ async def handle_order(event, context):
 ## Next Steps
 
 - **[03-events-structured](../03-events-structured/)** - Learn how to add rich metadata to events for LLM-based selection
-- **[05-memory-working](../05-memory-working/)** - Share state across event handlers in a workflow
-- **[08-planner-worker-basic](../08-planner-worker-basic/)** - Combine events with goal-driven orchestration
+- **05-memory-working (coming soon)** - Share state across event handlers in a workflow
+- **08-planner-worker-basic (coming soon)** - Combine events with goal-driven orchestration
 
 ---
 

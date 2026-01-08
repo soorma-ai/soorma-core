@@ -68,7 +68,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./04-memory-semantic/">04-memory-semantic</a></td>
+<!-- <td><a href="./04-memory-semantic/">04-memory-semantic</a></td> -->
+<td><!--a href="./06-memory-episodic/"-->04-memory-semantic<!--/a--><br>(coming soon)</td>
 <td>
 • Semantic memory (RAG)<br>
 • Knowledge storage with embeddings<br>
@@ -79,7 +80,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./05-memory-working/">05-memory-working</a></td>
+<!-- <td><a href="./05-memory-working/">05-memory-working</a></td> -->
+<td><!--a href="./06-memory-episodic/"-->05-memory-working<!--/a--><br>(coming soon)</td>
 <td>
 • Working memory<br>
 • Plan-scoped shared state<br>
@@ -90,7 +92,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./06-memory-episodic/">06-memory-episodic</a></td>
+<td><!--a href="./06-memory-episodic/"-->06-memory-episodic<!--/a--><br>(coming soon)</td>
 <td>
 • Episodic memory<br>
 • Conversation history<br>
@@ -112,7 +114,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./07-tool-discovery/">07-tool-discovery</a></td>
+<td><!--a href="./07-tool-discovery/"-->07-tool-discovery<!--/a--><br>(coming soon)</td>
 <td>
 • Dynamic capability discovery<br>
 • Tool registration<br>
@@ -123,7 +125,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./08-planner-worker-basic/">08-planner-worker-basic</a></td>
+<td><!--a href="./08-planner-worker-basic/"-->08-planner-worker-basic<!--/a--><br>(coming soon)</td>
 <td>
 • Trinity pattern (Planner-Worker-Tool)<br>
 • Goal decomposition<br>
@@ -134,7 +136,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./09-app-research-advisor/">09-app-research-advisor</a></td>
+<td><!--a href="./09-app-research-advisor/"-->09-app-research-advisor<!--/a--><br>(coming soon)</td>
 <td>
 • Autonomous Choreography pattern<br>
 • ChoreographyPlanner SDK class<br>
@@ -146,7 +148,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><a href="./10-multi-turn-conversation/">10-multi-turn-conversation</a></td>
+<td><!--a href="./10-multi-turn-conversation/"-->10-multi-turn-conversation<!--/a--><br>(coming soon)</td>
 <td>
 • Stateful conversations<br>
 • Follow-up handling<br>
@@ -167,17 +169,35 @@ This directory contains progressively more complex examples demonstrating Soorma
 |------|---------|---------|
 | Build a simple reactive agent | Event Subscriber | [02-events-simple](./02-events-simple/) |
 | Let an LLM choose the next action | Structured Events + LLM | [03-events-structured](./03-events-structured/) |
-| Store facts for RAG/knowledge retrieval | Semantic Memory | [04-memory-semantic](./04-memory-semantic/) |
-| Share state across agents in a workflow | Working Memory | [05-memory-working](./05-memory-working/) |
-| Log conversation history or audit trail | Episodic Memory | [06-memory-episodic](./06-memory-episodic/) |
-| Discover and use tools at runtime | Tool Discovery | [07-tool-discovery](./07-tool-discovery/) |
-| Break down goals into tasks | Planner-Worker Pattern | [08-planner-worker-basic](./08-planner-worker-basic/) |
-| Build a fully autonomous multi-agent system | Autonomous Choreography | [09-app-research-advisor](./09-app-research-advisor/) |
-| Handle multi-turn conversations | Stateful Conversation | [10-multi-turn-conversation](./10-multi-turn-conversation/) |
+| Store facts for RAG/knowledge retrieval | Semantic Memory | 04-memory-semantic (coming soon) |
+| Share state across agents in a workflow | Working Memory | 05-memory-working (coming soon) |
+| Log conversation history or audit trail | Episodic Memory | 06-memory-episodic (coming soon) |
+| Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
+| Break down goals into tasks | Planner-Worker Pattern | 08-planner-worker-basic (coming soon) |
+| Build a fully autonomous multi-agent system | Autonomous Choreography | 09-app-research-advisor (coming soon) |
+| Handle multi-turn conversations | Stateful Conversation | 10-multi-turn-conversation (coming soon) |
 
 ---
 
 ## 🏃 Running Examples
+
+### Prerequisites
+
+Before running examples, complete the initial setup:
+
+```bash
+# Clone the repository (if not already done)
+git clone https://github.com/soorma-ai/soorma-core.git
+cd soorma-core
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install the SDK
+pip install soorma-core
+# Or install from local source: pip install -e sdk/python
+```
 
 ### Step 1: Start Platform Services (One Time)
 
@@ -231,22 +251,22 @@ python client.py
 ### Path 1: Quick Start (30 minutes)
 1. [01-hello-world](./01-hello-world/) - Get your first agent running
 2. [02-events-simple](./02-events-simple/) - Learn event pub/sub
-3. [08-planner-worker-basic](./08-planner-worker-basic/) - See the Trinity pattern
+3. [03-events-structured](./03-events-structured/) - LLM event selection
 
 ### Path 2: LLM-Powered Agents (60 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [03-events-structured](./03-events-structured/) - LLM event selection
-3. [05-memory-working](./05-memory-working/) - State management
-4. [09-app-research-advisor](./09-app-research-advisor/) - Full autonomous system
+3. 05-memory-working (coming soon) - State management
+4. 09-app-research-advisor (coming soon) - Full autonomous system
 
 ### Path 3: Memory Deep Dive (45 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
-2. [04-memory-semantic](./04-memory-semantic/) - RAG/Knowledge
-3. [05-memory-working](./05-memory-working/) - Workflow state
-4. [06-memory-episodic](./06-memory-episodic/) - Conversation history
+2. 04-memory-semantic (coming soon) - RAG/Knowledge
+3. 05-memory-working (coming soon) - Workflow state
+4. 06-memory-episodic (coming soon) - Conversation history
 
-### Path 4: Complete Journey (2 hours)
-Work through examples 01 → 10 in sequence for comprehensive understanding.
+### Path 4: Complete Journey (Coming Soon)
+Once all examples are available, work through examples 01 → 10 in sequence for comprehensive understanding.
 
 ---
 

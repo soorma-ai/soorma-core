@@ -382,9 +382,9 @@ This prevents LLMs from "hallucinating" event names that don't exist.
 
 ## Next Steps
 
-- **[05-memory-working](../05-memory-working/)** - Store workflow state between event handlers
-- **[07-tool-discovery](../07-tool-discovery/)** - Similar pattern for discovering tools
-- **[09-app-research-advisor](../09-app-research-advisor/)** - Full autonomous system using structured events
+- **05-memory-working (coming soon)** - Store workflow state between event handlers
+- **07-tool-discovery (coming soon)** - Similar pattern for discovering tools
+- **09-app-research-advisor (coming soon)** - Full autonomous system using structured events
 
 ---
 
