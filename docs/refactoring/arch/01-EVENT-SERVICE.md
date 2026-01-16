@@ -188,6 +188,8 @@ trace_id (root goal)
 
 #### SDK Usage Example
 
+**Note:** The SDK provides helper methods (`create_child_request()`, `create_response()`) to auto-propagate metadata. See [sdk/01-EVENT-SYSTEM.md](../sdk/01-EVENT-SYSTEM.md) for details. The example below shows manual propagation for demonstration of the EventEnvelope fields.
+
 ```python
 # 1. User submits goal (creates trace)
 goal_event = await bus.publish(
@@ -197,7 +199,7 @@ goal_event = await bus.publish(
     trace_id=str(uuid4()),  # NEW TRACE
 )
 
-# 2. Planner creates tasks (propagates trace)
+# 2. Planner creates tasks (propagates trace) - manual example
 await bus.publish(
     topic="action-requests",
     event_type="web.search.requested",
@@ -208,7 +210,7 @@ await bus.publish(
     response_event="web.search.completed",
 )
 
-# 3. Worker delegates sub-task (propagates trace)
+# 3. Worker delegates sub-task (propagates trace) - manual example
 await bus.publish(
     topic="action-requests",
     event_type="extract.entities",
@@ -218,6 +220,16 @@ await bus.publish(
     parent_event_id=event.id,          # Link to parent task
     response_event="extract.entities.done",
 )
+
+# RECOMMENDED: Use SDK helper methods instead
+# See sdk/01-EVENT-SYSTEM.md for create_child_request() and create_response()
+child_envelope = bus.create_child_request(
+    parent_event=goal_event,
+    event_type="web.search.requested",
+    data={"query": "AI trends"},
+    response_event="web.search.completed",
+)
+await bus.publish_envelope(child_envelope)  # All metadata auto-propagated
 ```
 
 ---
@@ -226,37 +238,49 @@ await bus.publish(
 
 ### Step 1: Update EventEnvelope (soorma-common)
 
+**Current State:** `EventEnvelope` in `libs/soorma-common/src/soorma_common/events.py` currently has:
+- CloudEvents standard: `id`, `source`, `specversion`, `type`, `time`, `data`, `subject`
+- Soorma-specific: `correlation_id`, `topic`, `tenant_id`, `session_id`
+
+**Missing fields that need to be added:**
+
 ```python
-# soorma-common/events.py
+# libs/soorma-common/src/soorma_common/events.py
 class EventEnvelope(BaseDTO):
     """Event envelope with response routing and tracing support."""
     
-    # Existing fields
+    # Existing fields (already implemented)
     id: str = Field(default_factory=lambda: str(uuid4()))
     source: str
     specversion: str = "1.0"
     type: str  # event_type
-    topic: str
-    time: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-    data: Dict[str, Any]
+    topic: EventTopic  # Uses EventTopic enum
+    time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    data: Optional[Dict[str, Any]] = None
     
-    # Existing optional fields
-    correlation_id: Optional[str] = None
+    # Existing optional fields (already implemented)
+    correlation_id: str = Field(default_factory=lambda: str(uuid4()))
     tenant_id: Optional[str] = None
     session_id: Optional[str] = None
     subject: Optional[str] = None
     
-    # NEW: Response routing
+    # NEW: Response routing (TO BE ADDED)
     response_event: Optional[str] = Field(
         None,
         description="Event type for response (caller-specified)"
     )
     response_topic: Optional[str] = Field(
-        "action-results",
-        description="Topic for response (defaults to action-results)"
+        None,
+        description="Topic for response (defaults to action-results if not specified)"
     )
     
-    # NEW: Distributed tracing
+    # NEW: Schema reference (TO BE ADDED)
+    payload_schema_name: Optional[str] = Field(
+        None,
+        description="Registered schema name for payload (enables dynamic schema lookup)"
+    )
+    
+    # NEW: Distributed tracing (TO BE ADDED)
     parent_event_id: Optional[str] = Field(
         None,
         description="ID of parent event in trace tree"
@@ -265,6 +289,12 @@ class EventEnvelope(BaseDTO):
         None,
         description="Root trace ID for entire workflow"
     )
+```
+
+**Note:** Both Event Service and SDK use this same EventEnvelope from `soorma-common`. The Event Service imports it directly in `services/event-service/src/models/schemas.py`:
+```python
+from soorma_common.events import EventEnvelope
+EventPayload = EventEnvelope
 ```
 
 ### Step 2: Update Event Service
@@ -348,6 +378,110 @@ async def test_trace_propagation():
     assert child.trace_id == trace_id
     assert child.parent_event_id == root.id
 ```
+
+---
+
+## Event Service Architecture Patterns
+
+**Status:** ✅ **Already Implemented** - The Event Service already supports all three patterns through the `queue_group` parameter in `adapter.subscribe()`. This section documents how to use existing functionality.
+
+The Event Service supports three critical messaging patterns:
+
+### Pattern 1: Queue Behavior (Store-and-Forward)
+
+**Requirement:** Offline consumers should receive events when they reconnect.
+
+**Current Implementation:** Event Service uses the underlying broker's durable subscription features. Each consumer with a `queue_group` maintains message persistence.
+
+**How to Use:**
+```python
+# Subscribe with queue_group for durable subscription
+await context.bus.subscribe(
+    topics=["action-requests"],
+    event_type="research.requested",
+    handler=handle_research,
+)
+# When agent connects, it automatically receives any queued messages
+```
+
+**Broker-specific behavior:**
+- **NATS:** Durable queue subscriptions persist messages until delivered
+- **GCP Pub/Sub:** Subscriptions retain messages per retention policy
+- **Memory Adapter:** Ephemeral (for testing only)
+
+---
+
+### Pattern 2: Broadcast/Fan-Out
+
+**Requirement:** Multiple independent consumers receive same event (each consumer gets its own copy).
+
+**Current Implementation:** Each agent subscription without a `queue_group` (or with unique `queue_group`) creates an independent consumer.
+
+**How to Use:**
+```python
+# Agent A - gets all messages
+await bus.subscribe(
+    topics=["system-events"],
+    event_type="task.progress",
+    handler=handler_a,
+)
+
+# Agent B - also gets all messages (independent subscription)
+await bus.subscribe(
+    topics=["system-events"],
+    event_type="task.progress",
+    handler=handler_b,
+)
+```
+
+**Note:** Event Service abstracts broker connections. Agents connect via Event Service API (HTTP/SSE), and Event Service manages broker subscriptions.
+
+---
+
+### Pattern 3: Load Balancing
+
+**Requirement:** Multiple instances of same consumer agent share work (only one instance processes each message).
+
+**Current Implementation:** Multiple agents using the **same `queue_group`** will have messages distributed among them (round-robin).
+
+**How to Use:**
+```python
+# Instance 1 of research-worker
+await bus.subscribe(
+    topics=["action-requests"],
+    event_type="research.requested",
+    handler=handle_research,
+    # queue_group automatically set to agent_name by EventClient
+)
+
+# Instance 2 of research-worker (same agent_name)
+await bus.subscribe(
+    topics=["action-requests"],
+    event_type="research.requested",
+    handler=handle_research,
+    # Same queue_group = load balanced
+)
+```
+
+**Implementation Detail:** In `event_manager.py`, line 135:
+```python
+# Use agent_name as queue_group if provided, otherwise fallback to agent_id.
+# This enables load balancing across multiple instances of the same logical agent.
+queue_group = agent_name if agent_name else agent_id
+```
+
+**See Tests:** `services/event-service/tests/test_queue_groups.py` demonstrates all patterns.
+
+---
+
+## Design Principles
+
+The Event Service provides an **abstraction layer** between agents and message broker:
+
+1. **Broker Portability** - Switch brokers (NATS ↔ GCP Pub/Sub) without changing agent code
+2. **Security & Auth** - Centralized access control via Event Service API
+3. **Protocol Flexibility** - Agents use HTTP/SSE, Event Service handles broker protocols
+4. **Pattern Support** - Queue groups, broadcast, and load balancing work at broker level
 
 ---
 

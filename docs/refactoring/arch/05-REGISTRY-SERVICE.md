@@ -45,12 +45,35 @@ services/registry/
 
 ## Tasks
 
-### RF-ARCH-005: Events Tied to Agents
+### RF-ARCH-005: Schema Registration by Name (Not Event Name)
 
-Link events to their owning agents for cleanup and tracking.
+**Critical Design Change:** Register **payload schemas by schema name**, not event name. This decouples schemas from dynamic event names.
+
+**Why:** When LLM agents delegate to discovered agents with dynamic response_event names, they need to know the response payload schema. Since event names are now dynamic strings (caller-specified), schemas must be registered independently.
+
+**Schema Registration:**
+```python
+class PayloadSchema(BaseDTO):
+    schema_name: str  # e.g., "research_result_v1"
+    version: str
+    json_schema: Dict[str, Any]
+    owner_agent_id: str
+    description: Optional[str]
+```
 
 **Database Schema:**
 ```sql
+CREATE TABLE payload_schemas (
+    id UUID PRIMARY KEY,
+    schema_name VARCHAR NOT NULL,
+    version VARCHAR NOT NULL,
+    json_schema JSONB NOT NULL,
+    owner_agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(schema_name, version)
+);
+
 ALTER TABLE events ADD COLUMN owner_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL;
 ALTER TABLE events DROP CONSTRAINT events_event_name_key;
 ALTER TABLE events ADD CONSTRAINT events_name_owner_unique UNIQUE(event_name, owner_agent_id);
@@ -87,15 +110,41 @@ Response:
             "capabilities": [
                 {
                     "task_name": "web_research",
+                    "description": "Performs web research on a given topic",
                     "consumed_event": {
-                        "event_name": "web.research.requested",
-                        "payload_schema": {...}
+                        "event_type": "web.research.requested",
+                        "payload_schema_name": "research_request_v1",
+                        "description": "Request for web research",
+                        "examples": [{"topic": "AI trends", "max_results": 10}]
                     },
-                    "produced_events": [...]
+                    "produced_events": [
+                        {
+                            "event_type": "research.completed",  # Canonical/example type
+                            "payload_schema_name": "research_result_v1",
+                            "description": "Research results (actual event type from request's response_event)"
+                        }
+                    ]
                 }
             ]
         }
     ]
+}
+
+# To get the actual schema, LLM agent makes a separate call:
+GET /v1/schemas/research_request_v1
+
+Response:
+{
+    "schema_name": "research_request_v1",
+    "version": "1.0",
+    "json_schema": {
+        "type": "object",
+        "properties": {
+            "topic": {"type": "string"},
+            "max_results": {"type": "integer"}
+        },
+        "required": ["topic"]
+    }
 }
 ```
 

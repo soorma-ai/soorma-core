@@ -83,12 +83,23 @@ Events registered flat, no ownership relationship.
 Events registered as part of agent registration, with `agent_id` as owner.
 
 ```python
+class EventDefinition(BaseDTO):
+    event_type: str  # Canonical event type, e.g., "research.requested"
+    payload_schema_name: str  # Registered schema name (e.g., "research_request_v1")
+    description: Optional[str]
+    examples: Optional[List[Dict[str, Any]]]
+
 class AgentCapability(BaseDTO):
     task_name: str
     description: str
-    consumed_event: EventDefinition  # ← Full definition, not just name
-    produced_events: List[EventDefinition]  # ← Full definitions
+    consumed_event: EventDefinition  # ← Full definition with schema name
+    produced_events: List[EventDefinition]  # ← Full definitions with schema names
 ```
+
+**Key Change:** Events reference `payload_schema_name` (registered in Registry) instead of embedding full JSON schema. This enables:
+1. Schema reuse across multiple events
+2. LLM agents to lookup schema by name when processing dynamic response events
+3. Schema versioning independent of event names
 
 **Registry Service Changes:**
 - Store `agent_id` as owner of events

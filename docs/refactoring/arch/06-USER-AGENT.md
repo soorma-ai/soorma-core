@@ -31,10 +31,17 @@ User-Agent Service bridges **autonomous agents and humans**:
 3. **Progress notifications** - Push updates to users
 4. **Chat interface** - Conversational interaction with agents
 
+**Note:** User-Agent is a **soorma-cloud** component (not soorma-core). It will be implemented using:
+- SDK and helper methods from `soorma-core`
+- Common libraries defined by `soorma-core`
+- Same specifications as other agents
+
+This document provides the service contract that soorma-cloud will implement.
+
 ### Key Files
 
 ```
-services/user-agent/      # NEW SERVICE
+soorma-cloud/enterprise/services/user-agent/  # CLOUD SERVICE
 ├── src/
 │   ├── subscribers/      # Listen to notification-events
 │   ├── routes/           # UI APIs

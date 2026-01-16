@@ -160,6 +160,81 @@ class BusClient:
         )
 ```
 
+#### Event Creation from Events (Auto-propagate Metadata)
+
+To avoid manual copying of trace_id, correlation_id, parent_event_id, add utility methods that return typed EventEnvelope:
+
+```python
+class BusClient:
+    def create_child_request(
+        self,
+        parent_event: EventEnvelope,
+        event_type: str,
+        data: Dict[str, Any],
+        response_event: str,
+        new_correlation_id: Optional[str] = None,
+    ) -> EventEnvelope:
+        """
+        Create child request envelope from parent event, auto-propagating metadata.
+        Returns EventEnvelope with proper type safety.
+        """
+        return EventEnvelope(
+            id=str(uuid4()),
+            source=parent_event.source,
+            type=event_type,
+            topic="action-requests",
+            data=data,
+            response_event=response_event,
+            response_topic="action-results",
+            trace_id=parent_event.trace_id,  # PROPAGATE
+            parent_event_id=parent_event.id,  # LINK
+            correlation_id=new_correlation_id or str(uuid4()),
+            tenant_id=parent_event.tenant_id,  # PROPAGATE
+            session_id=parent_event.session_id,  # PROPAGATE
+        )
+    
+    def create_response(
+        self,
+        request_event: EventEnvelope,
+        data: Dict[str, Any],
+        payload_schema_name: Optional[str] = None,
+    ) -> EventEnvelope:
+        """
+        Create response envelope from request event, auto-copying metadata.
+        Returns EventEnvelope with proper type safety.
+        """
+        return EventEnvelope(
+            id=str(uuid4()),
+            source=request_event.source,
+            type=request_event.response_event,  # USE REQUESTED
+            topic=request_event.response_topic or "action-results",
+            data=data,
+            correlation_id=request_event.correlation_id,  # MATCH
+            trace_id=request_event.trace_id,  # PROPAGATE
+            parent_event_id=request_event.id,  # LINK
+            payload_schema_name=payload_schema_name,  # SCHEMA REFERENCE
+        )
+    
+    async def publish_envelope(self, envelope: EventEnvelope) -> str:
+        """
+        Publish a pre-constructed EventEnvelope.
+        Convenience method for use with create_child_request() and create_response().
+        """
+        return await self.publish(
+            topic=envelope.topic,
+            event_type=envelope.type,
+            data=envelope.data,
+            correlation_id=envelope.correlation_id,
+            response_event=envelope.response_event,
+            response_topic=envelope.response_topic,
+            trace_id=envelope.trace_id,
+            parent_event_id=envelope.parent_event_id,
+            payload_schema_name=envelope.payload_schema_name,
+            tenant_id=envelope.tenant_id,
+            session_id=envelope.session_id,
+        )
+```
+
 #### Usage Examples
 ```python
 # Action request (requires response_event)
@@ -167,14 +242,26 @@ await context.bus.request(
     event_type="research.requested",
     data={"topic": "AI trends"},
     response_event="research.completed",
+    trace_id=str(uuid4()),  # Start new trace
 )
 
-# Action response (requires correlation_id)
-await context.bus.respond(
-    event_type="research.completed",
-    data={"findings": [...]},
-    correlation_id=request.correlation_id,
+# Child request from parent event (metadata auto-propagated) - typed!
+child_envelope = context.bus.create_child_request(
+    parent_event=goal_event,
+    event_type="web.search.requested",
+    data={"query": "AI trends"},
+    response_event="task-1.search.done",
+    new_correlation_id="task-1",
 )
+await context.bus.publish_envelope(child_envelope)  # Type-safe
+
+# Response from request (metadata auto-copied) - typed!
+response_envelope = context.bus.create_response(
+    request_event=request,
+    data={"findings": [...]},
+    payload_schema_name="research_result_v1",  # Schema reference
+)
+await context.bus.publish_envelope(response_envelope)  # Type-safe
 
 # Business fact announcement (no response needed)
 await context.bus.announce(

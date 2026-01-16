@@ -1,7 +1,7 @@
 # Soorma Core Refactoring Index
 
 **Status:** 📋 Active Planning  
-**Last Updated:** January 11, 2026
+**Last Updated:** January 15, 2026
 
 ---
 
@@ -24,7 +24,7 @@ This directory contains planning documents for the pre-launch refactoring of Soo
 
 When implementing refactoring tasks:
 
-1. **Read existing code first** - Understand what exists before changing
+1. **Read existing code first** - Understand actual implementation; many items already have some implementation
 2. **Write tests that define behavior** (TDD):
    - Add/modify tests to specify expected behavior
    - Run tests to see them fail
@@ -77,7 +77,7 @@ The architecture refactoring plan has been split into focused documents for impl
 
 ## Quick Reference: Key Design Decisions
 
-### 1. Event Publishing (RF-SDK-001, RF-SDK-002)
+### 1. Event Publishing (RF-SDK-001, RF-SDK-002, RF-SDK-013)
 ```python
 # OLD: Topic inferred from event name (BAD)
 await context.bus.publish("order.created", data={...})
@@ -89,6 +89,15 @@ await context.bus.publish(
     data={...},
     response_event="research.completed",  # Caller specifies response
 )
+
+# NEW: Utility methods to create events from events (auto-propagate metadata)
+child_params = context.bus.create_child_request(
+    parent_event=goal_event,
+    event_type="web.search.requested",
+    data={"query": "AI trends"},
+    response_event="task-1.search.done",
+)
+await context.bus.request(**child_params)  # trace_id, parent_event_id auto-copied
 ```
 
 ### 2. Agent Decorators (RF-SDK-003)
@@ -166,7 +175,7 @@ This section provides **order-based** guidance for implementing refactoring task
 
 **Documents:** [arch/01-EVENT-SERVICE.md](arch/01-EVENT-SERVICE.md) + [sdk/01-EVENT-SYSTEM.md](sdk/01-EVENT-SYSTEM.md)
 
-**Tasks:** RF-ARCH-003, RF-ARCH-004, RF-SDK-001, RF-SDK-002, RF-SDK-003
+**Tasks:** RF-ARCH-003, RF-ARCH-004, RF-SDK-001, RF-SDK-002, RF-SDK-003, RF-SDK-013
 
 **Copilot Agent Prompt:**
 ```
@@ -177,24 +186,30 @@ Reference documents:
 - docs/refactoring/sdk/01-EVENT-SYSTEM.md (SDK changes)
 
 Key deliverables:
-1. Update EventEnvelope in soorma-common with response_event, response_topic, trace_id, parent_event_id
+1. Update EventEnvelope in soorma-common with response_event, response_topic, trace_id, parent_event_id, payload_schema_name
 2. Update Event Service to accept and propagate new envelope fields
-3. Remove topic inference from BusClient, add explicit topic parameter
-4. Add convenience methods: request(), respond(), announce()
-5. Add response_event parameter to publish() method
-6. Update on_event() decorator to require topic parameter
-7. Write tests for all changes (TDD)
-8. Update examples to use new patterns
+3. Document messaging patterns (already implemented): queue behavior, broadcast, load balancing via queue_group
+4. Remove topic inference from BusClient, add explicit topic parameter
+5. Add convenience methods: request(), respond(), announce()
+6. Add event creation utilities: create_child_request(), create_response() for auto-propagating metadata
+7. Add response_event parameter to publish() method
+8. Update on_event() decorator to require topic parameter
+9. Write tests for all changes (TDD)
+10. Update examples to use new patterns
+
+Note: Event Service already supports queue/broadcast/load-balancing patterns via queue_group parameter. Focus on documenting usage and updating examples.
 
 Follow TDD: write tests first, then implement. Coordinate service and SDK changes together.
 ```
 
 **Completion Criteria:**
-- ✅ EventEnvelope has new fields
+- ✅ EventEnvelope has new fields (including payload_schema_name)
+- ✅ Event Service messaging patterns documented (queue_group usage)
 - ✅ BusClient.publish() requires topic
+- ✅ BusClient has create_child_request() and create_response() utilities
 - ✅ on_event() requires topic for base Agent
 - ✅ All tests pass
-- ✅ Examples updated
+- ✅ Examples updated with pattern usage
 
 ---
 
@@ -330,7 +345,8 @@ Reference documents:
 
 Key deliverables:
 1. Update Registry Service:
-   - Events nested within capabilities (EventDefinition)
+   - Schema registration by schema name (not event name)
+   - Events nested within capabilities (EventDefinition with payload_schema_name)
    - Structured capability with input/output schemas
    - Discovery API with natural language search
    - A2AAgentCard publication
@@ -338,14 +354,16 @@ Key deliverables:
    - Event registration tied to agent startup
    - RegistryClient.discover() for capability-based discovery
    - A2A Gateway for external protocol clients
-3. Update examples to use discovery
-4. Write tests for discovery and A2A (TDD)
+3. Event payloads include payload_schema_name for LLM schema lookup
+4. Update examples to use discovery
+5. Write tests for discovery and A2A (TDD)
 
 Dependencies: Stage 1 (events), Stage 2 (common DTOs) must be complete.
 ```
 
 **Completion Criteria:**
-- ✅ Registry supports structured capabilities with events
+- ✅ Registry supports schema registration by name
+- ✅ Events reference payload_schema_name (not embedded schemas)
 - ✅ Discovery API works with natural language
 - ✅ A2A Gateway exposes agents
 - ✅ All tests pass
@@ -364,14 +382,15 @@ Implement Stage 6 (Migration & Polish) of the Soorma Core refactoring.
 
 Reference documents:
 - docs/refactoring/sdk/08-MIGRATION.md (Migration guide)
-- docs/refactoring/arch/06-USER-AGENT.md (HITL pattern)
+- docs/refactoring/arch/06-USER-AGENT.md (HITL pattern reference)
 
 Key deliverables:
 1. Create comprehensive migration guide:
    - Breaking changes list
    - Before/after code examples
    - Migration scripts where possible
-2. Implement User-Agent service (optional HITL):
+2. Note: User-Agent service will be implemented in soorma-cloud (not soorma-core)
+   - Document HITL pattern contract for soorma-cloud implementation
    - Subscribe to notification-events topic
    - Human-in-the-loop pattern
    - Approval workflows
@@ -383,7 +402,7 @@ Dependencies: All previous stages must be complete.
 
 **Completion Criteria:**
 - ✅ Migration guide complete with examples
-- ✅ User-Agent service implemented (if needed)
+- ✅ User-Agent service contract documented (for soorma-cloud)
 - ✅ All documentation updated
 - ✅ All examples working
 - ✅ All tests passing
@@ -401,6 +420,7 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-001 | Remove topic inference from BusClient | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
 | RF-SDK-002 | Add response_event to action requests | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
 | RF-SDK-003 | Refactor on_event() signature | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
+| RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
 | RF-ARCH-008 | TaskContext memory type | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
 | RF-ARCH-009 | Plan/session query APIs | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
 | RF-SDK-010 | Memory SDK methods | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
@@ -411,12 +431,12 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
 | RF-ARCH-010 | Tracker as event listener | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
 | RF-ARCH-011 | Task progress model | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
-| RF-ARCH-005 | Events tied to agents (schema) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
+| RF-ARCH-005 | Schema registration by name (not event name) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
 | RF-ARCH-006 | Structured capability with EventDefinition | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
 | RF-ARCH-007 | Discovery API for LLM reasoning | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
 | RF-SDK-007 | Event registration tied to agent | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
 | RF-SDK-008 | Agent discovery by capability (A2A) | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
-| RF-ARCH-002 | HITL pattern (User-Agent service) | Stage 6 | [06-USER-AGENT](arch/06-USER-AGENT.md) | ⬜ |
+| RF-ARCH-002 | HITL pattern (User-Agent in soorma-cloud) | Stage 6 | [06-USER-AGENT](arch/06-USER-AGENT.md) | ⬜ |
 | RF-ARCH-001 | Clarify business-facts purpose | Reference | [00-OVERVIEW](arch/00-OVERVIEW.md) | ⬜ |
 
 ---
