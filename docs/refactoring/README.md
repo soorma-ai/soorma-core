@@ -165,6 +165,82 @@ await context.bus.publish(
 )
 ```
 
+### 6. WorkflowState Helper (RF-SDK-014)
+```python
+# OLD: Manual working memory management (boilerplate)
+workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
+action_history = workflow_state.get('action_history', [])
+action_history.append(event_name)
+workflow_state['action_history'] = action_history
+await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
+
+# NEW: Helper class
+from soorma.workflow import WorkflowState
+
+state = WorkflowState(context, plan_id)
+await state.record_action(event_name)
+await state.set("research_data", research_results)
+history = await state.get_action_history()
+```
+
+### 7. ChoreographyPlanner (RF-SDK-015, RF-SDK-016)
+```python
+# OLD: 400+ lines of boilerplate (event discovery, LLM prompts, validation)
+
+# NEW: Autonomous orchestration class
+from soorma.ai.choreography import ChoreographyPlanner
+from soorma.ai.decisions import PlannerDecision, PlanAction
+
+planner = ChoreographyPlanner(
+    name="orchestrator",
+    reasoning_model="gpt-4o",
+    max_actions=10,  # Circuit breaker
+)
+
+@planner.on_goal("research.goal")
+async def handle_goal(goal, context):
+    # SDK handles: discovery, LLM reasoning, validation
+    decision: PlannerDecision = await planner.reason_next_action(
+        trigger=f"New goal: {goal.data['objective']}",
+        context=context,
+        plan_id=goal.correlation_id,
+    )
+    
+    # SDK validates event exists BEFORE publishing (prevents hallucination)
+    await planner.execute_decision(decision, context, goal_event=goal)
+```
+
+### 8. EventSelector for LLM Routing (RF-SDK-017, RF-SDK-018)
+```python
+# OLD: 150+ lines of boilerplate (discovery, formatting, LLM calls)
+
+# NEW: LLM-based event selection utility
+from soorma.ai.selection import EventSelector
+
+# Agent provides domain-specific prompt
+ROUTING_PROMPT = """
+Analyze the ticket and select best routing.
+TICKET: {{state}}
+AVAILABLE ROUTES: {{events}}
+Respond with JSON: {"event_type": "...", "payload": {...}, "reasoning": "..."}
+"""
+
+selector = EventSelector(
+    context=context,
+    topic="action-requests",
+    prompt_template=ROUTING_PROMPT,
+    model="gpt-4o-mini",
+)
+
+@worker.on_task("ticket.created")
+async def route_ticket(task, context):
+    # SDK handles: discovery, formatting, LLM call, validation
+    decision = await selector.select_event(
+        state={"ticket_data": task.data}
+    )
+    await selector.publish_decision(decision, correlation_id=task.correlation_id)
+```
+
 ---
 
 ## Implementation Order & Copilot Agent Prompts
@@ -220,7 +296,7 @@ Follow TDD: write tests first, then implement. Coordinate service and SDK change
 
 **Documents:** [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) + [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) + [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) + [sdk/03-COMMON-DTOS.md](sdk/03-COMMON-DTOS.md)
 
-**Tasks:** RF-ARCH-008, RF-ARCH-009, RF-SDK-010, RF-SDK-011, RF-SDK-012
+**Tasks:** RF-ARCH-008, RF-ARCH-009, RF-SDK-010, RF-SDK-011, RF-SDK-012, RF-SDK-014
 
 **Copilot Agent Prompt:**
 ```
@@ -240,8 +316,9 @@ Key deliverables:
    - StateConfig, StateTransition, StateAction
    - A2AAgentCard, A2ATask, A2ATaskResult
    - Progress tracking event schemas
-5. Update Tracker to subscribe to system-events topic instead of API calls
-6. Write tests for all changes (TDD)
+5. Add WorkflowState helper class for managing plan-scoped state (RF-SDK-014)
+6. Update Tracker to subscribe to system-events topic instead of API calls
+7. Write tests for all changes (TDD)
 
 Dependencies: Stage 1 must be complete (event system foundation).
 ```
@@ -250,6 +327,7 @@ Dependencies: Stage 1 must be complete (event system foundation).
 - ✅ Memory Service has task/plan context endpoints
 - ✅ MemoryClient provides save/restore methods
 - ✅ soorma-common library exists with shared DTOs
+- ✅ WorkflowState helper provides plan-scoped state management
 - ✅ Tracker subscribes to events
 - ✅ All tests pass
 
@@ -297,7 +375,7 @@ Dependencies: Stage 1 (event system) and Stage 2 (memory) must be complete.
 
 **Documents:** [sdk/06-PLANNER-MODEL.md](sdk/06-PLANNER-MODEL.md) + [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md)
 
-**Tasks:** RF-SDK-006, RF-ARCH-010, RF-ARCH-011
+**Tasks:** RF-SDK-006, RF-SDK-015, RF-SDK-016, RF-ARCH-010, RF-ARCH-011
 
 **Copilot Agent Prompt:**
 ```
@@ -314,12 +392,18 @@ Key deliverables:
    - PlanContext with state machine (states, transitions, actions)
    - plan.save() / plan.restore() using Memory SDK
    - plan.execute_next() for state-driven task execution
-2. Update Tracker Service:
+2. Add PlannerDecision and PlanAction types for type-safe LLM decisions (RF-SDK-015)
+3. Implement ChoreographyPlanner class for autonomous orchestration (RF-SDK-016):
+   - LLM-based reasoning for next action selection
+   - Event discovery integration
+   - Registry validation (prevent hallucinated events)
+   - Type-safe decision execution
+4. Update Tracker Service:
    - Subscribe to system-events topic
    - Store task progress events
    - Provide query API for progress timelines
-3. Update research-advisor example with Planner
-4. Write tests for state machine and Tracker (TDD)
+5. Update research-advisor example with ChoreographyPlanner
+6. Write tests for state machine, ChoreographyPlanner, and Tracker (TDD)
 
 Dependencies: Stage 1 (events), Stage 2 (memory), Stage 3 (worker) must be complete.
 ```
@@ -327,6 +411,8 @@ Dependencies: Stage 1 (events), Stage 2 (memory), Stage 3 (worker) must be compl
 **Completion Criteria:**
 - ✅ Planner supports on_goal() and on_transition()
 - ✅ PlanContext state machine works
+- ✅ PlannerDecision types provide type safety
+- ✅ ChoreographyPlanner handles autonomous orchestration
 - ✅ Tracker stores and queries progress events
 - ✅ All tests pass
 
@@ -336,7 +422,7 @@ Dependencies: Stage 1 (events), Stage 2 (memory), Stage 3 (worker) must be compl
 
 **Documents:** [arch/05-REGISTRY-SERVICE.md](arch/05-REGISTRY-SERVICE.md) + [sdk/07-DISCOVERY.md](sdk/07-DISCOVERY.md)
 
-**Tasks:** RF-ARCH-005, RF-ARCH-006, RF-ARCH-007, RF-SDK-007, RF-SDK-008
+**Tasks:** RF-ARCH-005, RF-ARCH-006, RF-ARCH-007, RF-SDK-007, RF-SDK-008, RF-SDK-017, RF-SDK-018
 
 **Copilot Agent Prompt:**
 ```
@@ -357,9 +443,14 @@ Key deliverables:
    - Event registration tied to agent startup
    - RegistryClient.discover() for capability-based discovery
    - A2A Gateway for external protocol clients
-3. Event payloads include payload_schema_name for LLM schema lookup
-4. Update examples to use discovery
-5. Write tests for discovery and A2A (TDD)
+3. Add EventSelector utility for LLM-based event selection (RF-SDK-017):
+   - Customizable prompt templates
+   - Type-safe EventDecision output
+   - Registry validation before publishing
+4. Add EventToolkit.format_for_llm_selection() helper (RF-SDK-018)
+5. Event payloads include payload_schema_name for LLM schema lookup
+6. Update examples to use discovery and EventSelector
+7. Write tests for discovery, EventSelector, and A2A (TDD)
 
 Dependencies: Stage 1 (events), Stage 2 (common DTOs) must be complete.
 ```
@@ -368,6 +459,8 @@ Dependencies: Stage 1 (events), Stage 2 (common DTOs) must be complete.
 - ✅ Registry supports schema registration by name
 - ✅ Events reference payload_schema_name (not embedded schemas)
 - ✅ Discovery API works with natural language
+- ✅ EventSelector provides LLM-based event selection
+- ✅ EventToolkit has LLM formatting helpers
 - ✅ A2A Gateway exposes agents
 - ✅ All tests pass
 
@@ -415,23 +508,26 @@ Dependencies: All previous stages must be complete.
 ## Task Reference Index
 
 Quick lookup table for all refactoring tasks:
-✅ |
+
+| Task ID | Description | Stage | Document | Status |
+|---------|-------------|-------|----------|--------|
+| RF-ARCH-003 | Event envelope enhancements | Stage 1 | [01-EVENT-SERVICE](arch/01-EVENT-SERVICE.md) | ✅ |
 | RF-ARCH-004 | Correlation ID semantics | Stage 1 | [01-EVENT-SERVICE](arch/01-EVENT-SERVICE.md) | ✅ |
 | RF-SDK-001 | Remove topic inference from BusClient | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
 | RF-SDK-002 | Add response_event to action requests | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
 | RF-SDK-003 | Refactor on_event() signature | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
-| RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅
-| RF-SDK-002 | Add response_event to action requests | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
-| RF-SDK-003 | Refactor on_event() signature | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
-| RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
+| RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
 | RF-ARCH-008 | TaskContext memory type | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
 | RF-ARCH-009 | Plan/session query APIs | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
 | RF-SDK-010 | Memory SDK methods | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
 | RF-SDK-011 | Tracker via events, not API | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ⬜ |
 | RF-SDK-012 | Common library DTOs (State, A2A) | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ⬜ |
+| RF-SDK-014 | WorkflowState helper for plan state | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ⬜ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |
 | RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
+| RF-SDK-015 | PlannerDecision and PlanAction types | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
+| RF-SDK-016 | ChoreographyPlanner class | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
 | RF-ARCH-010 | Tracker as event listener | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
 | RF-ARCH-011 | Task progress model | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
 | RF-ARCH-005 | Schema registration by name (not event name) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
@@ -439,6 +535,8 @@ Quick lookup table for all refactoring tasks:
 | RF-ARCH-007 | Discovery API for LLM reasoning | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
 | RF-SDK-007 | Event registration tied to agent | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
 | RF-SDK-008 | Agent discovery by capability (A2A) | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
+| RF-SDK-017 | EventSelector utility for LLM event selection | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
+| RF-SDK-018 | EventToolkit.format_for_llm_selection() | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
 | RF-ARCH-002 | HITL pattern (User-Agent in soorma-cloud) | Stage 6 | [06-USER-AGENT](arch/06-USER-AGENT.md) | ⬜ |
 | RF-ARCH-001 | Clarify business-facts purpose | Reference | [00-OVERVIEW](arch/00-OVERVIEW.md) | ⬜ |
 
@@ -510,6 +608,44 @@ arch/06-USER-AGENT         ←→    (Standalone)
 
 ---
 
+## Post-Refactoring: Examples Development
+
+**After completing all stages (1-6), proceed to examples development:**
+
+📍 **Next:** [EXAMPLES_REFACTOR_PLAN.md](../EXAMPLES_REFACTOR_PLAN.md) Phase 3-5
+
+**Dependencies:**
+- ✅ Stage 1-5 SDK primitives complete
+- ✅ WorkflowState, ChoreographyPlanner, EventSelector available
+- ✅ Stage 6 migration guide complete
+
+**What's Next:**
+1. **Phase 3: Memory Examples** (Week 2)
+   - `04-memory-semantic/` - RAG pattern
+   - `05-memory-working/` - Plan-scoped state (uses WorkflowState)
+   - `06-memory-episodic/` - Conversation history
+
+2. **Phase 4: Advanced Examples** (Week 2-3)
+   - `07-tool-discovery/` - Dynamic capability discovery
+   - `08-planner-worker-basic/` - Trinity pattern
+   - `09-app-research-advisor/` - Uses ChoreographyPlanner
+   - `10-multi-turn-conversation/` - Stateful conversations
+
+3. **Phase 5: Documentation & AI Tooling** (Week 3)
+   - Create `.cursorrules` for AI assistant guidance
+   - Pattern catalog (`docs/PATTERNS.md`)
+   - Update blog posts with example references
+
+**Estimated Timeline:** 2-3 weeks after Stage 6 completion
+
+**Success Criteria:**
+- [ ] Developer can complete learning path in 2 hours
+- [ ] Each example runs independently with `soorma dev`
+- [ ] AI assistants recommend correct example for each task
+- [ ] `research-advisor` planner is <100 lines (vs current 485)
+
+---
+
 ## Related Documentation
 
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - Current platform architecture
@@ -517,3 +653,4 @@ arch/06-USER-AGENT         ←→    (Standalone)
 - [EVENT_PATTERNS.md](../EVENT_PATTERNS.md) - Event-driven patterns
 - [TOPICS.md](../TOPICS.md) - Topic definitions
 - [Memory ARCHITECTURE.md](../../services/memory/ARCHITECTURE.md) - Memory service design
+- [EXAMPLES_REFACTOR_PLAN.md](../EXAMPLES_REFACTOR_PLAN.md) - Progressive examples roadmap

@@ -335,18 +335,18 @@ class EventDecision(BaseModel):
 - [x] Updated `docs/EVENT_PATTERNS.md` with topics section
 - [x] Updated all example READMEs to reflect correct topics and patterns
 
-### Phase 2: SDK Primitives (Week 1 - parallelize with Phase 1)
-> **Rationale:** Build SDK helpers first so examples can use them cleanly. Avoids "write it hard way then refactor" double work.
-
-- [ ] Implement `PlannerDecision` and `PlanAction` types in `soorma/ai/decisions.py`
-  - Include `trace_id` and `plan_id` fields for future State Tracker correlation
-- [ ] Implement `ChoreographyPlanner` class with Registry validation
-  - Add placeholder hook: `async def _register_plan(self, goal, context): pass`
-  - Add placeholder hook: `async def _report_decision(self, decision, context): pass`
-  - These no-ops will be wired to State Tracker later without breaking API
-- [ ] Implement `WorkflowState` helper in `soorma/workflow.py`
-- [ ] Add `format_for_llm_selection()` to EventToolkit
-- [ ] Update SDK CHANGELOG
+### Phase 2: SDK Primitives ✅ INTEGRATED
+> **Status:** SDK conveniences integrated into overall Soorma Core refactoring plan.  
+> **See:** [docs/refactoring/README.md](docs/refactoring/README.md) Stages 2-5
+>
+> The following SDK primitives are now part of the main refactoring:
+> - RF-SDK-014: WorkflowState helper (Stage 2)
+> - RF-SDK-015: PlannerDecision types (Stage 4)
+> - RF-SDK-016: ChoreographyPlanner class (Stage 4)
+> - RF-SDK-017: EventSelector utility (Stage 5)
+> - RF-SDK-018: EventToolkit.format_for_llm_selection() (Stage 5)
+>
+> **Examples refactoring will resume with Phase 3 after SDK implementation completes.**
 
 ### Phase 3: Memory Examples (Week 2)
 > **Depends on:** Phase 2 (`WorkflowState` helper)
