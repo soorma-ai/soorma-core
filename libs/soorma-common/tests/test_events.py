@@ -105,6 +105,76 @@ class TestEventEnvelope:
         assert "correlationId" in data
         assert "tenantId" in data
         assert "sessionId" in data
+    
+    def test_event_envelope_with_tracing(self):
+        """Test EventEnvelope with distributed tracing fields."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"test": "data"},
+            trace_id="trace-123",
+            parent_event_id="event-456",
+            correlation_id="task-789",
+            response_event="test.response",
+            response_topic="action-results",
+        )
+        
+        assert envelope.trace_id == "trace-123"
+        assert envelope.parent_event_id == "event-456"
+        assert envelope.response_event == "test.response"
+        assert envelope.response_topic == "action-results"
+    
+    def test_event_envelope_with_schema_reference(self):
+        """Test EventEnvelope with payload schema reference."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"test": "data"},
+            payload_schema_name="test_schema_v1",
+        )
+        
+        assert envelope.payload_schema_name == "test_schema_v1"
+    
+    def test_event_envelope_backwards_compatible(self):
+        """Test EventEnvelope works without new fields (backwards compatible)."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"test": "data"},
+        )
+        
+        assert envelope.trace_id is None
+        assert envelope.parent_event_id is None
+        assert envelope.response_event is None
+        assert envelope.response_topic is None
+        assert envelope.payload_schema_name is None
+    
+    def test_to_cloudevents_dict_with_new_fields(self):
+        """Test CloudEvents dict conversion includes new fields."""
+        envelope = EventEnvelope(
+            id="event-123",
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.BUSINESS_FACTS,
+            data={"key": "value"},
+            correlation_id="trace-456",
+            trace_id="trace-root",
+            parent_event_id="parent-event",
+            response_event="test.response",
+            response_topic="action-results",
+            payload_schema_name="test_schema_v1",
+        )
+        
+        ce_dict = envelope.to_cloudevents_dict()
+        
+        assert ce_dict["traceid"] == "trace-root"
+        assert ce_dict["parenteventid"] == "parent-event"
+        assert ce_dict["responseevent"] == "test.response"
+        assert ce_dict["responsetopic"] == "action-results"
+        assert ce_dict["payloadschemaname"] == "test_schema_v1"
 
 
 class TestActionRequestEvent:

@@ -16,10 +16,10 @@
 In [02-events-simple](../02-events-simple/), events were hardcoded:
 
 ```python
-@worker.on_event("order.placed")
+@worker.on_event("order.placed", topic="business-facts")
 async def handle_order(event, context):
     # Handler knows exactly what event it will publish
-    await context.bus.publish("inventory.reserve", ...)
+    await context.bus.announce("inventory.reserve", ...)
 ```
 
 But what if an agent needs to **dynamically choose** which event to publish based on:
@@ -214,7 +214,7 @@ OPTIONS: {events}
 
 Select the best routing event..."""
 
-@worker.on_event("ticket.created")
+@worker.on_event("ticket.created", topic="business-facts")
 async def route_ticket(event, context):
     # Step 1: Discover available routing options
     events = await discover_events(context, topic="action-requests")
@@ -346,19 +346,19 @@ The selector will show:
 ### Simple Events (02-events-simple)
 ```python
 # Hardcoded - fast, but inflexible
-@worker.on_event("order.placed")
+@worker.on_event("order.placed", topic="business-facts")
 async def handle(event, context):
-    await context.bus.publish("inventory.reserve", ...)
+    await context.bus.announce("inventory.reserve", ...)
 ```
 
 ### Structured Events (This example)
 ```python
 # Dynamic - flexible, but requires LLM call
-@worker.on_event("order.placed")
+@worker.on_event("order.placed", topic="business-facts")
 async def handle(event, context):
     events = await discover_events(topic="inventory")
     selected = await llm_choose_event(events, context)
-    await context.bus.publish(selected, ...)
+    await context.bus.announce(selected, ...)
 ```
 
 ## Advanced: Preventing Hallucinated Events
@@ -375,7 +375,7 @@ async def execute_decision(self, decision, context):
         )
     
     # Safe to publish
-    await context.bus.publish(decision.event_name, ...)
+    await context.bus.announce(decision.event_name, ...)
 ```
 
 This prevents LLMs from "hallucinating" event names that don't exist.

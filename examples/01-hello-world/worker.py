@@ -19,18 +19,9 @@ worker = Worker(
 )
 
 
-@worker.on_event("greeting.requested")
+@worker.on_event("greeting.requested", topic="action-requests")
 async def handle_greeting(event, context):
-    """
-    Handle greeting requests.
-    
-    Args:
-        event: Event dictionary containing event data
-        context: PlatformContext with access to registry, memory, and bus
-    
-    Returns:
-        The handler doesn't need to return anything - it publishes events instead
-    """
+    """Handle greeting requests and respond with a friendly message."""
     print(f"\n📨 Received greeting request")
     
     # Extract data from the event
@@ -43,15 +34,16 @@ async def handle_greeting(event, context):
     greeting = f"Hello, {name}! 👋"
     print(f"   Generated: {greeting}\n")
     
-    # Publish the response event
-    await context.bus.publish(
+    # Send response using respond() convenience method
+    await context.bus.respond(
         event_type="greeting.completed",
-        topic="action-results",
         data={
             "greeting": greeting,
             "name": name,
-        }
+        },
+        correlation_id=event.get("correlation_id"),
     )
+    
     print("✅ Response published")
 
 

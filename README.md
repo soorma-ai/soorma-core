@@ -153,6 +153,7 @@ See the **[Examples Guide](./examples/README.md)** for a complete catalog of exa
 - **[Developer Guide](./docs/DEVELOPER_GUIDE.md)** - DX workflows, testing, debugging, multi-provider LLM support
 - **[Design Patterns](./docs/DESIGN_PATTERNS.md)** - Agent patterns, autonomous choreography, circuit breakers
 - **[Event Patterns](./docs/EVENT_PATTERNS.md)** - Event-driven communication, topics, structured events
+- **[Messaging Patterns](./docs/MESSAGING_PATTERNS.md)** - Queue behavior, broadcast/fan-out, load balancing
 - **[Memory Patterns](./docs/MEMORY_PATTERNS.md)** - CoALA memory types (Semantic, Working, Episodic)
 - **[AI Assistant Guide](./docs/AI_ASSISTANT_GUIDE.md)** - Using examples with Copilot/Cursor for rapid development
 - **[Examples Guide](./examples/README.md)** - Progressive learning path and pattern catalog

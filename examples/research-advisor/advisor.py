@@ -30,7 +30,7 @@ async def startup():
 async def shutdown():
     print(f"\n🛑 {advisor.name} shutting down. Goodbye!")
 
-@advisor.on_event(ADVICE_REQUEST_EVENT.event_name)
+@advisor.on_event(ADVICE_REQUEST_EVENT.event_name, topic="action-requests")
 async def handle_advice_request(event: dict, context: PlatformContext):
     """
     Drafts response based on user request and research context.

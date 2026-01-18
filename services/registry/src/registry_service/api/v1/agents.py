@@ -99,8 +99,20 @@ async def refresh_agent_heartbeat(
         
     Returns:
         AgentRegistrationResponse with refresh status
+        
+    Raises:
+        HTTPException: 404 if agent not found
     """
-    return await AgentRegistryService.refresh_agent_heartbeat(db, agent_id)
+    response = await AgentRegistryService.refresh_agent_heartbeat(db, agent_id)
+    
+    # Return 404 if agent not found
+    if not response.success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=response.message
+        )
+    
+    return response
 
 
 @router.delete("/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)

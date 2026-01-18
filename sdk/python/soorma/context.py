@@ -261,13 +261,20 @@ class RegistryClient:
         """
         client = await self._ensure_client()
         try:
-            response = await client.post(
+            response = await client.put(
                 f"{self.base_url}/v1/agents/{agent_id}/heartbeat",
                 timeout=5.0,
             )
-            return response.status_code == 200
+            if response.status_code == 200:
+                return True
+            else:
+                logger.warning(
+                    f"Heartbeat failed for {agent_id}: "
+                    f"HTTP {response.status_code} - {response.text}"
+                )
+                return False
         except Exception as e:
-            logger.debug(f"Heartbeat failed: {e}")
+            logger.warning(f"Heartbeat exception for {agent_id}: {e}")
             return False
     
     async def close(self) -> None:
@@ -666,55 +673,298 @@ class BusClient:
     Powered by: Kafka / NATS (via Event Service)
     
     Methods:
-        publish(): Emit domain events
+        publish(): Emit domain events with explicit topic
+        request(): Convenience method for action requests
+        respond(): Convenience method for responses
+        announce(): Convenience method for business facts
+        create_child_request(): Create child event with metadata propagation
+        create_response(): Create response event from request
+        publish_envelope(): Publish pre-constructed envelope
         subscribe(): React to events (via EventClient)
-        request(): RPC-style calls
     """
     event_client: EventClient = field(default_factory=EventClient)
     
     async def publish(
         self,
+        topic: str,
         event_type: str,
         data: Dict[str, Any],
-        topic: Optional[str] = None,
         correlation_id: Optional[str] = None,
+        response_event: Optional[str] = None,
+        response_topic: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        parent_event_id: Optional[str] = None,
+        payload_schema_name: Optional[str] = None,
+        subject: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> str:
         """
-        Emit a domain event.
+        Emit a domain event with explicit topic.
         
         Args:
+            topic: Target topic (required, no inference)
             event_type: Event type (e.g., "technician_scheduled")
             data: Event payload
-            topic: Target topic (auto-inferred from event_type if not provided)
             correlation_id: Optional correlation ID for tracing
+            response_event: Event type for response (DisCo pattern)
+            response_topic: Topic for response (defaults to action-results)
+            trace_id: Root trace ID for distributed tracing
+            parent_event_id: ID of parent event in trace tree
+            payload_schema_name: Registered schema name for payload
+            subject: Optional subject/resource identifier
+            tenant_id: Tenant ID for multi-tenancy
+            session_id: Session ID for conversation correlation
             
         Returns:
             The event ID
         """
-        # Auto-infer topic from event type if not provided
-        if topic is None:
-            topic = self._infer_topic(event_type)
-        
         return await self.event_client.publish(
             event_type=event_type,
             topic=topic,
             data=data,
             correlation_id=correlation_id,
+            response_event=response_event,
+            response_topic=response_topic,
+            trace_id=trace_id,
+            parent_event_id=parent_event_id,
+            payload_schema_name=payload_schema_name,
+            subject=subject,
+            tenant_id=tenant_id,
+            session_id=session_id,
         )
     
-    def _infer_topic(self, event_type: str) -> str:
-        """Infer the topic from event type based on conventions."""
-        # Map common patterns to topics
-        if event_type.endswith(".requested") or event_type.endswith(".request"):
-            return "action-requests"
-        elif event_type.endswith(".completed") or event_type.endswith(".result"):
-            return "action-results"
-        elif event_type.startswith("billing."):
-            return "billing"
-        elif event_type.startswith("notification."):
-            return "notifications"
-        else:
-            return "business-facts"
+    async def request(
+        self,
+        event_type: str,
+        data: Dict[str, Any],
+        response_event: str,
+        correlation_id: Optional[str] = None,
+        response_topic: str = "action-results",
+        trace_id: Optional[str] = None,
+        parent_event_id: Optional[str] = None,
+        subject: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """
+        Publish to action-requests topic with mandatory response_event.
+        Enforces the request/response contract.
+        
+        Args:
+            event_type: Request event type
+            data: Request payload
+            response_event: Event type for response (required)
+            correlation_id: Optional correlation ID
+            response_topic: Topic for response (defaults to action-results)
+            trace_id: Root trace ID for distributed tracing
+            parent_event_id: ID of parent event in trace tree
+            subject: Optional subject/resource identifier
+            tenant_id: Tenant ID for multi-tenancy
+            session_id: Session ID for conversation correlation
+            
+        Returns:
+            The event ID
+        """
+        return await self.publish(
+            topic="action-requests",
+            event_type=event_type,
+            data=data,
+            correlation_id=correlation_id,
+            response_event=response_event,
+            response_topic=response_topic,
+            trace_id=trace_id,
+            parent_event_id=parent_event_id,
+            subject=subject,
+            tenant_id=tenant_id,
+            session_id=session_id,
+        )
+    
+    async def respond(
+        self,
+        event_type: str,
+        data: Dict[str, Any],
+        correlation_id: str,
+        topic: str = "action-results",
+        trace_id: Optional[str] = None,
+        parent_event_id: Optional[str] = None,
+        payload_schema_name: Optional[str] = None,
+        subject: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """
+        Publish to action-results topic with mandatory correlation_id.
+        Enforces response correlation contract.
+        
+        Args:
+            event_type: Response event type (from request.response_event)
+            data: Response payload
+            correlation_id: Correlation ID from original request (required)
+            topic: Response topic (defaults to action-results)
+            trace_id: Root trace ID for distributed tracing
+            parent_event_id: ID of parent event in trace tree
+            payload_schema_name: Registered schema name for payload
+            subject: Optional subject/resource identifier
+            tenant_id: Tenant ID for multi-tenancy
+            session_id: Session ID for conversation correlation
+            
+        Returns:
+            The event ID
+        """
+        return await self.publish(
+            topic=topic,
+            event_type=event_type,
+            data=data,
+            correlation_id=correlation_id,
+            trace_id=trace_id,
+            parent_event_id=parent_event_id,
+            payload_schema_name=payload_schema_name,
+            subject=subject,
+            tenant_id=tenant_id,
+            session_id=session_id,
+        )
+    
+    async def announce(
+        self,
+        event_type: str,
+        data: Dict[str, Any],
+        correlation_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        parent_event_id: Optional[str] = None,
+        subject: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """
+        Publish to business-facts topic for domain events/observations.
+        No response expected.
+        
+        Args:
+            event_type: Business fact event type
+            data: Event payload
+            correlation_id: Optional correlation ID
+            trace_id: Root trace ID for distributed tracing
+            parent_event_id: ID of parent event in trace tree
+            subject: Optional subject/resource identifier
+            tenant_id: Tenant ID for multi-tenancy
+            session_id: Session ID for conversation correlation
+            
+        Returns:
+            The event ID
+        """
+        return await self.publish(
+            topic="business-facts",
+            event_type=event_type,
+            data=data,
+            correlation_id=correlation_id,
+            trace_id=trace_id,
+            parent_event_id=parent_event_id,
+            subject=subject,
+            tenant_id=tenant_id,
+            session_id=session_id,
+        )
+    
+    def create_child_request(
+        self,
+        parent_event: "EventEnvelope",
+        event_type: str,
+        data: Dict[str, Any],
+        response_event: str,
+        new_correlation_id: Optional[str] = None,
+    ) -> "EventEnvelope":
+        """
+        Create child request envelope from parent event, auto-propagating metadata.
+        Returns EventEnvelope with proper type safety.
+        
+        Args:
+            parent_event: The parent event to derive metadata from
+            event_type: Child event type
+            data: Child event payload
+            response_event: Expected response event type
+            new_correlation_id: Optional new correlation ID (generated if not provided)
+            
+        Returns:
+            EventEnvelope with auto-propagated metadata
+        """
+        from uuid import uuid4
+        from soorma_common.events import EventEnvelope, EventTopic
+        
+        return EventEnvelope(
+            id=str(uuid4()),
+            source=parent_event.source,
+            type=event_type,
+            topic=EventTopic.ACTION_REQUESTS,
+            data=data,
+            response_event=response_event,
+            response_topic="action-results",
+            trace_id=parent_event.trace_id,  # PROPAGATE
+            parent_event_id=parent_event.id,  # LINK
+            correlation_id=new_correlation_id or str(uuid4()),
+            tenant_id=parent_event.tenant_id,  # PROPAGATE
+            session_id=parent_event.session_id,  # PROPAGATE
+        )
+    
+    def create_response(
+        self,
+        request_event: "EventEnvelope",
+        data: Dict[str, Any],
+        payload_schema_name: Optional[str] = None,
+    ) -> "EventEnvelope":
+        """
+        Create response envelope from request event, auto-copying metadata.
+        Returns EventEnvelope with proper type safety.
+        
+        Args:
+            request_event: The request event to respond to
+            data: Response payload
+            payload_schema_name: Optional schema reference for payload
+            
+        Returns:
+            EventEnvelope with auto-matched correlation and propagated metadata
+        """
+        from uuid import uuid4
+        from soorma_common.events import EventEnvelope, EventTopic
+        
+        return EventEnvelope(
+            id=str(uuid4()),
+            source=request_event.source,
+            type=request_event.response_event,  # USE REQUESTED
+            topic=EventTopic.ACTION_RESULTS if not request_event.response_topic else EventTopic(request_event.response_topic),
+            data=data,
+            correlation_id=request_event.correlation_id,  # MATCH
+            trace_id=request_event.trace_id,  # PROPAGATE
+            parent_event_id=request_event.id,  # LINK
+            payload_schema_name=payload_schema_name,  # SCHEMA REFERENCE
+            tenant_id=request_event.tenant_id,  # PROPAGATE
+            session_id=request_event.session_id,  # PROPAGATE
+        )
+    
+    async def publish_envelope(self, envelope: "EventEnvelope") -> str:
+        """
+        Publish a pre-constructed EventEnvelope.
+        Convenience method for use with create_child_request() and create_response().
+        
+        Args:
+            envelope: Pre-constructed EventEnvelope
+            
+        Returns:
+            The event ID
+        """
+        return await self.publish(
+            topic=envelope.topic.value,
+            event_type=envelope.type,
+            data=envelope.data,
+            correlation_id=envelope.correlation_id,
+            response_event=envelope.response_event,
+            response_topic=envelope.response_topic,
+            trace_id=envelope.trace_id,
+            parent_event_id=envelope.parent_event_id,
+            payload_schema_name=envelope.payload_schema_name,
+            subject=envelope.subject,
+            tenant_id=envelope.tenant_id,
+            session_id=envelope.session_id,
+        )
     
     async def subscribe(self, topics: List[str]) -> None:
         """
@@ -727,63 +977,6 @@ class BusClient:
             topics: List of topic patterns to subscribe to
         """
         await self.event_client.connect(topics=topics)
-    
-    async def request(
-        self,
-        event_type: str,
-        data: Dict[str, Any],
-        timeout: float = 30.0,
-    ) -> Optional[Dict[str, Any]]:
-        """
-        RPC-style request/response.
-        
-        Publishes a request event and waits for a correlated response.
-        
-        Args:
-            event_type: Request event type
-            data: Request payload
-            timeout: Timeout in seconds
-            
-        Returns:
-            Response data if received, None on timeout
-        """
-        import asyncio
-        from uuid import uuid4
-        
-        correlation_id = str(uuid4())
-        response_received = asyncio.Event()
-        response_data: Dict[str, Any] = {}
-        
-        # Create a one-time handler for the response
-        async def handle_response(event: Dict[str, Any]) -> None:
-            if event.get("correlation_id") == correlation_id:
-                response_data.update(event.get("data", {}))
-                response_received.set()
-        
-        # Register temporary handler
-        response_type = event_type.replace(".request", ".response")
-        original_handlers = self.event_client._handlers.get(response_type, [])
-        self.event_client._handlers.setdefault(response_type, []).append(handle_response)
-        
-        try:
-            # Publish request
-            await self.publish(
-                event_type=event_type,
-                data=data,
-                correlation_id=correlation_id,
-            )
-            
-            # Wait for response
-            try:
-                await asyncio.wait_for(response_received.wait(), timeout=timeout)
-                return response_data
-            except asyncio.TimeoutError:
-                logger.warning(f"Request {event_type} timed out after {timeout}s")
-                return None
-        finally:
-            # Cleanup handler
-            if handle_response in self.event_client._handlers.get(response_type, []):
-                self.event_client._handlers[response_type].remove(handle_response)
     
     async def close(self) -> None:
         """Close the event client."""

@@ -114,17 +114,23 @@ class EventClient:
     # Decorator for registering handlers
     # =========================================================================
     
-    def on_event(self, event_type: str) -> Callable[[EventHandler], EventHandler]:
+    def on_event(
+        self,
+        event_type: str,
+        *,
+        topic: Optional[str] = None,
+    ) -> Callable[[EventHandler], EventHandler]:
         """
         Decorator to register an event handler for a specific event type.
         
         Usage:
-            @client.on_event("research.requested")
+            @client.on_event("research.requested", topic="action-requests")
             async def handle_research(event):
                 print(f"Received: {event}")
         
         Args:
             event_type: The event type to handle (e.g., "research.requested")
+            topic: Optional topic (for consistency with Agent.on_event(), not yet enforced)
         
         Returns:
             Decorator function
@@ -233,6 +239,13 @@ class EventClient:
         data: Optional[Dict[str, Any]] = None,
         correlation_id: Optional[str] = None,
         subject: Optional[str] = None,
+        response_event: Optional[str] = None,
+        response_topic: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        parent_event_id: Optional[str] = None,
+        payload_schema_name: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> str:
         """
         Publish an event to the Event Service.
@@ -243,6 +256,13 @@ class EventClient:
             data: Event payload data
             correlation_id: Optional correlation ID for tracing
             subject: Optional subject/resource identifier
+            response_event: Event type for response (DisCo pattern)
+            response_topic: Topic for response (defaults to action-results)
+            trace_id: Root trace ID for distributed tracing
+            parent_event_id: ID of parent event in trace tree
+            payload_schema_name: Registered schema name for payload
+            tenant_id: Tenant ID for multi-tenancy (overrides client default)
+            session_id: Session ID for conversation correlation (overrides client default)
         
         Returns:
             The event ID
@@ -268,10 +288,22 @@ class EventClient:
         # Add optional fields
         if subject:
             event["subject"] = subject
-        if self.tenant_id:
-            event["tenant_id"] = self.tenant_id
-        if self.session_id:
-            event["session_id"] = self.session_id
+        if response_event:
+            event["response_event"] = response_event
+        if response_topic:
+            event["response_topic"] = response_topic
+        if trace_id:
+            event["trace_id"] = trace_id
+        if parent_event_id:
+            event["parent_event_id"] = parent_event_id
+        if payload_schema_name:
+            event["payload_schema_name"] = payload_schema_name
+        
+        # Use provided tenant_id/session_id, or fall back to client defaults
+        if tenant_id or self.tenant_id:
+            event["tenant_id"] = tenant_id or self.tenant_id
+        if session_id or self.session_id:
+            event["session_id"] = session_id or self.session_id
         
         url = f"{self.event_service_url}/v1/events/publish"
         

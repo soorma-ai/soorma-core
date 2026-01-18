@@ -232,7 +232,7 @@ class Planner(Agent):
             self._goal_handlers[goal_type] = func
             
             # Register as event handler for this goal type
-            @self.on_event(goal_type)
+            @self.on_event(goal_type, topic="action-requests")
             async def goal_event_handler(event: Dict[str, Any], context: PlatformContext) -> None:
                 await self._handle_goal_event(goal_type, event, context)
             

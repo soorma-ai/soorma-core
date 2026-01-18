@@ -32,7 +32,7 @@ async def startup():
 async def shutdown():
     print(f"\n🛑 {validator.name} shutting down. Goodbye!")
 
-@validator.on_event(VALIDATION_REQUEST_EVENT.event_name)
+@validator.on_event(VALIDATION_REQUEST_EVENT.event_name, topic="action-requests")
 async def handle_validation_request(event: dict, context: PlatformContext):
     """
     Validates if the draft is accurate based on the source text.

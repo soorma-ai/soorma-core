@@ -8,6 +8,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Agent Auto-Recovery on Heartbeat Failure (Production Critical Fix)**
+  - Agents now automatically re-register when heartbeat fails (e.g., after laptop sleep)
+  - Added consecutive failure tracking to prevent tight retry loops
+  - Enhanced heartbeat logging with status codes and response details
+  - Registry service now returns proper 404 errors for failed heartbeats (was 200 with success=false)
+  - Added timestamp logging to registry service matching event-service format
+  - **Tests**: 5 new tests validating auto-recovery behavior (all passing ✅)
+  - **Impact**: Fixes critical issue where agents would be deleted after sleep but never recover
+
+- **Stage 1 - Foundation Event System Refactoring (January 17, 2026)**
+  - Added new fields to `EventEnvelope` for response routing and distributed tracing:
+    - `response_event`: Event type for response (DisCo pattern for dynamic response coupling)
+    - `response_topic`: Topic for response (defaults to action-results)
+    - `trace_id`: Root trace ID for entire workflow
+    - `parent_event_id`: ID of parent event in trace tree
+    - `payload_schema_name`: Registered schema name for payload (enables dynamic schema lookup)
+  - Added convenience methods to `BusClient` for enforcing event contracts:
+    - `request()`: Publishes to action-requests with mandatory response_event
+    - `respond()`: Publishes to action-results with mandatory correlation_id
+    - `announce()`: Publishes to business-facts (no response expected)
+  - Added event creation utilities to `BusClient` for metadata propagation:
+    - `create_child_request()`: Auto-propagates trace_id, tenant_id, session_id from parent event
+    - `create_response()`: Auto-matches correlation_id and uses request.response_event
+    - `publish_envelope()`: Publishes pre-constructed EventEnvelope
+  - Created comprehensive documentation:
+    - `docs/MESSAGING_PATTERNS.md`: Guide to queue/broadcast/load-balancing patterns
+  - **Tests**: 64 new tests covering all event system changes (all passing ✅)
+
+### Changed
+- **BREAKING: BusClient.publish() now requires explicit topic parameter**
+  - Removed `_infer_topic()` method - no more automatic topic inference
+  - Migration: Add explicit `topic="business-facts"` (or appropriate topic) to all `bus.publish()` calls
+- **BREAKING: Agent.on_event() now requires topic parameter (keyword-only)**
+  - Base Agent class requires explicit topic: `@agent.on_event("event.type", topic="business-facts")`
+  - Worker, Tool, and Planner classes provide defaults internally for their specialized decorators
+  - Migration: Add `topic` parameter to all `@agent.on_event()` decorators
+- **Registry Service Heartbeat Enhancement**
+  - Heartbeat endpoint now returns 404 Not Found for nonexistent agents (was 200 OK with success=false)
+  - Enables SDK to properly detect and recover from agent deletion
+- Updated all examples to use new event system patterns:
+  - `01-hello-world/`: Uses explicit topics and demonstrates `respond()` convenience method
+  - `02-events-simple/`: Updated all event handlers with explicit topics
+  - `03-events-structured/`: Updated ticket routing handlers with explicit topics
+  - `research-advisor/`: Updated all agents (planner, researcher, advisor, validator) with explicit topics
+- Updated `EventClient.on_event()` to accept optional `topic` parameter for API consistency
+
+### Fixed
+- **Critical: Agent auto-recovery after heartbeat failures**
+  - Agents now automatically re-register when heartbeat fails (fixes laptop sleep issue)
+  - SDK logs heartbeat failures with HTTP status and response details for debugging
+  - Registry cleanup correctly deletes expired agents (TTL enforcement working as designed)
+
+### Documentation
+- **Stage 1 Completion**: All EventEnvelope, BusClient, and on_event() refactoring complete
+- **Completion Criteria Met**:
+  - ✅ EventEnvelope has new fields (including payload_schema_name)
+  - ✅ Event Service messaging patterns documented (queue_group usage in MESSAGING_PATTERNS.md)
+  - ✅ BusClient.publish() requires topic
+  - ✅ BusClient has create_child_request() and create_response() utilities
+  - ✅ on_event() requires topic for base Agent
+  - ✅ All tests pass (64/64)
+  - ✅ Examples updated with pattern usage
+
+### Added
 - **Documentation Restructure**: Separated concerns into focused documents
   - Created `docs/DEVELOPER_GUIDE.md` with developer experience patterns and workflows
   - Created `docs/DESIGN_PATTERNS.md` with Autonomous Choreography and Circuit Breakers

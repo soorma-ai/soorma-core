@@ -94,13 +94,14 @@ def test_heartbeat_post_endpoint(client, sample_agent_request):
 
 
 def test_heartbeat_nonexistent_agent(client):
-    """Test heartbeat endpoint with non-existent agent."""
+    """Test heartbeat endpoint with non-existent agent returns 404."""
     response = client.put("/v1/agents/nonexistent-agent/heartbeat")
     
-    assert response.status_code == 200
+    # After the auto-recovery fix, heartbeat failure should return 404
+    assert response.status_code == 404
     data = response.json()
-    assert data["success"] is False
-    assert "not found" in data["message"]
+    assert "detail" in data
+    assert "not found" in data["detail"].lower()
 
 
 def test_query_with_include_expired_parameter(client, sample_agent_request):

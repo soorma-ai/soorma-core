@@ -106,6 +106,32 @@ class EventEnvelope(BaseDTO):
         description="Session ID for conversation/workflow correlation"
     )
     
+    # Response routing (DisCo pattern)
+    response_event: Optional[str] = Field(
+        default=None,
+        description="Event type the callee should use for response (caller-specified)"
+    )
+    response_topic: Optional[str] = Field(
+        default=None,
+        description="Topic for response (defaults to action-results if not specified)"
+    )
+    
+    # Distributed tracing
+    trace_id: Optional[str] = Field(
+        default=None,
+        description="Root trace ID for entire workflow"
+    )
+    parent_event_id: Optional[str] = Field(
+        default=None,
+        description="ID of parent event in trace tree"
+    )
+    
+    # Schema reference
+    payload_schema_name: Optional[str] = Field(
+        default=None,
+        description="Registered schema name for payload (enables dynamic schema lookup)"
+    )
+    
     def to_cloudevents_dict(self) -> Dict[str, Any]:
         """
         Convert to CloudEvents JSON format.
@@ -132,6 +158,16 @@ class EventEnvelope(BaseDTO):
             result["sessionid"] = self.session_id
         if self.topic:
             result["topic"] = self.topic.value
+        if self.response_event:
+            result["responseevent"] = self.response_event
+        if self.response_topic:
+            result["responsetopic"] = self.response_topic
+        if self.trace_id:
+            result["traceid"] = self.trace_id
+        if self.parent_event_id:
+            result["parenteventid"] = self.parent_event_id
+        if self.payload_schema_name:
+            result["payloadschemaname"] = self.payload_schema_name
             
         return result
 

@@ -198,7 +198,7 @@ class Worker(Agent):
     
     def _register_action_request_handler(self) -> None:
         """Register the main action.request event handler."""
-        @self.on_event("action.request")
+        @self.on_event("action.request", topic="action-requests")
         async def handle_action_request(event: Dict[str, Any], context: PlatformContext) -> None:
             await self._handle_action_request(event, context)
     

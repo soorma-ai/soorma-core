@@ -82,7 +82,7 @@ Return your decision as JSON:
 """
 
 
-@worker.on_event("ticket.created")
+@worker.on_event("ticket.created", topic="business-facts")
 async def route_ticket(event, context):
     """
     Main event handler: Routes incoming tickets using LLM reasoning.
@@ -148,7 +148,7 @@ async def route_ticket(event, context):
 
 
 # Demo handlers to show routing results
-@worker.on_event("ticket.route.tier1")
+@worker.on_event("ticket.route.tier1", topic="action-requests")
 async def handle_tier1_routing(event, context):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
@@ -156,7 +156,7 @@ async def handle_tier1_routing(event, context):
     print("   Assigning to general support queue...\n")
 
 
-@worker.on_event("ticket.route.tier2")
+@worker.on_event("ticket.route.tier2", topic="action-requests")
 async def handle_tier2_routing(event, context):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
@@ -164,7 +164,7 @@ async def handle_tier2_routing(event, context):
     print("   Assigning to technical specialist...\n")
 
 
-@worker.on_event("ticket.route.specialist")
+@worker.on_event("ticket.route.specialist", topic="action-requests")
 async def handle_specialist_routing(event, context):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
@@ -172,7 +172,7 @@ async def handle_specialist_routing(event, context):
     print("   Assigning to domain expert...\n")
 
 
-@worker.on_event("ticket.escalate.management")
+@worker.on_event("ticket.escalate.management", topic="action-requests")
 async def handle_management_escalation(event, context):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
@@ -180,7 +180,7 @@ async def handle_management_escalation(event, context):
     print("   Notifying management team...\n")
 
 
-@worker.on_event("ticket.autoclose")
+@worker.on_event("ticket.autoclose", topic="action-requests")
 async def handle_autoclose(event, context):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})

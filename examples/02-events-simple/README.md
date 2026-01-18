@@ -1,38 +1,72 @@
 # 02 - Events Simple
 
-**Concepts:** Event publishing, Event subscription, Pub/Sub pattern  
+**Concepts:** Event publishing, Event subscription, Event chains, Metadata propagation  
 **Difficulty:** Beginner  
 **Prerequisites:** [01-hello-world](../01-hello-world/)
 
+**Teaching Focus:** This example demonstrates **production-ready patterns** you should use in real code:
+- ✅ `announce()` for business facts (not low-level `publish()`)
+- ✅ Metadata propagation for distributed tracing
+- ✅ Event chains for workflow orchestration
+
 ## What You'll Learn
 
-- How to publish events to different topics
-- How to subscribe to multiple event types
-- How to create event-driven workflows
-- Topic-based routing patterns
+- How to publish and subscribe to domain events
+- How to handle multiple event types in one agent
+- How to create event chains with automatic metadata propagation
+- **Best practice: Use `announce()` for business facts** (instead of low-level `publish()`)
+- **Best practice: Propagate trace_id for distributed tracing**
 
 ## The Pattern
 
 Event-driven architecture allows agents to communicate without direct coupling. In this pattern:
 
 1. **Publishers** emit events when something happens (data changes, actions complete, etc.)
-2. **Topics** organize events into logical channels using Soorma's predefined topics (e.g., "business-facts", "action-requests")
-3. **Subscribers** listen to topics and react to specific event types
-4. **The Event Service** handles routing and delivery
+2. **Event Types** identify what happened (e.g., "order.placed", "payment.completed")
+3. **Topics** organize events into logical channels - Soorma has predefined topics (e.g., "business-facts" for domain events)
+4. **Subscribers** listen to topics and react to specific event types
+5. **The Event Service** handles routing and delivery
 
-This example focuses on teaching the fundamentals: how to publish events, how to subscribe to them, and how to create event chains.
+This example demonstrates event publishing, subscription, and event chains - where one event handler triggers another by publishing a new event.
 
-**Note:** Soorma uses fixed topics. Domain events like orders, inventory, and payments all use the `business-facts` topic. See [TOPICS.md](../../docs/TOPICS.md) for details.
+**Note:** Soorma uses fixed topics for type safety. Domain events (orders, inventory, payments) use the `business-facts` topic. See [TOPICS.md](../../docs/TOPICS.md) for details.
 
 ## Use Case
 
-A simple order processing flow demonstrating event patterns:
-- Customer places an order → `order.placed` event published
-- Worker handles it and publishes → `inventory.reserved` event
-- Worker handles it and publishes → `payment.completed` event  
-- Worker handles it and publishes → `order.shipped` event
+A simple order processing flow demonstrating event chains. This example shows how one event handler can publish new events, triggering other handlers in sequence.
 
-Each step is triggered by an event, demonstrating event-driven patterns. (Note: In this example, one worker handles all events for simplicity. Real systems would have separate workers per domain.)
+**The Event Chain:**
+```
+publisher.py                    subscriber.py handlers
+    |                                  |
+    |-- order.placed ------------> handle_order_placed()
+                                       |
+                                       |-- inventory.reserved -----> handle_inventory_reserved()
+                                                                         |
+                                                                         |-- payment.completed -----> handle_payment_completed()
+                                                                                                          |
+                                                                                                          |-- order.completed -----> handle_order_completed()
+                                                                                                                                        (END)
+```
+
+**How it works:**
+1. **Publisher** publishes `order.placed` event with a trace_id (fact: an order was placed)
+2. **Subscriber** receives it, extracts metadata (trace_id, parent_event_id), reserves inventory, then announces `inventory.reserved` **with the same trace_id**
+3. **Subscriber** receives `inventory.reserved`, extracts metadata, processes payment, then announces `payment.completed` **with the same trace_id**
+4. **Subscriber** receives `payment.completed`, extracts metadata, finalizes order, then announces `order.completed` **with the same trace_id**
+5. **Subscriber** receives `order.completed` - final step shows the complete trace
+
+The **trace_id flows through the entire chain**, creating end-to-end traceability. This is crucial for debugging distributed workflows.
+
+Each step is triggered by an event from the previous step, creating an **event-driven workflow**. 
+
+**Note about topics and methods:** 
+- This example uses `business-facts` topic for all events because they represent domain facts (things that happened in the business)
+- Uses **`bus.announce()`** instead of low-level `bus.publish()` - semantically correct for business facts where no response is expected
+- Events use past-tense names (`.placed`, `.reserved`, `.completed`) to indicate they're observations of state changes, not commands
+- This is the **choreography pattern** - services react to facts about what happened, no central orchestrator
+
+In this example, one worker handles all events for simplicity. Real systems would have separate workers per domain (inventory service, payment service, etc.).
 
 ## Code Walkthrough
 
@@ -78,21 +112,21 @@ worker = Worker(
     events_produced=["inventory.reserve", "payment.process", "order.shipped"],
 )
 
-@worker.on_event("order.placed")
+@worker.on_event("order.placed", topic="business-facts")
 async def handle_order(event, context):
     # Process order and publish next event
     await context.bus.publish(
         event_type="inventory.reserve",
-        topic="business-facts",  # All domain events use business-facts
+        topic="business-facts",
         data={"order_id": event["data"]["order_id"]}
     )
 
-@worker.on_event("inventory.reserved")
+@worker.on_event("inventory.reserved", topic="business-facts")
 async def handle_inventory(event, context):
     # Continue the workflow
     await context.bus.publish(
         event_type="payment.process",
-        topic="business-facts",  # All domain events use business-facts
+        topic="business-facts",
         data={"order_id": event["data"]["order_id"]}
     )
 ```
@@ -158,63 +192,117 @@ Watch the subscriber terminal - you'll see it receive and process each event in 
 
 ## Expected Output
 
+When you run the example, watch for the **event chain** in the subscriber output:
+
 **Publisher:**
 ```
-Publishing order.placed event...
-Publishing inventory.check event...
-Publishing payment.authorize event...
-All events published!
+📦 Publishing order.placed event...
+   (This will trigger the event chain in the subscriber)
+
+   ✓ Published to 'business-facts' topic
+
+================================================================
+✅ Event published!
+================================================================
+
+Watch the subscriber terminal to see the event chain:
+  order.placed → inventory.reserved → payment.completed → order.completed
 ```
 
-**Subscriber:**
+**Subscriber (watch the chain flow - each handler publishes the next event):**
 ```
-📦 Order placed: ORD-001
+================================================================
+📦 Order placed!                           <-- 1. order.placed received
+================================================================
+   Order ID: ORD-001
    Items: laptop, mouse
    Total: $1500.00
-   → Publishing inventory.reserve event
+   Trace ID: 3f7a8b2e...                   <-- Trace starts here
 
-📊 Inventory check: ORD-001
-   Checking availability...
-   → Publishing inventory.reserved event
+   Reserving inventory...
+   ✓ Items reserved!
 
-💳 Payment authorized: ORD-001
-   Amount: $1500.00
-   → Publishing payment.completed event
+   → Announcing inventory.reserved event...  <-- Handler announces next event
+   ✓ Event announced
+
+================================================================
+🔒 Inventory reserved!                     <-- 2. inventory.reserved received
+================================================================
+   Order ID: ORD-001
+   Items: laptop, mouse
+   Trace ID: 3f7a8b2e...                   <-- Same trace_id
+
+   Processing payment...
+   ✓ Payment processed!
+
+   → Announcing payment.completed event...   <-- Handler announces next event
+   ✓ Event announced
+
+================================================================
+💳 Payment completed!                      <-- 3. payment.completed received
+================================================================
+   Order ID: ORD-001
+   Trace ID: 3f7a8b2e...                   <-- Same trace_id
+
+   Finalizing order...
+   ✓ Order finalized!
+
+   → Announcing order.completed event...     <-- Handler announces next event
+   ✓ Event announced
+
+================================================================
+🎉 Order workflow completed!               <-- 4. order.completed received (END)
+================================================================
+   Order ID: ORD-001
+   Trace ID: 3f7a8b2e...                   <-- Same trace_id throughout!
+   All steps finished successfully!
+   (Same trace_id propagated through entire chain)
+================================================================
 ```
+
+**Notice the patterns:** 
+1. Publisher sends **one** initial event (`order.placed`)
+2. Each handler does its work and **announces** the **next** event in the chain
+3. **Metadata flows through**: The same `trace_id` appears in every step - this creates end-to-end traceability
+4. Uses `announce()` not `publish()` - teaches the right abstraction for business facts
+
+This is **event choreography** with **distributed tracing** - no central orchestrator, just services reacting to domain facts with full observability!
 
 ## Key Takeaways
 
 ✅ **Events enable loose coupling** - Publishers don't know who's listening  
-✅ **Topics organize event streams** - Use Soorma's predefined topics for type safety  
-✅ **Event chains create flows** - Handlers can publish new events to continue processing  
+✅ **Event types identify what happened** - Use descriptive past-tense names like "order.placed"  
+✅ **Use high-level methods** - `announce()` for facts, `request()` for work (not low-level `publish()`)  
+✅ **Propagate metadata** - trace_id and parent_event_id create end-to-end traceability  
+✅ **Event chains create workflows** - Handlers announce new events to continue processing  
 ✅ **Multiple handlers per agent** - One Worker can handle many event types  
-✅ **Declarative event contracts** - `events_consumed` and `events_produced` document agent behavior  
+✅ **Declarative contracts** - `events_consumed` and `events_produced` document agent behavior  
 
 ## Common Patterns
 
-### Fan-Out
-One event triggers multiple handlers:
+### Fan-Out (different agents):
 ```python
 # When order.placed arrives, multiple services react:
-@worker1.on_event("order.placed")  # Inventory service
-@worker2.on_event("order.placed")  # Analytics service
-@worker3.on_event("order.placed")  # Notification service
+@worker1.on_event("order.placed", topic="business-facts")  # Inventory service
+@worker2.on_event("order.placed", topic="business-facts")  # Analytics service
+@worker3.on_event("order.placed", topic="business-facts")  # Notification service
 ```
 
 ### Sequential Chain
-Events trigger in sequence:
+Events trigger in sequence to create a workflow:
 ```python
 order.placed → inventory.reserved → payment.completed → order.shipped
 ```
 
-### Conditional Routing
-Publish different events based on conditions:
+### Conditional Events
+Publish different event types based on conditions:
 ```python
-@worker.on_event("order.placed")
+@worker.on_event("order.placed", topic="business-facts")
 async def handle_order(event, context):
     if event["data"]["total"] > 1000:
-        await context.bus.publish("order.priority", "priority-orders", ...)
+        await context.bus.publish("order.priority", "business-facts", ...)
     else:
+        await context.bus.publish("order.standard", "business-fact
         await context.bus.publish("order.standard", "orders", ...)
 ```
 

@@ -1,25 +1,26 @@
 # 01 - Hello World
 
-**Concepts:** Basic agent lifecycle, Worker pattern, Event handling  
+**Concepts:** Worker pattern, Event handling, Request/Response  
 **Difficulty:** Beginner  
 **Prerequisites:** None
 
 ## What You'll Learn
 
-- How to create a basic Worker agent
-- How to register event handlers using decorators
-- How to receive and process events
-- How to publish events as responses
+- How to create a Worker agent
+- How to handle events with `@worker.on_event()` decorator
+- **Best practice: Use `respond()` for request/response patterns**
+- How clients send requests and receive responses
 
 ## The Pattern
 
-The Worker pattern is the simplest way to build a reactive agent in Soorma. A Worker:
-1. Registers itself with the platform
-2. Subscribes to specific event types
-3. Processes events when they arrive
-4. Publishes result events
+The Worker pattern is a simple way to build reactive agents in Soorma. A Worker:
+1. Declares its capabilities (what it can do)
+2. Registers event handlers using `@worker.on_event()` decorator
+3. Receives events on subscribed topics
+4. Processes the request
+5. Sends response using `context.bus.respond()` convenience method
 
-This is the foundation for all Soorma agents.
+**Key advantage**: The `respond()` method is semantically correct for request/response patterns and cleaner than using low-level `publish()` directly.
 
 ## Code Walkthrough
 
@@ -38,16 +39,16 @@ worker = Worker(
 )
 
 # Register an event handler
-@worker.on_event("greeting.requested")
+@worker.on_event("greeting.requested", topic="action-requests")
 async def handle_greeting(event, context):
     name = event.get("data", {}).get("name", "World")
     greeting = f"Hello, {name}! 👋"
     
-    # Publish result event
-    await context.bus.publish(
+    # Use respond() convenience method for request/response
+    await context.bus.respond(
         event_type="greeting.completed",
-        topic="action-results",
-        data={"greeting": greeting}
+        data={"greeting": greeting, "name": name},
+        correlation_id=event.get("correlation_id"),
     )
 ```
 
@@ -57,15 +58,37 @@ async def handle_greeting(event, context):
 - `events_produced` declares which events this agent can publish
 - `@worker.on_event()` decorator registers handlers for specific event types
 - Event handlers receive the `event` data and `context` (platform services)
-- Use `context.bus.publish()` to send response events
+- **Use `context.bus.respond()`** for request/response - cleaner than `publish()`
+  - Automatically publishes to `action-results` topic
+  - Requires correlation_id to link response to request
 
 ### Client ([client.py](client.py))
 
-The client demonstrates how to interact with your agent:
-1. Creates an `EventClient` to communicate with the platform
-2. Subscribes to response events
-3. Publishes a request event
-4. Waits for and displays the response
+The client demonstrates how to send requests to a Worker:
+
+```python
+# Send greeting.requested event
+await client.publish(
+    event_type="greeting.requested",
+    topic="action-requests",
+    data={"name": "Alice"},
+    correlation_id=str(uuid4()),
+    response_event="greeting.completed",
+    response_topic="action-results",
+)
+
+# Listen for greeting.completed response
+@client.on_event("greeting.completed", topic="action-results")
+async def on_response(event):
+    greeting = event["data"]["greeting"]
+    print(f"Got greeting: {greeting}")
+```
+
+**Key Points:**
+1. Clients publish events with `response_event` and `response_topic` metadata
+2. Use `correlation_id` to link request and response
+3. Subscribe to response events on the response topic
+4. The Worker's `respond()` method automatically sends to the response topic
 
 ## Running the Example
 

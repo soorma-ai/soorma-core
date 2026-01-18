@@ -11,7 +11,7 @@ from soorma import EventClient
 
 
 async def publish_order_workflow():
-    """Publish a sequence of events simulating an order workflow."""
+    """Publish the initial event that triggers the order workflow chain."""
     
     # Create EventClient for publishing
     client = EventClient(
@@ -27,8 +27,10 @@ async def publish_order_workflow():
     # Connect to the platform (empty topics list since we only publish)
     await client.connect(topics=[])
     
-    # Event 1: Order placed
+    # Publish the initial event that starts the chain
     print("📦 Publishing order.placed event...")
+    print("   (This will trigger the event chain in the subscriber)")
+    print()
     await client.publish(
         event_type="order.placed",
         topic="business-facts",
@@ -40,39 +42,13 @@ async def publish_order_workflow():
         },
     )
     print("   ✓ Published to 'business-facts' topic\n")
-    await asyncio.sleep(0.5)
-    
-    # Event 2: Inventory check
-    print("📊 Publishing inventory.check event...")
-    await client.publish(
-        event_type="inventory.check",
-        topic="business-facts",
-        data={
-            "order_id": "ORD-001",
-            "items": ["laptop", "mouse"],
-        },
-    )
-    print("   ✓ Published to 'business-facts' topic\n")
-    await asyncio.sleep(0.5)
-    
-    # Event 3: Payment authorization
-    print("💳 Publishing payment.authorize event...")
-    await client.publish(
-        event_type="payment.authorize",
-        topic="business-facts",
-        data={
-            "order_id": "ORD-001",
-            "amount": 1500.00,
-            "customer": "Alice",
-        },
-    )
-    print("   ✓ Published to 'business-facts' topic\n")
     
     print("=" * 60)
-    print("✅ All events published!")
+    print("✅ Event published!")
     print("=" * 60)
     print()
-    print("Check the subscriber terminal to see the events being processed.")
+    print("Watch the subscriber terminal to see the event chain:")
+    print("  order.placed → inventory.reserved → payment.completed → order.completed")
     print()
     
     await client.disconnect()

@@ -271,35 +271,44 @@ class Agent(ABC):
         self._shutdown_handlers.append(func)
         return func
     
-    def on_event(self, event_type: str) -> Callable[[EventHandler], EventHandler]:
+    def on_event(
+        self,
+        event_type: str,
+        *,
+        topic: str,
+    ) -> Callable[[EventHandler], EventHandler]:
         """
         Decorator to register an event handler.
         
         Handlers receive the event payload and the platform context.
-        Multiple handlers can be registered for the same event type.
+        Multiple handlers can be registered for the same event type + topic combination.
         
         Usage:
-            @agent.on_event("data.requested")
+            @agent.on_event("data.requested", topic="action-requests")
             async def handle_request(event, context):
                 result = await process(event["data"])
-                await context.bus.publish("data.completed", result)
+                await context.bus.respond("data.completed", result, correlation_id=event["correlation_id"])
         
         Args:
             event_type: The event type to handle
+            topic: The topic to subscribe to (required)
         
         Returns:
             Decorator function
         """
         def decorator(func: EventHandler) -> EventHandler:
-            if event_type not in self._event_handlers:
-                self._event_handlers[event_type] = []
-            self._event_handlers[event_type].append(func)
+            # Create a composite key for topic:event_type
+            handler_key = f"{topic}:{event_type}"
             
-            # Track in consumed events
+            if handler_key not in self._event_handlers:
+                self._event_handlers[handler_key] = []
+            self._event_handlers[handler_key].append(func)
+            
+            # Track in consumed events (just event_type for backwards compatibility)
             if event_type not in self.config.events_consumed:
                 self.config.events_consumed.append(event_type)
             
-            logger.debug(f"Registered handler for event: {event_type}")
+            logger.debug(f"Registered handler for {topic}:{event_type}")
             return func
         return decorator
     
@@ -363,7 +372,15 @@ class Agent(ABC):
         )
         
         # Register our event handlers with the EventClient
-        for event_type, handlers in self._event_handlers.items():
+        # Handlers are keyed by "topic:event_type" in the new model
+        for handler_key, handlers in self._event_handlers.items():
+            # Extract event_type from handler_key (format is "topic:event_type")
+            if ":" in handler_key:
+                _, event_type = handler_key.split(":", 1)
+            else:
+                # Backwards compatibility: if no ":", assume it's just event_type
+                event_type = handler_key
+            
             for handler in handlers:
                 @event_client.on_event(event_type)
                 async def wrapped_handler(event: Dict[str, Any], h=handler) -> None:
@@ -425,15 +442,46 @@ class Agent(ABC):
     async def _start_heartbeat(self) -> None:
         """Start the heartbeat task."""
         async def heartbeat_loop():
+            consecutive_failures = 0
             while self._running:
                 try:
                     await asyncio.sleep(self.config.heartbeat_interval)
                     if self._running:
-                        await self.context.registry.heartbeat(self.agent_id)
+                        success = await self.context.registry.heartbeat(self.agent_id)
+                        if not success:
+                            consecutive_failures += 1
+                            logger.error(
+                                f"💔 Heartbeat failed for {self.name} ({self.agent_id}). "
+                                f"Agent may be deregistered. (Failures: {consecutive_failures})"
+                            )
+                            
+                            # Attempt to re-register after first failure
+                            if consecutive_failures >= 1:
+                                logger.warning(
+                                    f"🔄 Attempting to re-register {self.name} ({self.agent_id})..."
+                                )
+                                success = await self._register_with_registry()
+                                if success:
+                                    logger.info(
+                                        f"✅ Successfully re-registered {self.name} ({self.agent_id})"
+                                    )
+                                    consecutive_failures = 0
+                                else:
+                                    logger.error(
+                                        f"❌ Failed to re-register {self.name} ({self.agent_id})"
+                                    )
+                        else:
+                            # Reset failure counter on successful heartbeat
+                            if consecutive_failures > 0:
+                                logger.info(
+                                    f"💚 Heartbeat restored for {self.name} ({self.agent_id})"
+                                )
+                            consecutive_failures = 0
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    logger.debug(f"Heartbeat failed: {e}")
+                    consecutive_failures += 1
+                    logger.error(f"Heartbeat exception for {self.name}: {e}")
         
         self._heartbeat_task = asyncio.create_task(heartbeat_loop())
     
@@ -449,15 +497,24 @@ class Agent(ABC):
     
     async def _subscribe_to_events(self) -> None:
         """Subscribe to event topics."""
-        if not self.config.events_consumed:
-            logger.info("No events to subscribe to")
+        if not self._event_handlers:
+            logger.info("No event handlers registered")
             return
         
-        # Derive topics from event types
-        topics = self._derive_topics(self.config.events_consumed)
+        # Extract unique topics from handler keys (format: "topic:event_type")
+        topics = set()
+        for handler_key in self._event_handlers.keys():
+            if ":" in handler_key:
+                topic, _ = handler_key.split(":", 1)
+                topics.add(topic)
         
-        logger.info(f"Subscribing to topics: {topics}")
-        await self.context.bus.subscribe(topics)
+        if not topics:
+            logger.info("No topics to subscribe to")
+            return
+        
+        topics_list = list(topics)
+        logger.info(f"Subscribing to topics: {topics_list}")
+        await self.context.bus.subscribe(topics_list)
     
     def _derive_topics(self, event_types: List[str]) -> List[str]:
         """Derive topic patterns from event types."""
