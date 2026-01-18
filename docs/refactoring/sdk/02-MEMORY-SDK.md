@@ -11,7 +11,7 @@
 
 | Aspect | Details |
 |--------|----------|
-| **Task** | RF-SDK-010: Memory SDK Methods |
+| **Tasks** | RF-SDK-010: Memory SDK Methods<br>RF-SDK-014: WorkflowState Helper Class |
 | **Files** | `sdk/python/soorma/context.py`, Memory Service |
 | **Pairs With Arch** | [arch/02-MEMORY-SERVICE.md](../arch/02-MEMORY-SERVICE.md) |
 | **Dependencies** | None (foundational) |
@@ -53,6 +53,7 @@ sdk/python/soorma/
 
 This document covers the Memory SDK client alignment:
 - **RF-SDK-010:** Memory SDK Methods for Task/Plan Context
+- **RF-SDK-014:** WorkflowState Helper Class
 
 This enables async Worker completion and Planner state machine persistence.
 
@@ -420,6 +421,177 @@ async def test_list_plans_filters():
 
 ---
 
+### RF-SDK-014: WorkflowState Helper Class
+
+**Files:** [context.py](../../sdk/python/soorma/context.py) or new `workflow.py`
+
+#### Motivation
+
+Example code (research-advisor planner) has ~50+ lines of boilerplate for managing plan state:
+```python
+# Manual working memory management (boilerplate)
+workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
+action_history = workflow_state.get('action_history', [])
+action_history.append(event_name)
+workflow_state['action_history'] = action_history
+await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
+```
+
+This pattern repeats across all planner examples. Should be a helper.
+
+#### Target Design
+
+```python
+from soorma.workflow import WorkflowState
+
+@planner.on_goal("research.goal")
+async def handle_goal(goal, context):
+    plan_id = goal.correlation_id
+    state = WorkflowState(context, plan_id)
+    
+    # Simple state operations
+    await state.record_action("research.requested")
+    await state.set("research_data", research_results)
+    
+    # Query state
+    history = await state.get_action_history()
+    data = await state.get("research_data")
+    all_state = await state.get_all()
+```
+
+#### Implementation
+
+```python
+# sdk/python/soorma/workflow.py
+from typing import Any, Dict, List, Optional
+from .context import PlatformContext
+
+class WorkflowState:
+    """
+    Helper for managing plan-scoped working memory state.
+    
+    **Concurrency Note:** Each instance represents a snapshot of state.
+    In distributed scenarios with concurrent updates (multiple agents updating
+    same plan), always create a fresh instance per event handler to avoid
+    stale reads. The Memory Service should handle concurrent writes via
+    optimistic locking or last-write-wins.
+    """
+    
+    def __init__(self, context: PlatformContext, plan_id: str):
+        self.context = context
+        self.plan_id = plan_id
+    
+    async def _load_state(self) -> Dict[str, Any]:
+        """Load state from memory (always fresh from Memory Service)."""
+        return await self.context.memory.retrieve(
+            "workflow_state", 
+            plan_id=self.plan_id
+        ) or {"action_history": []}
+    
+    async def _save_state(self, state: Dict[str, Any]):
+        """Save state to memory."""
+        await self.context.memory.store(
+            "workflow_state", 
+            state, 
+            plan_id=self.plan_id
+        )
+    
+    async def record_action(self, event_name: str):
+        """
+        Append action to history.
+        
+        **Concurrency:** Uses read-modify-write. In high-concurrency scenarios,
+        consider Memory Service providing atomic append operations.
+        """
+        state = await self._load_state()
+        state["action_history"].append(event_name)
+        await self._save_state(state)
+    
+    async def get_action_history(self) -> List[str]:
+        """Get action history (fresh read from Memory Service)."""
+        state = await self._load_state()
+        return state.get("action_history", [])
+    
+    async def set(self, key: str, value: Any):
+        """Set a state value (read-modify-write)."""
+        state = await self._load_state()
+        state[key] = value
+        await self._save_state(state)
+    
+    async def get(self, key: str, default: Any = None) -> Any:
+        """Get a state value (fresh read from Memory Service)."""
+        state = await self._load_state()
+        return state.get(key, default)
+    
+    async def get_all(self) -> Dict[str, Any]:
+        """Get entire state dictionary (fresh read from Memory Service)."""
+        return await self._load_state()
+    
+    async def clear(self):
+        """Clear all state."""
+        await self._save_state({"action_history": []})
+```
+
+#### Concurrency Considerations
+
+**Problem:** In DisCo distributed architecture, multiple agents may update the same plan state concurrently:
+- Planner publishes task → Worker A starts
+- Worker A publishes sub-task → Worker B starts  
+- Both Workers try to update plan state simultaneously
+
+**Solutions:**
+
+1. **No Instance Caching** (implemented above):
+   - Each operation reads fresh from Memory Service
+   - Prevents stale reads within same event handler
+   - Still has race condition on read-modify-write
+
+2. **Memory Service Atomic Operations** (future enhancement):
+   ```python
+   # Instead of read-modify-write
+   await state.record_action("event")  # Race condition!
+   
+   # Atomic append in Memory Service
+   await context.memory.append_to_list(
+       key="workflow_state.action_history",
+       plan_id=plan_id,
+       value="event"
+   )
+   ```
+
+3. **Optimistic Locking** (future enhancement):
+   ```python
+   # Memory Service returns version with state
+   state, version = await context.memory.retrieve_with_version(...)
+   
+   # Update with version check
+   await context.memory.store_if_version_matches(
+       data=state,
+       expected_version=version,
+       plan_id=plan_id
+   )  # Raises ConflictError if version changed
+   ```
+
+**Recommendation for MVP:**
+- Use WorkflowState for **single-agent sequential workflows** (safe)
+- For **concurrent multi-agent workflows**, add Memory Service atomic operations in Phase 2
+- Document concurrency limitations clearly
+
+#### Benefits
+
+- **Reduces boilerplate**: 50+ lines → 10 lines in examples
+- **Prevents errors**: No manual dict manipulation
+- **Fresh reads**: No stale cached data
+- **Consistent API**: Same pattern across all planners
+
+#### Limitations
+
+- **Read-modify-write race conditions** in concurrent scenarios
+- **No atomic operations** (future Memory Service enhancement)
+- **Best for sequential workflows** where one agent owns plan state at a time
+
+---
+
 ## Implementation Checklist
 
 - [ ] **Define** Memory Service API endpoints (if not already)
@@ -431,7 +603,51 @@ async def test_list_plans_filters():
 - [ ] **Implement** `store_plan_context()`, `get_plan_context()`
 - [ ] **Write tests first** for session management
 - [ ] **Implement** `create_plan()`, `create_session()`, `list_plans()`, `list_sessions()`
+- [ ] **Write tests first** for WorkflowState helper (RF-SDK-014):
+  - [ ] Test sequential operations (set, get, record_action)
+  - [ ] Test fresh reads (no stale cached data)
+  - [ ] Test concurrent writes (document race condition behavior)
+  - [ ] Test action history append
+  - [ ] Test clear() operation
+- [ ] **Implement** WorkflowState class in `workflow.py`
+- [ ] **Document** concurrency limitations in docstrings
+- [ ] **Add integration tests** for multi-agent concurrent scenarios
 - [ ] **Update** Memory Service with new endpoints
+
+---
+
+## Future Enhancements (Post-MVP)
+
+### Atomic Operations for Concurrency
+
+Add Memory Service endpoints for atomic state updates:
+
+```python
+# Atomic list append (no race condition)
+POST /v1/memory/atomic/append
+{
+  "plan_id": "...",
+  "path": "workflow_state.action_history",
+  "value": "event_name"
+}
+
+# Atomic counter increment
+POST /v1/memory/atomic/increment
+{
+  "plan_id": "...",
+  "path": "workflow_state.retry_count"
+}
+
+# Optimistic locking
+POST /v1/memory/plan-context
+{
+  "plan_id": "...",
+  "context": {...},
+  "expected_version": 5  # Fails if version != 5
+}
+```
+
+This eliminates read-modify-write race conditions in concurrent workflows.
 
 ---
 

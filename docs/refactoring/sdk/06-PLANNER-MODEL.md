@@ -11,11 +11,11 @@
 
 | Aspect | Details |
 |--------|----------|
-| **Task** | RF-SDK-006: Planner on_goal() and on_transition() |
-| **Files** | `sdk/python/soorma/agents/planner.py` |
+| **Tasks** | RF-SDK-006: Planner on_goal() and on_transition()<br>RF-SDK-015: PlannerDecision types<br>RF-SDK-016: ChoreographyPlanner class |
+| **Files** | `sdk/python/soorma/agents/planner.py`<br>`sdk/python/soorma/ai/decisions.py`<br>`sdk/python/soorma/ai/choreography.py` |
 | **Dependencies** | 01-EVENT-SYSTEM, 02-MEMORY-SDK, 03-COMMON-DTOS |
 | **Blocks** | None |
-| **Estimated Effort** | 3-4 days |
+| **Estimated Effort** | 4-5 days |
 
 ---
 
@@ -70,6 +70,8 @@ From **03-COMMON-DTOS** (must complete first):
 
 This document covers the Planner state machine model:
 - **RF-SDK-006:** Planner `on_goal()` and `on_transition()` decorators with PlanContext
+- **RF-SDK-015:** PlannerDecision and PlanAction types for type-safe LLM decisions
+- **RF-SDK-016:** ChoreographyPlanner class for autonomous orchestration
 
 This is the most complex agent type, enabling LLM-driven planning and state machine execution.
 
@@ -497,8 +499,345 @@ async def test_nested_plans():
 
 ---
 
+### RF-SDK-015: PlannerDecision and PlanAction Types
+
+**Files:** New file `sdk/python/soorma/ai/decisions.py`
+
+#### Motivation
+
+Example code (research-advisor planner) has LLM returning raw dictionaries:
+```python
+# Current (no type safety)
+response = completion(model=model, messages=[...])
+decision = json.loads(response.choices[0].message.content)  # Dict[str, Any]
+
+# No validation that event exists before publishing
+await context.bus.publish(topic="action-requests", event_type=decision["event"], ...)
+```
+
+Problems:
+- No type hints (Dict[str, Any])
+- LLM can hallucinate non-existent events
+- No structured validation
+- Hard to add observability fields (trace_id, plan_id)
+
+#### Target Design
+
+```python
+# sdk/python/soorma/ai/decisions.py
+from enum import Enum
+from pydantic import BaseModel, Field
+from typing import Optional, Any, Dict
+
+class PlanAction(str, Enum):
+    """Actions a planner can take based on LLM reasoning."""
+    PUBLISH_EVENT = "publish"    # Trigger next agent
+    COMPLETE = "complete"        # Goal fulfilled, deliver result
+    WAIT = "wait"                # Need more info, pause
+    DELEGATE = "delegate"        # Delegate to sub-planner
+
+class PlannerDecision(BaseModel):
+    """Type-safe LLM decision for planners."""
+    
+    action: PlanAction = Field(
+        description="Action to take (publish, complete, wait, delegate)"
+    )
+    
+    # For PUBLISH_EVENT action
+    event_type: Optional[str] = Field(
+        None,
+        description="Event to publish (must exist in discovered events)"
+    )
+    payload: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Event payload data"
+    )
+    
+    # For COMPLETE action
+    result: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Final result to return to goal requester"
+    )
+    
+    # Observability
+    reasoning: str = Field(
+        description="LLM's explanation for this decision (audit trail)"
+    )
+    
+    # Future State Tracker correlation
+    trace_id: Optional[str] = Field(
+        None,
+        description="Correlation ID for distributed tracing"
+    )
+    plan_id: Optional[str] = Field(
+        None,
+        description="Plan ID this decision belongs to"
+    )
+    
+    # Confidence (optional)
+    confidence: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="LLM confidence score (0-1)"
+    )
+    
+    @classmethod
+    def model_json_schema(cls) -> Dict[str, Any]:
+        """Get JSON schema for LLM prompts."""
+        return cls.model_json_schema()
+```
+
+**Benefits:**
+- ChoreographyPlanner uses schema in prompts (no hardcoded JSON)
+- Keeps decision format in sync with Pydantic model
+- Auto-updates if PlannerDecision fields change
+
+#### Usage in Planner
+
+```python
+from soorma.ai.decisions import PlannerDecision, PlanAction
+
+@planner.on_goal("research.goal")
+async def handle_goal(goal, context):
+    # LLM reasoning returns typed decision
+    decision: PlannerDecision = await reason_next_action(
+        goal=goal,
+        discovered_events=events,
+        context=context
+    )
+    
+    # Type-safe action handling
+    if decision.action == PlanAction.PUBLISH_EVENT:
+        # Validate event exists BEFORE publishing
+        if decision.event_type not in [e.event_type for e in events]:
+            raise ValueError(f"Event '{decision.event_type}' not in discovered events")
+        
+        # Use create_child_request() helper (returns EventEnvelope)
+        child_envelope = context.bus.create_child_request(
+            parent_event=goal,
+            event_type=decision.event_type,
+            data=decision.payload,
+            response_event=f"{goal.correlation_id}.{decision.event_type}.done",
+        )
+        await context.bus.publish_envelope(child_envelope)  # Type-safe envelope pattern
+    
+    elif decision.action == PlanAction.COMPLETE:
+        await context.bus.respond(
+            request=goal,
+            data=decision.result
+        )
+```
+
+---
+
+### RF-SDK-016: ChoreographyPlanner Class
+
+**Files:** New file `sdk/python/soorma/ai/choreography.py`
+
+#### Motivation
+
+Example code (research-advisor planner) has ~400 lines of boilerplate:
+- Event discovery from Registry
+- LLM prompt construction
+- LLM API calls
+- Decision parsing and validation
+- Event publishing
+
+This should be a reusable class, not example code.
+
+#### Target Design
+
+```python
+# sdk/python/soorma/ai/choreography.py
+from typing import List, Optional, Callable
+from litellm import completion
+from soorma.ai.decisions import PlannerDecision, PlanAction
+from soorma.context import PlatformContext
+from soorma.registry import EventDefinition
+import json
+
+class ChoreographyPlanner:
+    """LLM-based autonomous orchestration planner."""
+    
+    def __init__(
+        self,
+        name: str,
+        reasoning_model: str = "gpt-4o",
+        max_actions: int = 10,  # Circuit breaker
+        temperature: float = 0.7,
+    ):
+        self.name = name
+        self.reasoning_model = reasoning_model
+        self.max_actions = max_actions
+        self.temperature = temperature
+    
+    async def reason_next_action(
+        self,
+        trigger: str,
+        context: PlatformContext,
+        plan_id: Optional[str] = None,
+        discovered_events: Optional[List[EventDefinition]] = None,
+    ) -> PlannerDecision:
+        """
+        Use LLM to determine next action based on current state.
+        
+        Args:
+            trigger: Current event/situation description
+            context: Platform context for discovery
+            plan_id: Optional plan ID for state tracking
+            discovered_events: Pre-discovered events (skips discovery if provided)
+        
+        Returns:
+            PlannerDecision with validated action
+        """
+        # Discover available events if not provided
+        if discovered_events is None:
+            discovered_events = await context.registry.discover(
+                topic="action-requests"
+            )
+        
+        # Build LLM prompt
+        prompt = self._build_prompt(trigger, discovered_events)
+        
+        # Call LLM
+        response = completion(
+            model=self.reasoning_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.temperature,
+            response_format={"type": "json_object"},
+        )
+        
+        # Parse and validate
+        decision_data = json.loads(response.choices[0].message.content)
+        decision = PlannerDecision(**decision_data)
+        decision.plan_id = plan_id
+        
+        # Validate event exists if PUBLISH_EVENT
+        if decision.action == PlanAction.PUBLISH_EVENT:
+            event_types = [e.event_type for e in discovered_events]
+            if decision.event_type not in event_types:
+                raise ValueError(
+                    f"LLM hallucinated event '{decision.event_type}'. "
+                    f"Available: {event_types}"
+                )
+        
+        return decision
+    
+    async def execute_decision(
+        self,
+        decision: PlannerDecision,
+        context: PlatformContext,
+        goal_event: Optional[dict] = None,
+    ):
+        """Execute a planner decision."""
+        if decision.action == PlanAction.PUBLISH_EVENT:
+            await context.bus.publish(
+                topic="action-requests",
+                event_type=decision.event_type,
+                data=decision.payload,
+                trace_id=decision.trace_id,
+            )
+        
+        elif decision.action == PlanAction.COMPLETE:
+            if goal_event:
+                await context.bus.respond(
+                    request=goal_event,
+                    data=decision.result
+                )
+        
+        elif decision.action == PlanAction.WAIT:
+            # Publish progress event
+            await context.bus.announce(
+                topic="system-events",
+                event_type="plan.waiting",
+                data={
+                    "plan_id": decision.plan_id,
+                    "reasoning": decision.reasoning,
+                }
+            )
+    
+    def _build_prompt(
+        self,
+        trigger: str,
+        events: List[EventDefinition]
+    ) -> str:
+        """Build LLM prompt for reasoning."""
+        events_list = "\n".join([
+            f"- {e.event_type}: {e.description}"
+            for e in events
+        ])
+        
+        # Use schema from PlannerDecision model (keeps in sync)
+        decision_schema = PlannerDecision.model_json_schema()
+        
+        return f"""
+You are an autonomous orchestrator agent.
+
+CURRENT SITUATION:
+{trigger}
+
+AVAILABLE ACTIONS:
+{events_list}
+
+Determine the next action. Respond with JSON matching this schema:
+{json.dumps(decision_schema, indent=2)}
+
+Required fields:
+- action: "publish" | "complete" | "wait" | "delegate"
+- reasoning: Explain your decision
+- event_type + payload (if action=publish)
+- result (if action=complete)
+"""
+```
+
+#### Usage Example
+
+```python
+from soorma.ai.choreography import ChoreographyPlanner
+from soorma.workflow import WorkflowState
+
+planner = ChoreographyPlanner(
+    name="research-orchestrator",
+    reasoning_model="gpt-4o",
+    max_actions=10,
+)
+
+@planner.on_goal("research.goal")
+async def handle_goal(goal, context):
+    plan_id = goal.correlation_id
+    state = WorkflowState(context, plan_id)
+    
+    # LLM reasoning (discovers events, validates, returns typed decision)
+    decision = await planner.reason_next_action(
+        trigger=f"New goal: {goal.data['objective']}",
+        context=context,
+        plan_id=plan_id,
+    )
+    
+    # Execute (publishes event or completes goal)
+    await planner.execute_decision(decision, context, goal_event=goal)
+    
+    # Track action
+    await state.record_action(decision.event_type or "completed")
+
+# Planner reduced from ~400 lines → ~20 lines
+```
+
+#### Benefits
+
+- **Reduces boilerplate**: 400 lines → 20 lines in examples
+- **Type safety**: Returns PlannerDecision (Pydantic)
+- **Validation**: Prevents hallucinated events
+- **Observability**: Built-in trace_id, plan_id support
+- **Reusable**: All planners use same class
+- **Customizable**: Override prompt building for domain logic
+
+---
+
 ## Implementation Checklist
 
+### RF-SDK-006: Planner State Machine
 - [ ] **Read existing code** in `planner.py`
 - [ ] **Import DTOs** from `soorma-common` (StateConfig, StateTransition, StateAction)
 - [ ] **Write tests first** for PlanContext persistence
@@ -510,6 +849,35 @@ async def test_nested_plans():
 - [ ] **Write tests first** for pause/resume
 - [ ] **Implement** `pause()` and `resume()` methods
 - [ ] **Update examples** with state machine patterns
+
+### RF-SDK-015: PlannerDecision Types
+- [ ] **Write tests first** for PlannerDecision validation:
+  - [ ] Test valid decisions (all action types)
+  - [ ] Test invalid decisions (missing required fields)
+  - [ ] Test event_type required when action=PUBLISH_EVENT
+  - [ ] Test result required when action=COMPLETE
+  - [ ] Test confidence score validation (0-1 range)
+  - [ ] Test model_json_schema() returns valid JSON schema
+- [ ] **Implement** PlannerDecision and PlanAction in `ai/decisions.py`
+- [ ] **Write integration tests** for decision validation against discovered events
+- [ ] **Document** usage patterns in docstrings
+
+### RF-SDK-016: ChoreographyPlanner Class
+- [ ] **Write tests first** for ChoreographyPlanner:
+  - [ ] Test reason_next_action() discovers events
+  - [ ] Test reason_next_action() calls LLM with schema-based prompt
+  - [ ] Test reason_next_action() validates event exists in discovered events
+  - [ ] Test reason_next_action() raises error on hallucinated events
+  - [ ] Test reason_next_action() parses LLM response to PlannerDecision
+  - [ ] Test execute_decision() for PUBLISH_EVENT action (uses create_child_request)
+  - [ ] Test execute_decision() for COMPLETE action
+  - [ ] Test execute_decision() for WAIT action (publishes system event)
+  - [ ] Test circuit breaker (max_actions limit)
+  - [ ] Test prompt building uses PlannerDecision.model_json_schema()
+- [ ] **Implement** ChoreographyPlanner class in `ai/choreography.py`
+- [ ] **Write integration tests** with mocked LLM responses
+- [ ] **Write integration tests** with real Registry discovery
+- [ ] **Update research-advisor example** to use ChoreographyPlanner
 
 ---
 

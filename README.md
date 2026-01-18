@@ -22,6 +22,15 @@
   <br />
 </div>
 
+---
+
+> **📋 Refactoring in Progress**  
+> Soorma Core is undergoing a pre-launch refactoring to solidify architecture and SDK design.  
+> See [docs/refactoring/README.md](docs/refactoring/README.md) for details and status.  
+> Current focus: Stage 1 (Foundation - Event System) ✅ Complete
+
+---
+
 ## 🛡️ Mission
 
 Soorma is an agentic infrastructure platform based on the **DisCo (Distributed Cognition)** architecture. It solves the fragmentation in the AI agent ecosystem by providing a standardized **Control Plane** (Gateway, Registry, State, Pub/Sub) that allows distinct cognitive entities to discover each other and collaborate.
