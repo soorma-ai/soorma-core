@@ -308,7 +308,7 @@ async def discover_and_decide(trigger_context: str, context: PlatformContext, pl
         await execute_decision(decision, events, context, plan_id)
 
 
-@planner.on_event(GOAL_EVENT.event_name)
+@planner.on_event(GOAL_EVENT.event_name, topic="action-requests")
 async def handle_goal(event: dict, context: PlatformContext):
     """Handle new goal - can be part of multi-turn conversation."""
     print(f"\n📋 Planner received GOAL: {event.get('id')}")
@@ -380,7 +380,7 @@ Choose the appropriate action based on your analysis of the user's intent."""
     await discover_and_decide(trigger_context, context, plan_id)
 
 
-@planner.on_event(RESEARCH_RESULT_EVENT.event_name)
+@planner.on_event(RESEARCH_RESULT_EVENT.event_name, topic="action-results")
 async def handle_research_result(event: dict, context: PlatformContext):
     """Handle research completion - store results and decide next step."""
     print(f"\n📋 Planner received RESEARCH RESULT: {event.get('id')}")
@@ -409,7 +409,7 @@ async def handle_research_result(event: dict, context: PlatformContext):
     await discover_and_decide(trigger_context, context, plan_id)
 
 
-@planner.on_event(ADVICE_RESULT_EVENT.event_name)
+@planner.on_event(ADVICE_RESULT_EVENT.event_name, topic="action-results")
 async def handle_advice_result(event: dict, context: PlatformContext):
     """Handle draft completion - store draft and decide next step."""
     print(f"\n📋 Planner received DRAFT RESULT: {event.get('id')}")
@@ -437,7 +437,7 @@ IMPORTANT: Before delivering content to users, it should be validated/fact-check
     await discover_and_decide(trigger_context, context, plan_id)
 
 
-@planner.on_event(VALIDATION_RESULT_EVENT.event_name)
+@planner.on_event(VALIDATION_RESULT_EVENT.event_name, topic="action-results")
 async def handle_validation_result(event: dict, context: PlatformContext):
     """Handle validation result - decide whether to retry or complete."""
     print(f"\n📋 Planner received VALIDATION RESULT: {event.get('id')}")

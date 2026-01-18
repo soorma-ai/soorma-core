@@ -20,7 +20,7 @@ async def interactive_cli():
     # Shared event to signal completion of a request
     request_completed = asyncio.Event()
     
-    @client.on_event(FULFILLED_EVENT.event_name)
+    @client.on_event(FULFILLED_EVENT.event_name, topic="action-results")
     async def on_fulfilled(event):
         data = event.get("data", {})
         print(f"\n🎉 CLIENT RECEIVED FINAL RESULT:")

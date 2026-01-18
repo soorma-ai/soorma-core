@@ -41,6 +41,8 @@ Soorma provides infrastructure services that connect agents through event-driven
   - Queue groups for load balancing
   - Topic-based routing
   - Persistent message storage (JetStream)
+  - Support for request/response patterns with response_event routing
+  - Distributed tracing with trace_id and parent_event_id
 
 **Event Flow:**
 ```mermaid
@@ -54,6 +56,8 @@ graph TB
     style EventService fill:#e1f5ff
     style NATS fill:#d0d0d0
 ```
+
+**See also:** [Messaging Patterns](./docs/MESSAGING_PATTERNS.md) for detailed queue/broadcast/load-balancing patterns.
 
 ### 2.2 Registry Service
 

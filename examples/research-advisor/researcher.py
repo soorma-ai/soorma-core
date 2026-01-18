@@ -58,7 +58,7 @@ async def startup():
 async def shutdown():
     print(f"\n🛑 {researcher.name} shutting down. Goodbye!")
 
-@researcher.on_event(RESEARCH_REQUEST_EVENT.event_name)
+@researcher.on_event(RESEARCH_REQUEST_EVENT.event_name, topic="action-requests")
 async def handle_research_request(event: dict, context: PlatformContext):
     """
     Handles research requests.

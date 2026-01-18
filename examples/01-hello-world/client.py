@@ -30,7 +30,7 @@ async def send_greeting_request(name: str = "World"):
     response_data = {}
     
     # Define response handler
-    @client.on_event("greeting.completed")
+    @client.on_event("greeting.completed", topic="action-results")
     async def on_response(event):
         """Handle the greeting response from the worker."""
         data = event.get("data", {})
@@ -42,11 +42,17 @@ async def send_greeting_request(name: str = "World"):
     
     print(f"🎯 Sending greeting request for: {name}")
     
-    # Publish the request event
+    # Publish the request event using respond pattern
+    from uuid import uuid4
+    correlation_id = str(uuid4())
+    
     await client.publish(
         event_type="greeting.requested",
         topic="action-requests",
         data={"name": name},
+        correlation_id=correlation_id,
+        response_event="greeting.completed",
+        response_topic="action-results",
     )
     
     print("📤 Request sent!")

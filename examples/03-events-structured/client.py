@@ -71,7 +71,7 @@ async def create_ticket(description: str, priority: str = "normal", customer: st
     # Connect to platform
     await client.connect(topics=["action-requests"])
     
-    # Publish ticket creation event
+    # Publish ticket creation event (business fact)
     print("📤 Publishing ticket.created event...")
     await client.publish(
         event_type="ticket.created",

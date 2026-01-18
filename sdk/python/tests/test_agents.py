@@ -48,11 +48,11 @@ class TestAgentBase:
         
         agent = Agent(name="test-agent")
         
-        @agent.on_event("test.event")
+        @agent.on_event("test.event", topic="business-facts")
         async def handler(event, context):
             pass
         
-        assert "test.event" in agent._event_handlers
+        assert "business-facts:test.event" in agent._event_handlers
         assert "test.event" in agent.config.events_consumed
     
     def test_on_startup_decorator(self):

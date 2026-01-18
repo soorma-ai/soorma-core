@@ -545,16 +545,16 @@ class TestBusClientWrapper:
         
         # Verify
         assert event_id == "event-123"
-        mock_event_client.publish.assert_called_once_with(
-            event_type="task.completed",
-            data={"task_id": "task-1"},
-            topic="tasks",
-            correlation_id="corr-1"
-        )
+        # Check that publish was called with expected parameters
+        call_kwargs = mock_event_client.publish.call_args.kwargs
+        assert call_kwargs["event_type"] == "task.completed"
+        assert call_kwargs["topic"] == "tasks"
+        assert call_kwargs["data"] == {"task_id": "task-1"}
+        assert call_kwargs["correlation_id"] == "corr-1"
     
     @pytest.mark.asyncio
-    async def test_publish_auto_infers_topic(self):
-        """Test publish() auto-infers topic from event_type."""
+    async def test_publish_requires_explicit_topic(self):
+        """Test publish() requires explicit topic parameter (Stage 1)."""
         # Setup
         mock_event_client = AsyncMock(spec=EventClient)
         mock_event_client.publish = AsyncMock(return_value="event-456")
@@ -564,10 +564,16 @@ class TestBusClientWrapper:
         # Execute
         event_id = await wrapper.publish(
             event_type="user.registered",
+            topic="users",
             data={"user_id": "user-1"}
         )
         
         # Verify
+        assert event_id == "event-456"
+        call_kwargs = mock_event_client.publish.call_args.kwargs
+        assert call_kwargs["event_type"] == "user.registered"
+        assert call_kwargs["topic"] == "users"
+        assert call_kwargs["data"] == {"user_id": "user-1"}
         assert event_id == "event-456"
         # Should be called with topic=None (auto-inferred)
         call_kwargs = mock_event_client.publish.call_args.kwargs
@@ -620,12 +626,12 @@ class TestIntegrationScenarios:
 
 
 
-class TestBusClientWrapper:
-    """Tests for the BusClient wrapper in context.py."""
+class TestBusClientWrapper2:
+    """Additional tests for the BusClient wrapper in context.py."""
     
     @pytest.mark.asyncio
-    async def test_publish_delegates_to_event_client(self):
-        """Test publish() delegates to event_client."""
+    async def test_publish_delegates_to_event_client_with_kwargs(self):
+        """Test publish() delegates to event_client with all parameters."""
         # Setup
         mock_event_client = AsyncMock(spec=EventClient)
         mock_event_client.publish = AsyncMock(return_value="event-123")
@@ -642,16 +648,16 @@ class TestBusClientWrapper:
         
         # Verify
         assert event_id == "event-123"
-        mock_event_client.publish.assert_called_once_with(
-            event_type="task.completed",
-            data={"task_id": "task-1"},
-            topic="tasks",
-            correlation_id="corr-1"
-        )
+        # Check that publish was called with expected parameters
+        call_kwargs = mock_event_client.publish.call_args.kwargs
+        assert call_kwargs["event_type"] == "task.completed"
+        assert call_kwargs["topic"] == "tasks"
+        assert call_kwargs["data"] == {"task_id": "task-1"}
+        assert call_kwargs["correlation_id"] == "corr-1"
     
     @pytest.mark.asyncio
-    async def test_publish_auto_infers_topic(self):
-        """Test publish() auto-infers topic from event_type."""
+    async def test_publish_requires_explicit_topic_stage1(self):
+        """Test publish() requires explicit topic parameter (Stage 1)."""
         # Setup
         mock_event_client = AsyncMock(spec=EventClient)
         mock_event_client.publish = AsyncMock(return_value="event-456")
@@ -661,14 +667,15 @@ class TestBusClientWrapper:
         # Execute
         event_id = await wrapper.publish(
             event_type="user.registered",
+            topic="users",
             data={"user_id": "user-1"}
         )
         
         # Verify
         assert event_id == "event-456"
-        # Should be called with topic=None (auto-inferred)
         call_kwargs = mock_event_client.publish.call_args.kwargs
         assert call_kwargs["event_type"] == "user.registered"
+        assert call_kwargs["topic"] == "users"
         assert call_kwargs["data"] == {"user_id": "user-1"}
 
 

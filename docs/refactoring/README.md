@@ -44,7 +44,7 @@ The SDK refactoring plan has been split into focused documents for implementatio
 | Document | Focus | Priority | Status |
 |----------|-------|----------|--------|
 | [sdk/00-OVERVIEW.md](sdk/00-OVERVIEW.md) | Overview & principles | Reference | 📋 |
-| [sdk/01-EVENT-SYSTEM.md](sdk/01-EVENT-SYSTEM.md) | Event publishing & decorators | 🔴 Phase 1 | ⬜ |
+| [sdk/01-EVENT-SYSTEM.md](sdk/01-EVENT-SYSTEM.md) | Event publishing & decorators | 🔴 Phase 1 | ✅ |
 | [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) | TaskContext/PlanContext persistence | 🔴 Phase 1 | ⬜ |
 | [sdk/03-COMMON-DTOS.md](sdk/03-COMMON-DTOS.md) | Shared DTOs in soorma-common | 🔴 Phase 1 | ⬜ |
 | [sdk/04-TOOL-MODEL.md](sdk/04-TOOL-MODEL.md) | Tool synchronous model | 🟡 Phase 2 | ⬜ |
@@ -63,7 +63,7 @@ The architecture refactoring plan has been split into focused documents for impl
 | Document | Focus | Priority | Status |
 |----------|-------|----------|--------|
 | [arch/00-OVERVIEW.md](arch/00-OVERVIEW.md) | Service map & principles | Reference | 📋 |
-| [arch/01-EVENT-SERVICE.md](arch/01-EVENT-SERVICE.md) | Event envelope enhancements | 🔴 Phase 1 | ⬜ |
+| [arch/01-EVENT-SERVICE.md](arch/01-EVENT-SERVICE.md) | Event envelope enhancements | 🔴 Phase 1 | ✅ |
 | [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) | Task/plan context storage | 🔴 Phase 1 | ⬜ |
 | [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) | Shared DTOs (soorma-common) | 🔴 Phase 1 | ⬜ |
 | [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md) | Event-driven observability | 🟡 Phase 2 | ⬜ |
@@ -208,8 +208,11 @@ Follow TDD: write tests first, then implement. Coordinate service and SDK change
 - ✅ BusClient.publish() requires topic
 - ✅ BusClient has create_child_request() and create_response() utilities
 - ✅ on_event() requires topic for base Agent
-- ✅ All tests pass
+- ✅ All tests pass (64/64)
 - ✅ Examples updated with pattern usage
+- ✅ CHANGELOG.md updated
+
+**Status:** ✅ **COMPLETE** (January 17, 2026)
 
 ---
 
@@ -412,12 +415,12 @@ Dependencies: All previous stages must be complete.
 ## Task Reference Index
 
 Quick lookup table for all refactoring tasks:
-
-| ID | Description | Stage | Document | Status |
-|----|-------------|-------|----------|--------|
-| RF-ARCH-003 | Response event in EventEnvelope | Stage 1 | [01-EVENT-SERVICE](arch/01-EVENT-SERVICE.md) | ⬜ |
-| RF-ARCH-004 | Correlation ID semantics | Stage 1 | [01-EVENT-SERVICE](arch/01-EVENT-SERVICE.md) | ⬜ |
-| RF-SDK-001 | Remove topic inference from BusClient | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
+✅ |
+| RF-ARCH-004 | Correlation ID semantics | Stage 1 | [01-EVENT-SERVICE](arch/01-EVENT-SERVICE.md) | ✅ |
+| RF-SDK-001 | Remove topic inference from BusClient | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
+| RF-SDK-002 | Add response_event to action requests | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
+| RF-SDK-003 | Refactor on_event() signature | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
+| RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅
 | RF-SDK-002 | Add response_event to action requests | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
 | RF-SDK-003 | Refactor on_event() signature | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |
 | RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ⬜ |

@@ -1,6 +1,7 @@
 """
 Main FastAPI application for Registry Service.
 """
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.background_tasks import background_task_manager
 from .api import router
+
+# Configure logging with timestamps
+logging.basicConfig(
+    level=logging.DEBUG if settings.IS_LOCAL_TESTING else logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager

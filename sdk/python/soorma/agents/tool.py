@@ -170,7 +170,7 @@ class Tool(Agent):
     
     def _register_tool_request_handler(self) -> None:
         """Register the main tool.request event handler."""
-        @self.on_event("tool.request")
+        @self.on_event("tool.request", topic="action-requests")
         async def handle_tool_request(event: Dict[str, Any], context: PlatformContext) -> None:
             await self._handle_tool_request(event, context)
     

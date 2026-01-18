@@ -12,38 +12,37 @@ from soorma import Worker
 # Create a Worker that handles multiple event types
 worker = Worker(
     name="order-processor",
-    description="Processes order workflow events",
+    description="Processes order workflow events in a chain",
     capabilities=["order-processing", "inventory", "payment"],
     events_consumed=[
         "order.placed",
-        "inventory.check",
-        "inventory.reserve",
-        "payment.authorize",
-        "payment.process",
+        "inventory.reserved",
         "payment.completed",
         "order.completed",
     ],
     events_produced=[
-        "inventory.reserve",
         "inventory.reserved",
-        "payment.process",
         "payment.completed",
         "order.completed",
-        "order.ship",
     ],
 )
 
 
-@worker.on_event("order.placed")
+@worker.on_event("order.placed", topic="business-facts")
 async def handle_order_placed(event, context):
     """
     Handle when a new order is placed.
-    This starts the workflow by checking inventory.
+    This starts the workflow by reserving inventory.
     """
     data = event.get("data", {})
     order_id = data.get("order_id")
     items = data.get("items", [])
     total = data.get("total")
+    
+    # Extract metadata for propagation
+    correlation_id = event.get("correlation_id")
+    trace_id = event.get("trace_id") or event.get("id")  # Use event ID as trace root if no trace_id
+    parent_event_id = event.get("id")
     
     print("\n" + "=" * 60)
     print("📦 Order placed!")
@@ -51,186 +50,114 @@ async def handle_order_placed(event, context):
     print(f"   Order ID: {order_id}")
     print(f"   Items: {', '.join(items)}")
     print(f"   Total: ${total:.2f}")
+    print(f"   Trace ID: {trace_id[:8]}...")
     print()
     
-    # Trigger next step: reserve inventory
-    print("   → Publishing inventory.reserve event...")
-    await context.bus.publish(
-        event_type="inventory.reserve",
-        topic="business-facts",
-        data={
-            "order_id": order_id,
-            "items": items,
-        },
-    )
-    print("   ✓ Event published\n")
-
-
-@worker.on_event("inventory.check")
-async def handle_inventory_check(event, context):
-    """
-    Handle inventory check requests.
-    In a real system, this would query a database.
-    """
-    data = event.get("data", {})
-    order_id = data.get("order_id")
-    items = data.get("items", [])
-    
-    print("\n" + "=" * 60)
-    print("📊 Inventory check requested")
-    print("=" * 60)
-    print(f"   Order ID: {order_id}")
-    print(f"   Checking availability for: {', '.join(items)}")
-    print()
-    
-    # Simulate inventory check (always succeeds in this example)
-    print("   ✓ All items available!")
-    print()
-    
-    # Publish inventory reserved event
-    print("   → Publishing inventory.reserved event...")
-    await context.bus.publish(
-        event_type="inventory.reserved",
-        topic="business-facts",
-        data={
-            "order_id": order_id,
-            "items": items,
-            "reserved": True,
-        },
-    )
-    print("   ✓ Event published\n")
-
-
-@worker.on_event("inventory.reserve")
-async def handle_inventory_reserve(event, context):
-    """
-    Handle inventory reservation.
-    This would actually reserve items in a real system.
-    """
-    data = event.get("data", {})
-    order_id = data.get("order_id")
-    items = data.get("items", [])
-    
-    print("\n" + "=" * 60)
-    print("🔒 Reserving inventory")
-    print("=" * 60)
-    print(f"   Order ID: {order_id}")
-    print(f"   Reserving: {', '.join(items)}")
-    print()
-    
-    # Simulate reservation
+    # Simulate inventory reservation (in real system, another service would do this)
+    print("   Reserving inventory...")
     print("   ✓ Items reserved!")
     print()
     
-    # Trigger next step: process payment
-    print("   → Publishing payment.process event...")
-    await context.bus.publish(
-        event_type="payment.process",
-        topic="business-facts",
+    # Announce fact: inventory is now reserved (propagate metadata for traceability)
+    print("   → Announcing inventory.reserved event...")
+    await context.bus.announce(
+        event_type="inventory.reserved",
         data={
             "order_id": order_id,
+            "items": items,
         },
+        correlation_id=correlation_id,
+        trace_id=trace_id,
+        parent_event_id=parent_event_id,
     )
-    print("   ✓ Event published\n")
+    print("   ✓ Event announced\n")
 
 
-@worker.on_event("payment.authorize")
-async def handle_payment_authorize(event, context):
+@worker.on_event("inventory.reserved", topic="business-facts")
+async def handle_inventory_reserved(event, context):
     """
-    Handle payment authorization requests.
-    In a real system, this would call a payment gateway.
+    Handle when inventory has been reserved.
+    This triggers payment processing.
     """
     data = event.get("data", {})
     order_id = data.get("order_id")
-    amount = data.get("amount")
-    customer = data.get("customer")
+    items = data.get("items", [])
+    
+    # Extract metadata for propagation
+    correlation_id = event.get("correlation_id")
+    trace_id = event.get("trace_id")
+    parent_event_id = event.get("id")
     
     print("\n" + "=" * 60)
-    print("💳 Payment authorization requested")
+    print("🔒 Inventory reserved!")
     print("=" * 60)
     print(f"   Order ID: {order_id}")
-    print(f"   Customer: {customer}")
-    print(f"   Amount: ${amount:.2f}")
+    print(f"   Items: {', '.join(items)}")
+    print(f"   Trace ID: {trace_id[:8]}...")
     print()
     
-    # Simulate payment authorization (always succeeds)
-    print("   ✓ Payment authorized!")
-    print()
-    
-    # Publish payment completed event
-    print("   → Publishing payment.completed event...")
-    await context.bus.publish(
-        event_type="payment.completed",
-        topic="business-facts",
-        data={
-            "order_id": order_id,
-            "amount": amount,
-            "status": "completed",
-        },
-    )
-    print("   ✓ Event published\n")
-
-
-@worker.on_event("payment.process")
-async def handle_payment_process(event, context):
-    """
-    Handle payment processing.
-    This would actually charge the customer in a real system.
-    """
-    data = event.get("data", {})
-    order_id = data.get("order_id")
-    
-    print("\n" + "=" * 60)
-    print("💰 Processing payment")
-    print("=" * 60)
-    print(f"   Order ID: {order_id}")
-    print()
-    
-    # Simulate payment processing
+    # Simulate payment processing (in real system, another service would do this)
+    print("   Processing payment...")
     print("   ✓ Payment processed!")
     print()
     
-    # Complete the workflow
-    print("   → Publishing order.completed event...")
-    await context.bus.publish(
-        event_type="order.completed",
-        topic="business-facts",
+    # Announce fact: payment is now completed (propagate metadata)
+    print("   → Announcing payment.completed event...")
+    await context.bus.announce(
+        event_type="payment.completed",
         data={
             "order_id": order_id,
             "status": "completed",
         },
+        correlation_id=correlation_id,
+        trace_id=trace_id,
+        parent_event_id=parent_event_id,
     )
-    print("   ✓ Event published\n")
+    print("   ✓ Event announced\n")
 
 
-@worker.on_event("payment.completed")
+@worker.on_event("payment.completed", topic="business-facts")
 async def handle_payment_completed(event, context):
     """
-    Handle payment completion.
-    This triggers the shipping process.
+    Handle when payment has been completed.
+    This finalizes the order.
     """
     data = event.get("data", {})
     order_id = data.get("order_id")
     
+    # Extract metadata for propagation
+    correlation_id = event.get("correlation_id")
+    trace_id = event.get("trace_id")
+    parent_event_id = event.get("id")
+    
     print("\n" + "=" * 60)
-    print("🚚 Payment completed - initiating shipping")
+    print("💳 Payment completed!")
     print("=" * 60)
     print(f"   Order ID: {order_id}")
+    print(f"   Trace ID: {trace_id[:8]}...")
     print()
     
-    # Trigger shipping
-    print("   → Publishing order.ship event...")
-    await context.bus.publish(
-        event_type="order.ship",
-        topic="business-facts",
+    # Finalize order (in real system, trigger fulfillment/shipping)
+    print("   Finalizing order...")
+    print("   ✓ Order finalized!")
+    print()
+    
+    # Announce fact: order is now completed (propagate metadata)
+    print("   → Announcing order.completed event...")
+    await context.bus.announce(
+        event_type="order.completed",
         data={
             "order_id": order_id,
+            "status": "completed",
         },
+        correlation_id=correlation_id,
+        trace_id=trace_id,
+        parent_event_id=parent_event_id,
     )
-    print("   ✓ Event published\n")
+    print("   ✓ Event announced\n")
 
 
-@worker.on_event("order.completed")
+@worker.on_event("order.completed", topic="business-facts")
 async def handle_order_completed(event, context):
     """
     Handle order completion.
@@ -238,12 +165,15 @@ async def handle_order_completed(event, context):
     """
     data = event.get("data", {})
     order_id = data.get("order_id")
+    trace_id = event.get("trace_id")
     
     print("\n" + "=" * 60)
     print("🎉 Order workflow completed!")
     print("=" * 60)
     print(f"   Order ID: {order_id}")
+    print(f"   Trace ID: {trace_id[:8]}...")
     print("   All steps finished successfully!")
+    print("   (Same trace_id propagated through entire chain)")
     print("=" * 60)
     print()
 
@@ -257,14 +187,11 @@ async def startup():
     print(f"   Name: {worker.name}")
     print(f"   Capabilities: {worker.capabilities}")
     print()
-    print("   Listening for events:")
-    print("   • order.placed")
-    print("   • inventory.check")
-    print("   • inventory.reserve")
-    print("   • payment.authorize")
-    print("   • payment.process")
-    print("   • payment.completed")
-    print("   • order.completed")
+    print("   Listening for events (chain):")
+    print("   • order.placed → inventory.reserved")
+    print("   • inventory.reserved → payment.completed")
+    print("   • payment.completed → order.completed")
+    print("   • order.completed (end)")
     print()
     print("   Press Ctrl+C to stop")
     print("=" * 60)
