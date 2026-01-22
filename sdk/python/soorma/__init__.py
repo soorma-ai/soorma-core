@@ -40,7 +40,7 @@ Usage:
     worker.run()
 """
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # Core imports
 from .events import EventClient
@@ -55,6 +55,7 @@ from .agents import Agent, Planner, Worker, Tool
 from .agents.planner import Goal, Plan, Task
 from .agents.worker import TaskContext
 from .agents.tool import ToolRequest, ToolResponse
+from .workflow import WorkflowState
 
 # Public API
 __all__ = [
@@ -80,6 +81,8 @@ __all__ = [
     "TaskContext",
     "ToolRequest",
     "ToolResponse",
+    # Helpers
+    "WorkflowState",
     # Functions
     "hello",
     "event_handler",

@@ -7,6 +7,10 @@ from memory_service.models.memory import (
     EpisodicMemory,
     ProceduralMemory,
     WorkingMemory,
+    TaskContext,
+    PlanContext,
+    Plan,
+    Session,
 )
 
 # Import DTOs from soorma-common (not re-exported, just for IDE cross-referencing)
@@ -27,4 +31,8 @@ __all__ = [
     "EpisodicMemory",
     "ProceduralMemory",
     "WorkingMemory",
+    "TaskContext",
+    "PlanContext",
+    "Plan",
+    "Session",
 ]

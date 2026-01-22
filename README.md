@@ -27,7 +27,9 @@
 > **📋 Refactoring in Progress**  
 > Soorma Core is undergoing a pre-launch refactoring to solidify architecture and SDK design.  
 > See [docs/refactoring/README.md](docs/refactoring/README.md) for details and status.  
-> Current focus: Stage 1 (Foundation - Event System) ✅ Complete
+> - Stage 1 (Foundation - Event System) ✅ Complete (v0.6.0)
+> - Stage 2 (Foundation - Memory & Common DTOs) ✅ Complete (v0.7.0)
+> - Stage 3 (Agent Models - Tool & Worker) ⬜ Next
 
 ---
 
@@ -176,10 +178,10 @@ For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see th
 | Service | Description | Status |
 | :--- | :--- | :--- |
 | **Gateway** | API Gateway & SSE Entrypoint | 🟡 Preview |
-| **Registry** | Service Discovery for Agents | 🟢 v0.5.0 |
-| **Event Service** | SSE Event Bus for Agent Choreography | 🟢 v0.5.0 |
+| **Registry** | Service Discovery for Agents | 🟢 Available |
+| **Event Service** | SSE Event Bus for Agent Choreography | 🟢 Available |
 | **Tracker** | Distributed State Machine | ⚪ Planned |
-| **Memory** | Vector & Semantic Memory Store (CoALA) | 🟢 v0.5.0 |
+| **Memory** | Vector & Semantic Memory Store (CoALA) | 🟢 Available |
 
 ## 🤝 Contributing
 

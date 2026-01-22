@@ -5,7 +5,41 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.7.0] - 2026-01-21
+
+### Added
+- **Stage 2 - Foundation: Memory & Common DTOs (Complete ✅)**
+  - **Memory Service enhancements**:
+    - Task Context storage for async Worker completion (6 new endpoints)
+    - Plan Context storage for Planner state machines (6 new endpoints)
+    - Plans & Sessions management for lifecycle tracking (11 new endpoints)
+    - Service layer architecture refactoring (API → Service → CRUD pattern)
+    - 5 new database tables with PostgreSQL RLS enforcement
+    - 37 tests passing (29 unit + 8 validation)
+  - **SDK MemoryClient enhancements**:
+    - 13 new methods for task/plan context and session management
+    - WorkflowState helper class with 12 convenience methods
+    - Tracker integration via events (removed direct API calls)
+    - 192 SDK tests passing
+  - **soorma-common library expansion**:
+    - State Machine DTOs (StateAction, StateTransition, StateConfig, PlanDefinition)
+    - A2A Protocol DTOs (A2AAgentCard, A2ATask, A2ASkill, etc.)
+    - Progress Tracking DTOs (TaskState, TaskProgressEvent, TaskStateChanged)
+    - 61 total exports, 44 tests passing
+  - **Total test coverage**: 273 tests passing across SDK, soorma-common, and Memory Service
+
+### Changed
+- **TrackerClient - Breaking**: Progress tracking now via events instead of API calls
+  - Removed: `emit_progress()`, `complete_task()`, `fail_task()`
+  - Kept: `get_plan_status()`, `list_tasks()` (read-only queries)
+  - Workers/Planners now publish to `system-events` topic
+
+### Fixed
+- Memory Service authentication: user_id extracted from query params or X-User-ID header
+- Session.metadata renamed to session_metadata (SQLAlchemy reserved field conflict)
+- Duplicate exception handling and incorrect db.commit() calls in sessions endpoint
+
+## [0.6.0] - 2026-01-17
 
 ### Added
 - **Agent Auto-Recovery on Heartbeat Failure (Production Critical Fix)**

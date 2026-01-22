@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-21
+
+### Added
+- **Stage 2 - Memory & Common DTOs Foundation (January 21, 2026)**
+  - **Task/Plan Context DTOs** for async worker and planner persistence:
+    - `TaskContextCreate`, `TaskContextUpdate`, `TaskContextResponse`: Async task state
+    - `PlanContextCreate`, `PlanContextUpdate`, `PlanContextResponse`: Planner state machine
+    - `PlanCreate`, `PlanUpdate`, `PlanSummary`: Plan lifecycle management
+    - `SessionCreate`, `SessionSummary`: Conversation session grouping
+  - **State Machine DTOs** (`state.py`):
+    - `StateAction`: Action to execute on state entry
+    - `StateTransition`: Transition between states with conditions
+    - `StateConfig`: Complete state definition in state machine
+    - `PlanDefinition`, `PlanRegistrationRequest`, `PlanInstanceRequest`: Plan type registration
+  - **A2A Protocol DTOs** (`a2a.py`):
+    - `A2AAuthType`, `A2AAuthentication`: Authentication types and config
+    - `A2ASkill`, `A2AAgentCard`: Agent capability discovery (A2A standard)
+    - `A2APart`, `A2AMessage`, `A2ATask`: Task structure
+    - `A2ATaskStatus`, `A2ATaskResponse`: Task lifecycle
+  - **Progress Tracking DTOs** (`tracking.py`):
+    - `TaskState`: Standard task states enum (pending, running, delegated, completed, etc.)
+    - `TaskProgressEvent`: Progress update event payload
+    - `TaskStateChanged`: State transition event payload
+  - **Tests**: 44 soorma-common tests passing, comprehensive DTO validation
+
+### Changed
+- Total exports increased to 61 (from ~40), supporting Stage 2 foundation
+
 ## [0.5.1] - 2025-12-24
 
 ### Changed

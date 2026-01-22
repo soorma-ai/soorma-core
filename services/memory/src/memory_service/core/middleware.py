@@ -11,7 +11,7 @@ class TenancyMiddleware(BaseHTTPMiddleware):
     """
     Middleware for single-tenant mode.
     
-    In v0.5.0, Memory Service operates in single-tenant mode with no authentication.
+    Currently Memory Service operates in single-tenant mode with no authentication.
     - tenant_id: Always uses default tenant (single-tenant mode)
     - user_id: Extracted from query parameters (no auth required)
     - agent_id: Extracted from query parameters
@@ -28,8 +28,12 @@ class TenancyMiddleware(BaseHTTPMiddleware):
         # Single-tenant mode - always use default tenant
         tenant_id = settings.default_tenant_id
         
-        # Store in request state (user_id will come from query parameters in endpoints)
+        # Extract user_id from query params (backward compatibility) or headers
+        user_id = request.query_params.get("user_id") or request.headers.get("X-User-ID")
+        
+        # Store in request state
         request.state.tenant_id = tenant_id
+        request.state.user_id = user_id
 
         return await call_next(request)
 
