@@ -6,7 +6,9 @@ Demonstrates how to subscribe to and handle multiple event types.
 This simulates various services reacting to events in an order workflow.
 """
 
+from typing import Any, Dict
 from soorma import Worker
+from soorma.context import PlatformContext
 
 
 # Create a Worker that handles multiple event types
@@ -29,7 +31,7 @@ worker = Worker(
 
 
 @worker.on_event("order.placed", topic="business-facts")
-async def handle_order_placed(event, context):
+async def handle_order_placed(event: Dict[str, Any], context: PlatformContext):
     """
     Handle when a new order is placed.
     This starts the workflow by reserving inventory.
@@ -74,7 +76,7 @@ async def handle_order_placed(event, context):
 
 
 @worker.on_event("inventory.reserved", topic="business-facts")
-async def handle_inventory_reserved(event, context):
+async def handle_inventory_reserved(event: Dict[str, Any], context: PlatformContext):
     """
     Handle when inventory has been reserved.
     This triggers payment processing.
@@ -117,7 +119,7 @@ async def handle_inventory_reserved(event, context):
 
 
 @worker.on_event("payment.completed", topic="business-facts")
-async def handle_payment_completed(event, context):
+async def handle_payment_completed(event: Dict[str, Any], context: PlatformContext):
     """
     Handle when payment has been completed.
     This finalizes the order.
@@ -158,7 +160,7 @@ async def handle_payment_completed(event, context):
 
 
 @worker.on_event("order.completed", topic="business-facts")
-async def handle_order_completed(event, context):
+async def handle_order_completed(event: Dict[str, Any], context: PlatformContext):
     """
     Handle order completion.
     This is the final step in the workflow.

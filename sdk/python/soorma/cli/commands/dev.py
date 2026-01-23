@@ -382,6 +382,11 @@ def dev_stack(
         "--stop",
         help="Stop the running development stack.",
     ),
+    clean: bool = typer.Option(
+        False,
+        "--clean",
+        help="Remove volumes when stopping (deletes all database data).",
+    ),
     status: bool = typer.Option(
         False,
         "--status",
@@ -437,12 +442,13 @@ def dev_stack(
     
     \b
     Usage:
-      soorma dev           # Start infrastructure (default)
-      soorma dev --start   # Explicitly start infrastructure
-      soorma dev --build   # Build images first, then start
-      soorma dev --status  # Check status
-      soorma dev --logs    # View logs
-      soorma dev --stop    # Stop everything
+      soorma dev                # Start infrastructure (default)
+      soorma dev --start        # Explicitly start infrastructure
+      soorma dev --build        # Build images first, then start
+      soorma dev --status       # Check status
+      soorma dev --logs         # View logs
+      soorma dev --stop         # Stop everything
+      soorma dev --stop --clean # Stop and remove all data/volumes
     
     After starting, run your agent separately with these environment variables:
       SOORMA_REGISTRY_URL=http://localhost:8081
@@ -553,10 +559,15 @@ OPENAI_API_KEY={openai_api_key}
     
     # Handle --stop
     if stop:
-        typer.echo("🛑 Stopping Soorma development stack...")
-        result = subprocess.run(base_cmd + ["down"], cwd=soorma_dir)
+        if clean:
+            typer.echo("🛑 Stopping Soorma development stack and removing volumes...")
+            typer.echo("   ⚠️  This will delete all database data!")
+            result = subprocess.run(base_cmd + ["down", "-v"], cwd=soorma_dir)
+        else:
+            typer.echo("🛑 Stopping Soorma development stack...")
+            result = subprocess.run(base_cmd + ["down"], cwd=soorma_dir)
         if result.returncode == 0:
-            typer.echo("✓ Stack stopped.")
+            typer.echo("✓ Stack stopped." + (" Volumes removed." if clean else ""))
         raise typer.Exit(result.returncode)
     
     # Handle --status

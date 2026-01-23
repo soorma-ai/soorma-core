@@ -3,6 +3,7 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
@@ -37,6 +38,11 @@ class Settings(BaseSettings):
     )
     default_username: str = os.environ.get("DEFAULT_USERNAME", "default-user")
 
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False
+    )
+
     @property
     def sync_db_url(self) -> str:
         """Get sync database URL for Alembic."""
@@ -44,12 +50,6 @@ class Settings(BaseSettings):
             return self.sync_database_url
         # Convert async URL to sync URL
         return self.database_url.replace("+asyncpg", "+psycopg2")
-
-    class Config:
-        """Pydantic config."""
-
-        env_file = ".env"
-        case_sensitive = False
 
 
 # Global settings instance

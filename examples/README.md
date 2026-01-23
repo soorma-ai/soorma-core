@@ -68,20 +68,19 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<!-- <td><a href="./04-memory-semantic/">04-memory-semantic</a></td> -->
-<td><!--a href="./06-memory-episodic/"-->04-memory-semantic<!--/a--><br>(coming soon)</td>
+<td><a href="./04-memory-semantic/">04-memory-semantic</a></td>
 <td>
 • Semantic memory (RAG)<br>
+• LLM-based routing<br>
 • Knowledge storage with embeddings<br>
-• Semantic search
+• Grounded answer generation
 </td>
-<td>15 min</td>
-<td>01-hello-world</td>
+<td>20 min</td>
+<td>03-events-structured</td>
 </tr>
 
 <tr>
-<!-- <td><a href="./05-memory-working/">05-memory-working</a></td> -->
-<td><!--a href="./06-memory-episodic/"-->05-memory-working<!--/a--><br>(coming soon)</td>
+<td><a href="./05-memory-working/">05-memory-working</a></td>
 <td>
 • Working memory<br>
 • Plan-scoped shared state<br>
@@ -92,7 +91,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./06-memory-episodic/"-->06-memory-episodic<!--/a--><br>(coming soon)</td>
+<td><a href="./06-memory-episodic/">06-memory-episodic</a></td>
 <td>
 • Episodic memory<br>
 • Conversation history<br>
@@ -169,9 +168,9 @@ This directory contains progressively more complex examples demonstrating Soorma
 |------|---------|---------|
 | Build a simple reactive agent | Event Subscriber | [02-events-simple](./02-events-simple/) |
 | Let an LLM choose the next action | Structured Events + LLM | [03-events-structured](./03-events-structured/) |
-| Store facts for RAG/knowledge retrieval | Semantic Memory | 04-memory-semantic (coming soon) |
-| Share state across agents in a workflow | Working Memory | 05-memory-working (coming soon) |
-| Log conversation history or audit trail | Episodic Memory | 06-memory-episodic (coming soon) |
+| Store facts for RAG/knowledge retrieval | Semantic Memory | [04-memory-semantic](./04-memory-semantic/) |
+| Share state across agents in a workflow | Working Memory | [05-memory-working](./05-memory-working/) |
+| Log conversation history or audit trail | Episodic Memory | [06-memory-episodic](./06-memory-episodic/) |
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Break down goals into tasks | Planner-Worker Pattern | 08-planner-worker-basic (coming soon) |
 | Build a fully autonomous multi-agent system | Autonomous Choreography | 09-app-research-advisor (coming soon) |
@@ -256,14 +255,15 @@ python client.py
 ### Path 2: LLM-Powered Agents (60 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [03-events-structured](./03-events-structured/) - LLM event selection
-3. 05-memory-working (coming soon) - State management
+3. [05-memory-working](./05-memory-working/) - State management
 4. 09-app-research-advisor (coming soon) - Full autonomous system
 
-### Path 3: Memory Deep Dive (45 minutes)
+### Path 3: Memory Deep Dive (60 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
-2. 04-memory-semantic (coming soon) - RAG/Knowledge
-3. 05-memory-working (coming soon) - Workflow state
-4. 06-memory-episodic (coming soon) - Conversation history
+2. [03-events-structured](./03-events-structured/) - LLM event selection
+3. [04-memory-semantic](./04-memory-semantic/) - RAG/Knowledge
+4. [05-memory-working](./05-memory-working/) - Workflow state
+5. [06-memory-episodic](./06-memory-episodic/) - Conversation history
 
 ### Path 4: Complete Journey (Coming Soon)
 Once all examples are available, work through examples 01 → 10 in sequence for comprehensive understanding.

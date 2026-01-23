@@ -11,12 +11,12 @@
 
 | Aspect | Details |
 |--------|----------|
-| **Tasks** | RF-SDK-010: Memory SDK Methods<br>RF-SDK-014: WorkflowState Helper Class |
-| **Files** | `sdk/python/soorma/context.py`, Memory Service |
+| **Tasks** | RF-SDK-010: Memory SDK Methods<br>RF-SDK-014: WorkflowState Helper Class<br>RF-SDK-019: Semantic Memory Upsert SDK (Stage 2.1)<br>RF-SDK-020: Working Memory Deletion SDK (Stage 2.1) |
+| **Files** | `sdk/python/soorma/context.py`, `sdk/python/soorma/workflow.py`, Memory Service |
 | **Pairs With Arch** | [arch/02-MEMORY-SERVICE.md](../arch/02-MEMORY-SERVICE.md) |
 | **Dependencies** | None (foundational) |
 | **Blocks** | 05-WORKER-MODEL, 06-PLANNER-MODEL |
-| **Estimated Effort** | 1-2 days |
+| **Estimated Effort** | 1-2 days (Stage 2)<br>2-3 days (Stage 2.1) |
 
 ---
 
@@ -54,6 +54,8 @@ sdk/python/soorma/
 This document covers the Memory SDK client alignment:
 - **RF-SDK-010:** Memory SDK Methods for Task/Plan Context
 - **RF-SDK-014:** WorkflowState Helper Class
+- **RF-SDK-019:** Semantic Memory Upsert SDK (Stage 2.1)
+- **RF-SDK-020:** Working Memory Deletion SDK (Stage 2.1)
 
 This enables async Worker completion and Planner state machine persistence.
 
@@ -78,18 +80,35 @@ SDK has basic working memory methods but lacks:
 
 | Service Endpoint | SDK Method | Status |
 |-----------------|------------|--------|
-| `POST /v1/memory/task-context` | `memory.store_task_context()` | NEW |
-| `GET /v1/memory/task-context/{id}` | `memory.get_task_context()` | NEW |
-| `DELETE /v1/memory/task-context/{id}` | `memory.delete_task_context()` | NEW |
-| `GET /v1/memory/task-context/by-subtask/{id}` | `memory.get_task_by_subtask()` | NEW |
-| `POST /v1/memory/plan-context` | `memory.store_plan_context()` | NEW |
-| `GET /v1/memory/plan-context/{id}` | `memory.get_plan_context()` | NEW |
-| `POST /v1/memory/plans` | `memory.create_plan()` | NEW |
-| `GET /v1/memory/plans` | `memory.list_plans()` | NEW |
-| `POST /v1/memory/sessions` | `memory.create_session()` | NEW |
-| `GET /v1/memory/sessions` | `memory.list_sessions()` | NEW |
-| `POST /v1/working-memory/{plan_id}` | `memory.store()` | Existing |
-| `GET /v1/working-memory/{plan_id}/{key}` | `memory.retrieve()` | Existing |
+| **Task Context** | | |
+| `POST /v1/memory/task-context` | `memory.store_task_context()` | NEW (Stage 2) |
+| `GET /v1/memory/task-context/{id}` | `memory.get_task_context()` | NEW (Stage 2) |
+| `DELETE /v1/memory/task-context/{id}` | `memory.delete_task_context()` | NEW (Stage 2) |
+| `GET /v1/memory/task-context/by-subtask/{id}` | `memory.get_task_by_subtask()` | NEW (Stage 2) |
+| **Plan Context** | | |
+| `POST /v1/memory/plan-context` | `memory.store_plan_context()` | NEW (Stage 2) |
+| `GET /v1/memory/plan-context/{id}` | `memory.get_plan_context()` | NEW (Stage 2) |
+| `GET /v1/memory/plan-context/by-correlation/{id}` | `memory.get_plan_by_correlation()` | NEW (Stage 2) |
+| **Plans & Sessions** | | |
+| `POST /v1/memory/plans` | `memory.create_plan()` | NEW (Stage 2) |
+| `GET /v1/memory/plans` | `memory.list_plans()` | NEW (Stage 2) |
+| `PUT /v1/memory/plans/{id}` | `memory.update_plan()` | NEW (Stage 2) |
+| `DELETE /v1/memory/plans/{id}` | `memory.delete_plan_record()` | NEW (Stage 2) |
+| `POST /v1/memory/sessions` | `memory.create_session()` | NEW (Stage 2) |
+| `GET /v1/memory/sessions` | `memory.list_sessions()` | NEW (Stage 2) |
+| `GET /v1/memory/sessions/{id}` | `memory.get_session()` | NEW (Stage 2) |
+| `DELETE /v1/memory/sessions/{id}` | `memory.delete_session()` | NEW (Stage 2) |
+| **Semantic Memory** | | |
+| `POST /v1/memory/semantic` | `memory.store_knowledge()` | Existing |
+| `POST /v1/memory/semantic` (with `external_id`) | `memory.store_knowledge(external_id=...)` | **NEW (Stage 2.1 - RF-SDK-019)** |
+| `POST /v1/memory/semantic/search` | `memory.search_knowledge()` | Existing |
+| **Working Memory** | | |
+| `PUT /v1/memory/working/{plan_id}/{key}` | `memory.set_plan_state()` | Existing |
+| `GET /v1/memory/working/{plan_id}/{key}` | `memory.get_plan_state()` | Existing |
+| `DELETE /v1/memory/working/{plan_id}/{key}` | `memory.delete_plan_state()` | **NEW (Stage 2.1 - RF-SDK-020)** |
+| `DELETE /v1/memory/working/{plan_id}` | `memory.delete_plan()` | **NEW (Stage 2.1 - RF-SDK-020)** |
+| `POST /v1/working-memory/{plan_id}` | `memory.store()` (deprecated) | Legacy |
+| `GET /v1/working-memory/{plan_id}/{key}` | `memory.retrieve()` (deprecated) | Legacy |
 
 ---
 
@@ -589,6 +608,337 @@ class WorkflowState:
 - **Read-modify-write race conditions** in concurrent scenarios
 - **No atomic operations** (future Memory Service enhancement)
 - **Best for sequential workflows** where one agent owns plan state at a time
+
+---
+
+## Stage 2.1 SDK Tasks (Follow-up)
+
+### RF-SDK-019: Semantic Memory Upsert SDK
+
+**Status:** ⬜ Not Started  
+**Priority:** P1 (High) - Pairs with RF-ARCH-012  
+**Estimated Effort:** 1-2 days
+
+#### Problem
+
+Current `store_knowledge()` method always creates new entries, causing duplicates. Need to support upsert behavior with deduplication.
+
+**Pairs with:** [arch/02-MEMORY-SERVICE.md](../arch/02-MEMORY-SERVICE.md) RF-ARCH-012
+
+#### Solution: Add external_id Parameter
+
+```python
+class MemoryClient:
+    async def store_knowledge(
+        self,
+        content: str,
+        user_id: str,
+        external_id: Optional[str] = None,  # NEW
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> SemanticMemoryResponse:
+        """
+        Store or update knowledge in semantic memory.
+        
+        Args:
+            content: Text content to store (required)
+            user_id: User identifier (required in single-tenant mode)
+            external_id: Optional user-provided ID for deduplication.
+                        If provided, upserts on external_id.
+                        If omitted, upserts on content_hash (automatic deduplication).
+            metadata: Optional metadata dict (tags, source, version, etc.)
+        
+        Returns:
+            SemanticMemoryResponse with id, content, embedding vector
+        
+        Behavior:
+            - With external_id: Upserts on (tenant_id, user_id, external_id)
+            - Without external_id: Upserts on (tenant_id, user_id, content_hash)
+            - Updates existing entry if constraint matches
+            - Creates new entry if no match found
+        
+        Examples:
+            # Explicit deduplication by ID
+            await memory.store_knowledge(
+                content="Docker is a container platform",
+                user_id="user-123",
+                external_id="doc-docker-intro",
+                metadata={"source": "docs.docker.com", "version": "v2"}
+            )
+            
+            # Automatic deduplication by content hash
+            await memory.store_knowledge(
+                content="Python was created by Guido van Rossum",
+                user_id="user-123"
+            )
+        """
+```
+
+#### Implementation Details
+
+**Request Body:**
+```python
+# New field in SemanticMemoryCreate DTO (soorma-common)
+@dataclass
+class SemanticMemoryCreate:
+    content: str
+    external_id: Optional[str] = None  # NEW
+    metadata: Dict[str, Any] = field(default_factory=dict)
+```
+
+**HTTP Call:**
+```python
+response = await self._client.post(
+    f"{self.base_url}/v1/memory/semantic",
+    json={
+        "content": content,
+        "external_id": external_id,  # NEW
+        "metadata": metadata or {},
+    },
+    params={"user_id": user_id},
+)
+```
+
+#### Testing
+
+```python
+async def test_store_knowledge_with_external_id():
+    """Should upsert on external_id."""
+    # First store
+    result1 = await memory.store_knowledge(
+        content="Docker v1",
+        user_id="user-1",
+        external_id="doc-docker"
+    )
+    
+    # Update same document
+    result2 = await memory.store_knowledge(
+        content="Docker v2",
+        user_id="user-1",
+        external_id="doc-docker"
+    )
+    
+    # Should have same ID (upsert)
+    assert result1.id == result2.id
+
+async def test_store_knowledge_auto_dedupe():
+    """Should upsert on content_hash when no external_id."""
+    content = "Python was created by Guido"
+    
+    # First store
+    result1 = await memory.store_knowledge(
+        content=content,
+        user_id="user-1"
+    )
+    
+    # Store same content again
+    result2 = await memory.store_knowledge(
+        content=content,
+        user_id="user-1"
+    )
+    
+    # Should have same ID (auto-dedupe)
+    assert result1.id == result2.id
+```
+
+---
+
+### RF-SDK-020: Working Memory Deletion SDK
+
+**Status:** ⬜ Not Started  
+**Priority:** P2 (Medium) - Pairs with RF-ARCH-013  
+**Estimated Effort:** 1 day
+
+#### Problem
+
+No SDK methods to delete working memory state, causing data accumulation.
+
+**Pairs with:** [arch/02-MEMORY-SERVICE.md](../arch/02-MEMORY-SERVICE.md) RF-ARCH-013
+
+#### Solution: Add Delete Methods
+
+```python
+class MemoryClient:
+    async def delete_plan_state(
+        self,
+        plan_id: str,
+        key: str,
+    ) -> bool:
+        """
+        Delete a specific key from plan state.
+        
+        Args:
+            plan_id: Plan identifier
+            key: State key to delete
+        
+        Returns:
+            True if deleted, False if key didn't exist
+        
+        Example:
+            await memory.delete_plan_state(
+                plan_id="plan-123",
+                key="research_data"
+            )
+        """
+        try:
+            response = await self._client.delete(
+                f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
+            )
+            response.raise_for_status()
+            return True
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                return False
+            raise
+    
+    async def delete_plan(
+        self,
+        plan_id: str,
+    ) -> int:
+        """
+        Delete all state for a plan.
+        
+        Args:
+            plan_id: Plan identifier
+        
+        Returns:
+            Number of keys deleted
+        
+        Example:
+            count = await memory.delete_plan(plan_id="plan-123")
+            print(f"Deleted {count} keys")
+        """
+        response = await self._client.delete(
+            f"{self.base_url}/v1/memory/working/{plan_id}",
+        )
+        response.raise_for_status()
+        result = response.json()
+        return result["deleted_count"]
+```
+
+#### WorkflowState Helper Updates
+
+```python
+class WorkflowState:
+    async def delete(self, key: str) -> bool:
+        """
+        Delete a key from plan state.
+        
+        Returns:
+            True if deleted, False if key didn't exist
+        
+        Example:
+            state = WorkflowState(context.memory, plan_id)
+            deleted = await state.delete("temp_data")
+        """
+        return await self.context.memory.delete_plan_state(
+            plan_id=self.plan_id,
+            key=key
+        )
+    
+    async def cleanup(self) -> int:
+        """
+        Delete all state for this plan.
+        
+        Returns:
+            Number of keys deleted
+        
+        Example:
+            state = WorkflowState(context.memory, plan_id)
+            await state.set("status", "completed")
+            count = await state.cleanup()  # Delete all keys
+        """
+        return await self.context.memory.delete_plan(self.plan_id)
+```
+
+#### Usage Patterns
+
+```python
+# Pattern 1: Explicit cleanup on completion
+@planner.on_goal("research.goal")
+async def handle_goal(goal, ctx):
+    state = WorkflowState(ctx.memory, plan_id)
+    
+    # Execute plan...
+    
+    # Mark as completed
+    await state.set("status", "completed")
+    
+    # Cleanup all state
+    await state.cleanup()
+
+# Pattern 2: Delete temporary keys
+@worker.on_task("process.data")
+async def handle_task(task, ctx):
+    state = WorkflowState(ctx.memory, task.plan_id)
+    
+    # Store temporary data
+    await state.set("temp_results", data)
+    
+    # Process...
+    
+    # Delete temporary data
+    await state.delete("temp_results")
+
+# Pattern 3: Background cleanup job
+async def cleanup_old_plans():
+    """Cleanup completed plans older than 7 days."""
+    plans = await memory.list_plans(
+        status="completed",
+        older_than="7d"
+    )
+    
+    for plan in plans:
+        count = await memory.delete_plan(plan["plan_id"])
+        print(f"Cleaned up {count} keys for {plan['plan_id']}")
+```
+
+#### Testing
+
+```python
+async def test_delete_plan_state():
+    """Should delete individual key."""
+    # Store key
+    await memory.set_plan_state(
+        plan_id="plan-1",
+        key="data",
+        value={"test": "value"}
+    )
+    
+    # Delete key
+    deleted = await memory.delete_plan_state(
+        plan_id="plan-1",
+        key="data"
+    )
+    assert deleted is True
+    
+    # Verify deleted
+    with pytest.raises(Exception):  # 404
+        await memory.get_plan_state("plan-1", "data")
+
+async def test_delete_plan():
+    """Should delete all keys for plan."""
+    # Store multiple keys
+    await memory.set_plan_state("plan-1", "key1", {"a": 1})
+    await memory.set_plan_state("plan-1", "key2", {"b": 2})
+    await memory.set_plan_state("plan-1", "key3", {"c": 3})
+    
+    # Delete all
+    count = await memory.delete_plan("plan-1")
+    assert count == 3
+
+async def test_workflow_state_cleanup():
+    """WorkflowState.cleanup() should delete all keys."""
+    state = WorkflowState(memory, "plan-1")
+    
+    # Store data
+    await state.set("goal", "test")
+    await state.set("status", "running")
+    await state.record_action("started")
+    
+    # Cleanup
+    count = await state.cleanup()
+    assert count >= 2  # At least goal + status
+```
 
 ---
 

@@ -386,7 +386,7 @@ class Agent(ABC):
                 async def wrapped_handler(event: Dict[str, Any], h=handler) -> None:
                     await h(event, self._context)
         
-        # Create context with configured clients
+        # Create context with clients
         from ..context import RegistryClient, MemoryClient, BusClient, TrackerClient
         
         self._context = PlatformContext(

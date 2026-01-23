@@ -1,13 +1,18 @@
 """Database models for memory service."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, CheckConstraint, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 
 from memory_service.core.database import Base
+
+
+def utc_now():
+    """Return timezone-naive UTC datetime for PostgreSQL TIMESTAMP WITHOUT TIME ZONE."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Tenant(Base):
@@ -17,7 +22,7 @@ class Tenant(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
 
 
 class User(Base):
@@ -32,7 +37,7 @@ class User(Base):
         nullable=False,
     )
     username = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
 
 
 class SemanticMemory(Base):
@@ -49,8 +54,8 @@ class SemanticMemory(Base):
     content = Column(Text, nullable=False)
     embedding = Column(Vector(1536))
     memory_metadata = Column(JSON, default={}, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
 
 class EpisodicMemory(Base):
@@ -74,7 +79,7 @@ class EpisodicMemory(Base):
     content = Column(Text, nullable=False)
     embedding = Column(Vector(1536))
     memory_metadata = Column(JSON, default={}, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
 
     __table_args__ = (
         CheckConstraint("role IN ('user', 'assistant', 'system', 'tool')", name="role_check"),
@@ -102,7 +107,7 @@ class ProceduralMemory(Base):
     embedding = Column(Vector(1536))
     procedure_type = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
 
     __table_args__ = (
         CheckConstraint(
@@ -126,7 +131,7 @@ class WorkingMemory(Base):
     plan_id = Column(UUID(as_uuid=True), nullable=False)
     key = Column(Text, nullable=False)
     value = Column(JSON, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     __table_args__ = (UniqueConstraint("plan_id", "key", name="plan_key_unique"),)
 
@@ -150,8 +155,8 @@ class TaskContext(Base):
     data = Column(JSON, default={}, nullable=False)
     sub_tasks = Column(JSON, default=[], nullable=False)
     state = Column(JSON, default={}, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     __table_args__ = (UniqueConstraint("tenant_id", "task_id", name="task_context_unique"),)
 
@@ -175,8 +180,8 @@ class PlanContext(Base):
     state = Column(JSON, default={}, nullable=False)
     current_state = Column(String(100), nullable=True)
     correlation_ids = Column(JSON, default=[], nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     __table_args__ = (UniqueConstraint("tenant_id", "plan_id", name="plan_context_unique"),)
 
@@ -203,8 +208,8 @@ class Plan(Base):
     goal_data = Column(JSON, default={}, nullable=False)
     status = Column(String(50), default='running', nullable=False)
     parent_plan_id = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "plan_id", name="plan_unique"),
@@ -234,8 +239,8 @@ class Session(Base):
     session_id = Column(String(100), nullable=False)
     name = Column(String(255), nullable=True)
     session_metadata = Column(JSON, default={}, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_interaction = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    last_interaction = Column(DateTime, default=utc_now, nullable=False)
 
     __table_args__ = (UniqueConstraint("tenant_id", "session_id", name="session_unique"),)
 

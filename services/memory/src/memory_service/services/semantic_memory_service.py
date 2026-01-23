@@ -22,7 +22,7 @@ class SemanticMemoryService:
             id=str(memory.id),
             tenant_id=str(memory.tenant_id),
             content=memory.content,
-            metadata=memory.metadata,
+            metadata=memory.memory_metadata or {},
             created_at=memory.created_at.isoformat(),
             updated_at=memory.updated_at.isoformat(),
             score=score,
@@ -52,8 +52,8 @@ class SemanticMemoryService:
         limit: int = 5,
     ) -> List[SemanticMemoryResponse]:
         """Search semantic memory by similarity."""
-        results = await crud_search(db, tenant_id, query, limit)
-        return [self._to_response(memory, score) for memory, score in results]
+        # CRUD layer already returns SemanticMemoryResponse objects with scores
+        return await crud_search(db, tenant_id, query, limit)
 
 
 # Singleton instance for dependency injection

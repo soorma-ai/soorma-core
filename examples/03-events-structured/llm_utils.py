@@ -20,9 +20,10 @@ import json
 import os
 from litellm import completion
 from soorma.ai.event_toolkit import EventToolkit
+from soorma.context import PlatformContext
 
 
-async def discover_events(context, topic: str) -> list[dict]:
+async def discover_events(context: PlatformContext, topic: str) -> list[dict]:
     """
     Discover available events from the Registry for a given topic.
     
@@ -116,7 +117,7 @@ async def validate_and_publish(
     decision: dict,
     events: list[dict],
     topic: str,
-    context
+    context: PlatformContext
 ) -> bool:
     """
     Validate the LLM's decision and publish the event.

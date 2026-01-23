@@ -16,7 +16,9 @@ The generic LLM utilities are in llm_utils.py (future SDK).
 """
 
 import os
+from typing import Any, Dict
 from soorma import Worker
+from soorma.context import PlatformContext
 from events import (
     TICKET_CREATED_EVENT,
     TIER1_ROUTE_EVENT,
@@ -83,7 +85,7 @@ Return your decision as JSON:
 
 
 @worker.on_event("ticket.created", topic="business-facts")
-async def route_ticket(event, context):
+async def route_ticket(event: Dict[str, Any], context: PlatformContext):
     """
     Main event handler: Routes incoming tickets using LLM reasoning.
     
@@ -149,7 +151,7 @@ async def route_ticket(event, context):
 
 # Demo handlers to show routing results
 @worker.on_event("ticket.route.tier1", topic="action-requests")
-async def handle_tier1_routing(event, context):
+async def handle_tier1_routing(event: Dict[str, Any], context: PlatformContext):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
     print(f"\n🎯 Tier 1 received ticket: {data.get('ticket_id')}")
@@ -157,7 +159,7 @@ async def handle_tier1_routing(event, context):
 
 
 @worker.on_event("ticket.route.tier2", topic="action-requests")
-async def handle_tier2_routing(event, context):
+async def handle_tier2_routing(event: Dict[str, Any], context: PlatformContext):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
     print(f"\n🎯 Tier 2 received ticket: {data.get('ticket_id')}")
@@ -165,7 +167,7 @@ async def handle_tier2_routing(event, context):
 
 
 @worker.on_event("ticket.route.specialist", topic="action-requests")
-async def handle_specialist_routing(event, context):
+async def handle_specialist_routing(event: Dict[str, Any], context: PlatformContext):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
     print(f"\n🎯 Specialist received ticket: {data.get('ticket_id')}")
@@ -173,7 +175,7 @@ async def handle_specialist_routing(event, context):
 
 
 @worker.on_event("ticket.escalate.management", topic="action-requests")
-async def handle_management_escalation(event, context):
+async def handle_management_escalation(event: Dict[str, Any], context: PlatformContext):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
     print(f"\n🚨 Management escalation for ticket: {data.get('ticket_id')}")
@@ -181,7 +183,7 @@ async def handle_management_escalation(event, context):
 
 
 @worker.on_event("ticket.autoclose", topic="action-requests")
-async def handle_autoclose(event, context):
+async def handle_autoclose(event: Dict[str, Any], context: PlatformContext):
     """Handler to demonstrate the event was received."""
     data = event.get("data", {})
     print(f"\n✅ Auto-closing ticket: {data.get('ticket_id')}")

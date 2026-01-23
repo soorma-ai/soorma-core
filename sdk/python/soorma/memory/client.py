@@ -62,9 +62,8 @@ class MemoryClient:
             timeout: HTTP request timeout in seconds
             
         Note:
-            v0.5.0 operates in single-tenant, unauthenticated mode.
-            user_id and agent_id must be provided as method parameters.
-            Multi-tenant authentication will be added via Identity Service in future releases.
+            tenant_id and user_id are passed per-request in method calls.
+            This allows a single agent to serve multiple users/tenants.
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -87,6 +86,7 @@ class MemoryClient:
     async def store_knowledge(
         self,
         content: str,
+        user_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> SemanticMemoryResponse:
         """
@@ -96,6 +96,7 @@ class MemoryClient:
         
         Args:
             content: Knowledge content to store
+            user_id: User identifier (required in single-tenant mode)
             metadata: Optional metadata (e.g., source, tags, etc.)
             
         Returns:
@@ -109,6 +110,7 @@ class MemoryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic",
             json=data.model_dump(by_alias=True),
+            params={"user_id": user_id},
         )
         response.raise_for_status()
         return SemanticMemoryResponse.model_validate(response.json())
@@ -116,6 +118,7 @@ class MemoryClient:
     async def search_knowledge(
         self,
         query: str,
+        user_id: str,
         limit: int = 5,
     ) -> List[SemanticMemoryResponse]:
         """
@@ -123,6 +126,7 @@ class MemoryClient:
         
         Args:
             query: Search query
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum number of results (1-50)
             
         Returns:
@@ -130,7 +134,7 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/semantic/search",
-            params={"q": query, "limit": limit},
+            params={"q": query, "user_id": user_id, "limit": limit},
         )
         response.raise_for_status()
         return [SemanticMemoryResponse.model_validate(item) for item in response.json()]
@@ -259,7 +263,9 @@ class MemoryClient:
         self,
         plan_id: str,
         key: str,
-        value: Dict[str, Any],
+        value: Any,
+        tenant_id: str,
+        user_id: str,
     ) -> WorkingMemoryResponse:
         """
         Set or update working memory value for a plan.
@@ -267,7 +273,9 @@ class MemoryClient:
         Args:
             plan_id: Plan identifier
             key: State key
-            value: State value (JSON)
+            value: State value (any JSON-serializable type)
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
             
         Returns:
             WorkingMemoryResponse with the stored state
@@ -277,6 +285,10 @@ class MemoryClient:
         response = await self._client.put(
             f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
             json=data.model_dump(by_alias=True),
+            headers={
+                "X-Tenant-ID": tenant_id,
+                "X-User-ID": user_id,
+            },
         )
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())
@@ -285,6 +297,8 @@ class MemoryClient:
         self,
         plan_id: str,
         key: str,
+        tenant_id: str,
+        user_id: str,
     ) -> WorkingMemoryResponse:
         """
         Get working memory value for a plan.
@@ -292,6 +306,8 @@ class MemoryClient:
         Args:
             plan_id: Plan identifier
             key: State key
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
             
         Returns:
             WorkingMemoryResponse with the state
@@ -301,6 +317,10 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
+            headers={
+                "X-Tenant-ID": tenant_id,
+                "X-User-ID": user_id,
+            },
         )
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())

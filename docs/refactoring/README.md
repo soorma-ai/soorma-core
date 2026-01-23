@@ -347,6 +347,55 @@ Dependencies: Stage 1 must be complete (event system foundation).
 - soorma-common: 44 tests passing with comprehensive DTO validation
 - **Total: 273 tests passing (100% success rate)**
 
+**Follow-up Work (Stage 2.1):**
+
+**Architecture Tasks:**
+- ⬜ **RF-ARCH-012**: Semantic Memory Upsert (Service)
+  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-012
+  - Design documented in [services/memory/SEMANTIC_MEMORY_UPSERT.md](../../services/memory/SEMANTIC_MEMORY_UPSERT.md)
+  - Add external_id and content_hash columns to semantic_memory table
+  - Implement upsert CRUD function with dual-constraint logic
+  - Update service layer and API endpoints
+  - Write tests for versioning and deduplication scenarios
+  - **Priority:** P1 (High) - Prevents data quality issues
+  - **Estimated effort:** 2-3 days
+
+- ⬜ **RF-ARCH-013**: Working Memory Deletion (Service)
+  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-013
+  - Add DELETE endpoints for plan state cleanup:
+    * `DELETE /v1/memory/working/{plan_id}` - Delete all keys for a plan
+    * `DELETE /v1/memory/working/{plan_id}/{key}` - Delete individual key
+  - Implement delete CRUD functions with RLS enforcement
+  - Write tests for deletion scenarios and RLS
+  - **Priority:** P2 (Medium) - Not blocking, but prevents data accumulation
+  - **Estimated effort:** 1-2 days
+
+**SDK Tasks:**
+- ⬜ **RF-SDK-019**: Semantic Memory Upsert SDK
+  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-019
+  - Add external_id parameter to `store_knowledge()` method
+  - Update SemanticMemoryCreate DTO in soorma-common
+  - Update HTTP call to include external_id
+  - Write tests for upsert behavior (external_id and content_hash)
+  - **Priority:** P1 (High) - Pairs with RF-ARCH-012
+  - **Estimated effort:** 1-2 days
+
+- ⬜ **RF-SDK-020**: Working Memory Deletion SDK
+  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-020
+  - Add `delete_plan_state()` method to MemoryClient
+  - Add `delete_plan()` method to MemoryClient
+  - Update WorkflowState helper with `delete()` and `cleanup()` methods
+  - Write tests for deletion methods
+  - Document usage patterns (explicit cleanup, background job, accept persistence)
+  - **Priority:** P2 (Medium) - Pairs with RF-ARCH-013
+  - **Estimated effort:** 1 day
+
+**Implementation Order:**
+1. RF-ARCH-012 (Service) + RF-SDK-019 (SDK) together (semantic memory upsert)
+2. RF-ARCH-013 (Service) + RF-SDK-020 (SDK) together (working memory deletion)
+
+**Total Estimated Effort:** 5-8 days for both service and SDK changes
+
 ---
 
 ### **Stage 3: Agent Models - Tool & Worker** 🟡
@@ -539,6 +588,10 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-011 | Tracker via events, not API | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
 | RF-SDK-012 | Common library DTOs (State, A2A) | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
 | RF-SDK-014 | WorkflowState helper for plan state | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
+| RF-ARCH-012 | Semantic memory upsert (external_id + content_hash) | Stage 2.1 | [SEMANTIC_MEMORY_UPSERT](../../services/memory/SEMANTIC_MEMORY_UPSERT.md) | ⬜ |
+| RF-ARCH-013 | Working memory deletion (DELETE endpoints) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
+| RF-SDK-019 | Semantic memory upsert SDK (external_id parameter) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
+| RF-SDK-020 | Working memory deletion SDK (delete methods) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ⬜ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |
 | RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |

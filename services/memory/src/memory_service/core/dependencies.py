@@ -46,7 +46,7 @@ async def get_tenant_context(
     user_id_str = get_user_id(request)
     if not user_id_str:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="user_id is required (provide as query parameter or X-User-ID header)"
         )
     
@@ -54,7 +54,7 @@ async def get_tenant_context(
         user_id = UUID(user_id_str)
     except (ValueError, AttributeError) as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Invalid user_id format: {user_id_str}"
         )
     

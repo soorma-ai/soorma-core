@@ -202,7 +202,7 @@ class ProceduralMemoryResponse(BaseDTO):
 
 class WorkingMemorySet(BaseDTO):
     """Set working memory value."""
-    value: Dict[str, Any] = Field(..., description="State value (JSON)")
+    value: Any = Field(..., description="State value (JSON-serializable)")
 
 
 class WorkingMemoryResponse(BaseDTO):
@@ -211,7 +211,7 @@ class WorkingMemoryResponse(BaseDTO):
     tenant_id: str = Field(..., description="Tenant ID")
     plan_id: str = Field(..., description="Plan ID")
     key: str = Field(..., description="State key")
-    value: Dict[str, Any] = Field(..., description="State value")
+    value: Any = Field(..., description="State value (JSON-serializable)")
     updated_at: str = Field(..., description="Last update timestamp")
 
 

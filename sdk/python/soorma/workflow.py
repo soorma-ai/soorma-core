@@ -5,8 +5,10 @@ Provides a simplified interface for working memory management,
 reducing boilerplate in agent code.
 """
 
-from typing import Any, Dict, List, Optional
-from soorma.memory.client import MemoryClient
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from soorma.context import MemoryClient
 
 
 class WorkflowState:
@@ -18,7 +20,11 @@ class WorkflowState:
     
     Example:
         ```python
-        state = WorkflowState(context, plan_id)
+        # Get tenant_id and user_id from event context
+        tenant_id = event.get("tenantId")
+        user_id = event.get("userId")
+        
+        state = WorkflowState(context.memory, plan_id, tenant_id, user_id)
         
         # Record actions
         await state.record_action("research.started")
@@ -32,16 +38,20 @@ class WorkflowState:
         ```
     """
     
-    def __init__(self, memory_client: MemoryClient, plan_id: str):
+    def __init__(self, memory_client: "MemoryClient", plan_id: str, tenant_id: str, user_id: str):
         """
         Initialize workflow state.
         
         Args:
             memory_client: MemoryClient instance from PlatformContext
             plan_id: Plan identifier
+            tenant_id: Tenant ID from event context
+            user_id: User ID from event context
         """
         self.memory = memory_client
         self.plan_id = plan_id
+        self.tenant_id = tenant_id
+        self.user_id = user_id
         self._action_history_key = "_action_history"
     
     async def record_action(self, event_name: str) -> None:
@@ -52,13 +62,17 @@ class WorkflowState:
             event_name: Name of the event/action to record
         """
         try:
-            history_response = await self.memory.get_plan_state(
-                self.plan_id,
+            history = await self.memory.retrieve(
                 self._action_history_key,
+                plan_id=self.plan_id,
+                tenant_id=self.tenant_id,
+                user_id=self.user_id,
             )
-            history = history_response.value
         except Exception:
             # Key doesn't exist yet
+            history = None
+        
+        if history is None:
             history = {"actions": []}
         
         if "actions" not in history:
@@ -66,10 +80,12 @@ class WorkflowState:
         
         history["actions"].append(event_name)
         
-        await self.memory.set_plan_state(
-            self.plan_id,
+        await self.memory.store(
             self._action_history_key,
             history,
+            plan_id=self.plan_id,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
         )
     
     async def get_action_history(self) -> List[str]:
@@ -80,11 +96,14 @@ class WorkflowState:
             List of action names in chronological order
         """
         try:
-            history_response = await self.memory.get_plan_state(
-                self.plan_id,
+            history = await self.memory.retrieve(
                 self._action_history_key,
+                plan_id=self.plan_id,
+                tenant_id=self.tenant_id,
+                user_id=self.user_id,
             )
-            history = history_response.value
+            if history is None:
+                return []
             return history.get("actions", [])
         except Exception:
             return []
@@ -97,10 +116,12 @@ class WorkflowState:
             key: State key
             value: Value to store (must be JSON-serializable)
         """
-        await self.memory.set_plan_state(
-            self.plan_id,
+        await self.memory.store(
             key,
-            {"value": value},
+            value,
+            plan_id=self.plan_id,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
         )
     
     async def get(self, key: str, default: Any = None) -> Any:
@@ -115,8 +136,13 @@ class WorkflowState:
             Stored value or default
         """
         try:
-            response = await self.memory.get_plan_state(self.plan_id, key)
-            return response.value.get("value", default)
+            value = await self.memory.retrieve(
+                key, 
+                plan_id=self.plan_id,
+                tenant_id=self.tenant_id,
+                user_id=self.user_id,
+            )
+            return value if value is not None else default
         except Exception:
             return default
     
@@ -131,8 +157,13 @@ class WorkflowState:
             True if key exists, False otherwise
         """
         try:
-            await self.memory.get_plan_state(self.plan_id, key)
-            return True
+            value = await self.memory.retrieve(
+                key,
+                plan_id=self.plan_id,
+                tenant_id=self.tenant_id,
+                user_id=self.user_id,
+            )
+            return value is not None
         except Exception:
             return False
     

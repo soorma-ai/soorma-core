@@ -27,10 +27,21 @@ The service implements the four primary memory types defined by the CoALA framew
 
 **Requirement:** Specific memories must be private to the User/Agent pair.
 
+**User Identity Clarification:**
+The `user_id` parameter represents **either a human end user OR an autonomous agent identity**:
+- **Human-driven systems**: `user_id` = authenticated end user (e.g., "alice", "bob")
+- **Autonomous agent systems**: `user_id` = agent identity (e.g., "research-agent", "monitoring-bot")
+- **Hybrid systems**: Mix of both (users interact with agents, agents work autonomously)
+
+This design ensures:
+- Access control works for both human users and autonomous agents
+- Semantic memory can be scoped to specific agents when needed (e.g., agent-specific knowledge bases)
+- Audit trails capture whether actions were user-initiated or agent-initiated
+
 **Scope:**
-- Episodic: Private to User/Agent.
-- Procedural: Private to User/Agent (personalized skills).
-- Semantic: Shared across Tenant (User-specific overrides possible in future).
+- Episodic: Private to User/Agent pair (human user + agent, or agent + sub-agent).
+- Procedural: Private to User/Agent pair (personalized skills for specific user or agent).
+- Semantic: Shared across Tenant by default, but `user_id` enables optional access restrictions.
 
 ### 3.3 Goal/Plan Context
 
