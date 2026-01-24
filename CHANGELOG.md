@@ -5,6 +5,16 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-01-23
+
+### Changed
+- **Documentation**: Cleaned up SDK README for PyPI publication
+  - Removed all broken/incomplete code sections that were causing formatting issues
+  - Streamlined to focus on installation, quick start, and documentation links
+  - Removed detailed agent pattern examples and architecture diagrams (available in GitHub repo)
+  - Reduced length by ~40% while maintaining all essential information
+  - PyPI page now serves as concise landing page that directs to GitHub for comprehensive docs
+
 ## [0.7.1] - 2026-01-23
 
 ### Changed
