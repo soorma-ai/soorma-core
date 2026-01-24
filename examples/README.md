@@ -93,12 +93,14 @@ This directory contains progressively more complex examples demonstrating Soorma
 <tr>
 <td><a href="./06-memory-episodic/">06-memory-episodic</a></td>
 <td>
-• Episodic memory<br>
-• Conversation history<br>
-• Audit trail
+• All three memory types combined<br>
+• Multi-agent chatbot (Router, RAG, Concierge, Knowledge Store)<br>
+• LLM-based intent classification<br>
+• Dual-context RAG<br>
+• Session management
 </td>
-<td>15 min</td>
-<td>01-hello-world</td>
+<td>30 min</td>
+<td>04-memory-working<br>05-memory-semantic</td>
 </tr>
 </table>
 
@@ -143,7 +145,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Full application example
 </td>
 <td>30 min</td>
-<td>03-events-structured, 04-memory-working</td>
+<td>03-events-structured<br>04-memory-working</td>
 </tr>
 
 <tr>
@@ -154,7 +156,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Context preservation
 </td>
 <td>20 min</td>
-<td>06-memory-episodic, 08-planner-worker-basic</td>
+<td>06-memory-episodic<br>08-planner-worker-basic</td>
 </tr>
 </table>
 
@@ -170,7 +172,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Let an LLM choose the next action | Structured Events + LLM | [03-events-structured](./03-events-structured/) |
 | Share state across agents in a workflow | Working Memory | [04-memory-working](./04-memory-working/) |
 | Store facts for RAG/knowledge retrieval | Semantic Memory | [05-memory-semantic](./05-memory-semantic/) |
-| Log conversation history or audit trail | Episodic Memory | [06-memory-episodic](./06-memory-episodic/) |
+| Build multi-agent chatbot with all memory types | Multi-Agent + All Memory Types | [06-memory-episodic](./06-memory-episodic/) |
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Break down goals into tasks | Planner-Worker Pattern | 08-planner-worker-basic (coming soon) |
 | Build a fully autonomous multi-agent system | Autonomous Choreography | 09-app-research-advisor (coming soon) |
@@ -252,19 +254,20 @@ python client.py
 2. [02-events-simple](./02-events-simple/) - Learn event pub/sub
 3. [03-events-structured](./03-events-structured/) - LLM event selection
 
-### Path 2: LLM-Powered Agents (60 minutes)
+### Path 2: LLM-Powered Agents (70 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [03-events-structured](./03-events-structured/) - LLM event selection
 3. [04-memory-working](./04-memory-working/) - State management
-4. 09-app-research-advisor (coming soon) - Full autonomous system
+4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
+5. 09-app-research-advisor (coming soon) - Full autonomous system
 
-### Path 3: Memory Deep Dive (60 minutes)
+### Path 3: Memory Deep Dive (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [02-events-simple](./02-events-simple/) - Event pub/sub
 3. [04-memory-working](./04-memory-working/) - Workflow state (simpler, learn first)
 4. [03-events-structured](./03-events-structured/) - LLM event selection
 5. [05-memory-semantic](./05-memory-semantic/) - RAG/Knowledge (requires LLM routing)
-6. [06-memory-episodic](./06-memory-episodic/) - Conversation history
+6. [06-memory-episodic](./06-memory-episodic/) - Multi-agent chatbot combining all three memory types
 
 ### Path 4: Complete Journey (Coming Soon)
 Once all examples are available, work through examples 01 → 10 in sequence for comprehensive understanding.
