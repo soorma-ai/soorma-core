@@ -17,6 +17,35 @@ This document provides comprehensive test coverage information for the Memory Se
 
 ## Recent Improvements (v0.7.1)
 
+### NEW: test_episodic_service.py
+**Coverage: EpisodicMemoryService business logic**
+
+**CRITICAL FIX:** Caught bug where `memory.metadata` should be `memory.memory_metadata` in `_to_response()`.
+
+Service layer now has **100% test coverage** for episodic memory:
+
+Tests:
+- ✅ _to_response() method with correct metadata field mapping (`memory.memory_metadata`)
+- ✅ _to_response() handles null metadata correctly
+- ✅ _to_response() preserves empty metadata dict
+- ✅ _to_response() includes similarity scores
+- ✅ _to_response() validates all role types (user/assistant/system/tool)
+- ✅ log() calls CRUD and commits transaction
+- ✅ log() handles metadata correctly
+- ✅ get_recent() returns list of EpisodicMemoryResponse
+- ✅ get_recent() handles empty results
+- ✅ search() returns scored results
+- ✅ search() preserves score ordering
+- ✅ search() respects limit parameter
+
+**12 tests, all passing** - Episodic service layer fully verified
+
+**Why This Bug Went Undetected:**
+- `test_api_validation.py` only checked `status_code != 422` (not validation error)
+- A 500 Internal Server Error would pass that test!
+- No service layer tests existed for episodic memory until now
+- Proper test should verify `status_code == 201` and response body structure
+
 ### NEW: test_semantic_service.py
 **Coverage: SemanticMemoryService business logic**
 
@@ -69,7 +98,29 @@ Tests:
 - Uses mocked OpenAI client
 - Tests business logic, not database interactions
 
-### 2. test_semantic_service.py
+### 2. test_episodic_service.py
+**Coverage: EpisodicMemoryService business logic**
+
+Tests:
+- ✅ _to_response() DTO conversion with correct field mapping (memory_metadata → metadata)
+- ✅ Null metadata handling
+- ✅ Empty metadata preservation
+- ✅ Similarity score inclusion
+- ✅ All role types validation (user/assistant/system/tool)
+- ✅ log() transaction management
+- ✅ log() with metadata
+- ✅ get_recent() returns formatted list
+- ✅ get_recent() handles empty results
+- ✅ search() returns scored results
+- ✅ search() preserves score ordering
+- ✅ search() respects limit parameter
+
+**Why No PostgreSQL Needed:**
+- Service layer orchestrates CRUD calls
+- Uses mocked CRUD functions
+- Tests business logic and transaction boundaries
+
+### 3. test_semantic_service.py
 **Coverage: SemanticMemoryService business logic**
 
 Tests:

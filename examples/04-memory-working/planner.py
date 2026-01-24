@@ -18,27 +18,30 @@ from soorma.workflow import WorkflowState
 
 planner = Worker(
     name="workflow-planner",
-    description="Decomposes goals into tasks and manages workflow state",
+    description="Initializes workflows with fixed tasks and manages workflow state",
     capabilities=["planning", "orchestration"],
-    events_consumed=["goal.received"],
+    events_consumed=["workflow.start"],
     events_produced=["task.assigned", "workflow.completed"],
 )
 
 
-@planner.on_event("goal.received", topic="action-requests")
-async def handle_goal(event: Dict[str, Any], context: PlatformContext):
+@planner.on_event("workflow.start", topic="action-requests")
+async def handle_workflow_start(event: Dict[str, Any], context: PlatformContext):
     """
-    Receive a goal, decompose into tasks, and initialize workflow.
+    Start a workflow with fixed tasks (demo purposes).
+    
+    This demonstrates WorkflowState mechanics. For dynamic, LLM-based
+    task generation from goals, see example 08-planner-worker-basic.
     """
     data = event.get("data", {})
-    goal = data.get("goal")
+    workflow_name = data.get("workflow_name", "demo-workflow")
     plan_id = str(uuid.uuid4())
     
     # Extract tenant_id and user_id from event envelope (infrastructure metadata)
     tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
     user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
     
-    print(f"\n📋 New Goal: {goal}")
+    print(f"\n📋 Starting Workflow: {workflow_name}")
     print(f"   Plan ID: {plan_id}")
     print(f"   Tenant: {tenant_id}, User: {user_id}")
     
@@ -50,19 +53,21 @@ async def handle_goal(event: Dict[str, Any], context: PlatformContext):
         user_id=user_id
     )
     
-    # Store goal and status
+    # Store workflow metadata and status
     print("   Initializing workflow state...")
-    await state.set("goal", goal)
+    await state.set("workflow_name", workflow_name)
     await state.set("status", "planning")
     await state.record_action("planning.started")
     
-    # Decompose into tasks (simplified - in real scenario, use LLM)
+    # Fixed task list (for demo purposes)
+    # Real applications would use LLM to generate tasks from goals
     tasks = ["research", "draft", "review"]
     await state.set("tasks", tasks)
     await state.set("current_task_index", 0)
     await state.set("results", {})
     
-    print(f"   ✓ Decomposed into {len(tasks)} tasks: {tasks}")
+    print(f"   ✓ Created workflow with {len(tasks)} tasks: {tasks}")
+    print(f"   (Note: Task list is fixed for this demo)")
     
     # Update status and trigger first task
     await state.set("status", "in_progress")
@@ -76,7 +81,6 @@ async def handle_goal(event: Dict[str, Any], context: PlatformContext):
         data={
             "plan_id": plan_id,
             "task": tasks[0],
-            "goal": goal,
             "task_index": 0
         },
         tenant_id=tenant_id,
@@ -90,12 +94,12 @@ if __name__ == "__main__":
     print("🎯 Workflow Planner with Working Memory")
     print("=" * 50)
     print("This planner uses WorkflowState to manage plan-scoped state.")
-    print("\nListening for goal.received events...")
+    print("\nListening for workflow.start events...")
     print("\nStart other agents:")
     print("  python worker.py   (in another terminal)")
     print("  python coordinator.py   (in another terminal)")
-    print("\nThen submit goals:")
-    print("  python client.py 'Write a blog post about Docker'")
+    print("\nThen start the workflow:")
+    print("  python client.py")
     print()
     
     planner.run()

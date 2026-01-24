@@ -1,4 +1,4 @@
-# 05 - Working Memory (Plan State Management)
+# 04 - Working Memory (Plan State Management)
 
 **Concepts:** Working memory, Plan-scoped state, Multi-agent collaboration, WorkflowState helper  
 **Difficulty:** Intermediate  
@@ -10,6 +10,8 @@
 - How to use WorkflowState helper for clean state management
 - When to use working memory vs other memory types
 - Plan-scoped data isolation
+
+**Note:** This example uses a fixed 3-task workflow (research → draft → review) to demonstrate WorkflowState mechanics. For dynamic, LLM-based task generation from user goals, see example 08-planner-worker-basic (coming soon).
 
 ## Prerequisites
 
@@ -29,7 +31,7 @@ State is scoped to a `plan_id`, ensuring isolation between different workflows.
 
 ## Code Walkthrough
 
-### Manual State Management ([manual_state.py](manual_state.py))
+### Raw Memory API Usage ([memory_api_demo.py](memory_api_demo.py))
 
 Direct usage of Memory API using standalone MemoryClient (more verbose):
 
@@ -111,13 +113,13 @@ history = await state.get_action_history()
 
 ### Planner Agent ([planner.py](planner.py))
 
-Decomposes goals and stores task state:
+Initializes workflow with fixed tasks:
 
 ```python
-@planner.on_event("goal.received", topic="action-requests")
-async def handle_goal(event, context):
+@planner.on_event("workflow.start", topic="action-requests")
+async def handle_workflow_start(event, context):
     data = event.get("data", {})
-    goal = data.get("goal")
+    workflow_name = data.get("workflow_name", "demo-workflow")
     plan_id = str(uuid.uuid4())
     
     # Extract tenant_id and user_id from event envelope (infrastructure metadata)
@@ -131,10 +133,11 @@ async def handle_goal(event, context):
         tenant_id=tenant_id,
         user_id=user_id
     )
-    await state.set("goal", goal)
+    await state.set("workflow_name", workflow_name)
     await state.set("status", "planning")
     
-    # Decompose into tasks
+    # Fixed task list (for demo purposes)
+    # Real applications would use LLM to generate tasks dynamically
     tasks = ["research", "draft", "review"]
     await state.set("tasks", tasks)
     await state.set("current_task_index", 0)
@@ -146,7 +149,6 @@ async def handle_goal(event, context):
         data={
             "plan_id": plan_id,
             "task": tasks[0],
-            "goal": goal,
             "task_index": 0
         },
         tenant_id=tenant_id,
@@ -244,11 +246,11 @@ Make sure platform services are running:
 soorma dev --build
 ```
 
-### Step 1: Manual State Example
+### Step 1: Raw Memory API Demo
 
 ```bash
-cd examples/05-memory-working
-python manual_state.py
+cd examples/04-memory-working
+python memory_api_demo.py
 ```
 
 See direct Memory API usage.
@@ -259,11 +261,13 @@ See direct Memory API usage.
 # Terminal 1: Start all agents
 ./start.sh
 
-# Terminal 2: Submit goal
-python client.py "Write a blog post about Docker"
+# Terminal 2: Start workflow
+python client.py
 ```
 
 The start.sh script runs planner, worker, and coordinator together. Watch state flow between agents!
+
+**Note:** The workflow uses fixed tasks (research → draft → review) to demonstrate state management mechanics.
 
 ## Key Takeaways
 
@@ -368,6 +372,8 @@ elif status == "approved":
 
 ## Next Steps
 
+- **[05-memory-semantic](../05-memory-semantic/)** - RAG and knowledge management with LLM routing (recommended next)
+- **[06-memory-episodic](../06-memory-episodic/)** - Conversation history and audit trails
 - **[08-planner-worker-basic](../08-planner-worker-basic/)** - Full Planner-Worker pattern (coming soon)
 - **[09-app-research-advisor](../09-app-research-advisor/)** - Advanced choreography (coming soon)
 - **[docs/MEMORY_PATTERNS.md](../../docs/MEMORY_PATTERNS.md)** - Deep dive on memory types

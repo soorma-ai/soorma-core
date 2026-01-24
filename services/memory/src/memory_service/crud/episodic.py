@@ -65,7 +65,7 @@ async def get_recent_episodic_memory(
             agent_id=m.agent_id,
             role=m.role,
             content=m.content,
-            metadata=m.memory_metadata,
+            metadata=m.memory_metadata or {},
             created_at=m.created_at.isoformat(),
         )
         for m in memories
@@ -76,8 +76,8 @@ async def search_episodic_memory(
     db: AsyncSession,
     tenant_id: UUID,
     user_id: UUID,
-    agent_id: str,
     query: str,
+    agent_id: str,
     limit: int = 5,
 ) -> List[EpisodicMemoryResponse]:
     """Search episodic memory using vector similarity."""
@@ -110,7 +110,7 @@ async def search_episodic_memory(
             agent_id=row.EpisodicMemory.agent_id,
             role=row.EpisodicMemory.role,
             content=row.EpisodicMemory.content,
-            metadata=row.EpisodicMemory.memory_metadata,
+            metadata=row.EpisodicMemory.memory_metadata or {},
             created_at=row.EpisodicMemory.created_at.isoformat(),
             score=float(row.score),
         )

@@ -1,8 +1,9 @@
-# 04 - Memory Semantic (RAG with LLM Routing)
+# 05 - Memory Semantic (RAG with LLM Routing)
 
 **Concepts:** Semantic memory (RAG), LLM-based routing, Knowledge management, Grounded answers  
 **Difficulty:** Intermediate  
-**Prerequisites:** [03-events-structured](../03-events-structured/)
+**Prerequisites:** [03-events-structured](../03-events-structured/)  
+**Recommended:** Complete [04-memory-working](../04-memory-working/) first (simpler memory concepts)
 
 ## What You'll Learn
 
@@ -299,7 +300,7 @@ This example requires OpenAI API access for:
 **Terminal 2: Start all agents**
 
 ```bash
-cd examples/04-memory-semantic
+cd examples/05-memory-semantic
 ./start.sh
 ```
 
@@ -514,8 +515,7 @@ await context.memory.store_knowledge(
 
 ## Next Steps
 
-- **05-memory-working** - State sharing across agents in workflows
-- **06-memory-episodic** - Conversation history and audit trails  
+- **[06-memory-episodic](../06-memory-episodic/)** - Conversation history and audit trails (recommended next)
 - **08-planner-worker-basic (coming soon)** - Goal decomposition with semantic memory
 - **09-app-research-advisor (coming soon)** - Full autonomous system combining all patterns
 

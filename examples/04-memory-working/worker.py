@@ -49,12 +49,13 @@ async def handle_task(event: Dict[str, Any], context: PlatformContext):
         tenant_id=tenant_id,
         user_id=user_id
     )
-    goal = await state.get("goal", "")
+    workflow_name = await state.get("workflow_name", "demo-workflow")
     
-    print(f"   Goal: {goal}")
+    print(f"   Workflow: {workflow_name}")
     print(f"   Executing {task}...")
     
-    # Simulate task execution (in real scenario, do actual work)
+    # Simulate task execution with hardcoded results (demo purposes)
+    # Real applications would do actual work based on task and context
     await asyncio.sleep(1)  # Simulate work
     
     result = None

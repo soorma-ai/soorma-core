@@ -10,8 +10,8 @@ import uuid
 from soorma.memory.client import MemoryClient
 
 
-async def demonstrate_manual_state():
-    """Show manual working memory operations."""
+async def demonstrate_raw_memory_api():
+    """Show raw Memory API operations for working memory."""
     # For example purposes - use hardcoded tenant/user IDs
     # In production, these come from authentication/event context
     tenant_id = "00000000-0000-0000-0000-000000000000"
@@ -96,4 +96,4 @@ async def demonstrate_manual_state():
 
 
 if __name__ == "__main__":
-    asyncio.run(demonstrate_manual_state())
+    asyncio.run(demonstrate_raw_memory_api())

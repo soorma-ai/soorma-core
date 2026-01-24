@@ -1,9 +1,11 @@
 """
-Client for submitting goals to the workflow system.
+Client for triggering the demo workflow.
+
+This example demonstrates WorkflowState mechanics with a fixed workflow.
+For dynamic, goal-driven task generation, see example 08-planner-worker-basic (coming soon).
 
 Usage:
-    python client.py "Write a blog post about Docker"
-    python client.py "Create a tutorial on Python asyncio"
+    python client.py
 """
 
 import asyncio
@@ -11,8 +13,8 @@ import sys
 from soorma import EventClient
 
 
-async def submit_goal(goal: str):
-    """Submit a goal and wait for workflow completion."""
+async def start_workflow():
+    """Start the demo workflow."""
     client = EventClient(agent_id="workflow-client", source="workflow-client")
     
     # Event to signal workflow completion
@@ -29,15 +31,17 @@ async def submit_goal(goal: str):
     # Connect to the platform
     await client.connect(topics=["action-results"])
     
-    print(f"🎯 Submitting goal: {goal}\n")
+    print("🎯 Starting demo workflow...\n")
+    print("   This demonstrates a fixed 3-task workflow:")
+    print("   research → draft → review\n")
     
     try:
-        # Publish goal with tenant_id and user_id at envelope level (not in data)
+        # Trigger workflow with tenant_id and user_id at envelope level (not in data)
         # In production, these would come from authentication/request context
         await client.publish(
-            event_type="goal.received",
+            event_type="workflow.start",
             topic="action-requests",
-            data={"goal": goal},
+            data={"workflow_name": "blog-post-demo"},
             tenant_id="00000000-0000-0000-0000-000000000000",
             user_id="00000000-0000-0000-0000-000000000001",
         )
@@ -79,13 +83,4 @@ async def submit_goal(goal: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python client.py \"Your goal here\"")
-        print("\nExamples:")
-        print("  python client.py \"Write a blog post about Docker\"")
-        print("  python client.py \"Create a tutorial on Python asyncio\"")
-        print("  python client.py \"Research and summarize Kubernetes basics\"")
-        sys.exit(1)
-    
-    goal = " ".join(sys.argv[1:])
-    asyncio.run(submit_goal(goal))
+    asyncio.run(start_workflow())

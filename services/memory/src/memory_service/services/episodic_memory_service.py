@@ -26,7 +26,7 @@ class EpisodicMemoryService:
             agent_id=memory.agent_id,
             role=memory.role,
             content=memory.content,
-            metadata=memory.metadata,
+            metadata=memory.memory_metadata or {},
             created_at=memory.created_at.isoformat(),
             score=score,
         )
@@ -57,8 +57,8 @@ class EpisodicMemoryService:
         limit: int = 10,
     ) -> List[EpisodicMemoryResponse]:
         """Get recent episodic memories for a user and agent."""
-        memories = await crud_get_recent(db, tenant_id, user_id, agent_id, limit)
-        return [self._to_response(memory) for memory in memories]
+        # CRUD layer already returns EpisodicMemoryResponse objects
+        return await crud_get_recent(db, tenant_id, user_id, agent_id, limit)
     
     async def search(
         self,
@@ -70,8 +70,8 @@ class EpisodicMemoryService:
         limit: int = 5,
     ) -> List[EpisodicMemoryResponse]:
         """Search episodic memories by similarity."""
-        results = await crud_search(db, tenant_id, user_id, query, agent_id, limit)
-        return [self._to_response(memory, score) for memory, score in results]
+        # CRUD layer already returns EpisodicMemoryResponse objects with scores
+        return await crud_search(db, tenant_id, user_id, query, agent_id, limit)
 
 
 # Singleton instance for dependency injection

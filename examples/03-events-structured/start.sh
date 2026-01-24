@@ -62,7 +62,7 @@ python "$EXAMPLE_DIR/ticket_router.py" &
 ROUTER_PID=$!
 
 # Give the router a moment to start and print its startup messages
-sleep 4
+sleep 6
 
 echo ""
 echo "======================================================================"

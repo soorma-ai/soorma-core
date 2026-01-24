@@ -49,7 +49,7 @@ async def handle_task_completion(event: Dict[str, Any], context: PlatformContext
     )
     
     tasks = await state.get("tasks", [])
-    goal = await state.get("goal", "")
+    workflow_name = await state.get("workflow_name", "demo-workflow")
     current_index = await state.get("current_task_index", 0)
     
     print(f"   Progress: {current_index + 1}/{len(tasks)} tasks")
@@ -70,7 +70,6 @@ async def handle_task_completion(event: Dict[str, Any], context: PlatformContext
             data={
                 "plan_id": plan_id,
                 "task": next_task,
-                "goal": goal,
                 "task_index": next_index
             },
             tenant_id=tenant_id,
@@ -99,7 +98,7 @@ async def handle_task_completion(event: Dict[str, Any], context: PlatformContext
             topic="action-results",
             data={
                 "plan_id": plan_id,
-                "goal": goal,
+                "workflow_name": workflow_name,
                 "results": results,
                 "history": history
             }
