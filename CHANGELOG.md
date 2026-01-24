@@ -5,6 +5,24 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-01-23
+
+### Changed
+- **Documentation**: Updated SDK README for PyPI publication accuracy
+  - Updated version references from Pre-Alpha to "Day 0 (Pre-Alpha)" with v0.7.1
+  - Removed outdated DisCo Trinity section with Goal/Plan/Task classes that don't match actual SDK
+  - Simplified agent examples to match real implementation (Worker, Tool, Planner patterns)
+  - Fixed Platform Context API methods to match actual SDK (removed non-existent methods)
+  - Converted all relative repository links to absolute GitHub URLs for PyPI compatibility
+  - Updated CLI commands to reflect actual implementation (removed non-existent flags)
+  - Updated roadmap to show v0.6.0 and v0.7.0 as complete
+  - Added comprehensive links to docs/ directory and examples/
+  - Updated Advanced Usage section with current EventDefinition and EventToolkit patterns
+- **Examples Documentation**: Added explicit LLM dependency requirements
+  - Added installation instructions for `litellm` and `openai` packages
+  - Marked examples 03, 05, 06 as requiring LLM dependencies in tables
+  - Clarified that examples 01-02 work with just soorma-core
+
 ## [0.7.0] - 2026-01-21
 
 ### Added

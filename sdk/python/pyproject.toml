@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "soorma-core"
-version = "0.7.0"
+version = "0.7.1"
 description = "The Open Source Foundation for AI Agents. Powered by the DisCo (Distributed Cognition) architecture."
 authors = ["Soorma AI <founders@soorma.ai>"]
 readme = "README.md"
