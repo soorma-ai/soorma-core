@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Soorma Event Service",
     description="Event proxy/gateway for the Soorma DisCo platform",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 
