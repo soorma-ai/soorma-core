@@ -50,7 +50,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Rich event metadata<br>
 • LLM-based event selection<br>
 • Structured events for reasoning<br>
-• Dynamic event discovery
+• Dynamic event discovery<br>
+<em>Requires: litellm, openai</em>
 </td>
 <td>15 min</td>
 <td>02-events-simple</td>
@@ -84,7 +85,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Semantic memory (RAG)<br>
 • LLM-based routing<br>
 • Knowledge storage with embeddings<br>
-• Grounded answer generation
+• Grounded answer generation<br>
+<em>Requires: litellm, openai</em>
 </td>
 <td>20 min</td>
 <td>03-events-structured</td>
@@ -97,7 +99,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Multi-agent chatbot (Router, RAG, Concierge, Knowledge Store)<br>
 • LLM-based intent classification<br>
 • Dual-context RAG<br>
-• Session management
+• Session management<br>
+<em>Requires: litellm, openai</em>
 </td>
 <td>30 min</td>
 <td>04-memory-working<br>05-memory-semantic</td>
@@ -199,6 +202,14 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install soorma-core
 # Or install from local source: pip install -e sdk/python
 ```
+
+**For examples using LLMs** (03, 05, 06, research-advisor), also install:
+
+```bash
+pip install litellm openai
+```
+
+> **Note:** Examples 01 and 02 work with just `soorma-core`. Examples 03+ require LLM libraries for reasoning capabilities.
 
 ### Step 1: Start Platform Services (One Time)
 
