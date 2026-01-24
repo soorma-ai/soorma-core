@@ -6,7 +6,7 @@ Soorma is an agentic infrastructure platform based on the **DisCo (Distributed C
 
 ## 🚧 Status: Day 0 (Pre-Alpha)
 
-**Current Version:** 0.7.0
+**Current Version:** 0.7.1
 
 The SDK and core infrastructure are functional for building multi-agent systems. We're in active pre-launch refactoring to solidify architecture and APIs before v1.0.
 
@@ -462,6 +462,7 @@ See the **[Examples Guide](https://github.com/soorma-ai/soorma-core/blob/main/ex
 * [x] **v0.5.0**: Memory Service (CoALA framework) with PostgreSQL + pgvector
 * [x] **v0.6.0**: Event System Refactoring (EventEnvelope, response routing, distributed tracing)
 * [x] **v0.7.0**: Memory Service Stage 2 (Task/Plan Context, Sessions, State Machines)
+* [x] **v0.7.1**: Documentation updates for PyPI
 * [ ] **v0.8.0**: State Tracker & Workflow observability
 * [ ] **v0.9.0**: Production hardening & performance optimization
 * [ ] **v1.0.0**: General Availability
