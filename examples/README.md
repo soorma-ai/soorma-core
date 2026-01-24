@@ -68,20 +68,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<!-- <td><a href="./04-memory-semantic/">04-memory-semantic</a></td> -->
-<td><!--a href="./06-memory-episodic/"-->04-memory-semantic<!--/a--><br>(coming soon)</td>
-<td>
-• Semantic memory (RAG)<br>
-• Knowledge storage with embeddings<br>
-• Semantic search
-</td>
-<td>15 min</td>
-<td>01-hello-world</td>
-</tr>
-
-<tr>
-<!-- <td><a href="./05-memory-working/">05-memory-working</a></td> -->
-<td><!--a href="./06-memory-episodic/"-->05-memory-working<!--/a--><br>(coming soon)</td>
+<td><a href="./04-memory-working/">04-memory-working</a></td>
 <td>
 • Working memory<br>
 • Plan-scoped shared state<br>
@@ -92,14 +79,28 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./06-memory-episodic/"-->06-memory-episodic<!--/a--><br>(coming soon)</td>
+<td><a href="./05-memory-semantic/">05-memory-semantic</a></td>
 <td>
-• Episodic memory<br>
-• Conversation history<br>
-• Audit trail
+• Semantic memory (RAG)<br>
+• LLM-based routing<br>
+• Knowledge storage with embeddings<br>
+• Grounded answer generation
 </td>
-<td>15 min</td>
-<td>01-hello-world</td>
+<td>20 min</td>
+<td>03-events-structured</td>
+</tr>
+
+<tr>
+<td><a href="./06-memory-episodic/">06-memory-episodic</a></td>
+<td>
+• All three memory types combined<br>
+• Multi-agent chatbot (Router, RAG, Concierge, Knowledge Store)<br>
+• LLM-based intent classification<br>
+• Dual-context RAG<br>
+• Session management
+</td>
+<td>30 min</td>
+<td>04-memory-working<br>05-memory-semantic</td>
 </tr>
 </table>
 
@@ -144,7 +145,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Full application example
 </td>
 <td>30 min</td>
-<td>03-events-structured, 05-memory-working</td>
+<td>03-events-structured<br>04-memory-working</td>
 </tr>
 
 <tr>
@@ -155,13 +156,13 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Context preservation
 </td>
 <td>20 min</td>
-<td>06-memory-episodic, 08-planner-worker-basic</td>
+<td>06-memory-episodic<br>08-planner-worker-basic</td>
 </tr>
 </table>
 
 ---
 
-## 🗺️ Pattern Catalog
+## Pattern Catalog
 
 **"I want to..."** → Use this pattern → See this example
 
@@ -169,9 +170,9 @@ This directory contains progressively more complex examples demonstrating Soorma
 |------|---------|---------|
 | Build a simple reactive agent | Event Subscriber | [02-events-simple](./02-events-simple/) |
 | Let an LLM choose the next action | Structured Events + LLM | [03-events-structured](./03-events-structured/) |
-| Store facts for RAG/knowledge retrieval | Semantic Memory | 04-memory-semantic (coming soon) |
-| Share state across agents in a workflow | Working Memory | 05-memory-working (coming soon) |
-| Log conversation history or audit trail | Episodic Memory | 06-memory-episodic (coming soon) |
+| Share state across agents in a workflow | Working Memory | [04-memory-working](./04-memory-working/) |
+| Store facts for RAG/knowledge retrieval | Semantic Memory | [05-memory-semantic](./05-memory-semantic/) |
+| Build multi-agent chatbot with all memory types | Multi-Agent + All Memory Types | [06-memory-episodic](./06-memory-episodic/) |
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Break down goals into tasks | Planner-Worker Pattern | 08-planner-worker-basic (coming soon) |
 | Build a fully autonomous multi-agent system | Autonomous Choreography | 09-app-research-advisor (coming soon) |
@@ -179,7 +180,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 
 ---
 
-## 🏃 Running Examples
+## Running Examples
 
 ### Prerequisites
 
@@ -235,7 +236,7 @@ python client.py
 
 ---
 
-## 📖 Additional Resources
+## Additional Resources
 
 - **Architecture**: See [../ARCHITECTURE.md](../ARCHITECTURE.md) for platform service details
 - **Design Patterns**: See [../docs/DESIGN_PATTERNS.md](../docs/DESIGN_PATTERNS.md) for agent patterns
@@ -253,24 +254,27 @@ python client.py
 2. [02-events-simple](./02-events-simple/) - Learn event pub/sub
 3. [03-events-structured](./03-events-structured/) - LLM event selection
 
-### Path 2: LLM-Powered Agents (60 minutes)
+### Path 2: LLM-Powered Agents (70 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [03-events-structured](./03-events-structured/) - LLM event selection
-3. 05-memory-working (coming soon) - State management
-4. 09-app-research-advisor (coming soon) - Full autonomous system
+3. [04-memory-working](./04-memory-working/) - State management
+4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
+5. 09-app-research-advisor (coming soon) - Full autonomous system
 
-### Path 3: Memory Deep Dive (45 minutes)
+### Path 3: Memory Deep Dive (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
-2. 04-memory-semantic (coming soon) - RAG/Knowledge
-3. 05-memory-working (coming soon) - Workflow state
-4. 06-memory-episodic (coming soon) - Conversation history
+2. [02-events-simple](./02-events-simple/) - Event pub/sub
+3. [04-memory-working](./04-memory-working/) - Workflow state (simpler, learn first)
+4. [03-events-structured](./03-events-structured/) - LLM event selection
+5. [05-memory-semantic](./05-memory-semantic/) - RAG/Knowledge (requires LLM routing)
+6. [06-memory-episodic](./06-memory-episodic/) - Multi-agent chatbot combining all three memory types
 
 ### Path 4: Complete Journey (Coming Soon)
 Once all examples are available, work through examples 01 → 10 in sequence for comprehensive understanding.
 
 ---
 
-## 💡 Tips for Success
+## Tips for Success
 
 - **One concept at a time**: Each example focuses on a single capability
 - **Run the code**: Examples are meant to be executed, not just read
@@ -280,7 +284,7 @@ Once all examples are available, work through examples 01 → 10 in sequence for
 
 ---
 
-## 🆘 Getting Help
+## Getting Help
 
 - **Issues**: Found a bug or unclear documentation? [Open an issue](https://github.com/soorma-ai/soorma-core/issues)
 - **Questions**: Join our [Discord community](https://discord.gg/soorma) or [Discussions](https://github.com/soorma-ai/soorma-core/discussions)
@@ -288,7 +292,7 @@ Once all examples are available, work through examples 01 → 10 in sequence for
 
 ---
 
-## 📝 Example Template
+## Example Template
 
 Each example follows this structure:
 
@@ -311,7 +315,7 @@ Every README includes:
 
 ---
 
-## 🤖 Using Examples with AI Assistants
+## Using Examples with AI Assistants
 
 These examples are designed to serve as **context** for AI coding assistants like GitHub Copilot and Cursor. See [AI Assistant Guide](../docs/AI_ASSISTANT_GUIDE.md) for details on:
 

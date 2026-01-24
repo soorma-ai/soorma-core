@@ -245,6 +245,7 @@ class EventClient:
         parent_event_id: Optional[str] = None,
         payload_schema_name: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> str:
         """
@@ -262,6 +263,7 @@ class EventClient:
             parent_event_id: ID of parent event in trace tree
             payload_schema_name: Registered schema name for payload
             tenant_id: Tenant ID for multi-tenancy (overrides client default)
+            user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation (overrides client default)
         
         Returns:
@@ -299,9 +301,11 @@ class EventClient:
         if payload_schema_name:
             event["payload_schema_name"] = payload_schema_name
         
-        # Use provided tenant_id/session_id, or fall back to client defaults
+        # Use provided tenant_id/user_id/session_id, or fall back to client defaults
         if tenant_id or self.tenant_id:
             event["tenant_id"] = tenant_id or self.tenant_id
+        if user_id:
+            event["user_id"] = user_id
         if session_id or self.session_id:
             event["session_id"] = session_id or self.session_id
         

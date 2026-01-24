@@ -316,9 +316,7 @@ class MemoryClient:
             delete(): Remove plan-scoped state
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
-    # Fallback in-memory storage for development (when Memory Service is not available)
-    _local_store: Dict[str, Any] = field(default_factory=dict, repr=False, init=False)
-    _use_local: bool = field(default=False, repr=False, init=False)  # Try service first, fallback to local
+    # Note: Local fallback removed - Memory Service required for multi-agent workflows
     _client: Optional[MemoryServiceClient] = field(default=None, repr=False, init=False)
     
     async def _ensure_client(self) -> MemoryServiceClient:
@@ -329,43 +327,50 @@ class MemoryClient:
                 await self._client.health()
                 logger.info(f"Connected to Memory Service at {self.base_url}")
             except Exception as e:
-                logger.warning(f"Memory Service unavailable, using local fallback: {e}")
-                self._use_local = True
+                logger.error(
+                    f"Memory Service unavailable at {self.base_url}. "
+                    f"Multi-agent workflows require Memory Service for shared state. "
+                    f"Start it with: soorma dev"
+                )
+                raise RuntimeError(
+                    f"Memory Service required but unavailable: {e}"
+                ) from e
         return self._client
     
-    async def retrieve(self, key: str, plan_id: Optional[str] = None) -> Optional[Any]:
+    async def retrieve(self, key: str, plan_id: Optional[str] = None, tenant_id: str = None, user_id: str = None) -> Optional[Any]:
         """
         Read shared memory by key (Working Memory).
         
         Args:
             key: Memory key (e.g., "research_summary", "account_id")
             plan_id: Plan ID for working memory scope (defaults to "default")
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
             
         Returns:
             Stored value if found, None otherwise
         """
-        if self._use_local:
-            value = self._local_store.get(key)
-            logger.debug(f"Memory retrieve (local): {key} -> {value is not None}")
-            return value
-        
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from event context)")
+            
         client = await self._ensure_client()
         try:
             plan = plan_id or "default"
-            result = await client.get_plan_state(plan, key)
+            result = await client.get_plan_state(plan, key, tenant_id, user_id)
+            # Return value directly - no unwrapping needed
             return result.value
         except Exception as e:
             if "404" in str(e):
                 return None
-            logger.debug(f"Memory retrieve failed, using local: {e}")
-            self._use_local = True
-            return self._local_store.get(key)
+            raise
     
     async def store(
         self,
         key: str,
         value: Any,
         plan_id: Optional[str] = None,
+        tenant_id: str = None,
+        user_id: str = None,
     ) -> bool:
         """
         Persist plan-scoped state to Working Memory.
@@ -374,29 +379,25 @@ class MemoryClient:
             key: Memory key (e.g., "research_summary", "account_id")
             value: Value to store (will be JSON serialized)
             plan_id: Plan ID for working memory scope (defaults to "default")
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
             
         Returns:
             True if store succeeded
         """
-        if self._use_local:
-            self._local_store[key] = value
-            logger.debug(f"Memory store (local): {key}")
-            return True
-        
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from event context)")
+            
         client = await self._ensure_client()
-        try:
-            plan = plan_id or "default"
-            await client.set_plan_state(plan, key, value)
-            return True
-        except Exception as e:
-            logger.debug(f"Memory store failed, using local: {e}")
-            self._use_local = True
-            self._local_store[key] = value
-            return True
+        plan = plan_id or "default"
+        # Pass value directly - set_plan_state wraps it in WorkingMemorySet
+        await client.set_plan_state(plan, key, value, tenant_id, user_id)
+        return True
     
     async def store_knowledge(
         self,
         content: str,
+        user_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
@@ -404,27 +405,20 @@ class MemoryClient:
         
         Args:
             content: Knowledge content/facts to store
+            user_id: User identifier (required in single-tenant mode)
             metadata: Optional metadata (source, tags, doc_id, etc.)
             
         Returns:
             Memory ID if successful, None otherwise
         """
-        if self._use_local:
-            logger.debug(f"Memory store_knowledge (local): semantic memory not available in dev mode")
-            return None
-        
         client = await self._ensure_client()
-        try:
-            result = await client.store_knowledge(content, metadata=metadata or {})
-            return str(result.id)
-        except Exception as e:
-            logger.debug(f"Memory store_knowledge failed: {e}")
-            self._use_local = True
-            return None
+        result = await client.store_knowledge(content, user_id=user_id, metadata=metadata or {})
+        return str(result.id)
     
     async def search_knowledge(
         self,
         query: str,
+        user_id: str,
         limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
@@ -432,55 +426,24 @@ class MemoryClient:
         
         Args:
             query: Natural language search query
+            user_id: User identifier (required in single-tenant mode)
             limit: Maximum results to return (1-50)
             
         Returns:
             List of matching knowledge entries with similarity scores
         """
-        if self._use_local:
-            logger.debug(f"Memory search_knowledge (local): semantic search not available in dev mode")
-            return []
-        
         client = await self._ensure_client()
-        try:
-            results = await client.search_knowledge(query, limit=limit)
-            return [
-                {
-                    "id": r.id,
-                    "content": r.content,
-                    "metadata": r.metadata,
-                    "score": r.score,
-                    "created_at": r.created_at,
-                }
-                for r in results
-            ]
-        except Exception as e:
-            logger.debug(f"Memory search_knowledge failed: {e}")
-            self._use_local = True
-            return []
-    
-    async def search(
-        self,
-        query: str,
-        memory_type: str = "semantic",
-        limit: int = 5,
-    ) -> List[Dict[str, Any]]:
-        """
-        Generic memory search (DEPRECATED - use search_knowledge() or search_interactions()).
-        
-        Args:
-            query: Natural language search query
-            memory_type: Type of memory ("semantic" or "episodic")
-            limit: Maximum results to return (1-50)
-            
-        Returns:
-            List of matching memory entries with similarity scores
-        """
-        if memory_type == "semantic":
-            return await self.search_knowledge(query, limit=limit)
-        else:
-            logger.warning(f"search() with memory_type='{memory_type}' is deprecated. Use search_knowledge() or search_interactions()")
-            return []
+        results = await client.search_knowledge(query, user_id=user_id, limit=limit)
+        return [
+            {
+                "id": r.id,
+                "content": r.content,
+                "metadata": r.metadata,
+                "score": r.score,
+                "created_at": r.created_at,
+            }
+            for r in results
+        ]
     
     async def search_interactions(
         self,
@@ -501,28 +464,19 @@ class MemoryClient:
         Returns:
             List of matching interaction entries with similarity scores
         """
-        if self._use_local:
-            logger.debug(f"Memory search_interactions (local): not available in dev mode")
-            return []
-        
         client = await self._ensure_client()
-        try:
-            results = await client.search_interactions(agent_id, query, user_id, limit=limit)
-            return [
-                {
-                    "id": r.id,
-                    "role": r.role,
-                    "content": r.content,
-                    "metadata": r.metadata,
-                    "score": r.score,
-                    "created_at": r.created_at,
-                }
-                for r in results
-            ]
-        except Exception as e:
-            logger.debug(f"Memory search_interactions failed: {e}")
-            self._use_local = True
-            return []
+        results = await client.search_interactions(agent_id, query, user_id, limit=limit)
+        return [
+            {
+                "id": r.id,
+                "role": r.role,
+                "content": r.content,
+                "metadata": r.metadata,
+                "score": r.score,
+                "created_at": r.created_at,
+            }
+            for r in results
+        ]
     
     async def log_interaction(
         self,
@@ -545,18 +499,9 @@ class MemoryClient:
         Returns:
             True if log succeeded
         """
-        if self._use_local:
-            logger.debug(f"Memory log_interaction (local): {agent_id} - not persisted")
-            return True
-        
         client = await self._ensure_client()
-        try:
-            await client.log_interaction(agent_id, role, content, user_id, metadata)
-            return True
-        except Exception as e:
-            logger.debug(f"Memory log_interaction failed: {e}")
-            self._use_local = True
-            return False
+        await client.log_interaction(agent_id, role, content, user_id, metadata)
+        return True
     
     async def get_recent_history(
         self,
@@ -575,27 +520,18 @@ class MemoryClient:
         Returns:
             List of recent interactions ordered by recency
         """
-        if self._use_local:
-            logger.debug(f"Memory get_recent_history (local): {agent_id} - not available in dev mode")
-            return []
-        
         client = await self._ensure_client()
-        try:
-            results = await client.get_recent_history(agent_id, user_id, limit=limit)
-            return [
-                {
-                    "id": r.id,
-                    "role": r.role,
-                    "content": r.content,
-                    "metadata": r.metadata,
-                    "created_at": r.created_at,
-                }
-                for r in results
-            ]
-        except Exception as e:
-            logger.debug(f"Memory get_recent_history failed: {e}")
-            self._use_local = True
-            return []
+        results = await client.get_recent_history(agent_id, user_id, limit=limit)
+        return [
+            {
+                "id": r.id,
+                "role": r.role,
+                "content": r.content,
+                "metadata": r.metadata,
+                "created_at": r.created_at,
+            }
+            for r in results
+        ]
     
     async def get_relevant_skills(
         self,
@@ -616,27 +552,18 @@ class MemoryClient:
         Returns:
             List of relevant skills ordered by relevance
         """
-        if self._use_local:
-            logger.debug(f"Memory get_relevant_skills (local): {agent_id} - not available in dev mode")
-            return []
-        
         client = await self._ensure_client()
-        try:
-            results = await client.get_relevant_skills(agent_id, context, user_id, limit=limit)
-            return [
-                {
-                    "id": r.id,
-                    "procedure_type": r.procedure_type,
-                    "content": r.content,
-                    "trigger_condition": r.trigger_condition,
-                    "score": r.score,
-                }
-                for r in results
-            ]
-        except Exception as e:
-            logger.debug(f"Memory get_relevant_skills failed: {e}")
-            self._use_local = True
-            return []
+        results = await client.get_relevant_skills(agent_id, context, user_id, limit=limit)
+        return [
+            {
+                "id": r.id,
+                "procedure_type": r.procedure_type,
+                "content": r.content,
+                "trigger_condition": r.trigger_condition,
+                "score": r.score,
+            }
+            for r in results
+        ]
     
     async def delete(self, key: str, plan_id: Optional[str] = None) -> bool:
         """
@@ -649,11 +576,6 @@ class MemoryClient:
         Returns:
             True if deletion succeeded
         """
-        if self._use_local:
-            self._local_store.pop(key, None)
-            logger.debug(f"Memory delete (local): {key}")
-            return True
-        
         # Note: Memory Service doesn't have a delete endpoint yet
         logger.warning("Memory delete not implemented in Memory Service")
         return False
@@ -697,6 +619,7 @@ class BusClient:
         payload_schema_name: Optional[str] = None,
         subject: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> str:
         """
@@ -713,7 +636,8 @@ class BusClient:
             parent_event_id: ID of parent event in trace tree
             payload_schema_name: Registered schema name for payload
             subject: Optional subject/resource identifier
-            tenant_id: Tenant ID for multi-tenancy
+            tenant_id: Tenant ID for multi-tenancy (envelope metadata)
+            user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
             
         Returns:
@@ -731,6 +655,7 @@ class BusClient:
             payload_schema_name=payload_schema_name,
             subject=subject,
             tenant_id=tenant_id,
+            user_id=user_id,
             session_id=session_id,
         )
     
@@ -745,6 +670,7 @@ class BusClient:
         parent_event_id: Optional[str] = None,
         subject: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> str:
         """
@@ -760,7 +686,8 @@ class BusClient:
             trace_id: Root trace ID for distributed tracing
             parent_event_id: ID of parent event in trace tree
             subject: Optional subject/resource identifier
-            tenant_id: Tenant ID for multi-tenancy
+            tenant_id: Tenant ID for multi-tenancy (envelope metadata)
+            user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
             
         Returns:
@@ -777,6 +704,7 @@ class BusClient:
             parent_event_id=parent_event_id,
             subject=subject,
             tenant_id=tenant_id,
+            user_id=user_id,
             session_id=session_id,
         )
     
@@ -791,6 +719,7 @@ class BusClient:
         payload_schema_name: Optional[str] = None,
         subject: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> str:
         """
@@ -806,7 +735,8 @@ class BusClient:
             parent_event_id: ID of parent event in trace tree
             payload_schema_name: Registered schema name for payload
             subject: Optional subject/resource identifier
-            tenant_id: Tenant ID for multi-tenancy
+            tenant_id: Tenant ID for multi-tenancy (envelope metadata)
+            user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
             
         Returns:
@@ -822,6 +752,7 @@ class BusClient:
             payload_schema_name=payload_schema_name,
             subject=subject,
             tenant_id=tenant_id,
+            user_id=user_id,
             session_id=session_id,
         )
     
@@ -834,6 +765,7 @@ class BusClient:
         parent_event_id: Optional[str] = None,
         subject: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> str:
         """
@@ -847,7 +779,8 @@ class BusClient:
             trace_id: Root trace ID for distributed tracing
             parent_event_id: ID of parent event in trace tree
             subject: Optional subject/resource identifier
-            tenant_id: Tenant ID for multi-tenancy
+            tenant_id: Tenant ID for multi-tenancy (envelope metadata)
+            user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
             
         Returns:
@@ -862,6 +795,7 @@ class BusClient:
             parent_event_id=parent_event_id,
             subject=subject,
             tenant_id=tenant_id,
+            user_id=user_id,
             session_id=session_id,
         )
     
@@ -1218,21 +1152,49 @@ class PlatformContext:
                 status="completed",
             )
     """
-    registry: RegistryClient = field(default_factory=RegistryClient)
-    memory: MemoryClient = field(default_factory=MemoryClient)
-    bus: BusClient = field(default_factory=BusClient)
-    tracker: TrackerClient = field(default_factory=TrackerClient)
+    registry: RegistryClient
+    memory: MemoryClient
+    bus: BusClient
+    tracker: TrackerClient
+    
+    def __init__(
+        self,
+        registry: RegistryClient = None,
+        memory: MemoryClient = None,
+        bus: BusClient = None,
+        tracker: TrackerClient = None,
+    ):
+        """
+        Create a PlatformContext with configured clients.
+        
+        Args:
+            registry: Registry client (optional)
+            memory: Memory client with tenant_id/user_id configured (required for memory operations)
+            bus: Bus client (optional)
+            tracker: Tracker client (optional)
+        """
+        self.registry = registry or RegistryClient()
+        self.memory = memory or MemoryClient()
+        self.bus = bus or BusClient()
+        self.tracker = tracker or TrackerClient()
     
     @classmethod
     def from_env(cls) -> "PlatformContext":
         """
-        Create a PlatformContext from environment variables.
+        Create a PlatformContext from environment variables (convenience method).
         
         Environment variables:
-            SOORMA_REGISTRY_URL: Registry service URL
-            SOORMA_EVENT_SERVICE_URL: Event service URL
-            SOORMA_MEMORY_URL: Memory service URL
-            SOORMA_TRACKER_URL: Tracker service URL
+            SOORMA_REGISTRY_URL: Registry service URL (default: http://localhost:8081)
+            SOORMA_EVENT_SERVICE_URL: Event service URL (default: http://localhost:8082)
+            SOORMA_MEMORY_URL: Memory service URL (default: http://localhost:8083)
+            SOORMA_TRACKER_URL: Tracker service URL (default: http://localhost:8084)
+            
+        Returns:
+            PlatformContext with clients configured from environment
+            
+        Note:
+            MemoryClient is initialized here, but tenant_id/user_id must be provided
+            at runtime when calling memory methods (from event context).
         """
         event_client = EventClient(
             event_service_url=os.getenv("SOORMA_EVENT_SERVICE_URL", "http://localhost:8082"),

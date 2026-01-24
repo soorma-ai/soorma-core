@@ -42,32 +42,19 @@ class TestMemoryClientWrapper:
         
         wrapper = MemoryClient(base_url="http://memory:8002")
         wrapper._client = mock_client
-        wrapper._use_local = False
         
         # Execute
         result = await wrapper.store_knowledge(
             content="Test knowledge",
+            user_id="user-1",
             metadata={"source": "test"}
         )
         
         # Verify
         assert result == "sem-123"
         mock_client.store_knowledge.assert_called_once_with(
-            "Test knowledge", metadata={"source": "test"}
+            "Test knowledge", user_id="user-1", metadata={"source": "test"}
         )
-    
-    @pytest.mark.asyncio
-    async def test_store_knowledge_fallback(self):
-        """Test store_knowledge() returns None in local mode."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        
-        # Execute
-        result = await wrapper.store_knowledge("Test knowledge")
-        
-        # Verify
-        assert result is None
     
     @pytest.mark.asyncio
     async def test_search_knowledge_with_service(self):
@@ -87,30 +74,16 @@ class TestMemoryClientWrapper:
         
         wrapper = MemoryClient(base_url="http://memory:8002")
         wrapper._client = mock_client
-        wrapper._use_local = False
         
         # Execute
-        results = await wrapper.search_knowledge(query="test query", limit=5)
+        results = await wrapper.search_knowledge(query="test query", user_id="user-1", limit=5)
         
         # Verify
         assert len(results) == 1
         assert results[0]["id"] == "mem-1"
         assert results[0]["content"] == "Test content"
         assert results[0]["score"] == 0.95
-        mock_client.search_knowledge.assert_called_once_with("test query", limit=5)
-    
-    @pytest.mark.asyncio
-    async def test_search_knowledge_fallback(self):
-        """Test search_knowledge() returns empty list in local mode."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        
-        # Execute
-        results = await wrapper.search_knowledge(query="test query")
-        
-        # Verify
-        assert results == []
+        mock_client.search_knowledge.assert_called_once_with("test query", user_id="user-1", limit=5)
     
     @pytest.mark.asyncio
     async def test_search_interactions_with_service(self):
@@ -152,54 +125,6 @@ class TestMemoryClientWrapper:
         )
     
     @pytest.mark.asyncio
-    async def test_search_interactions_fallback(self):
-        """Test search_interactions() returns empty list in local mode."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        
-        # Execute
-        results = await wrapper.search_interactions(
-            agent_id="agent-1",
-            query="test",
-            user_id="test-user"
-        )
-        
-        # Verify
-        assert results == []
-    
-    @pytest.mark.asyncio
-    async def test_search_deprecated_delegates_to_search_knowledge(self):
-        """Test search() delegates to search_knowledge() for semantic memory."""
-        # Setup
-        mock_client = AsyncMock(spec=MemoryServiceClient)
-        mock_memory = SemanticMemoryResponse(
-            id="mem-1",
-            tenant_id="tenant-1",
-            content="Test content",
-            metadata={},
-            created_at="2025-12-23T10:00:00Z",
-            updated_at="2025-12-23T10:00:00Z",
-            score=0.95
-        )
-        mock_client.search_knowledge = AsyncMock(return_value=[mock_memory])
-        
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._client = mock_client
-        wrapper._use_local = False
-        
-        # Execute
-        results = await wrapper.search(
-            query="test query",
-            memory_type="semantic",
-            limit=5
-        )
-        
-        # Verify
-        assert len(results) == 1
-        assert results[0]["id"] == "mem-1"
-        mock_client.search_knowledge.assert_called_once_with("test query", limit=5)
-    
     @pytest.mark.asyncio
     async def test_close_with_client(self):
         """Test closing MemoryClient when client exists."""
@@ -231,96 +156,7 @@ class TestMemoryClientWrapper:
         assert wrapper._client is None
     
     @pytest.mark.asyncio
-    async def test_store_fallback_to_local(self):
-        """Test store() falls back to local storage on failure."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._client = None  # No client available
-        wrapper._use_local = True
-        
-        # Execute
-        result = await wrapper.store("test_key", {"value": 123}, plan_id="plan-1")
-        
-        # Verify
-        assert result is True
-        assert "test_key" in wrapper._local_store
-        assert wrapper._local_store["test_key"] == {"value": 123}
-    
     @pytest.mark.asyncio
-    async def test_retrieve_fallback_to_local(self):
-        """Test retrieve() falls back to local storage when service unavailable."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        wrapper._local_store["test_key"] = {"value": 456}
-        
-        # Execute
-        result = await wrapper.retrieve("test_key", plan_id="plan-1")
-        
-        # Verify
-        assert result == {"value": 456}
-    
-    @pytest.mark.asyncio
-    async def test_retrieve_returns_none_when_not_found(self):
-        """Test retrieve() returns None when key not found locally."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        wrapper._local_store = {}
-        
-        # Execute
-        result = await wrapper.retrieve("nonexistent_key", plan_id="plan-1")
-        
-        # Verify
-        assert result is None
-    
-    @pytest.mark.asyncio
-    async def test_search_with_service(self):
-        """Test search() delegates to service client."""
-        # Setup
-        mock_client = AsyncMock(spec=MemoryServiceClient)
-        mock_memory = SemanticMemoryResponse(
-            id="mem-1",
-            tenant_id="agent-1",
-            content="Test content",
-            metadata={},
-            created_at="2025-12-23T10:00:00Z",
-            updated_at="2025-12-23T10:00:00Z",
-            score=0.95
-        )
-        mock_client.search_knowledge = AsyncMock(return_value=[mock_memory])
-        
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._client = mock_client
-        wrapper._use_local = False
-        
-        # Execute
-        results = await wrapper.search(
-            query="test query",
-            memory_type="semantic",
-            limit=5
-        )
-        
-        # Verify
-        assert len(results) == 1
-        assert results[0]["id"] == "mem-1"
-        assert results[0]["content"] == "Test content"
-        assert results[0]["score"] == 0.95
-        mock_client.search_knowledge.assert_called_once_with("test query", limit=5)
-    
-    @pytest.mark.asyncio
-    async def test_search_fallback(self):
-        """Test search() returns empty list in dev mode."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        
-        # Execute
-        results = await wrapper.search(query="test query")
-        
-        # Verify
-        assert results == []
-    
     @pytest.mark.asyncio
     async def test_log_interaction_with_service(self):
         """Test log_interaction() delegates to service client."""
@@ -427,21 +263,6 @@ class TestMemoryClientWrapper:
         )
     
     @pytest.mark.asyncio
-    async def test_delete_local_mode(self):
-        """Test delete() in local mode removes from local store."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        wrapper._local_store["key1"] = {"value": 1}
-        
-        # Execute
-        result = await wrapper.delete("key1")
-        
-        # Verify
-        assert result is True
-        assert "key1" not in wrapper._local_store
-    
-    @pytest.mark.asyncio
     async def test_ensure_client_creates_client(self):
         """Test _ensure_client() creates client if not exists."""
         # Setup
@@ -485,15 +306,20 @@ class TestMemoryClientWrapper:
         
         wrapper = MemoryClient(base_url="http://memory:8002")
         wrapper._client = mock_client
-        wrapper._use_local = False
         
         # Execute
-        result = await wrapper.store("key1", {"data": "value"}, plan_id="plan-1")
+        result = await wrapper.store(
+            "key1", 
+            {"data": "value"}, 
+            plan_id="plan-1",
+            tenant_id="test-tenant",
+            user_id="test-user"
+        )
         
-        # Verify
+        # Verify - value passed directly (wrapping happens in set_plan_state)
         assert result is True
         mock_client.set_plan_state.assert_called_once_with(
-            "plan-1", "key1", {"data": "value"}
+            "plan-1", "key1", {"data": "value"}, "test-tenant", "test-user"
         )
     
     @pytest.mark.asyncio
@@ -506,21 +332,27 @@ class TestMemoryClientWrapper:
             tenant_id="tenant-1",
             plan_id="plan-1",
             key="key1",
-            value={"data": "value"},
+            value={"data": "value"},  # Service returns value directly
             updated_at="2025-12-23T10:00:00Z"
         )
         mock_client.get_plan_state = AsyncMock(return_value=mock_response)
         
         wrapper = MemoryClient(base_url="http://memory:8002")
         wrapper._client = mock_client
-        wrapper._use_local = False
         
         # Execute
-        result = await wrapper.retrieve("key1", plan_id="plan-1")
+        result = await wrapper.retrieve(
+            "key1", 
+            plan_id="plan-1",
+            tenant_id="test-tenant",
+            user_id="test-user"
+        )
         
-        # Verify
+        # Verify - value returned directly
         assert result == {"data": "value"}
-        mock_client.get_plan_state.assert_called_once_with("plan-1", "key1")
+        mock_client.get_plan_state.assert_called_once_with(
+            "plan-1", "key1", "test-tenant", "test-user"
+        )
 
 
 class TestBusClientWrapper:
@@ -759,42 +591,4 @@ class TestRegistryClientWrapper:
 class TestIntegrationScenarios:
     """Integration tests for common usage patterns."""
     
-    @pytest.mark.asyncio
-    async def test_memory_client_lifecycle(self):
-        """Test full lifecycle: create, use, close."""
-        # Setup
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._use_local = True
-        
-        # Execute - store and retrieve
-        await wrapper.store("key1", {"value": 100})
-        result = await wrapper.retrieve("key1")
-        assert result == {"value": 100}
-        
-        # Execute - close
-        await wrapper.close()
-        assert wrapper._client is None
-    
-    @pytest.mark.asyncio
-    async def test_memory_client_error_recovery(self):
-        """Test error handling and fallback behavior."""
-        # Setup
-        mock_client = AsyncMock(spec=MemoryServiceClient)
-        mock_client.health = AsyncMock(side_effect=Exception("Connection failed"))
-        
-        wrapper = MemoryClient(base_url="http://memory:8002")
-        wrapper._client = None
-        
-        # Execute - should catch exception and fallback to local mode
-        with patch('soorma.context.MemoryServiceClient') as mock_client_class:
-            mock_client_class.return_value = mock_client
-            
-            await wrapper._ensure_client()
-            
-            # Verify - should switch to local mode
-            assert wrapper._use_local is True
-        
-        # Test fallback to local store still works
-        result = await wrapper.store("test_key", {"value": 123})
-        assert result is True
-        assert wrapper._local_store["test_key"] == {"value": 123}
+

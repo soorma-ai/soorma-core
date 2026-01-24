@@ -1,7 +1,7 @@
 # Soorma Core Refactoring Index
 
 **Status:** 📋 Active Planning  
-**Last Updated:** January 15, 2026
+**Last Updated:** January 21, 2026
 
 ---
 
@@ -45,8 +45,8 @@ The SDK refactoring plan has been split into focused documents for implementatio
 |----------|-------|----------|--------|
 | [sdk/00-OVERVIEW.md](sdk/00-OVERVIEW.md) | Overview & principles | Reference | 📋 |
 | [sdk/01-EVENT-SYSTEM.md](sdk/01-EVENT-SYSTEM.md) | Event publishing & decorators | 🔴 Phase 1 | ✅ |
-| [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) | TaskContext/PlanContext persistence | 🔴 Phase 1 | ⬜ |
-| [sdk/03-COMMON-DTOS.md](sdk/03-COMMON-DTOS.md) | Shared DTOs in soorma-common | 🔴 Phase 1 | ⬜ |
+| [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) | TaskContext/PlanContext persistence | 🔴 Phase 1 | ✅ |
+| [sdk/03-COMMON-DTOS.md](sdk/03-COMMON-DTOS.md) | Shared DTOs in soorma-common | 🔴 Phase 1 | ✅ |
 | [sdk/04-TOOL-MODEL.md](sdk/04-TOOL-MODEL.md) | Tool synchronous model | 🟡 Phase 2 | ⬜ |
 | [sdk/05-WORKER-MODEL.md](sdk/05-WORKER-MODEL.md) | Worker async model | 🟡 Phase 2 | ⬜ |
 | [sdk/06-PLANNER-MODEL.md](sdk/06-PLANNER-MODEL.md) | Planner state machine | 🟡 Phase 2 | ⬜ |
@@ -64,8 +64,8 @@ The architecture refactoring plan has been split into focused documents for impl
 |----------|-------|----------|--------|
 | [arch/00-OVERVIEW.md](arch/00-OVERVIEW.md) | Service map & principles | Reference | 📋 |
 | [arch/01-EVENT-SERVICE.md](arch/01-EVENT-SERVICE.md) | Event envelope enhancements | 🔴 Phase 1 | ✅ |
-| [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) | Task/plan context storage | 🔴 Phase 1 | ⬜ |
-| [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) | Shared DTOs (soorma-common) | 🔴 Phase 1 | ⬜ |
+| [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) | Task/plan context storage | 🔴 Phase 1 | ✅ |
+| [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) | Shared DTOs (soorma-common) | 🔴 Phase 1 | ✅ |
 | [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md) | Event-driven observability | 🟡 Phase 2 | ⬜ |
 | [arch/05-REGISTRY-SERVICE.md](arch/05-REGISTRY-SERVICE.md) | Enhanced discovery & A2A | 🟡 Phase 3 | ⬜ |
 | [arch/06-USER-AGENT.md](arch/06-USER-AGENT.md) | HITL pattern | 🟢 Phase 4 | ⬜ |
@@ -328,8 +328,73 @@ Dependencies: Stage 1 must be complete (event system foundation).
 - ✅ MemoryClient provides save/restore methods
 - ✅ soorma-common library exists with shared DTOs
 - ✅ WorkflowState helper provides plan-scoped state management
-- ✅ Tracker subscribes to events
+- ✅ Tracker subscribes to events (no-op, service in Stage 4)
 - ✅ All tests pass
+
+**Status:** ✅ **COMPLETE** (January 21, 2026)
+
+**Implementation Notes:**
+- Created 5 new tables in Memory Service: `task_context`, `plan_context`, `plans`, `sessions`, `plan_context` with full RLS
+- Added 23 new API endpoints across 8 files (task-context, plan-context, plans, sessions, working, semantic, episodic, procedural)
+- Refactored all endpoints to API → Service → CRUD pattern with proper transaction boundaries
+- TenantContext dependency injection eliminates 3-4 lines of auth boilerplate per endpoint
+- Added 13 new methods to MemoryClient for task/plan context and session management
+- Created WorkflowState helper class with 12 convenience methods (reduces boilerplate 8:1)
+- Added 18 new DTOs to soorma-common (state.py, a2a.py, tracking.py) - 61 total exports
+- Tracker integration via events (removed emit_progress, complete_task, fail_task)
+- Memory Service: 37 tests passing (29 unit + 8 validation)
+- SDK: 192 tests passing with full memory client coverage
+- soorma-common: 44 tests passing with comprehensive DTO validation
+- **Total: 273 tests passing (100% success rate)**
+
+**Follow-up Work (Stage 2.1):**
+
+**Architecture Tasks:**
+- ⬜ **RF-ARCH-012**: Semantic Memory Upsert (Service)
+  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-012
+  - Design documented in [services/memory/SEMANTIC_MEMORY_UPSERT.md](../../services/memory/SEMANTIC_MEMORY_UPSERT.md)
+  - Add external_id and content_hash columns to semantic_memory table
+  - Implement upsert CRUD function with dual-constraint logic
+  - Update service layer and API endpoints
+  - Write tests for versioning and deduplication scenarios
+  - **Priority:** P1 (High) - Prevents data quality issues
+  - **Estimated effort:** 2-3 days
+
+- ⬜ **RF-ARCH-013**: Working Memory Deletion (Service)
+  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-013
+  - Add DELETE endpoints for plan state cleanup:
+    * `DELETE /v1/memory/working/{plan_id}` - Delete all keys for a plan
+    * `DELETE /v1/memory/working/{plan_id}/{key}` - Delete individual key
+  - Implement delete CRUD functions with RLS enforcement
+  - Write tests for deletion scenarios and RLS
+  - **Priority:** P2 (Medium) - Not blocking, but prevents data accumulation
+  - **Estimated effort:** 1-2 days
+
+**SDK Tasks:**
+- ⬜ **RF-SDK-019**: Semantic Memory Upsert SDK
+  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-019
+  - Add external_id parameter to `store_knowledge()` method
+  - Update SemanticMemoryCreate DTO in soorma-common
+  - Update HTTP call to include external_id
+  - Write tests for upsert behavior (external_id and content_hash)
+  - **Priority:** P1 (High) - Pairs with RF-ARCH-012
+  - **Estimated effort:** 1-2 days
+
+- ⬜ **RF-SDK-020**: Working Memory Deletion SDK
+  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-020
+  - Add `delete_plan_state()` method to MemoryClient
+  - Add `delete_plan()` method to MemoryClient
+  - Update WorkflowState helper with `delete()` and `cleanup()` methods
+  - Write tests for deletion methods
+  - Document usage patterns (explicit cleanup, background job, accept persistence)
+  - **Priority:** P2 (Medium) - Pairs with RF-ARCH-013
+  - **Estimated effort:** 1 day
+
+**Implementation Order:**
+1. RF-ARCH-012 (Service) + RF-SDK-019 (SDK) together (semantic memory upsert)
+2. RF-ARCH-013 (Service) + RF-SDK-020 (SDK) together (working memory deletion)
+
+**Total Estimated Effort:** 5-8 days for both service and SDK changes
 
 ---
 
@@ -517,12 +582,16 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-002 | Add response_event to action requests | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
 | RF-SDK-003 | Refactor on_event() signature | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
 | RF-SDK-013 | Event creation utilities (auto-propagate metadata) | Stage 1 | [01-EVENT-SYSTEM](sdk/01-EVENT-SYSTEM.md) | ✅ |
-| RF-ARCH-008 | TaskContext memory type | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
-| RF-ARCH-009 | Plan/session query APIs | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
-| RF-SDK-010 | Memory SDK methods | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
-| RF-SDK-011 | Tracker via events, not API | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ⬜ |
-| RF-SDK-012 | Common library DTOs (State, A2A) | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ⬜ |
-| RF-SDK-014 | WorkflowState helper for plan state | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
+| RF-ARCH-008 | TaskContext memory type | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ✅ |
+| RF-ARCH-009 | Plan/session query APIs | Stage 2 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ✅ |
+| RF-SDK-010 | Memory SDK methods | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
+| RF-SDK-011 | Tracker via events, not API | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
+| RF-SDK-012 | Common library DTOs (State, A2A) | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
+| RF-SDK-014 | WorkflowState helper for plan state | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
+| RF-ARCH-012 | Semantic memory upsert (external_id + content_hash) | Stage 2.1 | [SEMANTIC_MEMORY_UPSERT](../../services/memory/SEMANTIC_MEMORY_UPSERT.md) | ⬜ |
+| RF-ARCH-013 | Working memory deletion (DELETE endpoints) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
+| RF-SDK-019 | Semantic memory upsert SDK (external_id parameter) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
+| RF-SDK-020 | Working memory deletion SDK (delete methods) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ⬜ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |
 | RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |

@@ -25,6 +25,20 @@ from .models import (
     ProceduralMemoryResponse,
     WorkingMemorySet,
     WorkingMemoryResponse,
+    # Task Context
+    TaskContextCreate,
+    TaskContextUpdate,
+    TaskContextResponse,
+    # Plan Context
+    PlanContextCreate,
+    PlanContextUpdate,
+    PlanContextResponse,
+    # Plans & Sessions
+    PlanCreate,
+    PlanUpdate,
+    PlanSummary,
+    SessionCreate,
+    SessionSummary,
 )
 
 from .events import (
@@ -42,6 +56,36 @@ from .events import (
     PublishResponse,
     SubscribeRequest,
     StreamConnectionInfo,
+)
+
+from .state import (
+    # State Machine
+    StateAction,
+    StateTransition,
+    StateConfig,
+    PlanDefinition,
+    PlanRegistrationRequest,
+    PlanInstanceRequest,
+)
+
+from .a2a import (
+    # A2A Protocol
+    A2AAuthType,
+    A2AAuthentication,
+    A2ASkill,
+    A2AAgentCard,
+    A2APart,
+    A2AMessage,
+    A2ATask,
+    A2ATaskStatus,
+    A2ATaskResponse,
+)
+
+from .tracking import (
+    # Progress Tracking
+    TaskState,
+    TaskProgressEvent,
+    TaskStateChanged,
 )
 
 __all__ = [
@@ -68,6 +112,20 @@ __all__ = [
     "ProceduralMemoryResponse",
     "WorkingMemorySet",
     "WorkingMemoryResponse",
+    # Task Context
+    "TaskContextCreate",
+    "TaskContextUpdate",
+    "TaskContextResponse",
+    # Plan Context
+    "PlanContextCreate",
+    "PlanContextUpdate",
+    "PlanContextResponse",
+    # Plans & Sessions
+    "PlanCreate",
+    "PlanUpdate",
+    "PlanSummary",
+    "SessionCreate",
+    "SessionSummary",
     # Event Topics
     "EventTopic",
     # Event Envelopes
@@ -82,6 +140,27 @@ __all__ = [
     "PublishResponse",
     "SubscribeRequest",
     "StreamConnectionInfo",
+    # State Machine
+    "StateAction",
+    "StateTransition",
+    "StateConfig",
+    "PlanDefinition",
+    "PlanRegistrationRequest",
+    "PlanInstanceRequest",
+    # A2A Protocol
+    "A2AAuthType",
+    "A2AAuthentication",
+    "A2ASkill",
+    "A2AAgentCard",
+    "A2APart",
+    "A2AMessage",
+    "A2ATask",
+    "A2ATaskStatus",
+    "A2ATaskResponse",
+    # Progress Tracking
+    "TaskState",
+    "TaskProgressEvent",
+    "TaskStateChanged",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"

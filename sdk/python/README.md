@@ -97,6 +97,9 @@ soorma dev --logs
 
 # Stop infrastructure
 soorma dev --stop
+
+# Stop and remove all data/volumes (clean slate)
+soorma dev --stop --clean
 ```
 
 ### Deploy to Soorma Cloud
@@ -383,6 +386,7 @@ result = await execute_ai_tool(
 | `soorma dev --build --infra-only` | Build images without running agent (first-time setup) |
 | `soorma dev --infra-only` | Start infra without running agent |
 | `soorma dev --stop` | Stop the development stack |
+| `soorma dev --stop --clean` | Stop stack and remove all data/volumes |
 | `soorma dev --status` | Show stack status |
 | `soorma dev --logs` | View infrastructure logs |
 | `soorma deploy` | Deploy to Soorma Cloud (coming soon) |

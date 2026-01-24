@@ -11,12 +11,12 @@
 
 | Aspect | Details |
 |--------|----------|
-| **Tasks** | RF-ARCH-008: TaskContext Memory Type, RF-ARCH-009: Plan/Session Query APIs |
+| **Tasks** | RF-ARCH-008: TaskContext Memory Type<br>RF-ARCH-009: Plan/Session Query APIs<br>RF-ARCH-012: Semantic Memory Upsert (Stage 2.1)<br>RF-ARCH-013: Working Memory Deletion (Stage 2.1) |
 | **Files** | Memory Service, database schema |
 | **Pairs With SDK** | [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md) |
 | **Dependencies** | None (foundational) |
 | **Blocks** | Worker, Planner implementations |
-| **Estimated Effort** | 2-3 days |
+| **Estimated Effort** | 2-3 days (Stage 2)<br>3-5 days (Stage 2.1) |
 
 ---
 
@@ -53,8 +53,14 @@ services/memory/
 ## Summary
 
 This document covers Memory Service enhancements:
+
+**Stage 2 (Foundation):**
 - **RF-ARCH-008:** Add TaskContext storage for async Workers
 - **RF-ARCH-009:** Add Plan/Session query APIs
+
+**Stage 2.1 (Follow-up):**
+- **RF-ARCH-012:** Semantic Memory Upsert with deduplication
+- **RF-ARCH-013:** Working Memory Deletion endpoints
 
 These endpoints are consumed by SDK MemoryClient (see [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md)).
 
@@ -367,6 +373,155 @@ CREATE POLICY sessions_user_isolation
         AND user_id = current_setting('app.user_id')::UUID
     );
 ```
+
+---
+
+## Stage 2.1 Tasks (Follow-up)
+
+### RF-ARCH-012: Semantic Memory Upsert
+
+**Status:** ⬜ Not Started  
+**Priority:** P1 (High) - Prevents data quality issues  
+**Estimated Effort:** 2-3 days
+
+#### Problem
+
+Current semantic memory API creates duplicate entries when storing the same content multiple times:
+- Same document ingested repeatedly → multiple embeddings
+- Updated content creates new entry → old version persists
+- No way to identify and update existing content
+
+This causes:
+- Wasted storage and embedding costs
+- Duplicate/stale content in search results
+- Confusion about which version is current
+
+#### Solution: Upsert with Dual Constraints
+
+Add `external_id` (user-provided) and `content_hash` (system-generated) columns for deduplication.
+
+**Design Document:** [services/memory/SEMANTIC_MEMORY_UPSERT.md](../../../services/memory/SEMANTIC_MEMORY_UPSERT.md)
+
+**Database Schema:**
+
+```sql
+-- Add columns to semantic_memory table
+ALTER TABLE semantic_memory
+ADD COLUMN external_id VARCHAR(255),
+ADD COLUMN content_hash VARCHAR(64);
+
+-- Create unique constraints
+CREATE UNIQUE INDEX semantic_memory_external_id_idx 
+    ON semantic_memory (tenant_id, user_id, external_id)
+    WHERE external_id IS NOT NULL;
+
+CREATE UNIQUE INDEX semantic_memory_content_hash_idx
+    ON semantic_memory (tenant_id, user_id, content_hash);
+```
+
+**API Update:**
+
+```python
+# Upsert by external_id (user controls identity)
+POST /v1/memory/semantic
+{
+    "content": "Docker is a containerization platform...",
+    "external_id": "doc-123",  # Optional user-provided ID
+    "metadata": {"source": "docs.docker.com"}
+}
+
+# If external_id provided → upsert on external_id
+# If no external_id → upsert on content_hash (automatic deduplication)
+```
+
+**Versioning Support:**
+
+```python
+# Store with timestamp in metadata for version tracking
+{
+    "external_id": "doc-123",
+    "content": "Updated content...",
+    "metadata": {
+        "version": "v2",
+        "updated_at": "2026-01-22T10:00:00Z"
+    }
+}
+```
+
+**SDK Changes:**
+
+See [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md) RF-SDK-019 for SDK method updates.
+
+**Testing:**
+- Duplicate content detection (same hash)
+- External ID upsert behavior
+- Version tracking via metadata
+- Migration for existing data
+
+---
+
+### RF-ARCH-013: Working Memory Deletion
+
+**Status:** ⬜ Not Started  
+**Priority:** P2 (Medium) - Prevents data accumulation  
+**Estimated Effort:** 1-2 days
+
+#### Problem
+
+Working memory is plan-scoped and temporary, but there's no cleanup mechanism:
+- Plan state persists forever after plan completes
+- No way to delete all keys for a plan
+- No way to delete individual keys
+- Data accumulates over time
+
+**Current State:**
+- `PUT /v1/memory/working/{plan_id}/{key}` - Set value ✅
+- `GET /v1/memory/working/{plan_id}/{key}` - Get value ✅
+- `DELETE /v1/memory/working/{plan_id}/{key}` - ❌ Missing
+- `DELETE /v1/memory/working/{plan_id}` - ❌ Missing
+
+#### Solution: Add DELETE Endpoints
+
+**New Endpoints:**
+
+```python
+# Delete individual key
+DELETE /v1/memory/working/{plan_id}/{key}
+
+Response: 204 No Content (success)
+          404 Not Found (key doesn't exist)
+
+# Delete all keys for a plan
+DELETE /v1/memory/working/{plan_id}
+
+Response: 
+{
+    "deleted_count": 5,
+    "plan_id": "plan-123"
+}
+```
+
+**Database Operations:**
+
+```python
+# Delete single key
+DELETE FROM working_memory 
+WHERE tenant_id = $1 AND plan_id = $2 AND key = $3;
+
+# Delete all keys for plan
+DELETE FROM working_memory
+WHERE tenant_id = $1 AND plan_id = $2;
+```
+
+**SDK Changes:**
+
+See [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md) RF-SDK-020 for SDK method updates and usage patterns.
+
+**Testing:**
+- Delete individual keys
+- Delete entire plan state
+- Delete non-existent keys (idempotent)
+- RLS enforcement (can't delete other tenant's data)
 
 ---
 

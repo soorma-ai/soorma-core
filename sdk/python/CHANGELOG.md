@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-21
+
+### Added
+- **Stage 2 - Memory & Common DTOs Foundation (January 21, 2026)**
+  - **MemoryClient enhancements** for task/plan context persistence:
+    - `store_task_context()`, `get_task_context()`, `update_task_context()`, `delete_task_context()`: Async Worker state management
+    - `get_task_by_subtask()`: Find parent task by subtask correlation ID
+    - `store_plan_context()`, `get_plan_context()`, `update_plan_context()`: Planner state machine persistence
+    - `get_plan_by_correlation()`: Find plan by task correlation ID
+    - `create_plan()`, `list_plans()`: Plan lifecycle management
+    - `create_session()`, `list_sessions()`: Conversation session grouping
+    - `set_plan_state()`, `get_plan_state()`: Working memory key-value operations
+  - **WorkflowState helper class** (`soorma.workflow.WorkflowState`):
+    - `record_action()`, `get_action_history()`: Event timeline tracking
+    - `set()`, `get()`, `delete()`, `clear()`: State management
+    - `exists()`, `get_all()`: State inspection
+    - `increment()`, `append()`, `update_dict()`: Convenience operations
+    - `set_ttl()`: Expiration support
+    - Reduces working memory boilerplate from 8+ lines to 1 line per operation
+  - **TrackerClient event integration**: Removed direct API calls, agents now publish to system-events topic
+    - Removed: `emit_progress()`, `complete_task()`, `fail_task()`
+    - Kept: `get_plan_status()`, `list_tasks()` (read-only queries)
+  - **Tests**: 192 SDK tests passing, comprehensive coverage for all memory operations
+
+### Changed
+- **TrackerClient - Breaking**: Progress tracking now via events instead of API calls
+  - Workers/Planners publish to `system-events` topic
+  - Tracker Service will subscribe (implemented in Stage 4)
+  - Decouples SDK from direct service dependencies
+
 ## [0.5.1] - 2025-12-24
 
 ### Added

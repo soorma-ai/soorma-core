@@ -6,7 +6,9 @@ The simplest possible Soorma agent - demonstrates the Worker pattern.
 A Worker listens for events and responds to them.
 """
 
+from typing import Any, Dict
 from soorma import Worker
+from soorma.context import PlatformContext
 
 
 # Create a Worker instance
@@ -20,7 +22,7 @@ worker = Worker(
 
 
 @worker.on_event("greeting.requested", topic="action-requests")
-async def handle_greeting(event, context):
+async def handle_greeting(event: Dict[str, Any], context: PlatformContext):
     """Handle greeting requests and respond with a friendly message."""
     print(f"\n📨 Received greeting request")
     

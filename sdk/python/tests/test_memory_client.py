@@ -42,6 +42,7 @@ async def test_store_knowledge(memory_client):
     # Test
     result = await memory_client.store_knowledge(
         content="Test knowledge",
+        user_id="user-1",
         metadata={"source": "test"}
     )
     
@@ -74,7 +75,7 @@ async def test_search_knowledge(memory_client):
     memory_client._client.get = AsyncMock(return_value=mock_response)
     
     # Test
-    results = await memory_client.search_knowledge(query="test query", limit=5)
+    results = await memory_client.search_knowledge(query="test query", user_id="user-1", limit=5)
     
     # Verify
     assert len(results) == 1
@@ -268,7 +269,9 @@ async def test_set_plan_state(memory_client):
     result = await memory_client.set_plan_state(
         plan_id="plan-123",
         key="research_summary",
-        value={"status": "completed"}
+        value={"status": "completed"},
+        tenant_id="test-tenant",
+        user_id="test-user"
     )
     
     # Verify
@@ -300,7 +303,9 @@ async def test_get_plan_state(memory_client):
     # Test
     result = await memory_client.get_plan_state(
         plan_id="plan-123",
-        key="research_summary"
+        key="research_summary",
+        tenant_id="test-tenant",
+        user_id="test-user"
     )
     
     # Verify

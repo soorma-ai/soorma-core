@@ -202,7 +202,7 @@ class ProceduralMemoryResponse(BaseDTO):
 
 class WorkingMemorySet(BaseDTO):
     """Set working memory value."""
-    value: Dict[str, Any] = Field(..., description="State value (JSON)")
+    value: Any = Field(..., description="State value (JSON-serializable)")
 
 
 class WorkingMemoryResponse(BaseDTO):
@@ -211,5 +211,134 @@ class WorkingMemoryResponse(BaseDTO):
     tenant_id: str = Field(..., description="Tenant ID")
     plan_id: str = Field(..., description="Plan ID")
     key: str = Field(..., description="State key")
-    value: Dict[str, Any] = Field(..., description="State value")
+    value: Any = Field(..., description="State value (JSON-serializable)")
     updated_at: str = Field(..., description="Last update timestamp")
+
+
+# =============================================================================
+# Task Context DTOs
+# =============================================================================
+
+
+class TaskContextCreate(BaseDTO):
+    """Create task context."""
+    task_id: str = Field(..., description="Task ID")
+    plan_id: Optional[str] = Field(None, description="Plan ID")
+    event_type: str = Field(..., description="Event type that triggered this task")
+    response_event: Optional[str] = Field(None, description="Expected response event")
+    response_topic: str = Field(default='action-results', description="Response topic")
+    data: Dict[str, Any] = Field(default_factory=dict, description="Original request data")
+    sub_tasks: List[str] = Field(default_factory=list, description="List of sub-task IDs")
+    state: Dict[str, Any] = Field(default_factory=dict, description="Worker-specific state")
+
+
+class TaskContextUpdate(BaseDTO):
+    """Update task context."""
+    sub_tasks: Optional[List[str]] = Field(None, description="Updated sub-task list")
+    state: Optional[Dict[str, Any]] = Field(None, description="Updated state")
+
+
+class TaskContextResponse(BaseDTO):
+    """Task context response."""
+    id: str = Field(..., description="Record ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    task_id: str = Field(..., description="Task ID")
+    plan_id: Optional[str] = Field(None, description="Plan ID")
+    event_type: str = Field(..., description="Event type")
+    response_event: Optional[str] = Field(None, description="Response event")
+    response_topic: str = Field(..., description="Response topic")
+    data: Dict[str, Any] = Field(..., description="Request data")
+    sub_tasks: List[str] = Field(..., description="Sub-task IDs")
+    state: Dict[str, Any] = Field(..., description="Worker state")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+
+# =============================================================================
+# Plan Context DTOs
+# =============================================================================
+
+
+class PlanContextCreate(BaseDTO):
+    """Create plan context."""
+    plan_id: str = Field(..., description="Plan ID")
+    session_id: Optional[str] = Field(None, description="Session ID")
+    goal_event: str = Field(..., description="Goal event type")
+    goal_data: Dict[str, Any] = Field(default_factory=dict, description="Goal data")
+    response_event: Optional[str] = Field(None, description="Expected response event")
+    state: Dict[str, Any] = Field(default_factory=dict, description="Plan state machine")
+    current_state: Optional[str] = Field(None, description="Current state name")
+    correlation_ids: List[str] = Field(default_factory=list, description="Correlation IDs")
+
+
+class PlanContextUpdate(BaseDTO):
+    """Update plan context."""
+    state: Optional[Dict[str, Any]] = Field(None, description="Updated state")
+    current_state: Optional[str] = Field(None, description="Updated current state")
+    correlation_ids: Optional[List[str]] = Field(None, description="Updated correlation IDs")
+
+
+class PlanContextResponse(BaseDTO):
+    """Plan context response."""
+    id: str = Field(..., description="Record ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    plan_id: str = Field(..., description="Plan ID")
+    session_id: Optional[str] = Field(None, description="Session ID")
+    goal_event: str = Field(..., description="Goal event type")
+    goal_data: Dict[str, Any] = Field(..., description="Goal data")
+    response_event: Optional[str] = Field(None, description="Response event")
+    state: Dict[str, Any] = Field(..., description="Plan state")
+    current_state: Optional[str] = Field(None, description="Current state")
+    correlation_ids: List[str] = Field(..., description="Correlation IDs")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+
+# =============================================================================
+# Plan & Session DTOs
+# =============================================================================
+
+
+class PlanCreate(BaseDTO):
+    """Create plan."""
+    plan_id: str = Field(..., description="Plan ID")
+    session_id: Optional[str] = Field(None, description="Session ID")
+    goal_event: str = Field(..., description="Goal event type")
+    goal_data: Dict[str, Any] = Field(default_factory=dict, description="Goal data")
+    parent_plan_id: Optional[str] = Field(None, description="Parent plan ID")
+
+
+class PlanUpdate(BaseDTO):
+    """Update plan."""
+    status: str = Field(..., description="Plan status: running, completed, failed, paused")
+
+
+class PlanSummary(BaseDTO):
+    """Plan summary response."""
+    id: str = Field(..., description="Record ID")
+    plan_id: str = Field(..., description="Plan ID")
+    session_id: Optional[str] = Field(None, description="Session ID")
+    goal_event: str = Field(..., description="Goal event type")
+    goal_data: Dict[str, Any] = Field(..., description="Goal data")
+    status: str = Field(..., description="Plan status")
+    parent_plan_id: Optional[str] = Field(None, description="Parent plan ID")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+
+class SessionCreate(BaseDTO):
+    """Create session."""
+    session_id: str = Field(..., description="Session ID")
+    name: Optional[str] = Field(None, description="Session name")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Session metadata")
+
+
+class SessionSummary(BaseDTO):
+    """Session summary response."""
+    id: str = Field(..., description="Record ID")
+    session_id: str = Field(..., description="Session ID")
+    name: Optional[str] = Field(None, description="Session name")
+    metadata: Dict[str, Any] = Field(..., description="Session metadata")
+    created_at: str = Field(..., description="Creation timestamp")
+    last_interaction: str = Field(..., description="Last interaction timestamp")
+

@@ -382,7 +382,8 @@ This prevents LLMs from "hallucinating" event names that don't exist.
 
 ## Next Steps
 
-- **05-memory-working (coming soon)** - Store workflow state between event handlers
+- **[04-memory-working](../04-memory-working/)** - Learn workflow state management (recommended next)
+- **[05-memory-semantic](../05-memory-semantic/)** - RAG with LLM routing (builds on this example)
 - **07-tool-discovery (coming soon)** - Similar pattern for discovering tools
 - **09-app-research-advisor (coming soon)** - Full autonomous system using structured events
 
