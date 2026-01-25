@@ -30,6 +30,8 @@
 > - Stage 1 (Foundation - Event System) ✅ Complete (v0.6.0)
 > - Stage 2 (Foundation - Memory & Common DTOs) ✅ Complete (v0.7.0)
 > - Stage 3 (Agent Models - Tool & Worker) ⬜ Next
+>
+> **⚠️ Install from source during pre-launch:** Use `pip install -e sdk/python` to stay synchronized with breaking changes.
 
 ---
 
@@ -103,17 +105,14 @@ cd soorma-core
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install the SDK from PyPI
-pip install soorma-core
+# Install the SDK from local source (recommended during pre-launch)
+pip install -e sdk/python
 
 # Build infrastructure containers (required first time)
 soorma dev --build
 ```
 
-> 💡 **Alternative:** To install SDK from local source (for development/customization):
-> ```bash
-> pip install -e sdk/python
-> ```
+> 💡 **Why local source?** During pre-launch with active development and breaking changes, installing from source ensures your SDK stays synchronized with the latest infrastructure when you pull updates. Once v1.0 is released, we'll recommend PyPI installation (`pip install soorma-core`).
 
 ### 2. Run the Hello World Example
 

@@ -17,7 +17,7 @@ This repository (`soorma-core`) contains the **complete open-source foundation**
 
 | Component | Description |
 | :--- | :--- |
-| **SDK** | Python SDK for building agents (`pip install soorma-core`) |
+| **SDK** | Python SDK for building agents (install from source: `pip install -e sdk/python`) |
 | **Services** | Registry, Event Service, Memory Service, and Gateway microservices |
 | **Libraries** | Common models and utilities |
 | **Examples** | Working examples demonstrating patterns |

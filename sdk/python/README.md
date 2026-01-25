@@ -18,9 +18,18 @@ We're in active pre-launch refactoring to solidify architecture and APIs before 
 
 ## Installation
 
+> **During Pre-Launch:** We recommend installing from local source to stay synchronized with breaking changes:
+
 ```bash
-pip install soorma-core
+# Clone the repository
+git clone https://github.com/soorma-ai/soorma-core.git
+cd soorma-core
+
+# Install from source
+pip install -e sdk/python
 ```
+
+> **After v1.0 Release:** Standard PyPI installation will be recommended: `pip install soorma-core`
 
 **Requirements:** Python 3.11+
 

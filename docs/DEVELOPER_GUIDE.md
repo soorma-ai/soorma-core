@@ -21,8 +21,15 @@ Soorma optimizes for three user journeys:
 
 ### 1.1 Installation
 
+> **Pre-Launch Phase:** Install from local source to stay synchronized with breaking changes:
+
 ```bash
-pip install soorma-core
+# Clone the repository
+git clone https://github.com/soorma-ai/soorma-core.git
+cd soorma-core
+
+# Install from source
+pip install -e sdk/python
 ```
 
 ### 1.2 CLI Commands
@@ -38,8 +45,9 @@ The `soorma` command is bundled in the SDK:
 ### 1.3 Typical Workflow
 
 ```bash
-# 1. Install the SDK
-pip install soorma-core
+# 1. Install the SDK from local source
+cd soorma-core
+pip install -e sdk/python
 
 # 2. Build local infrastructure
 export OPENAI_API_KEY=your_key_here
