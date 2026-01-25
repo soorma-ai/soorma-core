@@ -367,8 +367,8 @@ elif status == "approved":
 - Check no typos in state keys
 
 **"WorkflowState import error"**
-- Ensure SDK is installed: `pip install soorma-core`
-- Or install from source: `pip install -e ../../sdk/python`
+- Ensure SDK is installed from source: `pip install -e ../../sdk/python`
+- Verify you're in the correct virtual environment
 
 ## Next Steps
 

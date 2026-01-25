@@ -198,9 +198,8 @@ cd soorma-core
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install the SDK
-pip install soorma-core
-# Or install from local source: pip install -e sdk/python
+# Install the SDK from local source (recommended during pre-launch)
+pip install -e sdk/python
 ```
 
 **For examples using LLMs** (03, 05, 06, research-advisor), also install:

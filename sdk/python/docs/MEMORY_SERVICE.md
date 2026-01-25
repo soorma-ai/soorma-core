@@ -73,8 +73,15 @@ The context wrapper automatically falls back to local in-memory storage when the
 
 ## Installation
 
+> **Pre-Launch Phase:** Install from local source:
+
 ```bash
-pip install soorma-core
+# Clone repository
+git clone https://github.com/soorma-ai/soorma-core.git
+cd soorma-core
+
+# Install SDK
+pip install -e sdk/python
 ```
 
 For development with Memory Service:
