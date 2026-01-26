@@ -21,9 +21,9 @@ Usage:
     async def startup():
         print("Agent starting...")
 
-    @agent.on_event("data.requested")
-    async def handle_data_request(event, context):
-        result = process_data(event["data"])
+    @agent.on_event("data.requested", topic=EventTopic.ACTION_REQUESTS)
+    async def handle_data_request(event: EventEnvelope, context: PlatformContext):
+        result = process_data(event.data)
         await context.bus.publish("data.completed", result)
 
     agent.run()
@@ -37,13 +37,15 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from uuid import uuid4
 
+from soorma_common.events import EventEnvelope, EventTopic
+
 from ..context import PlatformContext
 from ..events import EventClient
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
-EventHandler = Callable[[Dict[str, Any], PlatformContext], Awaitable[None]]
+EventHandler = Callable[[EventEnvelope, PlatformContext], Awaitable[None]]
 LifecycleHandler = Callable[[], Awaitable[None]]
 
 
@@ -110,10 +112,10 @@ class Agent(ABC):
             capabilities=["data_processing", "csv_parsing"],
         )
         
-        @agent.on_event("data.requested")
-        async def handle_request(event, context):
+        @agent.on_event("data.requested", topic=EventTopic.ACTION_REQUESTS)
+        async def handle_request(event: EventEnvelope, context: PlatformContext):
             # Process the event
-            result = await process(event["data"])
+            result = await process(event.data)
             # Publish result
             await context.bus.publish("data.completed", {"result": result})
         
@@ -275,7 +277,7 @@ class Agent(ABC):
         self,
         event_type: str,
         *,
-        topic: str,
+        topic: EventTopic,
     ) -> Callable[[EventHandler], EventHandler]:
         """
         Decorator to register an event handler.
@@ -284,21 +286,21 @@ class Agent(ABC):
         Multiple handlers can be registered for the same event type + topic combination.
         
         Usage:
-            @agent.on_event("data.requested", topic="action-requests")
-            async def handle_request(event, context):
-                result = await process(event["data"])
-                await context.bus.respond("data.completed", result, correlation_id=event["correlation_id"])
+            @agent.on_event("data.requested", topic=EventTopic.ACTION_REQUESTS)
+            async def handle_request(event: EventEnvelope, context: PlatformContext):
+                result = await process(event.data)
+                await context.bus.respond("data.completed", result, correlation_id=event.correlation_id)
         
         Args:
             event_type: The event type to handle
-            topic: The topic to subscribe to (required)
+            topic: The topic to subscribe to (required EventTopic enum)
         
         Returns:
             Decorator function
         """
         def decorator(func: EventHandler) -> EventHandler:
-            # Create a composite key for topic:event_type
-            handler_key = f"{topic}:{event_type}"
+            # Create a composite key for topic:event_type (use topic.value for string)
+            handler_key = f"{topic.value}:{event_type}"
             
             if handler_key not in self._event_handlers:
                 self._event_handlers[handler_key] = []
@@ -383,7 +385,8 @@ class Agent(ABC):
             
             for handler in handlers:
                 @event_client.on_event(event_type)
-                async def wrapped_handler(event: Dict[str, Any], h=handler) -> None:
+                async def wrapped_handler(event: EventEnvelope, h=handler) -> None:
+                    # EventClient already deserializes to EventEnvelope
                     await h(event, self._context)
         
         # Create context with clients
@@ -411,25 +414,43 @@ class Agent(ABC):
             except Exception as e:
                 logger.warning(f"Failed to register event definition: {e}")
 
-        success = await self.context.registry.register(
+        # Build AgentDefinition from config
+        from soorma_common import AgentDefinition, AgentCapability
+        
+        # Convert capabilities to AgentCapability objects
+        structured_capabilities = []
+        for cap in self.config.capabilities:
+            if isinstance(cap, str):
+                structured_capabilities.append(
+                    AgentCapability(
+                        task_name=cap,
+                        description=f"Capability: {cap}",
+                        consumed_event="unknown",
+                        produced_events=[]
+                    )
+                )
+            elif isinstance(cap, AgentCapability):
+                structured_capabilities.append(cap)
+            elif isinstance(cap, dict):
+                structured_capabilities.append(AgentCapability(**cap))
+        
+        agent_def = AgentDefinition(
             agent_id=self.agent_id,
             name=self.name,
-            agent_type=self.config.agent_type,
-            capabilities=self.config.capabilities,
-            events_consumed=self.config.events_consumed,
-            events_produced=self.config.events_produced,
-            metadata={
-                "version": self.version,
-                "description": self.description,
-            },
+            description=self.description,
+            version=self.version,
+            capabilities=structured_capabilities,
+            consumed_events=self.config.events_consumed,
+            produced_events=self.config.events_produced
         )
         
-        if success:
+        try:
+            await self.context.registry.register_agent(agent_def)
             logger.info(f"✓ Registered {self.name} ({self.agent_id})")
-        else:
-            logger.warning(f"⚠ Failed to register with Registry (continuing in offline mode)")
-        
-        return success
+            return True
+        except Exception as e:
+            logger.warning(f"⚠ Failed to register with Registry: {e} (continuing in offline mode)")
+            return False
     
     async def _deregister_from_registry(self) -> None:
         """Deregister from the Registry service."""
@@ -437,7 +458,15 @@ class Agent(ABC):
             return
         
         logger.info(f"Deregistering {self.name} from Registry")
-        await self.context.registry.deregister(self.agent_id)
+        # Use DELETE endpoint directly
+        try:
+            response = await self.context.registry._client.delete(
+                f"{self.context.registry.base_url}/v1/agents/{self.agent_id}"
+            )
+            if response.status_code not in (200, 204):
+                logger.warning(f"Failed to deregister: HTTP {response.status_code}")
+        except Exception as e:
+            logger.warning(f"Failed to deregister: {e}")
     
     async def _start_heartbeat(self) -> None:
         """Start the heartbeat task."""
@@ -447,7 +476,15 @@ class Agent(ABC):
                 try:
                     await asyncio.sleep(self.config.heartbeat_interval)
                     if self._running:
-                        success = await self.context.registry.heartbeat(self.agent_id)
+                        # Send heartbeat via PUT endpoint
+                        try:
+                            response = await self.context.registry._client.put(
+                                f"{self.context.registry.base_url}/v1/agents/{self.agent_id}/heartbeat"
+                            )
+                            success = response.status_code == 200
+                        except Exception:
+                            success = False
+                        
                         if not success:
                             consecutive_failures += 1
                             logger.error(
@@ -506,7 +543,7 @@ class Agent(ABC):
         for handler_key in self._event_handlers.keys():
             if ":" in handler_key:
                 topic, _ = handler_key.split(":", 1)
-                topics.add(topic)
+                topics.add(topic)  # Already string from handler_key
         
         if not topics:
             logger.info("No topics to subscribe to")

@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
 
 
@@ -75,15 +76,15 @@ Your response:"""
         )
 
 
-@concierge.on_event("concierge.query", topic="action-requests")
-async def handle_concierge_query(event: Dict[str, Any], context: PlatformContext):
+@concierge.on_event("concierge.query", topic=EventTopic.ACTION_REQUESTS)
+async def handle_concierge_query(event: EventEnvelope, context: PlatformContext):
     """Handle queries about conversation history."""
-    data = event.get("data", {})
+    data = event.data or {}
     query = data.get("query", "")
     session_id = data.get("session_id")
     
-    tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-    user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
+    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
     
     print(f"\n🏨 Concierge Processing Query")
     print(f"   Session: {session_id}")
@@ -148,14 +149,16 @@ async def handle_concierge_query(event: Dict[str, Any], context: PlatformContext
     # Send response
     print(f"   ✓ Response ready")
     
-    await context.bus.publish(
-        event_type="chat.response",
-        topic="action-results",
+    # Extract response event from request (caller specifies expected response)
+    response_event_type = event.response_event or "concierge.response"
+    
+    await context.bus.respond(
+        event_type=response_event_type,
         data={
             "session_id": session_id,
-            "response": response,
-            "type": "concierge"
+            "response": response
         },
+        correlation_id=event.correlation_id,
         tenant_id=tenant_id,
         user_id=user_id,
     )

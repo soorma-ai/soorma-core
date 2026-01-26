@@ -4,7 +4,7 @@ import os
 from typing import Dict, Any, List
 from soorma import Planner
 from soorma.context import PlatformContext
-from soorma.ai.event_toolkit import EventToolkit
+from soorma_common.events import EventEnvelope, EventTopic
 from litellm import completion
 from llm_utils import get_llm_model
 
@@ -61,21 +61,7 @@ async def shutdown():
 MAX_TOTAL_ACTIONS = 10  # Maximum actions per goal to prevent infinite loops
 
 
-def format_events_for_llm(events: List[dict]) -> str:
-    """Format discovered events with their metadata for LLM reasoning."""
-    formatted = []
-    for e in events:
-        event_info = {
-            "event_name": e.get("name"),
-            "description": e.get("description"),
-            "purpose": e.get("purpose", "Not specified"),
-            "payload_schema": e.get("payload_fields", e.get("payload_schema", {})),
-        }
-        formatted.append(event_info)
-    return json.dumps(formatted, indent=2)
-
-
-async def get_next_action(trigger_context: str, workflow_data: dict, available_events: list, context: PlatformContext) -> Dict[str, Any]:
+async def get_next_action(trigger_context: str, workflow_data: dict, available_events: list, formatted_events: str, context: PlatformContext) -> Dict[str, Any]:
     """
     Asks LLM to decide the next action based on:
     - The trigger context (what just happened)
@@ -125,7 +111,7 @@ Your task: Analyze the current state and select the BEST next action from the di
 ## DISCOVERED AVAILABLE EVENTS
 These events were dynamically discovered from the registry. Each has metadata describing its purpose and required payload:
 
-{format_events_for_llm(available_events)}
+{formatted_events}
 
 ## YOUR TASK
 1. Analyze what data you have accumulated in the workflow state
@@ -265,10 +251,9 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
             metadata={"plan_id": plan_id, "status": "completed"}
         )
         
-        # Publish the fulfillment event
-        await context.bus.publish(
+        # Publish the fulfillment event (domain fact - BUSINESS_FACTS topic)
+        await context.bus.announce(
             event_type=FULFILLED_EVENT.event_name,
-            topic=FULFILLED_EVENT.topic,
             data={"result": result, "source": "Autonomous Orchestrator", "plan_id": plan_id}
         )
         
@@ -288,35 +273,38 @@ async def discover_and_decide(trigger_context: str, context: PlatformContext, pl
     # Retrieve workflow state from working memory
     workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
     
-    async with EventToolkit(context.registry.base_url) as toolkit:
-        # Discover all actionable events from the registry
-        events = await toolkit.discover_actionable_events(topic="action-requests")
-        
-        # Also include the fulfillment event as a possible action
-        events.append({
-            "name": FULFILLED_EVENT.event_name,
-            "description": FULFILLED_EVENT.description,
-            "purpose": "Deliver the final result to the user when the goal is fully addressed",
-            "topic": FULFILLED_EVENT.topic,
-            "payload_fields": {"result": {"type": "string", "description": "The final answer"}, 
-                             "source": {"type": "string", "description": "Source attribution"}}
-        })
-        
-        print(f"   🔍 Discovered {len(events)} events: {[e['name'] for e in events]}")
-        
-        decision = await get_next_action(trigger_context, workflow_state, events, context)
-        await execute_decision(decision, events, context, plan_id)
+    # Discover all actionable events from the registry using context.toolkit
+    events = await context.toolkit.discover_actionable_events(topic="action-requests")
+    
+    # Also include the fulfillment event as a possible action
+    events.append({
+        "name": FULFILLED_EVENT.event_name,
+        "description": FULFILLED_EVENT.description,
+        "purpose": "Deliver the final result to the user when the goal is fully addressed",
+        "topic": FULFILLED_EVENT.topic,
+        "payload_fields": {"result": {"type": "string", "description": "The final answer"}, 
+                         "source": {"type": "string", "description": "Source attribution"}}
+    })
+    
+    print(f"   🔍 Discovered {len(events)} events: {[e['name'] for e in events]}")
+    
+    # Format events for LLM consumption: EventDefinition → dict → text
+    event_dicts = context.toolkit.format_for_llm(events)
+    formatted_events = context.toolkit.format_as_prompt_text(event_dicts)
+    
+    decision = await get_next_action(trigger_context, workflow_state, events, formatted_events, context)
+    await execute_decision(decision, events, context, plan_id)
 
 
-@planner.on_event(GOAL_EVENT.event_name, topic="action-requests")
-async def handle_goal(event: dict, context: PlatformContext):
+@planner.on_event(GOAL_EVENT.event_name, topic=EventTopic.ACTION_REQUESTS)
+async def handle_goal(event: EventEnvelope, context: PlatformContext):
     """Handle new goal - can be part of multi-turn conversation."""
-    print(f"\n📋 Planner received GOAL: {event.get('id')}")
-    data = event.get("data", {})
+    print(f"\n📋 Planner received GOAL: {event.id}")
+    data = event.data or {}
     
     # Extract plan_id from goal payload (client provides for multi-turn conversations)
     # Fallback to event ID for backward compatibility
-    plan_id = data.get('plan_id', event.get('id'))
+    plan_id = data.get('plan_id', event.id)
     print(f"   Using plan_id: {plan_id}")
     
     # Log goal to episodic memory
@@ -380,14 +368,14 @@ Choose the appropriate action based on your analysis of the user's intent."""
     await discover_and_decide(trigger_context, context, plan_id)
 
 
-@planner.on_event(RESEARCH_RESULT_EVENT.event_name, topic="action-results")
-async def handle_research_result(event: dict, context: PlatformContext):
+@planner.on_event(RESEARCH_RESULT_EVENT.event_name, topic=EventTopic.ACTION_RESULTS)
+async def handle_research_result(event: EventEnvelope, context: PlatformContext):
     """Handle research completion - store results and decide next step."""
-    print(f"\n📋 Planner received RESEARCH RESULT: {event.get('id')}")
-    data = event.get("data", {})
+    print(f"\n📋 Planner received RESEARCH RESULT: {event.id}")
+    data = event.data or {}
     
     # Extract plan_id - should be propagated from original request
-    plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
+    plan_id = data.get('plan_id', data.get('original_request_id', event.id))
     
     # 1. SEMANTIC MEMORY: Store research summary for future cross-plan reuse
     #    Any future workflow can find this via semantic search
@@ -395,7 +383,7 @@ async def handle_research_result(event: dict, context: PlatformContext):
     if research_summary:
         await context.memory.store_knowledge(
             content=research_summary,
-            metadata={"event_id": event.get('id'), "plan_id": plan_id, "source_url": data.get('source_url')}
+            metadata={"event_id": event.id, "plan_id": plan_id, "source_url": data.get('source_url')}
         )
     
     # 2. WORKING MEMORY: Store full structured data in plan-scoped workflow state
@@ -409,14 +397,14 @@ async def handle_research_result(event: dict, context: PlatformContext):
     await discover_and_decide(trigger_context, context, plan_id)
 
 
-@planner.on_event(ADVICE_RESULT_EVENT.event_name, topic="action-results")
-async def handle_advice_result(event: dict, context: PlatformContext):
+@planner.on_event(ADVICE_RESULT_EVENT.event_name, topic=EventTopic.ACTION_RESULTS)
+async def handle_advice_result(event: EventEnvelope, context: PlatformContext):
     """Handle draft completion - store draft and decide next step."""
-    print(f"\n📋 Planner received DRAFT RESULT: {event.get('id')}")
-    data = event.get("data", {})
+    print(f"\n📋 Planner received DRAFT RESULT: {event.id}")
+    data = event.data or {}
     
     # Extract plan_id - should be propagated from original request
-    plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
+    plan_id = data.get('plan_id', data.get('original_request_id', event.id))
     
     # Update workflow state in working memory
     workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}
@@ -437,14 +425,14 @@ IMPORTANT: Before delivering content to users, it should be validated/fact-check
     await discover_and_decide(trigger_context, context, plan_id)
 
 
-@planner.on_event(VALIDATION_RESULT_EVENT.event_name, topic="action-results")
-async def handle_validation_result(event: dict, context: PlatformContext):
+@planner.on_event(VALIDATION_RESULT_EVENT.event_name, topic=EventTopic.ACTION_RESULTS)
+async def handle_validation_result(event: EventEnvelope, context: PlatformContext):
     """Handle validation result - decide whether to retry or complete."""
-    print(f"\n📋 Planner received VALIDATION RESULT: {event.get('id')}")
-    data = event.get("data", {})
+    print(f"\n📋 Planner received VALIDATION RESULT: {event.id}")
+    data = event.data or {}
     
     # Extract plan_id - should be propagated from original request
-    plan_id = data.get('plan_id', data.get('original_request_id', event.get('id')))
+    plan_id = data.get('plan_id', data.get('original_request_id', event.id))
     
     # Update workflow state in working memory
     workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {"action_history": []}

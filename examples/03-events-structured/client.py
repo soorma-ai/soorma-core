@@ -9,6 +9,7 @@ Each ticket will be analyzed by the LLM to determine the best routing.
 import sys
 import asyncio
 from soorma import EventClient
+from soorma_common.events import EventTopic
 
 
 SAMPLE_TICKETS = [
@@ -69,13 +70,13 @@ async def create_ticket(description: str, priority: str = "normal", customer: st
     print()
     
     # Connect to platform
-    await client.connect(topics=["action-requests"])
+    await client.connect(topics=[])
     
     # Publish ticket creation event (business fact)
     print("📤 Publishing ticket.created event...")
     await client.publish(
         event_type="ticket.created",
-        topic="business-facts",
+        topic=EventTopic.BUSINESS_FACTS,
         data={
             "ticket_id": ticket_id,
             "customer": customer,

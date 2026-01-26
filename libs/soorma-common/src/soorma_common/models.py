@@ -61,6 +61,18 @@ class AgentDefinition(BaseDTO):
         description="[DERIVED] List of all event names this agent produces (union of all capability produced_events). "
                     "This field is automatically populated from capabilities if not provided."
     )
+    
+    def __init__(self, version: str = "1.0.0", **data):
+        """Initialize AgentDefinition with version appended to name.
+        
+        Args:
+            version: Version string to append to name (default: "1.0.0")
+            **data: Other fields including name, agent_id, description, etc.
+        """
+        # Append version to name only if name doesn't already have a version suffix
+        if "name" in data and ":" not in data["name"]:
+            data["name"] = f"{data['name']}:{version}"
+        super().__init__(**data)
 
 
 class AgentRegistrationRequest(BaseDTO):

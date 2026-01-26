@@ -8,6 +8,7 @@ This simulates an order service publishing events in an order workflow.
 
 import asyncio
 from soorma import EventClient
+from soorma_common.events import EventTopic
 
 
 async def publish_order_workflow():
@@ -33,7 +34,7 @@ async def publish_order_workflow():
     print()
     await client.publish(
         event_type="order.placed",
-        topic="business-facts",
+        topic=EventTopic.BUSINESS_FACTS,
         data={
             "order_id": "ORD-001",
             "customer": "Alice",

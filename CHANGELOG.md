@@ -5,6 +5,92 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-01-26
+
+### Added
+- **SDK - EventToolkit Integration**: EventToolkit now available via `context.toolkit`
+  - No `async with` needed - toolkit shares context's registry client
+  - `discover_actionable_events()`: Find events consumed by active agents
+  - `format_for_llm()`: Convert EventDefinitions to LLM-friendly dicts
+  - `format_as_prompt_text()`: Generate formatted text for LLM prompts
+  - Enables dynamic event discovery in planners without manual async context management
+- **SDK - EventEnvelope Strict Typing**: Handlers now receive strongly-typed EventEnvelope objects
+  - All event handlers receive `EventEnvelope` instead of `dict`
+  - Type-safe access to event fields: `event.data`, `event.correlation_id`, `event.tenant_id`, `event.user_id`
+  - EventClient automatically deserializes incoming events to EventEnvelope
+  - Added `user_id` field to EventEnvelope for user-specific event routing
+- **SDK - EventTopic Enum**: Type-safe topic handling across all SDK methods
+  - EventClient.connect() and publish() accept `EventTopic` enum or strings
+  - BusClient.subscribe() accepts `EventTopic` enum or strings
+  - All examples updated to use `EventTopic.ACTION_REQUESTS`, `EventTopic.ACTION_RESULTS`, etc.
+  - Type hints and IDE autocomplete for all 8 Soorma topics
+- **Tests**: 12 new test files validating EventEnvelope and EventTopic changes
+  - `test_event_envelope_handlers.py`: EventEnvelope deserialization and handler typing
+  - `test_on_event_decorator.py`: EventTopic enum validation
+  - Updated 15+ existing test files for EventEnvelope compatibility
+
+### Changed
+- **SDK - BREAKING: Event Handler Signature**: All event handlers must accept EventEnvelope
+  - Before: `async def handler(event: Dict[str, Any], context: PlatformContext)`
+  - After: `async def handler(event: EventEnvelope, context: PlatformContext)`
+  - Migration: Update type hints and change `event.get("data")` → `event.data or {}`
+  - Migration: Change `event.get("correlation_id")` → `event.correlation_id`
+- **SDK - BREAKING: RegistryClient Refactored**: Now uses full RegistryClient from soorma.registry.client
+  - `register()` → `register_agent(agent: AgentDefinition)`
+  - `deregister()` → Direct HTTP DELETE call
+  - `heartbeat()` → Direct HTTP PUT call
+  - All methods use proper Pydantic models (AgentDefinition, EventDefinition)
+- **SDK - Agent Base Class**: Enhanced initialization with AgentDefinition
+  - Converts string capabilities to AgentCapability objects automatically
+  - Appends version to agent name (e.g., "my-agent:1.0.0")
+  - Uses `register_agent()` with structured AgentDefinition
+- **SDK - BusClient Response Methods**: Clarified request/response patterns
+  - `request()`: Publishes to action-requests with response_event (request/response pattern)
+  - `respond()`: Publishes to action-results with correlation_id (completes request)
+  - `announce()`: Publishes to business-facts (fire-and-forget)
+- **SDK - CLI Templates**: Updated `soorma init` templates for EventEnvelope pattern
+  - Worker template uses `EventEnvelope` and `EventTopic.ACTION_REQUESTS`
+  - Tool template uses `EventEnvelope` and `EventTopic.ACTION_REQUESTS`
+  - Test templates validate `context.bus.publish()` calls instead of return values
+  - Removed obsolete `TaskContext` and `ToolRequest` imports
+
+### Fixed
+- **Example 06 - Router Orchestration Pattern**: Fixed client response handling
+  - Router now stores client's correlation_id and response_event in working memory
+  - Worker handlers (knowledge.stored, question.answered, concierge.response) retrieve client info
+  - Workers respond to original CLIENT using client's response_event (not intermediate events)
+  - Demonstrates proper orchestrator pattern with state management
+- **Example 06 - RAG Agent**: Fixed dual-context retrieval with correct SDK methods
+  - Uses `context.memory.get_recent_history()` for episodic context
+  - Uses `context.memory.search_knowledge()` for semantic context
+  - Fixed response structure to match router's expectations
+- **research-advisor Example**: Updated all agents for EventEnvelope and SDK correctness
+  - Planner uses `context.toolkit.discover_actionable_events()` without async with
+  - Planner uses `context.toolkit.format_for_llm()` and `format_as_prompt_text()`
+  - All workers use `bus.respond()` with correlation_id propagation
+  - All handlers use EventEnvelope with proper type hints
+- **All Examples**: Corrected SDK method usage patterns
+  - Example 06: Router uses `bus.request()` for worker coordination
+  - Example 06: Workers use `bus.respond()` to complete requests
+  - research-advisor: Workers use `bus.respond()` instead of `bus.publish()`
+  - All examples: EventTopic enum instead of string literals
+
+### Documentation
+- **README Improvements**: Comprehensive documentation updates across Examples 01-06
+  - Streamlined all example READMEs to focus on learning objectives over implementation details
+  - Abbreviated code samples while maintaining SDK accuracy and key concepts
+  - Added "How it applies concepts" sections emphasizing conceptual understanding
+  - Reduced documentation length by ~25% overall while improving clarity:
+    - Example 01: 168 → 123 lines (27% reduction)
+    - Example 04: 427 → 310 lines (27% reduction)
+    - Example 05: 543 → 365 lines (33% reduction)
+    - Example 06: 478 → 399 lines (17% reduction)
+  - Emphasized that full code is available in Python files, READMEs teach concepts
+- **Version Alignment**: Updated all components to 0.7.3
+  - SDK (soorma-core): 0.7.3
+  - Common library (soorma-common): 0.7.3
+  - All services (memory, registry, event-service): 0.7.3
+
 ## [0.7.2] - 2026-01-23
 
 ### Changed

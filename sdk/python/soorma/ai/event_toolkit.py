@@ -15,6 +15,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from soorma.registry.client import RegistryClient
 from soorma_common import EventDefinition
+from soorma_common.events import EventTopic
 from soorma.utils.schema_utils import (
     create_event_models,
     get_schema_field_names,
@@ -41,25 +42,28 @@ class EventToolkit:
         ...     )
     """
     
-    def __init__(self, registry_url: str = "http://localhost:8000"):
+    def __init__(self, registry_url: str = "http://localhost:8000", registry_client: Optional[RegistryClient] = None):
         """
         Initialize the toolkit.
         
         Args:
             registry_url: Registry service URL (default: http://localhost:8000)
+            registry_client: Optional RegistryClient to reuse (shares HTTP session with context)
         """
         self.registry_url = registry_url
-        self._client: Optional[RegistryClient] = None
+        self._client: Optional[RegistryClient] = registry_client
+        self._owns_client = registry_client is None  # Track if we own the client lifecycle
     
     async def __aenter__(self):
-        """Async context manager entry."""
-        self._client = RegistryClient(base_url=self.registry_url)
-        await self._client.__aenter__()
+        """Async context manager entry - only creates client if not shared."""
+        if self._owns_client and not self._client:
+            self._client = RegistryClient(base_url=self.registry_url)
+            await self._client.__aenter__()
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        if self._client:
+        """Async context manager exit - only closes client if we created it."""
+        if self._owns_client and self._client:
             await self._client.__aexit__(exc_type, exc_val, exc_tb)
     
     def _format_event_descriptor(self, event: EventDefinition) -> Dict[str, Any]:
@@ -91,28 +95,31 @@ class EventToolkit:
 
     async def discover_events(
         self,
-        topic: Optional[str] = None,
+        topic: Optional[EventTopic] = None,
         event_name_pattern: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[EventDefinition]:
         """
         Discover available events with their schemas.
         
-        Returns a simplified list of events with metadata that AI agents
-        can understand and reason about.
+        Returns strongly-typed EventDefinition objects for type safety.
+        Use format_for_llm() to convert to LLM-friendly format.
         
         Args:
             topic: Optional topic filter (e.g., "action-requests", "business-facts")
             event_name_pattern: Optional pattern to match in event names
         
         Returns:
-            List of event descriptors with schemas in AI-friendly format
+            List of EventDefinition objects
         """
         if not self._client:
-            raise RuntimeError("Toolkit must be used as async context manager")
+            raise RuntimeError(
+                "Toolkit must be used as async context manager or initialized with registry_client. "
+                "When using context.toolkit, no async with is needed."
+            )
         
         # Get events from registry
         if topic:
-            all_events = await self._client.get_events_by_topic(topic)
+            all_events = await self._client.get_events_by_topic(topic.value)
         else:
             all_events = await self._client.get_all_events()
         
@@ -123,10 +130,9 @@ class EventToolkit:
                 if event_name_pattern.lower() in e.event_name.lower()
             ]
             
-        # Convert to AI-friendly format
-        return [self._format_event_descriptor(e) for e in all_events]
+        return all_events
 
-    async def discover_actionable_events(self, topic: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def discover_actionable_events(self, topic: Optional[EventTopic] = None) -> List[EventDefinition]:
         """
         Discover events that are currently consumed by active agents.
         
@@ -137,7 +143,7 @@ class EventToolkit:
             topic: Optional topic filter
             
         Returns:
-            List of event descriptors for actionable events
+            List of EventDefinition objects for actionable events
         """
         if not self._client:
             raise RuntimeError("Toolkit must be used as async context manager")
@@ -156,19 +162,19 @@ class EventToolkit:
             
         # 3. Get details for these events
         if topic:
-            all_events = await self._client.get_events_by_topic(topic)
+            all_events = await self._client.get_events_by_topic(topic.value)
         else:
             all_events = await self._client.get_all_events()
             
-        # 4. Filter and format
+        # 4. Filter to actionable events
         actionable_events = [
             e for e in all_events 
             if e.event_name in consumed_event_names
         ]
         
-        return [self._format_event_descriptor(e) for e in actionable_events]
+        return actionable_events
 
-    async def get_event_info(self, event_name: str) -> Optional[Dict[str, Any]]:
+    async def get_event_info(self, event_name: str) -> Optional[EventDefinition]:
         """
         Get detailed information about a specific event.
         
@@ -176,16 +182,72 @@ class EventToolkit:
             event_name: Name of the event
             
         Returns:
-            Detailed event info including full schema, or None if not found
+            EventDefinition object, or None if not found
         """
         if not self._client:
             raise RuntimeError("Toolkit must be used as async context manager")
             
-        event = await self._client.get_event(event_name)
-        if not event:
-            return None
+        return await self._client.get_event(event_name)
+    
+    def format_for_llm(self, events: List[EventDefinition]) -> List[Dict[str, Any]]:
+        """
+        Format EventDefinition objects for LLM consumption.
+        
+        Converts strongly-typed EventDefinition objects into simplified
+        dictionaries with computed fields that LLMs can easily reason about.
+        
+        Args:
+            events: List of EventDefinition objects
             
-        return self._format_event_descriptor(event)
+        Returns:
+            List of LLM-friendly event descriptor dictionaries
+        """
+        return [self._format_event_descriptor(e) for e in events]
+    
+    def format_as_prompt_text(
+        self,
+        events: List[Dict[str, Any]],
+        include_metadata: bool = True,
+        numbered: bool = True
+    ) -> str:
+        """
+        Format event dictionaries as human-readable text for LLM prompts.
+        
+        This method takes event dictionaries (from format_for_llm) and creates
+        nicely formatted text suitable for injecting into LLM prompts.
+        
+        Args:
+            events: Event dictionaries (from format_for_llm)
+            include_metadata: Include metadata like when_to_use guidance
+            numbered: Add numbering (1., 2., etc.)
+            
+        Returns:
+            Formatted string ready for prompt injection
+            
+        Example:
+            >>> definitions = await toolkit.discover_events(topic="action-requests")
+            >>> dicts = toolkit.format_for_llm(definitions)
+            >>> prompt_text = toolkit.format_as_prompt_text(dicts)
+            >>> # Use in prompt: f"Available actions:\n{prompt_text}"
+        """
+        formatted = []
+        for i, event in enumerate(events, 1):
+            prefix = f"{i}. " if numbered else ""
+            lines = [
+                f"{prefix}**{event['name']}**",
+                f"   Description: {event['description']}"
+            ]
+            
+            # Include metadata guidance if available
+            if include_metadata:
+                metadata = event.get("metadata", {})
+                when_to_use = metadata.get("when_to_use")
+                if when_to_use:
+                    lines.append(f"   When to use: {when_to_use}")
+            
+            formatted.append("\n".join(lines))
+        
+        return "\n".join(formatted)
 
     async def create_payload(
         self, 
@@ -288,7 +350,7 @@ class EventToolkit:
 async def discover_events_simple(
     topic: Optional[str] = None,
     registry_url: str = "http://localhost:8000"
-) -> List[Dict[str, Any]]:
+) -> List[EventDefinition]:
     """One-shot event discovery."""
     async with EventToolkit(registry_url) as toolkit:
         return await toolkit.discover_events(topic)
@@ -317,7 +379,7 @@ async def create_event_payload_simple(
 async def get_event_info_simple(
     event_name: str,
     registry_url: str = "http://localhost:8000"
-) -> Optional[Dict[str, Any]]:
+) -> Optional[EventDefinition]:
     """One-shot event info retrieval."""
     async with EventToolkit(registry_url) as toolkit:
         return await toolkit.get_event_info(event_name)

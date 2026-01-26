@@ -8,7 +8,7 @@ verifies that it automatically re-registers itself.
 
 import pytest
 import asyncio
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 
 
 @pytest.mark.asyncio
@@ -39,32 +39,37 @@ async def test_agent_heartbeat_auto_recovery_integration():
     heartbeat_results = []
     
     # Mock the registry client methods
-    async def mock_register(*args, **kwargs):
-        registration_attempts.append(("register", args, kwargs))
-        return True  # Registration succeeds
-    
-    async def mock_heartbeat(agent_id):
+    async def mock_register_agent(*args, **kwargs):
+        registration_attempts.append(("register_agent", args, kwargs))
+        from soorma_common import AgentRegistrationResponse
+        return AgentRegistrationResponse(agent_id="test", success=True, message="registered")
+
+    async def mock_heartbeat_call(url):
         # First 2 heartbeats succeed, then fail, then succeed again
         call_count = len(heartbeat_results)
         if call_count < 2:
-            result = True  # Success
+            result = 200  # Success
         elif call_count < 4:
-            result = False  # Failure (agent deleted)
+            result = 404  # Failure (agent deleted)
         else:
-            result = True  # Success after recovery
+            result = 200  # Success after recovery
         
         heartbeat_results.append((call_count, result))
-        return result
-    
+        response = MagicMock()
+        response.status_code = result
+        return response
     # Patch the registry client at the point of use
     with patch('soorma.context.RegistryClient') as MockRegistryClient:
         mock_registry_instance = AsyncMock()
-        mock_registry_instance.register = mock_register
-        mock_registry_instance.heartbeat = mock_heartbeat
+        mock_registry_instance.register_agent = mock_register_agent
+        mock_registry_instance._client = AsyncMock()
+        mock_registry_instance._client.put = mock_heartbeat_call
+        mock_registry_instance._client.delete = AsyncMock()
+        mock_registry_instance.base_url = "http://test"
         mock_registry_instance.register_event = AsyncMock(return_value=True)
-        mock_registry_instance.deregister = AsyncMock(return_value=True)
         mock_registry_instance.close = AsyncMock()
         
+        # Make the patched class return our mock instance
         MockRegistryClient.return_value = mock_registry_instance
         
         # Mock the event client to avoid actual NATS connections
@@ -92,7 +97,11 @@ async def test_agent_heartbeat_auto_recovery_integration():
                 for i in range(6):  # Run 6 iterations
                     await asyncio.sleep(0.1)  # Fast iterations for testing
                     if worker._running:
-                        success = await worker.context.registry.heartbeat(worker.agent_id)
+                        # Direct HTTP heartbeat call (matches agent implementation)
+                        response = await mock_registry_instance._client.put(
+                            f"{mock_registry_instance.base_url}/v1/agents/{worker.agent_id}/heartbeat"
+                        )
+                        success = response.status_code == 200
                         if not success:
                             consecutive_failures += 1
                             # Trigger re-registration
@@ -121,12 +130,12 @@ async def test_agent_heartbeat_auto_recovery_integration():
             )
             
             # Verify heartbeat failure detection and recovery
-            failures = [r for r in heartbeat_results if not r[1]]
+            failures = [r for r in heartbeat_results if r[1] != 200]
             assert len(failures) >= 2, f"Expected at least 2 failures, got {len(failures)}"
             
             successes_after_failure = [
                 r for r in heartbeat_results 
-                if r[0] > 3 and r[1]  # Successes after the failure period
+                if r[0] > 3 and r[1] == 200  # Successes after the failure period
             ]
             assert len(successes_after_failure) >= 1, (
                 "Expected heartbeats to succeed after recovery"

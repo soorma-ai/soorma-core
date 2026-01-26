@@ -39,6 +39,8 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from uuid import uuid4
 
+from soorma_common.events import EventEnvelope, EventTopic
+
 from .base import Agent
 from ..context import PlatformContext
 
@@ -198,8 +200,8 @@ class Worker(Agent):
     
     def _register_action_request_handler(self) -> None:
         """Register the main action.request event handler."""
-        @self.on_event("action.request", topic="action-requests")
-        async def handle_action_request(event: Dict[str, Any], context: PlatformContext) -> None:
+        @self.on_event("action.request", topic=EventTopic.ACTION_REQUESTS)
+        async def handle_action_request(event: EventEnvelope, context: PlatformContext) -> None:
             await self._handle_action_request(event, context)
     
     def on_task(self, task_name: str) -> Callable[[TaskHandler], TaskHandler]:
@@ -234,11 +236,11 @@ class Worker(Agent):
     
     async def _handle_action_request(
         self,
-        event: Dict[str, Any],
+        event: EventEnvelope,
         context: PlatformContext,
     ) -> None:
         """Handle an incoming action.request event."""
-        data = event.get("data", {})
+        data = event.data or {}
         
         task_name = data.get("task_name")
         assigned_to = data.get("assigned_to")

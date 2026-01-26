@@ -2,6 +2,7 @@ import asyncio
 import sys
 import uuid
 from soorma import EventClient
+from soorma_common.events import EventEnvelope, EventTopic
 from events import GOAL_EVENT, FULFILLED_EVENT
 
 async def interactive_cli():
@@ -20,9 +21,9 @@ async def interactive_cli():
     # Shared event to signal completion of a request
     request_completed = asyncio.Event()
     
-    @client.on_event(FULFILLED_EVENT.event_name, topic="action-results")
-    async def on_fulfilled(event):
-        data = event.get("data", {})
+    @client.on_event(FULFILLED_EVENT.event_name, topic=EventTopic.ACTION_RESULTS)
+    async def on_fulfilled(event: EventEnvelope):
+        data = event.data or {}
         print(f"\n🎉 CLIENT RECEIVED FINAL RESULT:")
         print(f"   Result: {data.get('result')}")
         print(f"   Source: {data.get('source')}")

@@ -1,7 +1,7 @@
 """
 Client library for interacting with the Registry Service.
 """
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 import httpx
 from soorma_common import (
     EventDefinition,

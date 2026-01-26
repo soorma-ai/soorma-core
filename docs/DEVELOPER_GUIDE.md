@@ -143,9 +143,8 @@ Integrate `soorma-core` into existing Python applications.
 ### 2.2 Example Integration
 
 ```python
-from soorma import Worker
-from soorma.context import PlatformContext
-from soorma_common import EventDefinition, EventTopic
+from soorma import Worker, PlatformContext
+from soorma_common import EventDefinition, EventTopic, EventEnvelope
 
 # Define events
 DATA_RECEIVED = EventDefinition(
@@ -171,15 +170,22 @@ worker = Worker(
     events_produced=[DATA_PROCESSED]
 )
 
-@worker.on_event("data.received")
-async def process_data(event: dict, context: PlatformContext):
-    # Your processing logic
-    result = process(event["data"])
+@worker.on_event("data.received", topic=EventTopic.BUSINESS_FACTS)
+async def process_data(event: EventEnvelope, context: PlatformContext):
+    # Access event data
+    data = event.data or {}
     
+    # Your processing logic
+    result = process(data)
+    
+    # Publish result with proper topic enum
     await context.bus.publish(
         event_type="data.processed",
-        topic="action-results",
-        data={"result": result}
+        topic=EventTopic.ACTION_RESULTS,
+        data={"result": result},
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
     )
 
 # Run the worker

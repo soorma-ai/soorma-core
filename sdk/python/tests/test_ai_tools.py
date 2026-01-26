@@ -133,9 +133,11 @@ class TestExecuteAITool:
         monkeypatch.setattr(RegistryClient, "__init__", mock_init)
         monkeypatch.setattr(RegistryClient, "__aenter__", mock_aenter)
         
+        from soorma_common.events import EventTopic
+
         result = await execute_ai_tool(
             "discover_events",
-            {"topic": "test-topic"}
+            {"topic": EventTopic.ACTION_REQUESTS}
         )
         
         assert result["success"] is True

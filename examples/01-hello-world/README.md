@@ -20,16 +20,15 @@ The Worker pattern is a simple way to build reactive agents in Soorma. A Worker:
 4. Processes the request
 5. Sends response using `context.bus.respond()` convenience method
 
-**Key advantage**: The `respond()` method is semantically correct for request/response patterns and cleaner than using low-level `publish()` directly.
+**Key advantage**: The `respond()` method is semantically correct for request/response patterns - it knows to publish responses to the `action-results` topic and requires a correlation_id to link responses to their requests.
 
 ## Code Walkthrough
 
 ### Worker Agent ([worker.py](worker.py))
 
-```python
-from soorma import Worker
+The Worker demonstrates the basic pattern:
 
-# Create a Worker instance
+```python
 worker = Worker(
     name="hello-worker",
     description="A simple greeting agent",
@@ -38,57 +37,56 @@ worker = Worker(
     events_produced=["greeting.completed"],
 )
 
-# Register an event handler
-@worker.on_event("greeting.requested", topic="action-requests")
-async def handle_greeting(event, context):
-    name = event.get("data", {}).get("name", "World")
+@worker.on_event("greeting.requested", topic=EventTopic.ACTION_REQUESTS)
+async def handle_greeting(event: EventEnvelope, context: PlatformContext):
+    name = event.data.get("name", "World")
     greeting = f"Hello, {name}! 👋"
     
-    # Use respond() convenience method for request/response
+    # Extract response_event from request (caller specifies expected response)
+    response_event_type = event.response_event or "greeting.completed"
+    
+    # Respond using convenience method - cleaner than publish()
     await context.bus.respond(
-        event_type="greeting.completed",
+        event_type=response_event_type,
         data={"greeting": greeting, "name": name},
-        correlation_id=event.get("correlation_id"),
+        correlation_id=event.correlation_id,
     )
 ```
 
-**Key Points:**
-- `Worker()` creates an agent instance with a name and capabilities
-- `events_consumed` declares which events this agent listens to
-- `events_produced` declares which events this agent can publish
-- `@worker.on_event()` decorator registers handlers for specific event types
-- Event handlers receive the `event` data and `context` (platform services)
-- **Use `context.bus.respond()`** for request/response - cleaner than `publish()`
-  - Automatically publishes to `action-results` topic
-  - Requires correlation_id to link response to request
+**How it applies the concepts:**
+- `events_consumed` and `events_produced` declare the agent's interface
+- `@worker.on_event()` with `topic=EventTopic.ACTION_REQUESTS` subscribes to incoming requests
+- `event.response_event` lets clients specify what event type they expect as response
+- `context.bus.respond()` automatically publishes to `action-results` topic
+- `correlation_id` links the response back to the original request
 
 ### Client ([client.py](client.py))
 
-The client demonstrates how to send requests to a Worker:
+The Client demonstrates how to make requests and receive responses:
 
 ```python
-# Send greeting.requested event
+# Send request with response_event metadata
 await client.publish(
     event_type="greeting.requested",
-    topic="action-requests",
-    data={"name": "Alice"},
+    topic=EventTopic.ACTION_REQUESTS,
+    data={"name": name},
     correlation_id=str(uuid4()),
     response_event="greeting.completed",
     response_topic="action-results",
 )
 
-# Listen for greeting.completed response
-@client.on_event("greeting.completed", topic="action-results")
-async def on_response(event):
-    greeting = event["data"]["greeting"]
+# Listen for response
+@client.on_event("greeting.completed", topic=EventTopic.ACTION_RESULTS)
+async def on_response(event: EventEnvelope):
+    greeting = event.data.get("greeting")
     print(f"Got greeting: {greeting}")
 ```
 
-**Key Points:**
-1. Clients publish events with `response_event` and `response_topic` metadata
-2. Use `correlation_id` to link request and response
-3. Subscribe to response events on the response topic
-4. The Worker's `respond()` method automatically sends to the response topic
+**How it applies the concepts:**
+- `correlation_id` allows matching responses to requests
+- `response_event` and `response_topic` tell the Worker where/what to send back
+- Handler receives responses on the specified topic
+- This demonstrates the request/response handshake pattern
 
 ## Running the Example
 
@@ -159,21 +157,26 @@ Expected output:
 
 ## Key Takeaways
 
-✅ **Workers are reactive** - They respond to events, not direct API calls  
-✅ **Decorators make it simple** - `@worker.on_event()` handles subscription automatically  
-✅ **Context provides platform services** - Access Registry, Memory, Event Bus through `context`  
-✅ **Events are asynchronous** - Use `async/await` for all handlers  
+✅ **Workers are reactive** - They respond to events, not direct function calls  
+✅ **Event metadata is powerful** - `correlation_id`, `response_event`, and `response_topic` enable clean request/response patterns  
+✅ **Decorators simplify wiring** - `@worker.on_event()` automatically handles subscription and topic binding  
+✅ **Use the right method** - `respond()` is better than `publish()` for request/response because it's semantically clear  
+✅ **Context provides platform access** - Use `context.bus`, `context.memory`, `context.registry` for all platform operations  
+✅ **Everything is asynchronous** - All I/O operations use `async/await`  
 
 ## Common Mistakes to Avoid
 
-❌ **Forgetting to run `soorma dev`** - Agents need the platform services running  
-❌ **Not awaiting async calls** - All platform operations are async  
-❌ **Using the wrong event name** - Event names must match exactly  
+❌ **Confusing `publish()` with `respond()`** - Use `respond()` for request/response, not `publish()`  
+❌ **Forgetting correlation_id** - Without it, clients can't match responses to requests  
+❌ **Not extracting `response_event` from request** - Let clients specify where responses go  
+❌ **Not awaiting async calls** - All I/O operations must be `await`ed  
+❌ **Using wrong topic** - Requests go to `ACTION_REQUESTS`, responses to `ACTION_RESULTS`  
 
 ## Next Steps
 
-- **[02-events-simple](../02-events-simple/)** - Learn more about event publishing and subscribing patterns
-- **08-planner-worker-basic (coming soon)** - See the full Trinity pattern with Planner, Worker, and Tool agents
+- **[02-events-simple](../02-events-simple/)** - Learn more event publishing patterns and topics
+- **[04-memory-working](../04-memory-working/)** - See request/response in a more complex orchestration scenario
+- **[AGENT_PATTERNS](../../docs/AI_ASSISTANT_GUIDE.md)** - Understand Planner/Worker/Tool patterns for AI agents
 
 ---
 

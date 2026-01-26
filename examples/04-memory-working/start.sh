@@ -1,9 +1,9 @@
 #!/bin/bash
-# Start script for 05-memory-working example
+# Start script for 04-memory-working example
 
-echo "🚀 Starting 05-memory-working example..."
+echo "🚀 Starting 04-memory-working example..."
 echo ""
-echo "This example demonstrates working memory and multi-agent workflows."
+echo "This example demonstrates working memory with request/response pattern."
 echo ""
 
 # Check if platform services are running
@@ -21,10 +21,9 @@ fi
 echo "✓ Memory Service is running"
 echo ""
 
-echo "This example requires 3 agents running simultaneously:"
-echo "  1. Planner (initializes workflow)"
-echo "  2. Worker (executes tasks)"
-echo "  3. Coordinator (advances workflow)"
+echo "This example requires 2 agents running simultaneously:"
+echo "  1. Planner (orchestrates workflow, listens for responses)"
+echo "  2. Worker (executes tasks, responds to planner)"
 echo ""
 echo "Starting all agents..."
 echo ""
@@ -41,11 +40,6 @@ sleep 2
 echo "Starting worker..."
 python3 worker.py &
 WORKER_PID=$!
-sleep 2
-
-echo "Starting coordinator..."
-python3 coordinator.py &
-COORDINATOR_PID=$!
 sleep 2
 
 echo ""

@@ -6,9 +6,9 @@ Demonstrates how to subscribe to and handle multiple event types.
 This simulates various services reacting to events in an order workflow.
 """
 
-from typing import Any, Dict
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 # Create a Worker that handles multiple event types
@@ -30,21 +30,21 @@ worker = Worker(
 )
 
 
-@worker.on_event("order.placed", topic="business-facts")
-async def handle_order_placed(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def handle_order_placed(event: EventEnvelope, context: PlatformContext):
     """
     Handle when a new order is placed.
     This starts the workflow by reserving inventory.
     """
-    data = event.get("data", {})
+    data = event.data or {}
     order_id = data.get("order_id")
     items = data.get("items", [])
     total = data.get("total")
     
     # Extract metadata for propagation
-    correlation_id = event.get("correlation_id")
-    trace_id = event.get("trace_id") or event.get("id")  # Use event ID as trace root if no trace_id
-    parent_event_id = event.get("id")
+    correlation_id = event.correlation_id
+    trace_id = event.trace_id or event.id  # Use event ID as trace root if no trace_id
+    parent_event_id = event.id
     
     print("\n" + "=" * 60)
     print("📦 Order placed!")
@@ -75,20 +75,20 @@ async def handle_order_placed(event: Dict[str, Any], context: PlatformContext):
     print("   ✓ Event announced\n")
 
 
-@worker.on_event("inventory.reserved", topic="business-facts")
-async def handle_inventory_reserved(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("inventory.reserved", topic=EventTopic.BUSINESS_FACTS)
+async def handle_inventory_reserved(event: EventEnvelope, context: PlatformContext):
     """
     Handle when inventory has been reserved.
     This triggers payment processing.
     """
-    data = event.get("data", {})
+    data = event.data or {}
     order_id = data.get("order_id")
     items = data.get("items", [])
     
     # Extract metadata for propagation
-    correlation_id = event.get("correlation_id")
-    trace_id = event.get("trace_id")
-    parent_event_id = event.get("id")
+    correlation_id = event.correlation_id
+    trace_id = event.trace_id
+    parent_event_id = event.id
     
     print("\n" + "=" * 60)
     print("🔒 Inventory reserved!")
@@ -118,19 +118,19 @@ async def handle_inventory_reserved(event: Dict[str, Any], context: PlatformCont
     print("   ✓ Event announced\n")
 
 
-@worker.on_event("payment.completed", topic="business-facts")
-async def handle_payment_completed(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("payment.completed", topic=EventTopic.BUSINESS_FACTS)
+async def handle_payment_completed(event: EventEnvelope, context: PlatformContext):
     """
     Handle when payment has been completed.
     This finalizes the order.
     """
-    data = event.get("data", {})
+    data = event.data or {}
     order_id = data.get("order_id")
     
     # Extract metadata for propagation
-    correlation_id = event.get("correlation_id")
-    trace_id = event.get("trace_id")
-    parent_event_id = event.get("id")
+    correlation_id = event.correlation_id
+    trace_id = event.trace_id
+    parent_event_id = event.id
     
     print("\n" + "=" * 60)
     print("💳 Payment completed!")
@@ -159,15 +159,15 @@ async def handle_payment_completed(event: Dict[str, Any], context: PlatformConte
     print("   ✓ Event announced\n")
 
 
-@worker.on_event("order.completed", topic="business-facts")
-async def handle_order_completed(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("order.completed", topic=EventTopic.BUSINESS_FACTS)
+async def handle_order_completed(event: EventEnvelope, context: PlatformContext):
     """
     Handle order completion.
     This is the final step in the workflow.
     """
-    data = event.get("data", {})
+    data = event.data or {}
     order_id = data.get("order_id")
-    trace_id = event.get("trace_id")
+    trace_id = event.trace_id
     
     print("\n" + "=" * 60)
     print("🎉 Order workflow completed!")

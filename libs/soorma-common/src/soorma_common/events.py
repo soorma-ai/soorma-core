@@ -101,6 +101,10 @@ class EventEnvelope(BaseDTO):
         default=None,
         description="Tenant ID for multi-tenancy"
     )
+    user_id: Optional[str] = Field(
+        default=None,
+        description="User ID for user-specific events"
+    )
     session_id: Optional[str] = Field(
         default=None,
         description="Session ID for conversation/workflow correlation"
@@ -154,6 +158,8 @@ class EventEnvelope(BaseDTO):
             result["subject"] = self.subject
         if self.tenant_id:
             result["tenantid"] = self.tenant_id
+        if self.user_id:
+            result["userid"] = self.user_id
         if self.session_id:
             result["sessionid"] = self.session_id
         if self.topic:

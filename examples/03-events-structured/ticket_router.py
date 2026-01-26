@@ -19,6 +19,7 @@ import os
 from typing import Any, Dict
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from events import (
     TICKET_CREATED_EVENT,
     TIER1_ROUTE_EVENT,
@@ -28,7 +29,6 @@ from events import (
     AUTOCLOSE_EVENT,
 )
 from llm_utils import (
-    discover_events,
     select_event_with_llm,
     validate_and_publish,
 )
@@ -84,8 +84,8 @@ Return your decision as JSON:
 """
 
 
-@worker.on_event("ticket.created", topic="business-facts")
-async def route_ticket(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("ticket.created", topic=EventTopic.BUSINESS_FACTS)
+async def route_ticket(event: EventEnvelope, context: PlatformContext):
     """
     Main event handler: Routes incoming tickets using LLM reasoning.
     
@@ -94,7 +94,7 @@ async def route_ticket(event: Dict[str, Any], context: PlatformContext):
     2. Let LLM select best option using domain-specific prompt
     3. Validate and publish the decision
     """
-    data = event.get("data", {})
+    data = event.data or {}
     ticket_id = data.get("ticket_id", "Unknown")
     description = data.get("description", "No description")
     
@@ -110,7 +110,7 @@ async def route_ticket(event: Dict[str, Any], context: PlatformContext):
     # Step 1: Discover available routing events (generic utility)
     print("🔍 Discovering routing options from Registry...")
     try:
-        events = await discover_events(context, topic="action-requests")
+        events = await context.toolkit.discover_actionable_events(topic=EventTopic.ACTION_REQUESTS)
         print(f"   Found {len(events)} routing options\n")
     except Exception as e:
         print(f"   ✗ Failed to discover events: {e}")
@@ -119,10 +119,14 @@ async def route_ticket(event: Dict[str, Any], context: PlatformContext):
     # Step 2: Use LLM to select the best event (generic utility + domain prompt)
     print("🤖 Analyzing ticket with LLM...")
     try:
+        # Format events for LLM consumption: EventDefinition → dict → text
+        event_dicts = context.toolkit.format_for_llm(events)
+        formatted_events = context.toolkit.format_as_prompt_text(event_dicts)
+        
         decision = await select_event_with_llm(
             prompt_template=TICKET_ROUTING_PROMPT,  # Agent-specific
             context_data=data,                      # Current ticket
-            events=events,                          # Discovered options
+            formatted_events=formatted_events,      # Formatted event options
             model=os.getenv("LLM_MODEL")            # Optional override
         )
         
@@ -150,42 +154,42 @@ async def route_ticket(event: Dict[str, Any], context: PlatformContext):
 
 
 # Demo handlers to show routing results
-@worker.on_event("ticket.route.tier1", topic="action-requests")
-async def handle_tier1_routing(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("ticket.route.tier1", topic=EventTopic.ACTION_REQUESTS)
+async def handle_tier1_routing(event: EventEnvelope, context: PlatformContext):
     """Handler to demonstrate the event was received."""
-    data = event.get("data", {})
+    data = event.data or {}
     print(f"\n🎯 Tier 1 received ticket: {data.get('ticket_id')}")
     print("   Assigning to general support queue...\n")
 
 
-@worker.on_event("ticket.route.tier2", topic="action-requests")
-async def handle_tier2_routing(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("ticket.route.tier2", topic=EventTopic.ACTION_REQUESTS)
+async def handle_tier2_routing(event: EventEnvelope, context: PlatformContext):
     """Handler to demonstrate the event was received."""
-    data = event.get("data", {})
+    data = event.data or {}
     print(f"\n🎯 Tier 2 received ticket: {data.get('ticket_id')}")
     print("   Assigning to technical specialist...\n")
 
 
-@worker.on_event("ticket.route.specialist", topic="action-requests")
-async def handle_specialist_routing(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("ticket.route.specialist", topic=EventTopic.ACTION_REQUESTS)
+async def handle_specialist_routing(event: EventEnvelope, context: PlatformContext):
     """Handler to demonstrate the event was received."""
-    data = event.get("data", {})
+    data = event.data or {}
     print(f"\n🎯 Specialist received ticket: {data.get('ticket_id')}")
     print("   Assigning to domain expert...\n")
 
 
-@worker.on_event("ticket.escalate.management", topic="action-requests")
-async def handle_management_escalation(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("ticket.escalate.management", topic=EventTopic.ACTION_REQUESTS)
+async def handle_management_escalation(event: EventEnvelope, context: PlatformContext):
     """Handler to demonstrate the event was received."""
-    data = event.get("data", {})
+    data = event.data or {}
     print(f"\n🚨 Management escalation for ticket: {data.get('ticket_id')}")
     print("   Notifying management team...\n")
 
 
-@worker.on_event("ticket.autoclose", topic="action-requests")
-async def handle_autoclose(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("ticket.autoclose", topic=EventTopic.ACTION_REQUESTS)
+async def handle_autoclose(event: EventEnvelope, context: PlatformContext):
     """Handler to demonstrate the event was received."""
-    data = event.get("data", {})
+    data = event.data or {}
     print(f"\n✅ Auto-closing ticket: {data.get('ticket_id')}")
     print(f"   Reason: {data.get('reason')}\n")
 

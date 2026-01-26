@@ -72,72 +72,64 @@ In this example, one worker handles all events for simplicity. Real systems woul
 
 ### Publisher ([publisher.py](publisher.py))
 
-The publisher demonstrates how to emit events to the platform:
+The publisher creates an EventClient and publishes the initial event:
 
 ```python
-from soorma import EventClient
-
 client = EventClient(agent_id="order-service", source="order-service")
-await client.connect()
+await client.connect(topics=[])  # Empty list since we only publish
 
-# Publish an event
 await client.publish(
     event_type="order.placed",
-    topic="business-facts",  # Domain events use business-facts topic
-    data={
-        "order_id": "ORD-001",
-        "items": ["laptop", "mouse"],
-        "total": 1500.00
-    }
+    topic=EventTopic.BUSINESS_FACTS,
+    data={"order_id": "ORD-001", "items": [...], "total": 1500.00},
 )
 ```
 
-**Key Points:**
-- `EventClient` is used for publishing and subscribing (not just for Workers)
-- Events have a `type` (what happened) and go to a `topic` (logical channel)
-- Data can be any JSON-serializable dictionary
-- Publishing is asynchronous
+**How it applies the concepts:**
+- `EventClient` is for publishing/subscribing (agents can be clients too)
+- `topic=EventTopic.BUSINESS_FACTS` indicates this is a domain event (not a command or request)
+- Data is any JSON-serializable dictionary
+- This single event triggers the entire event chain in the subscriber
 
 ### Subscriber ([subscriber.py](subscriber.py))
 
-The subscriber demonstrates multiple event handlers:
+The subscriber is a Worker with multiple event handlers that form an event chain:
 
 ```python
-from soorma import Worker
-
 worker = Worker(
     name="order-processor",
-    capabilities=["order-processing"],
-    events_consumed=["order.placed", "inventory.reserved", "payment.completed"],
-    events_produced=["inventory.reserve", "payment.process", "order.shipped"],
+    events_consumed=["order.placed", "inventory.reserved", "payment.completed", "order.completed"],
+    events_produced=["inventory.reserved", "payment.completed", "order.completed"],
 )
 
-@worker.on_event("order.placed", topic="business-facts")
-async def handle_order(event, context):
-    # Process order and publish next event
-    await context.bus.publish(
-        event_type="inventory.reserve",
-        topic="business-facts",
-        data={"order_id": event["data"]["order_id"]}
-    )
-
-@worker.on_event("inventory.reserved", topic="business-facts")
-async def handle_inventory(event, context):
-    # Continue the workflow
-    await context.bus.publish(
-        event_type="payment.process",
-        topic="business-facts",
-        data={"order_id": event["data"]["order_id"]}
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def handle_order_placed(event: EventEnvelope, context: PlatformContext):
+    # Extract event data and metadata
+    order_id = event.data.get("order_id")
+    trace_id = event.trace_id or event.id  # Start trace here if not already traced
+    
+    # Do work...
+    
+    # Announce next event with propagated metadata
+    await context.bus.announce(
+        event_type="inventory.reserved",
+        data={"order_id": order_id, ...},
+        correlation_id=event.correlation_id,
+        trace_id=trace_id,                    # Keep same trace throughout chain
+        parent_event_id=event.id,             # Track causality
     )
 ```
 
-**Key Points:**
-- `events_consumed` lists all event types this worker handles
-- `events_produced` lists all event types this worker can publish
-- Multiple `@worker.on_event()` decorators handle different events
-- Each handler can publish new events, creating a chain
-- One worker handles the entire flow (for simplicity in this example)
-- In a real system, different workers would handle different event types
+**How it applies the concepts:**
+- `events_consumed` and `events_produced` declare all events this worker handles
+- Multiple `@worker.on_event()` decorators handle different event types
+- **Metadata propagation is key**: Each handler extracts `trace_id` and passes it to the next announcement
+  - `trace_id` - Same throughout the chain (enables end-to-end traceability)
+  - `parent_event_id` - Points to the event that triggered this announcement (causality tracking)
+  - `correlation_id` - Groups related events (passed through unchanged)
+- `context.bus.announce()` publishes business facts (use for domain events, not requests)
+- Each handler's `announce()` call triggers the next handler's subscription
+- **In a real system**, different workers would handle different events (inventory service, payment service, etc.)
 
 ## Running the Example
 
@@ -209,7 +201,7 @@ Watch the subscriber terminal to see the event chain:
   order.placed → inventory.reserved → payment.completed → order.completed
 ```
 
-**Subscriber (watch the chain flow - each handler publishes the next event):**
+**Subscriber (watch the chain flow - each handler announces the next event):**
 ```
 ================================================================
 📦 Order placed!                           <-- 1. order.placed received
@@ -261,10 +253,11 @@ Watch the subscriber terminal to see the event chain:
 ```
 
 **Notice the patterns:** 
-1. Publisher sends **one** initial event (`order.placed`)
-2. Each handler does its work and **announces** the **next** event in the chain
-3. **Metadata flows through**: The same `trace_id` appears in every step - this creates end-to-end traceability
-4. Uses `announce()` not `publish()` - teaches the right abstraction for business facts
+1. Publisher sends **one** initial event (`order.placed`) using `client.publish()`
+2. Each handler does its work and **announces** the **next** event using `context.bus.announce()`
+3. **Metadata flows through**: The same `trace_id` and `correlation_id` appear in every step - creating end-to-end traceability
+4. **Causality tracking**: `parent_event_id` tracks which event triggered which
+5. Uses `announce()` not `publish()` for business facts - proper abstraction for domain events
 
 This is **event choreography** with **distributed tracing** - no central orchestrator, just services reacting to domain facts with full observability!
 
@@ -272,20 +265,23 @@ This is **event choreography** with **distributed tracing** - no central orchest
 
 ✅ **Events enable loose coupling** - Publishers don't know who's listening  
 ✅ **Event types identify what happened** - Use descriptive past-tense names like "order.placed"  
-✅ **Use high-level methods** - `announce()` for facts, `request()` for work (not low-level `publish()`)  
-✅ **Propagate metadata** - trace_id and parent_event_id create end-to-end traceability  
+✅ **Method matters** - `announce()` for business facts/domain events, `publish()` for commands/requests  
+✅ **Propagate metadata** - `trace_id` tracks causality, `correlation_id` groups related events, `parent_event_id` shows causality  
 ✅ **Event chains create workflows** - Handlers announce new events to continue processing  
 ✅ **Multiple handlers per agent** - One Worker can handle many event types  
 ✅ **Declarative contracts** - `events_consumed` and `events_produced` document agent behavior  
+✅ **Traceability** - All downstream events can reference the original trace for full observability  
 
 ## Common Patterns
 
 ### Fan-Out (different agents):
 ```python
+from soorma_common.events import EventTopic
+
 # When order.placed arrives, multiple services react:
-@worker1.on_event("order.placed", topic="business-facts")  # Inventory service
-@worker2.on_event("order.placed", topic="business-facts")  # Analytics service
-@worker3.on_event("order.placed", topic="business-facts")  # Notification service
+@worker1.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)  # Inventory service
+@worker2.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)  # Analytics service
+@worker3.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)  # Notification service
 ```
 
 ### Sequential Chain
@@ -297,13 +293,21 @@ order.placed → inventory.reserved → payment.completed → order.shipped
 ### Conditional Events
 Publish different event types based on conditions:
 ```python
-@worker.on_event("order.placed", topic="business-facts")
-async def handle_order(event, context):
-    if event["data"]["total"] > 1000:
-        await context.bus.publish("order.priority", "business-facts", ...)
-    else:
-        await context.bus.publish("order.standard", "business-fact
-        await context.bus.publish("order.standard", "orders", ...)
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def handle_order(event: EventEnvelope, context: PlatformContext):
+    data = event.data or {}
+    total = data.get("total", 0)
+    
+    # Announce different events based on logic
+    event_type = "order.priority" if total > 1000 else "order.standard"
+    
+    await context.bus.announce(
+        event_type=event_type,
+        data=data,
+        correlation_id=event.correlation_id,
+        trace_id=event.trace_id or event.id,
+        parent_event_id=event.id,
+    )
 ```
 
 ## Next Steps

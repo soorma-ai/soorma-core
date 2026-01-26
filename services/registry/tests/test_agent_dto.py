@@ -38,7 +38,8 @@ def test_agent_definition_creation():
     )
     
     assert agent.agent_id == "test-agent-v1"
-    assert agent.name == "Test Agent"
+    # Name now includes default version suffix
+    assert agent.name == "Test Agent:1.0.0"
     assert len(agent.capabilities) == 1
 
 
@@ -92,3 +93,68 @@ def test_agent_registration_request():
     request = AgentRegistrationRequest(agent=agent)
     
     assert request.agent.agent_id == "test-agent-v1"
+
+def test_agent_definition_version_appended_to_name():
+    """Test that version is appended to agent name."""
+    capability = AgentCapability(
+        task_name="perform_task",
+        description="Performs a task",
+        consumed_event="event.request",
+        produced_events=["event.response"]
+    )
+    
+    # Create with explicit version
+    agent = AgentDefinition(
+        agent_id="test-agent-v1",
+        name="Test Agent",
+        description="Test agent description",
+        capabilities=[capability],
+        version="2.0.0"
+    )
+    
+    # Name should have version appended
+    assert agent.name == "Test Agent:2.0.0"
+
+
+def test_agent_definition_default_version():
+    """Test that default version (1.0.0) is appended to name."""
+    capability = AgentCapability(
+        task_name="perform_task",
+        description="Performs a task",
+        consumed_event="event.request",
+        produced_events=["event.response"]
+    )
+    
+    # Create without explicit version (uses default "1.0.0")
+    agent = AgentDefinition(
+        agent_id="test-agent-v1",
+        name="Test Agent",
+        description="Test agent description",
+        capabilities=[capability]
+    )
+    
+    # Name should have default version appended
+    assert agent.name == "Test Agent:1.0.0"
+
+
+def test_agent_definition_no_double_versioning():
+    """Test that version is not appended twice if name already contains colon."""
+    capability = AgentCapability(
+        task_name="perform_task",
+        description="Performs a task",
+        consumed_event="event.request",
+        produced_events=["event.response"]
+    )
+    
+    # Simulate deserialization from registry (name already has version)
+    agent = AgentDefinition(
+        agent_id="test-agent-v1",
+        name="Test Agent:2.0.0",
+        description="Test agent description",
+        capabilities=[capability],
+        version="1.0.0"  # This should be ignored since name already has version
+    )
+    
+    # Name should NOT have double versioning
+    assert agent.name == "Test Agent:2.0.0"
+    assert agent.name.count(":") == 1

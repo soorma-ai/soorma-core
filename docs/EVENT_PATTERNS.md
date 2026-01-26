@@ -32,12 +32,17 @@ Events are the primary communication mechanism in Soorma. They enable:
 **Example:** [02-events-simple](../examples/02-events-simple/)
 
 ```python
-@worker.on_event("order.placed")
-async def handle_order(event, context):
+from soorma_common import EventEnvelope, EventTopic
+
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def handle_order(event: EventEnvelope, context):
     await context.bus.publish(
         event_type="inventory.reserve",
-        topic="business-facts",  # ← Use correct Soorma topic
-        data={...}
+        topic=EventTopic.ACTION_REQUESTS,
+        data=event.data,
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
     )
 ```
 
@@ -45,7 +50,7 @@ async def handle_order(event, context):
 - Event names are known at compile time
 - Fast - no discovery overhead
 - Best for stable, well-defined workflows
-- Must use valid Soorma topics
+- Uses EventTopic enum for strong typing
 
 ### 2. Structured Events
 
@@ -178,19 +183,29 @@ order.placed → inventory.reserved → payment.completed → order.shipped
 Publish different events based on conditions:
 
 ```python
-@worker.on_event("order.placed")
-async def route_order(event, context):
-    if event["data"]["total"] > 1000:
+from soorma_common import EventEnvelope, EventTopic
+
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def route_order(event: EventEnvelope, context):
+    data = event.data or {}
+    
+    if data.get("total", 0) > 1000:
         await context.bus.publish(
             event_type="order.priority.route",
-            topic="action-requests",
-            data=event["data"]
+            topic=EventTopic.ACTION_REQUESTS,
+            data=data,
+            correlation_id=event.correlation_id,
+            tenant_id=event.tenant_id,
+            user_id=event.user_id,
         )
     else:
         await context.bus.publish(
             event_type="order.standard.route",
-            topic="action-requests",
-            data=event["data"]
+            topic=EventTopic.ACTION_REQUESTS,
+            data=data,
+            correlation_id=event.correlation_id,
+            tenant_id=event.tenant_id,
+            user_id=event.user_id,
         )
 ```
 
@@ -201,28 +216,42 @@ async def route_order(event, context):
 RPC-style synchronous communication over events:
 
 ```python
+from soorma_common import EventEnvelope, EventTopic
+
 # Requester sends request and waits for correlated response
 response = await context.bus.request(
     event_type="tool.request",
+    topic=EventTopic.ACTION_REQUESTS,
     data={
         "tool": "calculator",
         "operation": "add",
-        "data": {"a": 5, "b": 3}
+        "a": 5,
+        "b": 3
     },
     timeout=30.0
 )
 print(f"Result: {response['result']}")  # 8
 
 # Responder handles request and publishes response with correlation_id
-@tool.on_invoke("add")
-async def add(request: ToolRequest, context: PlatformContext):
-    result = request.data["a"] + request.data["b"]
-    return {"result": result}  # SDK handles correlation
+@tool.on_event("tool.request", topic=EventTopic.ACTION_REQUESTS)
+async def add(event: EventEnvelope, context: PlatformContext):
+    data = event.data or {}
+    result = data.get("a", 0) + data.get("b", 0)
+    
+    # SDK handles correlation via response
+    await context.bus.publish(
+        event_type="tool.response",
+        topic=EventTopic.ACTION_RESULTS,
+        data={"result": result},
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
 ```
 
 **Use when:** Need immediate response from another agent
 
-**Note:** The SDK handles correlation IDs automatically. Tools publish to `action-results` topic with the correlation_id from the request.
+**Note:** The SDK handles correlation IDs automatically through the EventEnvelope. Responses should include the correlation_id from the request.
 
 ---
 

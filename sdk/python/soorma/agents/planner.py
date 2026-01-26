@@ -45,6 +45,8 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from uuid import uuid4
 
+from soorma_common.events import EventEnvelope, EventTopic
+
 from .base import Agent
 from ..context import PlatformContext
 
@@ -155,8 +157,8 @@ class Planner(Agent):
         
         @planner.on_goal("maintenance.goal")
         async def plan_maintenance(goal: Goal, context: PlatformContext) -> Plan:
-            # Query available workers
-            mechanics = await context.registry.find_all("vehicle_maintenance")
+            # Query available workers (placeholder - needs proper capability search endpoint)
+            # mechanics = await context.registry.query_agents(...)
             
             # Create plan
             return Plan(
@@ -232,8 +234,8 @@ class Planner(Agent):
             self._goal_handlers[goal_type] = func
             
             # Register as event handler for this goal type
-            @self.on_event(goal_type, topic="action-requests")
-            async def goal_event_handler(event: Dict[str, Any], context: PlatformContext) -> None:
+            @self.on_event(goal_type, topic=EventTopic.ACTION_REQUESTS)
+            async def goal_event_handler(event: EventEnvelope, context: PlatformContext) -> None:
                 await self._handle_goal_event(goal_type, event, context)
             
             logger.debug(f"Registered goal handler: {goal_type}")
@@ -243,7 +245,7 @@ class Planner(Agent):
     async def _handle_goal_event(
         self,
         goal_type: str,
-        event: Dict[str, Any],
+        event: EventEnvelope,
         context: PlatformContext,
     ) -> None:
         """Handle an incoming goal event."""
@@ -255,11 +257,11 @@ class Planner(Agent):
         # Create Goal from event
         goal = Goal(
             goal_type=goal_type,
-            data=event.get("data", {}),
-            goal_id=event.get("id", str(uuid4())),
-            correlation_id=event.get("correlation_id"),
-            session_id=event.get("session_id"),
-            tenant_id=event.get("tenant_id"),
+            data=event.data or {},
+            goal_id=event.id,
+            correlation_id=event.correlation_id,
+            session_id=event.session_id,
+            tenant_id=event.tenant_id,
         )
         
         try:

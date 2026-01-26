@@ -35,18 +35,24 @@ await context.bus.subscribe(topics=["action-requests"])
 
 ```python
 from soorma import Worker
+from soorma_common import EventEnvelope, EventTopic
 
 worker = Worker(name="task-processor")
 
-@worker.on_event("task.requested", topic="action-requests")
-async def handle_task(event, context):
+@worker.on_event("task.requested", topic=EventTopic.ACTION_REQUESTS)
+async def handle_task(event: EventEnvelope, context):
     # This handler will receive messages even if the worker was offline
     # when the messages were published
-    print(f"Processing task: {event['data']}")
-    await context.bus.respond(
+    data = event.data or {}
+    print(f"Processing task: {data}")
+    
+    await context.bus.publish(
         event_type="task.completed",
+        topic=EventTopic.ACTION_RESULTS,
         data={"status": "success"},
-        correlation_id=event["correlation_id"],
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
     )
 
 worker.run()
@@ -83,25 +89,27 @@ await bus.subscribe(
 ```python
 # Logger Agent - logs all events for audit
 from soorma import Agent
+from soorma_common import EventEnvelope, EventTopic
 
 logger_agent = Agent(name="event-logger")
 
-@logger_agent.on_event("order.placed", topic="business-facts")
-async def log_order(event, context):
-    print(f"[AUDIT LOG] Order placed: {event['data']}")
+@logger_agent.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def log_order(event: EventEnvelope, context):
+    print(f"[AUDIT LOG] Order placed: {event.data}")
     # Store in audit database
-    await context.memory.store("audit", event)
+    await context.memory.store("audit", event.model_dump(mode="json"))
 
 logger_agent.run()
 
 # Analytics Agent - tracks metrics on the same events
 analytics_agent = Agent(name="analytics")
 
-@analytics_agent.on_event("order.placed", topic="business-facts")
-async def track_metrics(event, context):
+@analytics_agent.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
+async def track_metrics(event: EventEnvelope, context):
     print(f"[ANALYTICS] Updating metrics for order")
     # Update analytics dashboard
-    await update_dashboard(event["data"])
+    data = event.data or {}
+    await update_dashboard(data)
 
 analytics_agent.run()
 ```

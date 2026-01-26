@@ -1,15 +1,15 @@
-# 04 - Working Memory (Plan State Management)
+# 04 - Working Memory (Distributed Request/Response Workflow)
 
-**Concepts:** Working memory, Plan-scoped state, Multi-agent collaboration, WorkflowState helper  
+**Concepts:** Working memory, Plan-scoped state, Distributed async workflow, Request/Response orchestration, WorkflowState helper  
 **Difficulty:** Intermediate  
 **Prerequisites:** [01-hello-world](../01-hello-world/), [02-events-simple](../02-events-simple/)
 
 ## What You'll Learn
 
-- How to share state between agents in a workflow
-- How to use WorkflowState helper for clean state management
-- When to use working memory vs other memory types
-- Plan-scoped data isolation
+- How to share plan-scoped state across distributed agents
+- How to use WorkflowState for clean, multi-tenant state management
+- How to orchestrate with Request/Response (no chaining)
+- Why working memory enables async, distributed workflows
 
 **Note:** This example uses a fixed 3-task workflow (research → draft → review) to demonstrate WorkflowState mechanics. For dynamic, LLM-based task generation from user goals, see example 08-planner-worker-basic (coming soon).
 
@@ -17,17 +17,18 @@
 
 **Multi-tenancy:**
 
-This example requires tenant_id and user_id to be provided at runtime when memory operations are invoked. In production, these typically come from the event envelope or authentication context. For this example, the client script includes them in the event payload, and the agents extract them from the event data.
+This example uses `tenant_id` and `user_id` from the event envelope (set by the client when publishing). Agents extract these IDs from the `EventEnvelope` and pass them to `WorkflowState` to ensure proper isolation.
 
 ## The Pattern
 
-**Working Memory** is for temporary, plan-scoped state that needs to be shared across multiple agents working on the same goal. It's perfect for:
-- Multi-agent workflows (Planner → Worker → Worker)
-- Passing data between choreographed agents
-- Tracking workflow progress
-- Temporary state that doesn't need long-term persistence
+**Working Memory** is for temporary plan-scoped state shared across agents collaborating on a goal. In this example:
+- The client requests a workflow from the planner and specifies a response event
+- The planner stores client-request info in working memory (correlation_id, response_event, IDs)
+- The planner requests tasks from the worker and LISTENS for responses
+- The worker executes tasks and responds directly to the planner
+- The planner decides next steps and finally responds to the client
 
-State is scoped to a `plan_id`, ensuring isolation between different workflows.
+Everything is scoped by `plan_id`, ensuring isolation across workflows.
 
 ## Code Walkthrough
 
@@ -38,16 +39,9 @@ Direct usage of Memory API using standalone MemoryClient (more verbose):
 ```python
 from soorma.memory.client import MemoryClient
 
-# For example purposes - use hardcoded tenant/user IDs
-# In production, these come from authentication/event context
-tenant_id = "00000000-0000-0000-0000-000000000000"
-user_id = "00000000-0000-0000-0000-000000000000"
-
-# Create Memory client directly
 memory = MemoryClient()
-plan_id = str(uuid.uuid4())
 
-# Store state (must provide tenant_id/user_id for each call)
+# Store state (requires tenant_id/user_id for each call)
 await memory.set_plan_state(
     plan_id=plan_id,
     key="research_data",
@@ -64,311 +58,241 @@ response = await memory.get_plan_state(
     user_id=user_id
 )
 data = response.value
-
-# Clean up
-await memory.close()
 ```
 
-**Note:** This demonstrates the low-level Memory Service API. In agent handlers, you would extract tenant_id/user_id from the event envelope rather than hardcoding them.
+**Note:** This is the low-level API. Agents should use `WorkflowState` helper instead.
 
-### WorkflowState Helper ([planner.py](planner.py))
+### WorkflowState Helper (Recommended)
 
-Simplified API (recommended):
+The `WorkflowState` wrapper simplifies the API by 8x:
 
 ```python
 from soorma.workflow import WorkflowState
 
-# Extract tenant_id and user_id from event envelope (infrastructure metadata)
-tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
-
-# Create WorkflowState with runtime IDs
+# Create helper (tenant_id/user_id from event envelope)
 state = WorkflowState(
     context.memory, 
     plan_id,
-    tenant_id=tenant_id,
-    user_id=user_id
+    tenant_id=event.tenant_id,
+    user_id=event.user_id
 )
 
-# Record actions
-await state.record_action("research.started")
-
-# Store data
+# Clean operations
 await state.set("research_data", {"findings": [...]})
-
-# Retrieve data
 data = await state.get("research_data")
-
-# Get action history
+await state.record_action("research.completed")
 history = await state.get_action_history()
 ```
 
-**Benefits:**
-- Proper multi-tenancy isolation
-- Single agent serves multiple users
-- 8:1 code reduction vs manual approach
-- Built-in action history tracking
-- Cleaner error handling
-- Consistent patterns
+**Benefits:** No repeated parameters, built-in action tracking, proper multi-tenant isolation.
 
 ### Planner Agent ([planner.py](planner.py))
 
-Initializes workflow with fixed tasks:
+Orchestrates by storing client info and listening for worker responses:
 
 ```python
-@planner.on_event("workflow.start", topic="action-requests")
-async def handle_workflow_start(event, context):
-    data = event.get("data", {})
-    workflow_name = data.get("workflow_name", "demo-workflow")
+@planner.on_event("workflow.start", topic=EventTopic.ACTION_REQUESTS)
+async def handle_workflow_start(event: EventEnvelope, context: PlatformContext):
     plan_id = str(uuid.uuid4())
+    state = WorkflowState(context.memory, plan_id, 
+                         tenant_id=event.tenant_id, user_id=event.user_id)
     
-    # Extract tenant_id and user_id from event envelope (infrastructure metadata)
-    tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-    user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
+    # CRITICAL: Store client request info (correlation_id, response_event)
+    await state.set("client_correlation_id", event.correlation_id)
+    await state.set("client_response_event", event.response_event or "workflow.completed")
     
-    # Initialize workflow state with runtime IDs
-    state = WorkflowState(
-        context.memory, 
-        plan_id,
-        tenant_id=tenant_id,
-        user_id=user_id
-    )
-    await state.set("workflow_name", workflow_name)
-    await state.set("status", "planning")
-    
-    # Fixed task list (for demo purposes)
-    # Real applications would use LLM to generate tasks dynamically
-    tasks = ["research", "draft", "review"]
-    await state.set("tasks", tasks)
+    # Initialize workflow (fixed tasks for demo)
+    await state.set("tasks", ["research", "draft", "review"])
     await state.set("current_task_index", 0)
     
-    # Trigger first task (pass IDs as envelope metadata)
-    await context.bus.publish(
+    # Start workflow - request first task
+    await context.bus.request(
         event_type="task.assigned",
-        topic="action-requests",
-        data={
-            "plan_id": plan_id,
-            "task": tasks[0],
-            "task_index": 0
-        },
-        tenant_id=tenant_id,
-        user_id=user_id,
+        response_event="task.completed",
+        data={"plan_id": plan_id, "task": "research"},
+        correlation_id=plan_id,  # Use plan_id so planner knows to listen
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
     )
 ```
 
-### Worker Agent ([worker.py](worker.py))
-
-Executes tasks and updates shared state:
+**Response handler for task completions:**
 
 ```python
-@worker.on_event("task.assigned", topic="action-requests")
-async def handle_task(event, context):
-    data = event.get("data", {})
-    plan_id = data.get("plan_id")
-    task = data.get("task")
+@planner.on_event("task.completed", topic=EventTopic.ACTION_RESULTS)
+async def handle_task_completed(event: EventEnvelope, context: PlatformContext):
+    plan_id = event.data.get("plan_id")
+    state = WorkflowState(context.memory, plan_id,
+                         tenant_id=event.tenant_id, user_id=event.user_id)
     
-    # Extract tenant_id and user_id from event envelope (infrastructure metadata)
-    tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-    user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
+    # Store task result
+    await state.set(event.data.get("task"), event.data.get("result"))
     
-    # Access plan state with runtime IDs
-    state = WorkflowState(
-        context.memory, 
-        plan_id,
-        tenant_id=tenant_id,
-        user_id=user_id
-    )
-    goal = await state.get("goal")
-    
-    # Execute task
-    result = f"Completed {task} for: {goal}"
-    
-    # Store result
-    await state.record_action(f"{task}.completed")
-    await state.set(f"{task}_result", result)
-    
-    # Notify completion (pass IDs as envelope metadata)
-    await context.bus.publish(
-        event_type="task.completed",
-        topic="action-results",
-        data={
-            "plan_id": plan_id,
-            "task": task,
-            "result": result
-        },
-        tenant_id=tenant_id,
-        user_id=user_id,
-    )
-```
-
-### Coordinator Pattern ([coordinator.py](coordinator.py))
-
-Advances workflow through multiple stages:
-
-```python
-@coordinator.on_event("task.completed", topic="action-results")
-async def handle_task_completion(event, context):
-    data = event.get("data", {})
-    plan_id = data.get("plan_id")
-    
-    # Extract tenant_id and user_id from event envelope (infrastructure metadata)
-    tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-    user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
-    
-    state = WorkflowState(
-        context.memory, 
-        plan_id,
-        tenant_id=tenant_id,
-        user_id=user_id
-    )
+    # Decide next step
     tasks = await state.get("tasks")
     current_index = await state.get("current_task_index")
-    
-    # Move to next task
     next_index = current_index + 1
     
     if next_index < len(tasks):
+        # More tasks - request next one
         await state.set("current_task_index", next_index)
-        # Trigger next task...
+        await context.bus.request(
+            event_type="task.assigned",
+            response_event="task.completed",
+            data={"plan_id": plan_id, "task": tasks[next_index]},
+            correlation_id=plan_id,
+            tenant_id=event.tenant_id,
+            user_id=event.user_id,
+        )
     else:
-        # All tasks complete
-        await state.set("status", "completed")
+        # All done - respond to client with stored info
+        client_correlation_id = await state.get("client_correlation_id")
+        client_response_event = await state.get("client_response_event")
+        
+        results = {t: await state.get(t) for t in tasks}
+        await context.bus.respond(
+            event_type=client_response_event,
+            data={"plan_id": plan_id, "results": results},
+            correlation_id=client_correlation_id,
+            tenant_id=event.tenant_id,
+            user_id=event.user_id,
+        )
 ```
+
+**How it applies the concepts:**
+- Stores client request info in working memory before delegating to workers
+- Uses `plan_id` as correlation_id in requests (so planner knows which response matches which request)
+- Listens for `task.completed` responses from workers
+- Retrieves client info from working memory when workflow completes
+- Responds back to client using client-specified response_event
+
+### Worker Agent ([worker.py](worker.py))
+
+Executes tasks and updates shared state, responding to the planner’s expected response event:
+
+```python
+from soorma_common.events import EventEnvelope, EventTopic
+from soorma.context import PlatformContext
+
+@worker.on_event("task.assigned", topic=EventTopic.ACTION_REQUESTS)
+async def handle_task(event: EventEnvelope, context: PlatformContext):
+    plan_id = event.data.get("plan_id")
+    task = event.data.get("task")
+    
+    # Access shared state via plan_id
+    state = WorkflowState(context.memory, plan_id,
+                         tenant_id=event.tenant_id, user_id=event.user_id)
+    
+    # Can read results from previous tasks
+    research_data = await state.get("research", {})
+    
+    # Execute task and store result
+    result = execute_task(task, research_data)
+    await state.set(task, result)
+    await state.record_action(f"{task}.completed")
+    
+    # Respond to planner
+    await context.bus.respond(
+        event_type=event.response_event or "task.completed",
+        data={"plan_id": plan_id, "task": task, "result": result},
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
+```
+
+**How it applies the concepts:**
+- Accesses shared state using same `plan_id`
+- Can read/build on results from previous tasks in the workflow
+- Stores results for next agent to access
+- Responds directly to planner (worker doesn't know about client)
 
 ## Running the Example
 
 ### Prerequisites
-
-Make sure platform services are running:
 
 ```bash
 # From soorma-core root directory
 soorma dev --build
 ```
 
-### Step 1: Raw Memory API Demo
+### Step 1: Explore Raw Memory API
 
 ```bash
 cd examples/04-memory-working
 python memory_api_demo.py
 ```
 
-See direct Memory API usage.
+Demonstrates direct Memory API calls before the helper.
 
-### Step 2: Run Multi-Agent Workflow
+### Step 2: Run the Workflow
 
 ```bash
-# Terminal 1: Start all agents
+# Terminal 1: Start agents
 ./start.sh
 
-# Terminal 2: Start workflow
+# Terminal 2: Start workflow  
 python client.py
 ```
 
-The start.sh script runs planner, worker, and coordinator together. Watch state flow between agents!
-
-**Note:** The workflow uses fixed tasks (research → draft → review) to demonstrate state management mechanics.
+Watch the workflow: client → planner (stores plan) → workers (read/write shared state) → planner (listen for responses) → client (final response).
 
 ## Key Takeaways
 
-### When to Use Working Memory
+**Working memory is for plan-scoped, temporary state:**
+- Isolated by `plan_id` (not shared across workflows)
+- Shared between agents via tenant/user scoping
+- Perfect for multi-step tasks where agents build on each other's work
 
-✅ **Use working memory for:**
-- Temporary workflow state
-- Data shared between agents in a plan
-- Progress tracking
-- Multi-step task decomposition
+**Orchestration pattern with distributed responses:**
+- Planner stores client info BEFORE delegating to workers
+- Uses `plan_id` as correlation_id for its internal requests
+- Workers respond without knowing about the original client
+- Planner collects responses and orchestrates next steps
 
-❌ **Don't use working memory for:**
-- Long-term knowledge (use Semantic Memory)
-- Conversation history (use Episodic Memory)
-- Cross-plan data (not isolated by plan_id)
+**WorkflowState helper reduces boilerplate by 8x:**
+- Handles memory client lifecycle
+- Automatically includes tenant_id/user_id in all operations
+- Provides action history tracking out of the box
+- Better than manual API for most workflows
 
-### Best Practices
+## Best Practices
 
-1. **Always use plan_id**: Ensures state isolation between workflows
-2. **Use WorkflowState helper**: Reduces boilerplate by 8x
-3. **Track action history**: `record_action()` creates audit trail
-4. **Provide default values**: Always use `get(key, default)` to handle missing keys gracefully
-5. **Clean up after completion**: Delete plan state when workflow finishes (future enhancement)
-6. **Handle missing keys**: `get()` returns None if key doesn't exist, use defaults for safety
+1. **Always scope by plan_id**: Ensures isolation between workflows
+2. **Use WorkflowState helper**: Simpler than manual Memory API calls
+3. **Store client context in planner**: Before delegating, never lost when workers respond
+4. **Use default values in get()**: `get(key, default_value)` prevents errors on missing keys
+5. **Track action history**: Audit trail helps debugging distributed workflows
 
 ### Common Patterns
 
-**Pattern 1: Plan Initialization**
+**Pattern: Task Handoff**
 ```python
-data = event.get("data", {})
-plan_id = str(uuid.uuid4())
-
-# Extract IDs from event envelope (infrastructure metadata)
-tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
-
-state = WorkflowState(
-    context.memory, 
-    plan_id,
-    tenant_id=tenant_id,
-    user_id=user_id
-)
-
-await state.set("goal", goal_text)
-await state.set("status", "in_progress")
-await state.set("tasks", task_list)
-```
-
-**Pattern 2: Task Handoff**
-```python
-# Worker A stores result
+# Agent A stores result
 await state.set("research_data", results)
+
+# Agent B retrieves result
+research_data = await state.get("research_data", {})
+```
+
+**Pattern: Progress Tracking**
+```python
 await state.record_action("research.completed")
+await state.record_action("analysis.completed")
 
-# Worker B retrieves result
-research_data = await state.get("research_data")
-# ... use data ...
+history = await state.get_action_history()  # Full audit trail
 ```
 
-**Pattern 3: Progress Tracking**
-```python
-# Record each step
-await state.record_action("step1.completed")
-await state.record_action("step2.completed")
-
-# Check progress
-history = await state.get_action_history()
-# ["step1.completed", "step2.completed"]
-```
-
-**Pattern 4: Conditional Workflow**
-```python
-status = await state.get("status")
-
-if status == "needs_revision":
-    # Go back to drafting
-    await state.set("current_stage", "draft")
-elif status == "approved":
-    # Move forward
-    await state.set("current_stage", "publish")
-```
+See [memory_api_demo.py](memory_api_demo.py) and [planner.py](planner.py) for additional patterns.
 
 ## Troubleshooting
 
-**"Memory Service not responding"**
-- Ensure `soorma dev` is running
-- Check Memory Service health: `curl http://localhost:8083/health`
-
-**"KeyError: 'goal'"**
-- Ensure planner has initialized state with `set("goal", ...)`
-- Worker might be running before planner
-- Check plan_id matches between agents
-
-**"State not shared between agents"**
-- Verify all agents use the same plan_id
-- plan_id must be passed in event data
-- Check no typos in state keys
-
-**"WorkflowState import error"**
-- Ensure SDK is installed from source: `pip install -e ../../sdk/python`
-- Verify you're in the correct virtual environment
+| Issue | Solution |
+|-------|----------|
+| "Memory Service not responding" | Ensure `soorma dev` is running and Memory Service is healthy |
+| "KeyError: 'goal'" | Planner must initialize state before workers try to read it |
+| "State not shared between agents" | Verify all agents use identical plan_id in event data |
+| "WorkflowState import error" | Install SDK: `pip install -e ../../sdk/python` |
 
 ## Next Steps
 

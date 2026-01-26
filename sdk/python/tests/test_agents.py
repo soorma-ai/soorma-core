@@ -45,10 +45,11 @@ class TestAgentBase:
     def test_on_event_decorator(self):
         """Test event handler registration."""
         from soorma import Agent
+        from soorma_common.events import EventTopic
         
         agent = Agent(name="test-agent")
         
-        @agent.on_event("test.event", topic="business-facts")
+        @agent.on_event("test.event", topic=EventTopic.BUSINESS_FACTS)
         async def handler(event, context):
             pass
         

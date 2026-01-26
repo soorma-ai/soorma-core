@@ -13,6 +13,7 @@ import sys
 import uuid
 from datetime import datetime
 from soorma import EventClient
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 # Hardcoded user ID (in production, this comes from authentication)
@@ -34,12 +35,12 @@ class ChatbotClient:
     
     async def connect(self):
         """Connect to the platform."""
-        await self.client.connect(topics=["action-results"])
+        await self.client.connect(topics=[EventTopic.ACTION_RESULTS])
         
         # Register response handler
-        @self.client.on_event("chat.response", topic="action-results")
-        async def on_response(event):
-            data = event.get("data", {})
+        @self.client.on_event("chat.response", topic=EventTopic.ACTION_RESULTS)
+        async def on_response(event: EventEnvelope):
+            data = event.data or {}
             
             # Check if response is for our session
             if data.get("session_id") != self.session_id:
@@ -103,7 +104,7 @@ class ChatbotClient:
         
         await self.client.publish(
             event_type="chat.message",
-            topic="action-requests",
+            topic=EventTopic.ACTION_REQUESTS,
             data={
                 "session_id": self.session_id,
                 "message": message

@@ -35,13 +35,15 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 from uuid import uuid4
+
+from soorma_common.events import EventEnvelope, EventTopic
 
 logger = logging.getLogger(__name__)
 
 # Type alias for event handlers
-EventHandler = Callable[[Dict[str, Any]], Awaitable[None]]
+EventHandler = Callable[[EventEnvelope], Awaitable[None]]
 
 
 class EventClient:
@@ -118,15 +120,15 @@ class EventClient:
         self,
         event_type: str,
         *,
-        topic: Optional[str] = None,
+        topic: Optional[EventTopic] = None,
     ) -> Callable[[EventHandler], EventHandler]:
         """
         Decorator to register an event handler for a specific event type.
         
         Usage:
-            @client.on_event("research.requested", topic="action-requests")
-            async def handle_research(event):
-                print(f"Received: {event}")
+            @client.on_event("research.requested", topic=EventTopic.ACTION_REQUESTS)
+            async def handle_research(event: EventEnvelope):
+                print(f"Received: {event.type}, data: {event.data}")
         
         Args:
             event_type: The event type to handle (e.g., "research.requested")
@@ -149,8 +151,8 @@ class EventClient:
         
         Usage:
             @client.on_all_events
-            async def handle_all(event):
-                print(f"Received: {event}")
+            async def handle_all(event: EventEnvelope):
+                print(f"Received: {event.type}")
         
         Args:
             func: The handler function
@@ -166,7 +168,7 @@ class EventClient:
     # Connection Management
     # =========================================================================
     
-    async def connect(self, topics: List[str]) -> None:
+    async def connect(self, topics: List[Union[EventTopic, str]]) -> None:
         """
         Connect to the Event Service and start receiving events.
         
@@ -175,8 +177,11 @@ class EventClient:
         2. Subscribes to the specified topics
         3. Starts a background task to process incoming events
         
+        Note: If topics list is empty, no SSE connection is established.
+        This is useful for publish-only clients.
+        
         Args:
-            topics: List of topic patterns to subscribe to (e.g., ["research.*"])
+            topics: List of topics (EventTopic enum) or patterns (str for wildcards like "research.*")
         
         Raises:
             ConnectionError: If unable to connect to the Event Service
@@ -185,7 +190,15 @@ class EventClient:
             logger.warning("Already connected")
             return
         
-        self._subscribed_topics = topics
+        # Convert EventTopic enums to strings
+        self._subscribed_topics = [t.value if isinstance(t, EventTopic) else t for t in topics]
+        
+        # If no topics, skip SSE connection (publish-only mode)
+        if not self._subscribed_topics:
+            logger.info("No topics to subscribe to, skipping SSE connection (publish-only mode)")
+            self._connected = True  # Mark as connected for publish to work
+            return
+        
         self._stop_event.clear()
         
         # Start the SSE stream task
@@ -235,7 +248,7 @@ class EventClient:
     async def publish(
         self,
         event_type: str,
-        topic: str,
+        topic: Union[EventTopic, str],
         data: Optional[Dict[str, Any]] = None,
         correlation_id: Optional[str] = None,
         subject: Optional[str] = None,
@@ -253,7 +266,7 @@ class EventClient:
         
         Args:
             event_type: Event type (e.g., "research.completed")
-            topic: Target topic (e.g., "action-results")
+            topic: Target topic (EventTopic enum or string)
             data: Event payload data
             correlation_id: Optional correlation ID for tracing
             subject: Optional subject/resource identifier
@@ -276,12 +289,15 @@ class EventClient:
         
         event_id = str(uuid4())
         
+        # Convert EventTopic to string if needed
+        topic_str = topic.value if isinstance(topic, EventTopic) else topic
+        
         event = {
             "id": event_id,
             "source": self.source,
             "specversion": "1.0",
             "type": event_type,
-            "topic": topic,
+            "topic": topic_str,
             "time": datetime.now(timezone.utc).isoformat(),
             "data": data or {},
             "correlation_id": correlation_id or str(uuid4()),
@@ -468,22 +484,30 @@ class EventClient:
         Dispatch an event to registered handlers.
         
         Args:
-            event: The event data
+            event: The event data (dict that will be deserialized to EventEnvelope)
         """
         event_type = event.get("type", "")
+        
+        # Deserialize to EventEnvelope for type safety
+        try:
+            event_envelope = EventEnvelope(**event)
+        except Exception as e:
+            logger.error(f"Failed to deserialize event to EventEnvelope: {e}")
+            logger.debug(f"Event data: {event}")
+            return
         
         # Call specific handlers
         handlers = self._handlers.get(event_type, [])
         for handler in handlers:
             try:
-                await handler(event)
+                await handler(event_envelope)
             except Exception as e:
                 logger.error(f"Error in handler for {event_type}: {e}")
         
         # Call catch-all handlers
         for handler in self._catch_all_handlers:
             try:
-                await handler(event)
+                await handler(event_envelope)
             except Exception as e:
                 logger.error(f"Error in catch-all handler: {e}")
         

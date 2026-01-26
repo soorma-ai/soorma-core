@@ -16,7 +16,7 @@
 In [02-events-simple](../02-events-simple/), events were hardcoded:
 
 ```python
-@worker.on_event("order.placed", topic="business-facts")
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
 async def handle_order(event, context):
     # Handler knows exactly what event it will publish
     await context.bus.announce("inventory.reserve", ...)
@@ -93,7 +93,7 @@ The agent discovers available routing events and uses an LLM to select the most 
 
 ### Event Definitions ([events.py](events.py))
 
-Define events using `EventDefinition` with Pydantic schemas:
+Events are defined with Pydantic schemas and rich metadata:
 
 ```python
 from pydantic import BaseModel, Field
@@ -107,130 +107,129 @@ class Tier1RoutePayload(BaseModel):
 TIER1_ROUTE_EVENT = EventDefinition(
     event_name="ticket.route.tier1",
     topic=EventTopic.ACTION_REQUESTS,
-    description="Route ticket to Tier 1 general support for common issues like password resets, account questions, basic troubleshooting",
+    description="Route ticket to Tier 1 general support for common issues...",
     payload_schema=Tier1RoutePayload.model_json_schema(),
 )
 ```
 
+**How it applies the concepts:**
+- `EventDefinition` wraps event metadata (name, topic, description, schema)
+- Pydantic schemas self-document what data is required and what each field means
+- Event descriptions guide LLM reasoning ("Route to Tier 1 for common issues...")
+- When agent declares these in `events_produced`, the SDK auto-registers them with the Registry
+
 ### LLM Utilities ([llm_utils.py](llm_utils.py))
 
-> **Note**: These utilities are shown for educational purposes. The SDK will provide built-in methods to handle this complexity.
+Two generic utilities for LLM-based event selection:
 
-This file contains reusable functions for LLM-based event selection:
+**`select_event_with_llm(prompt_template, context_data, formatted_events, model)`** - Uses LLM to select the best event:
 
-**`discover_events(context, topic)`** - Discovers available events from Registry:
 ```python
-async def discover_events(context, topic: str) -> list[dict]:
-    async with EventToolkit(context.registry.base_url) as toolkit:
-        events = await toolkit.discover_actionable_events(topic=topic)
-        return events
-```
+# Format prompt by substituting agent-specific template variables
+prompt = prompt_template.format(
+    context_data=json.dumps(context_data, indent=2),
+    events=formatted_events  # Pre-formatted event options
+)
 
-**`format_events_for_llm(events)`** - Formats event metadata for LLM prompts:
-```python
-def format_events_for_llm(events: list[dict]) -> str:
-    formatted = []
-    for event in events:
-        formatted.append(
-            f"**{event['name']}**\n"
-            f"   Description: {event['description']}\n"
-        )
-    return "\n".join(formatted)
-```
+# Call LLM
+response = completion(
+    model=model or os.getenv("LLM_MODEL", "gpt-4o-mini"),
+    messages=[{"role": "user", "content": prompt}],
+    response_format={"type": "json_object"}
+)
 
-**`select_event_with_llm(prompt_template, context_data, events, model)`** - Uses LLM to select best event:
-```python
-async def select_event_with_llm(
-    prompt_template: str,  # Agent provides domain-specific instructions
-    context_data: dict,
-    events: list[dict],
-    model: str = None
-) -> dict:
-    # Format events for LLM
-    event_options = format_events_for_llm(events)
-    
-    # Build prompt with agent's template
-    prompt = prompt_template.format(
-        context_data=json.dumps(context_data, indent=2),
-        events=event_options
-    )
-    
-    # Call LLM
-    response = completion(
-        model=model or os.getenv("LLM_MODEL", "gpt-4o-mini"),
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"}
-    )
-    
-    return json.loads(response.choices[0].message.content)
+# Return decision with event_name, reason, data
+return json.loads(response.choices[0].message.content)
 ```
 
 **`validate_and_publish(decision, events, topic, context)`** - Validates LLM's choice and publishes:
+
 ```python
-async def validate_and_publish(
-    decision: dict,
-    events: list[dict],
-    topic: str,
-    context
-) -> bool:
-    event_names = [e["name"] for e in events]
-    
-    # Prevent LLM hallucinations - validate event exists
-    if decision["event_name"] not in event_names:
-        print(f"ERROR: LLM selected invalid event: {decision['event_name']}")
-        return False
-    
-    # Publish the validated event
-    await context.bus.publish(
-        event_type=decision["event_name"],
-        topic=topic,
-        data=decision["data"],
-    )
-    return True
+# Prevent hallucinations - check event was actually discovered
+if decision["event_name"] not in [e.event_name for e in events]:
+    print(f"ERROR: LLM selected invalid event: {decision['event_name']}")
+    return False
+
+# Publish validated event
+await context.bus.publish(
+    event_type=decision["event_name"],
+    topic=topic,
+    data=decision["data"],
+)
+return True
 ```
 
 ### Ticket Router Agent ([ticket_router.py](ticket_router.py))
 
-The agent focuses on domain-specific logic, using the utilities from `llm_utils.py`:
+The agent demonstrates the clean pattern when using SDK toolkit + LLM utilities:
 
 ```python
-from soorma import Worker
-from events import TICKET_CREATED_EVENT, TIER1_ROUTE_EVENT, ...
-from llm_utils import discover_events, select_event_with_llm, validate_and_publish
-
-# Pass EventDefinition objects - SDK auto-registers them
 worker = Worker(
     name="ticket-router",
-    capabilities=["routing"],
     events_consumed=[TICKET_CREATED_EVENT],
-    events_produced=[TIER1_ROUTE_EVENT, TIER2_ROUTE_EVENT, ...],
+    events_produced=[
+        TIER1_ROUTE_EVENT,
+        TIER2_ROUTE_EVENT,
+        SPECIALIST_ROUTE_EVENT,
+        MANAGEMENT_ESCALATION_EVENT,
+        AUTOCLOSE_EVENT,
+    ],
 )
+```
 
-# Domain-specific LLM prompt (agent customization)
-TICKET_ROUTING_PROMPT = """You are a support ticket router...
+**Domain-specific LLM prompt** - Only the prompt is agent-specific:
 
-TICKET: {context_data}
-OPTIONS: {events}
+```python
+TICKET_ROUTING_PROMPT = """You are a support ticket routing assistant...
 
-Select the best routing event..."""
+TICKET INFORMATION:
+{context_data}
 
-@worker.on_event("ticket.created", topic="business-facts")
-async def route_ticket(event, context):
-    # Step 1: Discover available routing options
-    events = await discover_events(context, topic="action-requests")
+AVAILABLE ROUTING OPTIONS:
+{events}
+
+Select the most appropriate routing event...
+Return JSON with: event_name, reason, data
+"""
+```
+
+**Event handler using three steps**:
+
+```python
+@worker.on_event("ticket.created", topic=EventTopic.BUSINESS_FACTS)
+async def route_ticket(event: EventEnvelope, context: PlatformContext):
+    data = event.data or {}
     
-    # Step 2: Let LLM select best option using agent's prompt
+    # Step 1: Discover available routing events from Registry
+    events = await context.toolkit.discover_actionable_events(
+        topic=EventTopic.ACTION_REQUESTS
+    )
+    
+    # Step 2: Format events for LLM and let it select the best one
+    event_dicts = context.toolkit.format_for_llm(events)
+    formatted_events = context.toolkit.format_as_prompt_text(event_dicts)
+    
     decision = await select_event_with_llm(
-        prompt_template=TICKET_ROUTING_PROMPT,  # Agent customizes here
-        context_data=event.data,
-        events=events
+        prompt_template=TICKET_ROUTING_PROMPT,  # Domain-specific
+        context_data=data,
+        formatted_events=formatted_events,
     )
     
     # Step 3: Validate and publish the decision
-    await validate_and_publish(decision, events, "action-requests", context)
+    await validate_and_publish(
+        decision=decision,
+        events=events,
+        topic=EventTopic.ACTION_REQUESTS,
+        context=context
+    )
 ```
 
-**Key Insight**: The agent code is focused and readable. The ~150 lines of boilerplate are isolated in `llm_utils.py`.
+**How it applies the concepts:**
+- SDK `discover_actionable_events()` finds all events the Registry knows about
+- SDK `format_for_llm()` and `format_as_prompt_text()` prepare events for LLM reasoning
+- Agent provides domain-specific prompt (ticket routing instructions)
+- LLM utility selects the best event based on context and available options
+- Validation prevents LLM hallucinations (if LLM picks non-existent event, it fails safely)
 
 ## Running the Example
 
@@ -262,9 +261,11 @@ cd examples/03-events-structured
 ./start.sh
 ```
 
-This will:
-1. Verify platform services are running
-2. Start the LLM event selector
+This starts the ticket router agent which will:
+1. Register its event definitions with the Registry
+2. Listen for `ticket.created` events
+3. Discover available routing options
+4. Use LLM to select the best routing event
 
 **Terminal 3: Create a test ticket**
 
@@ -276,29 +277,28 @@ python client.py "My API integration is failing"
 
 **After starting platform services above...**
 
-**Terminal 2: Start the LLM Event Selector**
+**Terminal 2: Start the Ticket Router Agent**
 
 ```bash
 cd examples/03-events-structured
 python ticket_router.py
 ```
 
-This agent will:
-1. Listen for `ticket.created` events
-2. Discover available routing events from Registry
-3. Use an LLM to select the appropriate routing event
-4. Publish the selected event
+The agent will:
+1. Register its event definitions with the Registry
+2. Listen for `ticket.created` events  
+3. Show routing decisions for each ticket
 
 **Terminal 3: Create Test Tickets**
 
 ```bash
-# Simple issue
+# Simple issue → Tier 1
 python client.py "My password reset link isn't working"
 
-# Technical issue
+# Technical issue → Tier 2
 python client.py "Getting 500 error when calling /api/v2/users endpoint"
 
-# Complex issue
+# Complex issue → Specialist
 python client.py "Need to integrate SSO with custom SAML provider"
 ```
 
@@ -319,17 +319,12 @@ The selector will show:
 
 ## Key Takeaways
 
-✅ **Discovery enables flexibility** - Agents can find available events from the Registry  
-✅ **LLMs reason about options** - Choose dynamically based on context and event metadata  
-✅ **Structured events self-document** - Event descriptions and schemas guide LLM reasoning  
-✅ **Decoupled workflows** - Agents discover capabilities without hardcoded dependencies  
-✅ **SDK auto-registration** - When agents declare `events_consumed` and `events_produced` with `EventDefinition` objects, the SDK automatically registers them with the Registry on startup
-
-**Key Pattern:** Pass `EventDefinition` objects (not strings) to `events_consumed` and `events_produced`. The SDK:
-1. Extracts event metadata from EventDefinition
-2. Registers events with Registry when agent starts
-3. Makes events discoverable via `EventToolkit.discover_actionable_events()`
-4. No manual registration needed  
+✅ **EventDefinition wraps metadata** - Event descriptions and schemas guide LLM reasoning  
+✅ **SDK auto-registers events** - Pass EventDefinition objects to `events_consumed`/`events_produced`, SDK handles Registry registration  
+✅ **Discovery enables flexibility** - Agents use `context.toolkit.discover_actionable_events()` to find available options at runtime  
+✅ **LLM reasoning selects dynamically** - Instead of hardcoding workflows, let LLMs choose based on context and available capabilities  
+✅ **Validation prevents hallucinations** - Always check that LLM-selected events actually exist in the Registry before publishing  
+✅ **Separate domain logic from utilities** - Agent code focuses on the prompt (domain-specific); discovery, formatting, validation are reusable utilities  
 
 ## When to Use Structured Events
 
@@ -345,20 +340,31 @@ The selector will show:
 
 ### Simple Events (02-events-simple)
 ```python
+from soorma_common.events import EventTopic
+
 # Hardcoded - fast, but inflexible
-@worker.on_event("order.placed", topic="business-facts")
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
 async def handle(event, context):
-    await context.bus.announce("inventory.reserve", ...)
+    await context.bus.announce("inventory.reserve", topic=EventTopic.ACTION_REQUESTS, ...)
 ```
 
 ### Structured Events (This example)
 ```python
+from soorma_common.events import EventTopic
+
 # Dynamic - flexible, but requires LLM call
-@worker.on_event("order.placed", topic="business-facts")
+@worker.on_event("order.placed", topic=EventTopic.BUSINESS_FACTS)
 async def handle(event, context):
-    events = await discover_events(topic="inventory")
-    selected = await llm_choose_event(events, context)
-    await context.bus.announce(selected, ...)
+    # Discover events dynamically
+    events = await context.toolkit.discover_actionable_events(
+        topic=EventTopic.ACTION_REQUESTS
+    )
+    # Use LLM to select
+    event_dicts = context.toolkit.format_for_llm(events)
+    formatted = context.toolkit.format_as_prompt_text(event_dicts)
+    selected = await llm_choose_event(formatted, context)
+    # Publish selected event
+    await context.bus.announce(selected, topic=EventTopic.ACTION_REQUESTS, ...)
 ```
 
 ## Advanced: Preventing Hallucinated Events
