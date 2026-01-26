@@ -16,6 +16,7 @@ from typing import Any, Dict
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
 
 
@@ -105,15 +106,15 @@ Return ONLY a JSON object:
         return {"intent": "general", "confidence": 0.5, "reasoning": "fallback"}
 
 
-@router.on_event("chat.message", topic="action-requests")
-async def route_message(event: Dict[str, Any], context: PlatformContext):
+@router.on_event("chat.message", topic=EventTopic.ACTION_REQUESTS)
+async def route_message(event: EventEnvelope, context: PlatformContext):
     """Route incoming chat message based on classified intent."""
-    data = event.get("data", {})
+    data = event.data or {}
     message = data.get("message", "")
     session_id = data.get("session_id")
     
-    tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-    user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
+    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
     
     print(f"\n📨 Incoming Message (session: {session_id})")
     print(f"   User: {message[:80]}...")
@@ -125,6 +126,11 @@ async def route_message(event: Dict[str, Any], context: PlatformContext):
         tenant_id=tenant_id,
         user_id=user_id
     )
+    
+    # Store CLIENT request info for later response (CRITICAL: router is orchestrator!)
+    # This tells workers' handlers how to respond back to the CLIENT
+    await state.set("client_correlation_id", event.correlation_id)
+    await state.set("client_response_event", event.response_event or "chat.response")
     
     # Retrieve session history for context
     history = await state.get("history") or []
@@ -171,42 +177,42 @@ async def route_message(event: Dict[str, Any], context: PlatformContext):
     # Route based on intent
     if intent == "store_knowledge":
         print("   → Routing to knowledge storage")
-        await context.bus.publish(
+        await context.bus.request(
             event_type="knowledge.store",
-            topic="action-requests",
+            response_event="knowledge.stored",
             data={
                 "session_id": session_id,
                 "message": message,
-                "original_event": event
             },
+            correlation_id=session_id,  # Use session_id so router handlers can retrieve client info
             tenant_id=tenant_id,
             user_id=user_id,
         )
     
     elif intent == "answer_question":
         print("   → Routing to RAG agent")
-        await context.bus.publish(
+        await context.bus.request(
             event_type="question.answer",
-            topic="action-requests",
+            response_event="question.answered",
             data={
                 "session_id": session_id,
                 "question": message,
-                "original_event": event
             },
+            correlation_id=session_id,  # Use session_id so router handlers can retrieve client info
             tenant_id=tenant_id,
             user_id=user_id,
         )
     
     elif intent == "concierge":
         print("   → Routing to concierge")
-        await context.bus.publish(
+        await context.bus.request(
             event_type="concierge.query",
-            topic="action-requests",
+            response_event="concierge.response",
             data={
                 "session_id": session_id,
                 "query": message,
-                "original_event": event
             },
+            correlation_id=session_id,  # Use session_id so router handlers can retrieve client info
             tenant_id=tenant_id,
             user_id=user_id,
         )
@@ -223,9 +229,11 @@ async def route_message(event: Dict[str, Any], context: PlatformContext):
             metadata={"session_id": session_id}
         )
         
-        await context.bus.publish(
-            event_type="chat.response",
-            topic="action-results",
+        # Extract response event from request (caller specifies expected response)
+        response_event_type = event.response_event or "chat.response"
+        
+        await context.bus.respond(
+            event_type=response_event_type,
             data={
                 "session_id": session_id,
                 "response": response,
@@ -233,7 +241,155 @@ async def route_message(event: Dict[str, Any], context: PlatformContext):
             },
             tenant_id=tenant_id,
             user_id=user_id,
+            correlation_id=event.correlation_id,
         )
+
+
+@router.on_event("knowledge.stored", topic=EventTopic.ACTION_RESULTS)
+async def handle_knowledge_stored(event: EventEnvelope, context: PlatformContext):
+    """Handle response from knowledge store worker - respond back to original client."""
+    session_id = event.correlation_id  # This is the session_id we sent
+    data = event.data or {}
+    
+    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
+    
+    print(f"\n✓ Knowledge stored (session: {session_id})")
+    
+    # Retrieve client's response event from working memory
+    state = WorkflowState(
+        context.memory,
+        session_id,
+        tenant_id=tenant_id,
+        user_id=user_id
+    )
+    
+    client_correlation_id = await state.get("client_correlation_id")
+    client_response_event = await state.get("client_response_event")
+    
+    # Log interaction
+    message = data.get("message", "")
+    await context.memory.log_interaction(
+        agent_id="chatbot-router",
+        role="assistant",
+        content=f"Stored: {message}",
+        user_id=user_id,
+        metadata={"session_id": session_id}
+    )
+    
+    # Respond to CLIENT using client's response event
+    response = f"I've saved that information. I'll use it to help answer future questions."
+    
+    await context.bus.respond(
+        event_type=client_response_event,
+        data={
+            "session_id": session_id,
+            "response": response,
+            "intent": "store_knowledge",
+            "sources": {
+                "knowledge_stored": True
+            }
+        },
+        correlation_id=client_correlation_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
+
+
+@router.on_event("question.answered", topic=EventTopic.ACTION_RESULTS)
+async def handle_question_answered(event: EventEnvelope, context: PlatformContext):
+    """Handle response from RAG agent - respond back to original client."""
+    session_id = event.correlation_id  # This is the session_id we sent
+    data = event.data or {}
+    
+    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
+    
+    print(f"\n✓ Question answered (session: {session_id})")
+    
+    # Retrieve client's response event from working memory
+    state = WorkflowState(
+        context.memory,
+        session_id,
+        tenant_id=tenant_id,
+        user_id=user_id
+    )
+    
+    client_correlation_id = await state.get("client_correlation_id")
+    client_response_event = await state.get("client_response_event")
+    
+    # Log interaction
+    answer = data.get("answer", "")
+    await context.memory.log_interaction(
+        agent_id="chatbot-router",
+        role="assistant",
+        content=answer,
+        user_id=user_id,
+        metadata={"session_id": session_id}
+    )
+    
+    # Respond to CLIENT using client's response event
+    await context.bus.respond(
+        event_type=client_response_event,
+        data={
+            "session_id": session_id,
+            "response": answer,
+            "intent": "answer_question",
+            "sources": {
+                "history_matches": data.get("history_matches_count", 0),
+                "knowledge_matches": data.get("knowledge_matches_count", 0)
+            }
+        },
+        correlation_id=client_correlation_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
+
+
+@router.on_event("concierge.response", topic=EventTopic.ACTION_RESULTS)
+async def handle_concierge_response(event: EventEnvelope, context: PlatformContext):
+    """Handle response from concierge worker - respond back to original client."""
+    session_id = event.correlation_id  # This is the session_id we sent
+    data = event.data or {}
+    
+    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
+    
+    print(f"\n✓ Concierge response (session: {session_id})")
+    
+    # Retrieve client's response event from working memory
+    state = WorkflowState(
+        context.memory,
+        session_id,
+        tenant_id=tenant_id,
+        user_id=user_id
+    )
+    
+    client_correlation_id = await state.get("client_correlation_id")
+    client_response_event = await state.get("client_response_event")
+    
+    # Log interaction
+    response_text = data.get("response", "")
+    await context.memory.log_interaction(
+        agent_id="chatbot-router",
+        role="assistant",
+        content=response_text,
+        user_id=user_id,
+        metadata={"session_id": session_id}
+    )
+    
+    # Respond to CLIENT using client's response event
+    await context.bus.respond(
+        event_type=client_response_event,
+        data={
+            "session_id": session_id,
+            "response": response_text,
+            "intent": "concierge"
+        },
+        correlation_id=client_correlation_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
 
 
 if __name__ == "__main__":

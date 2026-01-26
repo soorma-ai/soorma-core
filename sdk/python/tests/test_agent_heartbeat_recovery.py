@@ -154,26 +154,33 @@ async def test_consecutive_heartbeat_failures_tracked():
     mock_context = MagicMock(spec=PlatformContext)
     mock_context.registry = mock_registry
     
+    # Mock the HTTP client for heartbeat calls
+    mock_registry._client = AsyncMock()
+    mock_registry.base_url = "http://test"
     # Multiple failures, then success
-    mock_registry.heartbeat = AsyncMock(side_effect=[False, False, False, True])
-    mock_registry.register = AsyncMock(return_value=True)
-    
+    responses = [MagicMock(status_code=404), MagicMock(status_code=404), MagicMock(status_code=404), MagicMock(status_code=200)]
+    mock_registry._client.put = AsyncMock(side_effect=responses)
+    # Mock register_agent for re-registration
+    from soorma_common import AgentRegistrationResponse
+    mock_registry.register_agent = AsyncMock(return_value=AgentRegistrationResponse(agent_id="test", success=True, message="ok"))
+
     worker._context = mock_context
     worker._running = True
-    
     # Simulate multiple failure cycles
     for i in range(3):
-        success = await worker.context.registry.heartbeat(worker.agent_id)
+        # Heartbeat via direct HTTP call
+        response = await mock_registry._client.put(f"{mock_registry.base_url}/v1/agents/{worker.agent_id}/heartbeat")
+        success = response.status_code == 200
         assert success == False
-        
+
         # Each failure should trigger re-registration attempt
         await worker._register_with_registry()
-    
+
     # Verify multiple re-registration attempts
-    assert mock_registry.register.call_count == 3
-    
-    # Finally successful heartbeat
-    success = await worker.context.registry.heartbeat(worker.agent_id)
+    assert mock_registry.register_agent.call_count == 3
+    # Final heartbeat succeeds via direct HTTP call
+    response = await mock_registry._client.put(f"{mock_registry.base_url}/v1/agents/{worker.agent_id}/heartbeat")
+    success = response.status_code == 200
     assert success == True
     
     worker._running = False
@@ -196,24 +203,35 @@ async def test_agent_continues_after_failed_reregistration():
     mock_context = MagicMock(spec=PlatformContext)
     mock_context.registry = mock_registry
     
-    # Heartbeat fails, re-registration fails, then both succeed
-    mock_registry.heartbeat = AsyncMock(side_effect=[False, False, True])
-    # First re-registration attempt fails, second succeeds
-    mock_registry.register = AsyncMock(side_effect=[False, True])
+    # Mock HTTP client for heartbeat
+    mock_registry._client = AsyncMock()
+    mock_registry.base_url = "http://test"
+    # Heartbeat fails, then succeeds
+    heartbeat_responses = [MagicMock(status_code=404), MagicMock(status_code=404), MagicMock(status_code=200)]
+    mock_registry._client.put = AsyncMock(side_effect=heartbeat_responses)
     
+    # First re-registration attempt fails (raises exception), second succeeds
+    from soorma_common import AgentRegistrationResponse
+    mock_registry.register_agent = AsyncMock(side_effect=[
+        Exception("Network error"),
+        AgentRegistrationResponse(agent_id="test", success=True, message="ok")
+    ])
+
     worker._context = mock_context
     worker._running = True
-    
+
     # First heartbeat failure
-    success = await worker.context.registry.heartbeat(worker.agent_id)
+    response = await mock_registry._client.put(f"{mock_registry.base_url}/v1/agents/{worker.agent_id}/heartbeat")
+    success = response.status_code == 200
     assert success == False
-    
-    # Re-registration fails
+
+    # Re-registration fails (exception caught, returns False)
     re_reg_success = await worker._register_with_registry()
     assert re_reg_success == False
     
     # Second heartbeat still fails
-    success = await worker.context.registry.heartbeat(worker.agent_id)
+    response = await mock_registry._client.put(f"{mock_registry.base_url}/v1/agents/{worker.agent_id}/heartbeat")
+    success = response.status_code == 200
     assert success == False
     
     # Second re-registration succeeds
@@ -221,12 +239,13 @@ async def test_agent_continues_after_failed_reregistration():
     assert re_reg_success == True
     
     # Third heartbeat succeeds
-    success = await worker.context.registry.heartbeat(worker.agent_id)
+    response = await mock_registry._client.put(f"{mock_registry.base_url}/v1/agents/{worker.agent_id}/heartbeat")
+    success = response.status_code == 200
     assert success == True
     
-    # Verify persistence
-    assert mock_registry.heartbeat.call_count == 3
-    assert mock_registry.register.call_count == 2
+    # Verify persistence: 3 heartbeat attempts, 2 re-registration attempts
+    assert mock_registry._client.put.call_count == 3
+    assert mock_registry.register_agent.call_count == 2
     
     worker._running = False
 

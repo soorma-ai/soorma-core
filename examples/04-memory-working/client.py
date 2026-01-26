@@ -11,6 +11,7 @@ Usage:
 import asyncio
 import sys
 from soorma import EventClient
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 async def start_workflow():
@@ -21,15 +22,15 @@ async def start_workflow():
     workflow_completed = asyncio.Event()
     result_data = {}
     
-    @client.on_event("workflow.completed", topic="action-results")
-    async def on_completion(event):
+    @client.on_event("workflow.completed", topic=EventTopic.ACTION_RESULTS)
+    async def on_completion(event: EventEnvelope):
         """Handle workflow completion."""
         nonlocal result_data
-        result_data = event.get("data", {})
+        result_data = event.data or {}
         workflow_completed.set()
     
     # Connect to the platform
-    await client.connect(topics=["action-results"])
+    await client.connect(topics=[EventTopic.ACTION_RESULTS])
     
     print("🎯 Starting demo workflow...\n")
     print("   This demonstrates a fixed 3-task workflow:")
@@ -40,7 +41,8 @@ async def start_workflow():
         # In production, these would come from authentication/request context
         await client.publish(
             event_type="workflow.start",
-            topic="action-requests",
+            response_event="workflow.completed",
+            topic=EventTopic.ACTION_REQUESTS,
             data={"workflow_name": "blog-post-demo"},
             tenant_id="00000000-0000-0000-0000-000000000000",
             user_id="00000000-0000-0000-0000-000000000001",

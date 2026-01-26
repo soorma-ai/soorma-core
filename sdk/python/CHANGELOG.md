@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-01-26
+
+### Changed
+- **Documentation improvements** for all examples (01-06):
+  - Streamlined README files to focus on learning objectives and concepts
+  - Abbreviated code samples while maintaining SDK method accuracy
+  - Added "How it applies concepts" sections to each example
+  - Removed verbose explanations in favor of directing developers to source code
+  - Reduced total documentation by ~25% while improving clarity
+  - Examples now emphasize patterns over implementation details
+- **Example 01** (Hello World): Condensed from 168 to 123 lines (27% reduction)
+- **Example 02** (Events Simple): Streamlined event publishing patterns
+- **Example 03** (Structured Events): Clarified LLM routing and event discovery
+- **Example 04** (Working Memory): Reduced from 427 to 310 lines (27% reduction)
+- **Example 05** (Semantic Memory): Reduced from 543 to 365 lines (33% reduction)
+- **Example 06** (Episodic Memory): Reduced from 478 to 399 lines (17% reduction)
+
 ## [0.7.0] - 2026-01-21
 
 ### Added

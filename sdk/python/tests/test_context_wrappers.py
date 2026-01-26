@@ -9,16 +9,64 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Dict, Any, List
 
-from soorma.context import MemoryClient, BusClient, RegistryClient
+from soorma.context import MemoryClient, BusClient, RegistryClient, PlatformContext
 from soorma.memory.client import MemoryClient as MemoryServiceClient
 from soorma.registry.client import RegistryClient as RegistryServiceClient
 from soorma.events import EventClient
+from soorma.ai.event_toolkit import EventToolkit
 from soorma_common.models import (
     SemanticMemoryResponse,
     EpisodicMemoryResponse,
     ProceduralMemoryResponse,
     WorkingMemoryResponse,
 )
+
+
+class TestPlatformContext:
+    """Tests for PlatformContext initialization and toolkit integration."""
+    
+    def test_context_has_toolkit(self):
+        """Test that PlatformContext includes EventToolkit."""
+        context = PlatformContext()
+        
+        assert hasattr(context, 'toolkit')
+        assert isinstance(context.toolkit, EventToolkit)
+        assert context.toolkit.registry_url == context.registry.base_url
+    
+    def test_context_from_env_has_toolkit(self):
+        """Test that from_env() includes EventToolkit."""
+        context = PlatformContext.from_env()
+        
+        assert hasattr(context, 'toolkit')
+        assert isinstance(context.toolkit, EventToolkit)
+    
+    def test_toolkit_shares_registry_client(self):
+        """Test that toolkit reuses the context's registry client."""
+        context = PlatformContext()
+        
+        # Toolkit should reference the same registry client
+        assert context.toolkit._client is context.registry
+        # Toolkit should not own the client (won't close it independently)
+        assert context.toolkit._owns_client is False
+    
+    @pytest.mark.asyncio
+    async def test_toolkit_no_async_with_needed(self):
+        """Test that toolkit methods work directly without async with when using context."""
+        context = PlatformContext()
+        
+        # Mock the registry client's get_events_by_topic method
+        with patch.object(
+            context.registry,
+            'get_events_by_topic',
+            new_callable=AsyncMock,
+            return_value=[]
+        ) as mock_method:
+            # Should work WITHOUT async with when using context.toolkit
+            from soorma_common.events import EventTopic
+            events = await context.toolkit.discover_events(topic=EventTopic.ACTION_REQUESTS)
+            
+            assert events == []
+            mock_method.assert_called_once_with("action-requests")
 
 
 class TestMemoryClientWrapper:
@@ -509,83 +557,6 @@ class TestBusClientWrapper2:
         assert call_kwargs["event_type"] == "user.registered"
         assert call_kwargs["topic"] == "users"
         assert call_kwargs["data"] == {"user_id": "user-1"}
-
-
-class TestRegistryClientWrapper:
-    """Tests for the RegistryClient wrapper in context.py."""
-    
-    @pytest.mark.asyncio
-    async def test_register_delegates_with_http_client(self):
-        """Test register() makes correct HTTP call."""
-        # Setup
-        mock_http_client = AsyncMock()
-        mock_response = MagicMock()
-        mock_response.status_code = 201
-        mock_http_client.post = AsyncMock(return_value=mock_response)
-        
-        wrapper = RegistryClient(base_url="http://registry:8081")
-        wrapper._http_client = mock_http_client
-        
-        # Execute
-        result = await wrapper.register(
-            agent_id="agent-123",
-            name="researcher",
-            agent_type="worker",
-            capabilities=["search", "analyze"],
-            events_consumed=["task.assigned"],
-            events_produced=["task.completed"]
-        )
-        
-        # Verify
-        assert result is True
-        mock_http_client.post.assert_called_once()
-        call_args = mock_http_client.post.call_args
-        assert "v1/agents" in call_args[0][0]
-    
-    @pytest.mark.asyncio
-    async def test_deregister_delegates_with_http_client(self):
-        """Test deregister() makes correct HTTP call."""
-        # Setup
-        mock_http_client = AsyncMock()
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_http_client.delete = AsyncMock(return_value=mock_response)
-        
-        wrapper = RegistryClient(base_url="http://registry:8081")
-        wrapper._http_client = mock_http_client
-        
-        # Execute
-        result = await wrapper.deregister("agent-1")
-        
-        # Verify
-        assert result is True
-        mock_http_client.delete.assert_called_once()
-        call_args = mock_http_client.delete.call_args
-        assert "agent-1" in call_args[0][0]
-    
-    @pytest.mark.asyncio
-    async def test_query_schemas_success(self):
-        """Test query_schemas() retrieves event schemas."""
-        # Setup
-        mock_http_client = AsyncMock()
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "events": [
-                {"payload_schema": {"type": "object", "properties": {}}}
-            ]
-        })
-        mock_http_client.get = AsyncMock(return_value=mock_response)
-        
-        wrapper = RegistryClient(base_url="http://registry:8081")
-        wrapper._http_client = mock_http_client
-        
-        # Execute
-        result = await wrapper.query_schemas("task.completed")
-        
-        # Verify
-        assert result == {"type": "object", "properties": {}}
-        mock_http_client.get.assert_called_once()
 
 
 class TestIntegrationScenarios:

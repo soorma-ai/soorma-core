@@ -149,7 +149,9 @@ class TestInitAgentTypes:
         
         agent_py = (tmp_path / "default-agent" / "default_agent" / "agent.py").read_text()
         assert "from soorma import Worker" in agent_py
-        assert "@worker.on_task" in agent_py
+        assert "@worker.on_event" in agent_py
+        assert "EventEnvelope" in agent_py
+        assert "EventTopic.ACTION_REQUESTS" in agent_py
 
     def test_init_planner_type(self, tmp_path):
         """--type planner should create a Planner agent."""
@@ -179,8 +181,9 @@ class TestInitAgentTypes:
         
         agent_py = (tmp_path / "my-worker" / "my_worker" / "agent.py").read_text()
         assert "from soorma import Worker" in agent_py
-        assert "@worker.on_task" in agent_py
-        assert "TaskContext" in agent_py
+        assert "@worker.on_event" in agent_py
+        assert "EventEnvelope" in agent_py
+        assert "EventTopic.ACTION_REQUESTS" in agent_py
 
     def test_init_tool_type(self, tmp_path):
         """--type tool should create a Tool service."""
@@ -194,8 +197,9 @@ class TestInitAgentTypes:
         
         agent_py = (tmp_path / "my-tool" / "my_tool" / "agent.py").read_text()
         assert "from soorma import Tool" in agent_py
-        assert "@tool.on_invoke" in agent_py
-        assert "ToolRequest" in agent_py
+        assert "@tool.on_event" in agent_py
+        assert "EventEnvelope" in agent_py
+        assert "EventTopic.ACTION_REQUESTS" in agent_py
 
     def test_init_type_short_flag(self, tmp_path):
         """-t should work as shorthand for --type."""
@@ -239,4 +243,5 @@ class TestInitAgentTypes:
         test_py = (tmp_path / "tool-test" / "tests" / "test_agent.py").read_text()
         assert "test_tool_exists" in test_py
         assert "test_example_operation" in test_py
-        assert "from soorma.agents.tool import ToolRequest" in test_py
+        assert "from soorma_common.events import EventEnvelope, EventTopic" in test_py
+        assert "context.bus.publish.assert_called_once()" in test_py

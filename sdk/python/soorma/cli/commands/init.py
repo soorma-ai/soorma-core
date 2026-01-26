@@ -78,7 +78,7 @@ async def plan_example_goal(goal: Goal, context: PlatformContext) -> Plan:
     print(f"Planning goal: {{goal.goal_type}} ({{goal.goal_id}})")
     
     # Discover available workers (example)
-    # workers = await context.registry.find_all("data_processing")
+    # workers = await context.registry.query_agents(name="data_processing")
     
     # Decompose goal into tasks
     # In real scenarios, you might use an LLM for intelligent decomposition
@@ -114,20 +114,20 @@ WORKER_PY_TEMPLATE = '''"""
 {name} - A Soorma Worker Agent.
 
 Workers are the "hands" of the DisCo architecture. They:
-1. Register capabilities with the Registry
-2. Subscribe to action-requests matching their capabilities
+1. Subscribe to action-requests and execute domain-specific tasks
+2. Use EventEnvelope for strongly-typed event handling
 3. Execute tasks with domain expertise (often using LLMs)
-4. Report progress and results
+4. Publish results as action-results
 
 The PlatformContext provides access to:
-- context.registry: Service discovery & capabilities
+- context.registry: Service discovery & event types
 - context.memory: Distributed state management
 - context.bus: Event choreography (pub/sub)
-- context.tracker: Observability & state machines
+- context.toolkit: Event discovery and formatting
 """
 
 from soorma import Worker, PlatformContext
-from soorma.agents.worker import TaskContext
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 # Create a Worker agent
@@ -135,7 +135,7 @@ worker = Worker(
     name="{name}",
     description="{description}",
     version="0.1.0",
-    capabilities=["example_task"],  # Add your capabilities here
+    capabilities=["example_task"],
 )
 
 
@@ -152,39 +152,39 @@ async def shutdown():
     print(f"👋 {{worker.name}} is shutting down...")
 
 
-@worker.on_task("example_task")
-async def handle_example_task(task: TaskContext, context: PlatformContext):
+@worker.on_event("example.task", topic=EventTopic.ACTION_REQUESTS)
+async def handle_example_task(event: EventEnvelope, context: PlatformContext):
     """
-    Handle incoming example_task assignments.
+    Handle incoming example.task events.
     
-    Replace this with your own task handlers. Each task handler:
-    1. Receives a TaskContext with input data
+    Replace this with your own event handlers. Each handler:
+    1. Receives an EventEnvelope with strongly-typed data
     2. Has access to PlatformContext for platform services
-    3. Returns a result dictionary
+    3. Publishes results as action-results events
     
-    The platform automatically:
-    - Tracks task progress
-    - Publishes action-results on completion
-    - Handles errors and retries
+    Key patterns:
+    - Access event data: event.data or {{}}
+    - Access tenant/user: event.tenant_id, event.user_id
+    - Publish results: context.bus.publish(event_type=..., topic=EventTopic.ACTION_RESULTS, ...)
     """
-    print(f"Processing task: {{task.task_name}} ({{task.task_id}})")
-    
-    # Report progress (optional)
-    await task.report_progress(0.5, "Processing...")
-    
-    # Access shared memory (example)
-    # cached_data = await context.memory.retrieve(f"cache:{{task.data.get('key')}}")
+    data = event.data or {{}}
+    print(f"Processing: {{data}}")
     
     # Your task logic here
-    result = {{
+    result_data = {{
         "message": "Hello from {name}!",
         "processed": True,
     }}
     
-    # Store results for other workers (optional)
-    # await context.memory.store(f"result:{{task.task_id}}", result)
-    
-    return result
+    # Publish result
+    await context.bus.publish(
+        event_type="example.result",
+        topic=EventTopic.ACTION_RESULTS,
+        data=result_data,
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
 
 
 if __name__ == "__main__":
@@ -210,10 +210,11 @@ Key differences from Workers:
 The PlatformContext provides access to:
 - context.registry: Service discovery
 - context.bus: Event choreography
+- context.toolkit: Event discovery and formatting
 """
 
 from soorma import Tool, PlatformContext
-from soorma.agents.tool import ToolRequest
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 # Create a Tool service
@@ -221,7 +222,7 @@ tool = Tool(
     name="{name}",
     description="{description}",
     version="0.1.0",
-    capabilities=["example_operation"],  # Add your operations here
+    capabilities=["example_operation"],
 )
 
 
@@ -238,15 +239,20 @@ async def shutdown():
     print(f"👋 {{tool.name}} is shutting down...")
 
 
-@tool.on_invoke("example_operation")
-async def handle_example_operation(request: ToolRequest, context: PlatformContext):
+@tool.on_event("example.operation", topic=EventTopic.ACTION_REQUESTS)
+async def handle_example_operation(event: EventEnvelope, context: PlatformContext):
     """
-    Handle incoming example_operation requests.
+    Handle incoming example.operation events.
     
-    Replace this with your own operation handlers. Each handler:
-    1. Receives a ToolRequest with input parameters
+    Replace this with your own event handlers. Each handler:
+    1. Receives an EventEnvelope with strongly-typed data
     2. Performs a stateless, deterministic operation
-    3. Returns a result dictionary
+    3. Publishes result as action-results event
+    
+    Key patterns:
+    - Access event data: event.data or {{}}
+    - Access tenant/user: event.tenant_id, event.user_id
+    - Publish results: context.bus.publish(event_type=..., topic=EventTopic.ACTION_RESULTS, ...)
     
     Tools are ideal for:
     - API integrations (weather, maps, search)
@@ -254,17 +260,25 @@ async def handle_example_operation(request: ToolRequest, context: PlatformContex
     - Data transformations
     - File parsing
     """
-    print(f"Executing operation: {{request.operation}} ({{request.request_id}})")
+    data = event.data or {{}}
+    input_value = data.get("input", "default")
+    print(f"Executing operation with input: {{input_value}}")
     
     # Your operation logic here
-    input_value = request.data.get("input", "default")
-    
-    result = {{
+    result_data = {{
         "output": f"Processed: {{input_value}}",
         "success": True,
     }}
     
-    return result
+    # Publish result
+    await context.bus.publish(
+        event_type="example.result",
+        topic=EventTopic.ACTION_RESULTS,
+        data=result_data,
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
 
 
 if __name__ == "__main__":
@@ -457,6 +471,7 @@ Tests for {name} worker.
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 def test_worker_exists():
@@ -475,31 +490,32 @@ async def test_startup():
 
 @pytest.mark.asyncio
 async def test_example_task():
-    """Test the example_task handler."""
+    """Test the example_task event handler."""
     from {package_name}.agent import handle_example_task
-    from soorma.agents.worker import TaskContext
     
-    # Create mock task context
-    task = TaskContext(
-        task_id="test-123",
-        task_name="example_task",
-        plan_id="plan-1",
-        goal_id="goal-1",
+    # Create event envelope
+    event = EventEnvelope(
+        event_name="example.task",
+        topic=EventTopic.ACTION_REQUESTS,
         data={{"key": "value"}},
+        tenant_id="test-tenant",
+        user_id="test-user",
+        correlation_id="corr-123",
     )
-    task.report_progress = AsyncMock()
     
     # Create mock platform context
     context = MagicMock()
-    context.memory.retrieve = AsyncMock(return_value=None)
-    context.memory.store = AsyncMock()
+    context.bus.publish = AsyncMock()
     
     # Execute handler
-    result = await handle_example_task(task, context)
+    await handle_example_task(event, context)
     
-    # Verify result
-    assert result["processed"] is True
-    assert "message" in result
+    # Verify publish was called
+    context.bus.publish.assert_called_once()
+    call_kwargs = context.bus.publish.call_args[1]
+    assert call_kwargs["event_type"] == "example.result"
+    assert call_kwargs["topic"] == EventTopic.ACTION_RESULTS
+    assert call_kwargs["data"]["processed"] is True
 '''
 
 TOOL_TEST_TEMPLATE = '''"""
@@ -508,6 +524,7 @@ Tests for {name} tool.
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 def test_tool_exists():
@@ -526,25 +543,32 @@ async def test_startup():
 
 @pytest.mark.asyncio
 async def test_example_operation():
-    """Test the example_operation handler."""
+    """Test the example_operation event handler."""
     from {package_name}.agent import handle_example_operation
-    from soorma.agents.tool import ToolRequest
     
-    # Create mock request
-    request = ToolRequest(
-        operation="example_operation",
+    # Create event envelope
+    event = EventEnvelope(
+        event_name="example.operation",
+        topic=EventTopic.ACTION_REQUESTS,
         data={{"input": "test_value"}},
+        tenant_id="test-tenant",
+        user_id="test-user",
+        correlation_id="corr-123",
     )
     
     # Create mock platform context
     context = MagicMock()
+    context.bus.publish = AsyncMock()
     
     # Execute handler
-    result = await handle_example_operation(request, context)
+    await handle_example_operation(event, context)
     
-    # Verify result
-    assert result["success"] is True
-    assert "output" in result
+    # Verify publish was called
+    context.bus.publish.assert_called_once()
+    call_kwargs = context.bus.publish.call_args[1]
+    assert call_kwargs["event_type"] == "example.result"
+    assert call_kwargs["topic"] == EventTopic.ACTION_RESULTS
+    assert call_kwargs["data"]["success"] is True
 '''
 
 # Keep TEST_TEMPLATE as alias for backward compatibility (worker)

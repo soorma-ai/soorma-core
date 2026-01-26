@@ -14,6 +14,7 @@ from typing import Any, Dict
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from events import (
     ANSWER_QUESTION_EVENT,
     QUESTION_ANSWERED_EVENT,
@@ -84,12 +85,12 @@ Your answer:"""
     return response.choices[0].message.content
 
 
-async def _send_response(event: Dict[str, Any], context: PlatformContext, payload: QuestionAnsweredPayload):
+async def _send_response(event: EventEnvelope, context: PlatformContext, payload: QuestionAnsweredPayload):
     """Send response event with the answer payload."""
     await context.bus.respond(
         event_type=QUESTION_ANSWERED_EVENT.event_name,
         data=payload.model_dump(),
-        correlation_id=event.get("correlation_id"),
+        correlation_id=event.correlation_id,
     )
 
 
@@ -103,8 +104,8 @@ worker = Worker(
 )
 
 
-@worker.on_event("question.ask", topic="action-requests")
-async def answer_question(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("question.ask", topic=EventTopic.ACTION_REQUESTS)
+async def answer_question(event: EventEnvelope, context: PlatformContext):
     """
     Answer a question using RAG pattern with LLM.
     
@@ -113,7 +114,7 @@ async def answer_question(event: Dict[str, Any], context: PlatformContext):
     2. Use LLM to synthesize a grounded answer
     3. If no knowledge, admit we don't know
     """
-    data = event.get("data", {})
+    data = event.data or {}
     question = data.get("question", "")
     user_id = data.get("user_id", "00000000-0000-0000-0000-000000000001")
     

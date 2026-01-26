@@ -5,9 +5,9 @@ A stateless tool that stores knowledge in semantic memory.
 Uses event-driven choreography pattern.
 """
 
-from typing import Any, Dict
 from soorma import Tool
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from events import (
     STORE_KNOWLEDGE_EVENT,
     KNOWLEDGE_STORED_EVENT,
@@ -25,18 +25,22 @@ tool = Tool(
 )
 
 
-@tool.on_event("knowledge.store", topic="action-requests")
-async def store_knowledge(event: Dict[str, Any], context: PlatformContext):
+@tool.on_event("knowledge.store", topic=EventTopic.ACTION_REQUESTS)
+async def store_knowledge(event: EventEnvelope, context: PlatformContext):
     """
     Store knowledge in semantic memory.
+    
+    Args:
+        event: EventEnvelope with store knowledge request
+        context: PlatformContext for accessing memory and bus services
     
     This is a deterministic operation - just store the content
     with its metadata in the memory service.
     """
-    data = event.get("data", {})
+    data = event.data or {}
     content = data.get("content", "")
     metadata = data.get("metadata", {})
-    user_id = data.get("user_id", "00000000-0000-0000-0000-000000000001")
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
     
     print(f"\n📚 Storing knowledge:")
     print(f"   Content: {content[:100]}...")
@@ -62,7 +66,7 @@ async def store_knowledge(event: Dict[str, Any], context: PlatformContext):
         await context.bus.respond(
             event_type=KNOWLEDGE_STORED_EVENT.event_name,
             data=payload.model_dump(),
-            correlation_id=event.get("correlation_id"),
+            correlation_id=event.correlation_id,
         )
         
     except Exception as e:
@@ -78,7 +82,7 @@ async def store_knowledge(event: Dict[str, Any], context: PlatformContext):
         await context.bus.respond(
             event_type=KNOWLEDGE_STORED_EVENT.event_name,
             data=payload.model_dump(),
-            correlation_id=event.get("correlation_id"),
+            correlation_id=event.correlation_id,
         )
 
 

@@ -165,10 +165,12 @@ async def execute_ai_tool(
                     topic=tool_args.get("topic"),
                     event_name_pattern=tool_args.get("event_name_pattern")
                 )
+                # Format for LLM consumption
+                formatted_events = toolkit.format_for_llm(events)
                 return {
                     "success": True,
-                    "events": events,
-                    "count": len(events)
+                    "events": formatted_events,
+                    "count": len(formatted_events)
                 }
 
             elif tool_name == "get_event_schema":
@@ -179,9 +181,11 @@ async def execute_ai_tool(
                         "error": f"Event '{tool_args['event_name']}' not found",
                         "suggestion": "Use discover_events to find available events"
                     }
+                # Format for LLM consumption
+                formatted_event = toolkit.format_for_llm([event])[0]
                 return {
                     "success": True,
-                    "event": event
+                    "event": formatted_event
                 }
 
             elif tool_name == "create_event_payload":

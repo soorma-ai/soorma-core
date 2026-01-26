@@ -2,6 +2,7 @@ import asyncio
 import os
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from litellm import completion
 from events import (
     ADVICE_REQUEST_EVENT, ADVICE_RESULT_EVENT,
@@ -30,14 +31,14 @@ async def startup():
 async def shutdown():
     print(f"\n🛑 {advisor.name} shutting down. Goodbye!")
 
-@advisor.on_event(ADVICE_REQUEST_EVENT.event_name, topic="action-requests")
-async def handle_advice_request(event: dict, context: PlatformContext):
+@advisor.on_event(ADVICE_REQUEST_EVENT.event_name, topic=EventTopic.ACTION_REQUESTS)
+async def handle_advice_request(event: EventEnvelope, context: PlatformContext):
     """
     Drafts response based on user request and research context.
     """
-    print(f"\n✍️  Drafter received event: {event.get('type')}")
+    print(f"\n✍️  Drafter received event: {event.type}")
     
-    data = event.get("data", {})
+    data = event.data or {}
     try:
         request = DraftRequestPayload(**data)
     except Exception as e:
@@ -54,7 +55,7 @@ async def handle_advice_request(event: dict, context: PlatformContext):
         user_id=DEFAULT_USER_ID,
         role="user",
         content=f"Draft request for: {user_request} (context: {research_context[:100]}...)",
-        metadata={"event_id": event.get('id'), "has_critique": bool(critique)}
+        metadata={"event_id": event.id, "has_critique": bool(critique)}
     )
     
     prompt = f"""
@@ -97,21 +98,21 @@ async def handle_advice_request(event: dict, context: PlatformContext):
         user_id=DEFAULT_USER_ID,
         role="assistant",
         content=f"Draft created: {draft_text[:200]}...",
-        metadata={"event_id": event.get('id'), "draft_length": len(draft_text)}
+        metadata={"event_id": event.id, "draft_length": len(draft_text)}
     )
 
     result_data = {
         "draft_text": draft_text,
-        "original_request_id": event.get("id"),
-        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+        "original_request_id": event.id,
+        "plan_id": data.get("plan_id", event.id)  # Propagate plan_id for correlation
     }
     
     print(f"   📝 Drafted: {draft_text[:50]}...")
     
-    await context.bus.publish(
+    await context.bus.respond(
         event_type=ADVICE_RESULT_EVENT.event_name,
-        topic=ADVICE_RESULT_EVENT.topic,
-        data=result_data
+        data=result_data,
+        correlation_id=event.correlation_id or event.id,
     )
 
 if __name__ == "__main__":

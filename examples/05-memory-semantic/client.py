@@ -20,6 +20,7 @@ import asyncio
 import sys
 from uuid import uuid4
 from soorma import EventClient
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 async def send_request(request: str):
@@ -39,22 +40,22 @@ async def send_request(request: str):
     response_data = {}
     
     # Define response handlers for both possible responses
-    @client.on_event("knowledge.stored", topic="action-results")
-    async def on_knowledge_stored(event):
+    @client.on_event("knowledge.stored", topic=EventTopic.ACTION_RESULTS)
+    async def on_knowledge_stored(event: EventEnvelope):
         """Handle knowledge stored confirmation."""
         response_data["type"] = "knowledge.stored"
-        response_data["data"] = event.get("data", {})
+        response_data["data"] = event.data or {}
         response_received.set()
     
-    @client.on_event("question.answered", topic="action-results")
-    async def on_question_answered(event):
+    @client.on_event("question.answered", topic=EventTopic.ACTION_RESULTS)
+    async def on_question_answered(event: EventEnvelope):
         """Handle question answer response."""
         response_data["type"] = "question.answered"
-        response_data["data"] = event.get("data", {})
+        response_data["data"] = event.data or {}
         response_received.set()
     
     # Connect to platform
-    await client.connect(topics=["action-results"])
+    await client.connect(topics=[EventTopic.ACTION_RESULTS])
     
     # Generate correlation ID
     correlation_id = str(uuid4())
@@ -62,7 +63,7 @@ async def send_request(request: str):
     # Publish user request event
     await client.publish(
         event_type="user.request",
-        topic="action-requests",
+        topic=EventTopic.ACTION_REQUESTS,
         data={"request": request},
         correlation_id=correlation_id,
     )

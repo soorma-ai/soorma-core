@@ -40,6 +40,8 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from uuid import uuid4
 
+from soorma_common.events import EventEnvelope, EventTopic
+
 from .base import Agent
 from ..context import PlatformContext
 
@@ -170,8 +172,8 @@ class Tool(Agent):
     
     def _register_tool_request_handler(self) -> None:
         """Register the main tool.request event handler."""
-        @self.on_event("tool.request", topic="action-requests")
-        async def handle_tool_request(event: Dict[str, Any], context: PlatformContext) -> None:
+        @self.on_event("tool.request", topic=EventTopic.ACTION_REQUESTS)
+        async def handle_tool_request(event: EventEnvelope, context: PlatformContext) -> None:
             await self._handle_tool_request(event, context)
     
     def on_invoke(self, operation: str) -> Callable[[ToolHandler], ToolHandler]:
@@ -218,11 +220,11 @@ class Tool(Agent):
     
     async def _handle_tool_request(
         self,
-        event: Dict[str, Any],
+        event: EventEnvelope,
         context: PlatformContext,
     ) -> None:
         """Handle an incoming tool.request event."""
-        data = event.get("data", {})
+        data = event.data or {}
         
         operation = data.get("operation")
         target_tool = data.get("tool")
@@ -238,7 +240,7 @@ class Tool(Agent):
             await self._emit_error_response(
                 request_id=data.get("request_id", str(uuid4())),
                 error=f"Unknown operation: {operation}",
-                correlation_id=event.get("correlation_id"),
+                correlation_id=event.correlation_id,
                 context=context,
             )
             return

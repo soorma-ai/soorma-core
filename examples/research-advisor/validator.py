@@ -3,6 +3,7 @@ import os
 import json
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from soorma.registry.client import RegistryClient
 from litellm import completion
 from events import (
@@ -32,14 +33,14 @@ async def startup():
 async def shutdown():
     print(f"\n🛑 {validator.name} shutting down. Goodbye!")
 
-@validator.on_event(VALIDATION_REQUEST_EVENT.event_name, topic="action-requests")
-async def handle_validation_request(event: dict, context: PlatformContext):
+@validator.on_event(VALIDATION_REQUEST_EVENT.event_name, topic=EventTopic.ACTION_REQUESTS)
+async def handle_validation_request(event: EventEnvelope, context: PlatformContext):
     """
     Validates if the draft is accurate based on the source text.
     """
-    print(f"\n🔍 Validator received event: {event.get('type')}")
+    print(f"\n🔍 Validator received event: {event.type}")
     
-    data = event.get("data", {})
+    data = event.data or {}
     try:
         request = ValidationRequestPayload(**data)
     except Exception as e:
@@ -55,7 +56,7 @@ async def handle_validation_request(event: dict, context: PlatformContext):
         user_id=DEFAULT_USER_ID,
         role="user",
         content=f"Validation request - Draft: {draft_text[:100]}... Source: {source_text[:100]}...",
-        metadata={"event_id": event.get('id')}
+        metadata={"event_id": event.id}
     )
     
     prompt = f"""
@@ -102,22 +103,22 @@ async def handle_validation_request(event: dict, context: PlatformContext):
         user_id=DEFAULT_USER_ID,
         role="assistant",
         content=f"Validation {status}: {critique}",
-        metadata={"event_id": event.get('id'), "is_valid": is_valid}
+        metadata={"event_id": event.id, "is_valid": is_valid}
     )
 
     result_data = {
         "is_valid": is_valid,
         "critique": critique,
-        "original_request_id": event.get("id"),
-        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+        "original_request_id": event.id,
+        "plan_id": data.get("plan_id", event.id)  # Propagate plan_id for correlation
     }
     
     print(f"   {status}: {critique}")
     
-    await context.bus.publish(
+    await context.bus.respond(
         event_type=VALIDATION_RESULT_EVENT.event_name,
-        topic=VALIDATION_RESULT_EVENT.topic,
-        data=result_data
+        data=result_data,
+        correlation_id=event.correlation_id or event.id,
     )
 
 if __name__ == "__main__":

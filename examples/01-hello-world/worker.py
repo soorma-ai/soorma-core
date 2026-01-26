@@ -6,9 +6,9 @@ The simplest possible Soorma agent - demonstrates the Worker pattern.
 A Worker listens for events and responds to them.
 """
 
-from typing import Any, Dict
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 # Create a Worker instance
@@ -21,13 +21,13 @@ worker = Worker(
 )
 
 
-@worker.on_event("greeting.requested", topic="action-requests")
-async def handle_greeting(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("greeting.requested", topic=EventTopic.ACTION_REQUESTS)
+async def handle_greeting(event: EventEnvelope, context: PlatformContext):
     """Handle greeting requests and respond with a friendly message."""
     print(f"\n📨 Received greeting request")
     
-    # Extract data from the event
-    data = event.get("data", {})
+    # Extract data from the event - EventEnvelope.data is typed as Optional[Dict[str, Any]]
+    data = event.data or {}
     name = data.get("name", "World")
     
     print(f"   Name: {name}")
@@ -36,14 +36,17 @@ async def handle_greeting(event: Dict[str, Any], context: PlatformContext):
     greeting = f"Hello, {name}! 👋"
     print(f"   Generated: {greeting}\n")
     
+    # Extract response event from request (caller specifies expected response)
+    response_event_type = event.response_event or "greeting.completed"
+    
     # Send response using respond() convenience method
     await context.bus.respond(
-        event_type="greeting.completed",
+        event_type=response_event_type,
         data={
             "greeting": greeting,
             "name": name,
         },
-        correlation_id=event.get("correlation_id"),
+        correlation_id=event.correlation_id,
     )
     
     print("✅ Response published")

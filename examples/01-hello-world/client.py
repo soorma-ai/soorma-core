@@ -9,6 +9,7 @@ This demonstrates how to interact with Soorma agents using the EventClient.
 import sys
 import asyncio
 from soorma import EventClient
+from soorma_common.events import EventEnvelope, EventTopic
 
 
 async def send_greeting_request(name: str = "World"):
@@ -30,15 +31,15 @@ async def send_greeting_request(name: str = "World"):
     response_data = {}
     
     # Define response handler
-    @client.on_event("greeting.completed", topic="action-results")
-    async def on_response(event):
+    @client.on_event("greeting.completed", topic=EventTopic.ACTION_RESULTS)
+    async def on_response(event: EventEnvelope):
         """Handle the greeting response from the worker."""
-        data = event.get("data", {})
+        data = event.data or {}
         response_data.update(data)
         response_received.set()
     
     # Connect to the platform
-    await client.connect(topics=["action-results"])
+    await client.connect(topics=[EventTopic.ACTION_RESULTS])
     
     print(f"🎯 Sending greeting request for: {name}")
     
@@ -48,7 +49,7 @@ async def send_greeting_request(name: str = "World"):
     
     await client.publish(
         event_type="greeting.requested",
-        topic="action-requests",
+        topic=EventTopic.ACTION_REQUESTS,
         data={"name": name},
         correlation_id=correlation_id,
         response_event="greeting.completed",

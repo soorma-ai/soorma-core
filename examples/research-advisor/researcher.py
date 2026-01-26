@@ -2,6 +2,7 @@ import asyncio
 import os
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from ddgs import DDGS
 from litellm import completion
 from events import (
@@ -58,14 +59,14 @@ async def startup():
 async def shutdown():
     print(f"\n🛑 {researcher.name} shutting down. Goodbye!")
 
-@researcher.on_event(RESEARCH_REQUEST_EVENT.event_name, topic="action-requests")
-async def handle_research_request(event: dict, context: PlatformContext):
+@researcher.on_event(RESEARCH_REQUEST_EVENT.event_name, topic=EventTopic.ACTION_REQUESTS)
+async def handle_research_request(event: EventEnvelope, context: PlatformContext):
     """
     Handles research requests.
     """
-    print(f"\n📚 Researcher received event: {event.get('type')}")
+    print(f"\n📚 Researcher received event: {event.type}")
     
-    data = event.get("data", {})
+    data = event.data or {}
     try:
         request = ResearchRequestPayload(**data)
     except Exception as e:
@@ -81,7 +82,7 @@ async def handle_research_request(event: dict, context: PlatformContext):
         user_id=DEFAULT_USER_ID,
         role="user",
         content=f"Research request: {query_topic} (context: {extra_context})",
-        metadata={"event_id": event.get('id')}
+        metadata={"event_id": event.id}
     )
     
     # Check Semantic Memory first - maybe we already researched this!
@@ -161,7 +162,7 @@ async def handle_research_request(event: dict, context: PlatformContext):
             source_url = "http://mock-source.com"
 
     # Extract plan_id for proper memory scoping
-    plan_id = data.get("plan_id", event.get("id"))
+    plan_id = data.get("plan_id", event.id)
 
     # Only store in Semantic Memory if this is NEW research (not from cache)
     if not existing_knowledge:
@@ -183,7 +184,6 @@ async def handle_research_request(event: dict, context: PlatformContext):
             "summary": summary,
             "source_url": source_url,
             "query_topic": query_topic,
-            "timestamp": event.get("timestamp")
         },
         plan_id=plan_id
     )
@@ -195,22 +195,22 @@ async def handle_research_request(event: dict, context: PlatformContext):
         user_id=DEFAULT_USER_ID,
         role="assistant",
         content=f"Research completed for '{query_topic}': {summary[:200]}...",
-        metadata={"event_id": event.get('id'), "source_url": source_url}
+        metadata={"event_id": event.id, "source_url": source_url}
     )
 
     # Publish Result
     result_payload = {
         "summary": summary,
         "source_url": source_url,
-        "original_request_id": event.get("id"),
-        "plan_id": data.get("plan_id", event.get("id"))  # Propagate plan_id for correlation
+        "original_request_id": event.id,
+        "plan_id": data.get("plan_id", event.id)  # Propagate plan_id for correlation
     }
     
     print(f"   📤 Publishing results for: {query_topic}")
-    await context.bus.publish(
+    await context.bus.respond(
         event_type=RESEARCH_RESULT_EVENT.event_name,
-        topic=RESEARCH_RESULT_EVENT.topic,
-        data=result_payload
+        data=result_payload,
+        correlation_id=event.correlation_id or event.id,
     )
 
 if __name__ == "__main__":

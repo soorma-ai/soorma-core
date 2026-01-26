@@ -40,9 +40,10 @@ Usage:
     worker.run()
 """
 
-__version__ = "0.7.0"
+__version__ = "0.7.3"
 
 # Core imports
+from soorma_common.events import EventTopic, EventEnvelope
 from .events import EventClient
 from .context import (
     PlatformContext,
@@ -74,6 +75,8 @@ __all__ = [
     "TrackerClient",
     # Events
     "EventClient",
+    "EventTopic",
+    "EventEnvelope",
     # Data classes
     "Goal",
     "Plan",

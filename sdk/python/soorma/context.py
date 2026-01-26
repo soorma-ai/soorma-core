@@ -11,7 +11,8 @@ Usage:
     @worker.on_task("schedule_technician")
     async def schedule_service(task, context: PlatformContext):
         # Service Discovery
-        calendar_tool = await context.registry.find("calendar_api_tool")
+        agents = await context.registry.query_agents(name="calendar_api_tool")
+        calendar_tool = agents[0] if agents else None
         
         # Shared Memory
         vehicle = await context.memory.retrieve(f"vehicle:{task.data['vehicle_id']}")
@@ -20,268 +21,22 @@ Usage:
         await context.bus.publish("technician_scheduled", result)
 """
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import httpx
 import logging
 import os
 
+from soorma_common.events import EventTopic
 from .events import EventClient
 from .memory import MemoryClient as MemoryServiceClient
+from .registry.client import RegistryClient
+from .ai.event_toolkit import EventToolkit
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class RegistryClient:
-    """
-    Service Discovery & Capabilities client.
-    
-    Powered by: PostgreSQL + gRPC (in production)
-    
-    Methods:
-        find(): Locate agents by capability
-        register(): Announce your services  
-        query_schemas(): Get event DTOs
-    """
-    base_url: str = field(default_factory=lambda: os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"))
-    _http_client: Optional[httpx.AsyncClient] = field(default=None, repr=False)
-    
-    async def _ensure_client(self) -> httpx.AsyncClient:
-        if self._http_client is None:
-            self._http_client = httpx.AsyncClient()
-        return self._http_client
-    
-    async def find(self, capability: str) -> Optional[Dict[str, Any]]:
-        """
-        Locate agents by capability.
-        
-        Args:
-            capability: The capability to search for (e.g., "calendar_api_tool")
-            
-        Returns:
-            Agent info dict if found, None otherwise
-        """
-        client = await self._ensure_client()
-        try:
-            response = await client.get(
-                f"{self.base_url}/v1/agents/search",
-                params={"capability": capability},
-                timeout=10.0,
-            )
-            if response.status_code == 200:
-                results = response.json()
-                return results[0] if results else None
-            return None
-        except Exception as e:
-            logger.error(f"Registry lookup failed: {e}")
-            return None
-    
-    async def find_all(self, capability: str) -> List[Dict[str, Any]]:
-        """
-        Find all agents with a specific capability.
-        
-        Args:
-            capability: The capability to search for
-            
-        Returns:
-            List of agent info dicts
-        """
-        client = await self._ensure_client()
-        try:
-            response = await client.get(
-                f"{self.base_url}/v1/agents/search",
-                params={"capability": capability},
-                timeout=10.0,
-            )
-            if response.status_code == 200:
-                return response.json()
-            return []
-        except Exception as e:
-            logger.error(f"Registry lookup failed: {e}")
-            return []
-    
-    async def register(
-        self,
-        agent_id: str,
-        name: str,
-        agent_type: str,
-        capabilities: List[Any],  # Can be str or AgentCapability
-        events_consumed: List[str],
-        events_produced: List[str],
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> bool:
-        """
-        Register an agent with the platform.
-        
-        Args:
-            agent_id: Unique identifier for the agent
-            name: Human-readable name
-            agent_type: Type of agent (planner, worker, tool)
-            capabilities: List of capabilities (strings or AgentCapability objects)
-            events_consumed: Event types this agent subscribes to
-            events_produced: Event types this agent publishes
-            metadata: Optional additional metadata
-            
-        Returns:
-            True if registration succeeded
-        """
-        client = await self._ensure_client()
-        
-        # Convert capabilities to structured format if they are strings
-        structured_capabilities = []
-        for cap in capabilities:
-            if isinstance(cap, str):
-                # Auto-convert string capability to structured
-                structured_capabilities.append({
-                    "taskName": cap,
-                    "description": f"Capability: {cap}",
-                    "consumedEvent": "unknown",
-                    "producedEvents": []
-                })
-            elif hasattr(cap, "model_dump"):
-                # It's a Pydantic model (AgentCapability)
-                structured_capabilities.append(cap.model_dump(by_alias=True))
-            elif isinstance(cap, dict):
-                # Already a dict
-                structured_capabilities.append(cap)
-            else:
-                logger.warning(f"Unknown capability format: {cap}")
-
-        # Construct the full AgentDefinition structure
-        agent_def = {
-            "agentId": agent_id,
-            "name": name,
-            "description": (metadata or {}).get("description", ""),
-            "capabilities": structured_capabilities,
-            "consumedEvents": events_consumed,
-            "producedEvents": events_produced
-        }
-
-        try:
-            # Wrap in AgentRegistrationRequest structure
-            request_payload = {"agent": agent_def}
-            
-            response = await client.post(
-                f"{self.base_url}/v1/agents",
-                json=request_payload,
-                timeout=10.0,
-            )
-            return response.status_code in (200, 201)
-        except Exception as e:
-            logger.error(f"Registry registration failed: {e}")
-            return False
-
-    async def register_event(self, event_definition: Any) -> bool:
-        """
-        Register an event definition.
-        
-        Args:
-            event_definition: EventDefinition object or dict
-            
-        Returns:
-            True if registration succeeded
-        """
-        client = await self._ensure_client()
-        
-        payload = event_definition
-        if hasattr(event_definition, "model_dump"):
-            payload = event_definition.model_dump(by_alias=True)
-            
-        # Wrap in EventRegistrationRequest structure
-        request_payload = {"event": payload}
-            
-        try:
-            response = await client.post(
-                f"{self.base_url}/v1/events",
-                json=request_payload,
-                timeout=10.0,
-            )
-            return response.status_code in (200, 201)
-        except Exception as e:
-            logger.error(f"Event registration failed: {e}")
-            return False
-    
-    async def deregister(self, agent_id: str) -> bool:
-        """
-        Remove an agent from the registry.
-        
-        Args:
-            agent_id: The agent ID to remove
-            
-        Returns:
-            True if deregistration succeeded
-        """
-        client = await self._ensure_client()
-        try:
-            response = await client.delete(
-                f"{self.base_url}/v1/agents/{agent_id}",
-                timeout=10.0,
-            )
-            return response.status_code in (200, 204)
-        except Exception as e:
-            logger.error(f"Registry deregistration failed: {e}")
-            return False
-    
-    async def query_schemas(self, event_type: str) -> Optional[Dict[str, Any]]:
-        """
-        Get the JSON schema for an event type.
-        
-        Args:
-            event_type: The event type to get schema for
-            
-        Returns:
-            JSON schema dict if found, None otherwise
-        """
-        client = await self._ensure_client()
-        try:
-            response = await client.get(
-                f"{self.base_url}/v1/events",
-                params={"event_name": event_type},
-                timeout=10.0,
-            )
-            if response.status_code == 200:
-                data = response.json()
-                events = data.get("events", [])
-                if events:
-                    return events[0].get("payload_schema")
-            return None
-        except Exception as e:
-            logger.error(f"Schema query failed: {e}")
-            return None
-    
-    async def heartbeat(self, agent_id: str) -> bool:
-        """
-        Send a heartbeat to keep registration alive.
-        
-        Args:
-            agent_id: The agent ID
-            
-        Returns:
-            True if heartbeat succeeded
-        """
-        client = await self._ensure_client()
-        try:
-            response = await client.put(
-                f"{self.base_url}/v1/agents/{agent_id}/heartbeat",
-                timeout=5.0,
-            )
-            if response.status_code == 200:
-                return True
-            else:
-                logger.warning(
-                    f"Heartbeat failed for {agent_id}: "
-                    f"HTTP {response.status_code} - {response.text}"
-                )
-                return False
-        except Exception as e:
-            logger.warning(f"Heartbeat exception for {agent_id}: {e}")
-            return False
-    
-    async def close(self) -> None:
-        """Close the HTTP client."""
-        if self._http_client:
-            await self._http_client.aclose()
-            self._http_client = None
+# Legacy RegistryClient wrapper removed - now using full RegistryClient from soorma.registry.client
+# The full client provides all the same methods plus proper Pydantic models and event discovery
 
 
 @dataclass
@@ -900,7 +655,7 @@ class BusClient:
             session_id=envelope.session_id,
         )
     
-    async def subscribe(self, topics: List[str]) -> None:
+    async def subscribe(self, topics: List[Union[EventTopic, str]]) -> None:
         """
         Subscribe to event topics.
         
@@ -908,9 +663,11 @@ class BusClient:
         Use @event_client.on_event() decorator to register handlers.
         
         Args:
-            topics: List of topic patterns to subscribe to
+            topics: List of topics (EventTopic enum) or patterns (str for wildcards)
         """
-        await self.event_client.connect(topics=topics)
+        # Convert EventTopic enums to strings
+        topic_strings = [t.value if isinstance(t, EventTopic) else t for t in topics]
+        await self.event_client.connect(topics=topic_strings)
     
     async def close(self) -> None:
         """Close the event client."""
@@ -1132,12 +889,14 @@ class PlatformContext:
         memory: Distributed State Management
         bus: Event Choreography
         tracker: Observability & State Machines
+        toolkit: AI-friendly event discovery and generation utilities
     
     Usage:
         @worker.on_task("schedule_technician")
         async def schedule_service(task, context: PlatformContext):
             # Service Discovery
-            calendar_tool = await context.registry.find("calendar_api_tool")
+            agents = await context.registry.query_agents(name="calendar_api_tool")
+            calendar_tool = agents[0] if agents else None
             
             # Shared Memory
             vehicle = await context.memory.retrieve(f"vehicle:{task.data['vehicle_id']}")
@@ -1156,6 +915,7 @@ class PlatformContext:
     memory: MemoryClient
     bus: BusClient
     tracker: TrackerClient
+    toolkit: EventToolkit
     
     def __init__(
         self,
@@ -1163,6 +923,7 @@ class PlatformContext:
         memory: MemoryClient = None,
         bus: BusClient = None,
         tracker: TrackerClient = None,
+        toolkit: EventToolkit = None,
     ):
         """
         Create a PlatformContext with configured clients.
@@ -1172,11 +933,14 @@ class PlatformContext:
             memory: Memory client with tenant_id/user_id configured (required for memory operations)
             bus: Bus client (optional)
             tracker: Tracker client (optional)
+            toolkit: EventToolkit for AI-friendly event utilities (optional)
         """
-        self.registry = registry or RegistryClient()
+        self.registry = registry or RegistryClient(base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"))
         self.memory = memory or MemoryClient()
         self.bus = bus or BusClient()
         self.tracker = tracker or TrackerClient()
+        # Toolkit reuses registry client - no async with needed when using context.toolkit!
+        self.toolkit = toolkit or EventToolkit(registry_url=self.registry.base_url, registry_client=self.registry)
     
     @classmethod
     def from_env(cls) -> "PlatformContext":
@@ -1200,10 +964,11 @@ class PlatformContext:
             event_service_url=os.getenv("SOORMA_EVENT_SERVICE_URL", "http://localhost:8082"),
         )
         
+        registry_url = os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081")
+        registry_client = RegistryClient(base_url=registry_url)
+        
         return cls(
-            registry=RegistryClient(
-                base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"),
-            ),
+            registry=registry_client,
             memory=MemoryClient(
                 base_url=os.getenv("SOORMA_MEMORY_URL", "http://localhost:8083"),
             ),
@@ -1211,6 +976,7 @@ class PlatformContext:
             tracker=TrackerClient(
                 base_url=os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"),
             ),
+            toolkit=EventToolkit(registry_url=registry_url, registry_client=registry_client),
         )
     
     async def close(self) -> None:
@@ -1219,3 +985,4 @@ class PlatformContext:
         await self.memory.close()
         await self.bus.close()
         await self.tracker.close()
+        # EventToolkit doesn't need explicit close - it uses context managers internally

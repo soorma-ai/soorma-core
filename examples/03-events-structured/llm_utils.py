@@ -2,18 +2,19 @@
 """
 LLM Utilities for Event Selection
 
-This file contains generic utilities that will be provided by the Soorma SDK.
-These patterns are common across many agents (see research-advisor/planner.py).
+This file contains generic utilities that are used with the Soorma SDK.
+These patterns are common across many agents.
 
-This file exists to:
-1. Clearly separate "what will be SDK" from "agent-specific logic"
-2. Demonstrate the pattern for educational purposes
-3. Serve as reference for SDK implementation
+This file demonstrates:
+1. How to use SDK-provided event discovery and formatting
+2. How to integrate LLM-based decision making
+3. How to validate and publish events safely
 
-Future SDK API (not yet available):
-  - context.discover_events(topic, filters) -> list[dict]
-  - context.select_next_action(prompt_template, events, state) -> dict
-  - context.execute_decision(decision) -> None
+Available SDK APIs:
+  - context.toolkit.discover_actionable_events(topic) -> list[EventDefinition]
+  - context.toolkit.format_for_llm(events) -> list[dict]
+  - context.toolkit.format_as_prompt_text(event_dicts) -> str
+  - context.bus.publish(event_type, topic, data, correlation_id)
 """
 
 import json
@@ -21,56 +22,12 @@ import os
 from litellm import completion
 from soorma.ai.event_toolkit import EventToolkit
 from soorma.context import PlatformContext
-
-
-async def discover_events(context: PlatformContext, topic: str) -> list[dict]:
-    """
-    Discover available events from the Registry for a given topic.
-    
-    This is a generic utility that will become context.discover_events() in the SDK.
-    
-    Args:
-        context: Platform context with registry access
-        topic: Event topic to filter by (e.g., "action-requests")
-        
-    Returns:
-        List of event dictionaries with name, description, metadata
-    """
-    async with EventToolkit(context.registry.base_url) as toolkit:
-        events = await toolkit.discover_actionable_events(topic=topic)
-        return events
-
-
-def format_events_for_llm(events: list[dict]) -> str:
-    """
-    Format discovered events for LLM consumption.
-    
-    This is a generic formatter that will be part of the SDK.
-    Agents can customize the format via prompt templates.
-    
-    Args:
-        events: List of event dictionaries from Registry
-        
-    Returns:
-        Formatted string suitable for LLM prompts
-    """
-    formatted = []
-    for i, event in enumerate(events, 1):
-        metadata = event.get("metadata", {})
-        when_to_use = metadata.get("when_to_use", "No guidance provided")
-        
-        formatted.append(
-            f"{i}. **{event['name']}**\n"
-            f"   Description: {event['description']}\n"
-            f"   When to use: {when_to_use}\n"
-        )
-    return "\n".join(formatted)
-
+from soorma_common.models import EventDefinition
 
 async def select_event_with_llm(
     prompt_template: str,
     context_data: dict,
-    events: list[dict],
+    formatted_events: str,
     model: str = None
 ) -> dict:
     """
@@ -88,13 +45,10 @@ async def select_event_with_llm(
     Returns:
         dict with keys: event_name, reason, data
     """
-    # Format the available events
-    event_options = format_events_for_llm(events)
-    
     # Build the LLM prompt by substituting template variables
     prompt = prompt_template.format(
         context_data=json.dumps(context_data, indent=2),
-        events=event_options
+        events=formatted_events
     )
     
     # Get LLM model from parameter or environment
@@ -115,7 +69,7 @@ async def select_event_with_llm(
 
 async def validate_and_publish(
     decision: dict,
-    events: list[dict],
+    events: list[EventDefinition],
     topic: str,
     context: PlatformContext
 ) -> bool:
@@ -127,14 +81,14 @@ async def validate_and_publish(
     
     Args:
         decision: LLM decision dict with event_name, reason, data
-        events: Available events from Registry (for validation)
+        events: Available events from Registry (EventDefinition objects for validation)
         topic: Topic to publish to
         context: Platform context with event bus access
         
     Returns:
         True if published successfully, False otherwise
     """
-    event_names = [e["name"] for e in events]
+    event_names = [e.event_name for e in events]
     
     # Validate event exists
     if decision["event_name"] not in event_names:

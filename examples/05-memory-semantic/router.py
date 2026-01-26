@@ -13,8 +13,9 @@ It demonstrates:
 from typing import Any, Dict
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from events import USER_REQUEST_EVENT, STORE_KNOWLEDGE_EVENT, ANSWER_QUESTION_EVENT
-from llm_utils import discover_events, select_event_with_llm, validate_and_publish
+from llm_utils import select_event_with_llm, validate_and_publish
 
 
 # Create a Worker for routing user requests
@@ -67,27 +68,27 @@ Return your decision in this JSON format:
 Be precise in extracting the content/question - preserve the user's actual words."""
 
 
-@worker.on_event("user.request", topic="action-requests")
-async def route_request(event: Dict[str, Any], context: PlatformContext):
+@worker.on_event("user.request", topic=EventTopic.ACTION_REQUESTS)
+async def route_request(event: EventEnvelope, context: PlatformContext):
     """
     Route user requests using LLM-based event selection.
     
     This follows the exact pattern from example 03:
-    1. Discover available events
+    1. Discover available events via context.toolkit
     2. Use LLM to select appropriate event
     3. Validate and publish the selected event
     """
-    data = event.get("data", {})
+    data = event.data or {}
     request = data.get("request", "")
     
     print(f"\n📨 User Request: {request}")
     
-    # Step 1: Discover available routing options
+    # Step 1: Discover available routing options via context.toolkit
     print("🔍 Discovering available actions from Registry...")
-    events = await discover_events(context, topic="action-requests")
+    events = await context.toolkit.discover_actionable_events(topic=EventTopic.ACTION_REQUESTS)
     
     # Filter to only our action events (knowledge.store and question.ask)
-    action_events = [e for e in events if e["name"] in ["knowledge.store", "question.ask"]]
+    action_events = [e for e in events if e.event_name in ["knowledge.store", "question.ask"]]
     
     if not action_events:
         print("   ⚠️  No action events found in Registry")
@@ -95,12 +96,15 @@ async def route_request(event: Dict[str, Any], context: PlatformContext):
     
     print(f"   ✓ Found {len(action_events)} actions\n")
     
-    # Step 2: Let LLM select best action
+    # Step 2: Format events and let LLM select best action
     print("🤖 LLM analyzing request...")
+    event_dicts = context.toolkit.format_for_llm(action_events)
+    formatted_events = context.toolkit.format_as_prompt_text(event_dicts)
+    
     decision = await select_event_with_llm(
         prompt_template=ROUTING_PROMPT,
         context_data={"request": request},
-        events=action_events
+        formatted_events=formatted_events
     )
     
     print(f"   Selected: {decision['event_name']}")
@@ -110,9 +114,9 @@ async def route_request(event: Dict[str, Any], context: PlatformContext):
     success = await validate_and_publish(
         decision=decision,
         events=action_events,
-        topic="action-requests",
+        topic=EventTopic.ACTION_REQUESTS,
         context=context,
-        correlation_id=event.get("correlation_id")
+        correlation_id=event.correlation_id
     )
     
     if success:

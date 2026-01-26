@@ -14,6 +14,7 @@ from typing import Any, Dict, List
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
 
 
@@ -91,15 +92,15 @@ Your answer:"""
         return "I encountered an error generating the answer."
 
 
-@rag_agent.on_event("question.answer", topic="action-requests")
-async def answer_question(event: Dict[str, Any], context: PlatformContext):
+@rag_agent.on_event("question.answer", topic=EventTopic.ACTION_REQUESTS)
+async def answer_question(event: EventEnvelope, context: PlatformContext):
     """Answer question using dual context retrieval."""
-    data = event.get("data", {})
+    data = event.data or {}
     question = data.get("question", "")
     session_id = data.get("session_id")
     
-    tenant_id = event.get("tenant_id", "00000000-0000-0000-0000-000000000000")
-    user_id = event.get("user_id", "00000000-0000-0000-0000-000000000001")
+    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
+    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
     
     print(f"\n🤖 RAG Agent Processing Question")
     print(f"   Session: {session_id}")
@@ -165,17 +166,18 @@ async def answer_question(event: Dict[str, Any], context: PlatformContext):
     # 6. Send response
     print(f"   ✓ Answer ready (sources: {len(history_context)} history + {len(knowledge_results)} knowledge)")
     
-    await context.bus.publish(
-        event_type="chat.response",
-        topic="action-results",
+    # Extract response event from request (caller specifies expected response)
+    response_event_type = event.response_event or "question.answered"
+    
+    await context.bus.respond(
+        event_type=response_event_type,
         data={
             "session_id": session_id,
-            "response": answer,
-            "sources": {
-                "history_matches": len(history_context),
-                "knowledge_matches": len(knowledge_results)
-            }
+            "answer": answer,
+            "history_matches_count": len(history_context),
+            "knowledge_matches_count": len(knowledge_results)
         },
+        correlation_id=event.correlation_id,
         tenant_id=tenant_id,
         user_id=user_id,
     )

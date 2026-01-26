@@ -90,10 +90,18 @@ class TestAgentStructured:
         mock_context.registry = mock_registry
         mock_context.bus = AsyncMock()
         
+        # Mock register_agent to return proper response
+        from soorma_common import AgentRegistrationResponse
+        mock_registry.register_agent = AsyncMock(return_value=AgentRegistrationResponse(
+            agent_id="test",
+            success=True,
+            message="registered"
+        ))
+
         # Mock _initialize_context to set our mock context
         with patch.object(agent, '_initialize_context', return_value=None):
             agent._context = mock_context
-            
+
             # Mock other startup methods to avoid side effects
             with patch.object(agent, '_start_heartbeat', new_callable=AsyncMock), \
                  patch.object(agent, '_subscribe_to_events', new_callable=AsyncMock):
@@ -102,11 +110,11 @@ class TestAgentStructured:
 
         # Verify register_event was called
         mock_registry.register_event.assert_called()
-        # Verify register (agent) was called
-        mock_registry.register.assert_called()
+        # Verify register_agent was called
+        mock_registry.register_agent.assert_called()
 
-    def test_planner_with_structured_capabilities(self):
-        """Test Planner with structured capabilities."""
+    @pytest.mark.asyncio
+    async def test_planner_with_structured_capabilities(self):
         cap = AgentCapability(
             task_name="planning_cap",
             description="Planning capability",
