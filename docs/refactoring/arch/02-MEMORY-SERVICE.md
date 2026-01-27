@@ -11,7 +11,7 @@
 
 | Aspect | Details |
 |--------|----------|
-| **Tasks** | RF-ARCH-008: TaskContext Memory Type<br>RF-ARCH-009: Plan/Session Query APIs<br>RF-ARCH-012: Semantic Memory Upsert (Stage 2.1)<br>RF-ARCH-013: Working Memory Deletion (Stage 2.1) |
+| **Tasks** | RF-ARCH-008: TaskContext Memory Type<br>RF-ARCH-009: Plan/Session Query APIs<br>RF-ARCH-012: Semantic Memory Upsert (Stage 2.1)<br>RF-ARCH-013: Working Memory Deletion (Stage 2.1)<br>RF-ARCH-014: Semantic Memory Privacy (Stage 2.1) |
 | **Files** | Memory Service, database schema |
 | **Pairs With SDK** | [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md) |
 | **Dependencies** | None (foundational) |
@@ -61,6 +61,7 @@ This document covers Memory Service enhancements:
 **Stage 2.1 (Follow-up):**
 - **RF-ARCH-012:** Semantic Memory Upsert with deduplication
 - **RF-ARCH-013:** Working Memory Deletion endpoints
+- **RF-ARCH-014:** Semantic Memory Privacy (user-scoped by default, optional public flag)
 
 These endpoints are consumed by SDK MemoryClient (see [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md)).
 
@@ -522,6 +523,228 @@ See [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md) RF-SDK-020 for SDK method up
 - Delete entire plan state
 - Delete non-existent keys (idempotent)
 - RLS enforcement (can't delete other tenant's data)
+
+---
+
+### RF-ARCH-014: Semantic Memory Privacy
+
+**Status:** ⬜ Not Started  
+**Priority:** P1 (High) - Fundamental privacy model  
+**Estimated Effort:** 2-3 days
+
+#### Problem
+
+Current semantic memory is **tenant-scoped** (public to all users in tenant):
+- ❌ Agent memory should be private to the user by default
+- ❌ Cross-user memory leakage is a privacy/security concern
+- ❌ No control over knowledge visibility
+
+**Key Insight:** Semantic memory is **agent memory (CoALA framework)**, not a RAG solution. It's for individual user/agent workflows, not shared knowledge bases.
+
+#### Solution: User-Scoped Privacy with Optional Public Flag
+
+**Design Principle:** Private by default, explicitly public when needed.
+
+**Database Schema:**
+
+```sql
+-- Add user_id column (required)
+ALTER TABLE semantic_memory
+ADD COLUMN user_id VARCHAR(255) NOT NULL;
+
+-- Add is_public flag (default private)
+ALTER TABLE semantic_memory
+ADD COLUMN is_public BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Update unique constraints
+-- For private knowledge: unique per user
+CREATE UNIQUE INDEX semantic_memory_user_external_id_private_idx
+    ON semantic_memory (tenant_id, user_id, external_id)
+    WHERE external_id IS NOT NULL AND is_public = FALSE;
+
+-- For public knowledge: unique per tenant
+CREATE UNIQUE INDEX semantic_memory_tenant_external_id_public_idx
+    ON semantic_memory (tenant_id, external_id)
+    WHERE external_id IS NOT NULL AND is_public = TRUE;
+
+-- Content hash constraints
+CREATE UNIQUE INDEX semantic_memory_user_content_hash_private_idx
+    ON semantic_memory (tenant_id, user_id, content_hash)
+    WHERE is_public = FALSE;
+
+CREATE UNIQUE INDEX semantic_memory_tenant_content_hash_public_idx
+    ON semantic_memory (tenant_id, content_hash)
+    WHERE is_public = TRUE;
+```
+
+**RLS Policies:**
+
+```sql
+-- Read: Users can read their own private OR public knowledge in tenant
+CREATE POLICY semantic_memory_read_policy ON semantic_memory
+FOR SELECT
+USING (
+  (tenant_id = current_setting('app.current_tenant_id')::TEXT)
+  AND (
+    (user_id = current_setting('app.current_user_id')::TEXT) OR
+    (is_public = TRUE)
+  )
+);
+
+-- Write: Users can only write their own knowledge
+CREATE POLICY semantic_memory_write_policy ON semantic_memory
+FOR INSERT
+WITH CHECK (
+  (tenant_id = current_setting('app.current_tenant_id')::TEXT)
+  AND (user_id = current_setting('app.current_user_id')::TEXT)
+);
+
+-- Update: Users can only update their own knowledge
+CREATE POLICY semantic_memory_update_policy ON semantic_memory
+FOR UPDATE
+USING (
+  (tenant_id = current_setting('app.current_tenant_id')::TEXT)
+  AND (user_id = current_setting('app.current_user_id')::TEXT)
+);
+```
+
+**Updated CRUD Functions:**
+
+```python
+async def upsert_semantic_memory(
+    db: AsyncSession,
+    tenant_id: str,
+    user_id: str,              # NEW: Required
+    content: str,
+    embedding: List[float],
+    metadata: Optional[Dict] = None,
+    external_id: Optional[str] = None,
+    content_hash: Optional[str] = None,
+    is_public: bool = False,    # NEW: Default private
+    tags: Optional[List[str]] = None,
+    source: Optional[str] = None,
+    plan_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> SemanticMemory:
+    """
+    Upsert semantic memory entry (private by default).
+    
+    Args:
+        user_id: Required. User who owns this knowledge.
+        is_public: If True, visible to all users in tenant.
+                  If False (default), only visible to this user.
+    """
+
+async def query_semantic_memory(
+    db: AsyncSession,
+    tenant_id: str,
+    user_id: str,              # NEW: Required
+    query_embedding: List[float],
+    top_k: int = 10,
+    include_public: bool = True, # NEW: Include public knowledge
+    filters: Optional[Dict] = None,
+) -> List[SemanticMemory]:
+    """
+    Query semantic memory (user's private + optional public knowledge).
+    
+    Returns:
+        User's private knowledge + public knowledge (if include_public=True)
+    """
+```
+
+**API Update:**
+
+```python
+# Store private knowledge (default)
+POST /v1/memory/semantic
+{
+    "content": "My personal research notes...",
+    "user_id": "user-123",          # Required
+    "external_id": "research-2026",  # Optional
+    "is_public": false               # Default
+}
+
+# Store public knowledge (explicitly shared)
+POST /v1/memory/semantic
+{
+    "content": "Team-approved best practices...",
+    "user_id": "user-123",
+    "external_id": "best-practices",
+    "is_public": true  # Visible to all users in tenant
+}
+```
+
+**Query Behavior:**
+
+```python
+# Query returns user's private + public knowledge
+GET /v1/memory/semantic/query
+{
+    "query_embedding": [...],
+    "user_id": "user-123",
+    "include_public": true  # Default
+}
+# Returns: User's private knowledge + tenant's public knowledge
+
+# Query only private knowledge
+GET /v1/memory/semantic/query
+{
+    "query_embedding": [...],
+    "user_id": "user-123",
+    "include_public": false
+}
+# Returns: User's private knowledge only
+```
+
+**SDK Changes:**
+
+See [sdk/02-MEMORY-SDK.md](../sdk/02-MEMORY-SDK.md) RF-SDK-021 for SDK method updates.
+
+**Migration Strategy:**
+
+For existing rows without user_id:
+```python
+# Create system user or use current user context
+UPDATE semantic_memory
+SET user_id = 'system-user'  # or migrate to specific user
+WHERE user_id IS NULL;
+```
+
+**Testing:**
+- Private knowledge isolation between users
+- Public knowledge visible across users in tenant
+- Cross-tenant isolation (public knowledge not visible across tenants)
+- Upsert behavior with privacy constraints
+- Query returns correct union (private + public)
+- RLS enforcement at database level
+- Backward compatibility for existing clients
+
+**Use Cases:**
+
+```python
+# Use Case 1: User's personal research findings (private)
+await memory.store_knowledge(
+    content="Research findings on quantum computing...",
+    user_id="alice",
+    external_id="quantum-research-2026",
+    is_public=False  # Only Alice sees this
+)
+
+# Use Case 2: Shared team best practices (public)
+await memory.store_knowledge(
+    content="Our team's API design best practices...",
+    user_id="bob",
+    external_id="api-best-practices",
+    is_public=True  # All team members see this
+)
+
+# Use Case 3: Query returns both private and public
+results = await memory.query_knowledge(
+    query_embedding=embedding,
+    user_id="alice",
+    include_public=True  # Returns Alice's private + team's public
+)
+```
 
 ---
 

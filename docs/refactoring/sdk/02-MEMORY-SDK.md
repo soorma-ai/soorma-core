@@ -11,7 +11,7 @@
 
 | Aspect | Details |
 |--------|----------|
-| **Tasks** | RF-SDK-010: Memory SDK Methods<br>RF-SDK-014: WorkflowState Helper Class<br>RF-SDK-019: Semantic Memory Upsert SDK (Stage 2.1)<br>RF-SDK-020: Working Memory Deletion SDK (Stage 2.1) |
+| **Tasks** | RF-SDK-010: Memory SDK Methods<br>RF-SDK-014: WorkflowState Helper Class<br>RF-SDK-019: Semantic Memory Upsert SDK (Stage 2.1)<br>RF-SDK-020: Working Memory Deletion SDK (Stage 2.1)<br>RF-SDK-021: Semantic Memory Privacy SDK (Stage 2.1) |
 | **Files** | `sdk/python/soorma/context.py`, `sdk/python/soorma/workflow.py`, Memory Service |
 | **Pairs With Arch** | [arch/02-MEMORY-SERVICE.md](../arch/02-MEMORY-SERVICE.md) |
 | **Dependencies** | None (foundational) |
@@ -56,6 +56,7 @@ This document covers the Memory SDK client alignment:
 - **RF-SDK-014:** WorkflowState Helper Class
 - **RF-SDK-019:** Semantic Memory Upsert SDK (Stage 2.1)
 - **RF-SDK-020:** Working Memory Deletion SDK (Stage 2.1)
+- **RF-SDK-021:** Semantic Memory Privacy SDK (Stage 2.1)
 
 This enables async Worker completion and Planner state machine persistence.
 
@@ -938,6 +939,370 @@ async def test_workflow_state_cleanup():
     # Cleanup
     count = await state.cleanup()
     assert count >= 2  # At least goal + status
+```
+
+---
+
+### RF-SDK-021: Semantic Memory Privacy SDK
+
+**Status:** ⬜ Not Started  
+**Priority:** P1 (High) - Pairs with RF-ARCH-014  
+**Estimated Effort:** 1-2 days
+
+#### Problem
+
+Semantic memory is tenant-scoped without user isolation. This causes:
+- Privacy concerns (users see each other's agent memory)
+- No control over knowledge visibility
+- Doesn't match CoALA framework use case (agent memory, not shared knowledge)
+
+**Pairs with:** [arch/02-MEMORY-SERVICE.md](../arch/02-MEMORY-SERVICE.md) RF-ARCH-014
+
+#### Solution: User-Scoped Privacy with Optional Public Flag
+
+Add `user_id` parameter (required) and `is_public` flag (optional, default False) to semantic memory methods.
+
+**MemoryClient Updates:**
+
+```python
+class MemoryClient:
+    async def store_knowledge(
+        self,
+        content: str,
+        embedding: List[float],
+        user_id: str,              # NEW: Required
+        metadata: Optional[Dict[str, Any]] = None,
+        external_id: Optional[str] = None,
+        is_public: bool = False,    # NEW: Default private
+        tags: Optional[List[str]] = None,
+        source: Optional[str] = None,
+        plan_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Store knowledge in semantic memory (private by default).
+        
+        Args:
+            user_id: Required. User who owns this knowledge.
+            is_public: If True, visible to all users in tenant.
+                      If False (default), only visible to this user.
+        
+        Example:
+            # Store private research (default)
+            await memory.store_knowledge(
+                content="My findings on quantum computing...",
+                embedding=embedding_vector,
+                user_id="alice"
+            )
+            
+            # Store public best practices
+            await memory.store_knowledge(
+                content="Team's API design best practices...",
+                embedding=embedding_vector,
+                user_id="bob",
+                is_public=True
+            )
+        """
+        payload = {
+            "content": content,
+            "embedding": embedding,
+            "user_id": user_id,  # Required
+            "is_public": is_public,  # Default False
+            "metadata": metadata or {},
+            "external_id": external_id,
+            "tags": tags or [],
+            "source": source,
+            "plan_id": plan_id,
+            "session_id": session_id,
+        }
+        
+        response = await self._client.post(
+            f"{self.base_url}/v1/memory/semantic",
+            json=payload,
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    async def query_knowledge(
+        self,
+        query_embedding: List[float],
+        user_id: str,              # NEW: Required
+        top_k: int = 10,
+        include_public: bool = True, # NEW: Include public knowledge
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Query semantic memory (user's private + optional public knowledge).
+        
+        Args:
+            user_id: Required. User performing the query.
+            include_public: If True (default), includes public knowledge from all users.
+                           If False, only returns user's private knowledge.
+        
+        Returns:
+            List of knowledge entries matching query, with user_id and is_public fields.
+        
+        Example:
+            # Query includes Alice's private + team's public
+            results = await memory.query_knowledge(
+                query_embedding=embedding,
+                user_id="alice",
+                include_public=True
+            )
+            
+            # Query only Alice's private knowledge
+            private_only = await memory.query_knowledge(
+                query_embedding=embedding,
+                user_id="alice",
+                include_public=False
+            )
+        """
+        payload = {
+            "query_embedding": query_embedding,
+            "user_id": user_id,
+            "include_public": include_public,
+            "top_k": top_k,
+            "filters": filters or {},
+        }
+        
+        response = await self._client.post(
+            f"{self.base_url}/v1/memory/semantic/query",
+            json=payload,
+        )
+        response.raise_for_status()
+        return response.json()
+```
+
+#### WorkflowState Helper Updates
+
+```python
+class WorkflowState:
+    async def store_knowledge(
+        self,
+        user_id: str,
+        content: str,
+        embedding: List[float],
+        external_id: Optional[str] = None,
+        is_public: bool = False,
+        tags: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Store knowledge for this workflow (as part of plan context).
+        
+        Args:
+            user_id: User who owns this knowledge
+            is_public: If True, visible to all users in tenant
+        
+        Example:
+            state = WorkflowState(context.memory, plan_id)
+            await state.store_knowledge(
+                user_id="alice",
+                content="Research findings...",
+                embedding=embedding,
+                is_public=False  # Private to Alice
+            )
+        """
+        return await self.context.memory.store_knowledge(
+            content=content,
+            embedding=embedding,
+            user_id=user_id,
+            external_id=external_id,
+            is_public=is_public,
+            tags=tags,
+            plan_id=self.plan_id
+        )
+    
+    async def query_knowledge(
+        self,
+        user_id: str,
+        query_embedding: List[float],
+        include_public: bool = True,
+    ) -> List[Dict[str, Any]]:
+        """
+        Query knowledge for this workflow (user's private + optional public).
+        
+        Example:
+            state = WorkflowState(context.memory, plan_id)
+            results = await state.query_knowledge(
+                user_id="alice",
+                query_embedding=embedding,
+                include_public=True  # Include team knowledge
+            )
+        """
+        return await self.context.memory.query_knowledge(
+            query_embedding=query_embedding,
+            user_id=user_id,
+            include_public=include_public,
+        )
+```
+
+#### Usage Patterns
+
+```python
+# Pattern 1: Private user research
+@worker.on_task("research.requested")
+async def research(task, ctx):
+    state = WorkflowState(ctx.memory, task.plan_id)
+    
+    # Store research findings (private to user)
+    await state.store_knowledge(
+        user_id=task.user_id,
+        content=f"Research on {task.query}...",
+        embedding=embedding,
+        is_public=False  # Default, private to user
+    )
+
+# Pattern 2: Shared team knowledge
+@worker.on_task("share.knowledge")
+async def share(task, ctx):
+    state = WorkflowState(ctx.memory, task.plan_id)
+    
+    # Store as public (shared with team)
+    await state.store_knowledge(
+        user_id=task.creator_id,
+        content="Best practice: ...",
+        embedding=embedding,
+        is_public=True  # Visible to all team members
+    )
+
+# Pattern 3: Query includes private + public
+@planner.on_goal("research.goal")
+async def plan(goal, ctx):
+    state = WorkflowState(ctx.memory, plan_id)
+    
+    # Query includes user's private + team's public knowledge
+    relevant_knowledge = await state.query_knowledge(
+        user_id=goal.user_id,
+        query_embedding=goal_embedding,
+        include_public=True  # Defaults to True
+    )
+    
+    # Process knowledge...
+```
+
+#### Testing
+
+```python
+async def test_store_knowledge_private():
+    """Should store private knowledge by default."""
+    result = await memory.store_knowledge(
+        content="Private research...",
+        embedding=[...],
+        user_id="alice"
+    )
+    assert result["is_public"] is False
+    assert result["user_id"] == "alice"
+
+async def test_store_knowledge_public():
+    """Should store public knowledge when flag set."""
+    result = await memory.store_knowledge(
+        content="Shared best practices...",
+        embedding=[...],
+        user_id="bob",
+        is_public=True
+    )
+    assert result["is_public"] is True
+
+async def test_query_private_only():
+    """Should query only user's private knowledge."""
+    # Store Alice's private knowledge
+    await memory.store_knowledge(
+        content="Alice's private",
+        embedding=[...],
+        user_id="alice",
+        is_public=False
+    )
+    
+    # Store Bob's private knowledge
+    await memory.store_knowledge(
+        content="Bob's private",
+        embedding=[...],
+        user_id="bob",
+        is_public=False
+    )
+    
+    # Alice queries with include_public=False
+    results = await memory.query_knowledge(
+        query_embedding=[...],
+        user_id="alice",
+        include_public=False
+    )
+    
+    # Should only get Alice's private knowledge
+    assert len(results) == 1
+    assert results[0]["user_id"] == "alice"
+
+async def test_query_private_and_public():
+    """Should query user's private + public knowledge."""
+    # Store private knowledge
+    await memory.store_knowledge(
+        content="Alice's private",
+        embedding=[...],
+        user_id="alice",
+        is_public=False
+    )
+    
+    # Store public knowledge from Bob
+    await memory.store_knowledge(
+        content="Bob's public",
+        embedding=[...],
+        user_id="bob",
+        is_public=True
+    )
+    
+    # Alice queries with include_public=True
+    results = await memory.query_knowledge(
+        query_embedding=[...],
+        user_id="alice",
+        include_public=True
+    )
+    
+    # Should get both Alice's private + Bob's public
+    assert len(results) == 2
+    user_ids = {r["user_id"] for r in results}
+    assert user_ids == {"alice", "bob"}
+
+async def test_privacy_isolation():
+    """Should not expose private knowledge across users."""
+    # Store Alice's private knowledge
+    await memory.store_knowledge(
+        content="Alice's secret research",
+        embedding=[...],
+        user_id="alice",
+        is_public=False
+    )
+    
+    # Bob queries with include_public=False
+    results = await memory.query_knowledge(
+        query_embedding=[...],
+        user_id="bob",
+        include_public=False
+    )
+    
+    # Should not see Alice's private knowledge
+    assert len(results) == 0
+
+async def test_workflow_state_privacy():
+    """WorkflowState should respect privacy settings."""
+    state = WorkflowState(memory, "plan-1")
+    
+    # Store private knowledge
+    await state.store_knowledge(
+        user_id="alice",
+        content="Research...",
+        embedding=[...],
+        is_public=False
+    )
+    
+    # Query with include_public=False
+    results = await state.query_knowledge(
+        user_id="alice",
+        query_embedding=[...],
+        include_public=False
+    )
+    
+    assert len(results) == 1
+    assert results[0]["is_public"] is False
 ```
 
 ---
