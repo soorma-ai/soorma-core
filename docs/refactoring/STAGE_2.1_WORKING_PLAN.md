@@ -2,7 +2,7 @@
 
 **Status:** 📋 Planning / Review  
 **Created:** January 26, 2026  
-**Updated:** January 26, 2026 - Added privacy requirements
+**Updated:** January 27, 2026 - Added privacy decisions
 
 ---
 
@@ -151,6 +151,7 @@ async def upsert_semantic_memory(
 - Use PostgreSQL `INSERT ... ON CONFLICT ... DO UPDATE`
 - Ensure RLS policies are respected
 - Update `updated_at` timestamp on conflict
+- On conflict, also update `is_public` so visibility changes are applied when deduplicating
 
 #### Task 5: Update Service Layer
 **File:** `services/memory/src/services/semantic.py`
@@ -729,48 +730,24 @@ pytest tests/ -v
 
 ## Open Questions Summary
 
-### Critical (Need answers before starting)
+### Decisions (Answered)
 
-- [ ] **Q1:** Should we create Alembic migration now, or handle separately?
-  - **Recommendation:** Create migration as part of RF-ARCH-012 and RF-ARCH-014
-  
-- [ ] **Q4:** Should we enforce that at least ONE of (external_id, content_hash) must be provided?
-  - **Recommendation:** No - allow INSERT without either for flexibility
-  
-- [ ] **Q5:** If both external_id and content_hash are provided, should external_id take precedence? Or error?
-  - **Recommendation:** external_id takes precedence (more explicit)
+- **Q1:** Create Alembic migration as part of RF-ARCH-012 and RF-ARCH-014
+- **Q2:** VARCHAR(255) for external_id (standard)
+- **Q3:** content_hash nullable, auto-generated if not provided
+- **Q4:** Enforce at least one of external_id or content_hash (service can generate hash)
+- **Q5:** external_id takes precedence when both provided
+- **Q6:** external_id optional for convenience (breaking changes allowed pre-release)
+- **Q7:** No auto-cleanup; explicit cleanup only
+- **Q8:** TTL deferred to post-MVP
+- **Q9:** Document cleanup best practices in SDK docs + update MEMORY_PATTERNS.md
+- **Q10:** No backfill needed; during development developers wipe/recreate DB after breaking changes
+- **Q11:** Query returns union of user's private + public knowledge
+- **Q12:** No admin role yet; any user can create public knowledge if flag is set
+- **Q13:** Users can update their own knowledge from private→public
 
-- [ ] **Q6:** Should external_id be optional for backward compatibility?
-  - **Recommendation:** YES - optional field
-
-- [ ] **Q10:** Should we backfill existing rows with a system user_id, or require manual migration?
-  - **Recommendation:** Add a migration script with default user_id (e.g., "system" or "legacy")
-
-- [ ] **Q11:** Should querying public knowledge also return user's private knowledge?
-  - **Answer:** YES - union of user's private knowledge + public knowledge
-
-- [ ] **Q12:** Should there be a separate "admin" role that can create public knowledge?
-  - **Recommendation:** Not in this phase - allow any user to create public knowledge for now
-  
-- [ ] **Q13:** Can users update their private knowledge to public, or is that admin-only?
-  - **Recommendation:** Allow users to update is_public flag for their own knowledge
-
-### Important (Can decide during implementation)
-
-- [ ] **Q2:** What should be VARCHAR length for external_id?
-  - **Recommendation:** 255 (standard for IDs)
-  
-- [ ] **Q3:** Should content_hash be nullable or required?
-  - **Current:** Nullable, auto-generated if not provided
-  
-- [ ] **Q7:** Should WorkflowState.cleanup() be called automatically on plan completion?
-  - **Recommendation:** NO - explicit is better than implicit
-  
-- [ ] **Q8:** Should we add a TTL feature for automatic expiration?
-  - **Recommendation:** Future enhancement (Stage 3+)
-  
-- [ ] **Q9:** Document best practices - when to cleanup vs when to persist?
-  - **Recommendation:** Add usage guide in SDK docs
+### Open Items
+- None remaining
 
 ---
 
@@ -786,6 +763,7 @@ pytest tests/ -v
 ### Suggested Order
 
 **Week 1 (Days 1-3): Semantic Memory Upsert**
+
 1. ✅ Review design doc (Task 1)
 2. ✅ Answer open questions Q1-Q6, Q10-Q13
 3. 🔨 Database migration for upsert fields (Task 2)
@@ -795,6 +773,7 @@ pytest tests/ -v
 7. ✅ Validate Phase 1 complete
 
 **Week 1-2 (Days 3-6): Semantic Memory Privacy**
+
 8. 🔨 Database migration for privacy fields (Task 10)
 9. 🔨 Update RLS policies (Task 11)
 10. 🔨 Privacy tests + CRUD implementation (Tasks 12-13)
@@ -804,12 +783,14 @@ pytest tests/ -v
 14. ✅ Validate Phase 2 complete
 
 **Week 2 (Days 7-9): Working Memory Deletion**
+
 15. 🔨 Working memory deletion tests (Task 19)
 16. 🔨 CRUD + API implementation (Tasks 20-21)
 17. 🔨 SDK tests + implementation (Tasks 22-24)
 18. ✅ Validate Phase 3 complete
 
 **Final (Days 9-10): Validation & Documentation**
+
 19. 📝 Update all CHANGELOGs (Task 25)
 20. ✅ Run full test suite (Task 26)
 21. 📝 Update refactoring README status
@@ -844,23 +825,37 @@ pytest tests/ -v
 ### Planning Session 1 (Jan 26, 2026)
 
 **Decisions:**
-- TBD
+
+- Q1: Create Alembic migration as part of RF-ARCH-012 and RF-ARCH-014
+- Q2: VARCHAR(255) for external_id (standard)
+- Q3: content_hash nullable, auto-generated if not provided
+- Q4: yes enforce that at least one is provided, either external id (from API call) or content hash (service generated)
+- Q5: external_id takes precedence when both provided
+- Q6: external_id is optional for convenience purpose (backwards compatibility is not a decision factor right now, we are making breaking changes before first release)
+- Q10: no backfill is needed, during current development when we have breaking change, developers will simply wipe out and recreate database
+- Q11: Query returns union of user's private + public knowledge
+- Q12: No admin role yet - any user can create public knowledge if flag parameter is set in API / method call
+- Q13: Users can update their own private→public
+- Q7: No auto-cleanup - explicit cleanup only
+- Q8: TTL feature deferred to post-MVP
+- Q9: Add cleanup best practices to SDK docs. also, update MEMORY_PATTERNS.md document for changes to semantic memory and working memory
 
 **Changes to plan:**
-- TBD
+
+- when upserting semantic memory, in case of conflict (e.g. same content hash), make sure to also update public flag in addition to timestamp update -- use case to change public visibility
 
 **Blockers:**
-- TBD
+- None currently
 
 ---
 
 ## Next Steps
 
-1. **Review this plan** - Add feedback, answer questions, adjust priorities
-2. **Answer open questions** - Make decisions on Q1-Q9
-3. **Mark task 1 complete** - Update todo list
-4. **Begin implementation** - Start with Task 1 (read design doc)
+1. Mark Task 1 complete after reviewing all design docs
+2. Kick off Phase 1 implementation (upsert) with migration + tests first
+3. Parallel-plan Phase 2 privacy migration draft while Phase 1 tests run
+4. Update TODO list to reflect Task 1 completion
 
 ---
 
-**Status:** ⏸️ Waiting for review and feedback
+**Status:** ▶️ Ready to implement (planning decisions captured)
