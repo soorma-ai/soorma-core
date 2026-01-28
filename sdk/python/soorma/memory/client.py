@@ -181,8 +181,8 @@ class MemoryClient:
         """
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic/query",
-            params={"user_id": user_id},  # Pass user_id as query parameter for API context
-            json={
+            params={
+                "user_id": user_id,
                 "query": query,
                 "limit": limit,
                 "include_public": include_public,

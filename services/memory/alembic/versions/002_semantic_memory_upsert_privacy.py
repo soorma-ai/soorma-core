@@ -18,7 +18,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '002_semantic_memory_upsert_privacy'
+revision = '002_upsert_privacy'
 down_revision = '001_initial_schema'
 branch_labels = None
 depends_on = None
@@ -26,6 +26,9 @@ depends_on = None
 
 def upgrade() -> None:
     """Add upsert and privacy columns to semantic_memory."""
+    
+    # Enable pgcrypto extension for digest() function (required for content_hash generation)
+    op.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto')
     
     # Add new columns for upsert support (RF-ARCH-012)
     op.add_column('semantic_memory', sa.Column('external_id', sa.String(255), nullable=True))
@@ -57,6 +60,31 @@ def upgrade() -> None:
     
     # Now make content_hash NOT NULL
     op.alter_column('semantic_memory', 'content_hash', nullable=False)
+    
+    # Clean up duplicate rows before creating unique indexes
+    # Keep only the most recent row for each unique constraint combination
+    # See: docs/refactoring/STAGE_2.1_WORKING_PLAN.md
+    op.execute("""
+        DELETE FROM semantic_memory
+        WHERE ctid NOT IN (
+            SELECT MIN(ctid)
+            FROM semantic_memory
+            WHERE is_public = FALSE
+            GROUP BY tenant_id, user_id, content_hash
+        )
+        AND is_public = FALSE
+    """)
+    
+    op.execute("""
+        DELETE FROM semantic_memory
+        WHERE ctid NOT IN (
+            SELECT MIN(ctid)
+            FROM semantic_memory
+            WHERE is_public = TRUE
+            GROUP BY tenant_id, content_hash
+        )
+        AND is_public = TRUE
+    """)
     
     # Drop the old tenant_isolation_policy before creating new ones
     op.execute('DROP POLICY IF EXISTS tenant_isolation_policy ON semantic_memory')
