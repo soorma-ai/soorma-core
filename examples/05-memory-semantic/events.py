@@ -15,7 +15,6 @@ from soorma_common import EventDefinition, EventTopic
 class UserRequestPayload(BaseModel):
     """User's natural language request."""
     request: str = Field(..., description="User's request in natural language")
-    user_id: str = Field(default="00000000-0000-0000-0000-000000000001", description="User ID for memory isolation")
 
 
 USER_REQUEST_EVENT = EventDefinition(
@@ -34,7 +33,6 @@ class StoreKnowledgePayload(BaseModel):
     """Request to store knowledge in semantic memory."""
     content: str = Field(..., description="Knowledge content to store")
     metadata: dict = Field(default_factory=dict, description="Optional metadata (source, category, etc.)")
-    user_id: str = Field(default="00000000-0000-0000-0000-000000000001", description="User ID for memory isolation")
 
 
 STORE_KNOWLEDGE_EVENT = EventDefinition(
@@ -48,7 +46,6 @@ STORE_KNOWLEDGE_EVENT = EventDefinition(
 class AnswerQuestionPayload(BaseModel):
     """Request to answer a question using stored knowledge."""
     question: str = Field(..., description="Question to answer")
-    user_id: str = Field(default="00000000-0000-0000-0000-000000000001", description="User ID for memory isolation")
 
 
 ANSWER_QUESTION_EVENT = EventDefinition(

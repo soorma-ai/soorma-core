@@ -40,9 +40,9 @@ async def store_knowledge(event: EventEnvelope, context: PlatformContext):
     data = event.data or {}
     content = data.get("content", "")
     metadata = data.get("metadata", {})
-    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
+    user_id = event.user_id  # User ID from event envelope
     
-    print(f"\n📚 Storing knowledge:")
+    print(f"\n📚 Storing knowledge (user: {user_id}):")
     print(f"   Content: {content[:100]}...")
     print(f"   Metadata: {metadata}")
     

@@ -14,13 +14,23 @@ Usage:
     # Single request mode
     python client.py "Python was created by Guido van Rossum"
     python client.py "Who created Python?"
+    
+    # Specify user ID (default: 00000000-0000-0000-0000-000000000001)
+    USER_ID=00000000-0000-0000-0000-000000000002 python client.py "Tell me about Python"
 """
 
 import asyncio
+import os
 import sys
 from uuid import uuid4
 from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
+
+
+# User ID can be set via environment variable (simulates authentication)
+# Note: Memory service currently expects UUID format
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
+USER_ID = os.getenv("USER_ID", DEFAULT_USER_ID)
 
 
 async def send_request(request: str):
@@ -60,12 +70,15 @@ async def send_request(request: str):
     # Generate correlation ID
     correlation_id = str(uuid4())
     
-    # Publish user request event
+    print(f"   User: {USER_ID}")
+    
+    # Publish user request event with user_id in envelope
     await client.publish(
         event_type="user.request",
         topic=EventTopic.ACTION_REQUESTS,
         data={"request": request},
         correlation_id=correlation_id,
+        user_id=USER_ID,  # User ID propagates through event chain
     )
     
     print(f"   Request sent (correlation_id: {correlation_id})")

@@ -85,6 +85,18 @@ Perfect for:
 - Customer support knowledge bases
 - Any system that needs to learn and retrieve information
 
+### User-Scoped Privacy
+
+**Semantic memory is user-scoped** - each user has their own private knowledge base:
+- Knowledge stored by User A is NOT visible to User B
+- Each user can only query their own stored knowledge
+- Privacy isolation is enforced at the database level (Row-Level Security)
+
+This enables:
+- Multi-user systems with isolated knowledge per user
+- Personal assistants that maintain user-specific context
+- Secure knowledge bases where users don't see each other's data
+
 ## Code Walkthrough
 
 ### Event Definitions ([events.py](events.py))
@@ -250,6 +262,38 @@ You: Who created Python?  # → RAG retrieves knowledge + LLM generates answer
 python3 client.py "Python was created by Guido van Rossum"
 ```
 
+### Testing User Privacy Isolation
+
+**Verify that knowledge is user-scoped:**
+
+```bash
+# User 1 stores knowledge (default: 00000000-0000-0000-0000-000000000001)
+python3 client.py "my favorite color is blue"
+# ✅ Knowledge stored successfully
+
+# User 1 can retrieve their own knowledge
+python3 client.py "what is my favorite color?"
+# ✅ Your favorite color is blue.
+
+# User 2 CANNOT see User 1's knowledge
+USER_ID=00000000-0000-0000-0000-000000000002 python3 client.py "what is my favorite color?"
+# ⚠️  I don't have enough knowledge to answer that question.
+
+# User 2 can store their own knowledge
+USER_ID=00000000-0000-0000-0000-000000000002 python3 client.py "my favorite color is red"
+# ✅ Knowledge stored successfully
+
+# User 2 can retrieve their own knowledge
+USER_ID=00000000-0000-0000-0000-000000000002 python3 client.py "what is my favorite color?"
+# ✅ Your favorite color is red.
+```
+
+**Key points:**
+- Default user ID is `00000000-0000-0000-0000-000000000001`
+- Set `USER_ID` environment variable to test with different users
+- Each user has completely isolated knowledge storage
+- User ID propagates through the entire event chain automatically
+
 ### Expected Output
 
 Watches flow: user.request → router (LLM detects intent) → knowledge.store or question.ask → response events.
@@ -265,6 +309,7 @@ Watches flow: user.request → router (LLM detects intent) → knowledge.store o
 - Store knowledge in embeddings for semantic search
 - Retrieve relevant context for each question
 - Use LLM to synthesize grounded answers from stored knowledge
+- **User-scoped privacy:** Each user's knowledge is isolated from others
 
 **Tool vs Worker pattern:**
 - Knowledge Store is a Tool (deterministic, stateless storage)
