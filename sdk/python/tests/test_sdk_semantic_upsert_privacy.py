@@ -217,12 +217,13 @@ class TestSemanticQuerySDK:
         call_kwargs = memory_client._client.post.call_args.kwargs
         assert call_kwargs["params"]["user_id"] == "user-alice"
         
-        # Verify query params in JSON body (not user_id)
-        json_payload = call_kwargs["json"]
-        assert "user_id" not in json_payload
-        assert json_payload["query"] == "search term"
-        assert json_payload["limit"] == 5
-        assert json_payload["include_public"] == True  # Plain dict, not DTO
+        # Verify all params passed as query parameters (not JSON body)
+        params = call_kwargs["params"]
+        assert params["query"] == "search term"
+        assert params["limit"] == 5
+        assert params["include_public"] == True
+        # JSON body should be empty for query operations
+        assert call_kwargs.get("json") is None
 
     @pytest.mark.asyncio
     async def test_query_knowledge_exclude_public(self, memory_client):
@@ -255,9 +256,9 @@ class TestSemanticQuerySDK:
             include_public=False
         )
         
-        # Verify include_public passed correctly
-        json_payload = memory_client._client.post.call_args.kwargs["json"]
-        assert json_payload["include_public"] == False  # Plain dict, not DTO
+        # Verify include_public passed correctly as query parameter
+        params = memory_client._client.post.call_args.kwargs["params"]
+        assert params["include_public"] == False
 
 
 class TestSemanticMetadataSDK:
