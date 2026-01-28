@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, CheckConstraint, UniqueConstraint
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, CheckConstraint, UniqueConstraint, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 
@@ -41,7 +41,11 @@ class User(Base):
 
 
 class SemanticMemory(Base):
-    """Semantic memory - factual knowledge shared across tenant."""
+    """Semantic memory - factual knowledge (private by default, optional public).
+    
+    RF-ARCH-012: Upsert support via external_id and content_hash
+    RF-ARCH-014: Privacy support via user_id and is_public
+    """
 
     __tablename__ = "semantic_memory"
 
@@ -51,9 +55,22 @@ class SemanticMemory(Base):
         ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
     )
+    # RF-ARCH-014: User ownership (private by default)
+    user_id = Column(String(255), nullable=False)
+    
+    # Core content
     content = Column(Text, nullable=False)
     embedding = Column(Vector(1536))
     memory_metadata = Column(JSON, default={}, nullable=False)
+    
+    # RF-ARCH-012: Upsert support
+    external_id = Column(String(255), nullable=True)  # User-provided ID for versioning
+    content_hash = Column(String(64), nullable=False)  # SHA-256 for deduplication
+    
+    # RF-ARCH-014: Privacy control
+    is_public = Column(Boolean, nullable=False, default=False)  # Default private
+    
+    # Timestamps
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 

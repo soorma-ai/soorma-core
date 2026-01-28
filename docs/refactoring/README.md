@@ -350,25 +350,25 @@ Dependencies: Stage 1 must be complete (event system foundation).
 **Follow-up Work (Stage 2.1):**
 
 **Architecture Tasks:**
-- ⬜ **RF-ARCH-012**: Semantic Memory Upsert (Service)
+- ✅ **RF-ARCH-012**: Semantic Memory Upsert (Service)
   - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-012
   - Design documented in [services/memory/SEMANTIC_MEMORY_UPSERT.md](../../services/memory/SEMANTIC_MEMORY_UPSERT.md)
-  - Add external_id and content_hash columns to semantic_memory table
-  - Implement upsert CRUD function with dual-constraint logic
-  - Update service layer and API endpoints
-  - Write tests for versioning and deduplication scenarios
+  - ✅ Added external_id and content_hash columns to semantic_memory table
+  - ✅ Implemented upsert CRUD function with dual-constraint logic
+  - ✅ Updated service layer and API endpoints
+  - ✅ Tests for versioning and deduplication scenarios (13 model + 6 search tests)
   - **Priority:** P1 (High) - Prevents data quality issues
-  - **Estimated effort:** 2-3 days
+  - **Completed:** January 27, 2026
 
-- ⬜ **RF-ARCH-014**: Semantic Memory Privacy (Service)
+- ✅ **RF-ARCH-014**: Semantic Memory Privacy (Service)
   - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-014
-  - Add user_id column (required) and is_public flag (optional, default false) to semantic_memory table
-  - Update RLS policies for private-by-default with optional tenant-wide sharing
-  - Update CRUD functions to enforce user_id requirement
-  - Write tests for privacy isolation and public knowledge scenarios
+  - ✅ Added user_id column (required) and is_public flag (optional, default false) to semantic_memory table
+  - ✅ Updated RLS policies for private-by-default with optional tenant-wide sharing
+  - ✅ Updated CRUD functions to enforce user_id requirement
+  - ✅ Tests for privacy isolation and public knowledge scenarios (3 critical RLS tests)
   - **Rationale:** Semantic memory is agent memory (CoALA), not a RAG solution - should be private by default
   - **Priority:** P1 (High) - Fundamental privacy model
-  - **Estimated effort:** 2-3 days
+  - **Completed:** January 27, 2026
 
 - ⬜ **RF-ARCH-013**: Working Memory Deletion (Service)
   - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-013
@@ -378,27 +378,27 @@ Dependencies: Stage 1 must be complete (event system foundation).
   - Implement delete CRUD functions with RLS enforcement
   - Write tests for deletion scenarios and RLS
   - **Priority:** P2 (Medium) - Not blocking, but prevents data accumulation
-  - **Estimated effort:** 1-2 days
+  - **Status:** Deferred to next sprint
 
 **SDK Tasks:**
-- ⬜ **RF-SDK-019**: Semantic Memory Upsert SDK
+- ✅ **RF-SDK-019**: Semantic Memory Upsert SDK
   - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-019
-  - Add external_id parameter to `store_knowledge()` method
-  - Update SemanticMemoryCreate DTO in soorma-common
-  - Update HTTP call to include external_id
-  - Write tests for upsert behavior (external_id and content_hash)
+  - ✅ Added external_id parameter to `store_knowledge()` method
+  - ✅ Updated SemanticMemoryCreate DTO in soorma-common
+  - ✅ Updated HTTP call to include external_id
+  - ✅ Tests for upsert behavior (external_id and content_hash) - 4 tests
   - **Priority:** P1 (High) - Pairs with RF-ARCH-012
-  - **Estimated effort:** 1-2 days
+  - **Completed:** January 27, 2026
 
-- ⬜ **RF-SDK-021**: Semantic Memory Privacy SDK
+- ✅ **RF-SDK-021**: Semantic Memory Privacy SDK
   - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-021
-  - Add user_id parameter (required) to `store_knowledge()` method
-  - Add is_public parameter (optional, default False) to `store_knowledge()` method
-  - Update SemanticMemoryCreate DTO in soorma-common
-  - Update query methods to filter by user_id unless querying public knowledge
-  - Write tests for private/public knowledge scenarios
+  - ✅ Added user_id parameter (required) to `store_knowledge()` method
+  - ✅ Added is_public parameter (optional, default False) to `store_knowledge()` method
+  - ✅ Updated SemanticMemoryCreate DTO in soorma-common
+  - ✅ Updated query methods to filter by user_id unless querying public knowledge
+  - ✅ Tests for private/public knowledge scenarios - 4 tests
   - **Priority:** P1 (High) - Pairs with RF-ARCH-014
-  - **Estimated effort:** 1-2 days
+  - **Completed:** January 27, 2026
 
 - ⬜ **RF-SDK-020**: Working Memory Deletion SDK
   - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-020
@@ -408,14 +408,29 @@ Dependencies: Stage 1 must be complete (event system foundation).
   - Write tests for deletion methods
   - Document usage patterns (explicit cleanup, background job, accept persistence)
   - **Priority:** P2 (Medium) - Pairs with RF-ARCH-013
-  - **Estimated effort:** 1 day
+  - **Status:** Deferred to next sprint
 
-**Implementation Order:**
-1. RF-ARCH-012 (Service) + RF-SDK-019 (SDK) together (semantic memory upsert)
-2. RF-ARCH-014 (Service) + RF-SDK-021 (SDK) together (semantic memory privacy)
-3. RF-ARCH-013 (Service) + RF-SDK-020 (SDK) together (working memory deletion)
+**Implementation Order (Completed):**
+1. ✅ RF-ARCH-012 (Service) + RF-SDK-019 (SDK) together (semantic memory upsert)
+2. ✅ RF-ARCH-014 (Service) + RF-SDK-021 (SDK) together (semantic memory privacy)
+3. ⬜ RF-ARCH-013 (Service) + RF-SDK-020 (SDK) together (working memory deletion) - Deferred
 
-**Total Estimated Effort:** 8-13 days for all service and SDK changes
+**Total Effort Expended:** ~6-8 days (Phase 1 & 2 implementation complete, Phase 3 deferred)
+
+**Test Coverage:**
+- Memory Service: 96 tests passing (13 model validation + 6 search + 77 integration/other)
+- SDK Python: 218 tests passing (210 existing + 8 new Stage 2.1 specific)
+- Total: 314 passing, 8 skipped (pre-existing API validation)
+
+**Completion Notes:**
+Phase 1 & 2 of Stage 2.1 fully implemented with comprehensive test coverage. Key features:
+- Upsert by external_id OR content_hash with conditional unique indexes
+- Semantic memory private by default (user-scoped) with optional public flag
+- RLS enforces privacy at database level
+- User_id from auth context (query param), not request body (security pattern)
+- Architectural violations fixed (removed plan_id/session_id from semantic memory)
+- 14 obsolete/permanently-skipped tests cleaned up
+- Ready for commit after optional CHANGELOG updates
 
 ---
 
@@ -609,12 +624,12 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-011 | Tracker via events, not API | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
 | RF-SDK-012 | Common library DTOs (State, A2A) | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
 | RF-SDK-014 | WorkflowState helper for plan state | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
-| RF-ARCH-012 | Semantic memory upsert (external_id + content_hash) | Stage 2.1 | [SEMANTIC_MEMORY_UPSERT](../../services/memory/SEMANTIC_MEMORY_UPSERT.md) | ⬜ |
+| RF-ARCH-012 | Semantic memory upsert (external_id + content_hash) | Stage 2.1 | [SEMANTIC_MEMORY_UPSERT](../../services/memory/SEMANTIC_MEMORY_UPSERT.md) | ✅ |
 | RF-ARCH-013 | Working memory deletion (DELETE endpoints) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
-| RF-ARCH-014 | Semantic memory privacy (user_id + is_public) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
-| RF-SDK-019 | Semantic memory upsert SDK (external_id parameter) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
+| RF-ARCH-014 | Semantic memory privacy (user_id + is_public) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ✅ |
+| RF-SDK-019 | Semantic memory upsert SDK (external_id parameter) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
 | RF-SDK-020 | Working memory deletion SDK (delete methods) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
-| RF-SDK-021 | Semantic memory privacy SDK (user_id + is_public) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
+| RF-SDK-021 | Semantic memory privacy SDK (user_id + is_public) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ⬜ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |
 | RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |

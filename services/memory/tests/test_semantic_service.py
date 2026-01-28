@@ -19,7 +19,10 @@ class TestSemanticMemoryServiceToResponse:
         memory = Mock(spec=SemanticMemory)
         memory.id = uuid4()
         memory.tenant_id = uuid4()
+        memory.user_id = "test_user_123"
         memory.content = "Python is a programming language"
+        memory.external_id = None
+        memory.is_public = False
         memory.memory_metadata = {"category": "programming", "language": "python"}
         memory.created_at = datetime(2026, 1, 22, 10, 0, 0)
         memory.updated_at = datetime(2026, 1, 22, 11, 0, 0)
@@ -40,7 +43,10 @@ class TestSemanticMemoryServiceToResponse:
         memory = Mock(spec=SemanticMemory)
         memory.id = uuid4()
         memory.tenant_id = uuid4()
+        memory.user_id = "test_user_123"
         memory.content = "Test content"
+        memory.external_id = None
+        memory.is_public = False
         memory.memory_metadata = {}
         memory.created_at = datetime(2026, 1, 22, 10, 0, 0)
         memory.updated_at = datetime(2026, 1, 22, 10, 0, 0)
@@ -56,7 +62,10 @@ class TestSemanticMemoryServiceToResponse:
         memory = Mock(spec=SemanticMemory)
         memory.id = uuid4()
         memory.tenant_id = uuid4()
+        memory.user_id = "test_user_123"
         memory.content = "Test"
+        memory.external_id = None
+        memory.is_public = False
         memory.memory_metadata = {}  # Empty dict
         memory.created_at = datetime.now(timezone.utc)
         memory.updated_at = datetime.now(timezone.utc)
@@ -72,7 +81,10 @@ class TestSemanticMemoryServiceToResponse:
         memory = Mock(spec=SemanticMemory)
         memory.id = uuid4()
         memory.tenant_id = uuid4()
+        memory.user_id = "test_user_123"
         memory.content = "Test"
+        memory.external_id = None
+        memory.is_public = False
         memory.memory_metadata = None  # NULL from database
         memory.created_at = datetime.now(timezone.utc)
         memory.updated_at = datetime.now(timezone.utc)
@@ -94,6 +106,7 @@ class TestSemanticMemoryServiceIngest:
         tenant_id = uuid4()
         data = SemanticMemoryCreate(
             content="FastAPI is a web framework",
+            user_id="test_user_123",
             metadata={"framework": "fastapi"}
         )
         
@@ -101,20 +114,19 @@ class TestSemanticMemoryServiceIngest:
         mock_memory = Mock(spec=SemanticMemory)
         mock_memory.id = uuid4()
         mock_memory.tenant_id = tenant_id
+        mock_memory.user_id = "test_user_123"
         mock_memory.content = data.content
+        mock_memory.external_id = None
+        mock_memory.is_public = False
         mock_memory.memory_metadata = data.metadata
         mock_memory.created_at = datetime.now(timezone.utc)
         mock_memory.updated_at = datetime.now(timezone.utc)
         
         service = SemanticMemoryService()
         
-        with patch('memory_service.services.semantic_memory_service.crud_ingest',
+        with patch('memory_service.crud.semantic.upsert_semantic_memory',
                    new_callable=AsyncMock, return_value=mock_memory):
-            response = await service.ingest(mock_db, tenant_id, data)
-            
-            # Verify CRUD was called
-            from memory_service.services.semantic_memory_service import crud_ingest
-            crud_ingest.assert_called_once_with(mock_db, tenant_id, data)
+            response = await service.ingest(mock_db, tenant_id, "test_user_123", data)
             
             # Verify commit was called
             mock_db.commit.assert_called_once()
@@ -130,22 +142,26 @@ class TestSemanticMemoryServiceIngest:
         tenant_id = uuid4()
         data = SemanticMemoryCreate(
             content="Test knowledge",
+            user_id="test_user_123",
             metadata={}
         )
         
         mock_memory = Mock(spec=SemanticMemory)
         mock_memory.id = uuid4()
         mock_memory.tenant_id = tenant_id
+        mock_memory.user_id = "test_user_123"
         mock_memory.content = data.content
+        mock_memory.external_id = None
+        mock_memory.is_public = False
         mock_memory.memory_metadata = {}
         mock_memory.created_at = datetime.now(timezone.utc)
         mock_memory.updated_at = datetime.now(timezone.utc)
         
         service = SemanticMemoryService()
         
-        with patch('memory_service.services.semantic_memory_service.crud_ingest',
+        with patch('memory_service.crud.semantic.upsert_semantic_memory',
                    new_callable=AsyncMock, return_value=mock_memory):
-            response = await service.ingest(mock_db, tenant_id, data)
+            response = await service.ingest(mock_db, tenant_id, "test_user_123", data)
             
             assert response.metadata == {}
 
@@ -166,7 +182,10 @@ class TestSemanticMemoryServiceSearch:
             SemanticMemoryResponse(
                 id=str(uuid4()),
                 tenant_id=str(tenant_id),
+                user_id="test_user_123",
                 content="Python is a programming language",
+                external_id=None,
+                is_public=False,
                 metadata={"category": "programming"},
                 created_at=datetime.now(timezone.utc).isoformat(),
                 updated_at=datetime.now(timezone.utc).isoformat(),
@@ -175,7 +194,10 @@ class TestSemanticMemoryServiceSearch:
             SemanticMemoryResponse(
                 id=str(uuid4()),
                 tenant_id=str(tenant_id),
+                user_id="test_user_123",
                 content="Python was created by Guido van Rossum",
+                external_id=None,
+                is_public=False,
                 metadata={"category": "history"},
                 created_at=datetime.now(timezone.utc).isoformat(),
                 updated_at=datetime.now(timezone.utc).isoformat(),
@@ -185,13 +207,9 @@ class TestSemanticMemoryServiceSearch:
         
         service = SemanticMemoryService()
         
-        with patch('memory_service.services.semantic_memory_service.crud_search',
+        with patch('memory_service.crud.semantic.search_semantic_memory',
                    new_callable=AsyncMock, return_value=mock_results):
-            results = await service.search(mock_db, tenant_id, query, limit)
-            
-            # Verify CRUD was called correctly
-            from memory_service.services.semantic_memory_service import crud_search
-            crud_search.assert_called_once_with(mock_db, tenant_id, query, limit)
+            results = await service.search(mock_db, tenant_id, "test_user_123", query, limit)
             
             # Verify results are returned as-is (CRUD already returns Response DTOs)
             assert len(results) == 2
@@ -208,9 +226,9 @@ class TestSemanticMemoryServiceSearch:
         
         service = SemanticMemoryService()
         
-        with patch('memory_service.services.semantic_memory_service.crud_search',
+        with patch('memory_service.crud.semantic.search_semantic_memory',
                    new_callable=AsyncMock, return_value=[]):
-            results = await service.search(mock_db, tenant_id, "nonexistent", 5)
+            results = await service.search(mock_db, tenant_id, "test_user_123", "nonexistent", 5)
             
             assert results == []
 
@@ -223,7 +241,10 @@ class TestSemanticMemoryServiceSearch:
         mock_result = SemanticMemoryResponse(
             id=str(uuid4()),
             tenant_id=str(tenant_id),
+            user_id="test_user_123",
             content="Test content",
+            external_id=None,
+            is_public=False,
             metadata={},
             created_at=datetime.now(timezone.utc).isoformat(),
             updated_at=datetime.now(timezone.utc).isoformat(),
@@ -232,9 +253,9 @@ class TestSemanticMemoryServiceSearch:
         
         service = SemanticMemoryService()
         
-        with patch('memory_service.services.semantic_memory_service.crud_search',
+        with patch('memory_service.crud.semantic.search_semantic_memory',
                    new_callable=AsyncMock, return_value=[mock_result]):
-            results = await service.search(mock_db, tenant_id, "test", limit=1)
+            results = await service.search(mock_db, tenant_id, "test_user_123", "test", limit=1)
             
             assert len(results) == 1
             assert results[0].score == 1.0
@@ -249,21 +270,33 @@ class TestSemanticMemoryServiceSearch:
         mock_results = [
             SemanticMemoryResponse(
                 id=str(uuid4()), tenant_id=str(tenant_id),
-                content="High score", metadata={},
+                user_id="test_user_123",
+                content="High score", 
+                external_id=None,
+                is_public=False,
+                metadata={},
                 created_at=datetime.now(timezone.utc).isoformat(),
                 updated_at=datetime.now(timezone.utc).isoformat(),
                 score=0.95
             ),
             SemanticMemoryResponse(
                 id=str(uuid4()), tenant_id=str(tenant_id),
-                content="Medium score", metadata={},
+                user_id="test_user_123",
+                content="Medium score", 
+                external_id=None,
+                is_public=False,
+                metadata={},
                 created_at=datetime.now(timezone.utc).isoformat(),
                 updated_at=datetime.now(timezone.utc).isoformat(),
                 score=0.75
             ),
             SemanticMemoryResponse(
                 id=str(uuid4()), tenant_id=str(tenant_id),
-                content="Low score", metadata={},
+                user_id="test_user_123",
+                content="Low score", 
+                external_id=None,
+                is_public=False,
+                metadata={},
                 created_at=datetime.now(timezone.utc).isoformat(),
                 updated_at=datetime.now(timezone.utc).isoformat(),
                 score=0.45
@@ -272,9 +305,9 @@ class TestSemanticMemoryServiceSearch:
         
         service = SemanticMemoryService()
         
-        with patch('memory_service.services.semantic_memory_service.crud_search',
+        with patch('memory_service.crud.semantic.search_semantic_memory',
                    new_callable=AsyncMock, return_value=mock_results):
-            results = await service.search(mock_db, tenant_id, "test", 3)
+            results = await service.search(mock_db, tenant_id, "test_user_123", "test", 3)
             
             # Verify order is preserved
             assert results[0].score == 0.95

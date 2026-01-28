@@ -80,7 +80,10 @@ class TestMemoryClientWrapper:
         mock_response = SemanticMemoryResponse(
             id="sem-123",
             tenant_id="tenant-1",
+            user_id="user-1",
             content="Test knowledge",
+            external_id=None,
+            is_public=False,
             metadata={"source": "test"},
             created_at="2025-12-23T10:00:00Z",
             updated_at="2025-12-23T10:00:00Z",
@@ -112,7 +115,10 @@ class TestMemoryClientWrapper:
         mock_memory = SemanticMemoryResponse(
             id="mem-1",
             tenant_id="tenant-1",
+            user_id="user-1",
             content="Test content",
+            external_id=None,
+            is_public=False,
             metadata={},
             created_at="2025-12-23T10:00:00Z",
             updated_at="2025-12-23T10:00:00Z",

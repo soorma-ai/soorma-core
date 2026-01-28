@@ -87,33 +87,109 @@ class MemoryClient:
         self,
         content: str,
         user_id: str,
+        external_id: Optional[str] = None,
+        is_public: bool = False,
         metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None,
+        source: Optional[str] = None,
     ) -> SemanticMemoryResponse:
         """
-        Store knowledge in semantic memory.
+        Store or update knowledge in semantic memory (upsert).
+        
+        RF-ARCH-012: Upserts by external_id (if provided) or content_hash (automatic)
+        RF-ARCH-014: Defaults to private (user-scoped). Use is_public=True for shared knowledge.
         
         The service automatically generates embeddings for vector search.
         
+        Behavior:
+        - With external_id: Updates existing knowledge with same external_id
+        - Without external_id: Prevents duplicate content via content_hash
+        - Privacy: Knowledge is private by default (only visible to this user)
+        
         Args:
-            content: Knowledge content to store
-            user_id: User identifier (required in single-tenant mode)
-            metadata: Optional metadata (e.g., source, tags, etc.)
+            content: Knowledge content to store (required)
+            user_id: User who owns this knowledge (required)
+            external_id: Optional user-provided ID for versioning/upsert
+            is_public: If True, visible to all users in tenant. Default False (private).
+            metadata: Optional metadata dict
+            tags: Optional tags for categorization
+            source: Optional source identifier
             
         Returns:
             SemanticMemoryResponse with the stored memory
+            
+        Examples:
+            # Store private knowledge (default)
+            await memory.store_knowledge(
+                content="My personal research notes",
+                user_id="alice"
+            )
+            
+            # Store and update by external_id
+            await memory.store_knowledge(
+                content="Docker v2 documentation",
+                user_id="alice",
+                external_id="doc-docker",
+                metadata={"version": "2.0"}
+            )
+            
+            # Store public knowledge (shared with all users in tenant)
+            await memory.store_knowledge(
+                content="Team's API best practices",
+                user_id="alice",
+                external_id="best-practices",
+                is_public=True
+            )
         """
         data = SemanticMemoryCreate(
             content=content,
+            external_id=external_id,
+            is_public=is_public,
             metadata=metadata or {},
+            tags=tags,
+            source=source,
         )
         
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic",
+            params={"user_id": user_id},  # Pass user_id as query parameter for API context
             json=data.model_dump(by_alias=True),
-            params={"user_id": user_id},
         )
         response.raise_for_status()
         return SemanticMemoryResponse.model_validate(response.json())
+    
+    async def query_knowledge(
+        self,
+        query: str,
+        user_id: str,
+        limit: int = 5,
+        include_public: bool = True,
+    ) -> List[SemanticMemoryResponse]:
+        """
+        Query semantic memory using vector similarity with privacy support.
+        
+        RF-ARCH-014: Returns your private knowledge + optional public knowledge.
+        
+        Args:
+            query: Search query text
+            user_id: User performing the query
+            limit: Maximum number of results (1-50)
+            include_public: If True (default), includes public knowledge from all users
+            
+        Returns:
+            List of SemanticMemoryResponse sorted by similarity score (highest first)
+        """
+        response = await self._client.post(
+            f"{self.base_url}/v1/memory/semantic/query",
+            params={"user_id": user_id},  # Pass user_id as query parameter for API context
+            json={
+                "query": query,
+                "limit": limit,
+                "include_public": include_public,
+            },
+        )
+        response.raise_for_status()
+        return [SemanticMemoryResponse.model_validate(item) for item in response.json()]
     
     async def search_knowledge(
         self,
@@ -122,22 +198,21 @@ class MemoryClient:
         limit: int = 5,
     ) -> List[SemanticMemoryResponse]:
         """
-        Search semantic memory using vector similarity.
+        Search semantic memory using vector similarity (backward compatibility).
+        
+        Deprecated: Use query_knowledge() instead for better consistency.
+        
+        This endpoint maintains backward compatibility and includes public knowledge.
         
         Args:
             query: Search query
-            user_id: User identifier (required in single-tenant mode)
+            user_id: User identifier
             limit: Maximum number of results (1-50)
             
         Returns:
             List of SemanticMemoryResponse ordered by relevance
         """
-        response = await self._client.get(
-            f"{self.base_url}/v1/memory/semantic/search",
-            params={"q": query, "user_id": user_id, "limit": limit},
-        )
-        response.raise_for_status()
-        return [SemanticMemoryResponse.model_validate(item) for item in response.json()]
+        return await self.query_knowledge(query, user_id, limit, include_public=True)
     
     # Episodic Memory Methods
     

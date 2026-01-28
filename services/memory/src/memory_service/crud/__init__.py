@@ -1,6 +1,7 @@
 """CRUD operations package."""
 
 from memory_service.crud.semantic import create_semantic_memory, search_semantic_memory
+# Note: upsert_semantic_memory is imported in service layer to avoid circular imports
 from memory_service.crud.episodic import (
     create_episodic_memory,
     get_recent_episodic_memory,
