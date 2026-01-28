@@ -62,7 +62,8 @@ async def validate_and_publish(
     events: list[EventDefinition],
     topic: str,
     context: PlatformContext,
-    correlation_id: str = None
+    correlation_id: str = None,
+    user_id: str = None
 ) -> bool:
     """
     Validate LLM's event selection and publish the event.
@@ -75,6 +76,7 @@ async def validate_and_publish(
         topic: Topic to publish to
         context: PlatformContext with EventBus client
         correlation_id: Optional correlation ID for request/response pattern
+        user_id: User ID to propagate in event envelope
     
     Returns:
         True if event was published successfully, False otherwise
@@ -93,6 +95,7 @@ async def validate_and_publish(
         topic=topic,
         data=decision["data"],
         correlation_id=correlation_id,
+        user_id=user_id,  # Propagate user_id
     )
     
     return True

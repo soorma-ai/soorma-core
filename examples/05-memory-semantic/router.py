@@ -60,8 +60,7 @@ Return your decision in this JSON format:
     "event_name": "knowledge.store" or "question.ask",
     "reasoning": "Brief explanation of why you chose this action",
     "data": {{
-        "content": "..." (for knowledge.store) OR "question": "..." (for question.ask),
-        "user_id": "00000000-0000-0000-0000-000000000001"
+        "content": "..." (for knowledge.store) OR "question": "..." (for question.ask)
     }}
 }}
 
@@ -116,7 +115,8 @@ async def route_request(event: EventEnvelope, context: PlatformContext):
         events=action_events,
         topic=EventTopic.ACTION_REQUESTS,
         context=context,
-        correlation_id=event.correlation_id
+        correlation_id=event.correlation_id,
+        user_id=event.user_id  # Propagate user_id from incoming event
     )
     
     if success:

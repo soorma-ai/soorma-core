@@ -91,6 +91,7 @@ async def _send_response(event: EventEnvelope, context: PlatformContext, payload
         event_type=QUESTION_ANSWERED_EVENT.event_name,
         data=payload.model_dump(),
         correlation_id=event.correlation_id,
+        user_id=event.user_id,  # Propagate user_id
     )
 
 
@@ -116,9 +117,9 @@ async def answer_question(event: EventEnvelope, context: PlatformContext):
     """
     data = event.data or {}
     question = data.get("question", "")
-    user_id = data.get("user_id", "00000000-0000-0000-0000-000000000001")
+    user_id = event.user_id  # User ID from event envelope
     
-    print(f"\n❓ Question: {question}")
+    print(f"\n❓ Question (user: {user_id}): {question}")
     
     # Step 1: Retrieve relevant knowledge from semantic memory
     print("🔍 Searching semantic memory...")

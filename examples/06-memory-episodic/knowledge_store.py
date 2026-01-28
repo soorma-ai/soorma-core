@@ -60,10 +60,11 @@ async def store_knowledge(event: EventEnvelope, context: PlatformContext):
     session_id = data.get("session_id")
     
     tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
-    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
+    user_id = event.user_id  # User ID from event envelope
     
     print(f"\n📚 Knowledge Store Processing")
     print(f"   Session: {session_id}")
+    print(f"   User: {user_id}")
     print(f"   Message: {message[:80]}...")
     
     # Extract fact
