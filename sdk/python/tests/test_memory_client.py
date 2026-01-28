@@ -29,7 +29,10 @@ async def test_store_knowledge(memory_client):
     mock_response.json.return_value = {
         "id": "123",
         "tenantId": "tenant-1",
+        "userId": "user-1",
         "content": "Test knowledge",
+        "externalId": None,
+        "isPublic": False,
         "metadata": {"source": "test"},
         "createdAt": "2025-12-23T00:00:00Z",
         "updatedAt": "2025-12-23T00:00:00Z",
@@ -62,7 +65,10 @@ async def test_search_knowledge(memory_client):
         {
             "id": "123",
             "tenantId": "tenant-1",
+            "userId": "user-1",
             "content": "Test result",
+            "externalId": None,
+            "isPublic": False,
             "metadata": {},
             "createdAt": "2025-12-23T00:00:00Z",
             "updatedAt": "2025-12-23T00:00:00Z",
@@ -72,7 +78,7 @@ async def test_search_knowledge(memory_client):
     mock_response.raise_for_status = MagicMock()
     
     memory_client._client = AsyncMock()
-    memory_client._client.get = AsyncMock(return_value=mock_response)
+    memory_client._client.post = AsyncMock(return_value=mock_response)
     
     # Test
     results = await memory_client.search_knowledge(query="test query", user_id="user-1", limit=5)
@@ -82,7 +88,7 @@ async def test_search_knowledge(memory_client):
     assert isinstance(results[0], SemanticMemoryResponse)
     assert results[0].content == "Test result"
     assert results[0].score == 0.95
-    memory_client._client.get.assert_called_once()
+    memory_client._client.post.assert_called_once()
 
 
 @pytest.mark.asyncio

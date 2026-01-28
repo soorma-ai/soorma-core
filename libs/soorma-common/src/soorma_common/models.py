@@ -162,16 +162,35 @@ class EventQueryResponse(BaseDTO):
 
 
 class SemanticMemoryCreate(BaseDTO):
-    """Create semantic memory."""
+    """Create semantic memory with upsert and privacy support.
+    
+    RF-ARCH-012: Upsert via external_id or content_hash
+    RF-ARCH-014: User-scoped privacy (default private, optional public)
+    
+    Note: user_id is NOT included in this DTO - it comes from authentication context.
+    Clients must authenticate, and the user_id is derived from their auth credentials.
+    This prevents clients from claiming ownership of knowledge as another user.
+    """
     content: str = Field(..., description="Knowledge content")
+    external_id: Optional[str] = Field(None, description="User-provided ID for versioning/upsert")
+    is_public: bool = Field(default=False, description="If True, visible to all users in tenant. Default False (private).")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    tags: Optional[List[str]] = Field(None, description="Optional tags for categorization")
+    source: Optional[str] = Field(None, description="Optional source identifier")
 
 
 class SemanticMemoryResponse(BaseDTO):
-    """Semantic memory response."""
+    """Semantic memory response with upsert and privacy fields.
+    
+    RF-ARCH-012: Includes external_id and content_hash info
+    RF-ARCH-014: Includes user_id and is_public fields
+    """
     id: str = Field(..., description="Memory ID")
     tenant_id: str = Field(..., description="Tenant ID")
+    user_id: str = Field(..., description="User who owns this knowledge")
     content: str = Field(..., description="Knowledge content")
+    external_id: Optional[str] = Field(None, description="User-provided ID")
+    is_public: bool = Field(..., description="Whether knowledge is public or private")
     metadata: Dict[str, Any] = Field(..., description="Additional metadata")
     created_at: str = Field(..., description="Creation timestamp")
     updated_at: str = Field(..., description="Last update timestamp")

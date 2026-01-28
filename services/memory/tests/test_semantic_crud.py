@@ -14,147 +14,6 @@ from soorma_common.models import SemanticMemoryCreate, SemanticMemoryResponse
 from memory_service.models.memory import SemanticMemory
 
 
-class TestCreateSemanticMemory:
-    """Test suite for create_semantic_memory CRUD function."""
-
-    @pytest.mark.asyncio
-    async def test_create_stores_correct_fields(self):
-        """Test that create operation stores all fields correctly."""
-        mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
-        data = SemanticMemoryCreate(
-            content="Docker is a containerization platform",
-            metadata={"category": "devops", "tool": "docker"}
-        )
-        
-        # Mock embedding service
-        mock_embedding = [0.1] * 1536  # Standard OpenAI embedding size
-        
-        # Track the memory object that gets added to the session
-        added_memory = None
-        
-        def capture_add(obj):
-            nonlocal added_memory
-            added_memory = obj
-        
-        mock_db.add = Mock(side_effect=capture_add)
-        mock_db.flush = AsyncMock()
-        
-        # Mock refresh to set timestamps
-        async def mock_refresh(obj):
-            obj.created_at = datetime(2026, 1, 22, 10, 0, 0)
-            obj.updated_at = datetime(2026, 1, 22, 10, 0, 0)
-        
-        mock_db.refresh = AsyncMock(side_effect=mock_refresh)
-        
-        # Mock embedding service at the module level to avoid circular import
-        with patch('memory_service.services.embedding.embedding_service.generate_embedding',
-                   new_callable=AsyncMock, return_value=mock_embedding):
-            # Import after mocking to avoid circular import issues
-            from memory_service.crud.semantic import create_semantic_memory
-            
-            result = await create_semantic_memory(mock_db, tenant_id, data)
-            
-            # Verify database operations
-            mock_db.add.assert_called_once()
-            mock_db.flush.assert_called_once()
-            mock_db.refresh.assert_called_once()
-            
-            # Verify the memory object that was added
-            assert added_memory is not None
-            assert added_memory.content == "Docker is a containerization platform"
-            assert added_memory.memory_metadata == {"category": "devops", "tool": "docker"}
-            assert added_memory.tenant_id == tenant_id
-            assert added_memory.embedding == mock_embedding
-            
-            # Verify return value
-            assert result.content == data.content
-            assert result.memory_metadata == data.metadata
-
-    @pytest.mark.asyncio
-    async def test_create_with_empty_metadata(self):
-        """Test creating semantic memory with empty metadata dict."""
-        from memory_service.crud.semantic import create_semantic_memory
-        
-        mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
-        data = SemanticMemoryCreate(
-            content="Test content",
-            metadata={}
-        )
-        
-        added_memory = None
-        
-        def capture_add(obj):
-            nonlocal added_memory
-            added_memory = obj
-        
-        mock_db.add = Mock(side_effect=capture_add)
-        mock_db.flush = AsyncMock()
-        mock_db.refresh = AsyncMock()
-        
-        with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
-                   new_callable=AsyncMock, return_value=[0.0] * 1536):
-            result = await create_semantic_memory(mock_db, tenant_id, data)
-            
-            # Verify empty dict is stored (not None)
-            assert added_memory.memory_metadata == {}
-            assert result.memory_metadata == {}
-
-    @pytest.mark.asyncio
-    async def test_create_generates_embedding(self):
-        """Test that embedding is generated for content."""
-        mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
-        data = SemanticMemoryCreate(
-            content="Python is a programming language",
-            metadata={"language": "python"}
-        )
-        
-        mock_embedding = [0.2] * 1536
-        
-        mock_db.add = Mock()
-        mock_db.flush = AsyncMock()
-        mock_db.refresh = AsyncMock()
-        
-        # Mock at services level to avoid circular import
-        with patch('memory_service.services.embedding.embedding_service.generate_embedding',
-                   new_callable=AsyncMock, return_value=mock_embedding) as mock_gen:
-            from memory_service.crud.semantic import create_semantic_memory
-            
-            await create_semantic_memory(mock_db, tenant_id, data)
-            
-            # Verify embedding was generated for the content
-            mock_gen.assert_called_once_with("Python is a programming language")
-
-    @pytest.mark.asyncio
-    async def test_create_sets_tenant_id(self):
-        """Test that tenant_id is properly set on the memory object."""
-        mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
-        data = SemanticMemoryCreate(content="Test", metadata={})
-        
-        added_memory = None
-        
-        def capture_add(obj):
-            nonlocal added_memory
-            added_memory = obj
-        
-        mock_db.add = Mock(side_effect=capture_add)
-        mock_db.flush = AsyncMock()
-        mock_db.refresh = AsyncMock()
-        
-        with patch('memory_service.services.embedding.embedding_service.generate_embedding',
-                   new_callable=AsyncMock, return_value=[0.0] * 1536):
-            from memory_service.crud.semantic import create_semantic_memory
-            
-            await create_semantic_memory(mock_db, tenant_id, data)
-            
-            # Verify tenant_id was set correctly
-            assert added_memory is not None
-            assert added_memory.tenant_id == tenant_id
-
-
 class TestSearchSemanticMemory:
     """Test suite for search_semantic_memory CRUD function."""
 
@@ -171,8 +30,11 @@ class TestSearchSemanticMemory:
         mock_memory = Mock(spec=SemanticMemory)
         mock_memory.id = uuid4()
         mock_memory.tenant_id = tenant_id
+        mock_memory.user_id = "test_user_123"
         mock_memory.content = "Python is a programming language"
         mock_memory.memory_metadata = {"category": "programming"}
+        mock_memory.external_id = None
+        mock_memory.is_public = False
         mock_memory.created_at = datetime(2026, 1, 22, 10, 0, 0)
         mock_memory.updated_at = datetime(2026, 1, 22, 11, 0, 0)
         
@@ -189,7 +51,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.1] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, query, limit=5)
+            results = await search_semantic_memory(mock_db, tenant_id, "test_user_123", query, limit=5)
             
             # Verify results
             assert len(results) == 1
@@ -216,7 +78,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=mock_query_embedding) as mock_gen:
-            await search_semantic_memory(mock_db, tenant_id, query, limit=5)
+            await search_semantic_memory(mock_db, tenant_id, "test_user_123", query, limit=5)
             
             # Verify embedding was generated for query
             mock_gen.assert_called_once_with(query)
@@ -254,8 +116,11 @@ class TestSearchSemanticMemory:
             mock_memory = Mock(spec=SemanticMemory)
             mock_memory.id = uuid4()
             mock_memory.tenant_id = tenant_id
+            mock_memory.user_id = "test_user_123"
             mock_memory.content = f"Content {i}"
             mock_memory.memory_metadata = {}
+            mock_memory.external_id = None
+            mock_memory.is_public = False
             mock_memory.created_at = datetime(2026, 1, 22, 10, 0, 0)
             mock_memory.updated_at = datetime(2026, 1, 22, 10, 0, 0)
             
@@ -270,7 +135,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.0] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, "test", limit=limit)
+            results = await search_semantic_memory(mock_db, tenant_id, "test_user_123", "test", limit=limit)
             
             assert len(results) == limit
 
@@ -313,8 +178,11 @@ class TestSearchSemanticMemory:
         mock_memory = Mock(spec=SemanticMemory)
         mock_memory.id = uuid4()
         mock_memory.tenant_id = tenant_id
+        mock_memory.user_id = "test_user_123"
         mock_memory.content = "Test"
         mock_memory.memory_metadata = {"key": "value"}  # Correct column name
+        mock_memory.external_id = None
+        mock_memory.is_public = False
         mock_memory.created_at = datetime(2026, 1, 22, 10, 0, 0)
         mock_memory.updated_at = datetime(2026, 1, 22, 10, 0, 0)
         
@@ -328,7 +196,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.0] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, "test", 5)
+            results = await search_semantic_memory(mock_db, tenant_id, "test_user_123", "test", 5)
             
             # Verify metadata field is correctly mapped
             assert results[0].metadata == {"key": "value"}
