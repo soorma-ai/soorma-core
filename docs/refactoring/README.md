@@ -430,7 +430,13 @@ Phase 1 & 2 of Stage 2.1 fully implemented with comprehensive test coverage. Key
 - User_id from auth context (query param), not request body (security pattern)
 - Architectural violations fixed (removed plan_id/session_id from semantic memory)
 - 14 obsolete/permanently-skipped tests cleaned up
-- Ready for commit after optional CHANGELOG updates
+
+**Final Status - Release 0.7.5 (January 30, 2026):**
+- ✅ All Phase 1 & 2 work complete and tested
+- ✅ 452/452 tests passing (100% success rate)
+- ✅ Registry service test fixed (agent deduplication)
+- ✅ Ready for production release
+- 📋 STAGE_2.1_WORKING_PLAN.md recommended for archive after commit
 
 ---
 
@@ -625,10 +631,10 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-012 | Common library DTOs (State, A2A) | Stage 2 | [03-COMMON-DTOS](sdk/03-COMMON-DTOS.md) | ✅ |
 | RF-SDK-014 | WorkflowState helper for plan state | Stage 2 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
 | RF-ARCH-012 | Semantic memory upsert (external_id + content_hash) | Stage 2.1 | [SEMANTIC_MEMORY_UPSERT](../../services/memory/SEMANTIC_MEMORY_UPSERT.md) | ✅ |
-| RF-ARCH-013 | Working memory deletion (DELETE endpoints) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ⬜ |
+| RF-ARCH-013 | Working memory deletion (DELETE endpoints) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ✅ |
 | RF-ARCH-014 | Semantic memory privacy (user_id + is_public) | Stage 2.1 | [02-MEMORY-SERVICE](arch/02-MEMORY-SERVICE.md) | ✅ |
 | RF-SDK-019 | Semantic memory upsert SDK (external_id parameter) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
-| RF-SDK-020 | Working memory deletion SDK (delete methods) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ⬜ |
+| RF-SDK-020 | Working memory deletion SDK (delete methods) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
 | RF-SDK-021 | Semantic memory privacy SDK (user_id + is_public) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ⬜ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |

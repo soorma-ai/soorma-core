@@ -21,6 +21,8 @@ from soorma_common.models import (
     ProceduralMemoryResponse,
     WorkingMemorySet,
     WorkingMemoryResponse,
+    WorkingMemoryDeleteKeyResponse,
+    WorkingMemoryDeletePlanResponse,
     # Task Context
     TaskContextCreate,
     TaskContextUpdate,
@@ -400,6 +402,76 @@ class MemoryClient:
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())
     
+    async def delete_plan_state(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+        key: Optional[str] = None,
+    ) -> WorkingMemoryDeleteKeyResponse | WorkingMemoryDeletePlanResponse:
+        """
+        Delete working memory for a plan.
+        
+        Delete a single key or all keys for a plan.
+        
+        Args:
+            plan_id: Plan identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
+            key: Optional state key. If provided, deletes only this key.
+                 If not provided, deletes all keys for the plan.
+                 
+        Returns:
+            WorkingMemoryDeleteKeyResponse if key is provided (includes deleted: bool flag)
+            WorkingMemoryDeletePlanResponse if key is None (includes count_deleted: int)
+            
+        Raises:
+            httpx.HTTPStatusError: If plan not found (404)
+            
+        Examples:
+            # Delete single key
+            result = await client.delete_plan_state(
+                plan_id="plan-123",
+                tenant_id="tenant-1",
+                user_id="user-1",
+                key="agent_state"
+            )
+            if result.deleted:
+                print("Key deleted")
+            else:
+                print("Key not found")
+                
+            # Delete all keys for plan (cleanup)
+            result = await client.delete_plan_state(
+                plan_id="plan-123",
+                tenant_id="tenant-1",
+                user_id="user-1"
+            )
+            print(f"Deleted {result.count_deleted} keys")
+        """
+        if key:
+            # Delete single key
+            response = await self._client.delete(
+                f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
+            )
+            response.raise_for_status()
+            return WorkingMemoryDeleteKeyResponse.model_validate(response.json())
+        else:
+            # Delete all keys for plan
+            response = await self._client.delete(
+                f"{self.base_url}/v1/memory/working/{plan_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
+            )
+            response.raise_for_status()
+            return WorkingMemoryDeletePlanResponse.model_validate(response.json())
+    
     # Health Check
     
     async def health(self) -> Dict[str, Any]:
@@ -694,6 +766,8 @@ class MemoryClient:
         plan_id: str,
         goal_event: str,
         goal_data: Dict[str, Any],
+        tenant_id: str,
+        user_id: str,
         session_id: Optional[str] = None,
         parent_plan_id: Optional[str] = None,
     ) -> PlanSummary:
@@ -706,6 +780,8 @@ class MemoryClient:
             plan_id: Plan identifier
             goal_event: Goal event type
             goal_data: Goal data
+            tenant_id: Tenant ID (required for multi-tenant isolation)
+            user_id: User ID (required for ownership)
             session_id: Optional session identifier
             parent_plan_id: Optional parent plan identifier
             
@@ -723,9 +799,64 @@ class MemoryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/plans",
             json=request_data.model_dump(by_alias=True),
+            headers={
+                "X-Tenant-ID": tenant_id,
+                "X-User-ID": user_id,
+            },
         )
         response.raise_for_status()
         return PlanSummary.model_validate(response.json())
+    
+    async def delete_plan(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> bool:
+        """
+        Delete a plan record and all associated working memory state.
+        
+        This performs a complete cleanup:
+        1. Deletes all working memory keys for the plan
+        2. Deletes the Plan metadata record
+        
+        Args:
+            plan_id: Plan identifier
+            tenant_id: Tenant ID (required for multi-tenant isolation)
+            user_id: User ID (required for ownership)
+            
+        Returns:
+            True if deleted, False if not found
+            
+        Raises:
+            httpx.HTTPStatusError: If deletion fails
+        """
+        try:
+            # First, clean up all working memory state for this plan
+            try:
+                await self.delete_plan_state(
+                    plan_id=plan_id,
+                    tenant_id=tenant_id,
+                    user_id=user_id
+                )
+            except httpx.HTTPStatusError:
+                # Ignore errors - working memory may not exist
+                pass
+            
+            # Then delete the Plan record itself
+            response = await self._client.delete(
+                f"{self.base_url}/v1/memory/plans/{plan_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
+            )
+            response.raise_for_status()
+            return True
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                return False
+            raise
     
     async def create_session(
         self,
@@ -761,14 +892,18 @@ class MemoryClient:
     
     async def list_plans(
         self,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         status: Optional[str] = None,
         session_id: Optional[str] = None,
         limit: int = 20,
     ) -> List[PlanSummary]:
         """
-        List plans for the authenticated user.
+        List plans for a user.
         
         Args:
+            tenant_id: Tenant ID. If not provided, lists all accessible plans
+            user_id: User ID. If not provided, lists all accessible plans
             status: Filter by status (running, completed, failed, paused)
             session_id: Filter by session
             limit: Maximum number of results (1-100)
@@ -782,9 +917,16 @@ class MemoryClient:
         if session_id:
             params["session_id"] = session_id
         
+        headers = {}
+        if tenant_id:
+            headers["X-Tenant-ID"] = tenant_id
+        if user_id:
+            headers["X-User-ID"] = user_id
+        
         response = await self._client.get(
             f"{self.base_url}/v1/memory/plans",
             params=params,
+            headers=headers if headers else None,
         )
         response.raise_for_status()
         return [PlanSummary.model_validate(item) for item in response.json()]

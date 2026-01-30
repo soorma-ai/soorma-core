@@ -171,19 +171,55 @@ class WorkflowState:
         """
         Delete a key from plan-scoped state.
         
-        Note: The Memory Service doesn't have a delete endpoint yet,
-        so this sets the value to None as a workaround.
+        Permanently removes the key from working memory.
         
         Args:
             key: State key
             
         Returns:
             True if deleted, False if key didn't exist
+            
+        Example:
+            ```python
+            # Delete sensitive data after processing
+            if await state.delete("credit_card"):
+                print("Sensitive data deleted")
+            ```
         """
-        if await self.has(key):
-            await self.set(key, None)
-            return True
-        return False
+        result = await self.memory.delete_key(
+            plan_id=self.plan_id,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
+            key=key,
+        )
+        return result.deleted
+    
+    async def cleanup(self) -> int:
+        """
+        Delete all state for this plan.
+        
+        Removes all working memory keys for the plan. Useful for cleanup
+        after plan completion or when reclaiming resources.
+        
+        Returns:
+            Number of keys deleted
+            
+        Example:
+            ```python
+            # Clean up after plan completes
+            count = await state.cleanup()
+            print(f"Cleaned up {count} state entries")
+            
+            # Or explicitly handle sensitive data
+            await state.cleanup()  # Clear everything including temp state
+            ```
+        """
+        result = await self.memory.cleanup_plan(
+            plan_id=self.plan_id,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
+        )
+        return result.count_deleted
     
     async def increment(self, key: str, delta: int = 1) -> int:
         """

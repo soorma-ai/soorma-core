@@ -226,7 +226,13 @@ async def handle_task_completed(event: EventEnvelope, context: PlatformContext):
             user_id=client_user_id,
         )
         
-        print("   ✓ Response sent to client\n")
+        print("   ✓ Response sent to client")
+        
+        # Clean up working memory after workflow completion
+        # This removes all state for the plan, freeing up resources
+        # Useful for long-running systems handling many workflows
+        count = await state.cleanup()
+        print(f"   ✓ Cleaned up {count} state entries from working memory\n")
 
 
 if __name__ == "__main__":

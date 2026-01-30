@@ -27,6 +27,7 @@ import logging
 import os
 
 from soorma_common.events import EventTopic
+from soorma_common.models import WorkingMemoryDeleteKeyResponse, WorkingMemoryDeletePlanResponse
 from .events import EventClient
 from .memory import MemoryClient as MemoryServiceClient
 from .registry.client import RegistryClient
@@ -68,7 +69,8 @@ class MemoryClient:
         Working Memory:
             store(): Set plan-scoped state
             retrieve(): Get plan-scoped state
-            delete(): Remove plan-scoped state
+            delete_key(): Delete a single state key
+            cleanup_plan(): Delete all state for a plan
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
     # Note: Local fallback removed - Memory Service required for multi-agent workflows
@@ -320,20 +322,89 @@ class MemoryClient:
             for r in results
         ]
     
-    async def delete(self, key: str, plan_id: Optional[str] = None) -> bool:
+    
+    async def delete_key(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+        key: str,
+    ) -> WorkingMemoryDeleteKeyResponse:
         """
-        Delete a memory entry (Working Memory).
+        Delete a single key from plan working memory.
         
         Args:
-            key: Memory key to delete
-            plan_id: Plan ID for working memory scope (defaults to "default")
-            
+            plan_id: Plan identifier
+            tenant_id: Tenant ID from event context
+            user_id: User ID from event context
+            key: State key to delete
+                 
         Returns:
-            True if deletion succeeded
+            WorkingMemoryDeleteKeyResponse with success, deleted, and message
+            
+        Raises:
+            httpx.HTTPStatusError: If plan not found (404)
+            
+        Example:
+            ```python
+            result = await context.memory.delete_key(
+                plan_id="plan-123",
+                tenant_id="tenant-1",
+                user_id="user-1",
+                key="agent_state"
+            )
+            if result.deleted:
+                print("Key deleted")
+            ```
         """
-        # Note: Memory Service doesn't have a delete endpoint yet
-        logger.warning("Memory delete not implemented in Memory Service")
-        return False
+        client = await self._ensure_client()
+        return await client.delete_plan_state(
+            plan_id=plan_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            key=key,
+        )
+    
+    async def cleanup_plan(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> WorkingMemoryDeletePlanResponse:
+        """
+        Delete all working memory for a plan (cleanup).
+        
+        Removes all keys for the plan. Useful after plan completion or when
+        reclaiming resources.
+        
+        Args:
+            plan_id: Plan identifier
+            tenant_id: Tenant ID from event context
+            user_id: User ID from event context
+                 
+        Returns:
+            WorkingMemoryDeletePlanResponse with success, count_deleted, and message
+            
+        Raises:
+            httpx.HTTPStatusError: If plan not found (404)
+            
+        Example:
+            ```python
+            result = await context.memory.cleanup_plan(
+                plan_id="plan-123",
+                tenant_id="tenant-1",
+                user_id="user-1"
+            )
+            print(f"Cleaned up {result.count_deleted} state entries")
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.delete_plan_state(
+            plan_id=plan_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            key=None,
+        )
     
     async def close(self) -> None:
         """Close the Memory Service client connection."""

@@ -29,7 +29,6 @@ class SessionService:
     def _to_summary(session: Session) -> SessionSummary:
         """Convert database model to summary DTO."""
         return SessionSummary(
-            id=str(session.id),
             tenant_id=str(session.tenant_id),
             user_id=str(session.user_id),
             session_id=session.session_id,

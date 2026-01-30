@@ -283,6 +283,25 @@ await state.record_action("analysis.completed")
 history = await state.get_action_history()  # Full audit trail
 ```
 
+**Pattern: Cleanup After Completion**
+```python
+# After workflow is done and client has been notified:
+# Clean up all working memory for the plan
+count = await state.cleanup()
+print(f"Cleaned up {count} state entries")
+
+# Or delete a single key (e.g., for sensitive data):
+deleted = await state.delete("api_key")
+if deleted:
+    print("Sensitive data removed")
+```
+
+**When to cleanup:**
+- After plan/workflow completes
+- When reclaiming resources in long-running systems  
+- Before archiving workflow execution
+- For sensitive data (credentials, PII) - immediate cleanup recommended
+
 See [memory_api_demo.py](memory_api_demo.py) and [planner.py](planner.py) for additional patterns.
 
 ## Troubleshooting

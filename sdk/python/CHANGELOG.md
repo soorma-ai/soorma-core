@@ -5,7 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-01-30
+
+### Added
+- **Stage 2.1 Phase 1 & 2 - Semantic Memory Enhancements (January 27-30, 2026)** [RF-SDK-019, RF-SDK-021]
+  - **Semantic Memory Upsert Support** [RF-SDK-019]:
+    - Added `external_id` parameter to `store_knowledge()` method
+    - Supports versioned knowledge updates via external_id (application-controlled)
+    - Automatic deduplication via content_hash when external_id not provided
+    - Backward compatible (external_id optional, defaults to None)
+    - Enables update-or-insert patterns for document versioning
+  - **Semantic Memory Privacy Model** [RF-SDK-021]:
+    - Added `user_id` parameter (required) to `store_knowledge()` and `query_knowledge()` methods
+    - Added `is_public` parameter (optional, default False) to `store_knowledge()`
+    - Private knowledge: returned only to owning user + any user querying public knowledge
+    - Public knowledge: returned to all users in tenant (when is_public=True)
+    - Breaking change: user_id now required for all semantic memory operations
+    - Rationale: Semantic memory is agent memory (CoALA), not a general RAG solution
+  - **MemoryClient API Updates**:
+    - `store_knowledge(content, embedding, user_id, is_public=False, external_id=None, ...)`
+    - `query_knowledge(query_embedding, user_id, include_public=True, ...)`
+    - All semantic operations now require user_id for multi-user isolation
+  - **Type Safety**: Updated DTOs with new fields in SemanticMemoryCreate, SemanticMemoryResponse
+  - **Tests**: 239 total SDK tests passing
+    - 8 new Stage 2.1 specific tests (4 upsert + 4 privacy)
+    - 210 existing tests maintained and passing
+    - Full coverage of upsert, privacy, and query filtering scenarios
+
+### Fixed
+- **Registry Service Agent Deduplication Test**: Fixed test_agent_deduplication_by_name
+  - Updated expectations for versioned agent names (now include ":1.0.0" suffix)
+  - Test now expects "planner-agent:1.0.0" instead of plain "planner-agent"
+
 ## [0.7.3] - 2026-01-26
+
+### Changed
+- **Documentation improvements** for all examples (01-06):
+  - Streamlined README files to focus on learning objectives and concepts
+  - Abbreviated code samples while maintaining SDK method accuracy
+  - Added "How it applies concepts" sections to each example
+  - Removed verbose explanations in favor of directing developers to source code
+  - Reduced total documentation by ~25% while improving clarity
+  - Examples now emphasize patterns over implementation details
+- **Example 01** (Hello World): Condensed from 168 to 123 lines (27% reduction)
+- **Example 02** (Events Simple): Streamlined event publishing patterns
+- **Example 03** (Structured Events): Clarified LLM routing and event discovery
+- **Example 04** (Working Memory): Reduced from 427 to 310 lines (27% reduction)
+- **Example 05** (Semantic Memory): Reduced from 543 to 365 lines (33% reduction)
+- **Example 06** (Episodic Memory): Reduced from 478 to 399 lines (17% reduction)
+
+## [0.7.0] - 2026-01-21
 
 ### Changed
 - **Documentation improvements** for all examples (01-06):

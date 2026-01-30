@@ -30,7 +30,6 @@ class PlanService:
     def _to_summary(plan: Plan) -> PlanSummary:
         """Convert database model to summary DTO."""
         return PlanSummary(
-            id=str(plan.id),
             tenant_id=str(plan.tenant_id),
             user_id=str(plan.user_id),
             plan_id=plan.plan_id,

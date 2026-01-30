@@ -30,7 +30,6 @@ class TaskContextService:
     def _to_response(task_context: TaskContext) -> TaskContextResponse:
         """Convert database model to response DTO."""
         return TaskContextResponse(
-            id=str(task_context.id),
             tenant_id=str(task_context.tenant_id),
             task_id=task_context.task_id,
             plan_id=task_context.plan_id,

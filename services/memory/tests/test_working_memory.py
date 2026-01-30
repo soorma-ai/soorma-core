@@ -22,6 +22,7 @@ class TestWorkingMemoryValueTypes:
         """Generate test IDs."""
         return {
             "tenant_id": uuid4(),
+            "user_id": uuid4(),
             "plan_id": uuid4(),
         }
 
@@ -34,6 +35,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=string_value),
@@ -46,6 +48,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -62,6 +65,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=int_value),
@@ -74,6 +78,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -91,6 +96,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=list_value),
@@ -103,6 +109,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -125,6 +132,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=dict_value),
@@ -137,6 +145,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -154,6 +163,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=bool_value),
@@ -166,6 +176,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -183,6 +194,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=none_value),
@@ -194,6 +206,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -210,6 +223,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=float_value),
@@ -222,6 +236,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -250,6 +265,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=nested_value),
@@ -261,6 +277,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -277,6 +294,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             "empty_list",
             WorkingMemorySet(value=[]),
@@ -287,6 +305,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             "empty_dict",
             WorkingMemorySet(value={}),
@@ -297,6 +316,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             "empty_string",
             WorkingMemorySet(value=""),
@@ -311,6 +331,7 @@ class TestWorkingMemoryValueTypes:
         await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=0),
@@ -320,6 +341,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=1),
@@ -331,6 +353,7 @@ class TestWorkingMemoryValueTypes:
         retrieved = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -344,6 +367,7 @@ class TestWorkingMemoryValueTypes:
         await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value="initial"),
@@ -353,6 +377,7 @@ class TestWorkingMemoryValueTypes:
         await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=42),
@@ -361,6 +386,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -371,6 +397,7 @@ class TestWorkingMemoryValueTypes:
         await service.set(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=["a", "b", "c"]),
@@ -379,6 +406,7 @@ class TestWorkingMemoryValueTypes:
         result = await service.get(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -394,6 +422,7 @@ class TestWorkingMemoryCRUD:
         """Generate test IDs."""
         return {
             "tenant_id": uuid4(),
+            "user_id": uuid4(),
             "plan_id": uuid4(),
         }
 
@@ -406,6 +435,7 @@ class TestWorkingMemoryCRUD:
         memory = await set_working_memory(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=value),
@@ -417,6 +447,7 @@ class TestWorkingMemoryCRUD:
         retrieved = await get_working_memory(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -432,6 +463,7 @@ class TestWorkingMemoryCRUD:
         memory = await set_working_memory(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=value),
@@ -448,6 +480,7 @@ class TestWorkingMemoryCRUD:
         memory = await set_working_memory(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=value),
@@ -464,6 +497,7 @@ class TestWorkingMemoryCRUD:
         memory = await set_working_memory(
             db_session,
             test_ids["tenant_id"],
+            test_ids["user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value=value),

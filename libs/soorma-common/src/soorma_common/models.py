@@ -246,6 +246,20 @@ class WorkingMemoryResponse(BaseDTO):
     updated_at: str = Field(..., description="Last update timestamp")
 
 
+class WorkingMemoryDeleteKeyResponse(BaseDTO):
+    """Response for deleting a single working memory key."""
+    success: bool = Field(..., description="Whether deletion succeeded")
+    deleted: bool = Field(..., description="True if key was deleted, False if not found")
+    message: str = Field(..., description="Status message")
+
+
+class WorkingMemoryDeletePlanResponse(BaseDTO):
+    """Response for deleting all working memory keys for a plan."""
+    success: bool = Field(..., description="Whether deletion succeeded")
+    count_deleted: int = Field(..., description="Number of keys deleted")
+    message: str = Field(..., description="Status message")
+
+
 # =============================================================================
 # Task Context DTOs
 # =============================================================================
@@ -271,7 +285,6 @@ class TaskContextUpdate(BaseDTO):
 
 class TaskContextResponse(BaseDTO):
     """Task context response."""
-    id: str = Field(..., description="Record ID")
     tenant_id: str = Field(..., description="Tenant ID")
     task_id: str = Field(..., description="Task ID")
     plan_id: Optional[str] = Field(None, description="Plan ID")
@@ -311,7 +324,6 @@ class PlanContextUpdate(BaseDTO):
 
 class PlanContextResponse(BaseDTO):
     """Plan context response."""
-    id: str = Field(..., description="Record ID")
     tenant_id: str = Field(..., description="Tenant ID")
     plan_id: str = Field(..., description="Plan ID")
     session_id: Optional[str] = Field(None, description="Session ID")
@@ -346,7 +358,8 @@ class PlanUpdate(BaseDTO):
 
 class PlanSummary(BaseDTO):
     """Plan summary response."""
-    id: str = Field(..., description="Record ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    user_id: str = Field(..., description="User ID")
     plan_id: str = Field(..., description="Plan ID")
     session_id: Optional[str] = Field(None, description="Session ID")
     goal_event: str = Field(..., description="Goal event type")
@@ -366,7 +379,8 @@ class SessionCreate(BaseDTO):
 
 class SessionSummary(BaseDTO):
     """Session summary response."""
-    id: str = Field(..., description="Record ID")
+    tenant_id: str = Field(..., description="Tenant ID")
+    user_id: str = Field(..., description="User ID")
     session_id: str = Field(..., description="Session ID")
     name: Optional[str] = Field(None, description="Session name")
     metadata: Dict[str, Any] = Field(..., description="Session metadata")

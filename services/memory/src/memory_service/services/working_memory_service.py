@@ -4,10 +4,17 @@ from uuid import UUID
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from soorma_common.models import WorkingMemorySet, WorkingMemoryResponse
+from soorma_common.models import (
+    WorkingMemorySet,
+    WorkingMemoryResponse,
+    WorkingMemoryDeleteKeyResponse,
+    WorkingMemoryDeletePlanResponse,
+)
 from memory_service.crud.working import (
     set_working_memory as crud_set,
     get_working_memory as crud_get,
+    delete_working_memory_key as crud_delete_key,
+    delete_working_memory_plan as crud_delete_plan,
 )
 from memory_service.models.memory import WorkingMemory
 
@@ -31,6 +38,7 @@ class WorkingMemoryService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
+        user_id: UUID,
         plan_id: UUID,
         key: str,
         data: WorkingMemorySet,
@@ -40,22 +48,54 @@ class WorkingMemoryService:
         
         Transaction boundary: No commit needed - upsert is atomic.
         """
-        memory = await crud_set(db, tenant_id, plan_id, key, data)
+        memory = await crud_set(db, tenant_id, user_id, plan_id, key, data)
         return self._to_response(memory)
     
     async def get(
         self,
         db: AsyncSession,
         tenant_id: UUID,
+        user_id: UUID,
         plan_id: UUID,
         key: str,
     ) -> Optional[WorkingMemoryResponse]:
         """Get working memory value."""
-        memory = await crud_get(db, tenant_id, plan_id, key)
+        memory = await crud_get(db, tenant_id, user_id, plan_id, key)
         if not memory:
             return None
         
         return self._to_response(memory)
+
+    async def delete_key(
+        self,
+        db: AsyncSession,
+        tenant_id: UUID,
+        user_id: UUID,
+        plan_id: UUID,
+        key: str,
+    ) -> WorkingMemoryDeleteKeyResponse:
+        """Delete a single working memory key."""
+        deleted = await crud_delete_key(db, tenant_id, user_id, plan_id, key)
+        return WorkingMemoryDeleteKeyResponse(
+            success=True,
+            deleted=deleted,
+            message=f"Working memory key deleted" if deleted else f"Working memory key not found",
+        )
+
+    async def delete_plan(
+        self,
+        db: AsyncSession,
+        tenant_id: UUID,
+        user_id: UUID,
+        plan_id: UUID,
+    ) -> WorkingMemoryDeletePlanResponse:
+        """Delete all working memory for a plan."""
+        count = await crud_delete_plan(db, tenant_id, user_id, plan_id)
+        return WorkingMemoryDeletePlanResponse(
+            success=True,
+            count_deleted=count,
+            message=f"Deleted {count} working memory keys",
+        )
 
 
 # Singleton instance for dependency injection

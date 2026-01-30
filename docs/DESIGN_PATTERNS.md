@@ -303,6 +303,254 @@ async def start_saga(event, context):
 
 ---
 
+## Plans and Sessions: Workflow Organization
+
+### Conceptual Model
+
+The Memory Service provides two organizational constructs for structuring multi-agent workflows:
+
+| Concept | Purpose | Scope | Typical Use |
+|---------|---------|-------|-------------|
+| **Plan** | Individual work unit/workflow execution | Single goal execution | Chat conversation, research task, document generation |
+| **Session** | Container grouping related plans | Multi-plan conversation | Multi-turn project, extended research session, user journey |
+
+### Plans: The Execution Unit
+
+**Plans** are the primary organizational unit in Soorma. Each plan represents a single workflow execution with its own:
+- Unique `plan_id` (the business identifier)
+- Goal event and goal data (what the plan aims to achieve)
+- Status (running, completed, failed, paused)
+- Working memory state (plan-scoped key-value storage)
+
+**Data Model:**
+```python
+class Plan:
+    plan_id = String(100)          # Primary identifier
+    tenant_id = UUID               # Multi-tenant isolation
+    user_id = UUID                 # User/agent ownership
+    session_id = String(100)       # OPTIONAL - links to session
+    goal_event = String(255)       # What the plan aims to achieve
+    goal_data = JSON               # Parameters for the goal
+    status = String(50)            # running/completed/failed/paused
+    parent_plan_id = String(100)   # For hierarchical plans
+    created_at, updated_at
+```
+
+**Key Characteristics:**
+- ✅ **Working memory is plan-scoped** - All temporary state is isolated per plan
+- ✅ **Plans can exist independently** - `session_id` is optional
+- ✅ **Plans can be hierarchical** - `parent_plan_id` creates plan trees
+- ✅ **Each plan has a lifecycle** - Track status from creation to completion
+
+### Sessions: The Grouping Container
+
+**Sessions** are optional organizational metadata that group related plans together. A session represents a higher-level conversation or interaction boundary.
+
+**Data Model:**
+```python
+class Session:
+    session_id = String(100)       # Business identifier
+    tenant_id = UUID               # Multi-tenant isolation
+    user_id = UUID                 # User ownership
+    name = String(255)             # Optional human-readable name
+    session_metadata = JSON        # Flexible metadata
+    last_interaction = DateTime    # Auto-updated timestamp
+    created_at
+```
+
+**Key Characteristics:**
+- ✅ **One session can contain multiple plans** - Group related work units
+- ✅ **Sessions don't store data directly** - They're organizational metadata
+- ✅ **Sessions track interaction time** - `last_interaction` auto-updates
+- ✅ **Plans can exist without sessions** - Sessions are optional
+
+### Relationship to Memory Types
+
+**Critical Understanding:**
+
+```
+Session (optional container)
+  └─ Plan 1 (work unit)
+      ├─ Working Memory (plan-scoped state)
+      ├─ Episodic Memory (agent_id + user_id scoped)
+      └─ Semantic Memory (user_id scoped)
+  └─ Plan 2 (work unit)
+      ├─ Working Memory (different plan = different state)
+      ├─ Episodic Memory (shared across plans)
+      └─ Semantic Memory (shared across plans)
+```
+
+**Important:** Sessions don't directly contain memories:
+- **Working Memory** = Scoped to `plan_id` (not session_id)
+- **Episodic Memory** = Scoped to `agent_id + user_id` (crosses plans/sessions)
+- **Semantic Memory** = Scoped to `user_id` (crosses plans/sessions)
+
+### When to Use Plans vs Sessions
+
+#### Use Plans Alone When:
+
+✅ Simple single-conversation chatbots
+
+✅ One-off task execution
+
+✅ Independent workflow instances
+
+✅ No need to group related work
+
+**Example: Simple Chatbot**
+```python
+# Each conversation = one plan
+plan_id = str(uuid.uuid4())
+state = WorkflowState(context.memory, plan_id, tenant_id, user_id)
+
+# Store conversation state
+await state.set("history", messages)
+await state.set("user_preferences", prefs)
+```
+
+#### Use Plans + Sessions When:
+
+✅ Multi-turn research projects (multiple plans per project)
+
+✅ Complex user journeys (multiple related workflows)
+
+✅ Need to group and query related work units
+
+✅ Long-running interactions with multiple sub-goals
+
+**Example: Research Project**
+```python
+# Create session for the project
+session_id = "research-project-123"
+
+# Create multiple plans within the session
+plan1_id = str(uuid.uuid4())
+await create_plan(plan1_id, session_id=session_id, goal="literature_review")
+
+plan2_id = str(uuid.uuid4())
+await create_plan(plan2_id, session_id=session_id, goal="data_analysis")
+
+plan3_id = str(uuid.uuid4())
+await create_plan(plan3_id, session_id=session_id, goal="write_report")
+
+# Each plan has its own working memory
+state1 = WorkflowState(context.memory, plan1_id, tenant_id, user_id)
+state2 = WorkflowState(context.memory, plan2_id, tenant_id, user_id)
+
+# But they share episodic and semantic memory via user_id
+```
+
+### Design Patterns with Plans
+
+#### Pattern 1: Simple Chat (Plan Only)
+```python
+# Each conversation is a plan
+plan_id = f"chat-{user_id}-{timestamp}"
+
+# Store conversation state in working memory
+state = WorkflowState(context.memory, plan_id, tenant_id, user_id)
+await state.set("history", messages)
+
+# Log interactions in episodic memory
+await context.memory.log_interaction(
+    agent_id="chatbot",
+    role="user",
+    content=message,
+    user_id=user_id,
+    metadata={"plan_id": plan_id}
+)
+```
+
+#### Pattern 2: Multi-Step Workflow (Plan with Substeps)
+```python
+# Main plan
+main_plan_id = str(uuid.uuid4())
+
+# Sub-plans (hierarchical)
+plan1 = await create_plan(
+    plan_id=str(uuid.uuid4()),
+    parent_plan_id=main_plan_id,
+    goal="step1"
+)
+
+# Each sub-plan gets its own working memory
+state1 = WorkflowState(context.memory, plan1.plan_id, tenant_id, user_id)
+```
+
+#### Pattern 3: Project with Multiple Goals (Session + Plans)
+```python
+# Create session
+session_id = "project-789"
+await create_session(session_id, name="Q1 Product Launch")
+
+# Create plans for each phase
+research_plan = await create_plan(
+    session_id=session_id,
+    goal_event="research.market"
+)
+
+design_plan = await create_plan(
+    session_id=session_id,
+    goal_event="design.prototype"
+)
+
+# Later: Query all work in this project
+plans = await list_plans(session_id=session_id)
+```
+
+### Best Practices
+
+1. **Default to plans alone** - Only introduce sessions when you need grouping
+2. **Use plan_id for working memory** - Never try to store state at session level
+3. **Link episodic memory to plans** - Include `plan_id` in metadata for traceability
+4. **Clean up completed plans** - Delete working memory when workflows finish
+5. **Update plan status** - Track lifecycle (running → completed/failed)
+6. **Use parent_plan_id for hierarchy** - Better than sessions for nested workflows
+
+### Common Mistakes
+
+❌ **Trying to store data in sessions**
+```python
+# WRONG: Sessions don't have data storage
+session.data = {"important": "stuff"}  # This doesn't exist!
+```
+
+✅ **Store data in plan working memory**
+```python
+# RIGHT: Use plan-scoped working memory
+state = WorkflowState(context.memory, plan_id, tenant_id, user_id)
+await state.set("important", "stuff")
+```
+
+❌ **Confusing session_id with plan_id**
+```python
+# WRONG: Working memory needs plan_id, not session_id
+state = WorkflowState(context.memory, session_id, tenant_id, user_id)
+```
+
+✅ **Use plan_id for working memory**
+```python
+# RIGHT: Working memory is plan-scoped
+state = WorkflowState(context.memory, plan_id, tenant_id, user_id)
+```
+
+### Security and Isolation
+
+Both plans and sessions enforce multi-tenant isolation:
+
+```python
+# Unique constraints ensure no collisions
+(tenant_id, plan_id) = UNIQUE      # Plans isolated per tenant
+(tenant_id, session_id) = UNIQUE   # Sessions isolated per tenant
+
+# All queries filtered by tenant_id + user_id
+plans = await list_plans(tenant_id=tenant_id, user_id=user_id)
+```
+
+**Row Level Security (RLS):** PostgreSQL RLS policies enforce data isolation at the database level.
+
+---
+
 ## Choosing a Pattern
 
 ### Agent Orchestration Patterns
