@@ -82,8 +82,9 @@ def test_agent_deduplication_by_name(client: TestClient):
     assert len(data["agents"]) == 2
     
     names = [a["name"] for a in data["agents"]]
-    assert "planner-agent" in names
-    assert "worker-agent" in names
+    # Agent names are versioned by default (appended with :1.0.0)
+    assert "planner-agent:1.0.0" in names
+    assert "worker-agent:1.0.0" in names
     
     # Verify we got the latest planner (planner-2 was registered last)
     # Note: In a real concurrent scenario, we'd rely on heartbeat updates.
@@ -102,8 +103,8 @@ def test_agent_deduplication_by_name(client: TestClient):
     data = response.json()
     assert len(data["agents"]) == 2
     
-    # Find the planner agent in the response
-    planner_entry = next(a for a in data["agents"] if a["name"] == "planner-agent")
+    # Find the planner agent in the response (name is versioned)
+    planner_entry = next(a for a in data["agents"] if a["name"] == "planner-agent:1.0.0")
     assert planner_entry["agentId"] == "planner-1"
 
     # Now update planner-2
@@ -115,5 +116,5 @@ def test_agent_deduplication_by_name(client: TestClient):
     response = client.get("/v1/agents")
     data = response.json()
     
-    planner_entry = next(a for a in data["agents"] if a["name"] == "planner-agent")
+    planner_entry = next(a for a in data["agents"] if a["name"] == "planner-agent:1.0.0")
     assert planner_entry["agentId"] == "planner-2"

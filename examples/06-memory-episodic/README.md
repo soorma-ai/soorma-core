@@ -11,6 +11,7 @@
 - How to implement intent classification and routing
 - How to build RAG (Retrieval Augmented Generation) with dual context
 - How to manage conversation sessions with working memory
+- How to track and manage plans for session visibility and cleanup
 
 ## The Pattern
 
@@ -105,8 +106,11 @@ You: What is Python?
 You: What have we discussed?
 🤖: We discussed: "Remember that Python..." and "What is Python?"
 
-You: /new     # Start new session
-You: /quit    # Exit
+# Plan Management Commands
+You: /sessions   # List existing plans, choose one or create new
+You: /new        # Start new session (creates Plan record)
+You: /delete     # Delete a plan and its working memory
+You: /quit       # Exit
 ```
 
 ## Utility Scripts
@@ -356,6 +360,60 @@ async def store_knowledge(event: EventEnvelope, context: PlatformContext):
 - Stores extracted facts in semantic memory (knowledge base)
 - Logs confirmation to episodic memory (audit trail)
 - Tool-like behavior but implemented as Worker (could extract facts with LLM)
+
+### Interactive Client ([client.py](client.py))
+
+Multi-session client with plan management:
+
+```python
+async def start_new_session(self) -> str:
+    """Start a new chat session."""
+    session_id = str(uuid.uuid4())  # Full UUID for working memory
+    await self.create_plan_record(session_id)
+    return session_id
+
+async def create_plan_record(self, plan_id: str) -> bool:
+    """Create Plan record for tracking."""
+    await self.memory_client.create_plan(
+        plan_id=plan_id,
+        goal_event="chat.conversation",
+        goal_data={"type": "episodic_memory_demo"},
+        tenant_id=TENANT_ID,
+        user_id=USER_ID
+    )
+
+async def choose_session(self) -> str:
+    """List plans and let user choose."""
+    plans = await self.memory_client.list_plans(
+        tenant_id=TENANT_ID,
+        user_id=USER_ID,
+        limit=20
+    )
+    # Display plans, let user choose or create new
+    
+async def delete_session(self) -> None:
+    """Delete plan and working memory."""
+    await self.memory_client.delete_plan(
+        plan_id=plan_id,
+        tenant_id=TENANT_ID,
+        user_id=USER_ID
+    )
+```
+
+**How it applies the concepts:**
+- **Plan records** - Track conversation sessions for visibility
+- **Working memory** - Uses `plan_id` (session UUID) as namespace for state
+- **list_plans()** - Lets users resume previous conversations
+- **delete_plan()** - Removes Plan record and cleans up working memory
+- **Multi-session** - Users can switch between conversations (`/sessions` command)
+
+**Commands:**
+- `/new` - Create new session (creates Plan record)
+- `/sessions` - List and choose existing plans
+- `/delete` - Remove plan and associated state
+- `/quit` - Exit client
+
+**Pattern:** Plans are optional metadata for tracking. Working memory works with or without Plan records (uses `plan_id` as key either way).
 
 ## Best Practices
 

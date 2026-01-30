@@ -145,6 +145,7 @@ class WorkingMemory(Base):
         ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
     )
+    user_id = Column(UUID(as_uuid=True), nullable=False)
     plan_id = Column(UUID(as_uuid=True), nullable=False)
     key = Column(Text, nullable=False)
     value = Column(JSON, nullable=False)

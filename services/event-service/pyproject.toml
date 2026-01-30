@@ -1,6 +1,6 @@
 [project]
 name = "soorma-event-service"
-version = "0.7.4"
+version = "0.7.5"
 description = "Event Service proxy for Soorma platform - decouples agents from message bus"
 readme = "README.md"
 license = {text = "MIT"}

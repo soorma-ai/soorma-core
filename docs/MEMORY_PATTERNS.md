@@ -439,7 +439,43 @@ history = await state.get_action_history()
 # ["research.started", "research.completed", "draft.started"]
 ```
 
-**Example:** [examples/05-memory-working](../examples/05-memory-working/)
+### Pattern: Cleanup and Deletion
+
+Working memory is temporary state that should be cleaned up after workflows complete or when sensitive data needs to be removed immediately.
+
+**Immediate cleanup** - Remove sensitive data right after use:
+```python
+# Store sensitive API key temporarily
+await state.set("api_key", key_value)
+# ... use the key ...
+# Immediately delete it
+deleted = await state.delete("api_key")
+if deleted:
+    print("Sensitive data removed")
+```
+
+**Workflow cleanup** - After workflow completes:
+```python
+# All workflow steps done, now cleanup
+count = await state.cleanup()  # Removes ALL state for this plan
+print(f"Cleaned up {count} state entries")
+
+# Alternative: Use context.memory for finer control
+await context.memory.delete_plan_state(plan_id=plan_id, tenant_id=..., user_id=...)
+```
+
+**When to cleanup:**
+- ✅ After workflow completion (free resources)
+- ✅ Immediately after using sensitive data (credentials, PII)
+- ✅ Before archiving workflow execution
+- ✅ In long-running systems handling many workflows
+- ❌ During workflow execution (data still needed)
+
+**Example:** [examples/04-memory-working/planner.py](../examples/04-memory-working/planner.py) - cleanup after responding to client
+
+**Example:** [examples/04-memory-working/memory_api_demo.py](../examples/04-memory-working/memory_api_demo.py) - raw API cleanup operations
+
+**Note:** For information about Plans and Sessions (workflow organization constructs), see [Design Patterns](./DESIGN_PATTERNS.md#plans-and-sessions-workflow-organization).
 
 ---
 
@@ -625,7 +661,7 @@ history = await context.memory.get_recent_history(
 2. **Limit results**: Always specify reasonable limits for searches
 3. **Cache frequently accessed data**: Don't fetch same knowledge repeatedly
 4. **Use metadata**: Helps with future filtering capabilities
-5. **Clean up**: Delete plan state after workflow completion (future feature)
+5. **Clean up**: Delete plan state after workflow completion to free resources
 
 ---
 
@@ -635,7 +671,6 @@ Planned improvements to Memory Service:
 
 - **Metadata filtering** in semantic search
 - **Time-based queries** in episodic memory
-- **Automatic state cleanup** for completed workflows
 - **Memory compression** for long conversations
 - **Cross-plan queries** in working memory (limited)
 

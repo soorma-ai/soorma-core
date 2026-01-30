@@ -5,7 +5,92 @@ All notable changes to the Soorma Core project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Stage 2.1 Phase 3 - Working Memory Deletion (January 29, 2026)**
+  - **User Ownership Enforcement** (RF-ARCH-013): Working memory now scoped by user_id
+    - Added `user_id` column to `working_memory` table (Alembic migration 003)
+    - Updated RLS policy to enforce both tenant_id AND user_id match
+    - Prevents users from deleting/reading other users' plan state within same tenant
+    - All working memory operations require both tenant_id and user_id parameters
+  - **Working Memory Deletion API** (RF-SDK-020):
+    - DELETE `/v1/memory/working/{plan_id}/{key}`: Delete single key
+    - DELETE `/v1/memory/working/{plan_id}`: Delete all keys for plan
+    - Proper 404 responses for non-existent keys/plans
+  - **Service Layer**:
+    - CRUD functions: `delete_working_memory_key()`, `delete_working_memory_plan()`
+    - Service layer returns typed DTOs: `WorkingMemoryDeleteKeyResponse`, `WorkingMemoryDeletePlanResponse`
+    - User ownership verified at database level via RLS
+  - **SDK Enhancements** (RF-SDK-020):
+    - `MemoryClient.delete_plan_state(plan_id, tenant_id, user_id, key=None)`
+    - `WorkflowState.delete(key)`: Delete single key from plan state
+    - `WorkflowState.cleanup()`: Delete all state for plan (resource reclamation)
+  - **Common DTOs**:
+    - `WorkingMemoryDeleteKeyResponse`: Single-key deletion response (success, deleted, message)
+    - `WorkingMemoryDeletePlanResponse`: Plan-wide deletion response (success, count_deleted, message)
+  - **Examples**:
+    - Updated example 04-memory-working with cleanup pattern in planner.py
+    - Added delete pattern documentation to README (immediate vs. deferred cleanup)
+    - Added raw API deletion examples to memory_api_demo.py
+  - **Documentation**:
+    - Added "Cleanup and Deletion" pattern section to MEMORY_PATTERNS.md
+    - Documented when to cleanup (after completion, sensitive data, resource reclamation)
+    - Removed cleanup from "Future Enhancements" (now implemented)
+  - **Tests**: 
+    - Memory Service: 13 deletion tests (single key, all keys, tenant/user/plan isolation, idempotent)
+    - SDK: 8 deletion tests (MemoryClient and WorkflowState helpers)
+    - Total: 108 Memory Service tests + 226 SDK tests passing
+
+### Changed
+- **All working memory operations now require user_id**: Ensures proper isolation and ownership
+  - CRUD layer: Updated all `set_working_memory()`, `get_working_memory()` signatures
+  - API layer: X-User-ID header now required for all working memory endpoints
+  - SDK: MemoryClient and WorkflowState pass user_id to all operations
+
 ## [0.7.4] - 2026-01-28
+
+### Added
+- **Semantic Memory Upsert (RF-ARCH-012)**: Knowledge can now be upserted via external_id or content_hash
+  - `external_id`: Application-managed versioning for knowledge updates
+  - `content_hash`: Auto-deduplication via SHA-256 hash of content
+  - Four conditional unique indexes support both private and public knowledge scenarios
+  - ON CONFLICT...DO UPDATE pattern for atomic upserts
+- **Semantic Memory Privacy (RF-ARCH-014)**: User-scoped knowledge with public/private visibility
+  - Required `user_id` parameter for all semantic memory operations
+  - `is_public` boolean flag (default: FALSE) controls visibility
+  - Private knowledge: unique per (tenant_id, user_id, external_id/content_hash)
+  - Public knowledge: unique per (tenant_id, external_id/content_hash)
+  - Row-Level Security policies enforce privacy at database level
+- **SDK - User Context**: MemoryClient methods now accept `user_id` parameter
+  - `store_knowledge(user_id, ...)` - Required parameter for knowledge storage
+  - `query_knowledge(user_id, include_public=True, ...)` - Query with privacy filters
+  - `delete_knowledge(user_id, ...)` - User-scoped deletion (not yet implemented)
+
+### Changed
+- **BREAKING - Semantic Memory API**: All semantic memory operations now require user_id
+  - `POST /memory/semantic/knowledge` requires `user_id` parameter
+  - `GET /memory/semantic/knowledge` requires `user_id` parameter
+  - `DELETE /memory/semantic/knowledge` requires `user_id` parameter
+  - Migration path: Extract user_id from auth context and pass to all memory operations
+- **Database Schema**: Added user_id and is_public columns to semantic_knowledge table
+  - Migration `002_upsert_privacy` handles schema update with backward compatibility
+  - Existing knowledge defaults to is_public=TRUE for backward compatibility
+  - Duplicate cleanup before unique index creation
+
+### Fixed
+- **Memory Service Migration**: Fixed pgcrypto extension dependency for content_hash
+  - Added `CREATE EXTENSION IF NOT EXISTS pgcrypto` for digest() function
+  - Shortened revision ID to '002_upsert_privacy' (18 chars) to fit VARCHAR(32) constraint
+  - Fixed duplicate cleanup using ctid instead of MAX(UUID)
+- **SDK - Query Parameters**: Fixed MemoryClient.query_knowledge() to use query params
+  - Changed from sending query/limit/include_public in JSON body to query parameters
+  - Aligns with FastAPI Query() parameter expectations
+
+### Documentation
+- **Stage 2.1 Complete**: Phase 1 & 2 (Upsert + Privacy) implemented and tested
+  - See `docs/refactoring/STAGE_2.1_WORKING_PLAN.md` for implementation details
+  - RF-ARCH-012, RF-ARCH-014, RF-SDK-019, RF-SDK-021 marked complete
 
 ### Added
 - **Semantic Memory Upsert (RF-ARCH-012)**: Knowledge can now be upserted via external_id or content_hash

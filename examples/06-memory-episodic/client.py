@@ -6,6 +6,7 @@ This client:
 2. Allows users to start/resume chat sessions
 3. Sends messages and displays responses
 4. Manages session state
+5. Tracks sessions locally
 """
 
 import asyncio
@@ -13,6 +14,7 @@ import sys
 import uuid
 from datetime import datetime
 from soorma import EventClient
+from soorma.memory import MemoryClient
 from soorma_common.events import EventEnvelope, EventTopic
 
 
@@ -29,6 +31,7 @@ class ChatbotClient:
             agent_id="chatbot-client",
             source="chatbot-client"
         )
+        self.memory_client = MemoryClient()
         self.session_id = None
         self.waiting_for_response = False
         self.response_event = None
@@ -87,15 +90,150 @@ class ChatbotClient:
         print("  \"How many messages have I sent?\"")
         print("\nCommands:")
         print("  /new - Start a new session")
-        print("  /sessions - List recent sessions")
+        print("  /sessions - List existing sessions")
+        print("  /delete - Delete a session")
         print("  /quit - Exit")
         print("=" * 60)
     
-    def start_new_session(self) -> str:
+    async def start_new_session(self) -> str:
         """Start a new chat session."""
         session_id = str(uuid.uuid4())  # Full UUID required for working memory
         print(f"\n✨ Started new session: {session_id}\n")
+        # Create Plan record for this new session
+        await self.create_plan_record(session_id)
         return session_id
+    
+    async def create_plan_record(self, plan_id: str) -> bool:
+        """Create a Plan record in memory service for tracking."""
+        try:
+            await self.memory_client.create_plan(
+                plan_id=plan_id,
+                goal_event="chat.conversation",
+                goal_data={"type": "episodic_memory_demo"},
+                tenant_id=TENANT_ID,
+                user_id=USER_ID
+            )
+            return True
+        except Exception as e:
+            print(f"   ⚠️  Could not create plan record: {e}")
+            return False
+    
+    async def list_plans(self) -> list:
+        """List all existing plans in working memory for this user."""
+        try:
+            print("\n📋 Fetching plans from working memory...")
+            plans = await self.memory_client.list_plans(
+                tenant_id=TENANT_ID,
+                user_id=USER_ID,
+                limit=20
+            )
+            return plans if plans else []
+        except Exception as e:
+            print(f"   ⚠️  Could not fetch plans: {e}")
+            return []
+    
+    async def choose_session(self) -> str:
+        """Display list of plans and let user choose one."""
+        plans = await self.list_plans()
+
+        if not plans:
+            print("   No existing plans found.")
+            print("   Starting a new session instead.\n")
+            return await self.start_new_session()
+        
+        print(f"\n📋 Found {len(plans)} existing plan(s):\n")
+        
+        # Display plans with indices
+        for i, plan in enumerate(plans, 1):
+            plan_id = plan.plan_id if hasattr(plan, 'plan_id') else plan.get('planId', 'unknown')
+            created = plan.created_at if hasattr(plan, 'created_at') else plan.get('createdAt', 'unknown')
+            status = plan.status if hasattr(plan, 'status') else plan.get('status', 'unknown')
+            print(f"   {i}. {plan_id}")
+            print(f"      Created: {created}, Status: {status}")
+        
+        print(f"   {len(plans) + 1}. Start a new session")
+        print()
+        
+        # Get user choice
+        while True:
+            try:
+                choice = input("Choose a session (number): ").strip()
+                choice_num = int(choice)
+                
+                if choice_num == len(plans) + 1:
+                    return await self.start_new_session()
+                
+                if 1 <= choice_num <= len(plans):
+                    selected = plans[choice_num - 1]
+                    session_id = selected.plan_id if hasattr(selected, 'plan_id') else selected.get('planId')
+                    print(f"\n✨ Resuming session: {session_id}\n")
+                    return session_id
+                
+                print(f"   ❌ Invalid choice. Please enter 1-{len(plans) + 1}")
+            except ValueError:
+                print(f"   ❌ Please enter a valid number")
+    
+    async def delete_session(self) -> None:
+        """Delete a plan from working memory."""
+        plans = await self.list_plans()
+        
+        if not plans:
+            print("   No plans to delete.")
+            return
+        
+        print(f"\n🗑️  Delete Plan\n")
+        print(f"📋 Found {len(plans)} plan(s):\n")
+        
+        # Display plans with indices
+        for i, plan in enumerate(plans, 1):
+            plan_id = plan.plan_id if hasattr(plan, 'plan_id') else plan.get('planId', 'unknown')
+            created = plan.created_at if hasattr(plan, 'created_at') else plan.get('createdAt', 'unknown')
+            print(f"   {i}. {plan_id}")
+            print(f"      Created: {created}")
+        
+        print(f"   {len(plans) + 1}. Cancel")
+        print()
+        
+        # Get user choice
+        while True:
+            try:
+                choice = input("Choose a plan to delete (number): ").strip()
+                choice_num = int(choice)
+                
+                if choice_num == len(plans) + 1:
+                    print("   Cancelled.\n")
+                    return
+                
+                if 1 <= choice_num <= len(plans):
+                    to_delete = plans[choice_num - 1]
+                    plan_id = to_delete.plan_id if hasattr(to_delete, 'plan_id') else to_delete.get('planId')
+                    
+                    # Confirm deletion
+                    confirm = input(f"\n⚠️  Really delete plan {plan_id}? (yes/no): ").strip().lower()
+                    if confirm == "yes":
+                        try:
+                            # Delete plan (includes working memory cleanup)
+                            await self.memory_client.delete_plan(
+                                plan_id=plan_id,
+                                tenant_id=TENANT_ID,
+                                user_id=USER_ID
+                            )
+                            print(f"✅ Plan deleted: {plan_id}\n")
+                            # If we deleted the current session, need to switch
+                            if plan_id == self.session_id:
+                                print("   (Note: Your current session was deleted. Choose another.)\n")
+                                self.session_id = await self.choose_session()
+                            return
+                        except Exception as e:
+                            print(f"❌ Failed to delete plan: {e}\n")
+                            return
+                    else:
+                        print("   Cancelled.\n")
+                        return
+                
+                print(f"   ❌ Invalid choice. Please enter 1-{len(plans) + 1}")
+            except ValueError:
+                print(f"   ❌ Please enter a valid number")
     
     async def send_message(self, message: str):
         """Send a message and wait for response."""
@@ -127,8 +265,8 @@ class ChatbotClient:
         
         self.print_welcome()
         
-        # Start first session
-        self.session_id = self.start_new_session()
+        # Start with option to choose or create session
+        self.session_id = await self.choose_session()
         
         try:
             while True:
@@ -148,18 +286,20 @@ class ChatbotClient:
                     break
                 
                 elif user_input.lower() == "/new":
-                    self.session_id = self.start_new_session()
+                    self.session_id = await self.start_new_session()
                     continue
                 
                 elif user_input.lower() == "/sessions":
-                    print(f"\n📋 Current session: {self.session_id}")
-                    print("   (Session history not yet implemented)")
-                    print()
+                    self.session_id = await self.choose_session()
+                    continue
+                
+                elif user_input.lower() == "/delete":
+                    await self.delete_session()
                     continue
                 
                 elif user_input.startswith("/"):
                     print(f"❌ Unknown command: {user_input}")
-                    print("   Available: /new, /sessions, /quit")
+                    print("   Available: /new, /sessions, /delete, /quit")
                     print()
                     continue
                 

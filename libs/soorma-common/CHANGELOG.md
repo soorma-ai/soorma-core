@@ -5,7 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-01-30
+
+### Added
+- **Stage 2.1 Phase 1 & 2 - Semantic Memory Enhancements (January 27-30, 2026)**
+  - **Semantic Memory Upsert Support** (RF-SDK-019):
+    - Added `external_id` parameter to `SemanticMemoryCreate` for versioned knowledge updates
+    - Supports dual upsert strategy: by external_id (application-controlled) OR content_hash (auto-deduplication)
+    - Backward compatible (external_id optional, defaults to null)
+  - **Semantic Memory Privacy Model** (RF-SDK-021):
+    - **User-scoped privacy by default**: Semantic memory is now private to individual users
+    - Added `user_id` (required) parameter for multi-user isolation
+    - Added `is_public` (optional, default False) flag for explicit tenant-wide sharing
+    - Rationale: Semantic memory is agent memory (CoALA framework), not a general RAG solution
+    - Private knowledge unique per (tenant_id, user_id, external_id/content_hash)
+    - Public knowledge unique per (tenant_id, external_id/content_hash)
+  - **RLS Enforcement**: Database-level Row Level Security prevents unauthorized access
+  - **Breaking Change**: Existing semantic memory calls now require user_id parameter
+
+### Fixed
+- **Registry Service**: Fixed test_agent_deduplication_by_name to expect versioned agent names (":1.0.0")
+  - Agent names now include version suffix per AgentDefinition design
+  - Test updated to expect "planner-agent:1.0.0" instead of "planner-agent"
+
+
 ## [0.7.3] - 2026-01-26
+
+### Changed
+- Version bump to align with SDK 0.7.3 release
+- No functional changes to soorma-common library
+
+## [0.7.0] - 2026-01-21
 
 ### Changed
 - Version bump to align with SDK 0.7.3 release

@@ -30,7 +30,6 @@ class PlanContextService:
     def _to_response(plan_context: PlanContext) -> PlanContextResponse:
         """Convert database model to response DTO."""
         return PlanContextResponse(
-            id=str(plan_context.id),
             tenant_id=str(plan_context.tenant_id),
             plan_id=plan_context.plan_id,
             session_id=plan_context.session_id,
