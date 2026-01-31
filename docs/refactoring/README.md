@@ -1,7 +1,7 @@
 # Soorma Core Refactoring Index
 
-**Status:** 📋 Active Planning  
-**Last Updated:** January 21, 2026
+**Status:** 📋 Stage 1-2.1 Complete | Release: 0.7.5 (January 30, 2026)  
+**Last Updated:** January 30, 2026 - Stage 2.1 (All 4 Phases) Complete
 
 ---
 
@@ -331,112 +331,61 @@ Dependencies: Stage 1 must be complete (event system foundation).
 - ✅ Tracker subscribes to events (no-op, service in Stage 4)
 - ✅ All tests pass
 
-**Status:** ✅ **COMPLETE** (January 21, 2026)
+**Status:** ✅ **COMPLETE** (January 21, 2026 - Stage 2, January 30, 2026 - Stage 2.1)
 
-**Implementation Notes:**
-- Created 5 new tables in Memory Service: `task_context`, `plan_context`, `plans`, `sessions`, `plan_context` with full RLS
-- Added 23 new API endpoints across 8 files (task-context, plan-context, plans, sessions, working, semantic, episodic, procedural)
-- Refactored all endpoints to API → Service → CRUD pattern with proper transaction boundaries
-- TenantContext dependency injection eliminates 3-4 lines of auth boilerplate per endpoint
-- Added 13 new methods to MemoryClient for task/plan context and session management
-- Created WorkflowState helper class with 12 convenience methods (reduces boilerplate 8:1)
-- Added 18 new DTOs to soorma-common (state.py, a2a.py, tracking.py) - 61 total exports
-- Tracker integration via events (removed emit_progress, complete_task, fail_task)
-- Memory Service: 37 tests passing (29 unit + 8 validation)
-- SDK: 192 tests passing with full memory client coverage
-- soorma-common: 44 tests passing with comprehensive DTO validation
-- **Total: 273 tests passing (100% success rate)**
+**Stage 2.1 Completion Summary (January 30, 2026 - Release 0.7.5):**
 
-**Follow-up Work (Stage 2.1):**
+All 4 phases of Stage 2.1 successfully completed with 452/452 tests passing:
 
-**Architecture Tasks:**
-- ✅ **RF-ARCH-012**: Semantic Memory Upsert (Service)
-  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-012
-  - Design documented in [services/memory/SEMANTIC_MEMORY_UPSERT.md](../../services/memory/SEMANTIC_MEMORY_UPSERT.md)
-  - ✅ Added external_id and content_hash columns to semantic_memory table
-  - ✅ Implemented upsert CRUD function with dual-constraint logic
-  - ✅ Updated service layer and API endpoints
-  - ✅ Tests for versioning and deduplication scenarios (13 model + 6 search tests)
-  - **Priority:** P1 (High) - Prevents data quality issues
-  - **Completed:** January 27, 2026
-
-- ✅ **RF-ARCH-014**: Semantic Memory Privacy (Service)
-  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-014
-  - ✅ Added user_id column (required) and is_public flag (optional, default false) to semantic_memory table
-  - ✅ Updated RLS policies for private-by-default with optional tenant-wide sharing
-  - ✅ Updated CRUD functions to enforce user_id requirement
-  - ✅ Tests for privacy isolation and public knowledge scenarios (3 critical RLS tests)
-  - **Rationale:** Semantic memory is agent memory (CoALA), not a RAG solution - should be private by default
-  - **Priority:** P1 (High) - Fundamental privacy model
-  - **Completed:** January 27, 2026
-
-- ⬜ **RF-ARCH-013**: Working Memory Deletion (Service)
-  - Document: [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) RF-ARCH-013
-  - Add DELETE endpoints for plan state cleanup:
-    * `DELETE /v1/memory/working/{plan_id}` - Delete all keys for a plan
-    * `DELETE /v1/memory/working/{plan_id}/{key}` - Delete individual key
-  - Implement delete CRUD functions with RLS enforcement
-  - Write tests for deletion scenarios and RLS
-  - **Priority:** P2 (Medium) - Not blocking, but prevents data accumulation
-  - **Status:** Deferred to next sprint
-
-**SDK Tasks:**
-- ✅ **RF-SDK-019**: Semantic Memory Upsert SDK
-  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-019
-  - ✅ Added external_id parameter to `store_knowledge()` method
-  - ✅ Updated SemanticMemoryCreate DTO in soorma-common
-  - ✅ Updated HTTP call to include external_id
-  - ✅ Tests for upsert behavior (external_id and content_hash) - 4 tests
-  - **Priority:** P1 (High) - Pairs with RF-ARCH-012
-  - **Completed:** January 27, 2026
-
-- ✅ **RF-SDK-021**: Semantic Memory Privacy SDK
-  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-021
-  - ✅ Added user_id parameter (required) to `store_knowledge()` method
-  - ✅ Added is_public parameter (optional, default False) to `store_knowledge()` method
-  - ✅ Updated SemanticMemoryCreate DTO in soorma-common
-  - ✅ Updated query methods to filter by user_id unless querying public knowledge
-  - ✅ Tests for private/public knowledge scenarios - 4 tests
-  - **Priority:** P1 (High) - Pairs with RF-ARCH-014
-  - **Completed:** January 27, 2026
-
-- ⬜ **RF-SDK-020**: Working Memory Deletion SDK
-  - Document: [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) RF-SDK-020
-  - Add `delete_plan_state()` method to MemoryClient
-  - Add `delete_plan()` method to MemoryClient
-  - Update WorkflowState helper with `delete()` and `cleanup()` methods
-  - Write tests for deletion methods
-  - Document usage patterns (explicit cleanup, background job, accept persistence)
-  - **Priority:** P2 (Medium) - Pairs with RF-ARCH-013
-  - **Status:** Deferred to next sprint
-
-**Implementation Order (Completed):**
-1. ✅ RF-ARCH-012 (Service) + RF-SDK-019 (SDK) together (semantic memory upsert)
-2. ✅ RF-ARCH-014 (Service) + RF-SDK-021 (SDK) together (semantic memory privacy)
-3. ⬜ RF-ARCH-013 (Service) + RF-SDK-020 (SDK) together (working memory deletion) - Deferred
-
-**Total Effort Expended:** ~6-8 days (Phase 1 & 2 implementation complete, Phase 3 deferred)
-
-**Test Coverage:**
-- Memory Service: 96 tests passing (13 model validation + 6 search + 77 integration/other)
-- SDK Python: 218 tests passing (210 existing + 8 new Stage 2.1 specific)
-- Total: 314 passing, 8 skipped (pre-existing API validation)
-
-**Completion Notes:**
-Phase 1 & 2 of Stage 2.1 fully implemented with comprehensive test coverage. Key features:
-- Upsert by external_id OR content_hash with conditional unique indexes
-- Semantic memory private by default (user-scoped) with optional public flag
+**Phase 1 & 2: Semantic Memory Enhancements** ✅
+- RF-ARCH-012 + RF-SDK-019: Semantic memory upsert with external_id and content_hash
+- RF-ARCH-014 + RF-SDK-021: Semantic memory privacy (user_id required, is_public optional)
+- Dual-constraint upsert logic with conditional unique indexes
+- Private by default (user-scoped), optional tenant-wide sharing via is_public flag
 - RLS enforces privacy at database level
-- User_id from auth context (query param), not request body (security pattern)
-- Architectural violations fixed (removed plan_id/session_id from semantic memory)
-- 14 obsolete/permanently-skipped tests cleaned up
+- Security pattern: user_id from auth context (query param), not request body
 
-**Final Status - Release 0.7.5 (January 30, 2026):**
-- ✅ All Phase 1 & 2 work complete and tested
-- ✅ 452/452 tests passing (100% success rate)
-- ✅ Registry service test fixed (agent deduplication)
-- ✅ Ready for production release
-- 📋 STAGE_2.1_WORKING_PLAN.md recommended for archive after commit
+**Phase 3: Working Memory Deletion** ✅
+- RF-ARCH-013 + RF-SDK-020: DELETE endpoints and SDK methods for plan state cleanup
+- DELETE /v1/memory/working/{plan_id} - Delete all keys for a plan
+- DELETE /v1/memory/working/{plan_id}/{key} - Delete individual key
+- MemoryClient.delete_plan_state() with optional key parameter
+- WorkflowState.delete() and cleanup() helper methods
+
+**Phase 4: Documentation & Validation** ✅
+- All CHANGELOGs updated with 0.7.5 entries
+- Refactoring documentation updated with Stage 2.1 completion
+- All 452/452 tests passing (100% success rate)
+- Commit: 74bcfd1 (chore: Complete Stage 2.1 refactoring)
+
+**Test Coverage (Release 0.7.5):**
+- Memory Service: 108 tests passing
+- SDK Python: 239 tests passing
+- soorma-common: 44 tests passing
+- Event Service: 21 tests passing
+- Registry Service: 50 tests passing (1 fixed: agent deduplication)
+- **Total:** 452/452 tests passing (100% success rate)
+
+**Stage 2 + 2.1 Implementation Summary:**
+- Created 5 new tables in Memory Service with full RLS
+- Added 23+ new API endpoints across 9 files
+- Refactored all endpoints to API → Service → CRUD pattern
+- TenantContext dependency injection eliminates boilerplate
+- Added 16+ new methods to MemoryClient
+- Created WorkflowState helper class with 12+ convenience methods
+- Added 18 new DTOs to soorma-common - 61 total exports
+- Tracker integration via events
+**Stage 2.1 Follow-up Work: All 6 Tasks Completed** ✅
+
+All Stage 2.1 tasks completed on schedule (January 27-30, 2026):
+- ✅ RF-ARCH-012 (Semantic Memory Upsert) - Complete, January 27
+- ✅ RF-ARCH-013 (Working Memory Deletion) - Complete, January 29
+- ✅ RF-ARCH-014 (Semantic Memory Privacy) - Complete, January 27
+- ✅ RF-SDK-019 (Semantic Memory Upsert SDK) - Complete, January 27
+- ✅ RF-SDK-020 (Working Memory Deletion SDK) - Complete, January 29
+- ✅ RF-SDK-021 (Semantic Memory Privacy SDK) - Complete, January 27
+
+For detailed implementation notes, see [STAGE_2.1_WORKING_PLAN.md](STAGE_2.1_WORKING_PLAN.md)
 
 ---
 
