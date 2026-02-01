@@ -357,16 +357,46 @@ test_worker_fan_in_collects_all_results()
 
 ---
 
+## Notes & Feedback
+
+### Planning Session 1 (Feb 1, 2026)
+
+**Decisions:**
+
+- **Q1:** Keep InvocationContext in same class as Tool (no separate file)
+- **Q2:** response_event is optional - if not present, use default value from Tool's produced events list
+- **Q3:** Yes, Tool should support multiple event types with different handlers
+- **Q4:** Add test to validate registry publishing/retrieval. LLM-based discovery is separate concern (not unit tested)
+- **Q5:** Yes, on_invoke() event_type parameter required (since Tool supports multiple events)
+- **Q6:** Yes, add validation for handler return type to match schema definition
+
+**Implications:**
+- InvocationContext becomes internal helper class within Tool module
+- Tool registration creates registry entries with all supported event types and schemas
+- Handler registration is flexible: can have multiple @on_invoke() decorators for different event types
+- Response routing is explicit: response_event comes from request, falls back to Tool's default
+- Type validation happens at handler registration time (static) or invocation time (dynamic)
+
+**Blockers:**
+- None currently
+
+**Next Steps:**
+1. Mark Tasks 1.1-1.2 complete (design review + open questions answered)
+2. Proceed with Tasks 1.3-1.5 in order (TDD approach)
+3. Run tests after each task
+
+---
+
 ## Open Questions Summary
 
 | ID | Question | Options/Discussion | Status |
 |----|----------|------------------|--------|
-| Q1 | InvocationContext location? | New file vs alongside Tool | ⏳ Needs review |
-| Q2 | Validate response_event present? | Yes/No - recommend Yes | ⏳ Needs review |
-| Q3 | Multiple on_invoke() handlers? | Yes/No - recommend Yes | ⏳ Needs review |
-| Q4 | Test Tool discovery? | Yes/No - recommend separate doc | ⏳ Needs review |
-| Q5 | on_invoke() event_type required? | Yes/No - recommend Yes | ⏳ Needs review |
-| Q6 | Validate return type? | Yes/No - recommend No (runtime only) | ⏳ Needs review |
+| Q1 | InvocationContext location? | Same class as Tool | ✅ Answered |
+| Q2 | response_event handling? | Optional - fall back to Tool default | ✅ Answered |
+| Q3 | Multiple on_invoke() handlers? | Yes - support different event types | ✅ Answered |
+| Q4 | Test Tool discovery? | Yes - validate registry ops | ✅ Answered |
+| Q5 | on_invoke() event_type required? | Yes - required parameter | ✅ Answered |
+| Q6 | Validate return type? | Yes - match schema definition | ✅ Answered |
 | Q7 | TaskContext: dataclass or Pydantic? | dataclass vs Pydantic - recommend dataclass | ⏳ Needs review |
 | Q8 | Sub-tasks auto-tracked? | Yes/No - recommend auto | ⏳ Needs review |
 | Q9 | State dict flat or nested? | flat vs nested - recommend flat | ⏳ Needs review |
