@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     is_prod: bool = os.environ.get("IS_PROD", "false").lower() == "true"
     is_local_testing: bool = os.environ.get("IS_LOCAL_TESTING", "true").lower() == "true"
     service_name: str = "memory-service"
-    version: str = "0.7.0"
+    version: str = "0.7.6"
 
     # Database
     database_url: str = os.environ.get(

@@ -153,7 +153,6 @@ class TestAgentStructured:
         tool = Tool(name="test-tool", capabilities=[cap])
         
         assert cap in tool.capabilities
-        # Tools do NOT have topic names in events lists (only actual event types)
-        # Event types get added dynamically via @on_invoke() decorators
-        assert "action-requests" not in tool.config.events_consumed
-        assert "action-results" not in tool.config.events_produced
+        # Tool specific check
+        assert "tool.request" in tool.config.events_consumed
+        assert "tool.response" in tool.config.events_produced

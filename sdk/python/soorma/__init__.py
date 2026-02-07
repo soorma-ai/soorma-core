@@ -40,7 +40,7 @@ Usage:
     worker.run()
 """
 
-__version__ = "0.7.4"
+__version__ = "0.7.6"
 
 # Core imports
 from soorma_common.events import EventTopic, EventEnvelope
