@@ -10,8 +10,6 @@ Soorma is an agentic infrastructure platform based on the **DisCo (Distributed C
 
 ## 🚧 Status: Day 0 (Pre-Alpha)
 
-**Current Version:** 0.7.2
-
 We're in active pre-launch refactoring to solidify architecture and APIs before v1.0. The SDK and infrastructure are functional for building multi-agent systems.
 
 **Learn more:** [soorma.ai](https://soorma.ai)
