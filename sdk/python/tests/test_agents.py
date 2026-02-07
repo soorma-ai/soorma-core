@@ -189,31 +189,37 @@ class TestTool:
         assert tool.name == "calculator-tool"
         assert tool.config.agent_type == "tool"
         assert "arithmetic" in tool.capabilities
-        assert "tool.request" in tool.config.events_consumed
-        assert "tool.response" in tool.config.events_produced
+        # Tools do NOT have topic names in events lists (only actual event types)
+        assert "action-requests" not in tool.config.events_consumed
+        assert "action-results" not in tool.config.events_produced
     
     def test_on_invoke_decorator(self):
         """Test operation handler registration."""
         from soorma import Tool
-        from soorma.agents.tool import ToolRequest
+        from soorma.agents.tool import InvocationContext
         
         tool = Tool(name="test-tool")
         
         @tool.on_invoke("calculate")
-        async def calculate(request: ToolRequest, context):
+        async def calculate(request: InvocationContext, context):
             return {"result": 42}
         
         assert "calculate" in tool._operation_handlers
         assert "calculate" in tool.capabilities
     
     def test_should_handle_request_by_name(self):
-        """Test request matching by tool name."""
+        """Test request matching by name."""
         from soorma import Tool
         
         tool = Tool(name="my-tool", capabilities=["op_a"])
         
-        assert tool._should_handle_request("my-tool") is True
-        assert tool._should_handle_request("other-tool") is False
+        # Tool now uses on_invoke() for handler registration
+        @tool.on_invoke("op_a")
+        async def handle_op_a(request, context):
+            return {}
+        
+        # Verify handler is registered
+        assert "op_a" in tool._operation_handlers
     
     def test_should_handle_request_by_capability(self):
         """Test request matching by capability."""
@@ -221,9 +227,17 @@ class TestTool:
         
         tool = Tool(name="my-tool", capabilities=["op_a", "op_b"])
         
-        assert tool._should_handle_request("op_a") is True
-        assert tool._should_handle_request("op_b") is True
-        assert tool._should_handle_request("op_c") is False
+        @tool.on_invoke("op_a")
+        async def handle_a(request, context):
+            return {}
+        
+        @tool.on_invoke("op_b")
+        async def handle_b(request, context):
+            return {}
+        
+        # Verify both handlers are registered
+        assert "op_a" in tool._operation_handlers
+        assert "op_b" in tool._operation_handlers
 
 
 class TestPlatformContext:
@@ -324,14 +338,20 @@ class TestDataClasses:
         assert task.data["input"] == "test"
     
     def test_tool_request_creation(self):
-        """Test creating a ToolRequest."""
-        from soorma import ToolRequest
+        """Test creating an InvocationContext."""
+        from soorma import InvocationContext
         
-        request = ToolRequest(
-            operation="calculate",
+        request = InvocationContext(
+            request_id="req-123",
+            event_type="calculate",
+            correlation_id="corr-456",
             data={"expression": "2 + 2"},
+            response_event="calculate.result",
+            response_topic="action-results",
+            tenant_id="tenant-1",
+            user_id="user-1",
         )
         
-        assert request.operation == "calculate"
+        assert request.event_type == "calculate"
         assert request.data["expression"] == "2 + 2"
-        assert request.request_id is not None
+        assert request.request_id == "req-123"

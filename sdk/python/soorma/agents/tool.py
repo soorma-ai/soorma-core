@@ -1,14 +1,25 @@
 """
-Tool Service - Atomic, stateless capability.
+Tool Service - Atomic, stateless capability (Stage 3 Refactored).
 
 Tools are specialized micro-services that perform atomic, stateless operations.
 They:
 - Expose specific capabilities (e.g., calculator, API search, file parser)
-- Handle synchronous request/response operations
+- Handle synchronous request/response operations (via on_invoke decorator)
 - Are stateless - no memory of previous calls
 - Often wrap external APIs or perform deterministic computations
 
-Unlike Workers (which are cognitive), Tools are rules-based and deterministic.
+Key differences from Workers:
+- Stateless (no TaskContext or state persistence)
+- Synchronous handlers (return result directly)
+- Auto-publish to caller-specified response_event
+- Support multiple event types via multiple @on_invoke() decorators
+
+Design (RF-SDK-005):
+- Uses action-requests and action-results topics (standard)
+- InvocationContext provides lightweight request context
+- response_event specified by caller (in request data)
+- Return type validated against optional schema
+- Correlation IDs preserved for tracing
 
 Usage:
     from soorma.agents import Tool
@@ -16,17 +27,17 @@ Usage:
     tool = Tool(
         name="calculator-tool",
         description="Performs mathematical calculations",
-        capabilities=["arithmetic", "unit_conversion"],
+        capabilities=["arithmetic"],
     )
 
     @tool.on_invoke("calculate")
-    async def calculate(request, context):
+    async def calculate(request: InvocationContext, context: PlatformContext):
         expression = request.data["expression"]
-        result = eval(expression)  # (use safe_eval in production!)
+        result = eval(expression)  # Use safe_eval in production!
         return {"result": result, "expression": expression}
 
     @tool.on_invoke("convert_units")
-    async def convert_units(request, context):
+    async def convert_units(request: InvocationContext, context: PlatformContext):
         value = request.data["value"]
         from_unit = request.data["from"]
         to_unit = request.data["to"]
@@ -36,6 +47,7 @@ Usage:
     tool.run()
 """
 import logging
+import json
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from uuid import uuid4
@@ -49,76 +61,98 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ToolRequest:
+class InvocationContext:
     """
-    A request to invoke a tool operation.
+    Lightweight context for tool invocations (RF-SDK-005).
+    
+    Provided to all tool handlers via @on_invoke() decorator.
+    Contains the request data, event context, and response routing info.
     
     Attributes:
-        operation: The operation to perform
-        data: Input parameters
-        request_id: Unique request identifier
-        correlation_id: Tracking ID
-        timeout: Request timeout in seconds
-    """
-    operation: str
-    data: Dict[str, Any]
-    request_id: str = field(default_factory=lambda: str(uuid4()))
-    correlation_id: Optional[str] = None
-    session_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    timeout: Optional[float] = None
-
-
-@dataclass
-class ToolResponse:
-    """
-    Response from a tool invocation.
-    
-    Attributes:
-        request_id: Original request ID
-        success: Whether the operation succeeded
-        data: Result data (if successful)
-        error: Error message (if failed)
+        request_id: Unique request identifier (auto-generated if not provided)
+        event_type: The event type being handled (e.g., "calculate.requested")
+        correlation_id: Tracking ID for distributed tracing
+        data: Request payload/parameters
+        response_event: Caller-specified response event name (optional, tool can provide default)
+        response_topic: Topic for response (usually "action-results")
+        tenant_id: Multi-tenancy identifier
+        user_id: User/caller identifier
     """
     request_id: str
-    success: bool
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    event_type: str
+    correlation_id: Optional[str]
+    data: Dict[str, Any]
+    response_event: Optional[str]
+    response_topic: str
+    tenant_id: str
+    user_id: str
+    
+    @classmethod
+    def from_event(cls, event: EventEnvelope, context: PlatformContext) -> "InvocationContext":
+        """
+        Create InvocationContext from EventEnvelope and PlatformContext.
+        
+        Extracts request metadata from event data, using defaults where needed.
+        
+        Args:
+            event: The incoming event (from action-requests topic)
+            context: Platform context with tenant/user info
+            
+        Returns:
+            InvocationContext for use by handler
+        """
+        data = event.data or {}
+        
+        return cls(
+            request_id=data.get("request_id", str(uuid4())),
+            event_type=event.type,  # Use event.type, not event.event_type
+            correlation_id=event.correlation_id or data.get("correlation_id"),
+            data=data,
+            response_event=data.get("response_event"),
+            response_topic=data.get("response_topic", "action-results"),
+            tenant_id=context.tenant_id,
+            user_id=context.user_id,
+        )
 
 
 # Type alias for tool handlers
-ToolHandler = Callable[[ToolRequest, PlatformContext], Awaitable[Dict[str, Any]]]
+# Handlers receive InvocationContext and PlatformContext, return result dict
+ToolHandler = Callable[[InvocationContext, PlatformContext], Awaitable[Dict[str, Any]]]
 
 
 class Tool(Agent):
     """
-    Atomic, stateless capability micro-service.
+    Atomic, stateless capability micro-service (RF-SDK-005 refactored).
     
-    Tools are the "utilities" of the DisCo architecture. They:
-    1. Expose deterministic, stateless operations
-    2. Handle both event-driven and synchronous requests
-    3. Wrap external APIs or perform computations
-    4. Are highly reusable across different workflows
+    Tools are the "utilities" of the DisCo architecture that execute synchronously:
+    1. Receive invocation on action-requests topic with event_type
+    2. Handler executes synchronously, returns result dict
+    3. Decorator auto-publishes to caller's response_event on action-results topic
+    4. No state persistence, no delegation, no async completion
     
-    Key differences from Workers:
-    - Tools are stateless (no memory between calls)
-    - Tools are deterministic (same input = same output)
-    - Tools are typically rules-based, not cognitive
-    - Tools can also expose REST endpoints for sync calls
+    Features:
+    - Multiple @on_invoke() handlers for different event types (Q3)
+    - response_event optional (caller provides, tool has default) (Q2)
+    - Return type validation against optional schema (Q6)
+    - Registry includes all supported event types (Q4)
+    - Correlation IDs preserved for tracing
+    - Proper error handling with error response publishing
     
     Attributes:
-        All Agent attributes, plus:
-        on_invoke: Decorator for registering operation handlers
+        _operation_handlers: Dict mapping event_type → handler function
+        _response_schemas: Dict mapping event_type → response schema (for validation)
+        default_response_event: Tool's default response event if caller doesn't provide
     
     Usage:
         tool = Tool(
             name="weather-api",
             description="Fetches weather data",
             capabilities=["current_weather", "forecast"],
+            default_response_event="weather.response",
         )
         
         @tool.on_invoke("get_weather")
-        async def get_weather(request: ToolRequest, context: PlatformContext) -> Dict:
+        async def get_weather(request: InvocationContext, context: PlatformContext) -> Dict:
             location = request.data["location"]
             weather = await fetch_weather_api(location)
             return {"temperature": weather.temp, "conditions": weather.conditions}
@@ -132,6 +166,7 @@ class Tool(Agent):
         description: str = "",
         version: str = "0.1.0",
         capabilities: Optional[List[Any]] = None,
+        default_response_event: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -142,16 +177,17 @@ class Tool(Agent):
             description: What this tool does
             version: Version string
             capabilities: Operations this tool provides (strings or AgentCapability objects)
+            default_response_event: Default response event if caller doesn't specify
             **kwargs: Additional Agent arguments
         """
-        # Tools consume tool.request and produce tool.response
+        # Events consumed/produced are populated dynamically via @on_invoke() decorators
+        # Topics (action-requests/action-results) are specified in the decorator, not here
         events_consumed = kwargs.pop("events_consumed", [])
-        if "tool.request" not in events_consumed:
-            events_consumed.append("tool.request")
-        
         events_produced = kwargs.pop("events_produced", [])
-        if "tool.response" not in events_produced:
-            events_produced.append("tool.response")
+        
+        # Add default response event to produced events if specified
+        if default_response_event and default_response_event not in events_produced:
+            events_produced.append(default_response_event)
         
         super().__init__(
             name=name,
@@ -164,224 +200,250 @@ class Tool(Agent):
             **kwargs,
         )
         
-        # Operation handlers: operation_name -> handler
+        # Event handlers: event_type -> handler function
         self._operation_handlers: Dict[str, ToolHandler] = {}
         
-        # Register the main tool.request handler
-        self._register_tool_request_handler()
+        # Response schemas for validation: event_type -> schema dict
+        self._response_schemas: Dict[str, Dict[str, Any]] = {}
+        
+        # Default response event if not provided by caller
+        self.default_response_event = default_response_event
     
-    def _register_tool_request_handler(self) -> None:
-        """Register the main tool.request event handler."""
-        @self.on_event("tool.request", topic=EventTopic.ACTION_REQUESTS)
-        async def handle_tool_request(event: EventEnvelope, context: PlatformContext) -> None:
-            await self._handle_tool_request(event, context)
-    
-    def on_invoke(self, operation: str) -> Callable[[ToolHandler], ToolHandler]:
+    def on_invoke(
+        self,
+        event_type: str,
+        response_schema: Optional[Dict[str, Any]] = None,
+    ) -> Callable[[ToolHandler], ToolHandler]:
         """
-        Decorator to register an operation handler.
+        Decorator to register a handler for a specific event type (RF-SDK-005).
         
-        Operation handlers receive a ToolRequest and PlatformContext,
-        and return a result dictionary.
+        Supports multiple @on_invoke() decorators for different event types (Q3).
+        Requires event_type parameter (Q5).
+        Optional response_schema for return type validation (Q6).
         
-        Usage:
-            @tool.on_invoke("calculate")
-            async def calculate(request: ToolRequest, context: PlatformContext) -> Dict:
-                result = compute(request.data["expression"])
-                return {"result": result}
+        Handler signature:
+            async def handler(request: InvocationContext, context: PlatformContext) -> Dict:
+                return {"result": ...}
+        
+        Decorator:
+            - Registers handler for event_type
+            - Auto-publishes result to caller's response_event
+            - Validates return type if schema provided
+            - Publishes error if exception occurs
+            - Preserves correlation_id in response
         
         Args:
-            operation: The operation name to handle
+            event_type: Event type to handle (e.g., "calculate.requested")
+                       Required parameter (Q5)
+            response_schema: Optional JSON schema for validating return value (Q6)
+                            If provided, handler result must match schema
         
         Returns:
-            Decorator function
+            Decorator function that registers the handler
+            
+        Raises:
+            TypeError: If event_type not provided
         """
         def decorator(func: ToolHandler) -> ToolHandler:
-            self._operation_handlers[operation] = func
+            # Register handler
+            self._operation_handlers[event_type] = func
+            
+            # Store schema if provided (for validation)
+            if response_schema:
+                self._response_schemas[event_type] = response_schema
             
             # Add to capabilities if not already there
-            exists = False
-            for cap in self.config.capabilities:
-                if isinstance(cap, str) and cap == operation:
-                    exists = True
-                    break
-                elif hasattr(cap, "name") and cap.name == operation:
-                    exists = True
-                    break
-                elif isinstance(cap, dict) and cap.get("taskName") == operation:
-                    exists = True
-                    break
+            self._add_capability(event_type)
             
-            if not exists:
-                self.config.capabilities.append(operation)
+            # Add event_type to events_consumed (actual event names, not topics)
+            if event_type not in self.config.events_consumed:
+                self.config.events_consumed.append(event_type)
             
-            logger.debug(f"Registered operation handler: {operation}")
+            logger.debug(f"Tool '{self.name}' registered handler for event: {event_type}")
+            
+            # Subscribe to this event on action-requests topic
+            @self.on_event(event_type, topic=EventTopic.ACTION_REQUESTS)
+            async def event_handler(event: EventEnvelope, context: PlatformContext) -> None:
+                await self._handle_invocation(event, context, event_type)
+            
             return func
+        
         return decorator
     
-    async def _handle_tool_request(
+    def _add_capability(self, event_type: str) -> None:
+        """Add event_type to capabilities if not already present."""
+        exists = False
+        for cap in self.config.capabilities:
+            if isinstance(cap, str) and cap == event_type:
+                exists = True
+                break
+            elif hasattr(cap, "name") and cap.name == event_type:
+                exists = True
+                break
+            elif isinstance(cap, dict) and cap.get("taskName") == event_type:
+                exists = True
+                break
+        
+        if not exists:
+            self.config.capabilities.append(event_type)
+    
+    async def _handle_invocation(
         self,
         event: EventEnvelope,
         context: PlatformContext,
+        event_type: str,
     ) -> None:
-        """Handle an incoming tool.request event."""
-        data = event.data or {}
+        """
+        Handle an incoming invocation on action-requests.
         
-        operation = data.get("operation")
-        target_tool = data.get("tool")
+        Creates InvocationContext from event, calls handler, publishes response.
         
-        # Check if this request is for us
-        if not self._should_handle_request(target_tool):
-            return
-        
-        handler = self._operation_handlers.get(operation)
-        if not handler:
-            logger.debug(f"No handler for operation: {operation}")
-            # Emit error response
-            await self._emit_error_response(
-                request_id=data.get("request_id", str(uuid4())),
-                error=f"Unknown operation: {operation}",
-                correlation_id=event.correlation_id,
-                context=context,
-            )
-            return
-        
-        # Create ToolRequest
-        request = ToolRequest(
-            operation=operation,
-            data=data.get("data", {}),
-            request_id=data.get("request_id", str(uuid4())),
-            correlation_id=event.get("correlation_id"),
-            session_id=event.get("session_id"),
-            tenant_id=event.get("tenant_id"),
-            timeout=data.get("timeout"),
-        )
-        
+        Args:
+            event: The incoming event
+            context: Platform context
+            event_type: The event type being handled
+        """
         try:
-            # Execute operation
-            logger.info(f"Executing operation: {operation} ({request.request_id})")
-            result = await handler(request, context)
+            # Create InvocationContext from event (Q1: same class as Tool)
+            invocation = InvocationContext.from_event(event, context)
             
-            # Emit tool.response
-            await context.bus.publish(
-                event_type="tool.response",
+            # Get handler for this event type
+            handler = self._operation_handlers.get(event_type)
+            if not handler:
+                logger.warning(f"No handler for event type: {event_type}")
+                return
+            
+            # Execute handler (synchronous logic)
+            logger.info(
+                f"Tool '{self.name}' executing {event_type} "
+                f"(request_id={invocation.request_id})"
+            )
+            
+            result = await handler(invocation, context)
+            
+            # Validate return type if schema provided (Q6)
+            if event_type in self._response_schemas:
+                self._validate_response(result, self._response_schemas[event_type])
+            
+            # Determine response event (Q2: optional, use default if not provided)
+            response_event = (
+                invocation.response_event or 
+                self.default_response_event or 
+                f"{event_type}.completed"
+            )
+            
+            # Track response event in events_produced (if not already tracked)
+            if response_event not in self.config.events_produced:
+                self.config.events_produced.append(response_event)
+            
+            # Publish success response to caller's response_event
+            await context.bus.respond(
+                event_type=response_event,
                 data={
-                    "request_id": request.request_id,
-                    "operation": operation,
+                    "request_id": invocation.request_id,
                     "success": True,
                     "result": result,
                 },
-                topic="action-results",  # Tools use action-results topic
-                correlation_id=request.correlation_id,
+                correlation_id=invocation.correlation_id,
+                topic=invocation.response_topic,
+                tenant_id=invocation.tenant_id,
+                user_id=invocation.user_id,
             )
             
-            logger.info(f"Completed operation: {operation} ({request.request_id})")
+            logger.info(
+                f"Tool '{self.name}' completed {event_type} "
+                f"(request_id={invocation.request_id})"
+            )
             
         except Exception as e:
-            logger.error(f"Operation failed: {operation} - {e}")
-            await self._emit_error_response(
-                request_id=request.request_id,
-                error=str(e),
-                correlation_id=request.correlation_id,
-                context=context,
+            logger.error(
+                f"Tool '{self.name}' failed on {event_type}: {e}",
+                exc_info=True,
+            )
+            
+            # Publish error response
+            invocation = InvocationContext.from_event(event, context)
+            response_event = (
+                invocation.response_event or 
+                self.default_response_event or 
+                f"{event_type}.completed"
+            )
+            
+            await context.bus.respond(
+                event_type=response_event,
+                data={
+                    "request_id": invocation.request_id,
+                    "success": False,
+                    "error": str(e),
+                },
+                correlation_id=invocation.correlation_id,
+                topic=invocation.response_topic,
+                tenant_id=invocation.tenant_id,
+                user_id=invocation.user_id,
             )
     
-    async def _emit_error_response(
-        self,
-        request_id: str,
-        error: str,
-        correlation_id: Optional[str],
-        context: PlatformContext,
-    ) -> None:
-        """Emit an error response."""
-        await context.bus.publish(
-            event_type="tool.response",
-            data={
-                "request_id": request_id,
-                "success": False,
-                "error": error,
-            },
-            topic="action-results",
-            correlation_id=correlation_id,
-        )
-    
-    def _should_handle_request(self, target_tool: Optional[str]) -> bool:
-        """Check if this tool should handle a request."""
-        if not target_tool:
-            return False
+    def _validate_response(self, result: Dict[str, Any], schema: Dict[str, Any]) -> None:
+        """
+        Validate response against schema (Q6).
         
-        # Match by name
-        if target_tool == self.name:
-            return True
-        
-        # Match by agent_id
-        if target_tool == self.agent_id:
-            return True
-        
-        # Match by capability (tool name might be a capability)
-        if target_tool in self.config.capabilities:
-            return True
-        
-        return False
+        Args:
+            result: The handler's return value
+            schema: JSON schema for validation
+            
+        Raises:
+            ValueError: If response doesn't match schema
+        """
+        try:
+            # Import jsonschema for validation
+            import jsonschema
+            
+            jsonschema.validate(instance=result, schema=schema)
+            logger.debug(f"Response validation passed for schema: {schema}")
+            
+        except ImportError:
+            logger.warning(
+                "jsonschema not installed - skipping response validation. "
+                "Install with: pip install jsonschema"
+            )
+        except Exception as e:
+            raise ValueError(f"Response validation failed: {e}")
     
     async def invoke(
         self,
-        operation: str,
+        event_type: str,
         data: Dict[str, Any],
+        response_event: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Programmatically invoke a tool operation.
+        Programmatically invoke a tool operation (direct, no event bus).
         
-        This method allows invoking operations without going through the event bus,
-        useful for testing or direct integration.
+        Useful for testing or direct integration without event routing.
         
         Args:
-            operation: Name of the operation
-            data: Input parameters
+            event_type: Event type to handle
+            data: Request payload
+            response_event: Optional response event name
         
         Returns:
-            Operation result dictionary
+            Handler result dictionary
         
         Raises:
-            ValueError: If no handler for operation
+            ValueError: If no handler for event_type
         """
-        handler = self._operation_handlers.get(operation)
+        handler = self._operation_handlers.get(event_type)
         if not handler:
-            raise ValueError(f"No handler for operation: {operation}")
+            raise ValueError(f"No handler for event_type: {event_type}")
         
-        request = ToolRequest(
-            operation=operation,
+        invocation = InvocationContext(
+            request_id=str(uuid4()),
+            event_type=event_type,
+            correlation_id=None,
             data=data,
+            response_event=response_event,
+            response_topic="action-results",
+            tenant_id=self.config.registry_url.split("://")[1].split(":")[0],  # Dummy
+            user_id="system",  # System user for direct invocation
         )
         
-        return await handler(request, self.context)
-    
-    async def invoke_remote(
-        self,
-        tool_name: str,
-        operation: str,
-        data: Dict[str, Any],
-        timeout: float = 30.0,
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Invoke an operation on a remote tool.
-        
-        This sends a tool.request event and waits for tool.response.
-        
-        Args:
-            tool_name: Name of the target tool
-            operation: Operation to invoke
-            data: Input parameters
-            timeout: Timeout in seconds
-        
-        Returns:
-            Result dictionary if successful, None on timeout
-        """
-        return await self.context.bus.request(
-            event_type="tool.request",
-            data={
-                "tool": tool_name,
-                "operation": operation,
-                "data": data,
-            },
-            timeout=timeout,
-        )
+        return await handler(invocation, self.context)
+
