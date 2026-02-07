@@ -96,22 +96,22 @@ class InvocationContext:
         
         Args:
             event: The incoming event (from action-requests topic)
-            context: Platform context with tenant/user info
+            context: Platform context (reserved for future use)
             
         Returns:
             InvocationContext for use by handler
         """
         data = event.data or {}
-        
+
         return cls(
             request_id=data.get("request_id", str(uuid4())),
             event_type=event.type,  # Use event.type, not event.event_type
             correlation_id=event.correlation_id or data.get("correlation_id"),
             data=data,
-            response_event=data.get("response_event"),
-            response_topic=data.get("response_topic", "action-results"),
-            tenant_id=context.tenant_id,
-            user_id=context.user_id,
+            response_event=event.response_event,
+            response_topic=event.response_topic or "action-results",
+            tenant_id=event.tenant_id,
+            user_id=event.user_id,
         )
 
 

@@ -52,8 +52,6 @@ class TestInvocationContext:
         event_data = {
             "request_id": "req-789",
             "correlation_id": "corr-999",
-            "response_event": "custom.response",
-            "response_topic": "action-results",
             "expression": "5 * 3",
         }
         
@@ -64,14 +62,14 @@ class TestInvocationContext:
             data=event_data,
             topic=EventTopic.ACTION_REQUESTS,
             correlation_id="corr-999",
+            response_event="custom.response",
+            response_topic="action-results",
             tenant_id="tenant-1",
             user_id="user-1",
         )
         
         # Create a mock PlatformContext
         mock_context = MagicMock(spec=PlatformContext)
-        mock_context.tenant_id = "tenant-1"
-        mock_context.user_id = "user-1"
         
         ctx = InvocationContext.from_event(event, mock_context)
         
@@ -87,7 +85,6 @@ class TestInvocationContext:
     def test_invocation_context_from_event_auto_generates_request_id(self):
         """Test that missing request_id is auto-generated."""
         event_data = {
-            "response_event": "custom.response",
             "expression": "5 * 3",
         }
         
@@ -97,13 +94,12 @@ class TestInvocationContext:
             type="calculate.requested",
             data=event_data,
             topic=EventTopic.ACTION_REQUESTS,
+            response_event="custom.response",
             tenant_id="tenant-1",
             user_id="user-1",
         )
         
         mock_context = MagicMock(spec=PlatformContext)
-        mock_context.tenant_id = "tenant-1"
-        mock_context.user_id = "user-1"
         
         ctx = InvocationContext.from_event(event, mock_context)
         
@@ -115,7 +111,6 @@ class TestInvocationContext:
         """Test that response_topic defaults to 'action-results' when not provided."""
         event_data = {
             "request_id": "req-123",
-            "response_event": "my.response",
         }
         
         event = EventEnvelope(
@@ -124,13 +119,12 @@ class TestInvocationContext:
             type="test.requested",
             data=event_data,
             topic=EventTopic.ACTION_REQUESTS,
+            response_event="my.response",
             tenant_id="tenant-1",
             user_id="user-1",
         )
         
         mock_context = MagicMock(spec=PlatformContext)
-        mock_context.tenant_id = "tenant-1"
-        mock_context.user_id = "user-1"
         
         ctx = InvocationContext.from_event(event, mock_context)
         

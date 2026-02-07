@@ -422,8 +422,8 @@ test_worker_fan_in_collects_all_results()
 | 1.2 | Define InvocationContext | 0.5d | ✅ | Completed | Created in tool.py with from_event() factory |
 | 1.3 | Write Tool tests (TDD) | 0.5d | ✅ | Completed | 15 tests in test_tool_phase3.py |
 | 1.4 | Refactor Tool class | 0.5d | ✅ | Completed | on_invoke() decorator, dynamic event tracking |
-| 1.5 | Update examples | 0.5d | ⏳ | Pending | Need to create/update calculator example |
-| **Phase 1 Total** | | **2.5d** | **80% Complete** | | 4/5 tasks done (Feb 1-7, 2026) |
+| 1.5 | Update examples | 0.5d | ✅ | Completed | Created 01-hello-tool calculator example |
+| **Phase 1 Total** | | **2.5d** | **✅ 100% Complete** | | All 5 tasks done (Feb 1-7, 2026) |
 
 ### Phase 2: Worker Model
 
@@ -516,10 +516,10 @@ Phase 1 complete and validated. Phase 2 (Worker Model) can proceed when schedule
 - [x] Type hints on all functions
 
 ### Examples
-- [ ] Calculator tool works with `soorma dev`
+- [x] Calculator tool works with `soorma dev`
 - [ ] Research worker example works end-to-end
-- [ ] Both examples have clear README documentation
-- [ ] Examples work without external API keys
+- [x] Both examples have clear README documentation
+- [x] Examples work without external API keys
 
 ### Documentation
 - [ ] Migration guide from old pattern drafted
