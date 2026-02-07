@@ -191,10 +191,9 @@ class Planner(Agent):
             capabilities: Planning capabilities offered (strings or AgentCapability objects)
             **kwargs: Additional Agent arguments
         """
-        # Planners always produce action-requests
+        # Events produced are event types (not topics)
+        # Do not add topic names here
         events_produced = kwargs.pop("events_produced", [])
-        if "action.request" not in events_produced:
-            events_produced.append("action.request")
         
         super().__init__(
             name=name,

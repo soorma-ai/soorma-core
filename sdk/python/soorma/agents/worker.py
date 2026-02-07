@@ -172,14 +172,10 @@ class Worker(Agent):
             events_produced: List of event types this worker produces
             **kwargs: Additional Agent arguments
         """
-        # Workers consume action-requests and produce action-results by default
+        # Events consumed/produced are event types (not topics)
+        # Do not add topic names here
         events_consumed = list(events_consumed or [])
-        if "action.request" not in events_consumed:
-            events_consumed.append("action.request")
-        
         events_produced = list(events_produced or [])
-        if "action.result" not in events_produced:
-            events_produced.append("action.result")
         
         super().__init__(
             name=name,
@@ -203,6 +199,9 @@ class Worker(Agent):
         @self.on_event("action.request", topic=EventTopic.ACTION_REQUESTS)
         async def handle_action_request(event: EventEnvelope, context: PlatformContext) -> None:
             await self._handle_action_request(event, context)
+        # action-requests is a topic; do not treat action.request as a declared event type
+        if "action.request" in self.config.events_consumed:
+            self.config.events_consumed.remove("action.request")
     
     def on_task(self, task_name: str) -> Callable[[TaskHandler], TaskHandler]:
         """

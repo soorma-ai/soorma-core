@@ -4,7 +4,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 
 ## 🎯 Quick Start
 
-**New to Soorma?** Start with [01-hello-world](./01-hello-world/) and follow the sequence below.
+**New to Soorma?** Start with [01-hello-world](./01-hello-world/) or [01-hello-tool](./01-hello-tool/) and follow the sequence below.
 
 **Looking for something specific?** See the [Pattern Catalog](#pattern-catalog) below.
 
@@ -29,6 +29,18 @@ This directory contains progressively more complex examples demonstrating Soorma
 • action-requests / action-results topics
 </td>
 <td>10 min</td>
+<td>None</td>
+</tr>
+
+<tr>
+<td><a href="./01-hello-tool/">01-hello-tool</a></td>
+<td>
+• Tool pattern (stateless, synchronous)<br>
+• Multiple @on_invoke() handlers<br>
+• Caller-specified response_event<br>
+• action-requests / action-results topics
+</td>
+<td>5 min</td>
 <td>None</td>
 </tr>
 
@@ -171,6 +183,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 
 | Goal | Pattern | Example |
 |------|---------|---------|
+| Run a simple tool (stateless function) | Tool Pattern | [01-hello-tool](./01-hello-tool/) |
 | Build a simple reactive agent | Event Subscriber | [02-events-simple](./02-events-simple/) |
 | Let an LLM choose the next action | Structured Events + LLM | [03-events-structured](./03-events-structured/) |
 | Share state across agents in a workflow | Working Memory | [04-memory-working](./04-memory-working/) |

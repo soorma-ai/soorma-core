@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-02-07
+
+### Added
+- **Stage 3 Phase 1 - Tool Model Refactor (RF-SDK-005)**
+  - New `InvocationContext` for tool invocations
+  - `@on_invoke(event_type)` decorator with multi-handler support
+  - Auto-publish to caller-specified response event/topic
+  - Optional response schema validation
+- **New Example: 01-hello-tool**
+  - Minimal calculator tool (add/subtract/multiply/divide)
+  - CLI client with operation flags and inputs
+  - start.sh workflow aligned with platform health checks
+
+## [0.7.5] - 2026-01-30
+
 ### Added
 - **Stage 2.1 Phase 3 - Working Memory Deletion (January 29, 2026)**
   - **User Ownership Enforcement** (RF-ARCH-013): Working memory now scoped by user_id
@@ -47,6 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CRUD layer: Updated all `set_working_memory()`, `get_working_memory()` signatures
   - API layer: X-User-ID header now required for all working memory endpoints
   - SDK: MemoryClient and WorkflowState pass user_id to all operations
+
+### Fixed
+- Tool invocation now sources `tenant_id`, `user_id`, `response_event`, and `response_topic` from EventEnvelope
+- Tool registry event tracking now stores event types (not topic names)
 
 ## [0.7.4] - 2026-01-28
 

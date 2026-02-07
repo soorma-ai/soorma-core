@@ -40,7 +40,7 @@ Usage:
     worker.run()
 """
 
-__version__ = "0.7.4"
+__version__ = "0.7.6"
 
 # Core imports
 from soorma_common.events import EventTopic, EventEnvelope
@@ -55,7 +55,7 @@ from .context import (
 from .agents import Agent, Planner, Worker, Tool
 from .agents.planner import Goal, Plan, Task
 from .agents.worker import TaskContext
-from .agents.tool import ToolRequest, ToolResponse
+from .agents.tool import InvocationContext
 from .workflow import WorkflowState
 
 # Public API
@@ -82,8 +82,7 @@ __all__ = [
     "Plan",
     "Task",
     "TaskContext",
-    "ToolRequest",
-    "ToolResponse",
+    "InvocationContext",
     # Helpers
     "WorkflowState",
     # Functions
