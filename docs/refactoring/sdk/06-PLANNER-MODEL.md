@@ -93,6 +93,29 @@ Planner creates plan and publishes all tasks immediately. No support for:
 
 ---
 
+### RF-SDK-023: Planner Handler-Only Event Registration
+
+**Files:** [planner.py](../../sdk/python/soorma/agents/planner.py), [base.py](../../sdk/python/soorma/agents/base.py)
+
+#### Problem
+
+Planners may advertise events without handlers, which leads to invalid discovery and subscriptions.
+
+#### Target Behavior
+
+- **Register events only when handlers exist** (`on_goal`, `on_transition`).
+- **Do not populate `events_consumed/events_produced` from structured capabilities**.
+- **Never treat topics as event types** (e.g., `action-requests`, `action-results`).
+
+#### Acceptance Criteria
+
+- `events_consumed` only includes goal/transition event types with handlers
+- `events_produced` only includes response event types actually emitted
+- Structured capabilities remain for discovery only
+- Unit tests assert no topic names appear in events lists
+
+---
+
 ## Target Design
 
 ### 1. PlanContext with State Machine

@@ -125,7 +125,7 @@ class TestAgentStructured:
         
         assert cap in planner.capabilities
         # Planner specific check
-        assert "action.request" in planner.config.events_produced
+        assert "action.request" not in planner.config.events_produced
 
     def test_worker_with_structured_capabilities(self):
         """Test Worker with structured capabilities."""
@@ -139,8 +139,8 @@ class TestAgentStructured:
         
         assert cap in worker.capabilities
         # Worker specific check
-        assert "action.request" in worker.config.events_consumed
-        assert "action.result" in worker.config.events_produced
+        assert "action.request" not in worker.config.events_consumed
+        assert "action.result" not in worker.config.events_produced
 
     def test_tool_with_structured_capabilities(self):
         """Test Tool with structured capabilities."""
@@ -153,6 +153,6 @@ class TestAgentStructured:
         tool = Tool(name="test-tool", capabilities=[cap])
         
         assert cap in tool.capabilities
-        # Tool specific check
-        assert "tool.request" in tool.config.events_consumed
-        assert "tool.response" in tool.config.events_produced
+        # Tool does not populate events_* from capabilities that do not have @on_invoke handlers
+        assert "tool.request" not in tool.config.events_consumed
+        assert "tool.response" not in tool.config.events_produced

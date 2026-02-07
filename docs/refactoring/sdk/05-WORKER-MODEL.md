@@ -87,6 +87,29 @@ This breaks the async choreography pattern where workers delegate to sub-agents 
 
 ---
 
+### RF-SDK-022: Worker Handler-Only Event Registration
+
+**Files:** [worker.py](../../sdk/python/soorma/agents/worker.py), [base.py](../../sdk/python/soorma/agents/base.py)
+
+#### Problem
+
+Workers currently advertise or track events that don’t necessarily have handlers. This is unsafe for discovery and subscription semantics.
+
+#### Target Behavior
+
+- **Register events only when a handler exists** (`on_task`, `on_result`).
+- **Do not populate `events_consumed/events_produced` from structured capabilities**.
+- **Never treat topics as event types** (e.g., `action-requests`, `action-results`).
+
+#### Acceptance Criteria
+
+- `events_consumed` contains only task/result event types with handlers
+- `events_produced` contains only response event types actually emitted
+- Structured capabilities remain for discovery (registry) but do not auto-subscribe
+- Unit tests assert no topic names appear in events lists
+
+---
+
 ## Target Design
 
 ### 1. TaskContext with Persistence

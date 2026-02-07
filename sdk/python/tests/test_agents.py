@@ -97,7 +97,7 @@ class TestPlanner:
         assert planner.name == "test-planner"
         assert planner.config.agent_type == "planner"
         assert "planning" in planner.capabilities
-        assert "action.request" in planner.config.events_produced
+        assert "action.request" not in planner.config.events_produced
     
     def test_on_goal_decorator(self):
         """Test goal handler registration."""
@@ -136,8 +136,8 @@ class TestWorker:
         assert worker.name == "test-worker"
         assert worker.config.agent_type == "worker"
         assert "data_processing" in worker.capabilities
-        assert "action.request" in worker.config.events_consumed
-        assert "action.result" in worker.config.events_produced
+        assert "action.request" not in worker.config.events_consumed
+        assert "action.result" not in worker.config.events_produced
     
     def test_on_task_decorator(self):
         """Test task handler registration."""

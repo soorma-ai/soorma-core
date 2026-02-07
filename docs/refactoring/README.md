@@ -408,6 +408,7 @@ Key deliverables:
    - on_invoke() decorator with explicit topic default (action-requests)
    - Handler returns result directly
    - SDK publishes response to response_event from request
+    - Register only events with handlers (do not register structured capabilities without handlers)
 2. Refactor Worker model for async choreography:
    - on_task() and on_result() decorators
    - task.save() / task.restore() using Memory SDK
@@ -587,9 +588,11 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-021 | Semantic memory privacy SDK (user_id + is_public) | Stage 2.1 | [02-MEMORY-SDK](sdk/02-MEMORY-SDK.md) | ✅ |
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ⬜ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |
+| RF-SDK-022 | Worker handler-only event registration | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ⬜ |
 | RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
 | RF-SDK-015 | PlannerDecision and PlanAction types | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
 | RF-SDK-016 | ChoreographyPlanner class | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
+| RF-SDK-023 | Planner handler-only event registration | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
 | RF-ARCH-010 | Tracker as event listener | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
 | RF-ARCH-011 | Task progress model | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
 | RF-ARCH-005 | Schema registration by name (not event name) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |

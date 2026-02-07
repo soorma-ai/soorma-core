@@ -256,7 +256,20 @@ test_worker_fan_in_collects_all_results()
 - Q15: Should on_task() auto-subscribe to `action-requests` topic?
 - Q16: Should on_result() auto-subscribe to `action-results` topic?
 
-#### Task 2.6: Refactor Worker Class
+#### Task 2.6: Handler-Only Event Registration (Worker)
+**Goal:** Ensure workers only register/advertise event types that have handlers.
+
+**Changes needed:**
+- [ ] Do not populate `events_consumed/events_produced` from structured capabilities
+- [ ] Register events only when a handler is attached (e.g., `on_task`, `on_result`)
+- [ ] Ensure topic names (action-requests/action-results) are never treated as event types
+- [ ] Update tests to assert that only handler-registered events appear in config
+
+**Notes:**
+- Capabilities remain for discovery only; handlers define actual subscriptions
+
+
+#### Task 2.7: Refactor Worker Class
 **File:** `sdk/python/soorma/agents/worker.py`
 
 **Changes needed:**
@@ -272,7 +285,7 @@ test_worker_fan_in_collects_all_results()
 - Q17: Should Worker have a max action counter to prevent infinite loops?
 - Q18: Should we auto-validate that handler is async?
 
-#### Task 2.7: Update Examples
+#### Task 2.8: Update Examples
 **Files:**
 - `examples/05-memory-working/worker.py` (update or new)
 - Create research advisor v2 using new Worker pattern
