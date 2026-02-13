@@ -427,18 +427,18 @@ test_worker_fan_in_collects_all_results()
 | Q4 | Test Tool discovery? | Yes - validate registry ops | ✅ Answered |
 | Q5 | on_invoke() event_type required? | Yes - required parameter | ✅ Answered |
 | Q6 | Validate return type? | Yes - match schema definition | ✅ Answered |
-| Q7 | TaskContext: dataclass or Pydantic? | dataclass vs Pydantic - recommend dataclass | ⏳ Needs review |
-| Q8 | Sub-tasks auto-tracked? | Yes/No - recommend auto | ⏳ Needs review |
-| Q9 | State dict flat or nested? | flat vs nested - recommend flat | ⏳ Needs review |
-| Q10 | restore() class method? | Yes/No - recommend class method | ⏳ Needs review |
-| Q11 | Sub-task tracking automatic? | Yes/No - recommend auto | ⏳ Needs review |
-| Q12 | Worker timeout support? | Yes/No - recommend stage 4 (Planner) | ⏳ Needs review |
-| Q13 | Circuit breaker for loops? | Yes/No - recommend stage 4 | ⏳ Needs review |
-| Q14 | Parallel delegation? | Yes/No - recommend stage 4 (Planner) | ⏳ Needs review |
-| Q15 | on_task() auto-subscribe? | Yes/No - recommend Yes | ⏳ Needs review |
-| Q16 | on_result() auto-subscribe? | Yes/No - recommend Yes | ⏳ Needs review |
-| Q17 | Max action counter? | Yes/No - recommend stage 4 | ⏳ Needs review |
-| Q18 | Auto-validate async? | Yes/No - recommend Yes | ⏳ Needs review |
+| Q7 | TaskContext: dataclass or Pydantic? | dataclass vs Pydantic - dataclass | ✅ Answered |
+| Q8 | Sub-tasks auto-tracked? | Yes/No - auto | ✅ Answered |
+| Q9 | State dict flat or nested? | flat vs nested - flat | ✅ Answered |
+| Q10 | restore() class method? | Yes/No - class method | ✅ Answered |
+| Q11 | Sub-task tracking automatic? | Yes/No - auto | ✅ Answered |
+| Q12 | Worker timeout support? | Yes/No - stage 4 (Planner) | ✅ Answered |
+| Q13 | Circuit breaker for loops? | Yes/No - stage 4 | ✅ Answered |
+| Q14 | Parallel delegation? | Yes/No - stage 4 (Planner) | ✅ Answered |
+| Q15 | on_task() auto-subscribe? | Yes/No - yes | ✅ Answered |
+| Q16 | on_result() auto-subscribe? | Yes/No - yes | ✅ Answered |
+| Q17 | Max action counter? | Yes/No - stage 4 | ✅ Answered |
+| Q18 | Auto-validate async? | Yes/No - yes | ✅ Answered |
 
 ---
 
