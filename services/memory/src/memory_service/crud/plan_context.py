@@ -11,7 +11,7 @@ from memory_service.models.memory import PlanContext
 async def create_plan_context(
     db: AsyncSession,
     tenant_id: UUID,
-    plan_id: str,
+    plan_id: UUID,
     session_id: Optional[str],
     goal_event: str,
     goal_data: Dict[str, Any],
@@ -41,7 +41,7 @@ async def create_plan_context(
 async def get_plan_context(
     db: AsyncSession,
     tenant_id: UUID,
-    plan_id: str,
+    plan_id: UUID,
 ) -> Optional[PlanContext]:
     """Get plan context by plan ID."""
     result = await db.execute(
@@ -56,7 +56,7 @@ async def get_plan_context(
 async def update_plan_context(
     db: AsyncSession,
     tenant_id: UUID,
-    plan_id: str,
+    plan_id: UUID,
     state: Optional[Dict[str, Any]] = None,
     current_state: Optional[str] = None,
     correlation_ids: Optional[List[str]] = None,
@@ -81,7 +81,7 @@ async def update_plan_context(
 async def delete_plan_context(
     db: AsyncSession,
     tenant_id: UUID,
-    plan_id: str,
+    plan_id: UUID,
 ) -> bool:
     """Delete plan context."""
     result = await db.execute(

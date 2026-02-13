@@ -275,6 +275,7 @@ class TaskContextCreate(BaseDTO):
     data: Dict[str, Any] = Field(default_factory=dict, description="Original request data")
     sub_tasks: List[str] = Field(default_factory=list, description="List of sub-task IDs")
     state: Dict[str, Any] = Field(default_factory=dict, description="Worker-specific state")
+    user_id: Optional[str] = Field(None, description="User ID for RLS")
 
 
 class TaskContextUpdate(BaseDTO):
@@ -286,6 +287,7 @@ class TaskContextUpdate(BaseDTO):
 class TaskContextResponse(BaseDTO):
     """Task context response."""
     tenant_id: str = Field(..., description="Tenant ID")
+    user_id: Optional[str] = Field(None, description="User ID")
     task_id: str = Field(..., description="Task ID")
     plan_id: Optional[str] = Field(None, description="Plan ID")
     event_type: str = Field(..., description="Event type")

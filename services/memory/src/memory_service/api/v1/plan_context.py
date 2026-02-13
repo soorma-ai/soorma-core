@@ -1,5 +1,6 @@
 """Plan context API endpoints."""
 
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from memory_service.core.dependencies import TenantContext, get_tenant_context
@@ -24,7 +25,7 @@ async def create_plan_context_endpoint(
 
 @router.get("/{plan_id}", response_model=PlanContextResponse)
 async def get_plan_context_endpoint(
-    plan_id: str,
+    plan_id: UUID,
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Get plan context by plan ID."""
@@ -39,7 +40,7 @@ async def get_plan_context_endpoint(
 
 @router.put("/{plan_id}", response_model=PlanContextResponse)
 async def update_plan_context_endpoint(
-    plan_id: str,
+    plan_id: UUID,
     data: PlanContextUpdate,
     context: TenantContext = Depends(get_tenant_context),
 ):
@@ -55,7 +56,7 @@ async def update_plan_context_endpoint(
 
 @router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_plan_context_endpoint(
-    plan_id: str,
+    plan_id: UUID,
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Delete plan context."""

@@ -13,13 +13,13 @@ from memory_service.services.task_context_service import task_context_service
 router = APIRouter(prefix="/task-context", tags=["Task Context"])
 
 
-@router.post("", response_model=TaskContextResponse, status_code=status.HTTP_201_CREATED)
-async def create_task_context_endpoint(
+@router.post("", response_model=TaskContextResponse, status_code=status.HTTP_200_OK)
+async def store_task_context_endpoint(
     data: TaskContextCreate,
     context: TenantContext = Depends(get_tenant_context),
 ):
-    """Create a new task context."""
-    return await task_context_service.create(context.db, context.tenant_id, data)
+    """Store task context (insert or update if exists)."""
+    return await task_context_service.upsert(context.db, context.tenant_id, context.user_id, data)
 
 
 @router.get("/{task_id}", response_model=TaskContextResponse)

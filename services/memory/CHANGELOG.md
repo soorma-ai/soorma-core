@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Database Schema Improvements - Foreign Key Constraints (February 12, 2026)**
+  - **Migration 006**: Added `user_id` column to `task_context` table
+    - Type: UUID with FK constraint to `users.id`
+    - CASCADE delete ensures task contexts cleaned up when users deleted
+    - Supports user-scoped async Worker task tracking (RF-SDK-004)
+  - **Migration 007**: Foreign key enhancements
+    - Added FK constraint to `working_memory.user_id` → `users.id` with CASCADE delete
+    - Converted `plan_context.plan_id` from String(100) to UUID with FK → `plans.id` and CASCADE delete
+    - Updated `plan_context` unique constraint from `(tenant_id, plan_id)` to `(plan_id)` (plan_id now unique FK)
+  - **Cascade Chain**:
+    - User deleted → TaskContext, WorkingMemory deleted (direct)
+    - User deleted → Plans deleted → PlanContext deleted (two-hop)
+    - Plan deleted → PlanContext deleted (direct)
+  - **Referential Integrity**:
+    - Cannot create task contexts for non-existent users
+    - Cannot create plan contexts for non-existent plans
+    - Automatic cleanup prevents orphaned data in async workflows
+
+### Changed
+- **TaskContext Model**: Added `user_id` as UUID FK with CASCADE delete (not nullable)
+- **WorkingMemory Model**: Added FK constraint to existing `user_id` column
+- **PlanContext Model**: Changed `plan_id` from String(100) to UUID FK
+- **PlanContext API**: Updated all CRUD/service/API layers
+  - Path parameters now accept UUID type for `plan_id`
+  - Service layer converts between DTO (str) and database (UUID)
+  - Response DTOs serialize UUID to string for JSON compatibility
+- **Test Coverage**: All 126 tests passing
+  - 18 TaskContext tests (upsert, get, update, delete, sub-task tracking)
+  - 15 WorkingMemory tests (value types, CRUD)
+  - 12 WorkingMemory deletion tests (isolation)
+  - Full coverage of FK constraints and cascade behavior
+
 ## [0.7.6] - 2026-02-07
 
 ### Changed

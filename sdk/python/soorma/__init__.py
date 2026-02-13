@@ -54,7 +54,7 @@ from .context import (
 )
 from .agents import Agent, Planner, Worker, Tool
 from .agents.planner import Goal, Plan, Task
-from .agents.worker import TaskContext
+from .task_context import TaskContext
 from .agents.tool import InvocationContext
 from .workflow import WorkflowState
 
