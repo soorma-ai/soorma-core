@@ -141,17 +141,16 @@ class TestWorker:
     
     def test_on_task_decorator(self):
         """Test task handler registration."""
-        from soorma import Worker
-        from soorma.agents.worker import TaskContext
+        from soorma import Worker, TaskContext
         
         worker = Worker(name="test-worker")
         
-        @worker.on_task("process_data")
+        @worker.on_task("process.data.requested")
         async def handle_task(task: TaskContext, context):
             return {"processed": True}
         
-        assert "process_data" in worker._task_handlers
-        assert "process_data" in worker.capabilities
+        assert "process.data.requested" in worker._task_handlers
+        assert "process.data.requested" in worker.capabilities
     
     def test_should_handle_task_by_name(self):
         """Test task matching by worker name."""
@@ -327,14 +326,15 @@ class TestDataClasses:
         
         task = TaskContext(
             task_id="task-123",
-            task_name="process_data",
+            event_type="process.data.requested",
             plan_id="plan-456",
-            goal_id="goal-789",
             data={"input": "test"},
+            response_event="process.data.completed",
+            response_topic="action-results",
         )
-        
+
         assert task.task_id == "task-123"
-        assert task.task_name == "process_data"
+        assert task.event_type == "process.data.requested"
         assert task.data["input"] == "test"
     
     def test_tool_request_creation(self):

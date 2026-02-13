@@ -31,7 +31,7 @@ class PlanContextService:
         """Convert database model to response DTO."""
         return PlanContextResponse(
             tenant_id=str(plan_context.tenant_id),
-            plan_id=plan_context.plan_id,
+            plan_id=str(plan_context.plan_id),
             session_id=plan_context.session_id,
             goal_event=plan_context.goal_event,
             goal_data=plan_context.goal_data,
@@ -57,7 +57,7 @@ class PlanContextService:
         plan_context = await crud_create(
             db,
             tenant_id,
-            data.plan_id,
+            UUID(data.plan_id),
             data.session_id,
             data.goal_event,
             data.goal_data,
@@ -74,7 +74,7 @@ class PlanContextService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        plan_id: str,
+        plan_id: UUID,
     ) -> Optional[PlanContextResponse]:
         """Get plan context by plan ID."""
         plan_context = await crud_get(db, tenant_id, plan_id)
@@ -87,7 +87,7 @@ class PlanContextService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        plan_id: str,
+        plan_id: UUID,
         data: PlanContextUpdate,
     ) -> Optional[PlanContextResponse]:
         """
@@ -114,7 +114,7 @@ class PlanContextService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        plan_id: str,
+        plan_id: UUID,
     ) -> bool:
         """
         Delete plan context.

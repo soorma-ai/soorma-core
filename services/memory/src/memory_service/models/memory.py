@@ -145,7 +145,11 @@ class WorkingMemory(Base):
         ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
     )
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     plan_id = Column(UUID(as_uuid=True), nullable=False)
     key = Column(Text, nullable=False)
     value = Column(JSON, nullable=False)
@@ -163,6 +167,11 @@ class TaskContext(Base):
     tenant_id = Column(
         UUID(as_uuid=True),
         ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     task_id = Column(String(100), nullable=False)
@@ -190,7 +199,11 @@ class PlanContext(Base):
         ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
     )
-    plan_id = Column(String(100), nullable=False)
+    plan_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("plans.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     session_id = Column(String(100), nullable=True)
     goal_event = Column(String(255), nullable=False)
     goal_data = Column(JSON, default={}, nullable=False)
@@ -201,7 +214,7 @@ class PlanContext(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("tenant_id", "plan_id", name="plan_context_unique"),)
+    __table_args__ = (UniqueConstraint("plan_id", name="plan_context_unique"),)
 
 
 class Plan(Base):

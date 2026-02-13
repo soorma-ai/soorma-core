@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Memory Service - Database Schema Improvements (February 12, 2026)**
+  - **Foreign Key Constraints with CASCADE Delete**:
+    - Added FK constraint to `task_context.user_id` → `users.id` with CASCADE delete (Migration 006)
+    - Added FK constraint to `working_memory.user_id` → `users.id` with CASCADE delete (Migration 007)
+    - Converted `plan_context.plan_id` from String to UUID with FK → `plans.id` and CASCADE delete (Migration 007)
+  - **Referential Integrity**:
+    - Ensures task contexts, working memory, and plan contexts are automatically cleaned up when users or plans are deleted
+    - Prevents orphaned data in async worker task tracking
+    - Creates proper cascade chain: User deleted → Plans deleted → PlanContext deleted
+  - **Data Type Consistency**:
+    - `plan_context.plan_id` now uses UUID type for consistency with plans table
+    - Updated unique constraint from `(tenant_id, plan_id)` to `(plan_id)` since plan_id is now a FK
+  - **Code Updates**:
+    - Updated PlanContext CRUD/service/API layers to use UUID type for plan_id
+    - Added type conversion between DTOs (str) and database (UUID) in service layer
+  - **Test Coverage**: All 126 memory service tests passing
+    - 18 TaskContext tests (CRUD, service, sub-task tracking)
+    - 15 WorkingMemory tests (value types, CRUD operations)
+    - 12 WorkingMemory deletion tests (user/plan isolation)
+    - Full coverage of FK cascade behavior and referential integrity
+
 ## [0.7.6] - 2026-02-07
 
 ### Added

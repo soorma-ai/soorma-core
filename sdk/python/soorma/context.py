@@ -27,7 +27,11 @@ import logging
 import os
 
 from soorma_common.events import EventTopic
-from soorma_common.models import WorkingMemoryDeleteKeyResponse, WorkingMemoryDeletePlanResponse
+from soorma_common.models import (
+    TaskContextResponse,
+    WorkingMemoryDeleteKeyResponse,
+    WorkingMemoryDeletePlanResponse,
+)
 from .events import EventClient
 from .memory import MemoryClient as MemoryServiceClient
 from .registry.client import RegistryClient
@@ -71,6 +75,16 @@ class MemoryClient:
             retrieve(): Get plan-scoped state
             delete_key(): Delete a single state key
             cleanup_plan(): Delete all state for a plan
+        
+        Task Context (Async Worker Pattern - RF-SDK-004):
+            store_task_context(): Persist async worker task state
+            get_task_context(): Retrieve task context by task ID
+            update_task_context(): Update task state/sub-tasks
+            delete_task_context(): Clean up completed task
+            get_task_by_subtask(): Find parent task from sub-task ID
+            
+            Note: Prefer using TaskContext methods (save(), restore(), etc.)
+            over direct memory calls. These are low-level APIs.
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
     # Note: Local fallback removed - Memory Service required for multi-agent workflows
@@ -405,6 +419,222 @@ class MemoryClient:
             user_id=user_id,
             key=None,
         )
+
+    async def store_task_context(
+        self,
+        task_id: str,
+        plan_id: Optional[str],
+        event_type: str,
+        response_event: Optional[str] = None,
+        response_topic: str = "action-results",
+        data: Optional[Dict[str, Any]] = None,
+        sub_tasks: Optional[List[str]] = None,
+        state: Optional[Dict[str, Any]] = None,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> TaskContextResponse:
+        """
+        Persist async Worker task context for resumption (RF-SDK-004).
+        
+        Stores task metadata, sub-task tracking, and worker state so that
+        tasks can be paused during delegation and resumed when results arrive.
+        
+        LOW-LEVEL API: Prefer TaskContext.save() which handles serialization.
+        
+        Args:
+            task_id: Unique task identifier
+            plan_id: Optional plan ID for coordinated workflows
+            event_type: Event type that triggered this task
+            response_event: Event type to publish when task completes
+            response_topic: Topic for response event (default: "action-results")
+            data: Request data payload from triggering event
+            sub_tasks: List of sub-task IDs (for tracking delegations)
+            state: Worker-specific state dict (persisted across delegations)
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
+            
+        Returns:
+            Task context DTO from Memory Service
+            
+        Example:
+            ```python
+            # Prefer TaskContext.save() instead:
+            task.state["order_details"] = order
+            await task.save()  # Calls this internally
+            
+            # Direct usage (not recommended):
+            await context.memory.store_task_context(
+                task_id="task-123",
+                plan_id="plan-456",
+                event_type="process_order",
+                response_event="order_processed",
+                data={"order_id": "ord-789"},
+                state={"validation_step": "inventory_check"},
+            )
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.store_task_context(
+            task_id=task_id,
+            plan_id=plan_id,
+            event_type=event_type,
+            response_event=response_event,
+            response_topic=response_topic,
+            data=data,
+            sub_tasks=sub_tasks,
+            state=state,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+
+    async def get_task_context(
+        self,
+        task_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[TaskContextResponse]:
+        """
+        Retrieve persisted task context by task ID.
+        
+        LOW-LEVEL API: Prefer TaskContext.restore() which deserializes properly.
+        
+        Args:
+            task_id: Task identifier
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
+            
+        Returns:
+            Task context DTO if found, None otherwise
+            
+        Example:
+            ```python
+            # Prefer TaskContext.restore() instead:
+            task = await TaskContext.restore(task_id, context)
+            
+            # Direct usage (not recommended):
+            task_data = await context.memory.get_task_context("task-123")
+            if task_data:
+                print(f"Task {task_data.task_id}: {task_data.event_type}")
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.get_task_context(task_id, tenant_id=tenant_id, user_id=user_id)
+
+    async def update_task_context(
+        self,
+        task_id: str,
+        sub_tasks: Optional[List[str]] = None,
+        state: Optional[Dict[str, Any]] = None,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> TaskContextResponse:
+        """
+        Update persisted task context with new state or sub-task tracking.
+        
+        LOW-LEVEL API: Prefer TaskContext.save() which handles incremental updates.
+        
+        Args:
+            task_id: Task identifier
+            sub_tasks: Optional list of sub-task IDs to update tracking
+            state: Optional state dict to merge/replace
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
+            
+        Returns:
+            Updated task context DTO
+            
+        Example:
+            ```python
+            # Prefer TaskContext.save() instead:
+            task.state["validation_result"] = result
+            await task.save()  # Updates existing task context
+            
+            # Direct usage (not recommended):
+            await context.memory.update_task_context(
+                task_id="task-123",
+                state={"validation_result": "passed", "step": 2},
+            )
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.update_task_context(
+            task_id=task_id,
+            sub_tasks=sub_tasks,
+            state=state,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+
+    async def delete_task_context(
+        self,
+        task_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> bool:
+        """
+        Delete persisted task context (cleanup after completion).
+        
+        LOW-LEVEL API: TaskContext.complete() calls this automatically.
+        
+        Args:
+            task_id: Task identifier
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
+            
+        Returns:
+            True if deleted successfully
+            
+        Example:
+            ```python
+            # TaskContext.complete() handles this automatically:
+            await task.complete({"status": "completed"})
+            # ^ Publishes response and deletes task context
+            
+            # Direct usage (not recommended):
+            await context.memory.delete_task_context("task-123")
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.delete_task_context(task_id, tenant_id=tenant_id, user_id=user_id)
+
+    async def get_task_by_subtask(
+        self,
+        sub_task_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[TaskContextResponse]:
+        """
+        Find parent task context using sub-task correlation ID.
+        
+        Used by ResultContext.restore_task() to resume parent task when
+        a sub-task result arrives. Queries the reverse index maintained
+        by Memory Service.
+        
+        LOW-LEVEL API: Prefer ResultContext.restore_task() in on_result() handlers.
+        
+        Args:
+            sub_task_id: Sub-task identifier (correlation_id from result event)
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
+            
+        Returns:
+            Parent task context DTO if found, None otherwise
+            
+        Example:
+            ```python
+            # Prefer ResultContext.restore_task() instead:
+            @worker.on_result("payment_completed")
+            async def handle_payment(result: ResultContext, context: PlatformContext):
+                task = await result.restore_task()  # Calls this internally
+            
+            # Direct usage (not recommended):
+            task_data = await context.memory.get_task_by_subtask("subtask-456")
+            if task_data:
+                print(f"Parent task: {task_data.task_id}")
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.get_task_by_subtask(sub_task_id, tenant_id=tenant_id, user_id=user_id)
     
     async def close(self) -> None:
         """Close the Memory Service client connection."""

@@ -14,7 +14,7 @@ from soorma_common.models import (
     TaskContextResponse,
 )
 from memory_service.crud.task_context import (
-    create_task_context as crud_create,
+    upsert_task_context as crud_upsert,
     get_task_context as crud_get,
     update_task_context as crud_update,
     delete_task_context as crud_delete,
@@ -31,6 +31,7 @@ class TaskContextService:
         """Convert database model to response DTO."""
         return TaskContextResponse(
             tenant_id=str(task_context.tenant_id),
+            user_id=str(task_context.user_id),
             task_id=task_context.task_id,
             plan_id=task_context.plan_id,
             event_type=task_context.event_type,
@@ -43,20 +44,22 @@ class TaskContextService:
             updated_at=task_context.updated_at.isoformat(),
         )
     
-    async def create(
+    async def upsert(
         self,
         db: AsyncSession,
         tenant_id: UUID,
+        user_id: UUID,
         data: TaskContextCreate,
     ) -> TaskContextResponse:
         """
-        Create a new task context.
+        Upsert task context (insert or update if exists).
         
-        Transaction boundary: Commits after successful creation.
+        Transaction boundary: Commits after successful upsert.
         """
-        task_context = await crud_create(
+        task_context = await crud_upsert(
             db,
             tenant_id,
+            user_id,
             data.task_id,
             data.plan_id,
             data.event_type,

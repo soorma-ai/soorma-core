@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Memory Client - TaskContext DTOs Updated (February 12, 2026)**
+  - `TaskContextCreate` and `TaskContextResponse` now include `user_id` field
+  - `user_id` properly propagated through entire call chain (SDK → Memory Service)
+  - Supports user-scoped task context isolation for async Worker operations
+  - Memory Service enforces FK constraints with CASCADE delete for data cleanup
+
 ## [0.7.6] - 2026-02-07
 
 ### Added

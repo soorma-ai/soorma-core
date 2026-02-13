@@ -497,11 +497,14 @@ class MemoryClient:
         data: Optional[Dict[str, Any]] = None,
         sub_tasks: Optional[List[str]] = None,
         state: Optional[Dict[str, Any]] = None,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> TaskContextResponse:
         """
-        Store task context for async completion.
+        Store task context for async completion (upsert operation).
         
         Called by TaskContext.save() when Worker delegates to sub-agent.
+        Uses upsert so save() can be called multiple times safely.
         
         Args:
             task_id: Task identifier
@@ -512,10 +515,15 @@ class MemoryClient:
             data: Original request data
             sub_tasks: List of sub-task IDs
             state: Worker-specific state
+            tenant_id: Tenant ID (from event context, REQUIRED)
+            user_id: User ID (from event context, REQUIRED)
             
         Returns:
             TaskContextResponse with the stored context
         """
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from task context)")
+        
         request_data = TaskContextCreate(
             task_id=task_id,
             plan_id=plan_id,
@@ -525,16 +533,27 @@ class MemoryClient:
             data=data or {},
             sub_tasks=sub_tasks or [],
             state=state or {},
+            user_id=user_id,
         )
         
+        # POST does upsert so save() can be called multiple times safely
         response = await self._client.post(
             f"{self.base_url}/v1/memory/task-context",
             json=request_data.model_dump(by_alias=True),
+            headers={
+                "X-Tenant-ID": tenant_id,
+                "X-User-ID": user_id,
+            },
         )
         response.raise_for_status()
         return TaskContextResponse.model_validate(response.json())
     
-    async def get_task_context(self, task_id: str) -> Optional[TaskContextResponse]:
+    async def get_task_context(
+        self,
+        task_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[TaskContextResponse]:
         """
         Retrieve task context.
         
@@ -542,13 +561,22 @@ class MemoryClient:
         
         Args:
             task_id: Task identifier
+            tenant_id: Tenant ID (from event context, REQUIRED)
+            user_id: User ID (from event context, REQUIRED)
             
         Returns:
             TaskContextResponse or None if not found
         """
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from task context)")
+        
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/task-context/{task_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
             )
             response.raise_for_status()
             return TaskContextResponse.model_validate(response.json())
@@ -562,6 +590,8 @@ class MemoryClient:
         task_id: str,
         sub_tasks: Optional[List[str]] = None,
         state: Optional[Dict[str, Any]] = None,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> TaskContextResponse:
         """
         Update task context.
@@ -570,10 +600,15 @@ class MemoryClient:
             task_id: Task identifier
             sub_tasks: Updated sub-task list
             state: Updated state
+            tenant_id: Tenant ID (from event context, REQUIRED)
+            user_id: User ID (from event context, REQUIRED)
             
         Returns:
             TaskContextResponse with updated context
         """
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from task context)")
+        
         request_data = TaskContextUpdate(
             sub_tasks=sub_tasks,
             state=state,
@@ -582,11 +617,20 @@ class MemoryClient:
         response = await self._client.put(
             f"{self.base_url}/v1/memory/task-context/{task_id}",
             json=request_data.model_dump(by_alias=True, exclude_none=True),
+            headers={
+                "X-Tenant-ID": tenant_id,
+                "X-User-ID": user_id,
+            },
         )
         response.raise_for_status()
         return TaskContextResponse.model_validate(response.json())
     
-    async def delete_task_context(self, task_id: str) -> bool:
+    async def delete_task_context(
+        self,
+        task_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> bool:
         """
         Delete task context after completion.
         
@@ -594,13 +638,22 @@ class MemoryClient:
         
         Args:
             task_id: Task identifier
+            tenant_id: Tenant ID (from event context, REQUIRED)
+            user_id: User ID (from event context, REQUIRED)
             
         Returns:
             True if deleted, False if not found
         """
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from task context)")
+        
         try:
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/task-context/{task_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
             )
             response.raise_for_status()
             return True
@@ -609,7 +662,12 @@ class MemoryClient:
                 return False
             raise
     
-    async def get_task_by_subtask(self, sub_task_id: str) -> Optional[TaskContextResponse]:
+    async def get_task_by_subtask(
+        self,
+        sub_task_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[TaskContextResponse]:
         """
         Find parent task by sub-task correlation ID.
         
@@ -617,13 +675,22 @@ class MemoryClient:
         
         Args:
             sub_task_id: Sub-task identifier
+            tenant_id: Tenant ID (from event context, REQUIRED)
+            user_id: User ID (from event context, REQUIRED)
             
         Returns:
             TaskContextResponse or None if not found
         """
+        if not tenant_id or not user_id:
+            raise ValueError("tenant_id and user_id are required (get from task context)")
+        
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/task-context/by-subtask/{sub_task_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
             )
             response.raise_for_status()
             return TaskContextResponse.model_validate(response.json())

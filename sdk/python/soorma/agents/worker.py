@@ -3,10 +3,10 @@ Worker Agent - Domain-specific cognitive node.
 
 Workers are specialized agents that handle domain-specific cognitive tasks.
 They:
-- Subscribe to action-requests for their capabilities
+- Subscribe to action-requests for event types they handle
 - Execute tasks using domain knowledge (often with LLMs)
 - Report progress and results
-- Emit action-results when complete
+- Emit action-results explicitly via task.complete()
 
 Workers are discoverable via the Registry service based on their capabilities.
 
@@ -19,7 +19,7 @@ Usage:
         capabilities=["paper_search", "citation_analysis"],
     )
 
-    @worker.on_task("search_papers")
+    @worker.on_task("search.requested")
     async def search_papers(task, context):
         # Access shared memory
         preferences = await context.memory.retrieve(f"user:{task.session_id}:preferences")
@@ -30,12 +30,11 @@ Usage:
         # Store results in memory for other workers
         await context.memory.store(f"search_results:{task.task_id}", results)
         
-        return {"papers": results, "count": len(results)}
+        await task.complete({"papers": results, "count": len(results)})
 
     worker.run()
 """
 import logging
-from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from uuid import uuid4
 
@@ -43,68 +42,14 @@ from soorma_common.events import EventEnvelope, EventTopic
 
 from .base import Agent
 from ..context import PlatformContext
+from ..task_context import TaskContext, ResultContext
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class TaskContext:
-    """
-    Context for a task being executed by a Worker.
-    
-    Provides all the information needed to execute a task,
-    plus methods for reporting progress.
-    
-    Attributes:
-        task_id: Unique task identifier
-        task_name: Name of the task
-        plan_id: Parent plan ID
-        goal_id: Original goal ID
-        data: Task input data
-        correlation_id: Tracking ID
-        session_id: Client session
-        tenant_id: Multi-tenant isolation
-        timeout: Task timeout in seconds
-        priority: Task priority
-    """
-    task_id: str
-    task_name: str
-    plan_id: str
-    goal_id: str
-    data: Dict[str, Any]
-    correlation_id: Optional[str] = None
-    session_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    timeout: Optional[float] = None
-    priority: int = 0
-    
-    # Internal reference to platform context
-    _platform_context: Optional[PlatformContext] = field(default=None, repr=False)
-    
-    async def report_progress(
-        self,
-        progress: float,
-        message: Optional[str] = None,
-    ) -> None:
-        """
-        Report task progress.
-        
-        Args:
-            progress: Progress percentage (0.0 to 1.0)
-            message: Optional status message
-        """
-        if self._platform_context:
-            await self._platform_context.tracker.emit_progress(
-                plan_id=self.plan_id,
-                task_id=self.task_id,
-                status="running",
-                progress=progress,
-                message=message,
-            )
-
-
-# Type alias for task handlers
-TaskHandler = Callable[[TaskContext, PlatformContext], Awaitable[Dict[str, Any]]]
+# Type aliases for handlers
+TaskHandler = Callable[[TaskContext, PlatformContext], Awaitable[Any]]
+ResultHandler = Callable[[ResultContext, PlatformContext], Awaitable[Any]]
 
 
 class Worker(Agent):
@@ -113,10 +58,10 @@ class Worker(Agent):
     
     Workers are the "hands" of the DisCo architecture. They:
     1. Register capabilities with the Registry
-    2. Subscribe to action-requests matching their capabilities
+    2. Subscribe to action-requests for event types they handle
     3. Execute tasks with domain expertise (often using LLMs)
     4. Report progress to the Tracker
-    5. Emit action-results when complete
+    5. Emit action-results explicitly via task.complete()
     
     Workers are designed to be:
     - Specialized: Each worker handles specific domain tasks
@@ -135,8 +80,8 @@ class Worker(Agent):
             capabilities=["text_summarization", "key_extraction"],
         )
         
-        @worker.on_task("summarize_document")
-        async def summarize(task: TaskContext, context: PlatformContext) -> Dict:
+        @worker.on_task("summarize.requested")
+        async def summarize(task: TaskContext, context: PlatformContext) -> None:
             # Report progress
             await task.report_progress(0.1, "Loading document")
             
@@ -145,7 +90,7 @@ class Worker(Agent):
             await task.report_progress(0.5, "Summarizing")
             summary = await llm_summarize(doc)
             
-            return {"summary": summary, "length": len(summary)}
+            await task.complete({"summary": summary, "length": len(summary)})
         
         worker.run()
     """
@@ -188,147 +133,88 @@ class Worker(Agent):
             **kwargs,
         )
         
-        # Task handlers: task_name -> handler
+        # Task handlers: event_type -> handler
         self._task_handlers: Dict[str, TaskHandler] = {}
-        
-        # Also register the main action.request handler
-        self._register_action_request_handler()
-    
-    def _register_action_request_handler(self) -> None:
-        """Register the main action.request event handler."""
-        @self.on_event("action.request", topic=EventTopic.ACTION_REQUESTS)
-        async def handle_action_request(event: EventEnvelope, context: PlatformContext) -> None:
-            await self._handle_action_request(event, context)
-        # action-requests is a topic; do not treat action.request as a declared event type
-        if "action.request" in self.config.events_consumed:
-            self.config.events_consumed.remove("action.request")
-    
-    def on_task(self, task_name: str) -> Callable[[TaskHandler], TaskHandler]:
+
+        # Result handlers: event_type -> handler
+        self._result_handlers: Dict[str, ResultHandler] = {}
+
+    def on_task(self, event_type: str) -> Callable[[TaskHandler], TaskHandler]:
         """
         Decorator to register a task handler.
         
         Task handlers receive a TaskContext and PlatformContext,
-        and return a result dictionary.
+        and manage completion asynchronously.
         
         Usage:
-            @worker.on_task("process_data")
-            async def process(task: TaskContext, context: PlatformContext) -> Dict:
-                result = await do_processing(task.data)
-                return {"processed": True, "output": result}
+            @worker.on_task("data.process.requested")
+            async def process(task: TaskContext, context: PlatformContext) -> None:
+                await task.save()
+                await task.delegate(...)
         
         Args:
-            task_name: The task name to handle
+            event_type: The event type to handle
         
         Returns:
             Decorator function
         """
         def decorator(func: TaskHandler) -> TaskHandler:
-            self._task_handlers[task_name] = func
-            
+            self._task_handlers[event_type] = func
+
+            @self.on_event(event_type, topic=EventTopic.ACTION_REQUESTS)
+            async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
+                data = event.data or {}
+                assigned_to = data.get("assigned_to")
+                if assigned_to and not self._should_handle_task(assigned_to):
+                    return
+                task = TaskContext.from_event(
+                    event,
+                    context,
+                    agent_id=self.agent_id,
+                    register_produced_event=self._register_produced_event,
+                )
+                await func(task, context)
+
             # Add to capabilities if not already there
-            if task_name not in self.config.capabilities:
-                self.config.capabilities.append(task_name)
-            
-            logger.debug(f"Registered task handler: {task_name}")
+            if event_type not in self.config.capabilities:
+                self.config.capabilities.append(event_type)
+
+            logger.debug(f"Registered task handler: {event_type}")
             return func
         return decorator
-    
-    async def _handle_action_request(
-        self,
-        event: EventEnvelope,
-        context: PlatformContext,
-    ) -> None:
-        """Handle an incoming action.request event."""
-        data = event.data or {}
-        
-        task_name = data.get("task_name")
-        assigned_to = data.get("assigned_to")
-        
-        # Check if this task is assigned to us
-        if not self._should_handle_task(assigned_to):
-            return
-        
-        handler = self._task_handlers.get(task_name)
-        if not handler:
-            logger.debug(f"No handler for task: {task_name}")
-            return
-        
-        # Create TaskContext
-        task = TaskContext(
-            task_id=data.get("task_id", str(uuid4())),
-            task_name=task_name,
-            plan_id=data.get("plan_id", ""),
-            goal_id=data.get("goal_id", ""),
-            data=data.get("data", {}),
-            correlation_id=event.get("correlation_id"),
-            session_id=event.get("session_id"),
-            tenant_id=event.get("tenant_id"),
-            timeout=data.get("timeout"),
-            priority=data.get("priority", 0),
-            _platform_context=context,
-        )
-        
-        # Report task started
-        await context.tracker.emit_progress(
-            plan_id=task.plan_id,
-            task_id=task.task_id,
-            status="running",
-            progress=0.0,
-        )
-        
-        try:
-            # Execute task
-            logger.info(f"Executing task: {task_name} ({task.task_id})")
-            result = await handler(task, context)
-            
-            # Report completion
-            await context.tracker.complete_task(
-                plan_id=task.plan_id,
-                task_id=task.task_id,
-                result=result,
-            )
-            
-            # Emit action.result
-            await context.bus.publish(
-                event_type="action.result",
-                data={
-                    "task_id": task.task_id,
-                    "task_name": task_name,
-                    "plan_id": task.plan_id,
-                    "goal_id": task.goal_id,
-                    "status": "completed",
-                    "result": result,
-                },
-                topic="action-results",
-                correlation_id=task.correlation_id,
-            )
-            
-            logger.info(f"Completed task: {task_name} ({task.task_id})")
-            
-        except Exception as e:
-            logger.error(f"Task failed: {task_name} - {e}")
-            
-            # Report failure
-            await context.tracker.fail_task(
-                plan_id=task.plan_id,
-                task_id=task.task_id,
-                error=str(e),
-            )
-            
-            # Emit failure result
-            await context.bus.publish(
-                event_type="action.result",
-                data={
-                    "task_id": task.task_id,
-                    "task_name": task_name,
-                    "plan_id": task.plan_id,
-                    "goal_id": task.goal_id,
-                    "status": "failed",
-                    "error": str(e),
-                },
-                topic="action-results",
-                correlation_id=task.correlation_id,
-            )
+
+    def on_result(self, event_type: str) -> Callable[[ResultHandler], ResultHandler]:
+        """
+        Decorator to register a sub-task result handler.
+
+        Result handlers receive a ResultContext and PlatformContext,
+        and should restore task state before deciding to complete.
+
+        Args:
+            event_type: The event type to handle
+
+        Returns:
+            Decorator function
+        """
+        def decorator(func: ResultHandler) -> ResultHandler:
+            self._result_handlers[event_type] = func
+
+            @self.on_event(event_type, topic=EventTopic.ACTION_RESULTS)
+            async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
+                result = ResultContext.from_event(
+                    event,
+                    context,
+                    register_produced_event=self._register_produced_event,
+                )
+                await func(result, context)
+
+            logger.debug(f"Registered result handler: {event_type}")
+            return func
+        return decorator
+
+    def _register_produced_event(self, event_type: str) -> None:
+        if event_type not in self.config.events_produced:
+            self.config.events_produced.append(event_type)
     
     def _should_handle_task(self, assigned_to: str) -> bool:
         """Check if this worker should handle a task based on assigned_to."""
@@ -355,7 +241,7 @@ class Worker(Agent):
         data: Dict[str, Any],
         plan_id: Optional[str] = None,
         goal_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> Any:
         """
         Programmatically execute a task.
         
@@ -377,14 +263,18 @@ class Worker(Agent):
         handler = self._task_handlers.get(task_name)
         if not handler:
             raise ValueError(f"No handler for task: {task_name}")
-        
+
         task = TaskContext(
             task_id=str(uuid4()),
-            task_name=task_name,
-            plan_id=plan_id or "",
-            goal_id=goal_id or "",
+            event_type=task_name,
+            plan_id=plan_id,
             data=data,
-            _platform_context=self.context,
+            response_event=None,
+            response_topic="action-results",
+            agent_id=self.agent_id,
+            task_name=task_name,
+            _context=self.context,
+            _register_produced_event=self._register_produced_event,
         )
-        
+
         return await handler(task, self.context)
