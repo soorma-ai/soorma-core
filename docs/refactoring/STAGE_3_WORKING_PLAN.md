@@ -850,6 +850,232 @@ With Infrastructure Work (February 12, 2026)
 
 ---
 
+## Phase 3 Detailed Plan (Approved February 15, 2026)
+
+**Status:** 🟢 In Progress  
+**Timeline:** February 15-25, 2026 (7 working days)  
+**Scope:** Test expansion, documentation updates, end-to-end validation
+
+### Phase 3A: Test Suite Expansion (Priority 1)
+
+**Goal:** Achieve 80%+ test coverage for Worker/TaskContext  
+**Estimated:** 1.5-2 days  
+**Target:** 39 new tests, all passing
+
+#### Task 3A.1: TaskContext Test Suite
+**File:** `sdk/python/tests/task_context/test_task_context.py` (new file)
+
+**Persistence Tests (6 tests):**
+- [ ] `test_task_context_save_to_memory()` - Verify memory.store_task_context called
+- [ ] `test_task_context_restore_from_memory()` - Restore via task_id
+- [ ] `test_task_context_from_memory_factory()` - Class method factory
+- [ ] `test_task_context_state_serialization()` - Nested dict handling
+- [ ] `test_task_context_save_idempotent()` - Multiple saves work
+- [ ] `test_task_context_delete_after_complete()` - Cleanup on completion
+
+**Sequential Delegation Tests (4 tests):**
+- [ ] `test_delegate_creates_subtask()` - Sub-task tracking
+- [x] `test_delegate_publishes_request()` - Bus.request called (exists in test_worker_phase3.py)
+- [ ] `test_delegate_saves_before_publish()` - State persistence order
+- [ ] `test_delegate_preserves_correlation()` - Correlation ID tracking
+
+**Parallel Delegation Tests (5 tests):**
+- [ ] `test_delegate_parallel_creates_group()` - Shared parallel_group_id
+- [ ] `test_delegate_parallel_publishes_all()` - All specs published
+- [ ] `test_update_sub_task_result()` - Individual result updates
+- [ ] `test_aggregate_parallel_results()` - Fan-in detection
+- [ ] `test_aggregate_partial_results()` - Not all results arrived
+
+**Error Handling Tests (3 tests):**
+- [ ] `test_delegate_without_context()` - RuntimeError raised
+- [ ] `test_restore_nonexistent_task()` - None returned
+- [ ] `test_complete_twice()` - Idempotent or error
+
+**Total:** 18 tests (1 existing + 17 new)
+
+#### Task 3A.2: Worker Test Suite
+**File:** `sdk/python/tests/agents/test_worker_integration.py` (new file)
+
+**Decorator Tests (4 tests):**
+- [ ] `test_on_task_registers_event()` - Event in events_consumed
+- [ ] `test_on_result_registers_event()` - Event in events_consumed
+- [ ] `test_multiple_handlers_same_event()` - All handlers called
+- [ ] `test_async_handler_required()` - ValueError for sync handlers
+
+**Assignment Filtering Tests (3 tests):**
+- [ ] `test_worker_handles_assigned_task()` - assigned_to matches
+- [ ] `test_worker_ignores_unassigned_task()` - assigned_to mismatch
+- [ ] `test_worker_handles_broadcast_task()` - No assigned_to field
+
+**Error Handling Tests (4 tests):**
+- [ ] `test_worker_handler_exception()` - Exception logged, not re-raised
+- [ ] `test_worker_failed_sub_task()` - result.success=False handling
+- [ ] `test_worker_timeout_handling()` - (Future work - mark as skip)
+- [ ] `test_worker_invalid_response_event()` - Missing response_event
+
+**State Management Tests (3 tests):**
+- [ ] `test_worker_saves_state_before_delegate()` - Order verification
+- [ ] `test_worker_restores_state_on_result()` - Via restore_task()
+- [ ] `test_worker_state_isolation()` - Multiple tasks don't interfere
+
+**Total:** 14 tests
+
+#### Task 3A.3: Integration Tests
+**File:** `sdk/python/tests/integration/test_tool_worker_integration.py` (new file)
+
+**Tool ↔ Worker Interaction (2 tests):**
+- [ ] `test_tool_delegates_to_worker()` - Tool publishes action request
+- [ ] `test_tool_receives_worker_result()` - Tool gets action result
+
+**Worker ↔ Worker Chains (3 tests):**
+- [ ] `test_worker_delegates_to_worker()` - Two-level delegation
+- [ ] `test_multi_level_delegation()` - Three+ levels
+- [ ] `test_delegation_loop_detection()` - (Future - mark skip)
+
+**End-to-End Workflows (2 tests):**
+- [ ] `test_complete_order_processing()` - Simulate 08-worker-basic flow
+- [ ] `test_parallel_aggregation_e2e()` - Fan-out/fan-in complete
+
+**Total:** 7 tests
+
+**Phase 3A Total:** 39 tests (293 total SDK tests after completion)
+
+---
+
+### Phase 3B: Documentation Updates (Priority 2)
+
+**Goal:** Complete documentation for Tool/Worker models  
+**Estimated:** 1 day
+
+#### Task 3B.1: Update ARCHITECTURE.md
+**File:** `ARCHITECTURE.md`
+
+- [ ] **Add Section 5: Agent Models**
+  - Tool Model overview (synchronous, stateless)
+  - Worker Model overview (asynchronous, stateful)
+  - TaskContext lifecycle diagram
+  - Comparison table (Tool vs Worker)
+  - Delegation patterns (sequential, parallel)
+  - Response event routing
+
+- [ ] **Update Section 4: Event-Driven Architecture**
+  - Add action-requests/action-results topics
+  - Add response_event pattern explanation
+  - Add correlation tracking diagram
+
+#### Task 3B.2: Update README Files
+
+- [ ] **Root README.md**
+  - Update "Quick Start" with Tool/Worker examples
+  - Link to 01-hello-tool and 08-worker-basic
+  - Update architecture diagram
+
+- [ ] **SDK README.md** (`sdk/python/README.md`)
+  - Add Tool model section with code example
+  - Add Worker model section with delegation example
+  - Update API reference
+
+- [ ] **Examples README.md** (`examples/README.md`)
+  - Add 01-hello-tool to learning path
+  - Add 08-worker-basic to learning path
+  - Update pattern catalog
+
+---
+
+### Phase 3C: End-to-End Validation (Priority 3)
+
+**Goal:** Validate examples work with real services  
+**Estimated:** 0.5 day
+
+#### Task 3C.1: Validate 08-worker-basic Example
+
+- [ ] Start full platform stack (`soorma dev --build`)
+- [ ] Run publisher.py
+- [ ] Run subscriber.py
+- [ ] Verify order processing workflow completes
+- [ ] Verify Memory Service stores task context
+- [ ] Verify parallel delegation works (inventory + payment)
+- [ ] Verify result aggregation works
+- [ ] Check logs for errors/warnings
+
+#### Task 3C.2: Validate 01-hello-tool Example
+
+- [ ] Start platform stack
+- [ ] Run calculator tool example
+- [ ] Verify synchronous response
+- [ ] Verify no task persistence (stateless)
+- [ ] Check registry shows tool registered
+
+#### Task 3C.3: Performance Baseline
+
+- [ ] Measure P50/P95/P99 latency for tool invocation
+- [ ] Measure P50/P95/P99 latency for worker delegation
+- [ ] Measure memory usage for 100 concurrent tasks
+- [ ] Document baseline metrics in CHANGELOG
+
+#### Task 3C.4: Update CHANGELOG
+
+- [ ] Add all Phase 3 changes to Unreleased section
+- [ ] Document test coverage improvements
+- [ ] List documentation updates
+- [ ] List validation results
+
+---
+
+### Phase 3 Success Metrics
+
+**Code Quality:**
+- [ ] Test coverage ≥ 80% for Worker/TaskContext (from 10%)
+- [ ] All 293+ tests passing (254 SDK + 39 new)
+- [ ] No linting errors (`ruff check`)
+- [ ] All tests use async/await properly
+
+**Examples:**
+- [x] Calculator tool works with `soorma dev` ✅
+- [ ] 08-worker-basic validated end-to-end
+- [x] Both examples have clear README ✅
+- [x] Examples work without external API keys ✅
+
+**Documentation:**
+- [x] CHANGELOG.md updated for Unreleased ✅
+- [ ] ARCHITECTURE.md has Tool/Worker sections
+- [ ] README updated with tool/worker patterns
+- [x] Memory service infrastructure documented ✅
+
+**Testing:**
+- [x] Phase 1 & 2 code tested (TDD) ✅
+- [ ] Integration tests verify Tool ↔ Worker
+- [x] No regression in existing tests ✅
+- [ ] Example code validated
+
+---
+
+### Phase 3 Task Matrix
+
+| Phase | Task | Tests/Files | Status | Owner | Notes |
+|-------|------|-------------|--------|-------|-------|
+| 3A.1 | TaskContext persistence | 6 tests | ⏳ | TBD | New file: test_task_context.py |
+| 3A.1 | Sequential delegation | 3 new | ⏳ | TBD | 1 exists in test_worker_phase3.py |
+| 3A.1 | Parallel delegation | 5 tests | ⏳ | TBD | Fan-out/fan-in patterns |
+| 3A.1 | Error handling | 3 tests | ⏳ | TBD | RuntimeError, None, idempotent |
+| 3A.2 | Worker decorators | 4 tests | ⏳ | TBD | New file: test_worker_integration.py |
+| 3A.2 | Assignment filtering | 3 tests | ⏳ | TBD | assigned_to field handling |
+| 3A.2 | Worker error handling | 4 tests | ⏳ | TBD | Exceptions, failures, timeouts |
+| 3A.2 | State management | 3 tests | ⏳ | TBD | Save/restore/isolation |
+| 3A.3 | Tool ↔ Worker | 2 tests | ⏳ | TBD | New file: test_tool_worker_integration.py |
+| 3A.3 | Worker chains | 3 tests | ⏳ | TBD | Multi-level delegation |
+| 3A.3 | E2E workflows | 2 tests | ⏳ | TBD | Order processing simulation |
+| 3B.1 | ARCHITECTURE.md | Section 5 | ⏳ | TBD | Agent Models section |
+| 3B.2 | README updates | 3 files | ⏳ | TBD | Root, SDK, Examples |
+| 3C.1 | Validate 08-worker-basic | E2E test | ⏳ | TBD | With real Memory Service |
+| 3C.2 | Validate 01-hello-tool | E2E test | ⏳ | TBD | With real Registry |
+| 3C.3 | Performance baseline | Metrics | ⏳ | TBD | P50/P95/P99 latencies |
+| 3C.4 | CHANGELOG update | 1 file | ⏳ | TBD | Phase 3 summary |
+
+**Phase 3 Total Estimated: 7 days**
+
+---
+
 ## Related Documentation
 
 - [README.md](README.md) - Refactoring index and stage overview
