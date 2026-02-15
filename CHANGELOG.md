@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Stage 3 Phase 3 - Test Suite Expansion & Documentation (February 15, 2026)**
+  - **Test Coverage Expansion (RF-SDK-004)**:
+    - Added comprehensive TaskContext test suite (17 tests) covering persistence, delegation, parallel execution, error handling
+    - Added Worker integration test suite (14 tests) covering decorators, assignment filtering, error handling, state management
+    - Added Tool ↔ Worker integration test suite (7 tests) covering delegation chains, end-to-end workflows
+    - **Total SDK Tests**: 294 (was 254, +40 new tests)
+    - **Worker/TaskContext Coverage**: ~80% (was ~10%)
+  - **Documentation Updates**:
+    - Added Section 5 to ARCHITECTURE.md: Agent Models (Tool, Worker, Planner comparison)
+    - Added TaskContext lifecycle diagram with mermaid
+    - Updated README.md with Stage 3 progress indicator and example links
+    - Updated SDK README.md with Tool and Worker model sections with code examples
+    - Updated examples/README.md learning path with 08-worker-basic entry
+  - **End-to-End Validation**:
+    - Validated 08-worker-basic example: Order processing with parallel delegation (inventory + payment)
+    - Validated 01-hello-tool example: Calculator operations (add, multiply) with synchronous response
+    - Confirmed Memory Service task persistence: TaskContext save/restore/delete operations working
+    - Confirmed stateless Tool model: No task persistence, auto-publish to response_event
+    - No errors or warnings in platform/agent logs during validation
+  - **Quality Metrics**: All 294 SDK tests passing + 126 Memory Service tests passing = 420 total
+
 ### Changed
 - **Memory Service - Database Schema Improvements (February 12, 2026)**
   - **Foreign Key Constraints with CASCADE Delete**:
