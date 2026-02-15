@@ -57,9 +57,9 @@ python client.py Alice
 
 Soorma provides three agent types for building distributed AI systems:
 
-- **Worker** - Executes domain-specific cognitive tasks
-- **Tool** - Provides atomic, stateless operations
-- **Planner** - Orchestrates multi-agent workflows
+- **Tool** - Synchronous, stateless operations (< 1 second)
+- **Worker** - Asynchronous, stateful tasks with delegation
+- **Planner** - Strategic reasoning and goal decomposition (Stage 4)
 
 **Platform Services:**
 - `context.registry` - Service discovery
@@ -68,6 +68,90 @@ Soorma provides three agent types for building distributed AI systems:
 - `context.tracker` - Observability
 
 **Learn more:** See the [comprehensive documentation](https://github.com/soorma-ai/soorma-core) for architecture details, patterns, and API references.
+
+## Agent Models
+
+### Tool Model (Synchronous)
+
+Tools handle fast, stateless operations that return immediate results:
+
+```python
+from soorma import Tool
+from soorma.agents.tool import InvocationContext
+
+tool = Tool(name="calculator")
+
+@tool.on_invoke("calculate.add")
+async def add_numbers(request: InvocationContext, context):
+    numbers = request.data["numbers"]
+    return {"sum": sum(numbers)}  # Auto-published to caller
+```
+
+**Characteristics:**
+- ⚡ **Stateless:** No persistence between calls
+- 🚀 **Fast:** Returns immediately (< 1 second)
+- 🔄 **Auto-complete:** SDK publishes response automatically
+- 📊 **Use cases:** Calculations, lookups, validations
+
+**Example:** [01-hello-tool](https://github.com/soorma-ai/soorma-core/tree/main/examples/01-hello-tool)
+
+### Worker Model (Asynchronous with Delegation)
+
+Workers handle multi-step, stateful tasks with delegation:
+
+```python
+from soorma import Worker
+from soorma.task_context import TaskContext, ResultContext
+
+worker = Worker(name="order-processor")
+
+@worker.on_task("order.process.requested")
+async def process_order(task: TaskContext, context):
+    # Save state
+    task.state["order_id"] = task.data["order_id"]
+    await task.save()
+    
+    # Delegate to sub-workers
+    await task.delegate_parallel([
+        DelegationSpec("inventory.reserve.requested", {...}, "inventory.reserved"),
+        DelegationSpec("payment.process.requested", {...}, "payment.processed"),
+    ])
+
+@worker.on_result("inventory.reserved")
+@worker.on_result("payment.processed")
+async def handle_result(result: ResultContext, context):
+    task = await result.restore_task()
+    task.update_sub_task_result(result.correlation_id, result.data)
+    
+    # Complete when all results arrived
+    if task.aggregate_parallel_results(task.state["group_id"]):
+        await task.complete({"status": "completed"})
+```
+
+**Characteristics:**
+- 💾 **Stateful:** TaskContext persists across delegations
+- 🔄 **Asynchronous:** Manual completion with `task.complete()`
+- 🎯 **Delegation:** Sequential or parallel sub-tasks
+- ⚙️ **Use cases:** Workflows, long-running operations, coordination
+
+**Delegation Patterns:**
+- **Sequential:** `task.delegate()` - One sub-task at a time
+- **Parallel:** `task.delegate_parallel()` - Fan-out with aggregation
+- **Multi-level:** Workers can delegate to Workers (arbitrary depth)
+
+**Example:** [08-worker-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/08-worker-basic)
+
+### Comparison
+
+| Feature | Tool | Worker |
+|---------|------|--------|
+| Execution | Synchronous | Asynchronous |
+| State | Stateless | Stateful (TaskContext) |
+| Completion | Auto | Manual (`task.complete()`) |
+| Delegation | ❌ No | ✅ Yes |
+| Memory I/O | ❌ No | ✅ Yes |
+| Latency | < 100ms | Seconds to minutes |
+| Example | Calculator | Order processing |
 
 ## CLI Reference
 

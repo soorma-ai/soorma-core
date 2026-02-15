@@ -294,9 +294,231 @@ Agents can discover available events at runtime from the Registry, enabling dyna
 
 ---
 
-## 5. Deployment Options
+## 5. Agent Models
 
-### 5.1 Local Development
+Soorma provides three agent primitives for building AI agent systems. Each model serves a specific purpose in the distributed cognition architecture.
+
+### 5.1 Tool Model (Synchronous)
+
+**Purpose:** Stateless, synchronous operations that return immediate results.
+
+**Characteristics:**
+- Stateless: No persistence between invocations
+- Synchronous: Handler returns result directly
+- Auto-complete: SDK publishes response automatically
+- Fast: No memory I/O, minimal latency
+
+**Use Cases:**
+- Calculations, data transformations
+- API lookups, database queries
+- Format conversions, validations
+- Any operation that completes in < 1 second
+
+**Example:**
+
+```python
+from soorma import Tool
+from soorma.agents.tool import InvocationContext
+
+tool = Tool(name="calculator")
+
+@tool.on_invoke("calculate.add")
+async def add_numbers(request: InvocationContext, context):
+    numbers = request.data["numbers"]
+    result = sum(numbers)
+    return {"sum": result}  # Auto-published to response_event
+```
+
+**Topics:**
+- Receives: `action-requests` (with event_type filter)
+- Publishes: `action-results` (caller's response_event)
+
+**See:** [examples/01-hello-tool](examples/01-hello-tool/) for complete example.
+
+### 5.2 Worker Model (Asynchronous with Delegation)
+
+**Purpose:** Stateful, asynchronous tasks with delegation and persistence.
+
+**Characteristics:**
+- Stateful: TaskContext persists across delegations
+- Asynchronous: Manual completion with `task.complete()`
+- Delegation: Can delegate to other Workers
+- Resumable: State restored when results arrive
+
+**Use Cases:**
+- Multi-step workflows (book appointment → check availability → reserve slot)
+- Long-running operations (data processing, analysis)
+- Coordinated tasks (order processing with inventory + payment)
+- Any operation requiring multiple async steps
+
+**Example:**
+
+```python
+from soorma import Worker
+from soorma.task_context import TaskContext, ResultContext
+
+worker = Worker(name="booking-service")
+
+@worker.on_task("book.appointment.requested")
+async def book_appointment(task: TaskContext, context):
+    # Save state
+    task.state["appointment"] = task.data["appointment"]
+    await task.save()
+    
+    # Delegate to availability service
+    await task.delegate(
+        event_type="check.availability.requested",
+        data={"date": task.data["date"]},
+        response_event="availability.checked",
+    )
+    # Handler pauses - execution resumes in on_result handler
+
+@worker.on_result("availability.checked")
+async def handle_availability(result: ResultContext, context):
+    # Restore parent task
+    task = await result.restore_task()
+    
+    if result.success:
+        # Continue workflow
+        await task.delegate(
+            event_type="reserve.slot.requested",
+            data={"slot_id": result.data["slot_id"]},
+            response_event="slot.reserved",
+        )
+    else:
+        await task.complete({"status": "unavailable"})
+
+@worker.on_result("slot.reserved")
+async def handle_reservation(result: ResultContext, context):
+    task = await result.restore_task()
+    await task.complete({
+        "status": "booked",
+        "confirmation": result.data["confirmation"]
+    })
+```
+
+**Topics:**
+- Receives: `action-requests` (task events), `action-results` (result events)
+- Publishes: `action-results` (completion), `action-requests` (delegation)
+
+**Delegation Patterns:**
+
+1. **Sequential:** One sub-task at a time with `task.delegate()`
+2. **Parallel:** Multiple sub-tasks with `task.delegate_parallel()`
+3. **Multi-level:** Workers can delegate to Workers (arbitrary depth)
+
+**See:** [examples/08-worker-basic](examples/08-worker-basic/) for complete example with parallel delegation.
+
+### 5.3 Planner Model (Strategic Reasoning)
+
+**Purpose:** Goal decomposition and task coordination using LLM reasoning.
+
+**Characteristics:**
+- Strategic: Reasons about goals and plans
+- Adaptive: Adjusts plan based on results
+- Coordinating: Assigns tasks to Workers
+- Stateful: Plan state persists across steps
+
+**Example:**
+
+```python
+from soorma import Planner
+from soorma.agents.planner import Goal, Plan, Task
+
+planner = Planner(name="research-coordinator")
+
+@planner.on_goal("research.topic")
+async def handle_research_goal(goal: Goal, context):
+    topic = goal.data["topic"]
+    
+    # LLM-powered planning
+    plan = await planner.reason_about_goal(goal, context)
+    
+    return Plan(
+        goal=goal,
+        tasks=[
+            Task("search_papers", assigned_to="researcher"),
+            Task("summarize", assigned_to="summarizer", depends_on=["search_papers"]),
+            Task("draft_report", assigned_to="writer", depends_on=["summarize"]),
+        ]
+    )
+```
+
+**Note:** Full Planner implementation coming in Stage 4. See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) for patterns.
+
+### 5.4 Comparison Matrix
+
+| Aspect | Tool | Worker | Planner |
+|--------|------|--------|---------|
+| **Execution** | Synchronous | Asynchronous | Asynchronous |
+| **State** | Stateless | Stateful (TaskContext) | Stateful (Plan) |
+| **Completion** | Auto (SDK) | Manual (`task.complete()`) | Manual (`plan.complete()`) |
+| **Delegation** | ❌ No | ✅ Yes | ✅ Yes (via Tasks) |
+| **Memory I/O** | ❌ No | ✅ Yes (task persistence) | ✅ Yes (plan state) |
+| **Use Case** | Fast operations | Multi-step workflows | Goal decomposition |
+| **Latency** | < 100ms | Seconds to minutes | Minutes to hours |
+| **Example** | Calculator, Validator | Order processing | Research coordinator |
+
+### 5.5 Response Event Pattern
+
+All action requests include a `response_event` field that tells the responding agent what event type to publish when complete:
+
+```python
+# Requester (Tool or Worker)
+await context.bus.request(
+    event_type="process.data.requested",
+    data={"input": "value"},
+    response_event="process.data.completed",  # Tell responder what to publish
+    correlation_id="req-123",
+)
+
+# Responder (Worker)
+@worker.on_task("process.data.requested")
+async def process_data(task: TaskContext, context):
+    result = {"output": "processed"}
+    await task.complete(result)  # Publishes to task.response_event
+```
+
+**Benefits:**
+- No hardcoded response topic inference
+- Caller controls response routing
+- Supports dynamic workflows
+- Enables result aggregation
+
+### 5.6 TaskContext Lifecycle
+
+The TaskContext enables async Workers to pause and resume execution:
+
+```mermaid
+graph TB
+    A[Worker receives action request] --> B[TaskContext.from_event]
+    B --> C[Handler: task.save]
+    C --> D[Handler: task.delegate]
+    D --> E[TaskContext saved to Memory]
+    E --> F[Action request published]
+    F --> G[Handler exits - context destroyed]
+    
+    H[Sub-task result arrives] --> I[ResultContext.restore_task]
+    I --> J[TaskContext restored from Memory]
+    J --> K[on_result handler executes]
+    K --> L{All results?}
+    L -->|No| C
+    L -->|Yes| M[task.complete]
+    M --> N[Response published]
+    N --> O[TaskContext deleted]
+```
+
+**Key Points:**
+1. TaskContext persists state across async boundaries
+2. Sub-task correlation_id links results to parent task
+3. Worker can delegate multiple times before completing
+4. Memory Service provides transactional persistence
+
+---
+
+## 6. Deployment Options
+
+### 6.1 Local Development
 
 ```bash
 soorma dev --build  # Builds and starts all services in Docker
@@ -304,7 +526,7 @@ soorma dev --build  # Builds and starts all services in Docker
 
 See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for complete development workflow.
 
-### 5.2 Single Server Docker Compose (Planned)
+### 6.2 Single Server Docker Compose (Planned)
 
 ```bash
 cd iac/docker-compose
@@ -318,13 +540,13 @@ Services:
 - NATS: Port 4222
 - PostgreSQL: Port 5432
 
-### 5.3 Kubernetes (Planned)
+### 6.3 Kubernetes (Planned)
 
 ```bash
 helm install soorma ./iac/helm/soorma-core
 ```
 
-### 5.4 Cloud Managed (Planned)
+### 6.4 Cloud Managed (Planned)
 
 Deploy to Soorma Cloud:
 ```bash
@@ -333,11 +555,11 @@ soorma deploy --target cloud
 
 ---
 
-## 6. Contributing
+## 7. Contributing
 
 We welcome contributions! See key areas:
 
-### 6.1 Priority Areas
+### 7.1 Priority Areas
 
 1. **SDK Enhancements:** New agent primitives, utilities
 2. **Service Improvements:** Performance, reliability, features
@@ -345,7 +567,7 @@ We welcome contributions! See key areas:
 4. **Documentation:** Guides, tutorials, API docs
 5. **Testing:** Increase coverage, add integration tests
 
-### 6.2 Development Workflow
+### 7.2 Development Workflow
 
 ```bash
 # Fork the repo and clone
@@ -367,7 +589,7 @@ git push origin feat/my-feature
 
 See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for testing guidelines.
 
-### 6.3 Code Review Checklist
+### 7.3 Code Review Checklist
 
 - [ ] Tests pass (`pytest tests/ -v`)
 - [ ] Code follows style guide (Ruff clean)
@@ -378,7 +600,7 @@ See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for testing guidelines.
 
 ---
 
-## 7. Roadmap
+## 8. Roadmap
 
 ### Current
 ✅ Core SDK with Agent primitives
@@ -408,21 +630,21 @@ See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for testing guidelines.
 
 ---
 
-## 8. Philosophy & Design Principles
+## 9. Philosophy & Design Principles
 
-### 8.1 Simplicity Over Complexity
+### 9.1 Simplicity Over Complexity
 Favor clear, simple solutions over clever, complex ones. Make common tasks easy.
 
-### 8.2 Developer Experience First
+### 9.2 Developer Experience First
 Every decision prioritizes the developer using Soorma. Fast feedback loops, clear errors, excellent docs.
 
-### 8.3 Autonomous Over Orchestrated
+### 9.3 Autonomous Over Orchestrated
 Agents should coordinate through events and reasoning, not hardcoded workflows.
 
-### 8.4 Open Over Closed
+### 9.4 Open Over Closed
 Open source by default. Extensible. No lock-in. Standard protocols.
 
-### 8.5 Production-Ready
+### 9.5 Production-Ready
 Not just demos. Real reliability, observability, and scalability from day one.
 
 ---

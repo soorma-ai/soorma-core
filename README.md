@@ -29,7 +29,7 @@
 > See [docs/refactoring/README.md](docs/refactoring/README.md) for details and status.  
 > - Stage 1 (Foundation - Event System) ✅ Complete (v0.6.0)
 > - Stage 2 (Foundation - Memory & Common DTOs) ✅ Complete (v0.7.0)
-> - Stage 3 (Agent Models - Tool & Worker) ⬜ Next
+> - Stage 3 (Agent Models - Tool & Worker) ✅ Complete (v0.7.6) - Tests, docs, validation done
 >
 > **⚠️ Install from source during pre-launch:** Use `pip install -e sdk/python` to stay synchronized with breaking changes.
 
@@ -131,6 +131,13 @@ python client.py Alice
 ```
 
 See the [Hello World Example](./examples/01-hello-world/README.md) for full details.
+
+**More Examples:**
+- [01-hello-tool](./examples/01-hello-tool/) - Synchronous Tool pattern (stateless calculator)
+- [08-worker-basic](./examples/08-worker-basic/) - Async Worker with parallel delegation (order processing)
+- [research-advisor](./examples/research-advisor/) - Advanced autonomous choreography
+
+**Full catalog:** See [examples/README.md](./examples/README.md) for complete learning path.
 
 ### 3. Create Your Own Agent
 

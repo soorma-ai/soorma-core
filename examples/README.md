@@ -141,18 +141,31 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./08-planner-worker-basic/"-->08-planner-worker-basic<!--/a--><br>(coming soon)</td>
+<td><a href="./08-worker-basic/">08-worker-basic</a></td>
+<td>
+• Worker pattern (async, stateful)<br>
+• TaskContext with persistence<br>
+• Sequential and parallel delegation<br>
+• Result aggregation (fan-out/fan-in)<br>
+• action-requests / action-results topics
+</td>
+<td>15 min</td>
+<td>01-hello-world<br>02-events-simple</td>
+</tr>
+
+<tr>
+<td><!--a href="./09-planner-worker-tool/"-->09-planner-worker-tool<!--/a--><br>(coming soon)</td>
 <td>
 • Trinity pattern (Planner-Worker-Tool)<br>
 • Goal decomposition<br>
 • Task execution
 </td>
 <td>20 min</td>
-<td>01-hello-world</td>
+<td>01-hello-tool<br>08-worker-basic</td>
 </tr>
 
 <tr>
-<td><!--a href="./09-app-research-advisor/"-->09-app-research-advisor<!--/a--><br>(coming soon)</td>
+<td><!--a href="./10-app-research-advisor/"-->10-app-research-advisor<!--/a--><br>(coming soon)</td>
 <td>
 • Autonomous Choreography pattern<br>
 • ChoreographyPlanner SDK class<br>
@@ -164,14 +177,14 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./10-multi-turn-conversation/"-->10-multi-turn-conversation<!--/a--><br>(coming soon)</td>
+<td><!--a href="./11-multi-turn-conversation/"-->11-multi-turn-conversation<!--/a--><br>(coming soon)</td>
 <td>
 • Stateful conversations<br>
 • Follow-up handling<br>
 • Context preservation
 </td>
 <td>20 min</td>
-<td>06-memory-episodic<br>08-planner-worker-basic</td>
+<td>06-memory-episodic<br>09-planner-worker-tool</td>
 </tr>
 </table>
 
@@ -190,9 +203,10 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Store facts for RAG/knowledge retrieval | Semantic Memory | [05-memory-semantic](./05-memory-semantic/) |
 | Build multi-agent chatbot with all memory types | Multi-Agent + All Memory Types | [06-memory-episodic](./06-memory-episodic/) |
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
-| Break down goals into tasks | Planner-Worker Pattern | 08-planner-worker-basic (coming soon) |
-| Build a fully autonomous multi-agent system | Autonomous Choreography | 09-app-research-advisor (coming soon) |
-| Handle multi-turn conversations | Stateful Conversation | 10-multi-turn-conversation (coming soon) |
+| Handle async tasks with delegation | Worker Pattern | [08-worker-basic](./08-worker-basic/) |
+| Break down goals into tasks | Planner-Worker Pattern | 09-planner-worker-tool (coming soon) |
+| Build a fully autonomous multi-agent system | Autonomous Choreography | 10-app-research-advisor (coming soon) |
+| Handle multi-turn conversations | Stateful Conversation | 11-multi-turn-conversation (coming soon) |
 
 ---
 
