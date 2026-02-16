@@ -402,6 +402,5 @@ await context.bus.request(**child_params)
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical design and implementation
 - [Agent Patterns](../agent_patterns/README.md) - Agent orchestration patterns
-- [Messaging Patterns](../MESSAGING_PATTERNS.md) - Detailed queue/broadcast/load-balancing
 - [Refactoring Plan](../refactoring/sdk/01-EVENT-SYSTEM.md) - Stage 1 implementation details
 

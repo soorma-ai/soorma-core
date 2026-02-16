@@ -4,7 +4,7 @@
 This document defines the platform architecture, services, and infrastructure of the `soorma-core` open-source repository.
 
 **For Developer Experience:** See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)  
-**For Agent Patterns:** See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)
+**For Agent Patterns:** See [docs/agent_patterns/README.md](docs/agent_patterns/README.md)
 
 ---
 
@@ -57,7 +57,7 @@ graph TB
     style NATS fill:#d0d0d0
 ```
 
-**See also:** [Messaging Patterns](./docs/MESSAGING_PATTERNS.md) for detailed queue/broadcast/load-balancing patterns.
+**See also:** [Event System](./docs/event_system/README.md#messaging-patterns) for detailed queue/broadcast/load-balancing patterns.
 
 ### 2.2 Registry Service
 
@@ -127,7 +127,7 @@ await context.memory.log_interaction(agent_id, role, content, user_id)
 history = await context.memory.get_recent_history(agent_id, user_id, limit)
 ```
 
-See [docs/MEMORY_PATTERNS.md](docs/MEMORY_PATTERNS.md) for detailed usage patterns.
+See [docs/memory_system/README.md](docs/memory_system/README.md) for detailed usage patterns.
 
 ### 2.4 Gateway (Planned)
 
@@ -257,9 +257,7 @@ graph TB
 
 Soorma uses **8 fixed topics** for routing events. Topics are stable, well-defined channels that organize event flow.
 
-**See [docs/TOPICS.md](docs/TOPICS.md) for the complete topics reference.**
-
-**See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md) for event-driven patterns and usage.**
+**See [docs/event_system/README.md](docs/event_system/README.md) for topics reference and event-driven patterns.**
 
 ### 4.3 Event Registration
 
@@ -282,15 +280,15 @@ worker = Worker(
 )
 ```
 
-**See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md) for complete examples and patterns.**
+**See [docs/event_system/README.md](docs/event_system/README.md) for complete examples and patterns.**
 
 ### 4.4 Dynamic Discovery
 
 Agents can discover available events at runtime from the Registry, enabling dynamic workflows and LLM-based event selection.
 
-**See [docs/EVENT_PATTERNS.md](docs/EVENT_PATTERNS.md#event-discovery) for discovery API and examples.**
+**See [docs/discovery/README.md](docs/discovery/README.md) for discovery API and examples.**
 
-**See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) for Autonomous Choreography pattern.**
+**See [docs/agent_patterns/README.md](docs/agent_patterns/README.md) for Autonomous Choreography pattern.**
 
 ---
 
@@ -651,9 +649,10 @@ Not just demos. Real reliability, observability, and scalability from day one.
 
 **Related Documentation:**
 - [Developer Guide](docs/DEVELOPER_GUIDE.md) - Developer experience and workflows
-- [Design Patterns](docs/DESIGN_PATTERNS.md) - Agent orchestration patterns
-- [Event Patterns](docs/EVENT_PATTERNS.md) - Event-driven communication
-- [Memory Patterns](docs/MEMORY_PATTERNS.md) - Memory types and usage
+- [Agent Patterns](docs/agent_patterns/README.md) - Tool, Worker, Planner models and DisCo pattern
+- [Event System](docs/event_system/README.md) - Event-driven architecture, topics, messaging
+- [Memory System](docs/memory_system/README.md) - CoALA framework and memory types
+- [Discovery](docs/discovery/README.md) - Registry and capability discovery
 - [Examples](examples/) - Working implementations
 
 **Getting Started:** See [README.md](README.md) for installation and quick start.

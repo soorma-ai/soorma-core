@@ -597,6 +597,5 @@ data = response.value
 
 ## Related Documentation
 
-- [README.md](./README.md) - User guide
+- [README.md](./README.md) - User guide and usage patterns
 - [Service Implementation](../../services/memory/ARCHITECTURE.md)
-- [MEMORY_PATTERNS.md](../MEMORY_PATTERNS.md) - Detailed patterns guide

@@ -227,7 +227,7 @@ The agent will:
 3. **Don't Mix Patterns Incorrectly**
    - Trinity and Worker patterns serve different purposes
    - Semantic vs Working memory have different use cases
-   - Refer to docs/DESIGN_PATTERNS.md when unsure
+   - Refer to docs/agent_patterns/README.md when unsure
 
 4. **Don't Skip Testing**
    - Always run generated code
@@ -423,9 +423,10 @@ When generating Soorma agent code:
 ## Resources
 
 - **Pattern Catalog**: [examples/README.md](../examples/README.md#pattern-catalog)
-- **Design Patterns**: [docs/DESIGN_PATTERNS.md](./DESIGN_PATTERNS.md)
-- **Event Patterns**: [docs/EVENT_PATTERNS.md](./EVENT_PATTERNS.md)
-- **Memory Patterns**: [docs/MEMORY_PATTERNS.md](./MEMORY_PATTERNS.md)
+- **Agent Patterns**: [agent_patterns/README.md](./agent_patterns/README.md)
+- **Event System**: [event_system/README.md](./event_system/README.md)
+- **Memory System**: [memory_system/README.md](./memory_system/README.md)
+- **Discovery**: [discovery/README.md](./discovery/README.md)
 
 ---
 

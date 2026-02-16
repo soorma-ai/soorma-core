@@ -535,7 +535,6 @@ async def publish_event(
 ## Related Documentation
 
 - [README.md](./README.md) - User guide and patterns
-- [Messaging Patterns](../MESSAGING_PATTERNS.md) - Detailed pattern examples
 - [Agent Patterns](../agent_patterns/ARCHITECTURE.md) - Event subscription model
 - [Event Service](../../services/event-service/README.md) - Service implementation
 - [Refactoring Plan](../refactoring/arch/01-EVENT-SERVICE.md) - Stage 1 design decisions
