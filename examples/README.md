@@ -276,9 +276,10 @@ python client.py
 ## Additional Resources
 
 - **Architecture**: See [../ARCHITECTURE.md](../ARCHITECTURE.md) for platform service details
-- **Design Patterns**: See [../docs/DESIGN_PATTERNS.md](../docs/DESIGN_PATTERNS.md) for agent patterns
-- **Memory Patterns**: See [../docs/MEMORY_PATTERNS.md](../docs/MEMORY_PATTERNS.md) for memory usage guidance
-- **Event Patterns**: See [../docs/EVENT_PATTERNS.md](../docs/EVENT_PATTERNS.md) for event-driven architecture
+- **Agent Patterns**: See [../docs/agent_patterns/README.md](../docs/agent_patterns/README.md) for Tool, Worker, Planner models
+- **Event System**: See [../docs/event_system/README.md](../docs/event_system/README.md) for event-driven architecture
+- **Memory System**: See [../docs/memory_system/README.md](../docs/memory_system/README.md) for CoALA framework and memory types
+- **Discovery**: See [../docs/discovery/README.md](../docs/discovery/README.md) for Registry and capability discovery
 - **AI Assistant Guide**: See [../docs/AI_ASSISTANT_GUIDE.md](../docs/AI_ASSISTANT_GUIDE.md) for using examples with Copilot/Cursor
 - **Blog**: Visit our [blog](https://soorma.ai/blog) for deep dives and use cases
 

@@ -29,7 +29,7 @@ Event-driven architecture allows agents to communicate without direct coupling. 
 
 This example demonstrates event publishing, subscription, and event chains - where one event handler triggers another by publishing a new event.
 
-**Note:** Soorma uses fixed topics for type safety. Domain events (orders, inventory, payments) use the `business-facts` topic. See [TOPICS.md](../../docs/TOPICS.md) for details.
+**Note:** Soorma uses fixed topics for type safety. Domain events (orders, inventory, payments) use the `business-facts` topic. See [Event System](../../docs/event_system/README.md) for details.
 
 ## Use Case
 
@@ -319,5 +319,5 @@ async def handle_order(event: EventEnvelope, context: PlatformContext):
 ---
 
 **📖 Additional Resources:**
-- [Event Patterns Documentation](../../docs/EVENT_PATTERNS.md)
-- [Design Patterns](../../docs/DESIGN_PATTERNS.md)
+- [Event System Documentation](../../docs/event_system/README.md)
+- [Agent Patterns](../../docs/agent_patterns/README.md)

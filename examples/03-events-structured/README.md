@@ -58,7 +58,7 @@ TIER2_ROUTE_EVENT = EventDefinition(
 )
 ```
 
-**Note:** In this example, `ticket.created` uses `EventTopic.BUSINESS_FACTS` (domain event), while routing decisions use `EventTopic.ACTION_REQUESTS` (requesting agents to handle tickets). See [TOPICS.md](../../docs/TOPICS.md).
+**Note:** In this example, `ticket.created` uses `EventTopic.BUSINESS_FACTS` (domain event), while routing decisions use `EventTopic.ACTION_REQUESTS` (requesting agents to handle tickets). See [Event System](../../docs/event_system/README.md).
 
 When agents declare `events_consumed` and `events_produced` with `EventDefinition` objects, the SDK automatically registers them:
 
@@ -396,5 +396,5 @@ This prevents LLMs from "hallucinating" event names that don't exist.
 ---
 
 **📖 Additional Resources:**
-- [Event Patterns Documentation](../../docs/EVENT_PATTERNS.md)
-- [Design Patterns - Autonomous Choreography](../../docs/DESIGN_PATTERNS.md)
+- [Event System Documentation](../../docs/event_system/README.md)
+- [Agent Patterns - Autonomous Choreography](../../docs/agent_patterns/README.md)

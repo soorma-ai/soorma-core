@@ -181,5 +181,5 @@ Expected output:
 ---
 
 **📖 Additional Resources:**
-- [Event Service Documentation](../../docs/EVENT_PATTERNS.md)
+- [Event System Documentation](../../docs/event_system/README.md)
 - [Platform Architecture](../../ARCHITECTURE.md)

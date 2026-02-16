@@ -155,4 +155,4 @@ Service                           SDK
 - [../sdk/README.md](../sdk/README.md) - SDK refactoring index
 - [../README.md](../README.md) - Overall refactoring index
 - [../../ARCHITECTURE.md](../../ARCHITECTURE.md) - Current platform architecture
-- [../../TOPICS.md](../../TOPICS.md) - Topic definitions
+- [../../docs/event_system/README.md](../../docs/event_system/README.md) - Event system and topics

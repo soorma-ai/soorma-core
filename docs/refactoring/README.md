@@ -805,8 +805,8 @@ arch/06-USER-AGENT         ←→    (Standalone)
 ## Related Documentation
 
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - Current platform architecture
-- [DESIGN_PATTERNS.md](../DESIGN_PATTERNS.md) - Agent design patterns
-- [EVENT_PATTERNS.md](../EVENT_PATTERNS.md) - Event-driven patterns
-- [TOPICS.md](../TOPICS.md) - Topic definitions
-- [Memory ARCHITECTURE.md](../../services/memory/ARCHITECTURE.md) - Memory service design
+- [Agent Patterns](../docs/agent_patterns/README.md) - Tool, Worker, Planner models
+- [Event System](../docs/event_system/README.md) - Event-driven architecture and topics
+- [Memory System](../docs/memory_system/README.md) - CoALA framework
+- [Memory Service ARCHITECTURE.md](../../services/memory/ARCHITECTURE.md) - Memory service design
 - [EXAMPLES_REFACTOR_PLAN.md](../EXAMPLES_REFACTOR_PLAN.md) - Progressive examples roadmap

@@ -229,7 +229,7 @@ After migration, run these checks:
 1. **No deprecated patterns:**
    ```bash
    # Should return no results
-   grep -r "bus.publish(\"" --include="*.py"
+   grep -r "bus.publish("" --include="*.py"
    ```
 
 2. **All handlers use explicit completion:**

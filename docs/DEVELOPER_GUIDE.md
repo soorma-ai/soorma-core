@@ -520,9 +520,10 @@ docker compose -f production.yml up -d
 ## Related Documentation
 
 - [Architecture](../ARCHITECTURE.md) - Platform services and infrastructure
-- [Design Patterns](./DESIGN_PATTERNS.md) - Agent orchestration patterns
-- [Event Patterns](./EVENT_PATTERNS.md) - Event-driven communication patterns
-- [Memory Patterns](./MEMORY_PATTERNS.md) - Memory types and usage
+- [Agent Patterns](./agent_patterns/README.md) - Tool, Worker, Planner models and DisCo pattern
+- [Event System](./event_system/README.md) - Event-driven architecture, topics, messaging
+- [Memory System](./memory_system/README.md) - CoALA framework and memory types
+- [Discovery](./discovery/README.md) - Registry and capability discovery
 - [AI Assistant Guide](./AI_ASSISTANT_GUIDE.md) - Using examples with Copilot/Cursor for rapid development
 - [Examples](../examples/) - Working implementations
 

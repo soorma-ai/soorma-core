@@ -377,6 +377,6 @@ Watches flow: user.request → router (LLM detects intent) → knowledge.store o
 ---
 
 **📖 Additional Resources:**
-- [Memory Patterns Documentation](../../docs/MEMORY_PATTERNS.md)
-- [Event Patterns Documentation](../../docs/EVENT_PATTERNS.md)
-- [Design Patterns - DisCo Trinity](../../docs/DESIGN_PATTERNS.md)
+- [Memory System Documentation](../../docs/memory_system/README.md)
+- [Event System Documentation](../../docs/event_system/README.md)
+- [Agent Patterns - DisCo Trinity](../../docs/agent_patterns/README.md)
