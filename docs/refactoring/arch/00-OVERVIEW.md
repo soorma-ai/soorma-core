@@ -228,6 +228,5 @@ See [README.md](README.md) for full implementation order. Architecture documents
 
 - [../sdk/00-OVERVIEW.md](../sdk/00-OVERVIEW.md) - SDK refactoring overview
 - [../../ARCHITECTURE.md](../../ARCHITECTURE.md) - Current platform architecture
-- [../../DESIGN_PATTERNS.md](../../DESIGN_PATTERNS.md) - Agent design patterns
-- [../../EVENT_PATTERNS.md](../../EVENT_PATTERNS.md) - Event-driven patterns
-- [../../TOPICS.md](../../TOPICS.md) - Topic definitions
+- [../../docs/agent_patterns/README.md](../../docs/agent_patterns/README.md) - Agent design patterns
+- [../../docs/event_system/README.md](../../docs/event_system/README.md) - Event-driven architecture and topics

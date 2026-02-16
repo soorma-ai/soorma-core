@@ -319,10 +319,10 @@ See [memory_api_demo.py](memory_api_demo.py) and [planner.py](planner.py) for ad
 - **[06-memory-episodic](../06-memory-episodic/)** - Conversation history and audit trails
 - **[08-planner-worker-basic](../08-planner-worker-basic/)** - Full Planner-Worker pattern (coming soon)
 - **[09-app-research-advisor](../09-app-research-advisor/)** - Advanced choreography (coming soon)
-- **[docs/MEMORY_PATTERNS.md](../../docs/MEMORY_PATTERNS.md)** - Deep dive on memory types
+- **[Memory System](../../docs/memory_system/README.md)** - Deep dive on memory types
 
 ## Additional Resources
 
-- [Memory Patterns Guide](../../docs/MEMORY_PATTERNS.md)
+- [Memory System Guide](../../docs/memory_system/README.md)
 - [WorkflowState API Reference](../../sdk/python/README.md#workflowstate)
-- [Design Patterns](../../docs/DESIGN_PATTERNS.md) - Trinity and Choreography patterns
+- [Agent Patterns](../../docs/agent_patterns/README.md) - Trinity and Choreography patterns

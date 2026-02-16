@@ -442,7 +442,7 @@ async def handle_research_goal(goal: Goal, context):
     )
 ```
 
-**Note:** Full Planner implementation coming in Stage 4. See [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) for patterns.
+**Note:** Full Planner implementation coming in Stage 4. See [docs/agent_patterns/README.md](docs/agent_patterns/README.md) for patterns.
 
 ### 5.4 Comparison Matrix
 

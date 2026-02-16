@@ -450,7 +450,7 @@ async def delete_session(self) -> None:
 
 ## Next Steps
 
-- **[docs/MEMORY_PATTERNS.md](../../docs/MEMORY_PATTERNS.md)** - Comprehensive memory patterns guide
-- **[docs/EVENT_PATTERNS.md](../../docs/EVENT_PATTERNS.md)** - DisCo event patterns and best practices
+- **[Memory System](../../docs/memory_system/README.md)** - Comprehensive memory patterns guide
+- **[Event System](../../docs/event_system/README.md)** - DisCo event patterns and best practices
 - **08-planner-worker-basic (coming soon)** - Trinity pattern with goal decomposition
 

@@ -26,7 +26,7 @@ The Soorma platform uses an event-driven architecture where agents communicate t
 
 Topics are **stable, well-defined channels** for routing events. They are defined in `soorma-common` and used consistently across all services.
 
-**See [../../../docs/TOPICS.md](../../../docs/TOPICS.md) for the complete topics reference, including purpose, publishers, subscribers, and usage guidance.**
+**See [../../../docs/event_system/README.md](../../../docs/event_system/README.md) for the complete topics reference, including purpose, publishers, subscribers, and usage guidance.**
 
 ### Topic vs Event Type
 
@@ -188,7 +188,7 @@ Client                 Planner              Worker               Event Service
 | `billing.*` | `billing.usage` | `billing-events` | Cost tracking |
 | `notification.*` | `notification.email` | `notification-events` | User alerts |
 
-**For usage patterns, see [../../../docs/EVENT_PATTERNS.md](../../../docs/EVENT_PATTERNS.md).**
+**For usage patterns, see [../../../docs/event_system/README.md](../../../docs/event_system/README.md).**
 
 ## Extending the Architecture
 

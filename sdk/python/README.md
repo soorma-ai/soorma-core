@@ -175,10 +175,10 @@ The `soorma dev` command runs infrastructure (Registry, NATS, Event Service, Mem
 **Key Guides:**
 - [Examples Guide](https://github.com/soorma-ai/soorma-core/blob/main/examples/README.md) - Progressive learning path from hello-world to advanced patterns
 - [Developer Guide](https://github.com/soorma-ai/soorma-core/blob/main/docs/DEVELOPER_GUIDE.md) - Development workflows and testing
-- [Design Patterns](https://github.com/soorma-ai/soorma-core/blob/main/docs/DESIGN_PATTERNS.md) - Autonomous Choreography and architectural patterns
-- [Event Patterns](https://github.com/soorma-ai/soorma-core/blob/main/docs/EVENT_PATTERNS.md) - Event-driven communication
-- [Memory Patterns](https://github.com/soorma-ai/soorma-core/blob/main/docs/MEMORY_PATTERNS.md) - CoALA framework memory types
-- [Topics Guide](https://github.com/soorma-ai/soorma-core/blob/main/docs/TOPICS.md) - Complete list of event topics
+- [Agent Patterns](https://github.com/soorma-ai/soorma-core/blob/main/docs/agent_patterns/README.md) - Tool, Worker, Planner models and DisCo pattern
+- [Event System](https://github.com/soorma-ai/soorma-core/blob/main/docs/event_system/README.md) - Event-driven architecture, topics, messaging
+- [Memory System](https://github.com/soorma-ai/soorma-core/blob/main/docs/memory_system/README.md) - CoALA framework and memory types
+- [Discovery](https://github.com/soorma-ai/soorma-core/blob/main/docs/discovery/README.md) - Registry and capability discovery
 
 **🎓 Learning Path:**
 1. [01-hello-world](https://github.com/soorma-ai/soorma-core/tree/main/examples/01-hello-world) - Basic Worker pattern
