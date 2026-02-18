@@ -1,7 +1,7 @@
 # Soorma Core Refactoring Index
 
-**Status:** 📋 Stage 1-2.1 Complete | 🔥 Stage 3 Phase 1-2 Complete (90%) | Release: 0.7.5 (January 30, 2026)  
-**Last Updated:** February 12, 2026 - Stage 3 Phase 2 (Worker Model) Implementation Complete
+**Status:** 📋 Stage 1-2.1 Complete | 🔥 Stage 3 Phase 1-2 Complete (90%) | 🟡 Stage 4 Planning Approved | Release: 0.7.5 (January 30, 2026)  
+**Last Updated:** February 17, 2026 - Stage 4 Master Plan Approved, Implementation Starting
 
 ---
 
@@ -437,11 +437,17 @@ Dependencies: Stage 1 (event system) and Stage 2 (memory) must be complete.
 
 ---
 
-### **Stage 4: Agent Models - Planner** 🟡
+### **Stage 4: Agent Models - Planner** 🟡 ✅ Planning Approved
+
+**Status:** 📋 Master Plan Approved (February 17, 2026) | Ready for Phase 1 Implementation
+
+**Master Plan:** [docs/agent_patterns/plans/MASTER_PLAN_Stage4_Planner.md](../agent_patterns/plans/MASTER_PLAN_Stage4_Planner.md)
 
 **Documents:** [sdk/06-PLANNER-MODEL.md](sdk/06-PLANNER-MODEL.md) + [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md)
 
-**Tasks:** RF-SDK-006, RF-SDK-015, RF-SDK-016, RF-ARCH-010, RF-ARCH-011
+**Tasks:** RF-SDK-006, RF-SDK-015, RF-SDK-016, RF-SDK-023, RF-ARCH-010, RF-ARCH-011
+
+**Deferred to Stage 5+:** RF-SDK-017 (EventSelector), RF-SDK-018 (EventToolkit helpers) - See [DEFERRED_WORK.md](DEFERRED_WORK.md)
 
 **Copilot Agent Prompt:**
 ```
@@ -470,11 +476,40 @@ Key deliverables:
    - Provide query API for progress timelines
 5. Update research-advisor example with ChoreographyPlanner
 6. Write tests for state machine, ChoreographyPlanner, and Tracker (TDD)
-
-Dependencies: Stage 1 (events), Stage 2 (memory), Stage 3 (worker) must be complete.
 ```
-
 **Completion Criteria:**
+- [ ] Planner supports on_goal() and on_transition() (RF-SDK-006)
+- [ ] PlanContext state machine works with event-based transitions
+- [ ] PlannerDecision types provide type safety (RF-SDK-015)
+- [ ] ChoreographyPlanner handles autonomous orchestration (RF-SDK-016)
+- [ ] ChoreographyPlanner supports BYO LLM model (any LiteLLM-compatible provider)
+- [ ] Handler-only event registration (RF-SDK-023)
+- [ ] Tracker Service stores and queries progress events (RF-ARCH-010, RF-ARCH-011)
+- [ ] research-advisor example refactored (400 → 50 lines)
+- [ ] All 40+ tests pass
+
+**Phases:**
+- **Phase 1 (Days 1-4):** PlanContext state machine + decorators
+- **Phase 2 (Days 5-7):** PlannerDecision types + ChoreographyPlanner class
+- **Phase 3 (Days 8-10):** Example refactor + Tracker Service
+- **Phase 4 (Days 11-12):** Documentation + migration guide
+
+---
+
+## Deferred Work Tracking
+
+**Tracking Document:** [DEFERRED_WORK.md](DEFERRED_WORK.md)
+
+Items intentionally deferred from Stage 4 for future implementation:
+
+| Item | Reason | Target Stage | Effort |
+|------|--------|--------------|--------|
+| **RF-SDK-017:** EventSelector utility | Lower priority than ChoreographyPlanner | Stage 5 (Discovery) | 0.5-1 day |
+| **RF-SDK-018:** EventToolkit.format_for_llm_selection() | Already exists in EventToolkit | ✅ Complete | N/A |
+| **Conditional state transitions** | Simple event-based transitions sufficient for MVP | Stage 5 or 6 | 2-3 days |
+| **Tracker Service UI** | FDE: Use curl/Postman for now | Post-launch | 1-2 weeks |
+
+**Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.ria:**
 - ✅ Planner supports on_goal() and on_transition()
 - ✅ PlanContext state machine works
 - ✅ PlannerDecision types provide type safety
