@@ -342,11 +342,23 @@ class GoalContext:
 
 #### RED: Write Failing Tests
 
-- [ ] **Task 4.1:** Write test for `@planner.on_goal()` decorator registration ✅ (Status: Not Started)
-- [ ] **Task 4.2:** Write test for `on_goal()` creates GoalContext ✅ (Status: Not Started)
-- [ ] **Task 4.3:** Write test for `@planner.on_transition()` decorator ✅ (Status: Not Started)
-- [ ] **Task 4.4:** Write test for transition handler routes by correlation_id ✅ (Status: Not Started)
-- [ ] **Task 4.5:** Write test for handler-only event registration (RF-SDK-023) ✅ (Status: Not Started)
+- [x] **Task 4.1:** Write test for `@planner.on_goal()` decorator registration ✅ (Status: Completed)
+- [x] **Task 4.2:** Write test for `on_goal()` creates GoalContext ✅ (Status: Completed)
+- [x] **Task 4.3:** Write test for `@planner.on_transition()` decorator ✅ (Status: Completed)
+- [x] **Task 4.4:** Write test for transition handler routes by correlation_id ✅ (Status: Completed)
+- [x] **Task 4.5:** Write test for handler-only event registration (RF-SDK-023) ✅ (Status: Completed)
+
+#### GREEN: Implement Planner Decorators
+
+- [x] **Task 4.6:** Implement `on_goal()` decorator in planner.py ✅ (Status: Completed)
+- [x] **Task 4.7:** Implement `GoalContext` class ✅ (Status: Completed)
+- [x] **Task 4.8:** Implement `on_transition()` decorator ✅ (Status: Completed)
+- [x] **Task 4.9:** Update Planner `__init__` for handler tracking ✅ (Status: Completed)
+- [x] **Task 4.10:** Verify handler-only registration (RF-SDK-023) ✅ (Status: Completed)
+
+**Deliverables:**
+- ✅ `sdk/python/tests/test_planner.py` (11 passing tests)
+- ✅ `sdk/python/soorma/agents/planner.py` (GoalContext + decorators updated)
 
 #### GREEN: Implement Planner Decorators
 
