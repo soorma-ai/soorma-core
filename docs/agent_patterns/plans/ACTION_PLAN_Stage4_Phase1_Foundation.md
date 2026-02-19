@@ -294,23 +294,23 @@ class GoalContext:
 
 #### RED: Write Failing Tests
 
-- [ ] **Task 2.1:** Write test for `PlanContext.to_dict()` and `from_dict()` 🔴 (Status: Not Started)
-- [ ] **Task 2.2:** Write test for `PlanContext.save()` calls Memory Service 🔴 (Status: Not Started)
-- [ ] **Task 2.3:** Write test for `PlanContext.restore()` from Memory 🔴 (Status: Not Started)
-- [ ] **Task 2.4:** Write test for `PlanContext.restore_by_correlation()` 🔴 (Status: Not Started)
-- [ ] **Task 2.5:** Write test for `get_next_state()` with transitions 🔴 (Status: Not Started)
+- [x] **Task 2.1:** Write test for `PlanContext.to_dict()` and `from_dict()` ✅ (Status: Completed)
+- [x] **Task 2.2:** Write test for `PlanContext.save()` calls Memory Service ✅ (Status: Completed)
+- [x] **Task 2.3:** Write test for `PlanContext.restore()` from Memory ✅ (Status: Completed)
+- [x] **Task 2.4:** Write test for `PlanContext.restore_by_correlation()` ✅ (Status: Completed)
+- [x] **Task 2.5:** Write test for `get_next_state()` with transitions ✅ (Status: Completed)
 
 #### GREEN: Implement PlanContext Core
 
-- [ ] **Task 2.6:** Implement `to_dict()` and `from_dict()` methods ✅ (Status: Not Started)
-- [ ] **Task 2.7:** Implement `save()` using `context.memory.store_plan_context()` ✅ (Status: Not Started)
-- [ ] **Task 2.8:** Implement `restore()` class method ✅ (Status: Not Started)
-- [ ] **Task 2.9:** Implement `restore_by_correlation()` class method ✅ (Status: Not Started)
-- [ ] **Task 2.10:** Implement `get_next_state(event)` with transition matching ✅ (Status: Not Started)
+- [x] **Task 2.6:** Implement `to_dict()` and `from_dict()` methods ✅ (Status: Completed)
+- [x] **Task 2.7:** Implement `save()` using `context.memory.store_plan_context()` ✅ (Status: Completed)
+- [x] **Task 2.8:** Implement `restore()` class method ✅ (Status: Completed)
+- [x] **Task 2.9:** Implement `restore_by_correlation()` class method ✅ (Status: Completed)
+- [x] **Task 2.10:** Implement `get_next_state(event)` with transition matching ✅ (Status: Completed)
 
 **Deliverables:**
-- `sdk/python/tests/agents/test_plan_context.py` (~100 lines)
-- `sdk/python/soorma/plan_context.py` (core methods, ~200 lines total)
+- ✅ `sdk/python/tests/agents/test_plan_context.py` (11 passing tests)
+- ✅ `sdk/python/soorma/plan_context.py` (core methods implemented)
 
 ---
 

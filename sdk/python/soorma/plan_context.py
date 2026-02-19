@@ -117,9 +117,24 @@ class PlanContext:
         Persist plan context to Memory Service.
         
         Called after state transitions to ensure plan state is durable.
-        Implementation in Day 2.
         """
-        raise NotImplementedError("Day 2: Task 2.7")
+        if not self._context:
+            raise ValueError("PlanContext._context is required for save()")
+        
+        # Serialize plan state
+        state_dict = self.to_dict()
+        
+        # Store in Memory Service using wrapper method
+        await self._context.memory.store_plan_context(
+            plan_id=self.plan_id,
+            session_id=self.session_id,
+            goal_event=self.goal_event,
+            goal_data=self.goal_data,
+            response_event=self.response_event,
+            state=state_dict,
+            current_state=self.current_state,
+            correlation_ids=[self.plan_id],  # Track plan's own correlation
+        )
     
     @classmethod
     async def restore(
@@ -136,10 +151,20 @@ class PlanContext:
             
         Returns:
             PlanContext instance if found, None otherwise
-            
-        Implementation in Day 2.
         """
-        raise NotImplementedError("Day 2: Task 2.8")
+        # Get plan from Memory Service
+        plan_data = await context.memory.get_plan_context(plan_id)
+        
+        if not plan_data:
+            return None
+        
+        # Extract state from response
+        state = plan_data.get("state", {})
+        if not state:
+            return None
+        
+        # Deserialize using from_dict
+        return cls.from_dict(state, context)
     
     @classmethod
     async def restore_by_correlation(
@@ -156,10 +181,20 @@ class PlanContext:
             
         Returns:
             PlanContext instance if found, None otherwise
-            
-        Implementation in Day 2.
         """
-        raise NotImplementedError("Day 2: Task 2.9")
+        # Get plan by correlation_id from Memory Service
+        plan_data = await context.memory.get_plan_by_correlation(correlation_id)
+        
+        if not plan_data:
+            return None
+        
+        # Extract state from response
+        state = plan_data.get("state", {})
+        if not state:
+            return None
+        
+        # Deserialize using from_dict
+        return cls.from_dict(state, context)
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -167,10 +202,27 @@ class PlanContext:
         
         Returns:
             Dictionary representation for persistence
-            
-        Implementation in Day 2.
         """
-        raise NotImplementedError("Day 2: Task 2.6")
+        # Serialize state machine (StateConfig -> dict)
+        state_machine_dict = {}
+        for state_name, state_config in self.state_machine.items():
+            # Use Pydantic's model_dump() method
+            state_machine_dict[state_name] = state_config.model_dump()
+        
+        return {
+            "plan_id": self.plan_id,
+            "goal_event": self.goal_event,
+            "goal_data": self.goal_data,
+            "response_event": self.response_event,
+            "status": self.status,
+            "state_machine": state_machine_dict,
+            "current_state": self.current_state,
+            "results": self.results,
+            "parent_plan_id": self.parent_plan_id,
+            "session_id": self.session_id,
+            "user_id": self.user_id,
+            "tenant_id": self.tenant_id,
+        }
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any], context: 'PlatformContext') -> 'PlanContext':
@@ -183,10 +235,29 @@ class PlanContext:
             
         Returns:
             PlanContext instance
-            
-        Implementation in Day 2.
         """
-        raise NotImplementedError("Day 2: Task 2.6")
+        # Deserialize state machine (dict -> StateConfig)
+        state_machine_dict = data.get("state_machine", {})
+        state_machine = {}
+        for state_name, state_data in state_machine_dict.items():
+            # Use Pydantic's model_validate() to create StateConfig from dict
+            state_machine[state_name] = StateConfig.model_validate(state_data)
+        
+        return cls(
+            plan_id=data["plan_id"],
+            goal_event=data["goal_event"],
+            goal_data=data["goal_data"],
+            response_event=data["response_event"],
+            status=data["status"],
+            state_machine=state_machine,
+            current_state=data["current_state"],
+            results=data["results"],
+            parent_plan_id=data.get("parent_plan_id"),
+            session_id=data.get("session_id"),
+            user_id=data["user_id"],
+            tenant_id=data["tenant_id"],
+            _context=context,
+        )
     
     # State machine methods (Day 2-3)
     
@@ -199,10 +270,25 @@ class PlanContext:
             
         Returns:
             Next state name if transition found, None otherwise
-            
-        Implementation in Day 2.
         """
-        raise NotImplementedError("Day 2: Task 2.10")
+        # Get current state configuration
+        current_state_config = self.state_machine.get(self.current_state)
+        if not current_state_config:
+            return None
+        
+        # Check transitions for matching event
+        if not current_state_config.transitions:
+            return None
+        
+        # Get event type from event object
+        event_type = event.event_type if hasattr(event, 'event_type') else str(event)
+        
+        # Find matching transition
+        for transition in current_state_config.transitions:
+            if transition.on_event == event_type:
+                return transition.to_state
+        
+        return None
     
     async def execute_next(self, trigger_event: Optional[Any] = None) -> None:
         """
