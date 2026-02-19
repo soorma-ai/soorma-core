@@ -29,6 +29,7 @@ import os
 from soorma_common.events import EventTopic
 from soorma_common.models import (
     TaskContextResponse,
+    PlanContextResponse,
     WorkingMemoryDeleteKeyResponse,
     WorkingMemoryDeletePlanResponse,
 )
@@ -635,6 +636,134 @@ class MemoryClient:
         """
         client = await self._ensure_client()
         return await client.get_task_by_subtask(sub_task_id, tenant_id=tenant_id, user_id=user_id)
+
+    # Plan Context (for Planner state machine persistence - RF-SDK-006)
+
+    async def store_plan_context(
+        self,
+        plan_id: str,
+        session_id: Optional[str],
+        goal_event: str,
+        goal_data: Dict[str, Any],
+        response_event: Optional[str] = None,
+        state: Optional[Dict[str, Any]] = None,
+        current_state: Optional[str] = None,
+        correlation_ids: Optional[List[str]] = None,
+    ) -> 'PlanContextResponse':
+        """
+        Store plan context for Planner state machine persistence.
+        
+        Called by PlanContext.save() after state transitions to persist
+        the plan's state machine, current state, and correlation tracking.
+        
+        LOW-LEVEL API: Prefer PlanContext.save() which handles serialization.
+        
+        Args:
+            plan_id: Unique plan identifier
+            session_id: Optional session identifier for conversation context
+            goal_event: Goal event type that initiated the plan
+            goal_data: Goal parameters from the original request
+            response_event: Event type to publish when plan completes
+            state: Plan state machine configuration (StateConfig DTOs)
+            current_state: Current state name in the state machine
+            correlation_ids: List of correlation IDs for event routing
+            
+        Returns:
+            Plan context DTO from Memory Service
+            
+        Example:
+            ```python
+            # Prefer PlanContext.save() instead:
+            plan.current_state = "searching"
+            await plan.save()  # Calls this internally
+            
+            # Direct usage (not recommended):
+            await context.memory.store_plan_context(
+                plan_id="plan-123",
+                session_id="session-456",
+                goal_event="research.goal",
+                goal_data={"topic": "AI agents"},
+                response_event="research.completed",
+                state={"start": {...}, "search": {...}},
+                current_state="search",
+                correlation_ids=["plan-123"],
+            )
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.store_plan_context(
+            plan_id=plan_id,
+            session_id=session_id,
+            goal_event=goal_event,
+            goal_data=goal_data,
+            response_event=response_event,
+            state=state,
+            current_state=current_state,
+            correlation_ids=correlation_ids,
+        )
+
+    async def get_plan_context(self, plan_id: str) -> Optional['PlanContextResponse']:
+        """
+        Retrieve persisted plan context by plan ID.
+        
+        Called by PlanContext.restore() to resume plan execution after
+        system restart or event-driven transitions.
+        
+        LOW-LEVEL API: Prefer PlanContext.restore() which deserializes properly.
+        
+        Args:
+            plan_id: Plan identifier
+            
+        Returns:
+            Plan context DTO if found, None otherwise
+            
+        Example:
+            ```python
+            # Prefer PlanContext.restore() instead:
+            plan = await PlanContext.restore(plan_id, context)
+            
+            # Direct usage (not recommended):
+            plan_data = await context.memory.get_plan_context("plan-123")
+            if plan_data:
+                print(f"Plan {plan_data.plan_id}: {plan_data.current_state}")
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.get_plan_context(plan_id)
+
+    async def get_plan_by_correlation(self, correlation_id: str) -> Optional['PlanContextResponse']:
+        """
+        Find plan by correlation ID (for event routing in on_transition handlers).
+        
+        Called by on_transition() handlers to route incoming events to the
+        correct plan based on correlation_id tracking. Memory Service maintains
+        a reverse index from correlation_ids to plan IDs.
+        
+        LOW-LEVEL API: Prefer PlanContext.restore_by_correlation() wrapper.
+        
+        Args:
+            correlation_id: Correlation identifier from incoming event
+            
+        Returns:
+            Plan context DTO if found, None otherwise
+            
+        Example:
+            ```python
+            # Prefer PlanContext.restore_by_correlation() instead:
+            @planner.on_transition()
+            async def handle_transition(event, context):
+                plan = await PlanContext.restore_by_correlation(
+                    event.correlation_id, context
+                )
+            
+            # Direct usage (not recommended):
+            plan_data = await context.memory.get_plan_by_correlation("corr-456")
+            if plan_data:
+                print(f"Found plan: {plan_data.plan_id}")
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.get_plan_by_correlation(correlation_id)
     
     async def close(self) -> None:
         """Close the Memory Service client connection."""
