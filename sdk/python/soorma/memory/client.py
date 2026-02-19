@@ -707,6 +707,8 @@ class MemoryClient:
         session_id: Optional[str],
         goal_event: str,
         goal_data: Dict[str, Any],
+        tenant_id: str,
+        user_id: str,
         response_event: Optional[str] = None,
         state: Optional[Dict[str, Any]] = None,
         current_state: Optional[str] = None,
@@ -722,6 +724,8 @@ class MemoryClient:
             session_id: Optional session identifier
             goal_event: Goal event type
             goal_data: Goal data
+            tenant_id: Tenant ID for multi-tenant isolation
+            user_id: User ID for request context
             response_event: Expected response event
             state: Plan state machine
             current_state: Current state name
@@ -741,14 +745,37 @@ class MemoryClient:
             correlation_ids=correlation_ids or [],
         )
         
-        response = await self._client.post(
-            f"{self.base_url}/v1/memory/plan-context",
-            json=request_data.model_dump(by_alias=True),
-        )
-        response.raise_for_status()
-        return PlanContextResponse.model_validate(response.json())
+        try:
+            response = await self._client.post(
+                f"{self.base_url}/v1/memory/plan-context",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
+                json=request_data.model_dump(by_alias=True),
+            )
+            response.raise_for_status()
+            return PlanContextResponse.model_validate(response.json())
+        except httpx.HTTPStatusError as e:
+            # Log response details for debugging
+            error_detail = f"HTTP {e.response.status_code}"
+            try:
+                error_body = e.response.json()
+                error_detail += f": {error_body.get('detail', error_body)}"
+            except Exception:
+                error_detail += f": {e.response.text}"
+            raise httpx.HTTPStatusError(
+                f"{error_detail}",
+                request=e.request,
+                response=e.response,
+            )
     
-    async def get_plan_context(self, plan_id: str) -> Optional[PlanContextResponse]:
+    async def get_plan_context(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional[PlanContextResponse]:
         """
         Retrieve plan context.
         
@@ -756,6 +783,8 @@ class MemoryClient:
         
         Args:
             plan_id: Plan identifier
+            tenant_id: Tenant ID for multi-tenant isolation
+            user_id: User ID for request context
             
         Returns:
             PlanContextResponse or None if not found
@@ -763,6 +792,10 @@ class MemoryClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/plan-context/{plan_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
             )
             response.raise_for_status()
             return PlanContextResponse.model_validate(response.json())
@@ -774,6 +807,8 @@ class MemoryClient:
     async def update_plan_context(
         self,
         plan_id: str,
+        tenant_id: str,
+        user_id: str,
         state: Optional[Dict[str, Any]] = None,
         current_state: Optional[str] = None,
         correlation_ids: Optional[List[str]] = None,
@@ -783,6 +818,8 @@ class MemoryClient:
         
         Args:
             plan_id: Plan identifier
+            tenant_id: Tenant ID for multi-tenant isolation
+            user_id: User ID for request context
             state: Updated state
             current_state: Updated current state
             correlation_ids: Updated correlation IDs
@@ -798,12 +835,21 @@ class MemoryClient:
         
         response = await self._client.put(
             f"{self.base_url}/v1/memory/plan-context/{plan_id}",
+            headers={
+                "X-Tenant-ID": tenant_id,
+                "X-User-ID": user_id,
+            },
             json=request_data.model_dump(by_alias=True, exclude_none=True),
         )
         response.raise_for_status()
         return PlanContextResponse.model_validate(response.json())
     
-    async def get_plan_by_correlation(self, correlation_id: str) -> Optional[PlanContextResponse]:
+    async def get_plan_by_correlation(
+        self,
+        correlation_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional[PlanContextResponse]:
         """
         Find plan by task/step correlation ID.
         
@@ -811,6 +857,8 @@ class MemoryClient:
         
         Args:
             correlation_id: Correlation identifier
+            tenant_id: Tenant ID for multi-tenant isolation
+            user_id: User ID for request context
             
         Returns:
             PlanContextResponse or None if not found
@@ -818,6 +866,10 @@ class MemoryClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/plan-context/by-correlation/{correlation_id}",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
             )
             response.raise_for_status()
             return PlanContextResponse.model_validate(response.json())

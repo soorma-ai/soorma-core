@@ -14,11 +14,14 @@ from soorma_common.models import (
     PlanContextResponse,
 )
 from memory_service.crud.plan_context import (
-    create_plan_context as crud_create,
+    upsert_plan_context as crud_upsert,
     get_plan_context as crud_get,
     update_plan_context as crud_update,
     delete_plan_context as crud_delete,
     get_plan_by_correlation as crud_get_by_correlation,
+)
+from memory_service.crud.plans import (
+    get_plan as crud_get_plan,
 )
 from memory_service.models.memory import PlanContext
 
@@ -43,21 +46,26 @@ class PlanContextService:
             updated_at=plan_context.updated_at.isoformat(),
         )
     
-    async def create(
+    async def upsert(
         self,
         db: AsyncSession,
         tenant_id: UUID,
         data: PlanContextCreate,
     ) -> PlanContextResponse:
         """
-        Create a new plan context.
+        Upsert plan context (insert or update if exists).
         
-        Transaction boundary: Commits after successful creation.
+        Transaction boundary: Commits after successful upsert.
         """
-        plan_context = await crud_create(
+        # Look up the plan by string plan_id to get its UUID id
+        plan = await crud_get_plan(db, tenant_id, data.plan_id)
+        if not plan:
+            raise ValueError(f"Plan not found: {data.plan_id}")
+        
+        plan_context = await crud_upsert(
             db,
             tenant_id,
-            UUID(data.plan_id),
+            plan.id,  # Use the UUID id from the plans table
             data.session_id,
             data.goal_event,
             data.goal_data,
@@ -74,10 +82,15 @@ class PlanContextService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        plan_id: UUID,
+        plan_id: str,
     ) -> Optional[PlanContextResponse]:
         """Get plan context by plan ID."""
-        plan_context = await crud_get(db, tenant_id, plan_id)
+        # Look up the plan by string plan_id to get its UUID id
+        plan = await crud_get_plan(db, tenant_id, plan_id)
+        if not plan:
+            return None
+        
+        plan_context = await crud_get(db, tenant_id, plan.id)
         if not plan_context:
             return None
         
@@ -87,7 +100,7 @@ class PlanContextService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        plan_id: UUID,
+        plan_id: str,
         data: PlanContextUpdate,
     ) -> Optional[PlanContextResponse]:
         """
@@ -95,10 +108,15 @@ class PlanContextService:
         
         Transaction boundary: Commits after successful update.
         """
+        # Look up the plan by string plan_id to get its UUID id
+        plan = await crud_get_plan(db, tenant_id, plan_id)
+        if not plan:
+            return None
+        
         plan_context = await crud_update(
             db,
             tenant_id,
-            plan_id,
+            plan.id,
             data.state,
             data.current_state,
             data.correlation_ids,
@@ -114,7 +132,7 @@ class PlanContextService:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        plan_id: UUID,
+        plan_id: str,
     ) -> bool:
         """
         Delete plan context.
@@ -122,7 +140,12 @@ class PlanContextService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, tenant_id, plan_id)
+        # Look up the plan by string plan_id to get its UUID id
+        plan = await crud_get_plan(db, tenant_id, plan_id)
+        if not plan:
+            return False
+        
+        deleted = await crud_delete(db, tenant_id, plan.id)
         if deleted:
             await db.commit()
         

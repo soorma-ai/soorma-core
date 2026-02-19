@@ -85,6 +85,7 @@ class PlanContext:
         goal_event: Original goal event type
         goal_data: Goal parameters from the original request
         response_event: Event type for final result (from original request)
+        correlation_id: Original goal's correlation ID for response routing
         status: Plan execution status (pending|running|completed|failed|paused)
         state_machine: State definitions (state_name -> StateConfig)
         current_state: Current state name in the state machine
@@ -104,6 +105,7 @@ class PlanContext:
     state_machine: Dict[str, StateConfig]
     current_state: str
     results: Dict[str, Any]
+    correlation_id: str = ""  # Original goal's correlation ID
     parent_plan_id: Optional[str] = None
     session_id: Optional[str] = None
     user_id: str = ""
@@ -117,6 +119,7 @@ class PlanContext:
         Persist plan context to Memory Service.
         
         Called after state transitions to ensure plan state is durable.
+        Memory Service API handles upsert (insert or update).
         """
         if not self._context:
             raise ValueError("PlanContext._context is required for save()")
@@ -124,16 +127,18 @@ class PlanContext:
         # Serialize plan state
         state_dict = self.to_dict()
         
-        # Store in Memory Service using wrapper method
+        # Store/update in Memory Service (API handles upsert)
         await self._context.memory.store_plan_context(
             plan_id=self.plan_id,
             session_id=self.session_id,
             goal_event=self.goal_event,
             goal_data=self.goal_data,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
             response_event=self.response_event,
             state=state_dict,
             current_state=self.current_state,
-            correlation_ids=[self.plan_id],  # Track plan's own correlation
+            correlation_ids=[self.plan_id, self.correlation_id],  # Track both plan_id and original correlation
         )
     
     @classmethod
@@ -141,6 +146,8 @@ class PlanContext:
         cls,
         plan_id: str,
         context: 'PlatformContext',
+        tenant_id: str,
+        user_id: str,
     ) -> Optional['PlanContext']:
         """
         Restore plan context from Memory Service by plan ID.
@@ -148,18 +155,30 @@ class PlanContext:
         Args:
             plan_id: Plan identifier
             context: PlatformContext for service access
+            tenant_id: Tenant ID from event context
+            user_id: User ID from event context
             
         Returns:
             PlanContext instance if found, None otherwise
         """
         # Get plan from Memory Service
-        plan_data = await context.memory.get_plan_context(plan_id)
+        plan_data = await context.memory.get_plan_context(
+            plan_id=plan_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
         
         if not plan_data:
             return None
         
-        # Extract state from response
-        state = plan_data.get("state", {})
+        # Extract state from response (handle both dict and Pydantic model)
+        if hasattr(plan_data, 'state'):
+            # PlanContextResponse Pydantic model
+            state = plan_data.state
+        else:
+            # Dict (for tests/backwards compatibility)
+            state = plan_data.get("state", {})
+        
         if not state:
             return None
         
@@ -171,6 +190,8 @@ class PlanContext:
         cls,
         correlation_id: str,
         context: 'PlatformContext',
+        tenant_id: str,
+        user_id: str,
     ) -> Optional['PlanContext']:
         """
         Restore plan context by correlation ID (for event routing).
@@ -178,18 +199,30 @@ class PlanContext:
         Args:
             correlation_id: Correlation identifier from incoming event
             context: PlatformContext for service access
+            tenant_id: Tenant ID from event context
+            user_id: User ID from event context
             
         Returns:
             PlanContext instance if found, None otherwise
         """
         # Get plan by correlation_id from Memory Service
-        plan_data = await context.memory.get_plan_by_correlation(correlation_id)
+        plan_data = await context.memory.get_plan_by_correlation(
+            correlation_id=correlation_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
         
         if not plan_data:
             return None
         
-        # Extract state from response
-        state = plan_data.get("state", {})
+        # Extract state from response (handle both dict and Pydantic model)
+        if hasattr(plan_data, 'state'):
+            # PlanContextResponse Pydantic model
+            state = plan_data.state
+        else:
+            # Dict (for tests/backwards compatibility)
+            state = plan_data.get("state", {})
+        
         if not state:
             return None
         
@@ -214,6 +247,7 @@ class PlanContext:
             "goal_event": self.goal_event,
             "goal_data": self.goal_data,
             "response_event": self.response_event,
+            "correlation_id": self.correlation_id,
             "status": self.status,
             "state_machine": state_machine_dict,
             "current_state": self.current_state,
@@ -248,6 +282,7 @@ class PlanContext:
             goal_event=data["goal_event"],
             goal_data=data["goal_data"],
             response_event=data["response_event"],
+            correlation_id=data.get("correlation_id", ""),
             status=data["status"],
             state_machine=state_machine,
             current_state=data["current_state"],
@@ -281,7 +316,7 @@ class PlanContext:
             return None
         
         # Get event type from event object
-        event_type = event.event_type if hasattr(event, 'event_type') else str(event)
+        event_type = event.type if hasattr(event, 'type') else str(event)
         
         # Find matching transition
         for transition in current_state_config.transitions:
@@ -367,15 +402,25 @@ class PlanContext:
         # Update status
         self.status = "completed"
         
-        # Publish final result using explicit response_event
+        # Publish final result using original correlation_id
+        logger.info(f"📤 Publishing response: {self.response_event}")
+        logger.info(f"   Correlation: {self.correlation_id}")
+        logger.info(f"   Topic: action-results")
+        logger.info(f"   Data: {result}")
+        
         await self._context.bus.respond(
             event_type=self.response_event,
             data={
                 "plan_id": self.plan_id,
                 "result": result,
             },
-            correlation_id=self.plan_id,
+            correlation_id=self.correlation_id,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
+            session_id=self.session_id,
         )
+        
+        logger.info("✅ Response published")
         
         # Save final state
         await self.save()

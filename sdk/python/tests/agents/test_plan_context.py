@@ -234,7 +234,8 @@ class TestPlanContextPersistence:
         assert call_args["response_event"] == "test.completed"
         assert "state" in call_args
         assert call_args["current_state"] == "start"
-        assert call_args["correlation_ids"] == ["plan-123"]
+        # correlation_ids now includes both plan_id and correlation_id (empty string initially)
+        assert call_args["correlation_ids"] == ["plan-123", ""]
     
     @pytest.mark.asyncio
     async def test_plan_context_restore(self):
@@ -275,7 +276,12 @@ class TestPlanContextPersistence:
         })
         
         # Restore
-        plan = await PlanContext.restore("plan-123", context)
+        plan = await PlanContext.restore(
+            plan_id="plan-123",
+            context=context,
+            tenant_id="tenant-1",
+            user_id="user-1"
+        )
         
         # Verify
         assert plan is not None
@@ -283,7 +289,9 @@ class TestPlanContextPersistence:
         assert plan.goal_event == "test.goal"
         assert plan.status == "running"
         assert plan._context is context
-        context.memory.get_plan_context.assert_called_once_with("plan-123")
+        context.memory.get_plan_context.assert_called_once_with(
+            plan_id="plan-123", tenant_id="tenant-1", user_id="user-1"
+        )
     
     @pytest.mark.asyncio
     async def test_plan_context_restore_not_found(self):
@@ -291,7 +299,12 @@ class TestPlanContextPersistence:
         context = MagicMock()
         context.memory.get_plan_context = AsyncMock(return_value=None)
         
-        plan = await PlanContext.restore("unknown", context)
+        plan = await PlanContext.restore(
+            plan_id="unknown",
+            context=context,
+            tenant_id="tenant-1",
+            user_id="user-1"
+        )
         
         assert plan is None
     
@@ -334,13 +347,20 @@ class TestPlanContextPersistence:
         })
         
         # Restore
-        plan = await PlanContext.restore_by_correlation("corr-456", context)
+        plan = await PlanContext.restore_by_correlation(
+            correlation_id="corr-456",
+            context=context,
+            tenant_id="tenant-1",
+            user_id="user-1"
+        )
         
         # Verify
         assert plan is not None
         assert plan.plan_id == "plan-123"
         assert plan.goal_data == {"topic": "AI"}
-        context.memory.get_plan_by_correlation.assert_called_once_with("corr-456")
+        context.memory.get_plan_by_correlation.assert_called_once_with(
+            correlation_id="corr-456", tenant_id="tenant-1", user_id="user-1"
+        )
     
     @pytest.mark.asyncio
     async def test_restore_by_correlation_not_found(self):
@@ -348,7 +368,12 @@ class TestPlanContextPersistence:
         context = MagicMock()
         context.memory.get_plan_by_correlation = AsyncMock(return_value=None)
         
-        plan = await PlanContext.restore_by_correlation("unknown", context)
+        plan = await PlanContext.restore_by_correlation(
+            correlation_id="unknown",
+            context=context,
+            tenant_id="tenant-1",
+            user_id="user-1"
+        )
         
         assert plan is None
 
@@ -675,7 +700,7 @@ class TestPlanContextExecution:
     
     @pytest.mark.asyncio
     async def test_finalize_uses_response_event(self):
-        """finalize() should publish result to explicit response_event."""
+        """finalize() should publish result using original correlation_id."""
         context = MagicMock()
         context.bus.respond = AsyncMock()
         context.memory.store_plan_context = AsyncMock()
@@ -685,6 +710,7 @@ class TestPlanContextExecution:
             goal_event="research.goal",
             goal_data={"topic": "AI"},
             response_event="research.completed",  # Explicit from goal
+            correlation_id="original-correlation-456",  # Original goal's correlation
             status="running",
             state_machine={},
             current_state="done",
@@ -699,13 +725,16 @@ class TestPlanContextExecution:
         result = {"summary": "AI is evolving"}
         await plan.finalize(result)
         
-        # Verify published to response_event
+        # Verify published to response_event with original correlation_id
         context.bus.respond.assert_called_once()
         call_args = context.bus.respond.call_args[1]
         assert call_args["event_type"] == "research.completed"
         assert call_args["data"]["plan_id"] == "plan-123"
         assert call_args["data"]["result"] == result
-        assert call_args["correlation_id"] == "plan-123"
+        assert call_args["correlation_id"] == "original-correlation-456"
+        assert call_args["tenant_id"] == "tenant-1"
+        assert call_args["user_id"] == "user-1"
+        assert call_args["session_id"] == "session-456"
         
         # Verify status updated
         assert plan.status == "completed"

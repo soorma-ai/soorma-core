@@ -30,6 +30,7 @@ from soorma_common.events import EventTopic
 from soorma_common.models import (
     TaskContextResponse,
     PlanContextResponse,
+    PlanSummary,
     WorkingMemoryDeleteKeyResponse,
     WorkingMemoryDeletePlanResponse,
 )
@@ -645,16 +646,19 @@ class MemoryClient:
         session_id: Optional[str],
         goal_event: str,
         goal_data: Dict[str, Any],
+        tenant_id: str,
+        user_id: str,
         response_event: Optional[str] = None,
         state: Optional[Dict[str, Any]] = None,
         current_state: Optional[str] = None,
         correlation_ids: Optional[List[str]] = None,
     ) -> 'PlanContextResponse':
         """
-        Store plan context for Planner state machine persistence.
+        Store plan context for Planner state machine persistence (upsert).
         
         Called by PlanContext.save() after state transitions to persist
         the plan's state machine, current state, and correlation tracking.
+        Memory Service handles upsert automatically (insert or update).
         
         LOW-LEVEL API: Prefer PlanContext.save() which handles serialization.
         
@@ -663,6 +667,8 @@ class MemoryClient:
             session_id: Optional session identifier for conversation context
             goal_event: Goal event type that initiated the plan
             goal_data: Goal parameters from the original request
+            tenant_id: Tenant ID for multi-tenant isolation
+            user_id: User ID for request context
             response_event: Event type to publish when plan completes
             state: Plan state machine configuration (StateConfig DTOs)
             current_state: Current state name in the state machine
@@ -675,7 +681,7 @@ class MemoryClient:
             ```python
             # Prefer PlanContext.save() instead:
             plan.current_state = "searching"
-            await plan.save()  # Calls this internally
+            await plan.save()  # Calls this internally (upserts)
             
             # Direct usage (not recommended):
             await context.memory.store_plan_context(
@@ -683,6 +689,8 @@ class MemoryClient:
                 session_id="session-456",
                 goal_event="research.goal",
                 goal_data={"topic": "AI agents"},
+                tenant_id="00000000-0000-0000-0000-000000000000",
+                user_id="00000000-0000-0000-0000-000000000001",
                 response_event="research.completed",
                 state={"start": {...}, "search": {...}},
                 current_state="search",
@@ -696,13 +704,20 @@ class MemoryClient:
             session_id=session_id,
             goal_event=goal_event,
             goal_data=goal_data,
+            tenant_id=tenant_id,
+            user_id=user_id,
             response_event=response_event,
             state=state,
             current_state=current_state,
             correlation_ids=correlation_ids,
         )
 
-    async def get_plan_context(self, plan_id: str) -> Optional['PlanContextResponse']:
+    async def get_plan_context(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional['PlanContextResponse']:
         """
         Retrieve persisted plan context by plan ID.
         
@@ -713,6 +728,8 @@ class MemoryClient:
         
         Args:
             plan_id: Plan identifier
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
             
         Returns:
             Plan context DTO if found, None otherwise
@@ -723,15 +740,28 @@ class MemoryClient:
             plan = await PlanContext.restore(plan_id, context)
             
             # Direct usage (not recommended):
-            plan_data = await context.memory.get_plan_context("plan-123")
+            plan_data = await context.memory.get_plan_context(
+                plan_id="plan-123",
+                tenant_id="00000000-0000-0000-0000-000000000000",
+                user_id="00000000-0000-0000-0000-000000000001",
+            )
             if plan_data:
                 print(f"Plan {plan_data.plan_id}: {plan_data.current_state}")
             ```
         """
         client = await self._ensure_client()
-        return await client.get_plan_context(plan_id)
+        return await client.get_plan_context(
+            plan_id=plan_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
 
-    async def get_plan_by_correlation(self, correlation_id: str) -> Optional['PlanContextResponse']:
+    async def get_plan_by_correlation(
+        self,
+        correlation_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional['PlanContextResponse']:
         """
         Find plan by correlation ID (for event routing in on_transition handlers).
         
@@ -743,6 +773,8 @@ class MemoryClient:
         
         Args:
             correlation_id: Correlation identifier from incoming event
+            tenant_id: Tenant ID from event context (REQUIRED)
+            user_id: User ID from event context (REQUIRED)
             
         Returns:
             Plan context DTO if found, None otherwise
@@ -757,13 +789,80 @@ class MemoryClient:
                 )
             
             # Direct usage (not recommended):
-            plan_data = await context.memory.get_plan_by_correlation("corr-456")
+            plan_data = await context.memory.get_plan_by_correlation(
+                correlation_id="corr-456",
+                tenant_id="00000000-0000-0000-0000-000000000000",
+                user_id="00000000-0000-0000-0000-000000000001",
+            )
             if plan_data:
                 print(f"Found plan: {plan_data.plan_id}")
             ```
         """
         client = await self._ensure_client()
-        return await client.get_plan_by_correlation(correlation_id)
+        return await client.get_plan_by_correlation(
+            correlation_id=correlation_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+
+    async def create_plan(
+        self,
+        plan_id: str,
+        goal_event: str,
+        goal_data: Dict[str, Any],
+        tenant_id: str,
+        user_id: str,
+        session_id: Optional[str] = None,
+        parent_plan_id: Optional[str] = None,
+    ) -> 'PlanSummary':
+        """
+        Create a new plan record in Memory Service.
+        
+        Called by Planner when creating a new plan to execute a goal.
+        The Plan record must be created BEFORE creating the PlanContext,
+        since plan_context.plan_id is a foreign key to plans.id.
+        
+        Args:
+            plan_id: Unique plan identifier
+            goal_event: Goal event type that initiated the plan
+            goal_data: Goal parameters from the original request
+            tenant_id: Tenant ID for multi-tenant isolation (REQUIRED)
+            user_id: User ID for request context (REQUIRED)
+            session_id: Optional session identifier for conversation context
+            parent_plan_id: Optional parent plan identifier for hierarchical planning
+            
+        Returns:
+            PlanSummary DTO from Memory Service
+            
+        Example:
+            ```python
+            @planner.on_goal("research.goal")
+            async def handle_research(goal: GoalContext, context: PlatformContext):
+                # Create Plan record first
+                await context.memory.create_plan(
+                    plan_id=str(uuid4()),
+                    goal_event=goal.event_type,
+                    goal_data=goal.data,
+                    tenant_id=goal.tenant_id,
+                    user_id=goal.user_id,
+                    session_id=goal.session_id,
+                )
+                
+                # Then create PlanContext and save
+                plan = PlanContext(...)
+                await plan.save()
+            ```
+        """
+        client = await self._ensure_client()
+        return await client.create_plan(
+            plan_id=plan_id,
+            goal_event=goal_event,
+            goal_data=goal_data,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            session_id=session_id,
+            parent_plan_id=parent_plan_id,
+        )
     
     async def close(self) -> None:
         """Close the Memory Service client connection."""

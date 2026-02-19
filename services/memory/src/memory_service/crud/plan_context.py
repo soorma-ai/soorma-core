@@ -2,13 +2,14 @@
 
 from typing import Optional, List, Dict, Any
 from uuid import UUID
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete, func, cast
+from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from memory_service.models.memory import PlanContext
 
 
-async def create_plan_context(
+async def upsert_plan_context(
     db: AsyncSession,
     tenant_id: UUID,
     plan_id: UUID,
@@ -20,8 +21,9 @@ async def create_plan_context(
     current_state: Optional[str],
     correlation_ids: List[str],
 ) -> PlanContext:
-    """Create a new plan context."""
-    plan_context = PlanContext(
+    """Upsert plan context (insert or update if exists)."""
+    # Use PostgreSQL's INSERT ... ON CONFLICT DO UPDATE
+    stmt = insert(PlanContext).values(
         tenant_id=tenant_id,
         plan_id=plan_id,
         session_id=session_id,
@@ -31,8 +33,17 @@ async def create_plan_context(
         state=state,
         current_state=current_state,
         correlation_ids=correlation_ids,
-    )
-    db.add(plan_context)
+    ).on_conflict_do_update(
+        index_elements=['plan_id'],
+        set_=dict(
+            state=state,
+            current_state=current_state,
+            correlation_ids=correlation_ids,
+        )
+    ).returning(PlanContext)
+    
+    result = await db.execute(stmt)
+    plan_context = result.scalar_one()
     await db.flush()
     await db.refresh(plan_context)
     return plan_context
@@ -100,10 +111,12 @@ async def get_plan_by_correlation(
     correlation_id: str,
 ) -> Optional[PlanContext]:
     """Find plan by task/step correlation ID."""
+    # Use PostgreSQL JSONB containment operator @>
+    # Check if correlation_ids array contains the correlation_id
     result = await db.execute(
         select(PlanContext).where(
             PlanContext.tenant_id == tenant_id,
-            func.jsonb_contains(PlanContext.correlation_ids, [correlation_id]),
+            PlanContext.correlation_ids.op('@>')(cast([correlation_id], JSONB)),
         )
     )
     return result.scalar_one_or_none()
