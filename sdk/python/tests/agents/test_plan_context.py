@@ -463,3 +463,330 @@ class TestPlanContextStateTransitions:
         failure_event = MagicMock(event_type="task.failed")
         assert plan.get_next_state(failure_event) == "retry"
 
+
+class TestPlanContextExecution:
+    """Tests for state execution."""
+    
+    @pytest.mark.asyncio
+    async def test_execute_next_initial_state(self):
+        """execute_next() should start from initial state when no trigger_event."""
+        # State machine
+        state_machine = {
+            "start": StateConfig(
+                state_name="start",
+                description="Initial",
+                default_next="search",
+            ),
+            "search": StateConfig(
+                state_name="search",
+                description="Search state",
+                action=StateAction(
+                    event_type="search.requested",
+                    response_event="search.completed",
+                    data={"query": "AI research"},
+                ),
+            ),
+        }
+        
+        # Mock context
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+        context.memory.store_plan_context = AsyncMock()
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="test.goal",
+            goal_data={"topic": "AI"},
+            response_event="test.completed",
+            status="pending",
+            state_machine=state_machine,
+            current_state="start",
+            results={},
+            session_id="session-456",
+            user_id="user-1",
+            tenant_id="tenant-1",
+            _context=context,
+        )
+        
+        # Execute
+        await plan.execute_next()
+        
+        # Verify: published action event
+        context.bus.request.assert_called_once()
+        call_args = context.bus.request.call_args[1]
+        assert call_args["event_type"] == "search.requested"
+        assert call_args["response_event"] == "search.completed"
+        assert call_args["data"]["query"] == "AI research"
+        assert call_args["correlation_id"] == "plan-123"
+        
+        # Verify: state updated
+        assert plan.current_state == "search"
+        assert plan.status == "running"
+        
+        # Verify: saved
+        context.memory.store_plan_context.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_execute_next_with_trigger_event(self):
+        """execute_next() should transition based on trigger_event."""
+        state_machine = {
+            "search": StateConfig(
+                state_name="search",
+                description="Searching",
+                transitions=[
+                    StateTransition(on_event="search.completed", to_state="summarize")
+                ],
+            ),
+            "summarize": StateConfig(
+                state_name="summarize",
+                description="Summarizing",
+                action=StateAction(
+                    event_type="summarize.requested",
+                    response_event="summarize.completed",
+                    data={"input": "results"},
+                ),
+            ),
+        }
+        
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+        context.memory.store_plan_context = AsyncMock()
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="test.goal",
+            goal_data={},
+            response_event="test.completed",
+            status="running",
+            state_machine=state_machine,
+            current_state="search",
+            results={},
+            session_id="session-456",
+            user_id="user-1",
+            tenant_id="tenant-1",
+            _context=context,
+        )
+        
+        # Trigger event
+        trigger = MagicMock(event_type="search.completed")
+        trigger.data = {"papers": ["Paper1", "Paper2"]}
+        
+        # Execute
+        await plan.execute_next(trigger_event=trigger)
+        
+        # Verify transitioned to summarize
+        assert plan.current_state == "summarize"
+        context.bus.request.assert_called_once()
+        assert context.bus.request.call_args[1]["event_type"] == "summarize.requested"
+    
+    @pytest.mark.asyncio
+    async def test_execute_next_no_action(self):
+        """execute_next() should handle states without actions."""
+        state_machine = {
+            "start": StateConfig(
+                state_name="start",
+                description="Start",
+                default_next="done",
+            ),
+            "done": StateConfig(
+                state_name="done",
+                description="Done",
+                is_terminal=True,
+            ),
+        }
+        
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+        context.memory.store_plan_context = AsyncMock()
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="test.goal",
+            goal_data={},
+            response_event="test.completed",
+            status="pending",
+            state_machine=state_machine,
+            current_state="start",
+            results={},
+            user_id="user-1",
+            tenant_id="tenant-1",
+            _context=context,
+        )
+        
+        # Execute
+        await plan.execute_next()
+        
+        # Verify: transitioned but no event published
+        assert plan.current_state == "done"
+        context.bus.request.assert_not_called()
+        context.memory.store_plan_context.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_is_complete_terminal_state(self):
+        """is_complete() should return True for terminal states."""
+        state_machine = {
+            "done": StateConfig(
+                state_name="done",
+                description="Terminal",
+                is_terminal=True,
+            ),
+        }
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="test.goal",
+            goal_data={},
+            response_event="test.completed",
+            status="running",
+            state_machine=state_machine,
+            current_state="done",
+            results={},
+            user_id="user-1",
+            tenant_id="tenant-1",
+        )
+        
+        assert plan.is_complete() is True
+    
+    @pytest.mark.asyncio
+    async def test_is_complete_non_terminal_state(self):
+        """is_complete() should return False for non-terminal states."""
+        state_machine = {
+            "running": StateConfig(
+                state_name="running",
+                description="Running",
+                is_terminal=False,
+            ),
+        }
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="test.goal",
+            goal_data={},
+            response_event="test.completed",
+            status="running",
+            state_machine=state_machine,
+            current_state="running",
+            results={},
+            user_id="user-1",
+            tenant_id="tenant-1",
+        )
+        
+        assert plan.is_complete() is False
+    
+    @pytest.mark.asyncio
+    async def test_finalize_uses_response_event(self):
+        """finalize() should publish result to explicit response_event."""
+        context = MagicMock()
+        context.bus.respond = AsyncMock()
+        context.memory.store_plan_context = AsyncMock()
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="research.goal",
+            goal_data={"topic": "AI"},
+            response_event="research.completed",  # Explicit from goal
+            status="running",
+            state_machine={},
+            current_state="done",
+            results={"step1": "data"},
+            session_id="session-456",
+            user_id="user-1",
+            tenant_id="tenant-1",
+            _context=context,
+        )
+        
+        # Finalize
+        result = {"summary": "AI is evolving"}
+        await plan.finalize(result)
+        
+        # Verify published to response_event
+        context.bus.respond.assert_called_once()
+        call_args = context.bus.respond.call_args[1]
+        assert call_args["event_type"] == "research.completed"
+        assert call_args["data"]["plan_id"] == "plan-123"
+        assert call_args["data"]["result"] == result
+        assert call_args["correlation_id"] == "plan-123"
+        
+        # Verify status updated
+        assert plan.status == "completed"
+        context.memory.store_plan_context.assert_called_once()
+
+
+class TestPlanContextPauseResume:
+    """Tests for pause/resume HITL workflows."""
+    
+    @pytest.mark.asyncio
+    async def test_pause_sets_status(self):
+        """pause() should update status to paused."""
+        context = MagicMock()
+        context.memory.store_plan_context = AsyncMock()
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="test.goal",
+            goal_data={},
+            response_event="test.completed",
+            status="running",
+            state_machine={},
+            current_state="waiting",
+            results={},
+            user_id="user-1",
+            tenant_id="tenant-1",
+            _context=context,
+        )
+        
+        await plan.pause(reason="user_approval_required")
+        
+        assert plan.status == "paused"
+        context.memory.store_plan_context.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_resume_continues_execution(self):
+        """resume() should update status and call execute_next()."""
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+        context.memory.store_plan_context = AsyncMock()
+        
+        state_machine = {
+            "waiting": StateConfig(
+                state_name="waiting",
+                description="Waiting",
+                default_next="process",
+            ),
+            "process": StateConfig(
+                state_name="process",
+                description="Processing",
+                action=StateAction(
+                    event_type="process.requested",
+                    response_event="process.completed",
+                    data={"step": "execute"},
+                ),
+            ),
+        }
+        
+        plan = PlanContext(
+            plan_id="plan-hitl",
+            goal_event="test.goal",
+            goal_data={},
+            response_event="test.completed",
+            status="paused",
+            state_machine=state_machine,
+            current_state="waiting",
+            results={},
+            user_id="user-1",
+            tenant_id="tenant-1",
+            _context=context,
+        )
+        
+        # Resume
+        await plan.resume({"user_input": "approved"})
+        
+        # Verify status updated
+        assert plan.status == "running"
+        assert "user_input" in plan.results
+        assert plan.results["user_input"] == {"user_input": "approved"}
+        
+        # Verify execute_next called (state transitioned)
+        assert plan.current_state == "process"
+        context.bus.request.assert_called_once()
+

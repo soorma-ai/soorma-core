@@ -296,10 +296,50 @@ class PlanContext:
         
         Args:
             trigger_event: Optional event that triggered this transition
-            
-        Implementation in Day 3.
         """
-        raise NotImplementedError("Day 3: Task 3.6")
+        if not self._context:
+            raise ValueError("PlanContext._context is required for execute_next()")
+        
+        # Determine next state
+        if trigger_event:
+            # Transition based on incoming event
+            next_state_name = self.get_next_state(trigger_event)
+            if not next_state_name:
+                # No matching transition, no-op
+                return
+        else:
+            # Initial execution: use default_next from current state
+            current_config = self.state_machine.get(self.current_state)
+            if not current_config or not current_config.default_next:
+                return
+            next_state_name = current_config.default_next
+        
+        # Get next state config
+        next_state_config = self.state_machine.get(next_state_name)
+        if not next_state_config:
+            return
+        
+        # Update current state
+        self.current_state = next_state_name
+        self.status = "running"
+        
+        # Execute state action if present
+        if next_state_config.action:
+            action = next_state_config.action
+            
+            # Interpolate data with goal_data
+            action_data = self._interpolate_data(action.data)
+            
+            # Publish action event using bus.request()
+            await self._context.bus.request(
+                event_type=action.event_type,
+                data=action_data,
+                response_event=action.response_event,
+                correlation_id=self.plan_id,
+            )
+        
+        # Save state
+        await self.save()
     
     def is_complete(self) -> bool:
         """
@@ -307,10 +347,12 @@ class PlanContext:
         
         Returns:
             True if current state is terminal, False otherwise
-            
-        Implementation in Day 3.
         """
-        raise NotImplementedError("Day 3: Task 3.7")
+        current_config = self.state_machine.get(self.current_state)
+        if not current_config:
+            return False
+        
+        return current_config.is_terminal if current_config.is_terminal is not None else False
     
     async def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -318,10 +360,25 @@ class PlanContext:
         
         Args:
             result: Optional final result to include in response
-            
-        Implementation in Day 3.
         """
-        raise NotImplementedError("Day 3: Task 3.8")
+        if not self._context:
+            raise ValueError("PlanContext._context is required for finalize()")
+        
+        # Update status
+        self.status = "completed"
+        
+        # Publish final result using explicit response_event
+        await self._context.bus.respond(
+            event_type=self.response_event,
+            data={
+                "plan_id": self.plan_id,
+                "result": result,
+            },
+            correlation_id=self.plan_id,
+        )
+        
+        # Save final state
+        await self.save()
     
     async def pause(self, reason: str = "user_input_required") -> None:
         """
@@ -329,10 +386,15 @@ class PlanContext:
         
         Args:
             reason: Reason for pausing
-            
-        Implementation in Day 3.
         """
-        raise NotImplementedError("Day 3: Task 3.9")
+        if not self._context:
+            raise ValueError("PlanContext._context is required for pause()")
+        
+        # Update status
+        self.status = "paused"
+        
+        # Save paused state
+        await self.save()
     
     async def resume(self, input_data: Dict[str, Any]) -> None:
         """
@@ -340,8 +402,47 @@ class PlanContext:
         
         Args:
             input_data: User input or approval data
-            
-        Implementation in Day 3.
         """
-        raise NotImplementedError("Day 3: Task 3.10")
+        if not self._context:
+            raise ValueError("PlanContext._context is required for resume()")
+        
+        # Update status
+        self.status = "running"
+        
+        # Store user input in results
+        self.results["user_input"] = input_data
+        
+        # Continue execution
+        await self.execute_next()
+    
+    # Helper methods
+    
+    def _interpolate_data(self, template: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Replace {{goal_data.field}} placeholders with actual values.
+        
+        Args:
+            template: Data template with placeholders
+            
+        Returns:
+            Interpolated data dictionary
+            
+        Example:
+            template: {"query": "{{goal_data.topic}}"}
+            goal_data: {"topic": "AI agents"}
+            result: {"query": "AI agents"}
+        """
+        import json
+        import re
+        
+        # Convert to JSON string for easy replacement
+        json_str = json.dumps(template)
+        
+        # Replace {{goal_data.field}} patterns
+        for match in re.finditer(r'\{\{goal_data\.(\w+)\}\}', json_str):
+            field = match.group(1)
+            value = self.goal_data.get(field, "")
+            json_str = json_str.replace(match.group(0), json.dumps(value)[1:-1] if isinstance(value, str) else str(value))
+        
+        return json.loads(json_str)
 
