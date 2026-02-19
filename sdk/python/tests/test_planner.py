@@ -124,7 +124,7 @@ class TestPlannerOnTransitionDecorator:
         planner = Planner(name="test-planner")
         
         @planner.on_transition()
-        async def handle_transition(event, context):
+        async def handle_transition(event, context, plan, next_state):
             pass
         
         assert planner._transition_handler is not None
@@ -135,7 +135,7 @@ class TestPlannerOnTransitionDecorator:
         planner = Planner(name="test-planner")
         
         @planner.on_transition()
-        async def handle_transition(event, context):
+        async def handle_transition(event, context, plan, next_state):
             pass
         
         # RF-SDK-023: Topics are not event types
@@ -150,20 +150,13 @@ class TestPlannerOnTransitionDecorator:
         planner = Planner(name="test-planner")
         
         restored_plan = None
-        
-        # Mock PlanContext.restore_by_correlation
-        async def mock_restore(correlation_id, context):
-            if correlation_id == "plan-123":
-                return MagicMock(plan_id="plan-123")
-            return None
+        received_next_state = None
         
         @planner.on_transition()
-        async def handle_transition(event, context):
-            nonlocal restored_plan
-            restored_plan = await PlanContext.restore_by_correlation(
-                event.correlation_id,
-                context
-            )
+        async def handle_transition(event, context, plan, next_state):
+            nonlocal restored_plan, received_next_state
+            restored_plan = plan
+            received_next_state = next_state
         
         # Mock event
         event = EventEnvelope(
@@ -179,13 +172,17 @@ class TestPlannerOnTransitionDecorator:
         
         context = MagicMock()
         
-        # Call with mock
-        with patch.object(PlanContext, "restore_by_correlation", mock_restore):
-            await planner._transition_handler(event, context)
+        # Mock plan with next_state
+        mock_plan = MagicMock(plan_id="plan-123")
+        mock_plan.get_next_state.return_value = "summarize"
         
-        # Verify plan restored
+        # Call handler directly with required params
+        await planner._transition_handler(event, context, mock_plan, "summarize")
+        
+        # Verify plan received
         assert restored_plan is not None
         assert restored_plan.plan_id == "plan-123"
+        assert received_next_state == "summarize"
 
 
 class TestHandlerOnlyRegistration:
@@ -238,7 +235,7 @@ class TestHandlerOnlyRegistration:
             pass
         
         @planner.on_transition()
-        async def handle_transition(event, context):
+        async def handle_transition(event, context, plan, next_state):
             pass
         
         # Only goal event should be registered

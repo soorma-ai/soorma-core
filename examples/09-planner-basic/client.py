@@ -90,9 +90,11 @@ async def send_research_goal(topic: str):
         await asyncio.wait_for(response_received.wait(), timeout=30.0)
         
         # Display the response
-        summary = response_data.get("summary", "No summary")
-        papers_found = response_data.get("papers_found", 0)
-        papers = response_data.get("papers", [])
+        # PlanContext.finalize() wraps result in {"plan_id": "...", "result": {...}}
+        result = response_data.get("result", {})
+        summary = result.get("summary", "No summary")
+        papers_found = result.get("papers_found", 0)
+        papers = result.get("papers", [])
         
         print()
         print("🎉 Research Complete!")

@@ -126,19 +126,42 @@ async def handle_goal(goal: GoalContext, context: PlatformContext):
 ### 2. Transition Handler (@on_transition)
 ```python
 @planner.on_transition()
-async def handle_transition(event: EventEnvelope, context: PlatformContext):
-    # Restore plan by correlation_id
-    plan = await PlanContext.restore_by_correlation(event.correlation_id, context)
-    
-    # Transition to next state
-    next_state = plan.get_next_state(event)
+async def handle_transition(
+    event: EventEnvelope,
+    context: PlatformContext,
+    plan: PlanContext,
+    next_state: str,
+) -> None:
+    """SDK auto-filters to action-results and restores plan."""
+    # Update state
     plan.current_state = next_state
+    plan.results[event.type] = event.data
     
     # Execute or finalize
     if plan.is_complete():
         await plan.finalize(result=event.data)
     else:
         await plan.execute_next(event)
+```
+
+**What the SDK Does Automatically:**
+- Subscribes to `action-results` topic only (filters out action-requests)
+- Requires `tenant_id` and `user_id` for multi-tenant plan restoration
+- Restores plan using `PlanContext.restore_by_correlation()`
+- Validates transition exists in state machine
+- Only invokes handler if plan found and transition valid
+
+**Authentication Context Propagation:**
+Workers MUST propagate authentication context in responses:
+```python
+await context.bus.respond(
+    event_type=event.response_event,
+    data=result,
+    correlation_id=event.correlation_id,
+    tenant_id=event.tenant_id,      # Required
+    user_id=event.user_id,          # Required
+    session_id=event.session_id,    # Recommended
+)
 ```
 
 ### 3. State Machine Definition

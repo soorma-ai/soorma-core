@@ -445,15 +445,22 @@ async def plan_research(goal: GoalContext, context: PlatformContext):
     await plan.execute_next()
 
 @planner.on_transition()
-async def handle_transition(event, context: PlatformContext):
-    # Restore plan by correlation_id
-    plan = await PlanContext.restore_by_correlation(
-        event.correlation_id, context
-    )
+async def handle_transition(
+    event: EventEnvelope,
+    context: PlatformContext,
+    plan: PlanContext,
+    next_state: str,
+) -> None:
+    """SDK auto-restores plan and validates transition."""
+    # Update state
+    plan.current_state = next_state
+    plan.results[event.type] = event.data
     
-    # Execute next state
-    if plan and not plan.is_complete():
-        await plan.execute_next(trigger_event=event)
+    # Execute next state or finalize
+    if plan.is_complete():
+        await plan.finalize(result=event.data)
+    else:
+        await plan.execute_next(event)
 ```
 
 ---

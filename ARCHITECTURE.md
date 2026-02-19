@@ -407,42 +407,86 @@ async def handle_reservation(result: ResultContext, context):
 
 **See:** [examples/08-worker-basic](examples/08-worker-basic/) for complete example with parallel delegation.
 
-### 5.3 Planner Model (Strategic Reasoning)
+### 5.3 Planner Model (State Machine Orchestration)
 
-**Purpose:** Goal decomposition and task coordination using LLM reasoning.
+**Purpose:** Multi-step workflow orchestration using declarative state machines.
 
 **Characteristics:**
-- Strategic: Reasons about goals and plans
-- Adaptive: Adjusts plan based on results
-- Coordinating: Assigns tasks to Workers
-- Stateful: Plan state persists across steps
+- Strategic: Manages workflow state transitions
+- Event-driven: Transitions triggered by events
+- Stateful: Plan state persists to Memory Service
+- Coordinating: Orchestrates Workers/Tools via state actions
 
-**Example:**
+**Phase 1 Pattern (State Machine):**
 
 ```python
 from soorma import Planner
-from soorma.agents.planner import Goal, Plan, Task
+from soorma.plan_context import PlanContext, StateConfig, StateAction, StateTransition
 
 planner = Planner(name="research-coordinator")
 
-@planner.on_goal("research.topic")
-async def handle_research_goal(goal: Goal, context):
-    topic = goal.data["topic"]
+@planner.on_goal("research.goal")
+async def handle_goal(goal: GoalContext, context: PlatformContext):
+    # Define state machine
+    states = {
+        "start": StateConfig(
+            state_name="start",
+            default_next="research"
+        ),
+        "research": StateConfig(
+            state_name="research",
+            action=StateAction(
+                event_type="research.task",
+                response_event="research.complete",
+                data={"query": "{{goal_data.topic}}"}
+            ),
+            transitions=[
+                StateTransition(on_event="research.complete", to_state="complete")
+            ]
+        ),
+        "complete": StateConfig(
+            state_name="complete",
+            is_terminal=True
+        )
+    }
     
-    # LLM-powered planning
-    plan = await planner.reason_about_goal(goal, context)
-    
-    return Plan(
-        goal=goal,
-        tasks=[
-            Task("search_papers", assigned_to="researcher"),
-            Task("summarize", assigned_to="summarizer", depends_on=["search_papers"]),
-            Task("draft_report", assigned_to="writer", depends_on=["summarize"]),
-        ]
+    # Create and execute plan
+    plan = PlanContext(
+        plan_id=str(uuid4()),
+        state_machine=states,
+        current_state="start",
+        goal_data=goal.data,
+        _context=context,
     )
+    await plan.save()
+    await plan.execute_next()
+
+@planner.on_transition()
+async def handle_transition(
+    event: EventEnvelope,
+    context: PlatformContext,
+    plan: PlanContext,
+    next_state: str,
+) -> None:
+    """SDK auto-restores plan and validates transition."""
+    plan.current_state = next_state
+    plan.results[event.type] = event.data
+    
+    if plan.is_complete():
+        await plan.finalize(result=event.data)
+    else:
+        await plan.execute_next(event)
 ```
 
-**Note:** Full Planner implementation coming in Stage 4. See [docs/agent_patterns/README.md](docs/agent_patterns/README.md) for patterns.
+**What the SDK Does:**
+- `@on_transition()` auto-filters to action-results only
+- SDK requires `tenant_id`/`user_id` for plan restoration
+- SDK validates transition exists in state machine
+- Handler only invoked if plan and transition are valid
+
+**See:** [examples/09-planner-basic](examples/09-planner-basic/) for complete working example.
+
+**Phase 2 (Coming Soon):** ChoreographyPlanner with LLM-based reasoning and dynamic planning.
 
 ### 5.4 Comparison Matrix
 

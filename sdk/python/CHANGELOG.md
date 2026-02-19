@@ -18,7 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Nested plans via parent_plan_id
   - **Planner decorators** for goal handling and transition routing
     - `@on_goal(goal_type)` - Creates GoalContext wrapper for goal events
-    - `@on_transition()` - Routes events to plans via correlation_id
+    - `@on_transition()` - Auto-filters to action-results, restores plan, validates transitions
+      - Handler signature: `async def(event, context, plan, next_state) -> None`
+      - SDK requires tenant_id/user_id for multi-tenant plan restoration
+      - SDK auto-filters to action-results topic only
+      - SDK validates transition exists in state machine before invoking
     - `GoalContext` - Clean wrapper replacing old Goal class
   - **Handler-only event registration** (RF-SDK-023)
     - Only events with actual handlers appear in events_consumed

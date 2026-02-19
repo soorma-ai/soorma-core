@@ -135,40 +135,20 @@ async def handle_research_goal(goal: GoalContext, context: PlatformContext):
     print(f"▶️  Executing state: {plan.current_state}")
 
 
-# WORKAROUND: The @on_transition() wildcard subscription isn't triggering
-# Using specific event handler instead
-@planner.on_event("research.complete", topic=EventTopic.ACTION_RESULTS)
-async def handle_transition(event: EventEnvelope, context: PlatformContext):
-    """
-    Handle research completion and transition plan state.
-    
-    NOTE: This should ideally use @on_transition() for all events,
-    but wildcard subscription isn't working. Tracking issue for SDK fix.
-    """
+# Handle transitions for all plan-related events
+@planner.on_transition()
+async def handle_transition(
+    event: EventEnvelope,
+    context: PlatformContext,
+    plan: PlanContext,
+    next_state: str,
+) -> None:
+    """Handle research completion and transition plan state."""
     print(f"\n📥 Transition: {event.type}")
     print(f"   Correlation: {event.correlation_id}")
     
-    # Restore plan by correlation_id
-    plan = await PlanContext.restore_by_correlation(
-        correlation_id=event.correlation_id,
-        context=context,
-        tenant_id=event.tenant_id or "00000000-0000-0000-0000-000000000000",
-        user_id=event.user_id or "00000000-0000-0000-0000-000000000001",
-    )
-    
-    if not plan:
-        print(f"   ⚠️  No plan found for correlation: {event.correlation_id}")
-        return
-    
     print(f"   Plan ID: {plan.plan_id}")
     print(f"   Current state: {plan.current_state}")
-    
-    # Get next state based on event
-    next_state = plan.get_next_state(event)
-    
-    if not next_state:
-        print(f"   ⚠️  No transition defined for event: {event.type}")
-        return
     
     # Update state
     plan.current_state = next_state

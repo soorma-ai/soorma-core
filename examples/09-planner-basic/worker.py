@@ -88,6 +88,9 @@ async def handle_research_task(event: EventEnvelope, context: PlatformContext):
         event_type=event.response_event or "research.complete",
         data=result_data,
         correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+        session_id=event.session_id,
     )
     
     print(f"✅ Response published")

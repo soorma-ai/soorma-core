@@ -49,6 +49,7 @@ from soorma_common.events import EventEnvelope, EventTopic
 
 from .base import Agent
 from ..context import PlatformContext
+from ..plan_context import PlanContext
 
 logger = logging.getLogger(__name__)
 
@@ -181,8 +182,12 @@ class Plan:
     status: str = "pending"  # pending, running, completed, failed, paused
 
 
-# Type alias for goal handlers
+# Type aliases for handlers
 GoalHandler = Callable[[Goal, PlatformContext], Awaitable[Plan]]
+TransitionHandler = Callable[
+    [EventEnvelope, PlatformContext, PlanContext, str],
+    Awaitable[None],
+]
 
 
 class Planner(Agent):
@@ -263,7 +268,7 @@ class Planner(Agent):
         self._goal_handlers: Dict[str, GoalHandler] = {}
         
         # Transition handler (optional)
-        self._transition_handler: Optional[Callable] = None
+        self._transition_handler: Optional[TransitionHandler] = None
     
     def on_goal(self, goal_type: str) -> Callable:
         """
@@ -309,43 +314,51 @@ class Planner(Agent):
         """
         Register handler for ALL state transitions.
         
-        This handler is called for ANY event on action-requests or action-results
-        where the correlation_id matches a known plan.
+        This handler is called for action-results events that match a known
+        plan transition (based on the plan's current state machine).
         
         RF-SDK-023: This uses wildcard subscriptions but does NOT add topics
         to events_consumed (topics are not event types).
         
         Usage:
             @planner.on_transition()
-            async def handle_transition(event, context):
-                # Restore plan by correlation_id
-                plan = await PlanContext.restore_by_correlation(
-                    event.correlation_id, context
-                )
-                if not plan:
-                    return  # Not a plan-related event
-                
-                # Determine next state based on event
-                next_state = plan.get_next_state(event)
-                if next_state:
-                    await plan.execute_next(trigger_event=event)
-                elif plan.is_complete():
-                    await plan.finalize()
+            async def handle_transition(event, context, plan, next_state):
+                # plan and next_state are provided when available
+                plan.current_state = next_state
+                await plan.execute_next(trigger_event=event)
         
         Returns:
             Decorator function
         """
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: TransitionHandler) -> TransitionHandler:
             self._transition_handler = func
             
-            # Subscribe to ALL events on both topics
+            # Subscribe to ALL events on action-results only.
             # NOTE: We don't add these topics to events_consumed (RF-SDK-023)
-            # because topics are not event types
-            
-            @self.on_event("*", topic=EventTopic.ACTION_REQUESTS)
+            # because topics are not event types.
             @self.on_event("*", topic=EventTopic.ACTION_RESULTS)
             async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
-                await func(event, context)
+                # Require tenant/user context to restore plans.
+                if not event.tenant_id or not event.user_id:
+                    logger.warning(
+                        "Skipping transition event without tenant_id/user_id"
+                    )
+                    return
+
+                plan = await PlanContext.restore_by_correlation(
+                    correlation_id=event.correlation_id,
+                    context=context,
+                    tenant_id=event.tenant_id,
+                    user_id=event.user_id,
+                )
+                if not plan:
+                    return
+
+                next_state = plan.get_next_state(event)
+                if not next_state:
+                    return
+
+                await func(event, context, plan, next_state)
             
             # RF-SDK-023: Remove wildcard from events_consumed
             # Wildcard subscriptions are implementation details, not consumed events

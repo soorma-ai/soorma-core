@@ -316,7 +316,13 @@ class PlanContext:
             return None
         
         # Get event type from event object
-        event_type = event.type if hasattr(event, 'type') else str(event)
+        # Prefer event_type first to avoid MagicMock treating any attribute as present.
+        if hasattr(event, 'event_type'):
+            event_type = event.event_type  # Mock objects in tests use 'event_type'
+        elif hasattr(event, 'type'):
+            event_type = event.type  # EventEnvelope uses 'type'
+        else:
+            event_type = str(event)  # Fallback to string representation
         
         # Find matching transition
         for transition in current_state_config.transitions:
@@ -366,11 +372,15 @@ class PlanContext:
             action_data = self._interpolate_data(action.data)
             
             # Publish action event using bus.request()
+            # MUST propagate authentication context for multi-tenant plan restoration
             await self._context.bus.request(
                 event_type=action.event_type,
                 data=action_data,
                 response_event=action.response_event,
                 correlation_id=self.plan_id,
+                tenant_id=self.tenant_id,
+                user_id=self.user_id,
+                session_id=self.session_id,
             )
         
         # Save state

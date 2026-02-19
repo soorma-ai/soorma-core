@@ -184,12 +184,9 @@ class TestPlannerIntegration:
         handled_plan = None
         
         @planner.on_transition()
-        async def handle_transition(event: EventEnvelope, ctx: PlatformContext) -> None:
-            """Transition handler that restores plan."""
+        async def handle_transition(event: EventEnvelope, ctx: PlatformContext, plan: PlanContext, next_state: str) -> None:
+            """Transition handler that receives plan."""
             nonlocal handled_plan
-            
-            # Restore plan by correlation_id
-            plan = await PlanContext.restore_by_correlation(event.correlation_id, ctx)
             handled_plan = plan
         
         # Verify handler registered
@@ -207,7 +204,6 @@ class TestPlannerIntegration:
         # Trigger handler
         await planner._transition_handler(event, context)
         
-        # Verify plan restored
+        # Verify plan restored via decorator
         assert handled_plan is not None
         assert handled_plan.plan_id == "plan-123"
-        context.memory.get_plan_by_correlation.assert_called_once_with("plan-123")

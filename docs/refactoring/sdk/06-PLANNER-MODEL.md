@@ -301,24 +301,44 @@ class Planner(Agent):
     
     def on_transition(self):
         """
-        Register handler for ALL state transitions.
-        Called for any event on action-requests or action-results
-        where correlation_id matches a known plan.
+        Register handler for state transitions.
+        
+        SDK automatically:
+        - Subscribes to action-results topic only
+        - Requires tenant_id/user_id for multi-tenant plan restoration
+        - Restores plan using PlanContext.restore_by_correlation()
+        - Validates transition exists in state machine
+        - Only invokes handler if plan and transition are valid
+        
+        Handler signature:
+            async def handler(
+                event: EventEnvelope,
+                context: PlatformContext,
+                plan: PlanContext,
+                next_state: str
+            ) -> None
         """
         def decorator(func):
-            # Subscribe to both topics
-            @self.on_event(topic="action-requests", event_type="*")
-            @self.on_event(topic="action-results", event_type="*")
+            @self.on_event("*", topic=EventTopic.ACTION_RESULTS)
             async def wrapper(event, context):
-                correlation_id = event.get("correlation_id")
-                if not correlation_id:
+                if not event.tenant_id or not event.user_id:
+                    logger.warning("Skipping transition event without tenant_id/user_id")
                     return
                 
-                # Check if we have a plan for this correlation
-                plan = await PlanContext.restore(correlation_id, context)
-                if plan:
-                    transition = TransitionContext(event=event, plan=plan)
-                    await func(transition, context)
+                plan = await PlanContext.restore_by_correlation(
+                    correlation_id=event.correlation_id,
+                    context=context,
+                    tenant_id=event.tenant_id,
+                    user_id=event.user_id,
+                )
+                if not plan:
+                    return
+                
+                next_state = plan.get_next_state(event)
+                if not next_state:
+                    return
+                
+                await func(event, context, plan, next_state)
             return func
         return decorator
     
@@ -445,8 +465,14 @@ state_machine = {
 
 ```python
 # Planner pauses plan (not individual task) for approval
-async def handle_transition(transition, context):
-    plan = transition.plan
+@planner.on_transition()
+async def handle_transition(
+    event: EventEnvelope,
+    context: PlatformContext,
+    plan: PlanContext,
+    next_state: str,
+) -> None:
+    plan.current_state = next_state
     
     if plan.current_state == "awaiting_budget_approval":
         await plan.pause(reason="budget_approval_required")
