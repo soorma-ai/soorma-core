@@ -17,6 +17,58 @@ Soorma is built on the **Distributed Cognition (DisCo)** pattern. You MUST respe
 - `services/`: Control Plane services (Registry, Event Service, Memory).
 - `examples/`: Reference implementations for agent choreography.
 
+### SDK Architecture Pattern (Two-Layer Abstraction):
+
+Soorma SDK follows a **strict two-layer architecture** to separate low-level service communication from high-level agent APIs:
+
+**Layer 1: Service Clients (Low-Level)** - Internal HTTP clients
+- `soorma.memory.client.MemoryServiceClient` - Direct Memory Service HTTP client
+- `soorma.events.EventClient` - Direct Event Service client
+- `soorma.registry.client.RegistryServiceClient` - Direct Registry Service client
+- **Usage:** Internal implementation only, NOT for agent handlers
+
+**Layer 2: PlatformContext Wrappers (High-Level)** - Agent-facing API
+- `PlatformContext.memory` (MemoryClient wrapper) - Delegates to MemoryServiceClient
+- `PlatformContext.bus` (BusClient wrapper) - Delegates to EventClient
+- `PlatformContext.registry` (RegistryClient) - Full registry client (already high-level)
+- **Usage:** ALL agent handlers MUST use these wrappers exclusively
+
+#### Architectural Mandates:
+
+1. **Agent Code:** MUST use `context.memory`, `context.bus`, `context.registry` from PlatformContext
+2. **Examples:** MUST demonstrate wrapper usage, NEVER import service clients directly
+3. **New Service Methods:** MUST have corresponding wrapper methods in PlatformContext layer
+4. **Wrapper Pattern:** Wrappers delegate via `self._client` or `self._event_client` after initialization
+5. **Plan Verification:** Action Plans MUST verify wrapper completeness before implementation
+
+#### Verification Checklist (for Plans):
+
+When adding or modifying service endpoints, ensure:
+- [ ] Service client has the method (e.g., `MemoryServiceClient.store_plan_context()`)
+- [ ] PlatformContext wrapper has matching method (e.g., `MemoryClient.store_plan_context()`)
+- [ ] Wrapper delegates to underlying client (follows existing patterns like task context methods)
+- [ ] Examples and tests use `context.memory` / `context.bus`, NOT service clients directly
+
+**Example (Correct):**
+```python
+@worker.on_task("research.requested")
+async def handle_research(task, context: PlatformContext):
+    # ✅ HIGH-LEVEL: Use wrapper
+    await context.memory.store_task_context(task_id=task.id, ...)
+    await context.bus.publish("search.requested", data)
+```
+
+**Example (WRONG):**
+```python
+from soorma.memory.client import MemoryServiceClient  # ❌ LOW-LEVEL
+
+@worker.on_task("research.requested")
+async def handle_research(task, context: PlatformContext):
+    # ❌ WRONG: Direct service client usage
+    client = MemoryServiceClient(base_url="...")
+    await client.store_task_context(...)
+```
+
 ---
 
 ## 2. Workflow Rituals (Hierarchical Planning & TDD)

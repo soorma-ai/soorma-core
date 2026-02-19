@@ -266,14 +266,27 @@ class GoalContext:
 ### Day 1: Design & Setup
 
 - [x] **Task 1.1:** Review Master Plan and refactoring docs ✅ (Status: Completed)
-- [ ] **Task 1.2:** Create this Action Plan 📋 (Status: In Progress)
-- [ ] **Task 1.3:** Set up `plan_context.py` file structure 📋 (Status: Not Started)
-- [ ] **Task 1.4:** Import StateConfig DTOs from soorma-common 📋 (Status: Not Started)
-- [ ] **Task 1.5:** Define PlanContext dataclass skeleton 📋 (Status: Not Started)
+- [x] **Task 1.2:** Create this Action Plan ✅ (Status: Completed)
+- [ ] **Task 1.3:** Verify MemoryServiceClient plan context methods exist 📋 (Status: Not Started)
+  - ✅ Verify `MemoryServiceClient.store_plan_context()` exists at [client.py:704](../../sdk/python/soorma/memory/client.py#L704)
+  - ✅ Verify `MemoryServiceClient.get_plan_context()` exists at [client.py:751](../../sdk/python/soorma/memory/client.py#L751)
+  - ✅ Verify `MemoryServiceClient.get_plan_by_correlation()` exists at [client.py:806](../../sdk/python/soorma/memory/client.py#L806)
+  - Review method signatures match our PlanContext needs
+- [ ] **Task 1.4:** Add plan context wrapper methods to MemoryClient 🔴 (Status: Not Started - CRITICAL)
+  - Add `store_plan_context()` wrapper in [context.py](../../sdk/python/soorma/context.py) MemoryClient class
+  - Add `get_plan_context()` wrapper
+  - Add `get_plan_by_correlation()` wrapper
+  - These delegate to `self._client` (MemoryServiceClient) after `_ensure_client()`
+  - **REQUIRED** for PlanContext to use `context.memory.store_plan_context()`
+- [ ] **Task 1.5:** Set up `plan_context.py` file structure 📋 (Status: Not Started)
+- [ ] **Task 1.6:** Import StateConfig DTOs from soorma-common 📋 (Status: Not Started)
+- [ ] **Task 1.7:** Define PlanContext dataclass skeleton 📋 (Status: Not Started)
 
 **Deliverables:**
 - `sdk/python/soorma/plan_context.py` (skeleton, ~50 lines)
+- `sdk/python/soorma/context.py` (add 3 plan context wrapper methods, ~60 lines added)
 - Action Plan committed to docs/
+- Verification notes on Memory Client methods
 
 ---
 
@@ -1184,9 +1197,80 @@ Phase 1 focuses on:
 
 ## 6. Implementation Notes
 
-### Memory Service Integration
+### Memory Service Integration (Two-Layer Architecture)
 
-PlanContext uses existing Memory Service endpoints:
+**IMPORTANT Discovery:** Memory Service has plan context methods, but they're not exposed through the PlatformContext wrapper!
+
+**Architecture:**
+1. **MemoryServiceClient** ([memory/client.py](../../sdk/python/soorma/memory/client.py)) - Low-level HTTP client
+   - ✅ Has `store_plan_context()` at line 704
+   - ✅ Has `get_plan_context()` at line 751  
+   - ✅ Has `get_plan_by_correlation()` at line 806
+
+2. **MemoryClient wrapper** ([context.py](../../sdk/python/soorma/context.py)) - High-level API in PlatformContext
+   - ✅ Has task context methods (`store_task_context()`, `get_task_context()`, etc.)
+   - ❌ **MISSING** plan context wrapper methods
+   - **Task 1.4 adds these wrappers**
+
+**Why This Matters:**
+- PlanContext receives `PlatformContext` in handlers
+- PlanContext calls `context.memory.store_plan_context()`
+- But `context.memory` is the MemoryClient wrapper, not MemoryServiceClient directly
+- We must add wrapper methods that delegate to the underlying client
+
+**Wrapper Implementation Pattern:**
+
+```python
+# In sdk/python/soorma/context.py - MemoryClient class
+
+async def store_plan_context(
+    self,
+    plan_id: str,
+    session_id: Optional[str],
+    goal_event: str,
+    goal_data: Dict[str, Any],
+    response_event: Optional[str] = None,
+    state: Optional[Dict[str, Any]] = None,
+    current_state: Optional[str] = None,
+    correlation_ids: Optional[List[str]] = None,
+) -> 'PlanContextResponse':
+    """
+    Store plan context (delegates to MemoryServiceClient).
+    
+    Called by PlanContext.save() after state transitions.
+    """
+    client = await self._ensure_client()
+    return await client.store_plan_context(
+        plan_id=plan_id,
+        session_id=session_id,
+        goal_event=goal_event,
+        goal_data=goal_data,
+        response_event=response_event,
+        state=state,
+        current_state=current_state,
+        correlation_ids=correlation_ids,
+    )
+
+async def get_plan_context(self, plan_id: str) -> Optional['PlanContextResponse']:
+    """
+    Retrieve plan context (delegates to MemoryServiceClient).
+    
+    Called by PlanContext.restore() to resume plan execution.
+    """
+    client = await self._ensure_client()
+    return await client.get_plan_context(plan_id)
+
+async def get_plan_by_correlation(self, correlation_id: str) -> Optional['PlanContextResponse']:
+    """
+    Find plan by correlation ID (delegates to MemoryServiceClient).
+    
+    Called by on_transition() handlers to route events to plans.
+    """
+    client = await self._ensure_client()
+    return await client.get_plan_by_correlation(correlation_id)
+```
+
+**PlanContext Usage (After Wrappers Added):**
 
 ```python
 # Save
@@ -1324,10 +1408,11 @@ def _interpolate_data(self, template: Dict[str, Any]) -> Dict[str, Any]:
 
 ### Modified Files
 
+- `sdk/python/soorma/context.py` (+60 lines: plan context wrapper methods in MemoryClient)
 - `sdk/python/soorma/agents/planner.py` (+150 lines: decorators, GoalContext)
 - `sdk/python/CHANGELOG.md` (+20 lines: Phase 1 release notes)
 
-### Total Lines: ~970 new/modified lines
+### Total Lines: ~1030 new/modified lines
 
 ---
 
@@ -1336,8 +1421,13 @@ def _interpolate_data(self, template: Dict[str, Any]) -> Dict[str, Any]:
 ### Upstream (Must be complete)
 
 - ✅ Stage 1: Event System (bus.request, bus.respond, response_event)
-- ✅ Stage 2: Memory SDK (store_plan_context, get_plan_context, get_plan_by_correlation)
+- ✅ Stage 2: Memory SDK plan context methods **VERIFIED**:
+  - `context.memory.store_plan_context()` - [client.py:704](../../sdk/python/soorma/memory/client.py#L704)
+  - `context.memory.get_plan_context()` - [client.py:751](../../sdk/python/soorma/memory/client.py#L751)
+  - `context.memory.update_plan_context()` - [client.py:775](../../sdk/python/soorma/memory/client.py#L775)
+  - `context.memory.get_plan_by_correlation()` - [client.py:806](../../sdk/python/soorma/memory/client.py#L806)
 - ✅ Stage 2: StateConfig DTOs in soorma-common
+- ✅ Memory Service API endpoints `/v1/memory/plan-context/*` - [plan_context.py](../../services/memory/src/memory_service/api/v1/plan_context.py)
 
 ### Downstream (Unblocks)
 
@@ -1391,15 +1481,18 @@ Once Phase 1 is complete:
 
 ## 12. Commit Strategy
 
-### Commit 1: PlanContext Skeleton (Day 1)
+### Commit 1: Memory Client Wrappers + PlanContext Skeleton (Day 1)
 ```
-feat(sdk): Add PlanContext skeleton for state machine
+feat(sdk): Add plan context wrappers and PlanContext skeleton
 
+- Add store_plan_context(), get_plan_context(), get_plan_by_correlation() 
+  wrappers to MemoryClient in context.py (delegates to MemoryServiceClient)
 - Create plan_context.py with dataclass definition
 - Import StateConfig DTOs from soorma-common
 - Add to_dict/from_dict methods
 - No tests yet (skeleton only)
 
+Fixes: PlatformContext.memory now exposes plan context methods
 Part of RF-SDK-006 (Phase 1, Day 1)
 ```
 
