@@ -267,20 +267,20 @@ class GoalContext:
 
 - [x] **Task 1.1:** Review Master Plan and refactoring docs ✅ (Status: Completed)
 - [x] **Task 1.2:** Create this Action Plan ✅ (Status: Completed)
-- [ ] **Task 1.3:** Verify MemoryServiceClient plan context methods exist 📋 (Status: Not Started)
+- [x] **Task 1.3:** Verify MemoryServiceClient plan context methods exist ✅ (Status: Completed)
   - ✅ Verify `MemoryServiceClient.store_plan_context()` exists at [client.py:704](../../sdk/python/soorma/memory/client.py#L704)
   - ✅ Verify `MemoryServiceClient.get_plan_context()` exists at [client.py:751](../../sdk/python/soorma/memory/client.py#L751)
   - ✅ Verify `MemoryServiceClient.get_plan_by_correlation()` exists at [client.py:806](../../sdk/python/soorma/memory/client.py#L806)
-  - Review method signatures match our PlanContext needs
-- [ ] **Task 1.4:** Add plan context wrapper methods to MemoryClient 🔴 (Status: Not Started - CRITICAL)
-  - Add `store_plan_context()` wrapper in [context.py](../../sdk/python/soorma/context.py) MemoryClient class
-  - Add `get_plan_context()` wrapper
-  - Add `get_plan_by_correlation()` wrapper
-  - These delegate to `self._client` (MemoryServiceClient) after `_ensure_client()`
-  - **REQUIRED** for PlanContext to use `context.memory.store_plan_context()`
-- [ ] **Task 1.5:** Set up `plan_context.py` file structure 📋 (Status: Not Started)
-- [ ] **Task 1.6:** Import StateConfig DTOs from soorma-common 📋 (Status: Not Started)
-- [ ] **Task 1.7:** Define PlanContext dataclass skeleton 📋 (Status: Not Started)
+  - ✅ Method signatures match PlanContext needs
+- [x] **Task 1.4:** Add plan context wrapper methods to MemoryClient ✅ (Status: Completed - CRITICAL)
+  - ✅ Added `store_plan_context()` wrapper in [context.py](../../sdk/python/soorma/context.py) MemoryClient class
+  - ✅ Added `get_plan_context()` wrapper
+  - ✅ Added `get_plan_by_correlation()` wrapper
+  - ✅ All delegate to `self._client` (MemoryServiceClient) after `_ensure_client()`
+  - ✅ PlanContext can now use `context.memory.store_plan_context()`
+- [x] **Task 1.5:** Set up `plan_context.py` file structure ✅ (Status: Completed)
+- [x] **Task 1.6:** Import StateConfig DTOs from soorma-common ✅ (Status: Completed)
+- [x] **Task 1.7:** Define PlanContext dataclass skeleton ✅ (Status: Completed)
 
 **Deliverables:**
 - `sdk/python/soorma/plan_context.py` (skeleton, ~50 lines)
