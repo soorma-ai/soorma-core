@@ -73,6 +73,26 @@ async def handle_research(task, context: PlatformContext):
 
 ## 2. Workflow Rituals (Hierarchical Planning & TDD)
 
+### Step 0: Read Architecture Patterns (MANDATORY)
+
+**Before working on ANY SDK or backend service code, you MUST:**
+
+1. **Read:** `docs/ARCHITECTURE_PATTERNS.md` - Core architectural patterns
+2. **Understand:**
+   - Current authentication pattern (custom headers: `X-Tenant-ID`, `X-User-ID`)
+   - Two-layer SDK architecture (service clients → wrappers)
+   - Event choreography patterns (DisCo with explicit response_event)
+   - Multi-tenancy & RLS policies
+   - State management patterns (working memory, task context, plan context)
+3. **Reference:** Check ARCHITECTURE_PATTERNS.md whenever:
+   - Adding new service endpoints
+   - Creating wrapper methods
+   - Implementing agent handlers
+   - Designing state persistence
+   - Working with authentication context
+
+**Mandate:** Architecture patterns take precedence over assumptions. If ARCHITECTURE_PATTERNS.md contradicts your understanding, the document is authoritative.
+
 ### Step 1: Feature-Scoped Plan Mode
 - Identify the **Feature Area** (e.g., `docs/registry/`).
 - Read the feature's `README.md` and `ARCHITECTURE.md` for local context.
@@ -103,6 +123,30 @@ async def handle_research(task, context: PlatformContext):
 ---
 
 ## 3. Communication & Security
+
+### Authentication & Multi-Tenancy
+
+**Current Implementation (v0.7.x):**
+- Services use custom HTTP headers: `X-Tenant-ID` and `X-User-ID`
+- SDK service clients inject these headers on every request
+- Backend services use PostgreSQL RLS (Row-Level Security) for tenant isolation
+- **NOT production-ready** - development pattern only
+
+**Future (v0.8.0+):**
+- JWT authentication for user-facing applications
+- API Key authentication for agent-to-agent communication
+- See `docs/ARCHITECTURE_PATTERNS.md` Section 1 for migration roadmap
+
+**Developer Rules:**
+1. **Service Clients (Low-Level):** MUST include `X-Tenant-ID` and `X-User-ID` headers
+2. **Wrappers (High-Level):** MUST extract tenant/user from event context automatically
+3. **Agent Handlers:** MUST use `context.memory`/`context.bus` (high-level wrappers only)
+4. **Examples:** MUST demonstrate wrapper usage, NEVER direct service client imports
+
+See `docs/ARCHITECTURE_PATTERNS.md` for complete authentication patterns.
+
+### General Security
+
 - **Public Domain:** This is MIT-licensed. NEVER commit secrets.
 - **Event Service:** Use the SDK `EventClient` exclusively.
 - **Imports:** Use `soorma_common.models` for shared DTOs.
