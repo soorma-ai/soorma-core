@@ -17,81 +17,55 @@ Soorma is built on the **Distributed Cognition (DisCo)** pattern. You MUST respe
 - `services/`: Control Plane services (Registry, Event Service, Memory).
 - `examples/`: Reference implementations for agent choreography.
 
-### SDK Architecture Pattern (Two-Layer Abstraction):
+### SDK Architecture (Two-Layer Pattern)
 
-Soorma SDK follows a **strict two-layer architecture** to separate low-level service communication from high-level agent APIs:
+**Mandate:** Soorma SDK uses a strict two-layer architecture separating service clients from agent APIs.
 
-**Layer 1: Service Clients (Low-Level)** - Internal HTTP clients
-- `soorma.memory.client.MemoryServiceClient` - Direct Memory Service HTTP client
-- `soorma.events.EventClient` - Direct Event Service client
-- `soorma.registry.client.RegistryServiceClient` - Direct Registry Service client
-- **Usage:** Internal implementation only, NOT for agent handlers
-
-**Layer 2: PlatformContext Wrappers (High-Level)** - Agent-facing API
-- `PlatformContext.memory` (MemoryClient wrapper) - Delegates to MemoryServiceClient
-- `PlatformContext.bus` (BusClient wrapper) - Delegates to EventClient
-- `PlatformContext.registry` (RegistryClient) - Full registry client (already high-level)
-- **Usage:** ALL agent handlers MUST use these wrappers exclusively
-
-#### Architectural Mandates:
+**Non-Negotiable Rules:**
 
 1. **Agent Code:** MUST use `context.memory`, `context.bus`, `context.registry` from PlatformContext
 2. **Examples:** MUST demonstrate wrapper usage, NEVER import service clients directly
 3. **New Service Methods:** MUST have corresponding wrapper methods in PlatformContext layer
-4. **Wrapper Pattern:** Wrappers delegate via `self._client` or `self._event_client` after initialization
+4. **Tests:** MUST use high-level wrappers (`context.memory`), NOT service clients
 5. **Plan Verification:** Action Plans MUST verify wrapper completeness before implementation
 
-#### Verification Checklist (for Plans):
-
-When adding or modifying service endpoints, ensure:
-- [ ] Service client has the method (e.g., `MemoryServiceClient.store_plan_context()`)
-- [ ] PlatformContext wrapper has matching method (e.g., `MemoryClient.store_plan_context()`)
-- [ ] Wrapper delegates to underlying client (follows existing patterns like task context methods)
-- [ ] Examples and tests use `context.memory` / `context.bus`, NOT service clients directly
-
-**Example (Correct):**
+**Quick Reference:**
 ```python
+# ✅ CORRECT: Use PlatformContext wrappers
 @worker.on_task("research.requested")
 async def handle_research(task, context: PlatformContext):
-    # ✅ HIGH-LEVEL: Use wrapper
     await context.memory.store_task_context(task_id=task.id, ...)
     await context.bus.publish("search.requested", data)
+
+# ❌ WRONG: Never import service clients
+from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 ```
 
-**Example (WRONG):**
-```python
-from soorma.memory.client import MemoryServiceClient  # ❌ LOW-LEVEL
-
-@worker.on_task("research.requested")
-async def handle_research(task, context: PlatformContext):
-    # ❌ WRONG: Direct service client usage
-    client = MemoryServiceClient(base_url="...")
-    await client.store_task_context(...)
-```
+**Details:** See `docs/ARCHITECTURE_PATTERNS.md` Section 2 for layer definitions, wrapper patterns, and implementation guide.
 
 ---
 
 ## 2. Workflow Rituals (Hierarchical Planning & TDD)
 
-### Step 0: Read Architecture Patterns (MANDATORY)
+### Step 0: Mandatory Reading (Context-Dependent)
 
-**Before working on ANY SDK or backend service code, you MUST:**
+**When working on SDK or backend services, you MUST read:**
 
-1. **Read:** `docs/ARCHITECTURE_PATTERNS.md` - Core architectural patterns
-2. **Understand:**
-   - Current authentication pattern (custom headers: `X-Tenant-ID`, `X-User-ID`)
-   - Two-layer SDK architecture (service clients → wrappers)
-   - Event choreography patterns (DisCo with explicit response_event)
-   - Multi-tenancy & RLS policies
-   - State management patterns (working memory, task context, plan context)
-3. **Reference:** Check ARCHITECTURE_PATTERNS.md whenever:
-   - Adding new service endpoints
-   - Creating wrapper methods
-   - Implementing agent handlers
-   - Designing state persistence
-   - Working with authentication context
+- **`docs/ARCHITECTURE_PATTERNS.md`** - Technical patterns for:
+  - Authentication & multi-tenancy (Section 1, 4)
+  - Two-layer SDK architecture (Section 2)
+  - Event choreography (Section 3)
+  - State management (Section 5)
+  - Error handling & testing (Section 6, 7)
 
-**Mandate:** Architecture patterns take precedence over assumptions. If ARCHITECTURE_PATTERNS.md contradicts your understanding, the document is authoritative.
+**When to reference ARCHITECTURE_PATTERNS.md:**
+- Adding service endpoints or SDK methods
+- Implementing authentication/authorization
+- Designing state persistence
+- Working with event choreography
+- Writing integration tests
+
+**Authoritative Order:** AGENT.md (constitution) → ARCHITECTURE_PATTERNS.md (technical guide) → Feature docs
 
 ### Step 1: Feature-Scoped Plan Mode
 - Identify the **Feature Area** (e.g., `docs/registry/`).
@@ -124,31 +98,24 @@ async def handle_research(task, context: PlatformContext):
 
 ## 3. Communication & Security
 
-### Authentication & Multi-Tenancy
+### Authentication Context
 
-**Current Implementation (v0.7.x):**
-- Services use custom HTTP headers: `X-Tenant-ID` and `X-User-ID`
-- SDK service clients inject these headers on every request
-- Backend services use PostgreSQL RLS (Row-Level Security) for tenant isolation
-- **NOT production-ready** - development pattern only
+**Non-Negotiable Rules:**
 
-**Future (v0.8.0+):**
-- JWT authentication for user-facing applications
-- API Key authentication for agent-to-agent communication
-- See `docs/ARCHITECTURE_PATTERNS.md` Section 1 for migration roadmap
+1. **Service Clients:** MUST include authentication headers (`X-Tenant-ID`, `X-User-ID`) on every request
+2. **Wrappers:** MUST extract tenant/user context automatically (no manual parameters)
+3. **Agent Handlers:** MUST use high-level wrappers (`context.memory`, `context.bus`) exclusively
+4. **Multi-Tenancy:** ALL database queries MUST enforce tenant isolation via RLS policies
 
-**Developer Rules:**
-1. **Service Clients (Low-Level):** MUST include `X-Tenant-ID` and `X-User-ID` headers
-2. **Wrappers (High-Level):** MUST extract tenant/user from event context automatically
-3. **Agent Handlers:** MUST use `context.memory`/`context.bus` (high-level wrappers only)
-4. **Examples:** MUST demonstrate wrapper usage, NEVER direct service client imports
+**Current State:** v0.7.x uses custom headers (development-only pattern)  
+**Future State:** v0.8.0+ will use JWT/API Keys (production-ready)
 
-See `docs/ARCHITECTURE_PATTERNS.md` for complete authentication patterns.
+**Details:** See `docs/ARCHITECTURE_PATTERNS.md` Section 1 for current implementation, Section 4 for multi-tenancy patterns, and migration roadmap.
 
 ### General Security
 
-- **Public Domain:** This is MIT-licensed. NEVER commit secrets.
-- **Event Service:** Use the SDK `EventClient` exclusively.
+- **Public Domain:** This is MIT-licensed. NEVER commit secrets or credentials.
+- **Event Choreography:** Use explicit `response_event` (see `docs/ARCHITECTURE_PATTERNS.md` Section 3).
 - **Imports:** Use `soorma_common.models` for shared DTOs.
 
 ---
