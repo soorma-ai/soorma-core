@@ -4,6 +4,30 @@ You are a Senior Architect at Soorma AI. You operate under a **Specification-Dri
 
 ---
 
+## ⚠️ CRITICAL GATING REQUIREMENT
+
+**Before ANY planning work, code changes, or task definition on soorma-core SDK and services, you MUST:**
+
+1. **Read in full:** [docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md)
+2. **Understand:** Sections 1–7 (Authentication, Two-Layer SDK, Event Choreography, Multi-Tenancy, State Management, Error Handling, Testing)
+3. **Document alignment:** Your plan/specification MUST explicitly reference which patterns you follow
+4. **Validate wrapper completeness:** If adding service methods, verify PlatformContext wrappers exist (Section 2)
+
+**This is NOT optional.** This gate applies to ALL contributions affecting:
+- SDK client code (`sdk/python/soorma/`)
+- Backend services (`services/*/`)
+- Example implementations (`examples/*/`)
+- Integration patterns (event choreography, multi-tenancy, authentication)
+
+**Consequence:** 
+- Plans submitted without ARCHITECTURE_PATTERNS.md alignment will be **rejected**.
+- Code reviews will bounce PRs that violate documented patterns.
+- You must re-read relevant sections if changes are requested during review.
+
+**Why?** The two-layer architecture, authentication model, event choreography, and multi-tenancy patterns are non-negotiable. Violations leak low-level service details into agent handlers, create security gaps, and break the abstraction layer that keeps Soorma maintainable.
+
+---
+
 ## 1. Architectural Mandates (DisCo Pattern)
 
 Soorma is built on the **Distributed Cognition (DisCo)** pattern. You MUST respect the "Trinity" of entities:
@@ -19,15 +43,24 @@ Soorma is built on the **Distributed Cognition (DisCo)** pattern. You MUST respe
 
 ### SDK Architecture (Two-Layer Pattern)
 
-**Mandate:** Soorma SDK uses a strict two-layer architecture separating service clients from agent APIs.
+**Mandate:** Soorma SDK uses a strict two-layer architecture separating service clients from agent APIs. **This is NOT a suggestion—it is a structural requirement.** Violations are architectural debt that compounds across all features.
+
+**Reference Document:** [docs/ARCHITECTURE_PATTERNS.md Section 2](docs/ARCHITECTURE_PATTERNS.md#2-sdk-two-layer-architecture) — You MUST understand this section before adding ANY SDK method.
 
 **Non-Negotiable Rules:**
 
-1. **Agent Code:** MUST use `context.memory`, `context.bus`, `context.registry` from PlatformContext
+1. **Agent Code:** MUST use `context.memory`, `context.bus`, `context.registry` from PlatformContext **exclusively**
+   - Exception: None. Zero exceptions.
+   - Violation: Code review rejection + mandatory refactor
 2. **Examples:** MUST demonstrate wrapper usage, NEVER import service clients directly
-3. **New Service Methods:** MUST have corresponding wrapper methods in PlatformContext layer
+   - Example import violation: `from soorma.memory.client import MemoryServiceClient`
+   - This exposes internal abstraction and teaches bad patterns
+3. **New Service Methods:** MUST have corresponding wrapper methods in PlatformContext layer **before implementation starts**
+   - Validation: Plan MUST include wrapper method stubs for all new service endpoints
 4. **Tests:** MUST use high-level wrappers (`context.memory`), NOT service clients
+   - Service client imports in agent tests = automatic PR rejection
 5. **Plan Verification:** Action Plans MUST verify wrapper completeness before implementation
+   - Checklist: For each service endpoint, does an Agent-friendly wrapper method exist?
 
 **Quick Reference:**
 ```python
@@ -41,31 +74,30 @@ async def handle_research(task, context: PlatformContext):
 from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 ```
 
-**Details:** See `docs/ARCHITECTURE_PATTERNS.md` Section 2 for layer definitions, wrapper patterns, and implementation guide.
+**Details & Implementation Patterns:** See [docs/ARCHITECTURE_PATTERNS.md Section 2](docs/ARCHITECTURE_PATTERNS.md#2-sdk-two-layer-architecture) for layer definitions, wrapper patterns, and delegation examples.
 
 ---
 
 ## 2. Workflow Rituals (Hierarchical Planning & TDD)
 
-### Step 0: Mandatory Reading (Context-Dependent)
+### Step 0: Gateway — Verify ARCHITECTURE_PATTERNS.md Compliance [MANDATORY FOR ALL WORK]
 
-**When working on SDK or backend services, you MUST read:**
+**This step is a prerequisite.** You cannot proceed to Step 1 without completing it.
 
-- **`docs/ARCHITECTURE_PATTERNS.md`** - Technical patterns for:
-  - Authentication & multi-tenancy (Section 1, 4)
-  - Two-layer SDK architecture (Section 2)
-  - Event choreography (Section 3)
-  - State management (Section 5)
-  - Error handling & testing (Section 6, 7)
+**Explicit Checklist (complete ALL items before planning):**
 
-**When to reference ARCHITECTURE_PATTERNS.md:**
-- Adding service endpoints or SDK methods
-- Implementing authentication/authorization
-- Designing state persistence
-- Working with event choreography
-- Writing integration tests
+- [ ] **Read** [docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md) **in full.** (No skimming.)
+- [ ] **Understand Section 1:** Authentication model (custom headers v0.7.x, JWT/API Key roadmap v0.8.0+)
+- [ ] **Understand Section 2:** Two-layer SDK architecture — agent code uses `context.*` wrappers ONLY, never service clients directly
+- [ ] **Understand Section 3:** Event choreography — explicit `response_event`, no inferred event names
+- [ ] **Understand Section 4:** Multi-tenancy via PostgreSQL RLS and session variables
+- [ ] **Understand Section 5:** State management patterns (working memory, task context, plan context state machines)
+- [ ] **Understand Section 6:** Error handling in service clients vs. wrappers vs. agent handlers
+- [ ] **Understand Section 7:** Testing patterns (unit mocks vs. integration tests)
+- [ ] **Self-check:** Can you explain WITHOUT consulting the docs why agent code cannot import `MemoryServiceClient`?
+- [ ] **Self-check:** Can you explain the difference between a service endpoint and a wrapper method?
 
-**Authoritative Order:** AGENT.md (constitution) → ARCHITECTURE_PATTERNS.md (technical guide) → Feature docs
+**If you cannot check all items above, you are not ready to proceed. Re-read the document.**
 
 ### Step 1: Feature-Scoped Plan Mode
 - Identify the **Feature Area** (e.g., `docs/registry/`).
@@ -98,25 +130,34 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 
 ## 3. Communication & Security
 
-### Authentication Context
+### Authentication Context (Mandatory for All Service Communication)
+
+**Reference:** [docs/ARCHITECTURE_PATTERNS.md Section 1](docs/ARCHITECTURE_PATTERNS.md#1-authentication--authorization-current-implementation)
 
 **Non-Negotiable Rules:**
 
-1. **Service Clients:** MUST include authentication headers (`X-Tenant-ID`, `X-User-ID`) on every request
-2. **Wrappers:** MUST extract tenant/user context automatically (no manual parameters)
-3. **Agent Handlers:** MUST use high-level wrappers (`context.memory`, `context.bus`) exclusively
+1. **Service Clients:** MUST include authentication headers (`X-Tenant-ID`, `X-User-ID`) on **every request**
+   - No exceptions. Missing headers = 403 Forbidden by design.
+   - Service client methods validate headers are present
+2. **Wrappers:** MUST extract tenant/user context **automatically** from event envelope
+   - Agent handlers NEVER pass tenant_id/user_id manually
+   - Wrapper methods have NO tenant_id/user_id parameters
+3. **Agent Handlers:** MUST use high-level wrappers (`context.memory`, `context.bus`) **exclusively**
+   - Exception: None. Service clients are internal—never exposed to handler code.
 4. **Multi-Tenancy:** ALL database queries MUST enforce tenant isolation via RLS policies
+   - Service middleware MUST set PostgreSQL session variables (`app.tenant_id`, `app.user_id`)
+   - Queries execute within RLS policy scope—automatic enforcement, no manual filtering
 
 **Current State:** v0.7.x uses custom headers (development-only pattern)  
-**Future State:** v0.8.0+ will use JWT/API Keys (production-ready)
+**Future State:** v0.8.0+ will use JWT/API Keys (production-ready)  
 
-**Details:** See `docs/ARCHITECTURE_PATTERNS.md` Section 1 for current implementation, Section 4 for multi-tenancy patterns, and migration roadmap.
+**Implementation Details & Migration Roadmap:** See [docs/ARCHITECTURE_PATTERNS.md Section 1](docs/ARCHITECTURE_PATTERNS.md#1-authentication--authorization-current-implementation)
 
 ### General Security
 
 - **Public Domain:** This is MIT-licensed. NEVER commit secrets or credentials.
-- **Event Choreography:** Use explicit `response_event` (see `docs/ARCHITECTURE_PATTERNS.md` Section 3).
-- **Imports:** Use `soorma_common.models` for shared DTOs.
+- **Event Choreography:** Use explicit `response_event`—no inferred event names. See [docs/ARCHITECTURE_PATTERNS.md Section 3](docs/ARCHITECTURE_PATTERNS.md#3-event-choreography-patterns) for DisCo pattern enforcement.
+- **Imports:** Use `soorma_common.models` for shared DTOs; never couple agent code to service internals.
 
 ---
 
