@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-02-19
+
 ### Added
 - **Stage 4 Phase 1 - Planner Foundation (RF-SDK-006)** (February 18, 2026)
   - **PlanContext** class for state machine-based plan orchestration
