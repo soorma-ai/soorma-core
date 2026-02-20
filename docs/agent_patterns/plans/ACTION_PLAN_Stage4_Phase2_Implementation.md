@@ -30,8 +30,11 @@ This phase adds the LLM reasoning layer on top of Phase 1's state machine founda
 - [ ] **Validation:** Prevents hallucinated events (validates event existence before publish)
 - [ ] **Execution:** execute_decision() handles PUBLISH, COMPLETE, WAIT, DELEGATE actions
 - [ ] **Circuit Breaker:** max_actions limit prevents runaway loops
-- [ ] **Testing:** 20+ unit tests covering decisions, validation, execution
-- [ ] **Testing:** 3+ integration tests for end-to-end choreography flows
+- [ ] **Business Logic (Enhancement 1):** system_instructions parameter enables custom business rules
+- [ ] **Runtime Context (Enhancement 2):** custom_context parameter for dynamic decision context
+- [ ] **Planning Strategies:** Built-in strategies (balanced|conservative|aggressive)
+- [ ] **Testing:** 25+ unit tests covering decisions, validation, execution, custom context
+- [ ] **Testing:** 4+ integration tests for end-to-end choreography flows
 - [ ] **Architecture Alignment:** Two-layer pattern verified (no direct service client imports in examples)
 
 ### Success Metrics
@@ -45,6 +48,8 @@ This phase adds the LLM reasoning layer on top of Phase 1's state machine founda
 **Developer Experience:**
 - ChoreographyPlanner reduces planner code by 80%+ vs manual orchestration
 - Developers can control LLM model via simple parameter
+- Developers can inject business logic via system_instructions
+- Developers can provide runtime context for dynamic decisions
 - Error messages guide developers to set API keys
 - LiteLLM supports 50+ models (user choice, not framework dictated)
 
@@ -213,6 +218,8 @@ class ChoreographyPlanner(Planner):
         api_base: Optional base URL for custom endpoints (e.g., Azure)
         temperature: Temperature for LLM generation (0-2)
         max_actions: Circuit breaker - max actions per plan (prevents runaway loops)
+        system_instructions: Custom business logic/rules for LLM (optional)
+        planning_strategy: Pre-configured strategy (balanced|conservative|aggressive)
         **llm_kwargs: Additional parameters passed to LiteLLM (e.g., max_tokens, top_p)
     """
     
@@ -224,6 +231,8 @@ class ChoreographyPlanner(Planner):
         api_base: Optional[str] = None,
         temperature: float = 0.7,
         max_actions: int = 20,
+        system_instructions: Optional[str] = None,
+        planning_strategy: str = "balanced",
         **llm_kwargs,
     ):
         """
@@ -236,6 +245,8 @@ class ChoreographyPlanner(Planner):
             api_base: Optional base URL for custom LLM endpoints
             temperature: LLM temperature (lower = deterministic, higher = creative)
             max_actions: Circuit breaker limit for actions per plan
+            system_instructions: Custom business logic for the LLM (e.g., compliance rules, domain expertise)
+            planning_strategy: Pre-configured strategy ("balanced"|"conservative"|"aggressive")
             **llm_kwargs: Additional LiteLLM parameters (max_tokens, top_p, etc.)
             
         Raises:
@@ -268,6 +279,20 @@ class ChoreographyPlanner(Planner):
                 name="advisor",
                 reasoning_model="ollama/llama2",
             )
+            
+            # Custom business logic
+            planner = ChoreographyPlanner(
+                name="financial-advisor",
+                reasoning_model="gpt-4o",
+                system_instructions="""
+                    You are a financial planning agent for a regulated banking platform.
+                    CRITICAL RULES:
+                    - Transactions >$5,000 require human approval (use WAIT action)
+                    - Never auto-execute wire transfers (always DELEGATE to compliance-checker)
+                    - Prioritize security over speed
+                """,
+                planning_strategy="conservative",
+            )
         """
         super().__init__(name=name, description=f"Autonomous planner using {reasoning_model}")
         
@@ -276,6 +301,8 @@ class ChoreographyPlanner(Planner):
         self.api_base = api_base
         self.temperature = temperature
         self.max_actions = max_actions
+        self.system_instructions = system_instructions
+        self.planning_strategy = planning_strategy
         self.llm_kwargs = llm_kwargs
         
         # Will be lazily imported to avoid hard dependency
@@ -286,6 +313,7 @@ class ChoreographyPlanner(Planner):
         trigger: str,
         context: PlatformContext,
         plan_id: Optional[str] = None,
+        custom_context: Optional[Dict[str, Any]] = None,
     ) -> PlannerDecision:
         """
         Use LLM to decide the next action in the plan.
@@ -301,6 +329,7 @@ class ChoreographyPlanner(Planner):
             trigger: What triggered this decision (e.g., "search.completed")
             context: PlatformContext for service access
             plan_id: Optional plan ID for decision tracking
+            custom_context: Runtime-specific context for this decision (e.g., customer tier, inventory levels)
             
         Returns:
             PlannerDecision with next action to take
@@ -315,6 +344,16 @@ class ChoreographyPlanner(Planner):
                 context=context,
             )
             # Returns PlannerDecision with PUBLISH, COMPLETE, WAIT, or DELEGATE action
+            
+            # With custom runtime context
+            decision = await planner.reason_next_action(
+                trigger="order.received",
+                context=context,
+                custom_context={
+                    "customer": {"tier": "premium", "region": "EU"},
+                    "inventory": {"stock_level": "low"},
+                },
+            )
         """
         # Lazy import to avoid hard dependency
         if not self._litellm:
@@ -331,7 +370,7 @@ class ChoreographyPlanner(Planner):
         events = await context.toolkit.discover_actionable_events(topic="action-requests")
         
         # Build schema-based prompt
-        prompt = self._build_prompt(trigger, events)
+        prompt = self._build_prompt(trigger, events, custom_context)
         
         # Call LLM with decision schema
         decision_schema = PlannerDecision.model_json_schema()
@@ -420,13 +459,19 @@ class ChoreographyPlanner(Planner):
                 data=action.goal_data,
             )
     
-    def _build_prompt(self, trigger: str, available_events: List[Any]) -> str:
+    def _build_prompt(
+        self, 
+        trigger: str, 
+        available_events: List[Any],
+        custom_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
-        Build LLM prompt with available events schema.
+        Build LLM prompt with available events schema and custom context.
         
         Args:
             trigger: Event that triggered this decision
             available_events: List of EventDefinition objects
+            custom_context: Runtime-specific context for this decision
             
         Returns:
             Formatted prompt string with event schemas
@@ -436,13 +481,35 @@ class ChoreographyPlanner(Planner):
             f"- {e.event_name}: {e.description}" for e in available_events
         ])
         
-        return f"""
-You are planning the next step in a workflow.
+        # System instructions (business logic)
+        system_msg = self.system_instructions or "You are planning the next step in a workflow."
+        
+        # Planning strategy guidance
+        strategy_guidance = self._get_strategy_guidance()
+        
+        # Custom context section
+        context_section = ""
+        if custom_context:
+            import json
+            context_section = f"""
 
+Additional Context:
+{json.dumps(custom_context, indent=2)}
+
+Consider this context when making decisions.
+"""
+        
+        return f"""
+{system_msg}
+
+{strategy_guidance}
+
+Current Situation:
 Trigger: {trigger}
 
 Available events to publish:
 {event_descriptions}
+{context_section}
 
 Decide on the next action:
 - PUBLISH: Publish one of the above events
@@ -452,6 +519,20 @@ Decide on the next action:
 
 Respond with JSON matching the PlannerDecision schema.
 """
+    
+    def _get_strategy_guidance(self) -> str:
+        """
+        Return planning strategy-specific guidance.
+        
+        Returns:
+            Strategy guidance text for LLM prompt
+        """
+        strategies = {
+            "conservative": "Prioritize safety and compliance. When uncertain, use WAIT for human review.",
+            "balanced": "Balance speed and safety. Use WAIT only for high-risk decisions.",
+            "aggressive": "Prioritize speed and automation. Minimize WAIT actions.",
+        }
+        return strategies.get(self.planning_strategy, strategies["balanced"])
     
     async def _validate_decision_events(
         self,
@@ -478,6 +559,95 @@ Respond with JSON matching the PlannerDecision schema.
                     f"Available: {event_names}"
                 )
 ```
+
+### Business Logic Enhancements (Developer Experience)
+
+Phase 2 includes two critical enhancements for production readiness:
+
+#### **Enhancement 1: System Instructions (Init-Time Business Logic)**
+
+**Problem:** Generic LLM prompts can't encode domain expertise, compliance rules, or business constraints.
+
+**Solution:** `system_instructions` parameter for persistent business logic
+
+**Use Cases:**
+- **Financial Services:** "Never auto-approve transactions >$5,000. Always route to compliance for wire transfers."
+- **Healthcare:** "Prioritize peer-reviewed sources. Include methodology validation in every search."
+- **Manufacturing:** "Always check inventory before ordering. Prefer local suppliers for time-sensitive orders."
+- **Customer Service:** "Escalate to human if sentiment is negative. Use friendly tone for consumers, formal for B2B."
+
+**Implementation:**
+```python
+planner = ChoreographyPlanner(
+    name="financial-advisor",
+    reasoning_model="gpt-4o",
+    system_instructions="""
+        You are a financial planning agent for a regulated banking platform.
+        
+        CRITICAL RULES:
+        - Transactions >$5,000 require human approval (use WAIT action)
+        - Never auto-execute wire transfers (always DELEGATE to compliance-checker)
+        - Log all decisions for audit trail
+        - Prioritize security over speed
+    """,
+    planning_strategy="conservative",  # Affects prompt templates
+)
+```
+
+**Effort:** 2 hours (parameter + prompt integration + 3 tests)
+
+#### **Enhancement 2: Runtime Custom Context (Per-Decision Dynamic Context)**
+
+**Problem:** Business decisions need runtime data (customer tier, inventory levels, regulatory context).
+
+**Solution:** `custom_context` parameter in `reason_next_action()`
+
+**Use Cases:**
+- **E-commerce:** Customer tier ("premium" vs "basic") affects shipping priority
+- **Healthcare:** Patient age/conditions affect treatment recommendations
+- **Finance:** Transaction history affects fraud detection thresholds
+- **Manufacturing:** Current inventory levels affect ordering decisions
+
+**Implementation:**
+```python
+decision = await planner.reason_next_action(
+    trigger="order.received",
+    context=context,
+    custom_context={
+        "customer": {
+            "tier": "premium",
+            "lifetime_value": 50000,
+            "region": "EU",
+        },
+        "inventory": {
+            "stock_level": "low",
+            "restock_eta": "3 days",
+        },
+    },
+)
+```
+
+**Effort:** 1 hour (parameter + prompt injection + 2 tests)
+
+#### **Enhancement 3: Prompt Template System (DEFERRED)**
+
+**Status:** 🟡 Deferred to Stage 5 or Post-Launch  
+**Tracking:** RF-SDK-019 in Master Plan Section 11  
+**Reason:** Scope control - Enhancements 1 & 2 provide 80% of value  
+**Effort:** 2-3 days (reusable templates, few-shot examples, template registry)
+
+**Future Capabilities:**
+- Domain-specific prompt templates (finance, healthcare, legal)
+- Few-shot example integration for better reasoning
+- Template versioning and A/B testing
+- Jinja2-based template customization
+
+**Why Defer:**
+- Enhancements 1 & 2 satisfy immediate production needs
+- Templating requires more design work (Jinja2 vs custom DSL)
+- Can iterate based on real-world usage patterns
+
+---
 
 ### SDK Layer Verification (Architecture Compliance)
 
@@ -562,12 +732,13 @@ Rationale: LiteLLM provides:
 
 - [ ] **2.1:** Create `sdk/python/soorma/ai/choreography.py`
   - [ ] ChoreographyPlanner class extending Planner
-  - [ ] __init__() with BYO model parameters
-  - [ ] reason_next_action() - event discovery + LLM reasoning
+  - [ ] __init__() with BYO model parameters + system_instructions + planning_strategy
+  - [ ] reason_next_action() - event discovery + LLM reasoning + custom_context
   - [ ] execute_decision() - type-safe dispatch
-  - [ ] _build_prompt() - schema generation
+  - [ ] _build_prompt() - schema generation + system instructions + custom context
+  - [ ] _get_strategy_guidance() - strategy-specific prompts
   - [ ] _validate_decision_events() - hallucination prevention
-  - **Est:** 5 hours | Status: 📋 Planned
+  - **Est:** 6 hours | Status: 📋 Planned
 
 - [ ] **2.2:** LiteLLM Integration
   - [ ] Add litellm to pyproject.toml dependencies
@@ -577,10 +748,14 @@ Rationale: LiteLLM provides:
 
 - [ ] **2.3:** TDD - Write ChoreographyPlanner tests
   - [ ] test_choreography_planner_initialization()
+  - [ ] test_system_instructions_in_prompt()
+  - [ ] test_custom_context_in_prompt()
+  - [ ] test_planning_strategy_guidance()
   - [ ] test_reason_next_action_discovers_events()
   - [ ] test_reason_next_action_calls_litellm()
   - [ ] test_reason_next_action_validates_event_exists()
   - [ ] test_reason_next_action_raises_on_hallucination()
+  - [ ] test_reason_next_action_with_custom_context()
   - [ ] test_execute_decision_publish()
   - [ ] test_execute_decision_complete()
   - [ ] test_execute_decision_wait()
@@ -589,7 +764,7 @@ Rationale: LiteLLM provides:
   - [ ] test_byo_model_credentials()
   - [ ] test_byo_model_azure_openai()
   - [ ] test_byo_model_local_ollama()
-  - **Est:** 4 hours | Status: 📋 Planned
+  - **Est:** 5 hours | Status: 📋 Planned
 
 ### Task 3: Integration & Validation
 
@@ -605,7 +780,12 @@ Rationale: LiteLLM provides:
   - [ ] Note BYO model pattern
   - **Est:** 1 hour | Status: 📋 Planned
 
-**Total Phase 2 Effort:** ~19 hours (3 days, 1 person)
+**Total Phase 2 Effort:** ~22 hours (3 days, 1 person)
+
+**Enhancements Added:**
+- ✅ Enhancement 1: System Instructions (business logic) - 2 hours
+- ✅ Enhancement 2: Custom Context (runtime parameters) - 1 hour
+- 🟡 Enhancement 3: Prompt Template System - Deferred to Phase 4+ (tracked in Master Plan)
 
 ---
 
@@ -944,9 +1124,11 @@ if self.action_count >= self.max_actions:
 
 - [ ] RED: Write test_choreography.py with failing tests
 - [ ] GREEN: Create soorma/ai/choreography.py
-- [ ] GREEN: Implement reason_next_action()
+- [ ] GREEN: Implement reason_next_action() with custom_context parameter
 - [ ] GREEN: Implement execute_decision()
-- [ ] GREEN: Implement _build_prompt() and _validate_decision_events()
+- [ ] GREEN: Implement _build_prompt() with system_instructions and custom_context
+- [ ] GREEN: Implement _get_strategy_guidance() for planning strategies
+- [ ] GREEN: Implement _validate_decision_events()
 - [ ] REFACTOR: Code cleanup, docstring review
 - [ ] Commit: "feat(sdk): Add ChoreographyPlanner for autonomous orchestration (RF-SDK-016)"
 

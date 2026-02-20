@@ -550,17 +550,26 @@ Planner (???) ← incomplete ❌
   - PlannerDecision Pydantic model with validation
   - `model_json_schema()` for LLM prompts
 - [ ] **RF-SDK-016:** ChoreographyPlanner class
-  - `reason_next_action()` - LLM-based decision making
+  - `reason_next_action()` - LLM-based decision making with custom_context parameter
   - `execute_decision()` - type-safe execution
-  - `_build_prompt()` - schema-based prompts
+  - `_build_prompt()` - schema-based prompts with system_instructions and custom_context
+  - `_get_strategy_guidance()` - planning strategies (balanced/conservative/aggressive)
   - Circuit breaker (max_actions)
   - Event validation (prevent hallucinations)
+- [ ] **Enhancement 1:** System Instructions (business logic injection)
+  - system_instructions parameter in __init__()
+  - planning_strategy parameter (balanced|conservative|aggressive)
+  - Integration into prompt generation
+- [ ] **Enhancement 2:** Runtime Custom Context
+  - custom_context parameter in reason_next_action()
+  - Dynamic context injection per decision
+  - JSON serialization in prompts
 
 **Deliverables:**
 - `sdk/python/soorma/ai/decisions.py` - PlannerDecision types (~100 lines)
-- `sdk/python/soorma/ai/choreography.py` - ChoreographyPlanner (~250 lines)
+- `sdk/python/soorma/ai/choreography.py` - ChoreographyPlanner (~300 lines, +50 for enhancements)
 - Unit tests: `test/ai/test_decisions.py` (~100 lines)
-- Unit tests: `test/ai/test_choreography.py` (~200 lines)
+- Unit tests: `test/ai/test_choreography.py` (~250 lines, +50 for custom context tests)
 
 **Dependencies:** Phase 1 (PlanContext complete)
 
@@ -568,9 +577,12 @@ Planner (???) ← incomplete ❌
 - [ ] PlannerDecision validates all action types
 - [ ] ChoreographyPlanner discovers events from Registry
 - [ ] LLM decisions use schema-based prompts
+- [ ] system_instructions parameter enables business logic injection
+- [ ] custom_context parameter enables runtime dynamic context
+- [ ] Planning strategies (conservative/balanced/aggressive) work correctly
 - [ ] Event validation prevents hallucinated events
 - [ ] Circuit breaker prevents runaway workflows
-- [ ] All tests pass (10+ tests)
+- [ ] All tests pass (25+ tests, increased from 10+)
 
 ---
 
@@ -922,6 +934,33 @@ StateTransition(
 2. ✅ RF-SDK-018: EventToolkit helpers → ✅ Already exists (format_for_llm, format_as_prompt_text)
 3. ✅ Conditional state transitions → Stage 5 or 6
 4. ✅ Tracker Service UI → Post-launch FDE
+5. 🟡 RF-SDK-019: Prompt Template System → Stage 5 or Post-launch (2-3 days)
+   - Reusable templating for domain-specific prompts
+   - Few-shot example integration
+   - Template registry and versioning
+
+**Enhancements Completed in Phase 2:**
+1. ✅ Enhancement 1: System Instructions (business logic injection)
+2. ✅ Enhancement 2: Runtime Custom Context (dynamic decision parameters)
+
+**Remaining Enhancement (deferred):**
+3. 🟡 Enhancement 3: Prompt Template System (RF-SDK-019) - see item 5 above
+5. 🟡 **RF-SDK-019: Prompt Template System** → Stage 5 or Post-launch
+   - **Reason:** Enhancement 3 deferred from Phase 2 for scope control
+   - **Target:** Stage 5 (Discovery & Advanced Features) or Post-launch
+   - **Effort:** 2-3 days
+   - **Requirements:**
+     - Reusable prompt templates (Jinja2 or similar)
+     - Template registry for common patterns
+     - Few-shot example integration
+     - Template customization per domain
+     - Template versioning and validation
+   - **Use Cases:**
+     - Financial workflows (compliance-focused templates)
+     - Medical research (evidence-based templates)
+     - Customer service (tone-aware templates)
+     - Manufacturing (safety-first templates)
+   - **Dependencies:** Phase 2 complete (system_instructions working)
 
 ---
 
