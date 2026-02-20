@@ -17,9 +17,55 @@ Soorma is built on the **Distributed Cognition (DisCo)** pattern. You MUST respe
 - `services/`: Control Plane services (Registry, Event Service, Memory).
 - `examples/`: Reference implementations for agent choreography.
 
+### SDK Architecture (Two-Layer Pattern)
+
+**Mandate:** Soorma SDK uses a strict two-layer architecture separating service clients from agent APIs.
+
+**Non-Negotiable Rules:**
+
+1. **Agent Code:** MUST use `context.memory`, `context.bus`, `context.registry` from PlatformContext
+2. **Examples:** MUST demonstrate wrapper usage, NEVER import service clients directly
+3. **New Service Methods:** MUST have corresponding wrapper methods in PlatformContext layer
+4. **Tests:** MUST use high-level wrappers (`context.memory`), NOT service clients
+5. **Plan Verification:** Action Plans MUST verify wrapper completeness before implementation
+
+**Quick Reference:**
+```python
+# ✅ CORRECT: Use PlatformContext wrappers
+@worker.on_task("research.requested")
+async def handle_research(task, context: PlatformContext):
+    await context.memory.store_task_context(task_id=task.id, ...)
+    await context.bus.publish("search.requested", data)
+
+# ❌ WRONG: Never import service clients
+from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
+```
+
+**Details:** See `docs/ARCHITECTURE_PATTERNS.md` Section 2 for layer definitions, wrapper patterns, and implementation guide.
+
 ---
 
 ## 2. Workflow Rituals (Hierarchical Planning & TDD)
+
+### Step 0: Mandatory Reading (Context-Dependent)
+
+**When working on SDK or backend services, you MUST read:**
+
+- **`docs/ARCHITECTURE_PATTERNS.md`** - Technical patterns for:
+  - Authentication & multi-tenancy (Section 1, 4)
+  - Two-layer SDK architecture (Section 2)
+  - Event choreography (Section 3)
+  - State management (Section 5)
+  - Error handling & testing (Section 6, 7)
+
+**When to reference ARCHITECTURE_PATTERNS.md:**
+- Adding service endpoints or SDK methods
+- Implementing authentication/authorization
+- Designing state persistence
+- Working with event choreography
+- Writing integration tests
+
+**Authoritative Order:** AGENT.md (constitution) → ARCHITECTURE_PATTERNS.md (technical guide) → Feature docs
 
 ### Step 1: Feature-Scoped Plan Mode
 - Identify the **Feature Area** (e.g., `docs/registry/`).
@@ -51,8 +97,25 @@ Soorma is built on the **Distributed Cognition (DisCo)** pattern. You MUST respe
 ---
 
 ## 3. Communication & Security
-- **Public Domain:** This is MIT-licensed. NEVER commit secrets.
-- **Event Service:** Use the SDK `EventClient` exclusively.
+
+### Authentication Context
+
+**Non-Negotiable Rules:**
+
+1. **Service Clients:** MUST include authentication headers (`X-Tenant-ID`, `X-User-ID`) on every request
+2. **Wrappers:** MUST extract tenant/user context automatically (no manual parameters)
+3. **Agent Handlers:** MUST use high-level wrappers (`context.memory`, `context.bus`) exclusively
+4. **Multi-Tenancy:** ALL database queries MUST enforce tenant isolation via RLS policies
+
+**Current State:** v0.7.x uses custom headers (development-only pattern)  
+**Future State:** v0.8.0+ will use JWT/API Keys (production-ready)
+
+**Details:** See `docs/ARCHITECTURE_PATTERNS.md` Section 1 for current implementation, Section 4 for multi-tenancy patterns, and migration roadmap.
+
+### General Security
+
+- **Public Domain:** This is MIT-licensed. NEVER commit secrets or credentials.
+- **Event Choreography:** Use explicit `response_event` (see `docs/ARCHITECTURE_PATTERNS.md` Section 3).
 - **Imports:** Use `soorma_common.models` for shared DTOs.
 
 ---

@@ -467,6 +467,77 @@ CREATE POLICY tenant_isolation_policy ON semantic_memory
 
 **Code Reference:** `services/memory/src/memory_service/core/database.py` (`set_session_context()`)
 
+### 5. Plan Context Schema: Dual-ID Pattern
+
+**Decision:** `plan_context.plan_id` is a UUID Foreign Key to `plans.id`, while `plans.plan_id` is a user-facing string.
+
+**Schema:**
+
+```sql
+-- Plans table: User-facing string plan_id
+CREATE TABLE plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  -- Internal primary key
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
+    user_id UUID NOT NULL,
+    plan_id VARCHAR(100) NOT NULL,                   -- User-facing string
+    ...
+    UNIQUE(tenant_id, plan_id)
+);
+
+-- Plan Context: References plans.id (UUID)
+CREATE TABLE plan_context (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
+    plan_id UUID NOT NULL REFERENCES plans.id ON DELETE CASCADE,  -- FK to plans.id
+    ...
+    UNIQUE(plan_id)
+);
+```
+
+**Service Layer Pattern:**
+
+Since APIs accept user-facing string `plan_id` but database requires UUID, the service layer performs lookup:
+
+```python
+# API accepts string plan_id
+@router.post("/v1/memory/plan-context")
+async def create_plan_context(
+    data: PlanContextCreate,  # data.plan_id = "my-plan-123"
+    context: TenantContext
+):
+    return await plan_context_service.create(context.db, context.tenant_id, data)
+
+# Service layer looks up Plan by string to get UUID
+async def create(self, db, tenant_id, data: PlanContextCreate):
+    # 1. Look up Plan by string plan_id
+    plan = await crud_get_plan(db, tenant_id, data.plan_id)  # Returns Plan with UUID id
+    if not plan:
+        raise ValueError(f"Plan not found: {data.plan_id}")
+    
+    # 2. Use UUID id for plan_context FK
+    plan_context = await crud_create(
+        db,
+        tenant_id,
+        plan.id,  # UUID from plans.id
+        ...
+    )
+```
+
+**Rationale:**
+- **Referential Integrity:** CASCADE delete ensures plan_context is cleaned up when plan deleted
+- **User Experience:** APIs accept human-readable string IDs ("research-plan-42")
+- **Type Safety:** Database enforces UUID FK constraints
+- **Data Consistency:** One Plan = One PlanContext (enforced by UNIQUE constraint)
+
+**Migration History:**
+- Migration 005: Created plan_context with String plan_id
+- Migration 007: Converted plan_id to UUID FK, migrated existing data
+
+**Code Reference:** 
+- Service: `services/memory/src/memory_service/services/plan_context_service.py`
+- API: `services/memory/src/memory_service/api/v1/plan_context.py`
+- Tests: `services/memory/tests/test_plan_context.py`
+
 ---
 
 ## WorkflowState Helper

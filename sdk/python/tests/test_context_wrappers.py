@@ -407,6 +407,53 @@ class TestMemoryClientWrapper:
         mock_client.get_plan_state.assert_called_once_with(
             "plan-1", "key1", "test-tenant", "test-user"
         )
+    
+    @pytest.mark.asyncio
+    async def test_create_plan_delegates_to_service(self):
+        """Test create_plan() wrapper delegates to service client."""
+        # Setup
+        mock_client = AsyncMock(spec=MemoryServiceClient)
+        from soorma_common.models import PlanSummary
+        mock_response = PlanSummary(
+            plan_id="plan-abc",
+            tenant_id="tenant-1",
+            user_id="user-1",
+            session_id="session-1",
+            goal_event="research.goal",
+            goal_data={"topic": "AI agents"},
+            status="pending",
+            parent_plan_id=None,
+            created_at="2026-02-19T10:00:00Z",
+            updated_at="2026-02-19T10:00:00Z"
+        )
+        mock_client.create_plan = AsyncMock(return_value=mock_response)
+        
+        wrapper = MemoryClient(base_url="http://memory:8002")
+        wrapper._client = mock_client
+        
+        # Execute
+        result = await wrapper.create_plan(
+            plan_id="plan-abc",
+            goal_event="research.goal",
+            goal_data={"topic": "AI agents"},
+            tenant_id="tenant-1",
+            user_id="user-1",
+            session_id="session-1",
+        )
+        
+        # Verify
+        assert result.plan_id == "plan-abc"
+        assert result.goal_event == "research.goal"
+        assert result.status == "pending"
+        mock_client.create_plan.assert_called_once_with(
+            plan_id="plan-abc",
+            goal_event="research.goal",
+            goal_data={"topic": "AI agents"},
+            tenant_id="tenant-1",
+            user_id="user-1",
+            session_id="session-1",
+            parent_plan_id=None,
+        )
 
 
 class TestBusClientWrapper:

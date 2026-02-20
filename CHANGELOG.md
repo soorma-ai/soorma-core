@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-02-19
+
 ### Added
 - **Stage 3 Phase 3 - Test Suite Expansion & Documentation (February 15, 2026)**
   - **Test Coverage Expansion (RF-SDK-004)**:
@@ -28,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Confirmed stateless Tool model: No task persistence, auto-publish to response_event
     - No errors or warnings in platform/agent logs during validation
   - **Quality Metrics**: All 294 SDK tests passing + 126 Memory Service tests passing = 420 total
+
+### Fixed
+- Planner `@on_transition()` now routes wildcard events correctly, scopes to action-results, and filters to state-machine transitions
 
 ### Changed
 - **Memory Service - Database Schema Improvements (February 12, 2026)**

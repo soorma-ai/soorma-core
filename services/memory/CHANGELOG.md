@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-02-19
+
+### Fixed
+- **Plan Context Service - String Plan ID Lookup (February 18, 2026)**
+  - **Issue**: After Migration 007 changed `plan_context.plan_id` to UUID FK, service was attempting to convert user string directly to UUID, causing 500 errors
+  - **Root Cause**: `plan_context.plan_id` references `plans.id` (UUID), but APIs accept `plans.plan_id` (String)
+  - **Solution**: Service layer now looks up Plan by string `plan_id` to get UUID `id` before create/update/delete operations
+  - **Files Changed**:
+    - `services/plan_context_service.py`: Added `crud_get_plan` import, updated create/get/update/delete methods
+    - `api/v1/plan_context.py`: Changed path parameter types from UUID to str, added error handling
+  - **Testing**: Added comprehensive test suite (`tests/test_plan_context.py`) with 7 tests covering:
+    - Create plan context with string plan_id lookup
+    - Handle plan-not-found errors (404)
+    - Get/update/delete operations with string plan_id
+  - **Result**: All 133 memory service tests passing, plan context operations now work correctly
+
 ### Added
 - **Database Schema Improvements - Foreign Key Constraints (February 12, 2026)**
   - **Migration 006**: Added `user_id` column to `task_context` table

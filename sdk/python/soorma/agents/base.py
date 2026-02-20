@@ -34,7 +34,7 @@ import os
 import signal
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
 from soorma_common.events import EventEnvelope, EventTopic
@@ -313,6 +313,25 @@ class Agent(ABC):
             logger.debug(f"Registered handler for {topic}:{event_type}")
             return func
         return decorator
+
+    def _topic_matches(self, event_topic: Union[EventTopic, str, None], expected_topic: Optional[str]) -> bool:
+        """
+        Check whether an event topic matches the expected topic string.
+
+        Args:
+            event_topic: Topic from the incoming EventEnvelope (enum or string).
+            expected_topic: Topic string stored in handler key.
+
+        Returns:
+            True when topics match or when no expected topic is provided.
+        """
+        if not expected_topic:
+            return True
+        if event_topic is None:
+            return False
+        if isinstance(event_topic, EventTopic):
+            return event_topic.value == expected_topic
+        return str(event_topic) == expected_topic
     
     # =========================================================================
     # Event Publishing (convenience methods)
@@ -376,18 +395,41 @@ class Agent(ABC):
         # Register our event handlers with the EventClient
         # Handlers are keyed by "topic:event_type" in the new model
         for handler_key, handlers in self._event_handlers.items():
-            # Extract event_type from handler_key (format is "topic:event_type")
+            # Extract topic and event_type from handler_key (format is "topic:event_type")
             if ":" in handler_key:
-                _, event_type = handler_key.split(":", 1)
+                topic, event_type = handler_key.split(":", 1)
             else:
                 # Backwards compatibility: if no ":", assume it's just event_type
+                topic = None
                 event_type = handler_key
             
             for handler in handlers:
-                @event_client.on_event(event_type)
-                async def wrapped_handler(event: EventEnvelope, h=handler) -> None:
-                    # EventClient already deserializes to EventEnvelope
-                    await h(event, self._context)
+                if event_type == "*":
+                    @event_client.on_all_events
+                    async def wrapped_handler(
+                        event: EventEnvelope,
+                        h=handler,
+                        t=topic,
+                    ) -> None:
+                        # Filter by topic when provided (EventClient doesn't enforce it)
+                        if not self._topic_matches(event.topic, t):
+                            return
+                        await h(event, self._context)
+                else:
+                    @event_client.on_event(event_type)
+                    async def wrapped_handler(
+                        event: EventEnvelope,
+                        h=handler,
+                        t=topic,
+                        et=event_type,
+                    ) -> None:
+                        # Filter by topic when provided (EventClient doesn't enforce it)
+                        if not self._topic_matches(event.topic, t):
+                            return
+                        # Safety check in case handler is registered for multiple event types
+                        if event.type != et:
+                            return
+                        await h(event, self._context)
         
         # Create context with clients
         from ..context import RegistryClient, MemoryClient, BusClient, TrackerClient

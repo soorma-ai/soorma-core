@@ -172,16 +172,127 @@ async def handle_results(result, context):
 
 ---
 
-### 4. Trinity Pattern (Planner-Worker-Tool)
+### 4. Planner Pattern (State Machine)
+
+**Use when:** Multi-step workflows with event-driven state transitions
+
+**Complexity:** ⭐⭐ Intermediate
+
+**Example:** [09-planner-basic](../../examples/09-planner-basic/)
+
+```python
+from soorma import Planner
+from soorma.plan_context import PlanContext, StateConfig, StateAction, StateTransition
+
+planner = Planner(name="research-planner", capabilities=["research"])
+
+@planner.on_goal("research.goal")
+async def plan_research(goal: GoalContext, context: PlatformContext):
+    # Define state machine
+    states = {
+        "start": StateConfig(
+            state_name="start",
+            default_next="research"
+        ),
+        "research": StateConfig(
+            state_name="research",
+            action=StateAction(
+                event_type="research.task",
+                response_event="research.complete",
+                data={"query": "{{goal_data.topic}}"}
+            ),
+            transitions=[
+                StateTransition(on_event="research.complete", to_state="complete")
+            ]
+        ),
+        "complete": StateConfig(
+            state_name="complete",
+            is_terminal=True
+        )
+    }
+    
+    # Create and execute plan
+    plan = PlanContext(
+        plan_id=str(uuid4()),
+        goal_event=goal.event_type,
+        goal_data=goal.data,
+        response_event=goal.response_event,
+        correlation_id=goal.correlation_id,
+        state_machine=states,
+        current_state="start",
+        tenant_id=goal.tenant_id,
+        user_id=goal.user_id,
+        _context=context,
+    )
+    
+    await plan.save()
+    await plan.execute_next()
+
+@planner.on_transition()
+async def handle_transition(
+    event: EventEnvelope,
+    context: PlatformContext,
+    plan: PlanContext,
+    next_state: str,
+) -> None:
+    """SDK auto-filters and restores plan."""
+    # Update state
+    plan.current_state = next_state
+    plan.results[event.type] = event.data
+    
+    # Execute or finalize
+    if plan.is_complete():
+        await plan.finalize(result=event.data)
+    else:
+        await plan.execute_next(event)
+```
+
+**Characteristics:**
+- Declarative state machine definition
+- Event-driven state transitions
+- Plan persistence and restoration
+- Clean handler signature (no manual restore/filtering)
+- SDK handles authentication context validation
+- Automatic correlation-based routing
+
+**SDK Behavior:**
+- `@on_transition()` subscribes to action-results only
+- SDK requires `tenant_id`/`user_id` for plan restoration
+- SDK auto-restores plan from Memory Service
+- SDK validates transition exists in state machine
+- Handler only invoked if plan and transition are valid
+
+**Authentication Context:**
+Workers MUST propagate authentication in responses:
+```python
+await context.bus.respond(
+    event_type=event.response_event,
+    data=result,
+    correlation_id=event.correlation_id,
+    tenant_id=event.tenant_id,      # Required for plan restoration
+    user_id=event.user_id,          # Required for RLS policies
+    session_id=event.session_id,    # Recommended
+)
+```
+
+**Best for:**
+- Multi-step workflows with clear state transitions
+- Orchestrating workers/tools
+- Long-running processes
+- Workflows requiring persistence across restarts
+
+---
+
+### 5. Trinity Pattern (Planner-Worker-Tool)
 
 **Use when:** Goal-driven task decomposition with clear steps
 
 **Complexity:** ⭐⭐ Intermediate
 
-**Example:** [08-planner-worker-basic](../../examples/08-planner-worker-basic/) (Stage 4)
+**Example:** [09-planner-basic](../../examples/09-planner-basic/)
 
 **Architecture:**
-- **Planner:** Decomposes goals into actionable steps
+- **Planner:** Orchestrates workflow via state machine
 - **Worker:** Executes specific tasks/capabilities
 - **Tool:** Provides reusable, stateless operations
 
@@ -199,11 +310,9 @@ async def handle_results(result, context):
 - When control flow is well-understood
 - Applications requiring auditability and observability
 
-**Note:** Planner implementation coming in Stage 4. Workers and Tools are complete.
-
 ---
 
-### 5. Autonomous Choreography Pattern
+### 6. Autonomous Choreography Pattern
 
 **Use when:** Complex, adaptive workflows where LLM decides next steps
 
@@ -247,7 +356,7 @@ async def handle_results(result, context):
 
 ---
 
-### 6. Saga Pattern (Distributed Transactions)
+### 7. Saga Pattern (Distributed Transactions)
 
 **Use when:** Multi-step transactions that need rollback
 

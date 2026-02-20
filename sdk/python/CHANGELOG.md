@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-02-19
+
+### Added
+- **Stage 4 Phase 1 - Planner Foundation (RF-SDK-006)** (February 18, 2026)
+  - **PlanContext** class for state machine-based plan orchestration
+    - Creation from goal events with state machine definitions
+    - State persistence via Memory Service wrappers
+    - Event-driven state transitions with correlation routing
+    - Task execution based on state actions
+    - HITL workflows with pause/resume support
+    - Nested plans via parent_plan_id
+  - **Planner decorators** for goal handling and transition routing
+    - `@on_goal(goal_type)` - Creates GoalContext wrapper for goal events
+    - `@on_transition()` - Auto-filters to action-results, restores plan, validates transitions
+      - Handler signature: `async def(event, context, plan, next_state) -> None`
+      - SDK requires tenant_id/user_id for multi-tenant plan restoration
+      - SDK auto-filters to action-results topic only
+      - SDK validates transition exists in state machine before invoking
+    - `GoalContext` - Clean wrapper replacing old Goal class
+  - **Handler-only event registration** (RF-SDK-023)
+    - Only events with actual handlers appear in events_consumed
+    - Topics and wildcards excluded from consumed events list
+  - **Memory wrappers** for plan persistence
+    - `context.memory.store_plan_context()` - Persist plan state
+    - `context.memory.get_plan_context()` - Load plan by ID
+    - `context.memory.get_plan_by_correlation()` - Load by correlation_id
+  - **Comprehensive test coverage**
+    - 19 unit tests for PlanContext (persistence + execution)
+    - 11 unit tests for Planner decorators  
+    - 1 integration test for decorator orchestration
+    - Total: 31 passing tests
+
 ### Changed
 - **Memory Client - TaskContext DTOs Updated (February 12, 2026)**
   - `TaskContextCreate` and `TaskContextResponse` now include `user_id` field

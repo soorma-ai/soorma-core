@@ -49,8 +49,63 @@ from soorma_common.events import EventEnvelope, EventTopic
 
 from .base import Agent
 from ..context import PlatformContext
+from ..plan_context import PlanContext
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class GoalContext:
+    """
+    Wrapper for goal events passed to on_goal handlers.
+    
+    Provides structured access to goal data and request metadata.
+    
+    Attributes:
+        event_type: Goal event type (e.g., "research.goal")
+        data: Goal parameters
+        correlation_id: Correlation ID for tracking
+        response_event: Event type for final result (from original request)
+        session_id: Optional session identifier
+        user_id: User authentication context
+        tenant_id: Tenant isolation context
+        _raw_event: Original EventEnvelope
+        _context: PlatformContext for service access
+    """
+    event_type: str
+    data: Dict[str, Any]
+    correlation_id: str
+    response_event: str
+    session_id: Optional[str]
+    user_id: str
+    tenant_id: str
+    _raw_event: EventEnvelope
+    _context: PlatformContext
+    
+    @classmethod
+    def from_event(cls, event: EventEnvelope, context: PlatformContext) -> 'GoalContext':
+        """
+        Create GoalContext from event envelope.
+        
+        Args:
+            event: EventEnvelope containing goal
+            context: PlatformContext for service access
+            
+        Returns:
+            GoalContext instance
+        """
+        return cls(
+            event_type=event.type,  # EventEnvelope uses 'type' not 'event_type'
+            data=event.data or {},
+            correlation_id=event.correlation_id or "",
+            response_event=event.response_event or "",  # Direct field, not metadata
+            session_id=event.session_id,
+            user_id=event.user_id or "",
+            tenant_id=event.tenant_id or "",
+            _raw_event=event,
+            _context=context,
+        )
+
 
 
 @dataclass
@@ -127,8 +182,12 @@ class Plan:
     status: str = "pending"  # pending, running, completed, failed, paused
 
 
-# Type alias for goal handlers
+# Type aliases for handlers
 GoalHandler = Callable[[Goal, PlatformContext], Awaitable[Plan]]
+TransitionHandler = Callable[
+    [EventEnvelope, PlatformContext, PlanContext, str],
+    Awaitable[None],
+]
 
 
 class Planner(Agent):
@@ -207,21 +266,25 @@ class Planner(Agent):
         
         # Goal handlers: goal_type -> handler
         self._goal_handlers: Dict[str, GoalHandler] = {}
+        
+        # Transition handler (optional)
+        self._transition_handler: Optional[TransitionHandler] = None
     
-    def on_goal(self, goal_type: str) -> Callable[[GoalHandler], GoalHandler]:
+    def on_goal(self, goal_type: str) -> Callable:
         """
         Decorator to register a goal handler.
         
-        Goal handlers receive a Goal and PlatformContext, and return a Plan.
-        The Planner automatically publishes tasks as action-requests.
+        Goal handlers receive a GoalContext and PlatformContext.
+        Use PlanContext for state machine-based orchestration.
         
         Usage:
             @planner.on_goal("research.goal")
-            async def plan_research(goal: Goal, context: PlatformContext) -> Plan:
-                return Plan(
-                    goal=goal,
-                    tasks=[...],
-                )
+            async def plan_research(goal: GoalContext, context: PlatformContext):
+                # Create state machine
+                state_machine = {...}
+                plan = PlanContext(...)
+                await plan.save()
+                await plan.execute_next()
         
         Args:
             goal_type: The goal type to handle (e.g., "research.goal")
@@ -229,15 +292,80 @@ class Planner(Agent):
         Returns:
             Decorator function
         """
-        def decorator(func: GoalHandler) -> GoalHandler:
+        def decorator(func: Callable) -> Callable:
             self._goal_handlers[goal_type] = func
             
-            # Register as event handler for this goal type
+            # RF-SDK-023: Register event as consumed (not topics)
+            if goal_type not in self.config.events_consumed:
+                self.config.events_consumed.append(goal_type)
+            
+            # Register underlying event handler
             @self.on_event(goal_type, topic=EventTopic.ACTION_REQUESTS)
-            async def goal_event_handler(event: EventEnvelope, context: PlatformContext) -> None:
-                await self._handle_goal_event(goal_type, event, context)
+            async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
+                # Convert event to GoalContext
+                goal = GoalContext.from_event(event, context)
+                await func(goal, context)
             
             logger.debug(f"Registered goal handler: {goal_type}")
+            return func
+        return decorator
+    
+    def on_transition(self) -> Callable:
+        """
+        Register handler for ALL state transitions.
+        
+        This handler is called for action-results events that match a known
+        plan transition (based on the plan's current state machine).
+        
+        RF-SDK-023: This uses wildcard subscriptions but does NOT add topics
+        to events_consumed (topics are not event types).
+        
+        Usage:
+            @planner.on_transition()
+            async def handle_transition(event, context, plan, next_state):
+                # plan and next_state are provided when available
+                plan.current_state = next_state
+                await plan.execute_next(trigger_event=event)
+        
+        Returns:
+            Decorator function
+        """
+        def decorator(func: TransitionHandler) -> TransitionHandler:
+            self._transition_handler = func
+            
+            # Subscribe to ALL events on action-results only.
+            # NOTE: We don't add these topics to events_consumed (RF-SDK-023)
+            # because topics are not event types.
+            @self.on_event("*", topic=EventTopic.ACTION_RESULTS)
+            async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
+                # Require tenant/user context to restore plans.
+                if not event.tenant_id or not event.user_id:
+                    logger.warning(
+                        "Skipping transition event without tenant_id/user_id"
+                    )
+                    return
+
+                plan = await PlanContext.restore_by_correlation(
+                    correlation_id=event.correlation_id,
+                    context=context,
+                    tenant_id=event.tenant_id,
+                    user_id=event.user_id,
+                )
+                if not plan:
+                    return
+
+                next_state = plan.get_next_state(event)
+                if not next_state:
+                    return
+
+                await func(event, context, plan, next_state)
+            
+            # RF-SDK-023: Remove wildcard from events_consumed
+            # Wildcard subscriptions are implementation details, not consumed events
+            if "*" in self.config.events_consumed:
+                self.config.events_consumed.remove("*")
+            
+            logger.debug("Registered transition handler for all events")
             return func
         return decorator
     

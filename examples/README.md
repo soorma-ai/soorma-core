@@ -154,7 +154,20 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./09-planner-worker-tool/"-->09-planner-worker-tool<!--/a--><br>(coming soon)</td>
+<td><a href="./09-planner-basic/">09-planner-basic</a></td>
+<td>
+• Planner pattern (Stage 4 Phase 1)<br>
+• @on_goal() and @on_transition() decorators<br>
+• PlanContext state machine orchestration<br>
+• GoalContext wrapper<br>
+• 3-state workflow with correlation routing
+</td>
+<td>15 min</td>
+<td>01-hello-world<br>08-worker-basic</td>
+</tr>
+
+<tr>
+<td><!--a href="./10-planner-worker-tool/"-->10-planner-worker-tool<!--/a--><br>(coming soon)</td>
 <td>
 • Trinity pattern (Planner-Worker-Tool)<br>
 • Goal decomposition<br>
@@ -165,7 +178,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./10-app-research-advisor/"-->10-app-research-advisor<!--/a--><br>(coming soon)</td>
+<td><!--a href="./11-app-research-advisor/"-->11-app-research-advisor<!--/a--><br>(coming soon)</td>
 <td>
 • Autonomous Choreography pattern<br>
 • ChoreographyPlanner SDK class<br>
@@ -177,14 +190,14 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./11-multi-turn-conversation/"-->11-multi-turn-conversation<!--/a--><br>(coming soon)</td>
+<td><!--a href="./12-multi-turn-conversation/"-->12-multi-turn-conversation<!--/a--><br>(coming soon)</td>
 <td>
 • Stateful conversations<br>
 • Follow-up handling<br>
 • Context preservation
 </td>
 <td>20 min</td>
-<td>06-memory-episodic<br>09-planner-worker-tool</td>
+<td>06-memory-episodic<br>10-planner-worker-tool</td>
 </tr>
 </table>
 
@@ -204,9 +217,10 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Build multi-agent chatbot with all memory types | Multi-Agent + All Memory Types | [06-memory-episodic](./06-memory-episodic/) |
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Handle async tasks with delegation | Worker Pattern | [08-worker-basic](./08-worker-basic/) |
-| Break down goals into tasks | Planner-Worker Pattern | 09-planner-worker-tool (coming soon) |
-| Build a fully autonomous multi-agent system | Autonomous Choreography | 10-app-research-advisor (coming soon) |
-| Handle multi-turn conversations | Stateful Conversation | 11-multi-turn-conversation (coming soon) |
+| Orchestrate tasks with state machines | Planner Pattern | [09-planner-basic](./09-planner-basic/) |
+| Break down goals into tasks | Planner-Worker Pattern | 10-planner-worker-tool (coming soon) |
+| Build a fully autonomous multi-agent system | Autonomous Choreography | 11-app-research-advisor (coming soon) |
+| Handle multi-turn conversations | Stateful Conversation | 12-multi-turn-conversation (coming soon) |
 
 ---
 
@@ -297,7 +311,7 @@ python client.py
 2. [03-events-structured](./03-events-structured/) - LLM event selection
 3. [04-memory-working](./04-memory-working/) - State management
 4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
-5. 09-app-research-advisor (coming soon) - Full autonomous system
+5. 11-app-research-advisor (coming soon) - Full autonomous system
 
 ### Path 3: Memory Deep Dive (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
@@ -308,7 +322,7 @@ python client.py
 6. [06-memory-episodic](./06-memory-episodic/) - Multi-agent chatbot combining all three memory types
 
 ### Path 4: Complete Journey (Coming Soon)
-Once all examples are available, work through examples 01 → 10 in sequence for comprehensive understanding.
+Once all examples are available, work through examples 01 → 11 in sequence for comprehensive understanding.
 
 ---
 

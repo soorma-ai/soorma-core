@@ -14,18 +14,25 @@ from memory_service.services.plan_context_service import plan_context_service
 router = APIRouter(prefix="/plan-context", tags=["Plan Context"])
 
 
-@router.post("", response_model=PlanContextResponse, status_code=status.HTTP_201_CREATED)
-async def create_plan_context_endpoint(
+@router.post("", response_model=PlanContextResponse, status_code=status.HTTP_200_OK)
+async def store_plan_context_endpoint(
     data: PlanContextCreate,
     context: TenantContext = Depends(get_tenant_context),
 ):
-    """Create a new plan context."""
-    return await plan_context_service.create(context.db, context.tenant_id, data)
+    """Store plan context (insert or update if exists)."""
+    try:
+        return await plan_context_service.upsert(context.db, context.tenant_id, data)
+    except ValueError as e:
+        # Plan not found - return 404
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
 
 
 @router.get("/{plan_id}", response_model=PlanContextResponse)
 async def get_plan_context_endpoint(
-    plan_id: UUID,
+    plan_id: str,
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Get plan context by plan ID."""
@@ -40,7 +47,7 @@ async def get_plan_context_endpoint(
 
 @router.put("/{plan_id}", response_model=PlanContextResponse)
 async def update_plan_context_endpoint(
-    plan_id: UUID,
+    plan_id: str,
     data: PlanContextUpdate,
     context: TenantContext = Depends(get_tenant_context),
 ):
@@ -56,7 +63,7 @@ async def update_plan_context_endpoint(
 
 @router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_plan_context_endpoint(
-    plan_id: UUID,
+    plan_id: str,
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Delete plan context."""
