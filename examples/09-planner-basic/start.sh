@@ -47,7 +47,7 @@ echo "  Starting Planner Agent"
 echo "======================================================================"
 echo ""
 
-python3 "$EXAMPLE_DIR/planner.py" &
+python "$EXAMPLE_DIR/planner.py" &
 PLANNER_PID=$!
 sleep 2
 
@@ -57,7 +57,7 @@ echo "  Starting Worker Agent"
 echo "======================================================================"
 echo ""
 
-python3 "$EXAMPLE_DIR/worker.py" &
+python "$EXAMPLE_DIR/worker.py" &
 WORKER_PID=$!
 sleep 2
 
