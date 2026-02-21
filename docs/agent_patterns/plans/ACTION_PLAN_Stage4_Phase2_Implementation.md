@@ -9,6 +9,41 @@
 
 ---
 
+## 0. Gateway Verification (AGENT.md Step 0)
+
+**Status:** ✅ Completed (February 19, 2026)
+
+**Mandatory Checklist Before Planning Phase 2:**
+
+Per [AGENT.md Section 2, Step 0](../../../AGENT.md#step-0-gateway--verify-architecture_patternsmd-compliance-mandatory-for-all-work), the following items were verified before creating this Action Plan:
+
+- [x] **Read** [docs/ARCHITECTURE_PATTERNS.md](../../../docs/ARCHITECTURE_PATTERNS.md) **in full** (no skimming)
+- [x] **Understand Section 1:** Authentication model (custom headers v0.7.x, JWT/API Key roadmap v0.8.0+)
+- [x] **Understand Section 2:** Two-layer SDK architecture — agent code uses `context.*` wrappers ONLY, never service clients directly
+- [x] **Understand Section 3:** Event choreography — explicit `response_event`, no inferred event names
+- [x] **Understand Section 4:** Multi-tenancy via PostgreSQL RLS and session variables
+- [x] **Understand Section 5:** State management patterns (working memory, task context, plan context state machines)
+- [x] **Understand Section 6:** Error handling in service clients vs. wrappers vs. agent handlers
+- [x] **Understand Section 7:** Testing patterns (unit mocks vs. integration tests)
+- [x] **Self-check:** Agent code cannot import `MemoryServiceClient` because it violates two-layer abstraction (leaks service implementation details to agent handlers, breaks encapsulation, prevents wrapper-level auth/context automation)
+- [x] **Self-check:** Service endpoints are Layer-1 internal APIs (low-level, require explicit auth headers); wrapper methods are Layer-2 agent-friendly APIs (high-level, auto-extract auth from event context)
+
+**Wrapper Completeness Validation:**
+
+Per AGENT.md requirement, verified that all service methods needed for Phase 2 have corresponding wrapper methods:
+
+- [x] `context.toolkit.discover_events()` — exists (EventToolkit wrapper)
+- [x] `context.toolkit.discover_actionable_events()` — exists (EventToolkit wrapper)
+- [x] `context.bus.publish()` — exists (EventBus wrapper)
+- [x] `context.bus.respond()` — exists (EventBus wrapper)
+- [x] `context.memory.store_plan_context()` — exists from Phase 1 (Memory wrapper)
+
+**Verdict:** ✅ All required wrappers exist. **No new wrappers needed for Phase 2.**
+
+**Architecture Compliance:** See Section 2 "SDK Layer Verification" for detailed two-layer pattern verification.
+
+---
+
 ## 1. Requirements & Core Objective
 
 ### Executive Summary
@@ -1375,6 +1410,32 @@ if self.action_count >= self.max_actions:
 - ✅ Integration tests use high-level wrappers only
 - ✅ Service client testing in service repos only
 
+### Strict Coding Standards (AGENT.md Step 3)
+
+**Constitutional Requirements:**
+
+Per [AGENT.md Section 2, Step 3](../../../AGENT.md#step-3-implementation--tdd), the following coding standards are **mandatory** (not optional):
+
+- ✅ **Type Hints:** EVERY function argument and return value MUST have explicit Python type hints
+  - Example: `def run(data: Dict[str, Any]) -> bool:`
+  - Applies to: All functions in `decisions.py` and `choreography.py`
+  - Verification: mypy strict mode with zero errors (see Section 9)
+
+- ✅ **Docstrings:** All classes and public functions MUST have Google-style docstrings
+  - Must describe: Purpose, arguments, return values, raises (if applicable)
+  - Applies to: `PlannerDecision`, `ChoreographyPlanner`, all public methods
+  - Verification: Code review checklist (Section 8)
+
+- ✅ **Comments:** Use inline comments to explain "Why" specific logic paths were taken
+  - Especially for: Complex event choreography, LLM prompt construction, validation logic
+  - Applies to: `_build_prompt()`, `_validate_decision_events()`, `execute_decision()`
+  - Verification: 15-minute rule (see Section 8 refactor step)
+
+- ✅ **Import Order:** SDK → Common → Service (standard Soorma convention)
+  - Verification: Linter compliance
+
+**Enforcement:** These are gating requirements for code review approval. Non-compliance = mandatory refactor before merge.
+
 ---
 
 ## 8. Implementation Checklist
@@ -1401,7 +1462,7 @@ if self.action_count >= self.max_actions:
 - [ ] GREEN: Implement _build_prompt() with system_instructions and custom_context
 - [ ] GREEN: Implement _get_strategy_guidance() for planning strategies
 - [ ] GREEN: Implement _validate_decision_events()
-- [ ] REFACTOR: Code cleanup, docstring review
+- [ ] REFACTOR: Code cleanup, docstring review, **15-minute rule check** (no function >15 min audit time per AGENT.md Section 4)
 - [ ] Commit: "feat(sdk): Add ChoreographyPlanner for autonomous orchestration (RF-SDK-016)"
 
 ### Task 3: Integration & Validation
