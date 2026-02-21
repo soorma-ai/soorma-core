@@ -108,8 +108,8 @@ class WaitAction(BaseModel):
     
     action: PlanAction
     reason: str = Field(..., description="Why we're waiting")
-    expected_event: Optional[str] = Field(default=None, description="What event we expect next")
-    timeout_seconds: Optional[int] = Field(default=300, description="Timeout in seconds")
+    expected_event: str = Field(..., description="Event type that will resume the plan")
+    timeout_seconds: Optional[int] = Field(default=3600, description="Timeout in seconds (default: 1 hour)")
 
 
 class DelegateAction(BaseModel):
@@ -403,6 +403,7 @@ class ChoreographyPlanner(Planner):
         decision: PlannerDecision,
         context: PlatformContext,
         goal_event: Optional[EventEnvelope] = None,
+        plan: Optional[PlanContext] = None,
     ) -> None:
         """
         Execute the decided action safely.
@@ -410,19 +411,20 @@ class ChoreographyPlanner(Planner):
         This method dispatches based on action type:
         - PUBLISH: Publish event to action-requests topic
         - COMPLETE: Send response_event with results
-        - WAIT: Create progress event
+        - WAIT: Pause plan and wait for expected event
         - DELEGATE: Forward to another planner
         
         Args:
             decision: PlannerDecision from reason_next_action()
             context: PlatformContext for service access
             goal_event: Original goal event (for response routing)
+            plan: PlanContext for WAIT action (required for pause/resume)
             
         Raises:
-            ValueError: If action validation fails
+            ValueError: If action validation fails or plan missing for WAIT
             
         Examples:
-            await planner.execute_decision(decision, context, goal_event=goal)
+            await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
         """
         action = decision.next_action
         
@@ -444,11 +446,29 @@ class ChoreographyPlanner(Planner):
                 )
         
         elif action.action == PlanAction.WAIT:
-            # Publish progress/wait indicator
+            # WAIT requires PlanContext for pause/resume
+            if not plan:
+                raise ValueError("WAIT action requires PlanContext for pause/resume")
+            
+            # 1. Pause the plan (sets status="paused")
+            await plan.pause(reason=action.reason)
+            
+            # 2. Store expected event in plan metadata
+            plan.results["_waiting_for"] = action.expected_event
+            plan.results["_wait_timeout"] = action.timeout_seconds
+            await plan.save()
+            
+            # 3. Publish wait notification for external systems/UIs
             await context.bus.publish(
                 topic="system-events",
                 event_type="plan.waiting_for_input",
-                data={"reason": action.reason, "timeout": action.timeout_seconds},
+                data={
+                    "plan_id": plan.plan_id,
+                    "correlation_id": plan.correlation_id,
+                    "reason": action.reason,
+                    "expected_event": action.expected_event,
+                    "timeout_seconds": action.timeout_seconds,
+                },
             )
         
         elif action.action == PlanAction.DELEGATE:
@@ -703,6 +723,252 @@ Rationale: LiteLLM provides:
 
 ---
 
+### WAIT Action: Pause/Resume Flow (CRITICAL FEATURE)
+
+**Status:** ✅ Enhanced in Phase 2 (Feb 21, 2026)
+
+#### Problem & Solution
+
+**Original Design Gap:** WAIT action only published notification event, didn't actually pause the plan.
+
+**Enhanced Implementation:** Full pause/resume cycle with expected event tracking.
+
+#### How WAIT Works
+
+**1. LLM Decides to WAIT**
+
+Planner's LLM determines WAIT is needed when:
+- Human approval required (e.g., financial transactions >$5k)
+- External dependency (e.g., waiting for document upload)
+- Missing information (e.g., user clarification needed)
+- Rate limiting (e.g., API quota exhausted)
+
+**Example Decision:**
+```python
+decision = PlannerDecision(
+    plan_id="plan-123",
+    current_state="approval_pending",
+    next_action=WaitAction(
+        action=PlanAction.WAIT,
+        reason="Transaction $12,000 requires manager approval",
+        expected_event="approval.granted",  # ← Key: what event resumes?
+        timeout_seconds=3600,
+    ),
+    reasoning="Amount exceeds $5k compliance threshold",
+)
+```
+
+**2. Execute WAIT (Pause Plan)**
+
+```python
+await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
+
+# Inside execute_decision():
+# 1. Pause the plan
+await plan.pause(reason=action.reason)
+
+# 2. Store expected event
+plan.results["_waiting_for"] = action.expected_event
+await plan.save()
+
+# 3. Notify external systems
+await context.bus.publish(
+    topic="system-events",
+    event_type="plan.waiting_for_input",
+    data={
+        "plan_id": plan.plan_id,
+        "correlation_id": plan.correlation_id,
+        "expected_event": "approval.granted",
+        "reason": "...",
+    },
+)
+```
+
+**3. External System Provides Input**
+
+**Option A: Human via UI**
+```python
+# Manager UI calls approval API
+POST /api/approvals/{plan_id}/approve
+
+# Backend publishes expected event
+await context.bus.publish(
+    topic="action-results",
+    event_type="approval.granted",  # ← Matches expected_event
+    correlation_id="plan-123",
+    data={"status": "approved", "approved_by": "mgr-001"},
+)
+```
+
+**Option B: Automated Service**
+```python
+@approval_service.on_event("plan.waiting_for_input")
+async def auto_approve(event, context):
+    if can_auto_approve(event.data):
+        await context.bus.publish(
+            event_type=event.data["expected_event"],
+            correlation_id=event.data["correlation_id"],
+            data={"status": "approved", "auto": True},
+        )
+```
+
+**4. Planner Resumes on Expected Event**
+
+```python
+@planner.on_transition()
+async def handle_transition(event, context):
+    plan = await PlanContext.restore_by_correlation(...)
+    
+    # Check if paused and waiting for this event
+    if plan.status == "paused":
+        waiting_for = plan.results.get("_waiting_for")
+        if waiting_for == event.event_type:
+            logger.info(f"✅ WAIT condition met: {event.event_type}")
+            await plan.resume(input_data=event.data)
+            # resume() internally continues execution
+            return
+    
+    # Normal state transition logic
+    # ...
+```
+
+#### Complete E-Commerce Example
+
+**Scenario:** Customer orders $12,000 item, requires manager approval per policy.
+
+```python
+# 1. Initialize planner with business rules
+planner = ChoreographyPlanner(
+    name="order-processor",
+    reasoning_model="gpt-4o",
+    system_instructions=\"\"\"
+        You are an order processing agent.
+        
+        POLICY: Orders >$5,000 require manager approval.
+        - Use WAIT action with expected_event="approval.granted"
+        - Do NOT process payment before approval
+    \"\"\",
+)
+
+# 2. Goal arrives
+@planner.on_goal("order.received")
+async def handle_order(goal, context):
+    order = goal.data
+    
+    # Create plan
+    plan = PlanContext(
+        plan_id=goal.correlation_id,
+        goal_event="order.received",
+        goal_data=order,
+        response_event=goal.response_event,
+        state_machine={...},
+        current_state="validate",
+        _context=context,
+    )
+    await plan.save()
+    
+    # LLM decides what to do
+    decision = await planner.reason_next_action(
+        trigger=f"Order {order['order_id']}: ${order['amount']}",
+        context=context,
+        custom_context={"policy": "Orders >$5k need approval"},
+    )
+    
+    # LLM returns: WaitAction because amount > $5k
+    await planner.execute_decision(decision, context, goal, plan)
+    # Plan is now PAUSED, status="paused"
+
+# 3. Manager approves (external API)
+POST /api/approvals/plan-123/approve
+{
+  "approved_by": "manager@company.com",
+  "notes": "Customer verified, proceed"
+}
+
+# Backend publishes expected event
+await event_bus.publish(
+    topic="action-results",
+    event_type="approval.granted",  # ← Matches expected_event
+    correlation_id="plan-123",
+    data={"status": "approved"},
+)
+
+# 4. Planner resumes automatically
+@planner.on_transition()
+async def handle_transition(event, context):
+    plan = await PlanContext.restore_by_correlation(event.correlation_id, ...)
+    
+    if plan.status == "paused" and plan.results["_waiting_for"] == event.event_type:
+        # Resume plan with approval data
+        await plan.resume(input_data=event.data)
+        
+        # Plan continues, LLM decides next step
+        decision = await planner.reason_next_action(
+            trigger=f"Approval received: {event.data}",
+            context=context,
+        )
+        # LLM now returns: PublishAction(event_type="payment.process")
+        await planner.execute_decision(decision, context, None, plan)
+```
+
+#### Flow Diagram
+
+```
+Client                Planner              Manager              PaymentWorker
+   |                     |                     |                      |
+   |--order.received---->|                     |                      |
+   |  ($12k)             |                     |                      |
+   |                     |                     |                      |
+   |                     |--LLM: WAIT--------->|                      |
+   |                     |  (pause plan)       |                      |
+   |                     |                     |                      |
+   |                     |--notify: waiting--->|                      |
+   |                     |  for approval       |                      |
+   |                     |                     |                      |
+   |                     |                     |--approval.granted--->|
+   |                     |<--------------------|  (resume signal)     |
+   |                     |                     |                      |
+   |                     |--LLM: PUBLISH-------|--payment.process---->|
+   |                     |  (resume plan)      |                      |
+   |                     |                     |                      |
+   |                     |<------------------------------------payment.completed
+   |                     |                     |                      |
+   |                     |--LLM: COMPLETE------|                      |
+   |<--order.completed---|                     |                      |
+```
+
+#### Implementation Requirements
+
+**ChoreographyPlanner must:**
+1. Accept `plan` parameter in `execute_decision()` for WAIT
+2. Call `plan.pause()` when executing WAIT action
+3. Store `expected_event` in `plan.results["_waiting_for"]`
+4. Override `on_transition()` to check for WAIT resume conditions
+
+**PlanContext must provide:**
+- `pause(reason)` - sets status="paused"
+- `resume(input_data)` - sets status="running", continues execution  
+- Metadata storage for `_waiting_for` event type
+
+**External systems must:**
+- Listen to `plan.waiting_for_input` events (system-events topic)
+- Publish the `expected_event` to resume the plan
+- Include correct `correlation_id` for plan routing
+
+#### Testing Strategy
+
+**Unit Tests:**
+- `test_execute_decision_wait_pauses_plan()` - verifies pause() called
+- `test_execute_decision_wait_stores_expected_event()` - metadata saved
+- `test_execute_decision_wait_requires_plan()` - error if plan missing
+- `test_on_transition_resumes_on_expected_event()` - resume on match
+- `test_on_transition_ignores_unexpected_event_when_paused()` - stays paused
+
+**Integration Test:**
+- `test_choreography_planner_wait_and_resume_flow()` - full cycle
+
+---
+
 ## 3. Task Tracking Matrix
 
 ### Task 1: DTO Design (soorma-common)
@@ -758,21 +1024,26 @@ Rationale: LiteLLM provides:
   - [ ] test_reason_next_action_with_custom_context()
   - [ ] test_execute_decision_publish()
   - [ ] test_execute_decision_complete()
-  - [ ] test_execute_decision_wait()
+  - [ ] test_execute_decision_wait_pauses_plan()
+  - [ ] test_execute_decision_wait_stores_expected_event()
+  - [ ] test_execute_decision_wait_requires_plan()
   - [ ] test_execute_decision_delegate()
+  - [ ] test_on_transition_resumes_on_expected_event()
+  - [ ] test_on_transition_ignores_unexpected_event_when_paused()
   - [ ] test_circuit_breaker_max_actions()
   - [ ] test_byo_model_credentials()
   - [ ] test_byo_model_azure_openai()
   - [ ] test_byo_model_local_ollama()
-  - **Est:** 5 hours | Status: 📋 Planned
+  - **Est:** 6 hours | Status: 📋 Planned
 
 ### Task 3: Integration & Validation
 
 - [ ] **3.1:** Integration tests (end-to-end)
   - [ ] test_choreography_planner_autonomous_flow()
   - [ ] test_choreography_planner_with_plan_context()
+  - [ ] test_choreography_planner_wait_and_resume_flow()
   - [ ] test_decision_validation_prevents_hallucinations()
-  - **Est:** 2 hours | Status: 📋 Planned
+  - **Est:** 3 hours | Status: 📋 Planned
 
 - [ ] **3.2:** Update CHANGELOG.md (soorma-common & SDK)
   - [ ] Document new decision types
@@ -780,11 +1051,12 @@ Rationale: LiteLLM provides:
   - [ ] Note BYO model pattern
   - **Est:** 1 hour | Status: 📋 Planned
 
-**Total Phase 2 Effort:** ~22 hours (3 days, 1 person)
+**Total Phase 2 Effort:** ~24 hours (3 days, 1 person)
 
 **Enhancements Added:**
 - ✅ Enhancement 1: System Instructions (business logic) - 2 hours
 - ✅ Enhancement 2: Custom Context (runtime parameters) - 1 hour
+- ✅ WAIT Action Fixes (pause/resume implementation) - 2 hours
 - 🟡 Enhancement 3: Prompt Template System - Deferred to Phase 4+ (tracked in Master Plan)
 
 ---
