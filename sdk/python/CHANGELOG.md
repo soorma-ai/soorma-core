@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Stage 4 Phase 2 - Autonomous Planning (RF-SDK-016)** (February 21, 2026)
+  - **ChoreographyPlanner** class for LLM-based autonomous orchestration
+    - Reduces planner boilerplate from ~400 lines → ~50 lines
+    - Automatic event discovery from Registry Service
+    - LLM reasoning via LiteLLM (50+ model providers supported)
+    - Event validation prevents LLM hallucinations
+    - Type-safe execution of PUBLISH, COMPLETE, WAIT, DELEGATE actions
+    - Circuit breaker (max_actions) prevents runaway loops
+  - **BYO Model Credentials** pattern
+    - Developer-controlled LLM provider & API keys
+    - Supports OpenAI, Azure OpenAI, Anthropic, local Ollama, etc.
+    - No API keys hardcoded in framework
+  - **Business Logic Injection**
+    - `system_instructions` parameter for domain-specific rules
+    - `planning_strategy` (balanced|conservative|aggressive)
+    - `custom_context` parameter for runtime decision context
+  - **WAIT Action** for Human-in-the-Loop workflows
+    - Pauses plan execution (`plan.pause()`)
+    - Tracks expected resume event
+    - Publishes notification for external systems
+  - **PlanContext.create_from_goal()** utility
+    - Standardizes plan creation across all planner handlers
+    - Creates Plan record + PlanContext in single call
+    - Auto-persists before returning
+    - Defaults plan_id to correlation_id or generates UUID
+  - **Optional LiteLLM dependency**
+    - Install: `pip install 'soorma-core[ai]'`
+    - Keeps core SDK lightweight for non-LLM use cases
+
 ## [0.7.7] - 2026-02-19
 
 ### Added

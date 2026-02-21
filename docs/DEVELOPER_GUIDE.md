@@ -65,6 +65,8 @@ python agent.py
 ```
 
 > 💡 **AI-Assisted Development:** Use `soorma init` to generate scaffolding, then leverage examples with GitHub Copilot or Cursor to implement your agent logic. See the **[AI Assistant Guide](./AI_ASSISTANT_GUIDE.md)** for effective prompting patterns and workflows.
+>
+> ⚠️ **For Core Contributors:** If you're implementing features for soorma-core itself (not just using it), you **MUST** follow the [Session Initialization Template](./SESSION_INITIALIZATION.md) to ensure TDD compliance and constitutional adherence.
 
 ### 1.4 The "Infra in Docker, Code on Host" Pattern
 

@@ -24,6 +24,10 @@ typer = ">=0.13.0"  # 0.12.x had packaging issues with typer-slim split
 rich = ">=10.11.0"
 httpx = ">=0.26.0"  # For EventClient SSE streaming
 soorma-common = ">=0.7.0"
+litellm = {version = "^1.36", optional = true}  # For ChoreographyPlanner LLM integration
+
+[tool.poetry.extras]
+ai = ["litellm"]  # pip install soorma-core[ai] for autonomous planning
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

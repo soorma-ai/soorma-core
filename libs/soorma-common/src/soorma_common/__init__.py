@@ -88,6 +88,17 @@ from .tracking import (
     TaskStateChanged,
 )
 
+from .decisions import (
+    # Decision Types
+    PlanAction,
+    PublishAction,
+    CompleteAction,
+    WaitAction,
+    DelegateAction,
+    PlannerAction,
+    PlannerDecision,
+)
+
 __all__ = [
     "BaseDTO",
     # Agent Registry
@@ -161,6 +172,14 @@ __all__ = [
     "TaskState",
     "TaskProgressEvent",
     "TaskStateChanged",
+    # Decision Types
+    "PlanAction",
+    "PublishAction",
+    "CompleteAction",
+    "WaitAction",
+    "DelegateAction",
+    "PlannerAction",
+    "PlannerDecision",
 ]
 
 __version__ = "0.7.7"

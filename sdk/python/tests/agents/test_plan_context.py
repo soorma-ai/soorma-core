@@ -819,3 +819,249 @@ class TestPlanContextPauseResume:
         assert plan.current_state == "process"
         context.bus.request.assert_called_once()
 
+
+class TestPlanContextCreateFromGoal:
+    """Tests for PlanContext.create_from_goal() utility method."""
+    
+    @pytest.mark.asyncio
+    async def test_create_from_goal_creates_plan_record(self):
+        """create_from_goal() should call context.memory.create_plan()."""
+        # Mock context
+        context = MagicMock()
+        context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="plan-123"))
+        context.memory.store_plan_context = AsyncMock()
+        
+        # Mock goal
+        goal = MagicMock()
+        goal.correlation_id = "corr-123"
+        goal.data = {"topic": "AI agents"}
+        goal.response_event = "research.completed"
+        goal.session_id = "session-1"
+        goal.user_id = "user-1"
+        goal.tenant_id = "tenant-1"
+        goal.event_type = "research.goal"
+        
+        # Define state machine
+        state_machine = {
+            "start": StateConfig(
+                state_name="start",
+                description="Initial state",
+                default_next="process",
+            )
+        }
+        
+        # Create plan from goal
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="pending",
+        )
+        
+        # Verify create_plan called
+        context.memory.create_plan.assert_called_once()
+        call_args = context.memory.create_plan.call_args
+        assert call_args.kwargs["plan_id"] == "corr-123"  # Should use correlation_id as plan_id
+        assert call_args.kwargs["goal_event"] == "research.goal"
+        assert call_args.kwargs["goal_data"] == {"topic": "AI agents"}
+        assert call_args.kwargs["tenant_id"] == "tenant-1"
+        assert call_args.kwargs["user_id"] == "user-1"
+        assert call_args.kwargs["session_id"] == "session-1"
+    
+    @pytest.mark.asyncio
+    async def test_create_from_goal_persists_plan_context(self):
+        """create_from_goal() should save PlanContext before returning."""
+        # Mock context
+        context = MagicMock()
+        context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="plan-123"))
+        context.memory.store_plan_context = AsyncMock()
+        
+        # Mock goal
+        goal = MagicMock()
+        goal.correlation_id = "corr-123"
+        goal.data = {"topic": "AI"}
+        goal.response_event = "research.completed"
+        goal.session_id = "session-1"
+        goal.user_id = "user-1"
+        goal.tenant_id = "tenant-1"
+        goal.event_type = "research.goal"
+        
+        state_machine = {
+            "start": StateConfig(state_name="start", description="Start")
+        }
+        
+        # Create plan from goal
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="pending",
+        )
+        
+        # Verify store_plan_context called (plan was saved)
+        context.memory.store_plan_context.assert_called_once()
+        call_args = context.memory.store_plan_context.call_args
+        assert call_args.kwargs["plan_id"] == "corr-123"
+        assert call_args.kwargs["session_id"] == "session-1"
+    
+    @pytest.mark.asyncio
+    async def test_create_from_goal_defaults_plan_id_from_correlation(self):
+        """plan_id should default to goal.correlation_id when present."""
+        # Mock context
+        context = MagicMock()
+        context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="corr-456"))
+        context.memory.store_plan_context = AsyncMock()
+        
+        # Mock goal with correlation_id
+        goal = MagicMock()
+        goal.correlation_id = "corr-456"
+        goal.data = {}
+        goal.response_event = "test.completed"
+        goal.session_id = None
+        goal.user_id = "user-1"
+        goal.tenant_id = "tenant-1"
+        goal.event_type = "test.goal"
+        
+        state_machine = {
+            "start": StateConfig(state_name="start", description="Start")
+        }
+        
+        # Create plan without explicit plan_id
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="pending",
+        )
+        
+        # Verify plan_id equals correlation_id
+        assert plan.plan_id == "corr-456"
+        assert plan.correlation_id == "corr-456"
+    
+    @pytest.mark.asyncio
+    async def test_create_from_goal_generates_uuid_when_missing_correlation(self):
+        """plan_id should generate UUID when goal.correlation_id is empty."""
+        # Mock context
+        context = MagicMock()
+        context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="generated-uuid"))
+        context.memory.store_plan_context = AsyncMock()
+        
+        # Mock goal without correlation_id
+        goal = MagicMock()
+        goal.correlation_id = ""  # Empty
+        goal.data = {}
+        goal.response_event = "test.completed"
+        goal.session_id = None
+        goal.user_id = "user-1"
+        goal.tenant_id = "tenant-1"
+        goal.event_type = "test.goal"
+        
+        state_machine = {
+            "start": StateConfig(state_name="start", description="Start")
+        }
+        
+        # Create plan
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="pending",
+        )
+        
+        # Verify plan_id was generated (not empty)
+        assert plan.plan_id != ""
+        assert len(plan.plan_id) > 0
+        # UUID format check (should have dashes)
+        assert "-" in plan.plan_id
+    
+    @pytest.mark.asyncio
+    async def test_create_from_goal_accepts_explicit_plan_id(self):
+        """create_from_goal() should allow explicit plan_id override."""
+        # Mock context
+        context = MagicMock()
+        context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="custom-plan-123"))
+        context.memory.store_plan_context = AsyncMock()
+        
+        # Mock goal
+        goal = MagicMock()
+        goal.correlation_id = "corr-999"
+        goal.data = {}
+        goal.response_event = "test.completed"
+        goal.session_id = None
+        goal.user_id = "user-1"
+        goal.tenant_id = "tenant-1"
+        goal.event_type = "test.goal"
+        
+        state_machine = {
+            "start": StateConfig(state_name="start", description="Start")
+        }
+        
+        # Create plan with explicit plan_id
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="pending",
+            plan_id="custom-plan-123",  # Explicit override
+        )
+        
+        # Verify explicit plan_id was used
+        assert plan.plan_id == "custom-plan-123"
+        # But correlation_id should still be from goal
+        assert plan.correlation_id == "corr-999"
+    
+    @pytest.mark.asyncio
+    async def test_create_from_goal_initializes_all_fields(self):
+        """create_from_goal() should properly initialize all PlanContext fields."""
+        # Mock context
+        context = MagicMock()
+        context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="plan-full"))
+        context.memory.store_plan_context = AsyncMock()
+        
+        # Mock goal
+        goal = MagicMock()
+        goal.correlation_id = "corr-full"
+        goal.data = {"key": "value"}
+        goal.response_event = "goal.completed"
+        goal.session_id = "session-abc"
+        goal.user_id = "user-xyz"
+        goal.tenant_id = "tenant-123"
+        goal.event_type = "test.goal"
+        
+        state_machine = {
+            "start": StateConfig(state_name="start", description="Start"),
+            "done": StateConfig(state_name="done", description="Done", is_terminal=True),
+        }
+        
+        # Create plan with all parameters
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="running",
+            results={"initial": "data"},
+            parent_plan_id="parent-123",
+        )
+        
+        # Verify all fields initialized correctly
+        assert plan.plan_id == "corr-full"
+        assert plan.goal_event == "test.goal"
+        assert plan.goal_data == {"key": "value"}
+        assert plan.response_event == "goal.completed"
+        assert plan.correlation_id == "corr-full"
+        assert plan.status == "running"
+        assert plan.state_machine == state_machine
+        assert plan.current_state == "start"
+        assert plan.results == {"initial": "data"}
+        assert plan.parent_plan_id == "parent-123"
+        assert plan.session_id == "session-abc"
+        assert plan.user_id == "user-xyz"
+        assert plan.tenant_id == "tenant-123"
+        assert plan._context is context
+
