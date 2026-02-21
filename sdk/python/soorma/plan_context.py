@@ -38,21 +38,13 @@ Usage:
         }
         
         # Create and execute plan
-        plan = PlanContext(
-            plan_id=goal.correlation_id,
-            goal_event=goal.event_type,
-            goal_data=goal.data,
-            response_event=goal.response_event,
-            status="pending",
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
             state_machine=state_machine,
             current_state="start",
-            results={},
-            session_id=goal.session_id,
-            user_id=goal.user_id,
-            tenant_id=goal.tenant_id,
-            _context=context,
+            status="pending",
         )
-        await plan.save()
         await plan.execute_next()
 """
 from dataclasses import dataclass, field

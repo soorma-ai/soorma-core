@@ -359,6 +359,7 @@ await planner.execute_decision(decision, context, None, plan)
 
 ```python
 from soorma.ai.choreography import ChoreographyPlanner
+from soorma.plan_context import PlanContext
 
 planner = ChoreographyPlanner(
     name="order-processor",
@@ -391,22 +392,14 @@ async def handle_order(goal, context):
     """Process incoming order."""
     order_data = goal.data
     
-    # Create plan context
-    plan = PlanContext(
-        plan_id=goal.correlation_id,
-        goal_event="order.received",
-        goal_data=order_data,
-        response_event=goal.response_event,
-        status="running",
+    # Create and persist plan context
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
         state_machine={},  # ChoreographyPlanner uses LLM, not state machine
         current_state="processing",
-        results={},
-        tenant_id=goal.tenant_id,
-        user_id=goal.user_id,
-        session_id=goal.session_id,
-        _context=context,
+        status="running",
     )
-    await plan.save()
     
     # LLM decides first action
     decision = await planner.reason_next_action(

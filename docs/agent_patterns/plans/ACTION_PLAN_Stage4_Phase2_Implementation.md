@@ -59,6 +59,7 @@ This phase adds the LLM reasoning layer on top of Phase 1's state machine founda
 
 - [ ] **DTOs:** PlanAction enum and PlannerDecision model exist in soorma-common
 - [ ] **DTOs:** PlannerDecision.model_json_schema() generates LLM-friendly prompt schemas
+- [ ] **Plan Utility:** PlanContext.create_from_goal() exists to standardize plan creation + persistence
 - [ ] **ChoreographyPlanner:** Class initializes with configurable LLM model (BYO credentials)
 - [ ] **Event Discovery:** reason_next_action() discovers events from Registry Service
 - [ ] **LLM Integration:** Uses LiteLLM for model-agnostic LLM calls (with fallback for offline)
@@ -193,6 +194,41 @@ class PlannerDecision(BaseModel):
     }
 ```
 
+
+**New Method:** `PlanContext.create_from_goal()`
+
+Standardize plan creation in `sdk/python/soorma/plan_context.py` so every `@on_goal` handler creates and persists a plan consistently.
+
+```python
+class PlanContext:
+    @classmethod
+    async def create_from_goal(
+        cls,
+        goal: GoalContext,
+        context: PlatformContext,
+        state_machine: Dict[str, StateConfig],
+        current_state: str,
+        status: str = "pending",
+        results: Optional[Dict[str, Any]] = None,
+        plan_id: Optional[str] = None,
+        parent_plan_id: Optional[str] = None,
+    ) -> "PlanContext":
+        """
+        Create, persist, and return a PlanContext for a goal event.
+
+        Behavior:
+        - Create Plan record in Memory Service (context.memory.create_plan)
+        - Initialize PlanContext with goal metadata (response_event, correlation_id, tenant/user/session)
+        - Persist PlanContext (plan.save)
+        - Return the PlanContext instance
+        """
+```
+
+**Defaults & Rules:**
+- `plan_id`: Defaults to `goal.correlation_id` if present, else generated UUID
+- `results`: Defaults to `{}`
+- `status`: Defaults to `pending`
+- Always persists both Plan record and PlanContext before returning
 **New File:** `sdk/python/soorma/ai/choreography.py`
 
 ```python
@@ -215,11 +251,18 @@ Usage:
     
     @planner.on_goal("research.goal")
     async def handle_goal(goal, context):
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
+            state_machine={},  # ChoreographyPlanner uses LLM, not state machine
+            current_state="reasoning",
+            status="running",
+        )
         decision = await planner.reason_next_action(
             trigger=f"New goal: {goal.data['objective']}",
             context=context,
         )
-        await planner.execute_decision(decision, context, goal_event=goal)
+        await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
 """
 
 from typing import Dict, Any, Optional, List
@@ -876,13 +919,13 @@ async def handle_transition(event, context):
 planner = ChoreographyPlanner(
     name="order-processor",
     reasoning_model="gpt-4o",
-    system_instructions=\"\"\"
+    system_instructions="""
         You are an order processing agent.
         
         POLICY: Orders >$5,000 require manager approval.
         - Use WAIT action with expected_event="approval.granted"
         - Do NOT process payment before approval
-    \"\"\",
+    """,
 )
 
 # 2. Goal arrives
@@ -890,17 +933,14 @@ planner = ChoreographyPlanner(
 async def handle_order(goal, context):
     order = goal.data
     
-    # Create plan
-    plan = PlanContext(
-        plan_id=goal.correlation_id,
-        goal_event="order.received",
-        goal_data=order,
-        response_event=goal.response_event,
-        state_machine={...},
+    # Create and persist plan
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
+        state_machine={},  # ChoreographyPlanner uses LLM, not state machine
         current_state="validate",
-        _context=context,
+        status="running",
     )
-    await plan.save()
     
     # LLM decides what to do
     decision = await planner.reason_next_action(
@@ -1006,6 +1046,22 @@ Client                Planner              Manager              PaymentWorker
 
 ## 3. Task Tracking Matrix
 
+### Task 0: PlanContext Utility (SDK)
+
+- [ ] **0.1:** Add `PlanContext.create_from_goal()` in `sdk/python/soorma/plan_context.py`
+    - [ ] Create Plan record via `context.memory.create_plan()`
+    - [ ] Initialize PlanContext with goal metadata (correlation_id, response_event, tenant/user/session)
+    - [ ] Persist PlanContext via `plan.save()`
+    - [ ] Return PlanContext instance
+    - **Est:** 2 hours | Status: 📋 Planned
+
+- [ ] **0.2:** TDD - Write PlanContext utility tests
+    - [ ] test_create_from_goal_creates_plan_record()
+    - [ ] test_create_from_goal_persists_plan_context()
+    - [ ] test_create_from_goal_defaults_plan_id_from_correlation()
+    - [ ] test_create_from_goal_generates_uuid_when_missing_correlation()
+    - **Est:** 2 hours | Status: 📋 Planned
+
 ### Task 1: DTO Design (soorma-common)
 
 - [ ] **1.1:** Create `libs/soorma-common/src/soorma_common/decisions.py`
@@ -1086,7 +1142,7 @@ Client                Planner              Manager              PaymentWorker
   - [ ] Note BYO model pattern
   - **Est:** 1 hour | Status: 📋 Planned
 
-**Total Phase 2 Effort:** ~24 hours (3 days, 1 person)
+**Total Phase 2 Effort:** ~28 hours (3.5 days, 1 person)
 
 **Enhancements Added:**
 - ✅ Enhancement 1: System Instructions (business logic) - 2 hours
@@ -1105,8 +1161,34 @@ tests/
 ├── ai/
 │   ├── test_decisions.py           # DTO validation tests
 │   └── test_choreography.py        # ChoreographyPlanner logic
+├── plan/
+│   └── test_plan_context.py         # PlanContext create_from_goal tests
 └── integration/
     └── test_choreography_e2e.py    # End-to-end flows
+```
+
+### Unit Tests: PlanContext Utility
+
+**File:** `tests/plan/test_plan_context.py`
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_create_from_goal_creates_plan_record():
+    """create_from_goal calls context.memory.create_plan."""
+
+@pytest.mark.asyncio
+async def test_create_from_goal_persists_plan_context():
+    """create_from_goal saves PlanContext before returning."""
+
+@pytest.mark.asyncio
+async def test_create_from_goal_defaults_plan_id_from_correlation():
+    """plan_id defaults to goal.correlation_id when present."""
+
+@pytest.mark.asyncio
+async def test_create_from_goal_generates_uuid_when_missing_correlation():
+    """plan_id generates UUID when goal.correlation_id is empty."""
 ```
 
 ### Unit Tests: PlannerDecision Types

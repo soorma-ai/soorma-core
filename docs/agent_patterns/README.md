@@ -182,7 +182,11 @@ async def handle_results(result, context):
 
 ```python
 from soorma import Planner
-from soorma.plan_context import PlanContext, StateConfig, StateAction, StateTransition
+from soorma.agents.planner import GoalContext
+from soorma.context import PlatformContext
+from soorma.plan_context import PlanContext
+from soorma_common.events import EventEnvelope
+from soorma_common.state import StateConfig, StateAction, StateTransition
 
 planner = Planner(name="research-planner", capabilities=["research"])
 
@@ -212,20 +216,13 @@ async def plan_research(goal: GoalContext, context: PlatformContext):
     }
     
     # Create and execute plan
-    plan = PlanContext(
-        plan_id=str(uuid4()),
-        goal_event=goal.event_type,
-        goal_data=goal.data,
-        response_event=goal.response_event,
-        correlation_id=goal.correlation_id,
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
         state_machine=states,
         current_state="start",
-        tenant_id=goal.tenant_id,
-        user_id=goal.user_id,
-        _context=context,
+        status="pending",
     )
-    
-    await plan.save()
     await plan.execute_next()
 
 @planner.on_transition()
@@ -324,6 +321,7 @@ await context.bus.respond(
 
 ```python
 from soorma.ai.choreography import ChoreographyPlanner
+from soorma.plan_context import PlanContext
 
 planner = ChoreographyPlanner(
     name="order-processor",
@@ -333,6 +331,13 @@ planner = ChoreographyPlanner(
 
 @planner.on_goal("order.received")
 async def handle_order(goal, context):
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
+        state_machine={},  # ChoreographyPlanner uses LLM, not state machine
+        current_state="reasoning",
+        status="running",
+    )
     decision = await planner.reason_next_action(
         trigger=f"Order: ${goal.data['amount']}",
         context=context,

@@ -23,8 +23,8 @@ PLANNER_PY_TEMPLATE = '''"""
 
 Planners are the "brain" of the DisCo architecture. They:
 1. Receive high-level goals from clients
-2. Decompose goals into actionable tasks
-3. Assign tasks to Worker agents based on capabilities
+2. Model workflows as state machines
+3. Publish tasks to Worker agents
 4. Monitor plan execution progress
 
 The PlatformContext provides access to:
@@ -35,7 +35,9 @@ The PlatformContext provides access to:
 """
 
 from soorma import Planner, PlatformContext
-from soorma.agents.planner import Goal, Plan, Task
+from soorma.agents.planner import GoalContext
+from soorma.plan_context import PlanContext
+from soorma_common.state import StateConfig, StateAction, StateTransition
 
 
 # Create a Planner agent
@@ -61,46 +63,59 @@ async def shutdown():
 
 
 @planner.on_goal("example.goal")
-async def plan_example_goal(goal: Goal, context: PlatformContext) -> Plan:
+async def plan_example_goal(goal: GoalContext, context: PlatformContext) -> None:
     """
     Handle incoming example.goal requests.
     
     Replace this with your own goal handlers. Each goal handler:
     1. Receives a Goal with the high-level objective
     2. Has access to PlatformContext for service discovery
-    3. Returns a Plan with ordered Tasks
+    3. Creates and persists a PlanContext with a state machine
     
     The platform automatically:
-    - Tracks plan execution via Tracker service
+    - Persists plan context to Memory Service
     - Publishes tasks as action-requests
-    - Monitors task completion and dependencies
+    - Routes transitions based on action-results
     """
-    print(f"Planning goal: {{goal.goal_type}} ({{goal.goal_id}})")
+    print(f"Planning goal: {{goal.event_type}} ({{goal.correlation_id}})")
     
     # Discover available workers (example)
     # workers = await context.registry.query_agents(name="data_processing")
     
-    # Decompose goal into tasks
-    # In real scenarios, you might use an LLM for intelligent decomposition
-    tasks = [
-        Task(
-            name="step_1",
-            assigned_to="example_task",  # Worker capability
-            data={{"input": goal.data.get("input", "default")}},
+    # Define state machine
+    states = {{
+        "start": StateConfig(
+            state_name="start",
+            default_next="execute",
         ),
-        Task(
-            name="step_2",
-            assigned_to="example_task",
-            data={{"previous_step": "step_1"}},
-            depends_on=["step_1"],  # Wait for step_1 to complete
+        "execute": StateConfig(
+            state_name="execute",
+            action=StateAction(
+                event_type="example.task",
+                response_event="example.completed",
+                data={{"input": "{{goal_data.input}}"}},
+            ),
+            transitions=[
+                StateTransition(on_event="example.completed", to_state="complete")
+            ],
         ),
-    ]
+        "complete": StateConfig(
+            state_name="complete",
+            is_terminal=True,
+        ),
+    }}
     
-    return Plan(
+    # Create and persist plan context
+    plan = await PlanContext.create_from_goal(
         goal=goal,
-        tasks=tasks,
-        metadata={{"planned_by": "{name}"}},
+        context=context,
+        state_machine=states,
+        current_state="start",
+        status="pending",
     )
+    
+    # Execute initial state
+    await plan.execute_next()
 
 
 if __name__ == "__main__":

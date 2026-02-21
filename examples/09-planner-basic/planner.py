@@ -8,7 +8,6 @@ Demonstrates Stage 4 Phase 1 Planner patterns:
 - GoalContext wrapper for clean goal access
 """
 
-from uuid import uuid4
 from soorma.agents.planner import Planner, GoalContext
 from soorma.plan_context import PlanContext
 from soorma.context import PlatformContext
@@ -95,39 +94,19 @@ async def handle_research_goal(goal: GoalContext, context: PlatformContext):
         )
     }
     
-    # Create plan context
-    plan = PlanContext(
-        plan_id=str(uuid4()),
-        goal_event=goal.event_type,
-        goal_data=goal.data,
-        response_event=goal.response_event,
-        correlation_id=goal.correlation_id,
+    # Create and persist plan context
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
         state_machine=states,
         current_state="start",
         status="pending",
-        results={},
-        session_id=goal.session_id,
-        user_id=goal.user_id,
-        tenant_id=goal.tenant_id,
-        _context=context,
     )
     
     print(f"📝 Creating plan with {len(states)} states")
     print(f"   Plan ID: {plan.plan_id}")
     
-    # Create Plan record first (required before PlanContext)
-    await context.memory.create_plan(
-        plan_id=plan.plan_id,
-        goal_event=goal.event_type,
-        goal_data=goal.data,
-        tenant_id=goal.tenant_id,
-        user_id=goal.user_id,
-        session_id=goal.session_id,
-    )
     print(f"📋 Created plan record: {plan.plan_id}")
-    
-    # Save plan context to Memory Service
-    await plan.save()
     print(f"💾 Saved plan context: {plan.plan_id}")
     
     # Execute initial state (start → research)

@@ -603,6 +603,8 @@ class PlanContext:
     current_state: str
     transitions: List[StateTransition]
     
+    @classmethod
+    async def create_from_goal(...)
     async def save()
     async def restore()
     async def execute_next()
@@ -615,6 +617,7 @@ Autonomous orchestration class that uses LLM reasoning for decision-making:
 
 ```python
 from soorma.ai.choreography import ChoreographyPlanner
+from soorma.plan_context import PlanContext
 
 planner = ChoreographyPlanner(
     name="orchestrator",
@@ -625,6 +628,13 @@ planner = ChoreographyPlanner(
 
 @planner.on_goal("order.received")
 async def handle_goal(goal, context):
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
+        state_machine={},  # ChoreographyPlanner uses LLM, not state machine
+        current_state="reasoning",
+        status="running",
+    )
     # LLM discovers available events from Registry
     # LLM reasons about next action
     # SDK validates event exists before publishing

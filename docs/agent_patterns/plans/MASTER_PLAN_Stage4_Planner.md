@@ -52,17 +52,24 @@ After Stage 4, developers can:
 
 # AFTER (20 lines with ChoreographyPlanner)
 from soorma.ai.choreography import ChoreographyPlanner
+from soorma.plan_context import PlanContext
 
 planner = ChoreographyPlanner(name="orchestrator", reasoning_model="gpt-4o")
 
 @planner.on_goal("research.goal")
 async def handle_goal(goal, context):
+  plan = await PlanContext.create_from_goal(
+    goal=goal,
+    context=context,
+    state_machine={},
+    current_state="reasoning",
+    status="running",
+  )
     decision = await planner.reason_next_action(
         trigger=f"New goal: {goal.data['objective']}",
         context=context,
-        plan_id=goal.correlation_id,
     )
-    await planner.execute_decision(decision, context, goal_event=goal)
+  await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
 ```
 
 **Key Benefits:**
@@ -89,9 +96,13 @@ async def handle_goal(goal, context):
     # Create OR restore plan (supports re-entrant plans)
     plan = await PlanContext.restore_by_correlation(goal.correlation_id, context)
     if not plan:
-        plan = PlanContext.create_from_goal(goal, state_machine={...})
-    
-    await plan.save()  # Persist
+    plan = await PlanContext.create_from_goal(
+      goal=goal,
+      context=context,
+      state_machine={...},
+      current_state="start",
+      status="pending",
+    )
     await plan.execute_next()  # Start first state
 
 @planner.on_transition()
@@ -140,8 +151,13 @@ async def plan_order(goal, context):
     else:
         state_machine = express_flow
     
-    plan = PlanContext(goal=goal, state_machine=state_machine)
-    await plan.save()
+    plan = await PlanContext.create_from_goal(
+      goal=goal,
+      context=context,
+      state_machine=state_machine,
+      current_state="start",
+      status="pending",
+    )
     await plan.execute_next()
 
 @planner.on_transition()
@@ -169,12 +185,19 @@ planner = ChoreographyPlanner(
 
 @planner.on_goal("research.goal")
 async def handle(goal, context):
+  plan = await PlanContext.create_from_goal(
+    goal=goal,
+    context=context,
+    state_machine={},
+    current_state="reasoning",
+    status="running",
+  )
     # SDK does: discover events, LLM reasoning, validation
     decision = await planner.reason_next_action(
         trigger=f"New goal: {goal.data['objective']}",
         context=context,
     )
-    await planner.execute_decision(decision, context)
+  await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
 ```
 
 **Use Cases:**
