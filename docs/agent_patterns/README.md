@@ -312,47 +312,93 @@ await context.bus.respond(
 
 ---
 
-### 6. Autonomous Choreography Pattern
+### 6. Autonomous Choreography Pattern (ChoreographyPlanner)
 
 **Use when:** Complex, adaptive workflows where LLM decides next steps
 
 **Complexity:** ⭐⭐⭐ Advanced
 
+**Status:** ✅ Available in Stage 4 Phase 2+
+
 **Example:** [09-app-research-advisor](../../examples/09-app-research-advisor/) (Stage 4)
 
+```python
+from soorma.ai.choreography import ChoreographyPlanner
+
+planner = ChoreographyPlanner(
+    name="order-processor",
+    reasoning_model="gpt-4o",
+    system_instructions="""Orders >$5k require manager approval.""",
+)
+
+@planner.on_goal("order.received")
+async def handle_order(goal, context):
+    decision = await planner.reason_next_action(
+        trigger=f"Order: ${goal.data['amount']}",
+        context=context,
+        custom_context={"policy": "High-value approval required"},
+    )
+    await planner.execute_decision(decision, context, goal, plan)
+```
+
 **How it works:**
-1. Planner receives goal event (e.g., `research.goal`)
+1. Planner receives goal event (e.g., `order.received`)
 2. LLM discovers available events from Registry
 3. LLM reasons about next action based on:
    - Current goal and context
-   - Workflow state (from Working Memory)
+   - Business rules (system_instructions)
+   - Runtime data (custom_context)
    - Available capabilities (discovered events)
    - Previous actions taken
-4. Planner publishes chosen event (e.g., `web.search.request`)
-5. Worker responds with results event (e.g., `web.search.complete`)
-6. Planner receives results, reasons about next step, repeats
+4. Planner executes decision:
+   - **PUBLISH:** Publish event to trigger workers
+   - **COMPLETE:** Finalize plan with response
+   - **WAIT:** Pause for external input (approval, upload, callback)
+   - **DELEGATE:** Forward to another planner
+5. Worker/external system responds, process repeats
 
 **Event-driven flow:**
 - No loops - each step is triggered by incoming events
-- State tracked in Working Memory and Plan (state machine)
-- Circuit breaker (max actions) prevents runaway workflows
+- State tracked in Working Memory and PlanContext
+- Circuit breaker (max_actions) prevents runaway workflows
 - LLM adapts based on results from each step
+
+**WAIT Action (Human-in-the-Loop):**
+The ChoreographyPlanner can pause plans for external input:
+```python
+# LLM decides: WAIT for manager approval
+decision = WaitAction(
+    reason="Transaction >$5k requires approval",
+    expected_event="approval.granted",
+)
+# Plan pauses until approval event arrives
+```
+
+**Use Cases for WAIT:**
+- Financial approvals (transactions >threshold)
+- Document uploads (user must provide file)
+- External API callbacks (payment verification)
+- User clarification (ambiguous requests)
+
+**See:** [WAIT_ACTION_GUIDE.md](./WAIT_ACTION_GUIDE.md) for complete guide with examples and troubleshooting.
 
 **Characteristics:**
 - No predefined workflow - LLM decides dynamically
 - Events discovered at runtime from Registry
+- Custom business logic via system_instructions
+- Runtime context injection via custom_context
 - Self-adapting to available capabilities
 - Fully event-driven (no while loops)
 - Circuit breaker prevents infinite action sequences
+- Pause/resume support for HITL workflows
 
 **Best for:**
 - Unpredictable workflows where steps depend on intermediate results
 - Complex decision trees with many possible paths
+- Human approval workflows (financial, compliance)
 - Adaptive systems that evolve with available capabilities
 - When requirements change frequently
 - Research, exploration, and creative tasks
-
-**Note:** ChoreographyPlanner implementation coming in Stage 4.
 
 ---
 
@@ -542,7 +588,14 @@ Start simple and add complexity only when needed:
 
 ## Related Documentation
 
+### Pattern Guides
+- [WAIT_ACTION_GUIDE.md](./WAIT_ACTION_GUIDE.md) - Human-in-the-loop workflows with ChoreographyPlanner
+
+### Architecture
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical design and implementation details
 - [Event System](../event_system/README.md) - Event-driven communication
 - [Memory System](../memory_system/README.md) - Memory types and patterns
+
+### Implementation
 - [Refactoring Index](../refactoring/README.md) - Stage 3 implementation details
+- [Stage 4 Master Plan](./plans/MASTER_PLAN_Stage4_Planner.md) - Planner implementation
