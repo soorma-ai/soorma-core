@@ -1,6 +1,6 @@
 """SQLAlchemy database models for Tracker Service (STUB)."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import (
     String,
@@ -13,6 +13,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
+
+
+def utcnow():
+    """Return current UTC time with timezone awareness."""
+    return datetime.now(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -74,13 +79,13 @@ class PlanProgress(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         nullable=False,
-        default=datetime.utcnow,
+        default=utcnow,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utcnow,
+        onupdate=utcnow,
     )
     started_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), 
@@ -153,13 +158,13 @@ class ActionProgress(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=utcnow,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utcnow,
+        onupdate=utcnow,
     )
     started_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),

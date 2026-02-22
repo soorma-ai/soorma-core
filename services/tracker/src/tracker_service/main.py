@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from tracker_service import __version__
 from tracker_service.core.config import settings
 from tracker_service.core.db import init_db, close_db
+from tracker_service.api.v1 import query
 
 
 @asynccontextmanager
@@ -46,6 +47,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include API routers
+app.include_router(query.router)
 
 
 @app.get("/health")
