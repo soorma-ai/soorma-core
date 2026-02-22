@@ -121,6 +121,30 @@ services:
       retries: 5
       start_period: 15s
 
+  # Tracker Service - Event-driven observability
+  tracker-service:
+    image: ${TRACKER_SERVICE_IMAGE:-tracker-service:latest}
+    container_name: soorma-tracker
+    ports:
+      - "${TRACKER_SERVICE_PORT:-8084}:8084"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/tracker
+      - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/tracker
+      - EVENT_SERVICE_URL=http://event-service:8082
+      - IS_LOCAL_TESTING=true
+      - IS_PROD=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   postgres-data:
     name: soorma-postgres-data
@@ -138,6 +162,7 @@ POSTGRES_INIT_SQL = '''-- Initialize Soorma PostgreSQL Databases
 -- Create databases for each service (only if they don't exist)
 SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\\gexec
 SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\\gexec
+SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\\gexec
 
 -- Connect to registry database and enable pgvector
 \\c registry
@@ -146,6 +171,8 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- Connect to memory database and enable pgvector
 \\c memory
 CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Note: tracker database doesn't need pgvector extension
 '''
 
 
@@ -215,13 +242,12 @@ SERVICE_DEFINITIONS = {
         "dockerfile": "services/memory/Dockerfile",
         "name": "Memory Service",
     },
-    # Future services can be added here:
-    # "tracker": {
-    #     "local_image": "tracker-service:latest",
-    #     "public_image": "ghcr.io/soorma-ai/tracker-service:latest",
-    #     "dockerfile": "services/tracker/Dockerfile",
-    #     "name": "State Tracker",
-    # },
+    "tracker-service": {
+        "local_image": "tracker-service:latest",
+        "public_image": "ghcr.io/soorma-ai/tracker-service:latest",
+        "dockerfile": "services/tracker/Dockerfile",
+        "name": "Tracker Service",
+    },
 }
 
 
