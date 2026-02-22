@@ -6,25 +6,33 @@
 
 ---
 
-## 🚨 IMPORTANT: Start Every Implementation Session Correctly
+## 🚨 IMPORTANT: Know Which Guide to Use
 
-**Before implementing any feature or Action Plan**, you MUST use the [Session Initialization Template](SESSION_INITIALIZATION.md).
+**This guide helps you learn Soorma patterns and build prototypes using examples.** It's for:
+- ✅ Learning how Soorma works
+- ✅ Building your own agents (outside soorma-core)
+- ✅ Rapid prototyping with AI code generation
+- ✅ Exploring examples with Copilot/Cursor
 
-**Why?** This enforces:
-- ✅ TDD workflow (tests FIRST, implementation second)
-- ✅ Constitutional compliance (AGENT.md requirements)
-- ✅ Architecture validation (two-layer SDK pattern)
-- ✅ No scope creep (sticks to Action Plan)
+**Contributing to soorma-core itself?** You need **[📋 SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md)** instead.
 
-**Quick Link:** **[📋 SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md)** ← Copy/paste this at session start
+### When to Use SESSION_INITIALIZATION.md
 
-**Failure to use this template will result in:**
-- ❌ Implementation-first code (violates TDD)
-- ❌ Missing tests or post-facto testing
-- ❌ Architecture violations (service client leaks)
-- ❌ Hours of refactoring later
+**MANDATORY for production work on soorma-core:**
+- Contributing SDK features (`sdk/python/`)
+- Implementing platform services (`services/*/`)
+- Creating reference examples (`examples/*/`)
+- Any work requiring constitutional compliance
 
-**See:** [Session Initialization Guide](SESSION_INITIALIZATION.md) for the complete template and workflow.
+**SESSION_INITIALIZATION.md enforces:**
+- ✅ Specification-Driven Development (Gateway → Plans → TDD)
+- ✅ ARCHITECTURE_PATTERNS.md compliance
+- ✅ Two-layer SDK pattern (wrappers vs. service clients)
+- ✅ Test-driven development (RED → GREEN → REFACTOR)
+
+**Bottom line:**
+- **Learning/prototyping?** Use this guide (AI_ASSISTANT_GUIDE.md)
+- **Contributing to soorma-core?** Use [SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md)
 
 ---
 
@@ -444,11 +452,18 @@ When generating Soorma agent code:
 
 ## Resources
 
+**For Learning & Prototyping (you are here):**
 - **Pattern Catalog**: [examples/README.md](../examples/README.md#pattern-catalog)
+- **Developer Workflows**: [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)
 - **Agent Patterns**: [agent_patterns/README.md](./agent_patterns/README.md)
 - **Event System**: [event_system/README.md](./event_system/README.md)
 - **Memory System**: [memory_system/README.md](./memory_system/README.md)
 - **Discovery**: [discovery/README.md](./discovery/README.md)
+
+**For Core Contributors (different scope):**
+- **Constitutional Workflow**: [SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md) - MANDATORY for soorma-core contributions
+- **Architecture Patterns**: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md) - SDK design requirements
+- **Constitution**: [../AGENT.md](../AGENT.md) - Core developer requirements
 
 ---
 

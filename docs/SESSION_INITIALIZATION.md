@@ -1,8 +1,18 @@
 # AI Assistant Session Initialization Guide
 
-**Purpose:** Ensure consistent, specification-driven development sessions for soorma-core contributions across all workflow phases: Planning → Implementation → Validation.
+**Purpose:** Ensure consistent, specification-driven development sessions for **soorma-core contributions** across all workflow phases: Planning → Implementation → Validation.
 
-This guide is mandatory for all AI-assisted sessions to enforce constitutional requirements from [AGENT.md](../AGENT.md).
+**Scope:** This guide is for **production work on soorma-core itself** (SDK, services, examples). It enforces constitutional requirements from [AGENT.md](../AGENT.md).
+
+**Not for learning Soorma?** If you're learning Soorma patterns or building your own agents:
+- 📖 **Learning & Prototyping:** See [AI_ASSISTANT_GUIDE.md](AI_ASSISTANT_GUIDE.md)
+- 🛠️ **General Development:** See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+
+**This guide is MANDATORY for:**
+- Contributing features to soorma-core SDK (`sdk/python/`)
+- Implementing platform services (`services/*/`)
+- Creating reference examples (`examples/*/`)
+- Any work requiring ARCHITECTURE_PATTERNS.md compliance
 
 ---
 
@@ -304,6 +314,7 @@ Before starting implementation, you (agent) MUST:
    - ✅ REFACTOR: Clean up
 
 4. **Task Tracking**: Use manage_todo_list for ALL tasks in the action plan
+5. **Technical Reference**: For CLI commands, testing syntax, and import patterns, see [CONTRIBUTING_REFERENCE.md](CONTRIBUTING_REFERENCE.md)
 
 # Workflow Validation
 Before you start Task 1, confirm you will:
@@ -311,6 +322,7 @@ Before you start Task 1, confirm you will:
 - Only implement after tests are written and failing
 - Follow the RED → GREEN → REFACTOR cycle
 - Use `context.*` wrappers (never direct service client imports in agent code)
+- Refer to CONTRIBUTING_REFERENCE.md for technical syntax as needed
 
 If you understand and will follow this process, acknowledge and begin Task 1 with RED (tests first).
 ```
@@ -761,6 +773,7 @@ AGENT INSTRUCTIONS - MANDATORY WORKFLOW:
 2. Follow TDD: RED (failing tests) → GREEN (minimal code) → REFACTOR
 3. Use manage_todo_list for task tracking
 4. Use context.* wrappers (never direct service client imports in agent code)
+5. Reference CONTRIBUTING_REFERENCE.md for CLI commands and testing syntax
 
 Confirm you will write TESTS FIRST before any implementation, then begin.
 ```
@@ -769,10 +782,21 @@ Confirm you will write TESTS FIRST before any implementation, then begin.
 
 ## 📚 Related Documentation
 
-- [AGENT.md](../AGENT.md) - Core developer constitution
-- [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md) - SDK architecture requirements
-- [AI_ASSISTANT_GUIDE.md](AI_ASSISTANT_GUIDE.md) - General AI assistant guidance
-- [CONTRIBUTING_REFERENCE.md](CONTRIBUTING_REFERENCE.md) - Technical reference (CLI, testing, patterns)
+**Documentation Hierarchy for Core Contributors:**
+
+1. **[AGENT.md](../AGENT.md)** - Constitution (read FIRST)
+2. **[SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md)** - Workflow process (you are here)
+3. **[ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md)** - SDK patterns (Phase 0 prerequisite)
+4. **[CONTRIBUTING_REFERENCE.md](CONTRIBUTING_REFERENCE.md)** - Technical syntax (Phase 3 reference)
+
+**Templates:**
+- [docs/templates/Master_Plan_Template.md](templates/Master_Plan_Template.md) - Master Plan template
+- [docs/templates/Action_Plan_Template.md](templates/Action_Plan_Template.md) - Action Plan template
+
+**For Learning & Prototyping (different audience):**
+- [AI_ASSISTANT_GUIDE.md](AI_ASSISTANT_GUIDE.md) - Using examples with AI to build your own agents
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - General workflows for using Soorma
+- [examples/README.md](../examples/README.md) - Progressive learning path with working examples
 
 ---
 

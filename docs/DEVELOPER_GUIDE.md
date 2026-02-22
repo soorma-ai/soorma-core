@@ -66,7 +66,12 @@ python agent.py
 
 > 💡 **AI-Assisted Development:** Use `soorma init` to generate scaffolding, then leverage examples with GitHub Copilot or Cursor to implement your agent logic. See the **[AI Assistant Guide](./AI_ASSISTANT_GUIDE.md)** for effective prompting patterns and workflows.
 >
-> ⚠️ **For Core Contributors:** If you're implementing features for soorma-core itself (not just using it), you **MUST** follow the [Session Initialization Template](./SESSION_INITIALIZATION.md) to ensure TDD compliance and constitutional adherence.
+> 📚 **Guide Navigation:**
+> - **This guide (DEVELOPER_GUIDE.md):** General developer workflows for using Soorma
+> - **[AI_ASSISTANT_GUIDE.md](AI_ASSISTANT_GUIDE.md):** Learning patterns & rapid prototyping with examples
+> - **[SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md):** MANDATORY for soorma-core contributors (enforces TDD & constitutional compliance)
+>
+> ⚠️ **For Core Contributors:** If you're implementing features for soorma-core itself (SDK, services, examples), you **MUST** use [SESSION_INITIALIZATION.md](./SESSION_INITIALIZATION.md) to ensure specification-driven development and architectural compliance.
 
 ### 1.4 The "Infra in Docker, Code on Host" Pattern
 
@@ -521,14 +526,24 @@ docker compose -f production.yml up -d
 
 ## Related Documentation
 
+**For General Development (you are here):**
 - [Architecture](../ARCHITECTURE.md) - Platform services and infrastructure
+- [Examples](../examples/) - Working implementations
+- [AI Assistant Guide](./AI_ASSISTANT_GUIDE.md) - Using examples with Copilot/Cursor for rapid prototyping
+
+**Deep Dive: Feature-Specific Guides:**
 - [Agent Patterns](./agent_patterns/README.md) - Tool, Worker, Planner models and DisCo pattern
 - [Event System](./event_system/README.md) - Event-driven architecture, topics, messaging
 - [Memory System](./memory_system/README.md) - CoALA framework and memory types
 - [Discovery](./discovery/README.md) - Registry and capability discovery
-- [AI Assistant Guide](./AI_ASSISTANT_GUIDE.md) - Using examples with Copilot/Cursor for rapid development
-- [Examples](../examples/) - Working implementations
+
+**For Core Contributors (different scope):**
+- [SESSION_INITIALIZATION.md](./SESSION_INITIALIZATION.md) - MANDATORY workflow for soorma-core contributions
+- [ARCHITECTURE_PATTERNS.md](./ARCHITECTURE_PATTERNS.md) - SDK architecture requirements
+- [AGENT.md](../AGENT.md) - Core contributor constitution
 
 ---
 
-**Questions?** Check [AGENT.md](../AGENT.md) for AI assistant instructions or [README.md](../README.md) for getting started.
+**Questions?** 
+- **Using Soorma?** Check [README.md](../README.md) for getting started
+- **Contributing to soorma-core?** Read [AGENT.md](../AGENT.md) for core contributor requirements
