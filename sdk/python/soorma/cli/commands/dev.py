@@ -73,7 +73,7 @@ services:
       nats:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,10 +90,12 @@ services:
       - NATS_URL=nats://nats:4222
       - DEBUG=false
     depends_on:
+      postgres:
+        condition: service_healthy
       nats:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health').read()"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -115,7 +117,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health').read()"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -136,14 +138,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      event-service:
+      nats:
         condition: service_healthy
+      event-service:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health').read()"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 20s
 
 volumes:
   postgres-data:
@@ -443,6 +447,11 @@ def dev_stack(
         "--memory-service-port",
         help="Port for the Memory Service.",
     ),
+    tracker_service_port: int = typer.Option(
+        8084,
+        "--tracker-service-port",
+        help="Port for the Tracker Service.",
+    ),
     postgres_port: int = typer.Option(
         5432,
         "--postgres-port",
@@ -463,6 +472,7 @@ def dev_stack(
     • Registry Service - Agent & event registration
     • Event Service - PubSub proxy (SSE + REST)
     • Memory Service - Persistent memory layer (CoALA)
+    • Tracker Service - Event-driven observability
     • NATS - Event bus with JetStream
     • PostgreSQL - Database with pgvector
     
@@ -480,6 +490,7 @@ def dev_stack(
       SOORMA_REGISTRY_URL=http://localhost:8081
       SOORMA_EVENT_SERVICE_URL=http://localhost:8082
       SOORMA_MEMORY_SERVICE_URL=http://localhost:8083
+      SOORMA_TRACKER_SERVICE_URL=http://localhost:8084
       SOORMA_NATS_URL=nats://localhost:4222
     """
     # Check Docker availability
@@ -561,6 +572,7 @@ def dev_stack(
     registry_image = service_images.get("registry", "registry-service:latest")
     event_service_image = service_images.get("event-service", "event-service:latest")
     memory_service_image = service_images.get("memory-service", "memory-service:latest")
+    tracker_service_image = service_images.get("tracker-service", "tracker-service:latest")
     
     # Get OpenAI API key from environment
     openai_api_key = os.environ.get("OPENAI_API_KEY", "")
@@ -575,6 +587,8 @@ EVENT_SERVICE_PORT={event_service_port}
 EVENT_SERVICE_IMAGE={event_service_image or 'event-service:latest'}
 MEMORY_SERVICE_PORT={memory_service_port}
 MEMORY_SERVICE_IMAGE={memory_service_image or 'memory-service:latest'}
+TRACKER_SERVICE_PORT={tracker_service_port}
+TRACKER_SERVICE_IMAGE={tracker_service_image or 'tracker-service:latest'}
 POSTGRES_PORT={postgres_port}
 OPENAI_API_KEY={openai_api_key}
 """
@@ -619,11 +633,12 @@ OPENAI_API_KEY={openai_api_key}
     
     # Start infrastructure
     typer.echo("📦 Starting infrastructure (Docker)...")
-    typer.echo(f"   Registry:      http://localhost:{registry_port}")
-    typer.echo(f"   Event Service: http://localhost:{event_service_port}")
-    typer.echo(f"   Memory Service: http://localhost:{memory_service_port}")
-    typer.echo(f"   NATS:          nats://localhost:{nats_port}")
-    typer.echo(f"   PostgreSQL:    postgresql://localhost:{postgres_port}")
+    typer.echo(f"   Registry:        http://localhost:{registry_port}")
+    typer.echo(f"   Event Service:   http://localhost:{event_service_port}")
+    typer.echo(f"   Memory Service:  http://localhost:{memory_service_port}")
+    typer.echo(f"   Tracker Service: http://localhost:{tracker_service_port}")
+    typer.echo(f"   NATS:            nats://localhost:{nats_port}")
+    typer.echo(f"   PostgreSQL:      postgresql://localhost:{postgres_port}")
     typer.echo("")
     
     # Pull images (quiet mode)
@@ -668,6 +683,7 @@ OPENAI_API_KEY={openai_api_key}
     typer.echo(f"  export SOORMA_REGISTRY_URL=http://localhost:{registry_port}")
     typer.echo(f"  export SOORMA_EVENT_SERVICE_URL=http://localhost:{event_service_port}")
     typer.echo(f"  export SOORMA_MEMORY_SERVICE_URL=http://localhost:{memory_service_port}")
+    typer.echo(f"  export SOORMA_TRACKER_SERVICE_URL=http://localhost:{tracker_service_port}")
     typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
     typer.echo("  python agent.py")
     raise typer.Exit(0)

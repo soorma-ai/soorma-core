@@ -23,14 +23,14 @@ def upgrade() -> None:
     plan_status_enum = postgresql.ENUM(
         'pending', 'in_progress', 'completed', 'failed', 'cancelled',
         name='plan_status_enum',
-        create_type=True
+        create_type=False
     )
     plan_status_enum.create(op.get_bind(), checkfirst=True)
     
     action_status_enum = postgresql.ENUM(
         'pending', 'running', 'completed', 'failed', 'skipped',
         name='action_status_enum',
-        create_type=True
+        create_type=False
     )
     action_status_enum.create(op.get_bind(), checkfirst=True)
     
@@ -53,6 +53,7 @@ def upgrade() -> None:
         sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('error_message', sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('plan_id', name='uq_plan_id'),
     )
     
     # Create indexes for plan_progress

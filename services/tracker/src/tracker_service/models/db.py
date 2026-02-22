@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     ForeignKey,
     Enum as SQLEnum,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
@@ -55,7 +56,7 @@ class PlanProgress(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
     # Business identifiers
-    plan_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    plan_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     user_id: Mapped[str] = mapped_column(String(255), nullable=False)
     
@@ -65,7 +66,7 @@ class PlanProgress(Base):
     
     # Execution state
     status: Mapped[PlanStatus] = mapped_column(
-        SQLEnum(PlanStatus, name="plan_status_enum"),
+        SQLEnum(PlanStatus, name="plan_status_enum", create_type=False),
         nullable=False,
         default=PlanStatus.PENDING,
     )
@@ -108,6 +109,7 @@ class PlanProgress(Base):
     
     # Indexes for multi-tenant queries
     __table_args__ = (
+        UniqueConstraint("plan_id", name="uq_plan_id"),
         Index("idx_plan_tenant_plan", "tenant_id", "plan_id"),
         Index("idx_plan_status", "status"),
         Index("idx_plan_created", "created_at"),
@@ -145,7 +147,7 @@ class ActionProgress(Base):
     
     # Execution state
     status: Mapped[ActionStatus] = mapped_column(
-        SQLEnum(ActionStatus, name="action_status_enum"),
+        SQLEnum(ActionStatus, name="action_status_enum", create_type=False),
         nullable=False,
         default=ActionStatus.PENDING,
     )
