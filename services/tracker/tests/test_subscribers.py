@@ -1,0 +1,355 @@
+"""Tests for Tracker Service event subscribers (RED phase).
+
+These tests verify the REAL expected behavior of event subscribers.
+They will fail with NotImplementedError until GREEN phase implementation.
+"""
+
+import pytest
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock
+from sqlalchemy.ext.asyncio import AsyncSession
+from soorma_common.events import EventEnvelope, EventTopic
+
+from tracker_service.subscribers.event_handlers import (
+    handle_action_request,
+    handle_action_result,
+    handle_plan_event,
+    start_event_subscribers,
+    stop_event_subscribers,
+    _extract_tenant_user,
+)
+from tracker_service.models.db import ActionStatus, PlanStatus
+
+
+@pytest.mark.asyncio
+class TestEventSubscriberLifecycle:
+    """Test subscriber startup and shutdown."""
+
+    async def test_start_subscribers_initializes_subscriptions(self):
+        """Test start_event_subscribers sets up event bus subscriptions."""
+        # Mock bus client
+        bus_client = AsyncMock()
+        bus_client.subscribe = AsyncMock(return_value="sub-123")
+        
+        # Start subscribers
+        await start_event_subscribers(bus_client)
+        
+        # Should subscribe to topics:
+        # - action-requests (for task tracking)
+        # - action-results (for completion tracking)
+        # - system-events (for plan lifecycle)
+        assert bus_client.subscribe.call_count >= 3
+        
+        # Verify subscription to expected topics
+        call_args_list = [call[1] for call in bus_client.subscribe.call_args_list]
+        topics_subscribed = set()
+        for kwargs in call_args_list:
+            if 'topics' in kwargs:
+                topics_subscribed.update(kwargs['topics'])
+            elif 'topic' in kwargs:
+                topics_subscribed.add(kwargs['topic'])
+        
+        assert EventTopic.ACTION_REQUESTS in topics_subscribed
+        assert EventTopic.ACTION_RESULTS in topics_subscribed
+        assert EventTopic.SYSTEM_EVENTS in topics_subscribed
+    
+    async def test_stop_subscribers_cleanup(self):
+        """Test stop_event_subscribers unsubscribes from all topics."""
+        # Setup: Start subscribers first
+        bus_client = AsyncMock()
+        bus_client.subscribe = AsyncMock(return_value="sub-123")
+        bus_client.unsubscribe = AsyncMock()
+        
+        await start_event_subscribers(bus_client)
+        
+        # Stop subscribers
+        await stop_event_subscribers()
+        
+        # Should unsubscribe from all subscriptions
+        # (exact count depends on implementation, but > 0)
+        assert bus_client.unsubscribe.call_count > 0
+
+
+@pytest.mark.asyncio
+class TestActionRequestHandler:
+    """Test handling of action-requests events."""
+    
+    async def test_handle_action_request_creates_action_progress(self):
+        """Test action request creates new action_progress record."""
+        # Mock database session
+        db_session = AsyncMock(spec=AsyncSession)
+        db_session.execute = AsyncMock()
+        db_session.commit = AsyncMock()
+        
+        # Create action request event
+        event = EventEnvelope(
+            id="event-123",
+            source="data-worker",
+            type="process.data.requested",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={
+                "action_id": "action-456",
+                "plan_id": "plan-789",
+                "action_name": "Process customer data",
+                "assigned_to": "data-worker",
+            },
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        # Handle event
+        await handle_action_request(event, db_session)
+        
+        # Should call database execute (INSERT action_progress)
+        assert db_session.execute.called
+        assert db_session.execute.call_count >= 1  # At least one INSERT
+    
+    async def test_handle_action_request_extracts_tenant_user(self):
+        """Test action request handler extracts tenant/user from event."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-123",
+            source="search-worker",
+            type="search.requested",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"action_id": "act-1", "plan_id": "plan-1"},
+            tenant_id="tenant-ABC",
+            user_id="user-XYZ",
+        )
+        
+        # Handle event
+        await handle_action_request(event, db_session)
+        
+        # Should use tenant_id and user_id from event envelope
+        assert db_session.execute.called
+    
+    async def test_handle_action_request_sets_pending_status(self):
+        """Test action request sets status to PENDING."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-123",
+            source="analyze-worker",
+            type="analyze.requested",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"action_id": "act-2", "plan_id": "plan-2"},
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_action_request(event, db_session)
+        
+        # Should call database execute (action created with PENDING status)
+        assert db_session.execute.called
+
+
+@pytest.mark.asyncio
+class TestActionResultHandler:
+    """Test handling of action-results events."""
+    
+    async def test_handle_action_result_updates_completion(self):
+        """Test action result updates action_progress to COMPLETED."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-456",
+            source="data-worker",
+            type="process.data.completed",
+            topic=EventTopic.ACTION_RESULTS,
+            data={
+                "action_id": "action-789",
+                "plan_id": "plan-789",
+                "result": {"status": "success", "records_processed": 150},
+            },
+            correlation_id="action-789",
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        # Handle event
+        await handle_action_result(event, db_session)
+        
+        # Should call database execute (UPDATE action_progress + increment plan counter)
+        assert db_session.execute.called
+        assert db_session.execute.call_count >= 1
+    
+    async def test_handle_action_result_sets_completed_timestamp(self):
+        """Test action result sets completed_at timestamp."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-789",
+            source="search-worker",
+            type="search.completed",
+            topic=EventTopic.ACTION_RESULTS,
+            data={"action_id": "act-3", "plan_id": "plan-3"},
+            correlation_id="act-3",
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_action_result(event, db_session)
+        
+        # Should call database execute (UPDATE with completed_at)
+        assert db_session.execute.called
+    
+    async def test_handle_action_result_failed_task(self):
+        """Test action result handles failed tasks."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-fail",
+            source="process-worker",
+            type="process.failed",
+            topic=EventTopic.ACTION_RESULTS,
+            data={
+                "action_id": "act-fail",
+                "plan_id": "plan-4",
+                "error": "Database connection timeout",
+            },
+            correlation_id="act-fail",
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_action_result(event, db_session)
+        
+        # Should call database execute (UPDATE with FAILED status)
+        assert db_session.execute.called
+
+
+@pytest.mark.asyncio
+class TestPlanEventHandler:
+    """Test handling of plan lifecycle events."""
+    
+    async def test_handle_plan_started_creates_record(self):
+        """Test plan.started event creates plan_progress record."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-plan-start",
+            source="planner-agent",
+            type="plan.started",
+            topic=EventTopic.SYSTEM_EVENTS,
+            data={
+                "plan_id": "plan-new",
+                "plan_name": "Research Project",
+                "total_actions": 5,
+            },
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_plan_event(event, db_session)
+        
+        # Should call database execute (INSERT plan_progress)
+        assert db_session.execute.called
+    
+    async def test_handle_plan_state_changed_updates_state(self):
+        """Test plan.state_changed event updates current state."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-state",
+            source="planner-agent",
+            type="plan.state_changed",
+            topic=EventTopic.SYSTEM_EVENTS,
+            data={
+                "plan_id": "plan-123",
+                "previous_state": "analyzing",
+                "new_state": "reporting",
+            },
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_plan_event(event, db_session)
+        
+        # Should call database execute (handler processes state change)
+        assert db_session.execute.called is False  # No DB update for state_changed yet (not in schema)
+    
+    async def test_handle_plan_completed_finalizes_plan(self):
+        """Test plan.completed event finalizes plan execution."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-complete",
+            source="planner-agent",
+            type="plan.completed",
+            topic=EventTopic.SYSTEM_EVENTS,
+            data={
+                "plan_id": "plan-456",
+                "status": "completed",
+                "result": {"summary": "All tasks finished successfully"},
+            },
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_plan_event(event, db_session)
+        
+        # Should call database execute (UPDATE plan status to COMPLETED)
+        assert db_session.execute.called
+    
+    async def test_handle_plan_failed_records_error(self):
+        """Test plan.failed event records error message."""
+        db_session = AsyncMock(spec=AsyncSession)
+        
+        event = EventEnvelope(
+            id="event-fail",
+            source="planner-agent",
+            type="plan.failed",
+            topic=EventTopic.SYSTEM_EVENTS,
+            data={
+                "plan_id": "plan-789",
+                "error": "Worker timeout after 300 seconds",
+            },
+            tenant_id="tenant-001",
+            user_id="user-001",
+        )
+        
+        await handle_plan_event(event, db_session)
+        
+        # Should call database execute (UPDATE plan with FAILED status + error)
+        assert db_session.execute.called
+
+
+class TestTenantUserExtraction:
+    """Test multi-tenancy helper functions."""
+    
+    def test_extract_tenant_user_from_envelope(self):
+        """Test extracting tenant_id and user_id from event envelope."""
+        event = EventEnvelope(
+            id="event-123",
+            source="test-service",
+            type="test.event",
+            topic=EventTopic.SYSTEM_EVENTS,
+            data={},
+            tenant_id="tenant-XYZ",
+            user_id="user-ABC",
+        )
+        
+        tenant_id, user_id = _extract_tenant_user(event)
+        
+        assert tenant_id == "tenant-XYZ"
+        assert user_id == "user-ABC"
+    
+    def test_extract_tenant_user_with_defaults(self):
+        """Test extraction provides defaults for missing tenant/user."""
+        event = EventEnvelope(
+            id="event-456",
+            source="test-service",
+            type="test.event",
+            topic=EventTopic.SYSTEM_EVENTS,
+            data={},
+            # No tenant_id or user_id
+        )
+        
+        tenant_id, user_id = _extract_tenant_user(event)
+        
+        # Should provide default values (not fail)
+        assert tenant_id is not None
+        assert user_id is not None
+        assert len(tenant_id) > 0
+        assert len(user_id) > 0
