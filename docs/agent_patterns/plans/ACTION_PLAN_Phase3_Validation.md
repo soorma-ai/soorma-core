@@ -26,6 +26,7 @@ Implement end-to-end validation of Stage 4 Planner Model by:
 - [ ] **Code Reduction:** Achieves ≥85% reduction in orchestration code
 - [ ] **Tracker Service:** Subscribes to events and stores progress in PostgreSQL
 - [ ] **TrackerClient Wrapper:** Exists in PlatformContext with query methods
+- [ ] **CLI Integration:** `soorma dev` starts Tracker Service on port 8084
 - [ ] **Integration Tests:** ≥4 tests covering goal → completion → tracker query flow
 - [ ] **Documentation:** README.md and CHANGELOG.md updated
 - [ ] **No Regressions:** All existing tests still pass
@@ -51,6 +52,7 @@ Implement end-to-end validation of Stage 4 Planner Model by:
 |-----------|------|-------|-------------|
 | **Tracker Service** | Backend Service | `services/tracker/` (NEW) | Major - New Service |
 | **TrackerClient Wrapper** | SDK | `sdk/python/soorma/context.py` | Medium - Add wrapper class |
+| **CLI Integration** | SDK CLI | `sdk/python/soorma/cli/commands/dev.py` | Small - Add service to docker-compose |
 | **research-advisor** | Example | `examples/research-advisor/planner.py` | Major - Refactor |
 | **soorma-common** | DTOs | ✅ Already exists: `tracking.py` | No change (schemas exist) |
 | **Integration Tests** | Tests | `sdk/python/tests/test_planner_flow.py` (NEW) | Medium - New tests |
@@ -867,7 +869,7 @@ await context.bus.publish(
 
 ---
 
-#### Day 2: Tracker Service Implementation (6-7 hours with hierarchy tracking)
+#### Day 2: Tracker Service Implementation (6.5-7.5 hours with hierarchy tracking + CLI)
 
 **Task 4: Tracker Service Scaffold**
 - **Status:** ⏳ Not Started
@@ -885,14 +887,64 @@ await context.bus.publish(
   3. Add dependencies: `soorma-sdk`, `soorma-common`, `fastapi`, `uvicorn`, `asyncpg`
   4. Create FastAPI app scaffold
   5. Database connection setup (PostgreSQL)
-  6. Health check endpoint
+  6. Health check endpoint: `GET /health`
+  7. Create Dockerfile following pattern from memory/registry services
 - **Acceptance:** Service starts, health check returns 200
+
+**Task 4.5: CLI Integration - Add Tracker to `soorma dev`**
+- **Status:** ⏳ Not Started
+- **Effort:** 0.5 hours
+- **TDD Phase:** GREEN (infrastructure)
+- **Dependencies:** Task 4 complete (Dockerfile exists)
+- **Files:**
+  - `sdk/python/soorma/cli/commands/dev.py` (MODIFY)
+  - `sdk/python/tests/cli/test_dev.py` (MODIFY - optional)
+- **Steps:**
+  1. Update `DOCKER_COMPOSE_TEMPLATE` to add tracker-service:
+     ```yaml
+     tracker-service:
+       image: ${TRACKER_SERVICE_IMAGE:-tracker-service:latest}
+       container_name: soorma-tracker
+       ports:
+         - "${TRACKER_SERVICE_PORT:-8084}:8084"
+       environment:
+         - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/tracker
+         - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/tracker
+         - EVENT_SERVICE_URL=http://event-service:8082
+       depends_on:
+         postgres:
+           condition: service_healthy
+         event-service:
+           condition: service_healthy
+       healthcheck:
+         test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+         interval: 10s
+         timeout: 5s
+         retries: 5
+         start_period: 10s
+     ```
+  2. Update `POSTGRES_INIT_SQL` to create tracker database:
+     ```sql
+     SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\gexec
+     ```
+  3. Update `SERVICE_DEFINITIONS` dict to include tracker:
+     ```python
+     "tracker": {
+         "local_image": "tracker-service:latest",
+         "public_image": "ghcr.io/soorma-ai/tracker-service:latest",
+         "dockerfile": "services/tracker/Dockerfile",
+         "context": "services/tracker"
+     }
+     ```
+  4. Test: `soorma dev --build` starts all 5 services
+  5. Manual verification: `curl http://localhost:8084/health`
+- **Acceptance:** `soorma dev` starts tracker-service on port 8084, health check passes
 
 **Task 5: Database Schema Migration**
 - **Status:** ⏳ Not Started
 - **Effort:** 1 hour
 - **TDD Phase:** GREEN
-- **Dependencies:** Task 4 complete
+- **Dependencies:** Task 4.5 complete (CLI can start tracker database)
 - **Files:**
   - `services/tracker/migrations/001_initial_schema.sql` (NEW)
   - `services/tracker/src/db.py` (MODIFY - add table classes)
@@ -1536,7 +1588,7 @@ curl -H "X-Tenant-ID: $TENANT_ID" \
 
 ### Code Complete
 
-- [ ] All 10 tasks completed
+- [ ] All 11 tasks completed
 - [ ] 37+ new tests passing (88+ total including Phase 1+2)
 - [ ] Test coverage ≥85% on new code
 - [ ] research-advisor planner refactored: ≤60 lines (≥85% reduction)
