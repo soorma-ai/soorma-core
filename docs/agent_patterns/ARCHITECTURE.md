@@ -603,6 +603,8 @@ class PlanContext:
     current_state: str
     transitions: List[StateTransition]
     
+    @classmethod
+    async def create_from_goal(...)
     async def save()
     async def restore()
     async def execute_next()
@@ -611,31 +613,79 @@ class PlanContext:
 
 ### ChoreographyPlanner (RF-SDK-016)
 
-Autonomous orchestration class:
+Autonomous orchestration class that uses LLM reasoning for decision-making:
 
 ```python
 from soorma.ai.choreography import ChoreographyPlanner
+from soorma.plan_context import PlanContext
 
 planner = ChoreographyPlanner(
     name="orchestrator",
     reasoning_model="gpt-4o",
-    max_actions=10,  # Circuit breaker
+    system_instructions="""Business rules and constraints...""",  # Custom logic
+    max_actions=20,  # Circuit breaker
 )
 
-@planner.on_goal("research.goal")
+@planner.on_goal("order.received")
 async def handle_goal(goal, context):
-    # LLM discovers available events
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
+        state_machine={},  # ChoreographyPlanner uses LLM, not state machine
+        current_state="reasoning",
+        status="running",
+    )
+    # LLM discovers available events from Registry
     # LLM reasons about next action
     # SDK validates event exists before publishing
     decision = await planner.reason_next_action(
-        trigger=f"New goal: {goal.data['objective']}",
+        trigger=f"Order: ${goal.data['amount']}",
         context=context,
-        plan_id=goal.correlation_id,
+        custom_context={"policy": "Orders >$5k need approval"},  # Runtime context
     )
-    await planner.execute_decision(decision, context)
+    await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
 ```
 
-**See:** [06-PLANNER-MODEL.md](../refactoring/sdk/06-PLANNER-MODEL.md) for detailed design.
+**Key Features:**
+- **LLM Reasoning:** Autonomous decision-making based on available events
+- **Business Logic:** Inject rules via `system_instructions` parameter
+- **Runtime Context:** Pass dynamic data via `custom_context` parameter
+- **Event Validation:** Prevents LLM hallucinations by validating events exist
+- **WAIT Action:** Pause/resume for human-in-the-loop workflows (see guide below)
+
+**Decision Types:**
+- **PUBLISH:** Publish event to trigger workers
+- **COMPLETE:** Finalize plan with response
+- **WAIT:** Pause for external input (approval, upload, callback)
+- **DELEGATE:** Forward to another planner
+
+#### WAIT Action for Human-in-the-Loop
+
+ChoreographyPlanner supports pausing plans to wait for external input:
+
+```python
+# LLM decides to WAIT for approval
+decision = PlannerDecision(
+    next_action=WaitAction(
+        reason="Order >$5k requires manager approval",
+        expected_event="approval.granted",
+        timeout_seconds=3600,
+    )
+)
+
+# Plan pauses, external system provides input
+# Plan auto-resumes when expected_event arrives
+```
+
+**Common Use Cases:**
+- Financial approvals (transactions >threshold)
+- Document uploads (user must provide file)
+- External API callbacks (payment verification)
+- User clarification (ambiguous requests)
+
+**See:** [WAIT_ACTION_GUIDE.md](./WAIT_ACTION_GUIDE.md) for complete examples, testing, and troubleshooting.
+
+**Design:** [06-PLANNER-MODEL.md](../refactoring/sdk/06-PLANNER-MODEL.md) for detailed architecture.
 
 ---
 
@@ -732,10 +782,19 @@ async def handle_goal(goal, context):
 
 ## Related Documentation
 
+### Pattern Guides
 - [README.md](./README.md) - User guide and patterns
+- [WAIT_ACTION_GUIDE.md](./WAIT_ACTION_GUIDE.md) - Human-in-the-loop workflows with ChoreographyPlanner
+
+### Architecture References
 - [Event System Architecture](../event_system/ARCHITECTURE.md) - Event model details
 - [Memory System Architecture](../memory_system/ARCHITECTURE.md) - Persistence layer
-- [Stage 3 Working Plan](../refactoring/STAGE_3_WORKING_PLAN.md) - Implementation details
+
+### Design Documents
 - [Tool Model Design](../refactoring/sdk/04-TOOL-MODEL.md) - RF-SDK-005
 - [Worker Model Design](../refactoring/sdk/05-WORKER-MODEL.md) - RF-SDK-004
 - [Planner Model Design](../refactoring/sdk/06-PLANNER-MODEL.md) - RF-SDK-006
+
+### Implementation Plans
+- [Stage 3 Working Plan](../refactoring/STAGE_3_WORKING_PLAN.md) - Tool & Worker implementation
+- [Stage 4 Master Plan](./plans/MASTER_PLAN_Stage4_Planner.md) - Planner implementation

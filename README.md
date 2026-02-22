@@ -197,6 +197,16 @@ For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see th
 We are currently in **Day 0 (Pre-Alpha)**. The codebase is being actively scaffolded.
 Join the [Waitlist](https://soorma.ai) to be notified when the first "Good First Issue" drops.
 
+### For Core Contributors & AI-Assisted Development
+
+If you're contributing to soorma-core itself:
+
+1. **Read the Constitution:** [AGENT.md](AGENT.md) - Core developer requirements
+2. **Use TDD Session Template:** [docs/SESSION_INITIALIZATION.md](docs/SESSION_INITIALIZATION.md) - **MANDATORY** for all implementation sessions
+3. **Follow Architecture Patterns:** [docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md) - SDK design requirements
+
+**Why the session template?** It enforces test-driven development (TDD) and prevents common violations like implementation-before-tests. **Every session must start with this template.**
+
 ---
 <div align="center">
   <sub>© 2025 Soorma AI. Built for the brave.</sub>

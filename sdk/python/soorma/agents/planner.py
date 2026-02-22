@@ -18,25 +18,38 @@ Usage:
 
     @planner.on_goal("research.goal")
     async def plan_research(goal, context):
-        # Decompose goal into tasks
-        tasks = [
-            Task(
-                name="search_papers",
-                assigned_to="research-worker",
-                data={"query": goal.data["topic"]},
+        # Define state machine
+        state_machine = {
+            "start": StateConfig(
+                state_name="start",
+                default_next="search",
             ),
-            Task(
-                name="summarize_findings",
-                assigned_to="summarizer-worker",
-                depends_on=["search_papers"],
+            "search": StateConfig(
+                state_name="search",
+                action=StateAction(
+                    event_type="search.requested",
+                    response_event="search.completed",
+                    data={"query": "{{goal_data.topic}}"},
+                ),
+                transitions=[
+                    StateTransition(on_event="search.completed", to_state="done")
+                ],
             ),
-        ]
-        
-        # Create and track the plan
-        return Plan(
+            "done": StateConfig(
+                state_name="done",
+                is_terminal=True,
+            ),
+        }
+
+        # Create and persist the plan
+        plan = await PlanContext.create_from_goal(
             goal=goal,
-            tasks=tasks,
+            context=context,
+            state_machine=state_machine,
+            current_state="start",
+            status="pending",
         )
+        await plan.execute_next()
 
     planner.run()
 """

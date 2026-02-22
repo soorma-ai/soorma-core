@@ -2,7 +2,29 @@
 
 **How to Use Soorma Examples with GitHub Copilot & Cursor**
 
-**Last Updated:** January 6, 2026
+**Last Updated:** February 21, 2026
+
+---
+
+## 🚨 IMPORTANT: Start Every Implementation Session Correctly
+
+**Before implementing any feature or Action Plan**, you MUST use the [Session Initialization Template](SESSION_INITIALIZATION.md).
+
+**Why?** This enforces:
+- ✅ TDD workflow (tests FIRST, implementation second)
+- ✅ Constitutional compliance (AGENT.md requirements)
+- ✅ Architecture validation (two-layer SDK pattern)
+- ✅ No scope creep (sticks to Action Plan)
+
+**Quick Link:** **[📋 SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md)** ← Copy/paste this at session start
+
+**Failure to use this template will result in:**
+- ❌ Implementation-first code (violates TDD)
+- ❌ Missing tests or post-facto testing
+- ❌ Architecture violations (service client leaks)
+- ❌ Hours of refactoring later
+
+**See:** [Session Initialization Guide](SESSION_INITIALIZATION.md) for the complete template and workflow.
 
 ---
 

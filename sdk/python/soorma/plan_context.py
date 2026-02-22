@@ -38,26 +38,19 @@ Usage:
         }
         
         # Create and execute plan
-        plan = PlanContext(
-            plan_id=goal.correlation_id,
-            goal_event=goal.event_type,
-            goal_data=goal.data,
-            response_event=goal.response_event,
-            status="pending",
+        plan = await PlanContext.create_from_goal(
+            goal=goal,
+            context=context,
             state_machine=state_machine,
             current_state="start",
-            results={},
-            session_id=goal.session_id,
-            user_id=goal.user_id,
-            tenant_id=goal.tenant_id,
-            _context=context,
+            status="pending",
         )
-        await plan.save()
         await plan.execute_next()
 """
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import logging
+import uuid
 
 from soorma_common.state import StateConfig, StateAction, StateTransition
 
@@ -66,6 +59,7 @@ logger = logging.getLogger(__name__)
 # Forward reference for PlatformContext (import at runtime to avoid circular dependency)
 if TYPE_CHECKING:
     from .context import PlatformContext
+    from .agents.planner import GoalContext
 
 
 @dataclass
@@ -228,6 +222,99 @@ class PlanContext:
         
         # Deserialize using from_dict
         return cls.from_dict(state, context)
+    
+    @classmethod
+    async def create_from_goal(
+        cls,
+        goal: 'GoalContext',
+        context: 'PlatformContext',
+        state_machine: Dict[str, StateConfig],
+        current_state: str,
+        status: str = "pending",
+        results: Optional[Dict[str, Any]] = None,
+        plan_id: Optional[str] = None,
+        parent_plan_id: Optional[str] = None,
+    ) -> 'PlanContext':
+        """
+        Create, persist, and return a PlanContext for a goal event.
+        
+        This utility method standardizes plan creation across all Planner handlers.
+        It creates both the Plan record and PlanContext, then persists before returning.
+        
+        Behavior:
+        - Create Plan record in Memory Service (context.memory.create_plan)
+        - Initialize PlanContext with goal metadata (response_event, correlation_id, tenant/user/session)
+        - Persist PlanContext (plan.save)
+        - Return the PlanContext instance
+        
+        Args:
+            goal: GoalContext from on_goal handler
+            context: PlatformContext for service access
+            state_machine: State definitions (state_name -> StateConfig)
+            current_state: Initial state name
+            status: Initial plan status (default: "pending")
+            results: Initial results dictionary (default: {})
+            plan_id: Optional plan ID override (default: goal.correlation_id or generated UUID)
+            parent_plan_id: Optional parent plan for hierarchical workflows
+            
+        Returns:
+            PlanContext instance (already persisted)
+            
+        Example:
+            ```python
+            @planner.on_goal("research.goal")
+            async def handle_research(goal: GoalContext, context: PlatformContext):
+                plan = await PlanContext.create_from_goal(
+                    goal=goal,
+                    context=context,
+                    state_machine={...},
+                    current_state="start",
+                    status="running",
+                )
+                await plan.execute_next()
+            ```
+        """
+        # Determine plan_id: explicit > correlation_id > generated UUID
+        if plan_id is None:
+            plan_id = goal.correlation_id if goal.correlation_id else str(uuid.uuid4())
+        
+        # Default results to empty dict
+        if results is None:
+            results = {}
+        
+        # 1. Create Plan record in Memory Service (required before PlanContext)
+        await context.memory.create_plan(
+            plan_id=plan_id,
+            goal_event=goal.event_type,
+            goal_data=goal.data,
+            tenant_id=goal.tenant_id,
+            user_id=goal.user_id,
+            session_id=goal.session_id,
+            parent_plan_id=parent_plan_id,
+        )
+        
+        # 2. Initialize PlanContext with goal metadata
+        plan = cls(
+            plan_id=plan_id,
+            goal_event=goal.event_type,
+            goal_data=goal.data,
+            response_event=goal.response_event,
+            correlation_id=goal.correlation_id or plan_id,
+            status=status,
+            state_machine=state_machine,
+            current_state=current_state,
+            results=results,
+            parent_plan_id=parent_plan_id,
+            session_id=goal.session_id,
+            user_id=goal.user_id,
+            tenant_id=goal.tenant_id,
+            _context=context,
+        )
+        
+        # 3. Persist PlanContext before returning
+        await plan.save()
+        
+        return plan
     
     def to_dict(self) -> Dict[str, Any]:
         """

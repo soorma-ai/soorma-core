@@ -166,8 +166,9 @@ class TestInitAgentTypes:
         agent_py = (tmp_path / "my-planner" / "my_planner" / "agent.py").read_text()
         assert "from soorma import Planner" in agent_py
         assert "@planner.on_goal" in agent_py
-        assert "Plan" in agent_py
-        assert "Task" in agent_py
+        assert "PlanContext" in agent_py  # Phase 2: State machine-based planning
+        assert "StateConfig" in agent_py  # Phase 2: State definitions
+        assert "create_from_goal" in agent_py  # Phase 2: Plan creation utility
 
     def test_init_worker_type(self, tmp_path):
         """--type worker should create a Worker agent."""

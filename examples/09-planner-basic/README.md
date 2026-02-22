@@ -111,15 +111,15 @@ async def handle_goal(goal: GoalContext, context: PlatformContext):
     }
     
     # Create plan
-    plan = PlanContext(
-        plan_id=str(uuid4()),
-        goal_event=goal.event_type,
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
         state_machine=states,
-        ...
+        current_state="start",
+        status="pending",
     )
     
     # Save and execute
-    await plan.save()
     await plan.execute_next()
 ```
 

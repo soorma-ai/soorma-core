@@ -433,15 +433,15 @@ For multi-step workflows:
 @planner.on_goal("research.goal")
 async def plan_research(goal: GoalContext, context: PlatformContext):
     # Create state machine
-    plan = PlanContext(
-        plan_id=goal.correlation_id,
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
         state_machine={...},
         current_state="start",
-        _context=context,
+        status="pending",
     )
     
-    # Persist and execute
-    await plan.save()
+    # Execute
     await plan.execute_next()
 
 @planner.on_transition()

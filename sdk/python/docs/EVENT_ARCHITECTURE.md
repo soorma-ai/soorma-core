@@ -45,15 +45,22 @@ The SDK provides high-level decorators that abstract away the topic/event mappin
 
 ```python
 @planner.on_goal("greeting.goal")
-async def plan_greeting(goal: Goal, context) -> Plan:
-    ...
+async def plan_greeting(goal: GoalContext, context: PlatformContext):
+    plan = await PlanContext.create_from_goal(
+        goal=goal,
+        context=context,
+        state_machine={...},
+        current_state="start",
+        status="pending",
+    )
+    await plan.execute_next()
 ```
 
 **Under the hood:**
 1. Registers event handler for event type `greeting.goal`
 2. `greeting.goal` maps to topic `business-facts` (via `_derive_topics()`)
 3. When event arrives, SDK creates `Goal` object and calls handler
-4. Handler returns `Plan`, SDK publishes tasks to `action-requests` topic
+4. Handler creates and persists a `PlanContext`, then executes the first state
 
 ### `@worker.on_task(task_name)`
 

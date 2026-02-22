@@ -838,19 +838,15 @@ class MemoryClient:
             ```python
             @planner.on_goal("research.goal")
             async def handle_research(goal: GoalContext, context: PlatformContext):
-                # Create Plan record first
-                await context.memory.create_plan(
-                    plan_id=str(uuid4()),
-                    goal_event=goal.event_type,
-                    goal_data=goal.data,
-                    tenant_id=goal.tenant_id,
-                    user_id=goal.user_id,
-                    session_id=goal.session_id,
+                # Preferred: create and persist plan via PlanContext helper
+                plan = await PlanContext.create_from_goal(
+                    goal=goal,
+                    context=context,
+                    state_machine={...},
+                    current_state="start",
+                    status="pending",
                 )
-                
-                # Then create PlanContext and save
-                plan = PlanContext(...)
-                await plan.save()
+                await plan.execute_next()
             ```
         """
         client = await self._ensure_client()
