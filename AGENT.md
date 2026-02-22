@@ -140,19 +140,24 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
    - Raise `NotImplementedError` or return `None`/empty collections
    - Run stub code to verify it imports without errors
 
-2. **RED Phase:** Write tests that FAIL due to assertions, NOT import errors
+2. **RED Phase:** Write tests for REAL expected behavior that FAIL due to `NotImplementedError`
    ```python
-   # Test calls the stub and fails on assertion
+   # Write tests for the REAL expected functionality (NOT for the stub)
    def test_get_plan_progress():
        client = TrackerServiceClient()
-       # This will raise NotImplementedError
-       with pytest.raises(NotImplementedError):
-           await client.get_plan_progress("plan-123", "tenant", "user")
+       # Test the REAL expected behavior - this will fail with NotImplementedError
+       result = await client.get_plan_progress("plan-123", "tenant", "user")
+       assert result.plan_id == "plan-123"
+       assert result.status in ["running", "completed", "failed"]
    ```
-   - **VERIFY:** Run tests and confirm they fail with `NotImplementedError` or assertion failures
-   - **NEVER accept:** `ModuleNotFoundError`, `ImportError`, `AttributeError` as RED phase
-   - **Check the error message:** Ensure it's the expected failure
-   - Tests MUST call actual methods (not fail on missing imports)
+   - **CRITICAL:** Do NOT test for the stub (no `pytest.raises(NotImplementedError)`)
+   - **CRITICAL:** Write tests that assert the REAL expected behavior
+   - **RUN the tests:** They MUST fail with `NotImplementedError` from the stub
+   - **VERIFY failure reason:** Check test output shows `NotImplementedError`, NOT:
+     - `ModuleNotFoundError` (missing imports)
+     - `ImportError` (package not installed)
+     - `AttributeError` (method doesn't exist)
+   - **Agent responsibility:** Review test execution output to confirm failure reason is correct
 
 3. **GREEN Phase:** Implement real logic to make tests pass
    ```python
@@ -163,7 +168,7 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
        return PlanProgress.model_validate(response.json())
    ```
    - Replace `NotImplementedError` with actual logic
-   - Run tests again - they MUST pass
+   - Run tests again - they MUST pass (same tests that failed in RED phase)
    - Minimal code to pass (don't over-engineer)
 
 4. **REFACTOR Phase:** Clean up and align architecture
@@ -175,8 +180,15 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 **Enforcement:**
 - If RED phase shows `ImportError`/`ModuleNotFoundError` → You skipped STUB phase
 - If RED phase shows `AttributeError` → You skipped STUB phase
-- If tests pass in RED phase → You wrote tests incorrectly
+- If tests PASS in RED phase → You wrote tests for the stub instead of real functionality (WRONG)
+- If tests fail due to wrong exception (not `NotImplementedError`) → Review test execution output
 - **Consequence:** Re-do the cycle correctly before moving to next task
+
+**RED Phase Verification Checklist:**
+- [ ] Tests written for REAL expected behavior (not stub behavior)
+- [ ] Tests executed and reviewed output
+- [ ] Tests FAIL due to `NotImplementedError` (not import/attribute errors)
+- [ ] Test failure output confirms stub is being called correctly
 
 ---
 
