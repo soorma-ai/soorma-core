@@ -119,6 +119,128 @@ Total NEW work: ~50% (LLM integration, prompt templates, EventDecision type)
 
 ---
 
+### Tracker Service Enhancements
+
+**Description:** Advanced features for Tracker Service beyond Phase 3 MVP.
+
+**Deferred from:** Stage 4 Phase 3 (Action Plan)
+
+**Reason for Deferral:**
+- Phase 3 delivers core observability (event subscriptions + query APIs)
+- Advanced features add 4-6 days of work
+- Can be added incrementally based on usage patterns
+- Focus on shipping MVP first, learn from real-world usage
+
+**Target Stage:** Stage 5+ or Post-Launch
+
+**Estimated Effort:** 4-6 days total
+
+#### Deferred Item 1: Tracker Service UI
+
+**Description:** Web dashboard for plan/task visualization.
+
+**Use Cases:**
+- Real-time workflow progress visualization
+- Event timeline graphs with parent/child relationships
+- Agent performance charts (success rates, avg duration)
+- Failed workflow debugging interface
+
+**Current FDE:** Use `curl` or Postman for manual queries
+
+```bash
+# FDE during Phase 3
+curl -H "X-Tenant-ID: $TENANT_ID" \
+     -H "X-User-ID: $USER_ID" \
+     http://localhost:8084/v1/tracker/plans/$PLAN_ID | jq
+```
+
+**Future Implementation:**
+- React/Vue frontend
+- WebSocket for real-time updates
+- D3.js for event timeline visualization
+- Chart.js for metrics graphs
+
+**Effort:** 2-3 days
+
+#### Deferred Item 2: Advanced Metrics Aggregation
+
+**Description:** Pre-computed metrics rollups for performance.
+
+**Use Cases:**
+- Hourly/daily/weekly aggregations
+- Tenant-wide performance dashboards
+- Historical trend analysis
+- Cost attribution per user
+
+**Current FDE:** Query raw task_executions table
+
+**Future Implementation:**
+- Cron job for metric rollups
+- Materialized views or separate aggregation tables
+- Time-series optimizations
+
+**Effort:** 1-2 days
+
+#### Deferred Item 3: Alerting & Notifications
+
+**Description:** Proactive failure notifications.
+
+**Use Cases:**
+- Webhook on task failure
+- Email on workflow timeout
+- Slack integration for team alerts
+- SLA breach notifications
+
+**Current FDE:** Poll Tracker APIs manually
+
+**Future Implementation:**
+- Webhook configuration per user/tenant
+- Email service integration
+- Slack/Discord webhook support
+- Alert rules engine
+
+**Effort:** 2-3 days
+
+#### Deferred Item 4: Tracker Service Feature Area
+
+**Description:** Dedicated documentation structure for Tracker Service.
+
+**Rationale:**
+- Tracker is currently documented in:
+  - `docs/refactoring/arch/04-TRACKER-SERVICE.md`
+  - `docs/agent_patterns/ARCHITECTURE.md`
+  - `docs/agent_patterns/plans/ACTION_PLAN_Phase3_Validation.md`
+- Should have dedicated feature area like Memory/Registry
+
+**Target Structure:**
+```
+docs/tracker/
+  README.md           # User guide
+  ARCHITECTURE.md     # Technical architecture
+  API.md             # API reference
+  DEPLOYMENT.md      # Deployment guide
+  plans/             # Refactoring plans
+```
+
+**Migration Work:**
+- Extract Tracker docs from current locations
+- Create dedicated feature area
+- Update cross-references
+- Add deployment guides
+
+**Effort:** 4-6 hours
+
+**When to do this:** After Phase 3 complete + initial usage feedback
+
+**Tracking:**
+- [ ] Create GitHub issue: "Refactor Tracker documentation into feature area"
+- [ ] Create GitHub issue: "Implement Tracker Service UI"
+- [ ] Create GitHub issue: "Add metrics aggregation to Tracker"
+- [ ] Create GitHub issue: "Add alerting to Tracker Service"
+- [ ] Update Stage 5+ roadmap with Tracker enhancements
+
+---
+
 ### RF-SDK-018: EventToolkit.format_for_llm_selection()
 
 **Description:** Helper method to format discovered events for LLM consumption.

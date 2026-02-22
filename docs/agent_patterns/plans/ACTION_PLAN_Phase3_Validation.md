@@ -353,6 +353,7 @@ class AgentMetrics(BaseModel):
 CREATE TABLE tracker.task_executions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     task_id VARCHAR(100) NOT NULL,
     plan_id VARCHAR(100),
     event_type VARCHAR(255) NOT NULL,
@@ -372,17 +373,29 @@ CREATE TABLE tracker.task_executions (
 CREATE INDEX task_executions_plan_idx ON tracker.task_executions (tenant_id, plan_id);
 CREATE INDEX task_executions_trace_idx ON tracker.task_executions (tenant_id, trace_id);
 
--- RLS Policy
+-- RLS Policy (User-scoped isolation)
 ALTER TABLE tracker.task_executions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY task_executions_tenant_isolation 
+CREATE POLICY task_executions_user_isolation 
 ON tracker.task_executions
-USING (tenant_id = current_setting('app.tenant_id')::UUID);
+USING (
+    tenant_id = current_setting('app.tenant_id')::UUID
+    AND user_id = current_setting('app.user_id')::UUID
+);
+
+-- Optional: Admin policy for platform operators to view all tenant data
+CREATE POLICY task_executions_admin_view
+ON tracker.task_executions
+USING (
+    current_setting('app.role', true) = 'admin'
+    AND tenant_id = current_setting('app.tenant_id')::UUID
+);
 
 -- State transition history
 CREATE TABLE tracker.state_transitions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     task_id VARCHAR(100) NOT NULL,
     plan_id VARCHAR(100),
     from_state VARCHAR(50) NOT NULL,
@@ -396,14 +409,18 @@ ON tracker.state_transitions (tenant_id, task_id, transitioned_at);
 
 ALTER TABLE tracker.state_transitions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY state_transitions_tenant_isolation 
+CREATE POLICY state_transitions_user_isolation 
 ON tracker.state_transitions
-USING (tenant_id = current_setting('app.tenant_id')::UUID);
+USING (
+    tenant_id = current_setting('app.tenant_id')::UUID
+    AND user_id = current_setting('app.user_id')::UUID
+);
 
 -- Event timeline
 CREATE TABLE tracker.event_timeline (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     event_id VARCHAR(100) NOT NULL,
     event_type VARCHAR(255) NOT NULL,
     topic VARCHAR(100),
@@ -420,9 +437,12 @@ ON tracker.event_timeline (tenant_id, trace_id, occurred_at);
 
 ALTER TABLE tracker.event_timeline ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY event_timeline_tenant_isolation 
+CREATE POLICY event_timeline_user_isolation 
 ON tracker.event_timeline
-USING (tenant_id = current_setting('app.tenant_id')::UUID);
+USING (
+    tenant_id = current_setting('app.tenant_id')::UUID
+    AND user_id = current_setting('app.user_id')::UUID
+);
 ```
 
 ---

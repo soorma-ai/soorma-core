@@ -689,6 +689,133 @@ decision = PlannerDecision(
 
 ---
 
+## Platform Services
+
+### Tracker Service (RF-ARCH-010, RF-ARCH-011)
+
+**Status:** 🟡 Planned (Stage 4 Phase 3)  
+**Purpose:** Event-driven observability for agent workflows
+
+#### Design Principles
+
+1. **Passive Consumer** - Subscribes to events, no write APIs
+2. **Multi-User Isolation** - Per-user observability with admin override
+3. **Event-Driven** - No SDK instrumentation required
+4. **Query-Only Interface** - Read-only REST APIs
+
+#### Use Cases
+
+**User-Scoped Observability:**
+- "Show MY workflow execution history"
+- "What tasks did MY research plan execute?"
+- "Why did MY workflow fail?"
+- User dashboards showing personal agent activity
+
+**Tenant-Scoped Analytics (Admin):**
+- "Which users are running the most workflows?"
+- "What's our tenant-wide success rate?"
+- "Platform usage metrics across all users"
+- Resource quota enforcement
+
+**Debugging & Auditing:**
+- Event timeline for failed workflows
+- State transition history
+- Task execution traces
+- Performance bottleneck identification
+
+**Billing & Quotas:**
+- Per-user task execution counts
+- Agent performance metrics per user
+- Usage-based billing calculations
+- Fair-use quota enforcement
+
+#### Event Subscriptions
+
+Tracker subscribes to:
+- `system-events` topic: `task.progress`, `task.state_changed`, `plan.started`, `plan.completed`
+- `action-requests` topic: All events (record task starts)
+- `action-results` topic: All events (record task completions)
+
+#### Database Schema
+
+All tables include `tenant_id` AND `user_id` for multi-user isolation:
+
+```sql
+-- User-scoped task execution records
+CREATE TABLE tracker.task_executions (
+    tenant_id UUID NOT NULL,
+    user_id UUID NOT NULL,  -- Enables per-user queries
+    task_id VARCHAR(100) NOT NULL,
+    plan_id VARCHAR(100),
+    state VARCHAR(50) NOT NULL,
+    ...
+);
+
+-- RLS: Users see only their own executions
+CREATE POLICY task_executions_user_isolation 
+ON tracker.task_executions
+USING (
+    tenant_id = current_setting('app.tenant_id')::UUID
+    AND user_id = current_setting('app.user_id')::UUID
+);
+
+-- RLS: Admins see all tenant executions
+CREATE POLICY task_executions_admin_view
+ON tracker.task_executions
+USING (
+    current_setting('app.role', true) = 'admin'
+    AND tenant_id = current_setting('app.tenant_id')::UUID
+);
+```
+
+#### Query APIs
+
+```python
+# User queries their own workflows
+context = PlatformContext()  # user_id from JWT/session
+progress = await context.tracker.get_plan_progress(plan_id)
+# Returns: Only plans belonging to this user
+
+# Admin queries all tenant workflows
+admin_context = PlatformContext(role="admin")
+all_plans = await admin_context.tracker.query_tenant_plans()
+# Returns: All plans for the tenant (all users)
+```
+
+#### SDK Integration (Two-Layer Pattern)
+
+**Layer 1:** TrackerServiceClient (low-level HTTP client)  
+**Layer 2:** TrackerClient wrapper in PlatformContext
+
+```python
+@dataclass
+class TrackerClient:
+    """High-level Tracker Service wrapper."""
+    
+    async def get_plan_progress(self, plan_id: str) -> Optional[PlanProgress]:
+        """Get plan execution status.
+        
+        Automatically scoped to current user via X-User-ID header.
+        Admins can bypass with elevated permissions.
+        """
+        client = await self._ensure_client()
+        # tenant_id/user_id extracted from context (NOT parameters)
+        return await client.get_plan_progress(plan_id, tenant_id, user_id)
+```
+
+**Examples MUST use:** `context.tracker.*` (NOT `TrackerServiceClient` directly)
+
+#### Future Enhancements (Deferred)
+
+See [DEFERRED_WORK.md](../refactoring/DEFERRED_WORK.md#tracker-service-enhancements):
+- Tracker Service UI (visualization dashboard)
+- Advanced metrics aggregation (hourly/daily rollups)
+- Alerting on failures (webhooks, email)
+- Tracker Service dedicated feature area (`docs/tracker/`)
+- SLA monitoring and anomaly detection
+
+---
+
 ## Implementation Status
 
 ### Stage 3: Tool & Worker Models
