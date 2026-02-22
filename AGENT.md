@@ -117,14 +117,66 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 - **Mandate:** Always flag "Platform Bloat" to the developer during Plan Mode.
 
 ### Step 3: Implementation & TDD
-- **Reference:** For technical "How-to" (CLI commands, testing syntax, patterns), refer to `docs/CONTRIBUTING_REFERENCE.md`.
-- **Strict Coding Standards:**
-    - **Type Hints:** EVERY function argument and return value MUST have explicit Python type hints (e.g., `def run(data: Dict[str, Any]) -> bool:`).
-    - **Docstrings:** All classes and public functions MUST have Google-style docstrings describing purpose, args, and returns.
-    - **Comments:** Use inline comments to explain "Why" a specific logic path was taken, especially for complex event choreography.
-- **RED:** Write a failing `pytest` test in the relevant component.
-- **GREEN:** Implement minimal logic to pass.
-- **REFACTOR:** Align imports (SDK -> Common -> Service) and update the feature's `ARCHITECTURE.md` if the design evolved.
+
+**Reference:** For technical "How-to" (CLI commands, testing syntax, patterns), refer to `docs/CONTRIBUTING_REFERENCE.md`.
+
+**Strict Coding Standards:**
+- **Type Hints:** EVERY function argument and return value MUST have explicit Python type hints (e.g., `def run(data: Dict[str, Any]) -> bool:`).
+- **Docstrings:** All classes and public functions MUST have Google-style docstrings describing purpose, args, and returns.
+- **Comments:** Use inline comments to explain "Why" a specific logic path was taken, especially for complex event choreography.
+
+**MANDATORY TDD Cycle (STUB → RED → GREEN → REFACTOR):**
+
+⚠️ **CRITICAL:** You MUST follow this exact sequence. Shortcuts violate the constitution.
+
+1. **STUB Phase:** Create skeleton code with `NotImplementedError` or placeholder returns
+   ```python
+   # Example: Create stub FIRST
+   def get_plan_progress(self, plan_id: str, tenant_id: str, user_id: str) -> Optional[PlanProgress]:
+       """Get plan execution progress (stub)."""
+       raise NotImplementedError("Tracker client not yet implemented")
+   ```
+   - Create ALL method signatures with proper type hints
+   - Raise `NotImplementedError` or return `None`/empty collections
+   - Run stub code to verify it imports without errors
+
+2. **RED Phase:** Write tests that FAIL due to assertions, NOT import errors
+   ```python
+   # Test calls the stub and fails on assertion
+   def test_get_plan_progress():
+       client = TrackerServiceClient()
+       # This will raise NotImplementedError
+       with pytest.raises(NotImplementedError):
+           await client.get_plan_progress("plan-123", "tenant", "user")
+   ```
+   - **VERIFY:** Run tests and confirm they fail with `NotImplementedError` or assertion failures
+   - **NEVER accept:** `ModuleNotFoundError`, `ImportError`, `AttributeError` as RED phase
+   - **Check the error message:** Ensure it's the expected failure
+   - Tests MUST call actual methods (not fail on missing imports)
+
+3. **GREEN Phase:** Implement real logic to make tests pass
+   ```python
+   # Replace stub with real implementation
+   def get_plan_progress(self, plan_id: str, tenant_id: str, user_id: str) -> Optional[PlanProgress]:
+       """Get plan execution progress."""
+       response = await self._client.get(...)
+       return PlanProgress.model_validate(response.json())
+   ```
+   - Replace `NotImplementedError` with actual logic
+   - Run tests again - they MUST pass
+   - Minimal code to pass (don't over-engineer)
+
+4. **REFACTOR Phase:** Clean up and align architecture
+   - Align imports (SDK -> Common -> Service)
+   - Extract duplicated code
+   - Update `ARCHITECTURE.md` if design evolved
+   - Run tests again to ensure refactoring didn't break anything
+
+**Enforcement:**
+- If RED phase shows `ImportError`/`ModuleNotFoundError` → You skipped STUB phase
+- If RED phase shows `AttributeError` → You skipped STUB phase
+- If tests pass in RED phase → You wrote tests incorrectly
+- **Consequence:** Re-do the cycle correctly before moving to next task
 
 ---
 
@@ -164,5 +216,10 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 ## 4. Documentation & Standards
 - **Feature Catalog:** Maintain the `docs/[feature-area]/` structure.
 - **Changelog:** Update the `CHANGELOG.md` in the specific component directory.
-- **Commits:** Use Conventional Commits (e.g., `feat(sdk): ...`).
+- **Commits:** Use Conventional Commits with succinct messages (≤15 lines total)
+  - Format: `type(scope): subject` (e.g., `feat(sdk): add TrackerClient wrapper`)
+  - Subject line: ≤72 characters, imperative mood
+  - Body: Optional, use bullet points for clarity
+  - **Maximum 15 lines total** (prevents terminal execution issues)
+  - Use `-m` flag multiple times for multi-paragraph messages: `git commit -m 'Subject' -m 'Body paragraph 1' -m 'Body paragraph 2'`
 - **15-Minute Rule:** If logic is too complex for a human to audit in 15 minutes, refactor it.

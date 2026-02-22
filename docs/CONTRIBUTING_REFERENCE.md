@@ -50,3 +50,72 @@ CONTRIBUTING_REFERENCE.md (YOU ARE HERE) → Technical syntax & commands
 async def test_feature():
     result = await some_async_function()
     assert result == expected
+```
+
+---
+
+## 📝 Git Workflow
+
+### Commit Message Format
+
+**CRITICAL:** Keep commit messages ≤15 lines total to prevent terminal execution issues.
+
+**Format:** `type(scope): subject`
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `refactor`: Code restructuring
+- `test`: Add/update tests
+- `docs`: Documentation only
+- `chore`: Build/tooling changes
+
+**Scopes:**
+- `sdk`: SDK changes
+- `common`: soorma-common library
+- `memory`: Memory Service
+- `registry`: Registry Service
+- `event`: Event Service
+- `tracker`: Tracker Service
+- `examples`: Example code
+
+### Examples
+
+**✅ GOOD - Succinct single-line commits:**
+```bash
+git commit -m "feat(sdk): add TrackerClient wrapper to PlatformContext"
+git commit -m "test(common): add 11 tests for Tracker response DTOs"
+git commit -m "fix(memory): handle 404 errors in semantic search"
+```
+
+**✅ GOOD - Multi-line with `-m` flags (≤15 lines total):**
+```bash
+git commit \
+  -m "feat(sdk): add Tracker Service client integration" \
+  -m "Layer 1: TrackerServiceClient with 10 tests" \
+  -m "Layer 2: TrackerClient wrapper with 6 tests" \
+  -m "Two-layer architecture compliance enforced"
+```
+
+**❌ BAD - Long message in single string (causes terminal issues):**
+```bash
+# This wraps in terminal and causes execution errors
+git commit -m "feat(sdk): add Tracker Service client integration
+
+Layer 1 - TrackerServiceClient (low-level HTTP client):
+- Implement 7 query methods with headers
+- Add 10 unit tests...
+[20+ lines of text]"
+```
+
+**Subject Line Rules:**
+- ≤72 characters
+- Imperative mood ("add" not "added")
+- No period at end
+- Lowercase after colon
+
+**Body Guidelines:**
+- Use bullet points
+- Each point on separate `-m` flag
+- Focus on "what" and "why", not "how"
+- Reference issue/plan if applicable
