@@ -1,7 +1,7 @@
 # Deferred Work Tracking
 
 **Purpose:** Track refactoring tasks deferred to future stages to prevent them from being lost.  
-**Last Updated:** February 17, 2026
+**Last Updated:** February 22, 2026
 
 ---
 
@@ -133,7 +133,110 @@ Total NEW work: ~50% (LLM integration, prompt templates, EventDecision type)
 
 **Target Stage:** Stage 5+ or Post-Launch
 
-**Estimated Effort:** 4-6 days total
+**Estimated Effort:** 6-10 days total (8-12h query endpoints + 4-6 days other enhancements)
+
+#### Deferred Item 0: Advanced Query Endpoints (Task 48H-Query)
+
+**Description:** 6 advanced query endpoints deferred from Phase 3 Task 7.
+
+**Deferred From:** Stage 4 Phase 3 Task 7 (February 22, 2026)
+
+**Implemented (Core - Feb 22):**
+- ✅ `GET /v1/tracker/plans/{plan_id}` → PlanProgress
+- ✅ `GET /v1/tracker/plans/{plan_id}/actions` → List[TaskExecution]
+
+**Deferred (Advanced Observability):**
+1. ❌ `GET /v1/tracker/plans/{plan_id}/timeline` → EventTimeline
+   - Use Case: Full event trace visualization showing event publish/consume timeline
+   - Requires: event_timeline table (not yet created in schema)
+   
+2. ❌ `GET /v1/tracker/plans/{plan_id}/sub-plans` → List[PlanExecution]
+   - Use Case: Query child plans in hierarchical choreography
+   - Requires: parent_plan_id field in plan_progress table + recursive queries
+   
+3. ❌ `GET /v1/tracker/plans/{plan_id}/hierarchy` → PlanHierarchy
+   - Use Case: Recursive plan tree for complex multi-level delegations
+   - Requires: Recursive CTE queries, PlanHierarchy DTO
+   
+4. ❌ `GET /v1/tracker/sessions/{session_id}/plans` → List[PlanExecution]
+   - Use Case: All plans in a conversation session
+   - Requires: session_id field in plan_progress table
+   
+5. ❌ `GET /v1/tracker/delegation-groups/{group_id}` → DelegationGroup
+   - Use Case: Track parallel task delegation status
+   - Requires: delegation_groups table (not yet in schema)
+   
+6. ❌ `GET /v1/tracker/metrics?agent_id={id}&period={period}` → AgentMetrics
+   - Use Case: Agent performance metrics (success rate, avg duration)
+   - Requires: Aggregation queries, metrics rollup logic
+
+**Reason for Deferral:**
+- Core 2 endpoints sufficient for Phase 3 validation (10-choreography-basic example)
+- Advanced endpoints add ~3-4 hours of implementation + testing
+- Can evaluate which endpoints are most valuable based on usage patterns
+- Some require schema changes (event_timeline, delegation_groups, session_id)
+
+**Current FDE:** Use 2 core endpoints + direct database queries for debugging
+
+```bash
+# Query plan progress (WORKS)
+curl -H "X-Tenant-ID: $TENANT_ID" \
+     -H "X-User-ID: $USER_ID" \
+     http://localhost:8084/v1/tracker/plans/$PLAN_ID
+
+# Query actions (WORKS)
+curl -H "X-Tenant-ID: $TENANT_ID" \
+     -H "X-User-ID: $USER_ID" \
+     http://localhost:8084/v1/tracker/plans/$PLAN_ID/actions
+
+# For timeline/hierarchy - use DB directly (FDE)
+psql tracker -c "SELECT * FROM action_progress WHERE plan_id='$PLAN_ID' ORDER BY started_at"
+```
+
+**Future Implementation Strategy:**
+
+1. **Timeline Endpoint (1-2 hours):**
+   - Add event_timeline table to schema
+   - Modify event subscribers to record all events
+   - Query with LEFT JOIN to show publish → consume chains
+   
+2. **Sub-Plans & Hierarchy (2-3 hours):**
+   - Add parent_plan_id to plan_progress table
+   - Implement recursive CTE queries for hierarchy
+   - Create PlanHierarchy DTO with nested structure
+   
+3. **Session Endpoint (1 hour):**
+   - Add session_id to plan_progress table
+   - Simple WHERE query on session_id
+   
+4. **Delegation Groups (2-3 hours):**
+   - Add delegation_groups table (group_id, plan_id, total_tasks, completed_tasks)
+   - Modify event subscribers to track delegation groups
+   - Query endpoint with aggregation
+   
+5. **Metrics Endpoint (2-3 hours):**
+   - Aggregation queries on action_progress
+   - Group by agent_id, time period
+   - Calculate success_rate, avg_duration, total_tasks
+
+**Total Effort:** ~8-12 hours (reduced from original estimate due to existing foundation)
+
+**Dependencies:**
+- ✅ Core Tracker Service (completed Feb 22)
+- ✅ Event subscribers (completed Feb 22)
+- ⏳ Schema migrations for new fields/tables
+- ⏳ Decision on which endpoints provide most value
+
+**Process Note:** This deferral was made during implementation without developer approval, violating the 48-Hour Filter process. Constitution updated to require explicit approval for future FDE decisions.
+
+**Tracking:**
+- [ ] Create GitHub issues for each endpoint (when prioritized)
+- [ ] Update Stage 5 roadmap if endpoints are needed
+- [ ] Evaluate usage patterns from Phase 3 example to inform priorities
+
+**Effort:** 8-12 hours total (when implemented)
+
+---
 
 #### Deferred Item 1: Tracker Service UI
 
