@@ -119,6 +119,128 @@ Total NEW work: ~50% (LLM integration, prompt templates, EventDecision type)
 
 ---
 
+### Tracker Service Enhancements
+
+**Description:** Advanced features for Tracker Service beyond Phase 3 MVP.
+
+**Deferred from:** Stage 4 Phase 3 (Action Plan)
+
+**Reason for Deferral:**
+- Phase 3 delivers core observability (event subscriptions + query APIs)
+- Advanced features add 4-6 days of work
+- Can be added incrementally based on usage patterns
+- Focus on shipping MVP first, learn from real-world usage
+
+**Target Stage:** Stage 5+ or Post-Launch
+
+**Estimated Effort:** 4-6 days total
+
+#### Deferred Item 1: Tracker Service UI
+
+**Description:** Web dashboard for plan/task visualization.
+
+**Use Cases:**
+- Real-time workflow progress visualization
+- Event timeline graphs with parent/child relationships
+- Agent performance charts (success rates, avg duration)
+- Failed workflow debugging interface
+
+**Current FDE:** Use `curl` or Postman for manual queries
+
+```bash
+# FDE during Phase 3
+curl -H "X-Tenant-ID: $TENANT_ID" \
+     -H "X-User-ID: $USER_ID" \
+     http://localhost:8084/v1/tracker/plans/$PLAN_ID | jq
+```
+
+**Future Implementation:**
+- React/Vue frontend
+- WebSocket for real-time updates
+- D3.js for event timeline visualization
+- Chart.js for metrics graphs
+
+**Effort:** 2-3 days
+
+#### Deferred Item 2: Advanced Metrics Aggregation
+
+**Description:** Pre-computed metrics rollups for performance.
+
+**Use Cases:**
+- Hourly/daily/weekly aggregations
+- Tenant-wide performance dashboards
+- Historical trend analysis
+- Cost attribution per user
+
+**Current FDE:** Query raw task_executions table
+
+**Future Implementation:**
+- Cron job for metric rollups
+- Materialized views or separate aggregation tables
+- Time-series optimizations
+
+**Effort:** 1-2 days
+
+#### Deferred Item 3: Alerting & Notifications
+
+**Description:** Proactive failure notifications.
+
+**Use Cases:**
+- Webhook on task failure
+- Email on workflow timeout
+- Slack integration for team alerts
+- SLA breach notifications
+
+**Current FDE:** Poll Tracker APIs manually
+
+**Future Implementation:**
+- Webhook configuration per user/tenant
+- Email service integration
+- Slack/Discord webhook support
+- Alert rules engine
+
+**Effort:** 2-3 days
+
+#### Deferred Item 4: Tracker Service Feature Area
+
+**Description:** Dedicated documentation structure for Tracker Service.
+
+**Rationale:**
+- Tracker is currently documented in:
+  - `docs/refactoring/arch/04-TRACKER-SERVICE.md`
+  - `docs/agent_patterns/ARCHITECTURE.md`
+  - `docs/agent_patterns/plans/ACTION_PLAN_Phase3_Validation.md`
+- Should have dedicated feature area like Memory/Registry
+
+**Target Structure:**
+```
+docs/tracker/
+  README.md           # User guide
+  ARCHITECTURE.md     # Technical architecture
+  API.md             # API reference
+  DEPLOYMENT.md      # Deployment guide
+  plans/             # Refactoring plans
+```
+
+**Migration Work:**
+- Extract Tracker docs from current locations
+- Create dedicated feature area
+- Update cross-references
+- Add deployment guides
+
+**Effort:** 4-6 hours
+
+**When to do this:** After Phase 3 complete + initial usage feedback
+
+**Tracking:**
+- [ ] Create GitHub issue: "Refactor Tracker documentation into feature area"
+- [ ] Create GitHub issue: "Implement Tracker Service UI"
+- [ ] Create GitHub issue: "Add metrics aggregation to Tracker"
+- [ ] Create GitHub issue: "Add alerting to Tracker Service"
+- [ ] Update Stage 5+ roadmap with Tracker enhancements
+
+---
+
 ### RF-SDK-018: EventToolkit.format_for_llm_selection()
 
 **Description:** Helper method to format discovered events for LLM consumption.
@@ -352,6 +474,101 @@ When deferring work during implementation:
 
 4. **Reference in commit message:**
    - Example: `feat(sdk): Add ChoreographyPlanner; defer EventSelector to Stage 5 (see DEFERRED_WORK.md)`
+
+---
+
+## Stage 4 Phase 3 Deferrals
+
+### 11-app-research-advisor (Full Application)
+
+**Description:** Rebuild research-advisor as a production-grade autonomous research application.
+
+**Deferred From:** Stage 4 Phase 3 (February 2026)
+
+**Target Stage:** Stage 5+ or post-launch
+
+**Estimated Effort:** 2-3 days (16-24 hours)
+
+**Current State:**
+- Existing `examples/research-advisor/` preserved as legacy reference (1,259 lines)
+- Uses manual LLM orchestration (472-line planner.py)
+- Demonstrates autonomous choreography concepts
+- Complex dependencies: Web scraping, fact-checking, citation management
+
+**Why research-advisor Deserves Master Planning:**
+
+research-advisor is an **APPLICATION**, not just an example. It requires:
+1. **Web Scraping Strategy:** Playwright vs Selenium, rate limiting, caching, error recovery
+2. **Citation Management:** URL tracking, source verification, deduplication
+3. **Fact-Checking Pipeline:** LLM-based validation, confidence scoring, hallucination detection
+4. **Tracker Integration:** Complete workflow observability, debugging stuck states
+5. **Error Recovery:** Network failures, timeout handling, retry logic with exponential backoff
+6. **Testing Strategy:** Mock web responses, LLM mocking (litellm), integration test suite
+7. **Deployment:** Multi-container setup, environment configuration, secrets management
+8. **Performance:** Parallel research, caching layer, cost optimization
+
+**Scope Comparison:**
+```
+Simple Example (10-choreography-basic):  160 lines, simulated data
+Full Application (11-app-research-advisor): 1,500+ lines, real integrations
+```
+
+**Rationale for Deferral:**
+- Phase 3 goal: Validate ChoreographyPlanner pattern (achieved with 10-choreography-basic)
+- research-advisor scope: Full application with external dependencies
+- 48-Hour Filter compliance: 2-3 days exceeds validation scope
+- Better served by dedicated Master Plan in Stage 5+
+
+**Future Work:**
+```markdown
+## 11-app-research-advisor (Stage 5+)
+
+### Master Plan Required
+
+**Scope:**
+- Rebuild planner.py using ChoreographyPlanner (~50 lines, down from 472)
+- Add Tracker Service integration for workflow observability
+- Implement web scraping with rate limiting and caching
+- Add fact-checking with confidence scoring
+- Comprehensive test suite (unit + integration + E2E)
+- Deployment guide with docker-compose
+- Performance optimization (parallel research, cost tracking)
+
+**Deliverables:**
+- `examples/11-app-research-advisor/` (new directory)
+- Complete README with architecture diagrams
+- ARCHITECTURE.md with system design
+- DEPLOYMENT.md with setup instructions
+- Test suite with ≥80% coverage
+- Legacy research-advisor marked deprecated (or removed)
+
+**Success Criteria:**
+- End-to-end research workflow completes successfully
+- Web scraping handles rate limits and errors gracefully
+- Fact-checking catches hallucinations
+- Tracker records complete workflow history
+- Tests pass consistently
+- Documentation enables independent deployment
+```
+
+**FDE Alternative:**
+- Current legacy research-advisor remains available as reference
+- Developers can study autonomous choreography concepts
+- Simple examples (10-choreography-basic) demonstrate pattern
+
+**Dependencies:**
+- ✅ ChoreographyPlanner (Stage 4 Phase 2)
+- ✅ Tracker Service (Stage 4 Phase 3)
+- ✅ 10-choreography-basic (Stage 4 Phase 3 - validation reference)
+
+**Link to Docs:**
+- Original spec: `examples/research-advisor/README.md`
+- Pattern documentation: `docs/agent_patterns/README.md`
+
+**Tracking:**
+- [ ] Create GitHub issue: "Build 11-app-research-advisor with ChoreographyPlanner"
+- [ ] Add to Stage 5 Master Plan roadmap
+- [ ] Document migration path from legacy research-advisor
 
 ---
 
