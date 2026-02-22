@@ -168,6 +168,32 @@ class TrackerClient:
         """Get event execution timeline."""
         # Similar delegation pattern
     
+    async def get_sub_plans(self, plan_id: str) -> List[PlanExecution]:
+        """Get child plans (nested plan hierarchy).
+        
+        Returns all plans where parent_plan_id = plan_id.
+        """
+        client = await self._ensure_client()
+        return await client.get_sub_plans(plan_id, tenant_id, user_id)
+    
+    async def get_plan_hierarchy(self, plan_id: str) -> PlanHierarchy:
+        """Get full plan tree (recursive hierarchy).
+        
+        Returns plan with all descendants in tree structure.
+        """
+        client = await self._ensure_client()
+        return await client.get_plan_hierarchy(plan_id, tenant_id, user_id)
+    
+    async def get_session_plans(self, session_id: str) -> List[PlanExecution]:
+        """Get all plans in a conversation session."""
+        client = await self._ensure_client()
+        return await client.get_session_plans(session_id, tenant_id, user_id)
+    
+    async def get_delegation_group(self, group_id: str) -> Optional[DelegationGroup]:
+        """Get parallel delegation group status."""
+        client = await self._ensure_client()
+        return await client.get_delegation_group(group_id, tenant_id, user_id)
+    
     async def query_agent_metrics(
         self, 
         agent_id: str, 
@@ -336,6 +362,27 @@ class AgentMetrics(BaseModel):
     failed_tasks: int
     avg_duration_seconds: float
     success_rate: float
+
+class PlanExecution(BaseModel):
+    """Plan execution record with hierarchy."""
+    plan_id: str
+    parent_plan_id: Optional[str]  # For nested plans
+    session_id: Optional[str]       # For conversation tracking
+    goal_event: str
+    status: str  # pending|running|completed|failed|paused
+    current_state: Optional[str]    # State machine current state
+    trace_id: str                   # Root workflow trace
+    started_at: datetime
+    completed_at: Optional[datetime]
+
+class DelegationGroup(BaseModel):
+    """Parallel delegation group tracking."""
+    group_id: str
+    parent_task_id: str
+    plan_id: Optional[str]
+    total_tasks: int
+    completed_tasks: int
+    created_at: datetime
 ```
 
 **Status:** ⬜ Missing - Task 1 will create
@@ -443,7 +490,317 @@ USING (
     tenant_id = current_setting('app.tenant_id')::UUID
     AND user_id = current_setting('app.user_id')::UUID
 );
+
+-- Plan execution tracking (NEW - for plan hierarchy observability)
+CREATE TABLE tracker.plan_executions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    plan_id VARCHAR(100) NOT NULL,
+    parent_plan_id VARCHAR(100),  -- For nested plan hierarchies
+    session_id VARCHAR(100),       -- For conversation context
+    goal_event VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL,   -- pending|running|completed|failed|paused
+    current_state VARCHAR(100),    -- State machine current state
+    trace_id VARCHAR(100),         -- Root trace for entire workflow
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    data JSONB DEFAULT '{}',       -- Plan-specific metadata
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(tenant_id, plan_id)
+);
+
+CREATE INDEX plan_executions_parent_idx 
+ON tracker.plan_executions (tenant_id, parent_plan_id) 
+WHERE parent_plan_id IS NOT NULL;
+
+CREATE INDEX plan_executions_session_idx 
+ON tracker.plan_executions (tenant_id, session_id) 
+WHERE session_id IS NOT NULL;
+
+CREATE INDEX plan_executions_trace_idx 
+ON tracker.plan_executions (tenant_id, trace_id);
+
+ALTER TABLE tracker.plan_executions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY plan_executions_user_isolation 
+ON tracker.plan_executions
+USING (
+    tenant_id = current_setting('app.tenant_id')::UUID
+    AND user_id = current_setting('app.user_id')::UUID
+);
+
+-- Task delegation groups (NEW - for parallel fan-out/fan-in tracking)
+CREATE TABLE tracker.delegation_groups (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    group_id VARCHAR(100) NOT NULL,
+    parent_task_id VARCHAR(100) NOT NULL,  -- The task that fanned out
+    plan_id VARCHAR(100),
+    total_tasks INT NOT NULL,              -- Expected number of parallel tasks
+    completed_tasks INT DEFAULT 0,         -- How many completed
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(tenant_id, group_id)
+);
+
+CREATE INDEX delegation_groups_parent_task_idx 
+ON tracker.delegation_groups (tenant_id, parent_task_id);
+
+ALTER TABLE tracker.delegation_groups ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY delegation_groups_user_isolation 
+ON tracker.delegation_groups
+USING (
+    tenant_id = current_setting('app.tenant_id')::UUID
+    AND user_id = current_setting('app.user_id')::UUID
+);
+
+-- Link tasks to delegation groups
+ALTER TABLE tracker.task_executions 
+ADD COLUMN delegation_group_id VARCHAR(100);
+
+CREATE INDEX task_executions_delegation_group_idx 
+ON tracker.task_executions (tenant_id, delegation_group_id) 
+WHERE delegation_group_id IS NOT NULL;
 ```
+
+---
+
+### End-to-End Hierarchy Tracking
+
+**Challenge:** Multi-agent workflows create nested hierarchies:
+- **Plans** can spawn **sub-plans** (parent_plan_id relationships)
+- **Tasks** can delegate to **sub-tasks** (sequential or parallel)
+- **Events** form trees (trace_id, parent_event_id)
+
+**Solution:** Track hierarchy at multiple levels in Tracker Service.
+
+#### Level 1: Event Hierarchy (Already Exists)
+
+```python
+class EventEnvelope:
+    trace_id: str              # Root workflow (constant across tree)
+    parent_event_id: str       # Immediate parent event
+    correlation_id: str        # Request/response pairing
+```
+
+**Example Event Tree:**
+```
+goal.requested (event-1, trace=T1)
+  ├─ search.requested (event-2, parent=event-1, trace=T1)
+  │   └─ search.completed (event-3, parent=event-2, trace=T1)
+  ├─ analyze.requested (event-4, parent=event-1, trace=T1)
+  │   └─ analyze.completed (event-5, parent=event-4, trace=T1)
+  └─ goal.fulfilled (event-6, parent=event-1, trace=T1)
+```
+
+**Tracker Storage:** `event_timeline` table captures this via `trace_id` and `parent_event_id`.
+
+#### Level 2: Plan Hierarchy (NEW - plan_executions Table)
+
+```python
+class PlanContext:
+    plan_id: str               # Unique plan ID
+    parent_plan_id: str        # Parent plan (if sub-plan)
+    session_id: str            # Conversation context
+```
+
+**Example Plan Tree:**
+```
+Research Goal (plan-1)
+  ├─ Search Papers Plan (plan-2, parent=plan-1)
+  ├─ Analyze Papers Plan (plan-3, parent=plan-1)
+  │   ├─ Summarize Plan (plan-4, parent=plan-3)  ← Nested 2 levels deep
+  │   └─ Extract Insights Plan (plan-5, parent=plan-3)
+  └─ Draft Report Plan (plan-6, parent=plan-1)
+```
+
+**Tracker Storage:** `plan_executions` table with `parent_plan_id` column.
+
+**Query APIs:**
+- `GET /v1/tracker/plans/{plan-id}/sub-plans` → Direct children
+- `GET /v1/tracker/plans/{plan-id}/hierarchy` → Recursive tree
+- `GET /v1/tracker/sessions/{session-id}/plans` → All plans in conversation
+
+#### Level 3: Task Delegation Hierarchy (NEW - delegation_groups Table)
+
+```python
+class TaskContext:
+    task_id: str               # Unique task ID
+    plan_id: str               # Associated plan
+    sub_tasks: Dict            # Map of delegated sub-tasks
+    
+# Parallel delegation
+await task.delegate_parallel([
+    DelegationSpec("validate", {"item": "A"}, "validated"),
+    DelegationSpec("check", {"item": "B"}, "checked"),
+    DelegationSpec("verify", {"item": "C"}, "verified"),
+])  # Returns group_id for tracking
+```
+
+**Example Delegation Tree:**
+```
+process_order (task-1)
+  ├─ [PARALLEL GROUP group-123]
+  │   ├─ validate_inventory (task-2, group=group-123)
+  │   ├─ check_pricing (task-3, group=group-123)
+  │   └─ verify_address (task-4, group=group-123)
+  └─ complete_order (task-5) ← Waits for group-123 completion
+```
+
+**Tracker Storage:**
+- `delegation_groups` table tracks group progress (2 of 3 complete)
+- `task_executions.delegation_group_id` links tasks to groups
+
+**Query APIs:**
+- `GET /v1/tracker/delegation-groups/{group-id}` → Group status + task list
+
+#### Complete Example: Multi-Level Hierarchy
+
+**Scenario:** User asks for research on "AI Agents" (session-X)
+
+```
+SESSION: session-X
+│
+└─ PLAN: research-goal (plan-1, session=session-X)
+    STATUS: running, STATE: searching
+    │
+    ├─ SUB-PLAN: web-search (plan-2, parent=plan-1)
+    │   STATUS: completed
+    │   TASKS:
+    │     └─ search.requested (task-1, plan=plan-2)
+    │         PARALLEL GROUP: search-group-1
+    │           ├─ google_search (task-2, group=search-group-1) ✅ DONE
+    │           ├─ arxiv_search (task-3, group=search-group-1) ✅ DONE
+    │           └─ scholar_search (task-4, group=search-group-1) ✅ DONE
+    │
+    ├─ SUB-PLAN: analyze-papers (plan-3, parent=plan-1)
+    │   STATUS: running, STATE: summarizing
+    │   │
+    │   ├─ SUB-SUB-PLAN: summarize (plan-4, parent=plan-3)
+    │   │   TASKS:
+    │   │     └─ summarize.requested (task-5, plan=plan-4) ⏳ RUNNING
+    │   │
+    │   └─ SUB-SUB-PLAN: extract-insights (plan-5, parent=plan-3)
+    │       STATUS: pending
+    │
+    └─ SUB-PLAN: draft-report (plan-6, parent=plan-1)
+        STATUS: pending
+```
+
+**Tracker Queries Enable:**
+
+```python
+# Query 1: Show all sub-plans of research-goal
+sub_plans = await context.tracker.get_sub_plans("plan-1")
+# Returns: [plan-2, plan-3, plan-6]
+
+# Query 2: Show FULL hierarchy from root
+hierarchy = await context.tracker.get_plan_hierarchy("plan-1")
+# Returns: Tree with plan-1 → [plan-2, plan-3 → [plan-4, plan-5], plan-6]
+
+# Query 3: Show all plans in this conversation
+session_plans = await context.tracker.get_session_plans("session-X")
+# Returns: [plan-1, plan-2, plan-3, plan-4, plan-5, plan-6]
+
+# Query 4: Check parallel search progress
+search_group = await context.tracker.get_delegation_group("search-group-1")
+# Returns: DelegationGroup(total=3, completed=3, status="complete")
+
+# Query 5: Get all tasks for analyze-papers plan
+tasks = await context.tracker.get_plan_tasks("plan-3")
+# Returns: [task-5] (and eventually more as plan progresses)
+```
+
+#### Event Flow (How Tracker Populates Tables)
+
+**Plan Created:**
+```python
+# Planner creates sub-plan
+plan = await PlanContext.create_from_goal(
+    parent_plan_id="plan-1",  # ← Links to parent
+    ...
+)
+
+# Publishes: plan.started event
+await context.bus.publish(
+    topic="system-events",
+    event_type="plan.started",
+    data={"plan_id": plan.plan_id, "parent_plan_id": "plan-1"}
+)
+
+# Tracker subscriber → INSERT INTO plan_executions
+```
+
+**Task Delegated (Parallel):**
+```python
+# Worker delegates parallel tasks
+group_id = await task.delegate_parallel([...])
+
+# Publishes: delegation.started event
+await context.bus.publish(
+    topic="system-events",
+    event_type="delegation.started",
+    data={
+        "group_id": group_id,
+        "parent_task_id": task.task_id,
+        "total_tasks": 3
+    }
+)
+
+# Tracker subscriber → INSERT INTO delegation_groups
+
+# Then publishes action-requests for each sub-task
+# Tracker subscriber → INSERT INTO task_executions with delegation_group_id
+```
+
+**Task Completed (Part of Group):**
+```python
+# Sub-task completes
+await context.bus.publish(
+    topic="action-results",
+    event_type="search.completed",
+    data={"delegation_group_id": "search-group-1"}
+)
+
+# Tracker subscriber →
+#   1. UPDATE task_executions SET completed_at = NOW()
+#   2. UPDATE delegation_groups SET completed_tasks = completed_tasks + 1
+```
+
+**Plan Completed:**
+```python
+# Plan finishes
+await plan.finalize(result)
+
+# Publishes: plan.completed event
+await context.bus.publish(
+    topic="system-events",
+    event_type="plan.completed",
+    data={"plan_id": plan.plan_id, "status": "completed"}
+)
+
+# Tracker subscriber → UPDATE plan_executions SET status = 'completed'
+```
+
+#### What This Enables
+
+**For Users:**
+- "Show me my workflow history" (session-scoped queries)
+- "Why did my research fail?" (hierarchy + event timeline)
+- "How far along is my analysis?" (plan progress + sub-plans)
+
+**For Admins:**
+- "Which users are running the most complex workflows?" (plan depth metrics)
+- "What's the average fan-out for parallel delegations?" (delegation_groups stats)
+- "Identify workflow bottlenecks" (task duration by delegation depth)
+
+**For Developers:**
+- Debug nested workflows (full hierarchy visibility)
+- Optimize parallel patterns (delegation group analysis)
+- Audit multi-user interactions (session + tenant isolation)
 
 ---
 
@@ -510,7 +867,7 @@ USING (
 
 ---
 
-#### Day 2: Tracker Service Implementation (5-6 hours)
+#### Day 2: Tracker Service Implementation (6-7 hours with hierarchy tracking)
 
 **Task 4: Tracker Service Scaffold**
 - **Status:** ⏳ Not Started
@@ -549,27 +906,37 @@ USING (
 
 **Task 6: Event Subscribers (RF-ARCH-010)**
 - **Status:** ⏳ Not Started
-- **Effort:** 2 hours
+- **Effort:** 2.5 hours (increased for plan hierarchy tracking)
 - **TDD Phase:** RED → GREEN
 - **Dependencies:** Task 5 complete
 - **Files:**
   - `services/tracker/src/subscribers/task_tracking.py` (NEW)
+  - `services/tracker/src/subscribers/plan_tracking.py` (NEW)
   - `services/tracker/tests/test_subscribers.py` (NEW)
 - **Steps:**
   1. Write tests for subscriber handlers (mock event bus)
-  2. Implement subscriber for `system-events` topic:
+  2. Implement task subscriber for `system-events` topic:
      - `task.progress` → upsert `task_executions`
      - `task.state_changed` → insert `state_transitions`
-  3. Implement subscriber for `action-requests` topic:
+  3. Implement task subscriber for `action-requests` topic:
      - `*` → record task start in `task_executions`
-  4. Implement subscriber for `action-results` topic:
+     - Extract `delegation_group_id` from event data if present
+  4. Implement task subscriber for `action-results` topic:
      - `*` → record task completion in `task_executions`
-  5. Refactor: Error handling, tenant_id extraction from event envelope
-- **Acceptance:** 8+ tests passing, subscribers insert correctly
+     - Update `delegation_groups.completed_tasks` if part of group
+  5. Implement plan subscriber for `system-events` topic:
+     - `plan.started` → insert `plan_executions` with parent_plan_id
+     - `plan.state_changed` → update `plan_executions.current_state`
+     - `plan.completed` → update `plan_executions.status` and `completed_at`
+  6. Implement delegation group tracking:
+     - On parallel delegation start → insert `delegation_groups`
+     - On result received → increment `delegation_groups.completed_tasks`
+  7. Refactor: Error handling, tenant_id/user_id extraction from event envelope
+- **Acceptance:** 12+ tests passing (expanded for plan/delegation tracking)
 
 **Task 7: Query API Endpoints**
 - **Status:** ⏳ Not Started
-- **Effort:** 1.5 hours
+- **Effort:** 2 hours (increased for hierarchy queries)
 - **TDD Phase:** RED → GREEN
 - **Dependencies:** Task 6 complete
 - **Files:**
@@ -580,9 +947,17 @@ USING (
   2. Implement `GET /v1/tracker/plans/{plan_id}` → PlanProgress
   3. Implement `GET /v1/tracker/plans/{plan_id}/tasks` → List[TaskExecution]
   4. Implement `GET /v1/tracker/plans/{plan_id}/timeline` → EventTimeline
-  5. Implement `GET /v1/tracker/metrics?agent_id={id}&period={period}` → AgentMetrics
-  6. Refactor: Pagination, 404 handling, tenant isolation via RLS
-- **Acceptance:** 6+ tests passing, queries return correct data
+  5. Implement `GET /v1/tracker/plans/{plan_id}/sub-plans` → List[PlanExecution]
+     - Returns all child plans where parent_plan_id = plan_id
+  6. Implement `GET /v1/tracker/plans/{plan_id}/hierarchy` → PlanHierarchy
+     - Recursive query returning full plan tree
+  7. Implement `GET /v1/tracker/sessions/{session_id}/plans` → List[PlanExecution]
+     - All plans in a conversation session
+  8. Implement `GET /v1/tracker/delegation-groups/{group_id}` → DelegationGroup
+     - Parallel delegation group status
+  9. Implement `GET /v1/tracker/metrics?agent_id={id}&period={period}` → AgentMetrics
+  10. Refactor: Pagination, 404 handling, tenant isolation via RLS
+- **Acceptance:** 9+ tests passing (expanded for hierarchy queries), queries return correct data
 
 **Task 48H: FDE Decision - Tracker UI**
 - **Decision:** ✅ **DEFER Tracker UI to Post-Launch**
@@ -1040,15 +1415,15 @@ def mock_tracker_client():
 - Task 3: 5+ unit tests (TrackerClient wrapper)
 
 **Day 2:**
-- Task 6: 8+ unit tests (Event subscribers)
-- Task 7: 6+ unit tests (Query API endpoints)
+- Task 6: 12+ unit tests (Event subscribers with plan/delegation tracking)
+- Task 7: 9+ unit tests (Query API endpoints with hierarchy queries)
 
 **Day 3:**
 - Task 9: 4+ integration tests (End-to-end flow)
 
-**Total Tests:** 37+ new tests  
-**Existing Tests:** 51 passing (Phase 2)  
-**Phase 3 Target:** 88+ total tests passing
+**Total Tests:** 46+ new tests (increased from 37+ for hierarchy tracking)
+**Existing Tests:** 51 passing (Phase 2)
+**Phase 3 Target:** 97+ total tests passing (increased from 88+)
 
 ---
 
