@@ -362,11 +362,33 @@ class ChoreographyPlanner(Planner):
         if action.action == PlanAction.PUBLISH:
             # PUBLISH: Publish new event to trigger workers
             publish_action = action  # Type hint for IDE
-            await context.bus.publish(
-                topic=publish_action.topic or "action-requests",
-                event_type=publish_action.event_type,
-                data=publish_action.data,
-            )
+            metadata = self._resolve_publish_metadata(publish_action, goal_event)
+            
+            # Prepare data payload - inject task_id when correlation_id present
+            payload_data = dict(publish_action.data) if publish_action.data else {}
+            if metadata.get("correlation_id"):
+                payload_data["task_id"] = metadata["correlation_id"]
+            
+            if metadata.get("response_event"):
+                await context.bus.request(
+                    event_type=publish_action.event_type,
+                    data=payload_data,
+                    response_event=metadata["response_event"],
+                    correlation_id=metadata.get("correlation_id"),
+                    response_topic=metadata.get("response_topic") or "action-results",
+                    tenant_id=metadata.get("tenant_id"),
+                    user_id=metadata.get("user_id"),
+                    session_id=metadata.get("session_id"),
+                )
+            else:
+                await context.bus.publish(
+                    topic=publish_action.topic or "action-requests",
+                    event_type=publish_action.event_type,
+                    data=payload_data,
+                    tenant_id=metadata.get("tenant_id"),
+                    user_id=metadata.get("user_id"),
+                    session_id=metadata.get("session_id"),
+                )
             logger.debug(
                 f"Published {publish_action.event_type} to {publish_action.topic}: "
                 f"{publish_action.reasoning}"
@@ -380,6 +402,9 @@ class ChoreographyPlanner(Planner):
                     event_type=goal_event.response_event,
                     correlation_id=goal_event.correlation_id,
                     data=complete_action.result,
+                    tenant_id=goal_event.tenant_id,
+                    user_id=goal_event.user_id,
+                    session_id=goal_event.session_id,
                 )
                 logger.info(
                     f"Plan {decision.plan_id} completed: {complete_action.reasoning}"
@@ -438,6 +463,36 @@ class ChoreographyPlanner(Planner):
                 f"Delegated to {delegate_action.target_planner} via {delegate_action.goal_event}: "
                 f"{delegate_action.reasoning}"
             )
+
+    def _resolve_publish_metadata(
+        self,
+        action: PublishAction,
+        goal_event: Optional[Any],
+    ) -> Dict[str, Optional[str]]:
+        """Resolve publish metadata for request/response choreography.
+
+        When PublishAction carries response_event, this method extracts and prepares
+        metadata needed for bus.request() to enable request/response choreography.
+        Falls back to broadcast (None response_event) if response contract not provided.
+
+        Args:
+            action: PublishAction payload with optional response_event, correlation_id.
+            goal_event: Optional event with tenant/user/session context to propagate.
+
+        Returns:
+            Metadata dict with keys: response_event, correlation_id, response_topic,
+            tenant_id, user_id, session_id. None values are allowed (treated as absent).
+        """
+        metadata = {
+            "response_event": action.response_event,
+            "correlation_id": action.correlation_id,
+            "response_topic": action.response_topic,
+            "tenant_id": getattr(goal_event, "tenant_id", None) if goal_event else None,
+            "user_id": getattr(goal_event, "user_id", None) if goal_event else None,
+            "session_id": getattr(goal_event, "session_id", None) if goal_event else None,
+        }
+        return metadata
+    
     
     def _build_prompt(
         self,

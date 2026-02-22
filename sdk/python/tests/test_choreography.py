@@ -310,8 +310,8 @@ class TestChoreographyPlannerExecution:
     """Tests for decision execution."""
     
     @pytest.mark.asyncio
-    async def test_execute_decision_publish(self):
-        """execute_decision publishes event for PUBLISH action."""
+    async def test_execute_decision_publish_without_response_event(self):
+        """execute_decision publishes event when response_event is not set."""
         planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
         
         context = MagicMock()
@@ -335,6 +335,44 @@ class TestChoreographyPlannerExecution:
         call_args = context.bus.publish.call_args
         assert call_args.kwargs["event_type"] == "search.requested"
         assert call_args.kwargs["data"] == {"query": "ai"}
+
+    @pytest.mark.asyncio
+    async def test_execute_decision_publish_with_response_event(self):
+        """execute_decision uses request when response_event is provided."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+
+        goal_event = MagicMock()
+        goal_event.tenant_id = "tenant-1"
+        goal_event.user_id = "user-1"
+        goal_event.session_id = "session-1"
+
+        decision = PlannerDecision(
+            plan_id="p1",
+            current_state="s",
+            next_action=PublishAction(
+                event_type="search.requested",
+                data={"query": "ai"},
+                response_event="search.completed",
+                correlation_id="task-1",
+                reasoning="test",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, goal_event=goal_event)
+
+        context.bus.request.assert_called_once()
+        call_args = context.bus.request.call_args
+        assert call_args.kwargs["event_type"] == "search.requested"
+        assert call_args.kwargs["response_event"] == "search.completed"
+        assert call_args.kwargs["correlation_id"] == "task-1"
+        assert call_args.kwargs["tenant_id"] == "tenant-1"
+        assert call_args.kwargs["user_id"] == "user-1"
+        assert call_args.kwargs["session_id"] == "session-1"
+        assert call_args.kwargs["data"]["task_id"] == "task-1"
     
     @pytest.mark.asyncio
     async def test_execute_decision_complete(self):
@@ -348,6 +386,9 @@ class TestChoreographyPlannerExecution:
         goal_event = MagicMock()
         goal_event.response_event = "research.completed"
         goal_event.correlation_id = "corr-123"
+        goal_event.tenant_id = "tenant-1"
+        goal_event.user_id = "user-1"
+        goal_event.session_id = "session-1"
         
         decision = PlannerDecision(
             plan_id="p1",
@@ -367,6 +408,9 @@ class TestChoreographyPlannerExecution:
         assert call_args.kwargs["event_type"] == "research.completed"
         assert call_args.kwargs["correlation_id"] == "corr-123"
         assert call_args.kwargs["data"] == {"summary": "Research done"}
+        assert call_args.kwargs["tenant_id"] == "tenant-1"
+        assert call_args.kwargs["user_id"] == "user-1"
+        assert call_args.kwargs["session_id"] == "session-1"
     
     @pytest.mark.asyncio
     async def test_execute_decision_wait_pauses_plan(self):

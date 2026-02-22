@@ -55,6 +55,9 @@ class PublishAction(BaseModel):
         event_type: Event type to publish (must exist in Registry)
         topic: Topic for event (default: "action-requests")
         data: Event payload
+        response_event: Optional response event for request/response flows
+        response_topic: Optional response topic (defaults to action-results)
+        correlation_id: Optional correlation ID for request/response tracking
         reasoning: Why this event should be published
     """
     
@@ -62,6 +65,18 @@ class PublishAction(BaseModel):
     event_type: str = Field(..., description="Event type to publish")
     topic: Optional[str] = Field(default="action-requests", description="Topic for event")
     data: Dict[str, Any] = Field(default_factory=dict, description="Event payload")
+    response_event: Optional[str] = Field(
+        default=None,
+        description="Response event for action request flows",
+    )
+    response_topic: Optional[str] = Field(
+        default=None,
+        description="Response topic (defaults to action-results)",
+    )
+    correlation_id: Optional[str] = Field(
+        default=None,
+        description="Correlation ID for request/response flows",
+    )
     reasoning: str = Field(..., description="Why this event should be published")
 
 
