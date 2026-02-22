@@ -115,6 +115,7 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
     - *Admin:* Use `sqlite3` CLI instead of building a UI.
     - *Memory:* Use local JSON/ChromaDB instead of a managed cluster.
 - **Mandate:** Always flag "Platform Bloat" to the developer during Plan Mode.
+- **⚠️ CRITICAL - Approval Required:** You MUST NOT implement a reduced scope or FDE alternative without explicit developer approval. If you discover an FDE opportunity during implementation (e.g., realizing a task has 8 endpoints but only 2 are critical), STOP and ask the developer before proceeding with the reduced scope.
 
 ### Step 3: Implementation & TDD
 
