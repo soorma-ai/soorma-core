@@ -88,6 +88,17 @@ from .tracking import (
     TaskStateChanged,
 )
 
+from .tracker import (
+    # Tracker Service Response DTOs
+    PlanProgress,
+    TaskExecution,
+    EventTimelineEntry,
+    EventTimeline,
+    AgentMetrics,
+    PlanExecution,
+    DelegationGroup,
+)
+
 from .decisions import (
     # Decision Types
     PlanAction,
@@ -172,6 +183,14 @@ __all__ = [
     "TaskState",
     "TaskProgressEvent",
     "TaskStateChanged",
+    # Tracker Service Response DTOs
+    "PlanProgress",
+    "TaskExecution",
+    "EventTimelineEntry",
+    "EventTimeline",
+    "AgentMetrics",
+    "PlanExecution",
+    "DelegationGroup",
     # Decision Types
     "PlanAction",
     "PublishAction",

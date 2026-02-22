@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stage 4 Phase 3 - Tracker Response DTOs (RF-ARCH-011 extension)** (February 22, 2026)
+  - **Tracker Service response models** for plan/task observability
+    - `PlanProgress` model for plan execution summary
+    - `TaskExecution` model for task execution records
+    - `EventTimelineEntry` and `EventTimeline` for event tracing
+    - `AgentMetrics` model for agent performance metrics
+    - `PlanExecution` model for plan hierarchy tracking (parent_plan_id, session_id)
+    - `DelegationGroup` model for parallel task fan-out/fan-in tracking
+  - **11 validation tests** covering all response models
+  - Separate from `tracking.py` (events) - these are read-only query responses
+
 - **Stage 4 Phase 2 - Type-Safe Decisions (RF-SDK-015)** (February 21, 2026)
   - **PlannerDecision types** for LLM-based autonomous planning
     - `PlanAction` enum: PUBLISH, COMPLETE, WAIT, DELEGATE
