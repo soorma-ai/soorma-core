@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stage 4 Phase 3 Day 1 - Tracker Service Integration (RF-SDK-017)** (February 22, 2026)
+  - **TrackerServiceClient** (Layer 1 - Low-level HTTP client)
+    - `get_plan_progress()`: Plan execution summary
+    - `get_plan_tasks()`: Task history for a plan
+    - `get_plan_timeline()`: Event execution timeline
+    - `query_agent_metrics()`: Agent performance metrics
+    - `get_sub_plans()`: Child plan hierarchy
+    - `get_session_plans()`: All plans in a conversation session
+    - `get_delegation_group()`: Parallel delegation group status
+    - Includes `X-Tenant-ID`, `X-User-ID` headers on all requests
+    - 10 unit tests validating HTTP client behavior
+  - **TrackerClient** (Layer 2 - High-level wrapper)
+    - Replaces stub implementation in `context.py`
+    - Agent-friendly API in PlatformContext (`context.tracker.*`)
+    - Automatic tenant/user context extraction from events
+    - Lazy initialization with `_ensure_client()` pattern
+    - Delegates to TrackerServiceClient after validation
+    - 6 wrapper tests validating delegation behavior
+  - **Two-Layer Architecture Compliance**
+    - Service client (Layer 1) requires tenant_id/user_id parameters
+    - Wrapper (Layer 2) extracts context from event envelope
+    - Agent handlers MUST use `context.tracker.*`, not direct client
+  - **Integration with PlatformContext**
+    - `tracker` field added to PlatformContext dataclass
+    - Available via `from_env()` and explicit initialization
+
 - **Stage 4 Phase 2 - Autonomous Planning (RF-SDK-016)** (February 21, 2026)
   - **ChoreographyPlanner** class for LLM-based autonomous orchestration
     - Reduces planner boilerplate from ~400 lines → ~50 lines
