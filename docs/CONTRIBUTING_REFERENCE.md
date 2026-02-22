@@ -1,6 +1,25 @@
-# Soorma Core: Technical Reference for AI Agents
+# Soorma Core: Technical Reference for Contributors
 
-This document provides deep technical context for implementing features in the `soorma-core` repository. Refer to this AFTER the Action Plan has been approved.
+**Purpose:** Technical cookbook for implementation—CLI commands, testing syntax, import patterns, and component-specific workflows.
+
+**When to use:** During **Phase 3 (Implementation)** when you need actual commands/syntax to execute the approved Action Plan.
+
+**Documentation Hierarchy:**
+```
+AGENT.md (Constitution) → Read first for requirements
+  ↓
+SESSION_INITIALIZATION.md (Workflow Process) → Use for planning & TDD workflow
+  ↓ Phase 3: Implementation starts
+  ↓
+CONTRIBUTING_REFERENCE.md (YOU ARE HERE) → Technical syntax & commands
+```
+
+**Related Guides:**
+- **Process & Workflow:** [SESSION_INITIALIZATION.md](SESSION_INITIALIZATION.md) - Master/Action Plans, TDD workflow, checklists
+- **Architecture Patterns:** [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md) - SDK design patterns (read in Phase 0)
+- **Constitution:** [../AGENT.md](../AGENT.md) - Core developer requirements
+
+---
 
 ## 🛠️ Component Workflows
 

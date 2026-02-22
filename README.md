@@ -166,13 +166,23 @@ See the **[Examples Guide](./examples/README.md)** for a complete catalog of exa
 
 ## 📚 Documentation
 
-### Core Documentation
-- **[Architecture](./ARCHITECTURE.md)** - Platform services, event architecture, deployment options
-- **[Developer Guide](./docs/DEVELOPER_GUIDE.md)** - DX workflows, testing, debugging, multi-provider LLM support
-- **[AI Assistant Guide](./docs/AI_ASSISTANT_GUIDE.md)** - Using examples with Copilot/Cursor for rapid development
-- **[Examples Guide](./examples/README.md)** - Progressive learning path and pattern catalog
+### Getting Started Guides (Choose Your Path)
 
-### Feature-Specific Guides
+**🎯 I want to learn Soorma & build my own agents:**
+1. **[Examples Guide](./examples/README.md)** - Start here! Progressive learning path with working examples
+2. **[AI Assistant Guide](./docs/AI_ASSISTANT_GUIDE.md)** - Use examples with Copilot/Cursor for rapid prototyping
+3. **[Developer Guide](./docs/DEVELOPER_GUIDE.md)** - General workflows, testing, debugging, LLM configuration
+
+**🔧 I'm contributing to soorma-core (SDK/services/examples):**
+1. **[AGENT.md](./AGENT.md)** - Core contributor constitution (read first!)
+2. **[SESSION_INITIALIZATION.md](./docs/SESSION_INITIALIZATION.md)** - MANDATORY workflow for all contributions
+3. **[ARCHITECTURE_PATTERNS.md](./docs/ARCHITECTURE_PATTERNS.md)** - SDK architecture requirements
+4. **[CONTRIBUTING_REFERENCE.md](./docs/CONTRIBUTING_REFERENCE.md)** - Technical reference (CLI, testing patterns)
+
+### Core Reference Documentation
+- **[Architecture](./ARCHITECTURE.md)** - Platform services, event architecture, deployment options
+
+### Deep Dive: Feature-Specific Guides
 - **[Agent Patterns](./docs/agent_patterns/README.md)** - Tool, Worker, Planner models and DisCo pattern
 - **[Event System](./docs/event_system/README.md)** - Event-driven architecture, topics, messaging patterns
 - **[Memory System](./docs/memory_system/README.md)** - CoALA framework (Semantic, Working, Episodic, Procedural)
@@ -197,15 +207,28 @@ For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see th
 We are currently in **Day 0 (Pre-Alpha)**. The codebase is being actively scaffolded.
 Join the [Waitlist](https://soorma.ai) to be notified when the first "Good First Issue" drops.
 
-### For Core Contributors & AI-Assisted Development
+### For Core Contributors
 
-If you're contributing to soorma-core itself:
+If you're contributing to soorma-core itself (not just using it to build agents), follow this **documentation hierarchy**:
 
-1. **Read the Constitution:** [AGENT.md](AGENT.md) - Core developer requirements
-2. **Use TDD Session Template:** [docs/SESSION_INITIALIZATION.md](docs/SESSION_INITIALIZATION.md) - **MANDATORY** for all implementation sessions
-3. **Follow Architecture Patterns:** [docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md) - SDK design requirements
+**Read in Order:**
+1. **[AGENT.md](AGENT.md)** - Core developer constitution and workflow overview (read FIRST)
+2. **[docs/SESSION_INITIALIZATION.md](docs/SESSION_INITIALIZATION.md)** - **MANDATORY** workflow for all contributions (planning → TDD)
+3. **[docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md)** - SDK design patterns (referenced in Phase 0)
+4. **[docs/CONTRIBUTING_REFERENCE.md](docs/CONTRIBUTING_REFERENCE.md)** - Technical commands & syntax (use during Phase 3)
 
-**Why the session template?** It enforces test-driven development (TDD) and prevents common violations like implementation-before-tests. **Every session must start with this template.**
+**Why this hierarchy?**
+- **AGENT.md:** Understand the constitution and rules
+- **SESSION_INITIALIZATION.md:** Follow the workflow (Gateway → Master Plan → Action Plan → TDD)
+- **ARCHITECTURE_PATTERNS.md:** Learn SDK patterns before planning service changes
+- **CONTRIBUTING_REFERENCE.md:** Get technical syntax during implementation
+
+**SESSION_INITIALIZATION.md enforces specification-driven development:**
+- **Phase 0:** Gateway verification (ARCHITECTURE_PATTERNS.md compliance)
+- **Phase 1-2:** Master/Action Plan creation (design before code)
+- **Phase 3:** TDD implementation (tests before implementation, reference CONTRIBUTING_REFERENCE.md)
+
+This prevents architectural violations, missing tests, and hours of refactoring. **Every contribution session must start with the SESSION_INITIALIZATION template.**
 
 ---
 <div align="center">
