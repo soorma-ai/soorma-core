@@ -477,6 +477,101 @@ When deferring work during implementation:
 
 ---
 
+## Stage 4 Phase 3 Deferrals
+
+### 11-app-research-advisor (Full Application)
+
+**Description:** Rebuild research-advisor as a production-grade autonomous research application.
+
+**Deferred From:** Stage 4 Phase 3 (February 2026)
+
+**Target Stage:** Stage 5+ or post-launch
+
+**Estimated Effort:** 2-3 days (16-24 hours)
+
+**Current State:**
+- Existing `examples/research-advisor/` preserved as legacy reference (1,259 lines)
+- Uses manual LLM orchestration (472-line planner.py)
+- Demonstrates autonomous choreography concepts
+- Complex dependencies: Web scraping, fact-checking, citation management
+
+**Why research-advisor Deserves Master Planning:**
+
+research-advisor is an **APPLICATION**, not just an example. It requires:
+1. **Web Scraping Strategy:** Playwright vs Selenium, rate limiting, caching, error recovery
+2. **Citation Management:** URL tracking, source verification, deduplication
+3. **Fact-Checking Pipeline:** LLM-based validation, confidence scoring, hallucination detection
+4. **Tracker Integration:** Complete workflow observability, debugging stuck states
+5. **Error Recovery:** Network failures, timeout handling, retry logic with exponential backoff
+6. **Testing Strategy:** Mock web responses, LLM mocking (litellm), integration test suite
+7. **Deployment:** Multi-container setup, environment configuration, secrets management
+8. **Performance:** Parallel research, caching layer, cost optimization
+
+**Scope Comparison:**
+```
+Simple Example (10-choreography-basic):  160 lines, simulated data
+Full Application (11-app-research-advisor): 1,500+ lines, real integrations
+```
+
+**Rationale for Deferral:**
+- Phase 3 goal: Validate ChoreographyPlanner pattern (achieved with 10-choreography-basic)
+- research-advisor scope: Full application with external dependencies
+- 48-Hour Filter compliance: 2-3 days exceeds validation scope
+- Better served by dedicated Master Plan in Stage 5+
+
+**Future Work:**
+```markdown
+## 11-app-research-advisor (Stage 5+)
+
+### Master Plan Required
+
+**Scope:**
+- Rebuild planner.py using ChoreographyPlanner (~50 lines, down from 472)
+- Add Tracker Service integration for workflow observability
+- Implement web scraping with rate limiting and caching
+- Add fact-checking with confidence scoring
+- Comprehensive test suite (unit + integration + E2E)
+- Deployment guide with docker-compose
+- Performance optimization (parallel research, cost tracking)
+
+**Deliverables:**
+- `examples/11-app-research-advisor/` (new directory)
+- Complete README with architecture diagrams
+- ARCHITECTURE.md with system design
+- DEPLOYMENT.md with setup instructions
+- Test suite with ≥80% coverage
+- Legacy research-advisor marked deprecated (or removed)
+
+**Success Criteria:**
+- End-to-end research workflow completes successfully
+- Web scraping handles rate limits and errors gracefully
+- Fact-checking catches hallucinations
+- Tracker records complete workflow history
+- Tests pass consistently
+- Documentation enables independent deployment
+```
+
+**FDE Alternative:**
+- Current legacy research-advisor remains available as reference
+- Developers can study autonomous choreography concepts
+- Simple examples (10-choreography-basic) demonstrate pattern
+
+**Dependencies:**
+- ✅ ChoreographyPlanner (Stage 4 Phase 2)
+- ✅ Tracker Service (Stage 4 Phase 3)
+- ✅ 10-choreography-basic (Stage 4 Phase 3 - validation reference)
+
+**Link to Docs:**
+- Original spec: `examples/research-advisor/README.md`
+- Pattern documentation: `docs/agent_patterns/README.md`
+
+**Tracking:**
+- [ ] Create GitHub issue: "Build 11-app-research-advisor with ChoreographyPlanner"
+- [ ] Add to Stage 5 Master Plan roadmap
+- [ ] Document migration path from legacy research-advisor
+
+---
+
 ## Review Cadence
 
 - **During stage planning:** Review deferred items, promote to current stage if priorities changed

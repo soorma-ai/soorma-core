@@ -167,26 +167,39 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./10-planner-worker-tool/"-->10-planner-worker-tool<!--/a--><br>(coming soon)</td>
+<td><!--a href="./10-choreography-basic/"-->10-choreography-basic<!--/a--><br>(in progress)</td>
 <td>
-• Trinity pattern (Planner-Worker-Tool)<br>
-• Goal decomposition<br>
-• Task execution
+• ChoreographyPlanner pattern (Stage 4 Phase 2)<br>
+• Autonomous LLM-based orchestration<br>
+• Event discovery from Registry<br>
+• Multi-agent choreography (Planner + 3 Workers)<br>
+<em>Requires: litellm, openai</em>
 </td>
 <td>20 min</td>
-<td>01-hello-tool<br>08-worker-basic</td>
+<td>09-planner-basic<br>03-events-structured</td>
 </tr>
 
 <tr>
 <td><!--a href="./11-app-research-advisor/"-->11-app-research-advisor<!--/a--><br>(coming soon)</td>
 <td>
-• Autonomous Choreography pattern<br>
-• ChoreographyPlanner SDK class<br>
-• Multi-agent orchestration<br>
-• Full application example
+• Full autonomous research application<br>
+• Web scraping with Playwright<br>
+• Fact-checking pipeline<br>
+• Citation management<br>
+• Tracker Service integration<br>
+<em>Requires: litellm, openai, playwright</em>
 </td>
-<td>30 min</td>
-<td>03-events-structured<br>04-memory-working</td>
+<td>45 min</td>
+<td>10-choreography-basic<br>06-memory-episodic</td>
+</tr>
+
+<tr>
+<td><!--a href="./10-planner-worker-tool/"-->DEPRECATED: 10-planner-worker-tool<!--/a--></td>
+<td>
+<em>Merged into 10-choreography-basic</em>
+</td>
+<td>-</td>
+<td>-</td>
 </tr>
 
 <tr>
@@ -197,7 +210,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 • Context preservation
 </td>
 <td>20 min</td>
-<td>06-memory-episodic<br>10-planner-worker-tool</td>
+<td>06-memory-episodic<br>10-choreography-basic</td>
 </tr>
 </table>
 
@@ -218,8 +231,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Handle async tasks with delegation | Worker Pattern | [08-worker-basic](./08-worker-basic/) |
 | Orchestrate tasks with state machines | Planner Pattern | [09-planner-basic](./09-planner-basic/) |
-| Break down goals into tasks | Planner-Worker Pattern | 10-planner-worker-tool (coming soon) |
-| Build a fully autonomous multi-agent system | Autonomous Choreography | 11-app-research-advisor (coming soon) |
+| Build autonomous multi-agent systems | Choreography Pattern | 10-choreography-basic (in progress) |
+| Build production applications | Full Applications | 11-app-research-advisor (coming soon) |
 | Handle multi-turn conversations | Stateful Conversation | 12-multi-turn-conversation (coming soon) |
 
 ---
@@ -311,7 +324,8 @@ python client.py
 2. [03-events-structured](./03-events-structured/) - LLM event selection
 3. [04-memory-working](./04-memory-working/) - State management
 4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
-5. 11-app-research-advisor (coming soon) - Full autonomous system
+5. 10-choreography-basic (in progress) - Autonomous choreography
+6. 11-app-research-advisor (coming soon) - Full research application
 
 ### Path 3: Memory Deep Dive (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics

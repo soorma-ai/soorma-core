@@ -14,7 +14,7 @@
 ### Summary
 
 Implement end-to-end validation of Stage 4 Planner Model by:
-1. **Refactoring research-advisor example** from manual orchestration (~472 lines) to ChoreographyPlanner (~50 lines)
+1. **Creating 10-choreography-basic example** to demonstrate autonomous ChoreographyPlanner pattern (~160 lines)
 2. **Building Tracker Service** for event-driven observability
 3. **Adding TrackerClient wrapper** to PlatformContext (two-layer SDK compliance)
 4. **Integration testing** across Planner → Workers → Tracker flow
@@ -22,8 +22,8 @@ Implement end-to-end validation of Stage 4 Planner Model by:
 ### Acceptance Criteria
 
 - [x] ✅ **Phase 2 Complete:** ChoreographyPlanner, PlannerDecision, PlanContext implemented and tested (51 tests passing)
-- [ ] **Example Refactor:** research-advisor planner reduced from 472 lines → ≤60 lines
-- [ ] **Code Reduction:** Achieves ≥85% reduction in orchestration code
+- [ ] **New Example:** 10-choreography-basic demonstrates ChoreographyPlanner pattern (~160 lines)
+- [ ] **Validation:** Clean validation of autonomous choreography without application complexity
 - [ ] **Tracker Service:** Subscribes to events and stores progress in PostgreSQL
 - [ ] **TrackerClient Wrapper:** Exists in PlatformContext with query methods
 - [ ] **CLI Integration:** `soorma dev` starts Tracker Service on port 8084
@@ -36,7 +36,7 @@ Implement end-to-end validation of Stage 4 Planner Model by:
 
 | Metric | Target | Validation |
 |--------|--------|------------|
-| **Code Reduction** | 472 → ≤60 lines (87%+) | `wc -l planner.py` |
+| **Example Size** | ~160 lines total (4 files) | `wc -l examples/10-choreography-basic/*.py` |
 | **Test Coverage** | ≥85% on new code | `pytest --cov` |
 | **Integration Tests** | ≥4 passing | `pytest tests/integration/` |
 | **API Response Time** | Tracker queries <200ms | Manual curl tests |
@@ -53,7 +53,7 @@ Implement end-to-end validation of Stage 4 Planner Model by:
 | **Tracker Service** | Backend Service | `services/tracker/` (NEW) | Major - New Service |
 | **TrackerClient Wrapper** | SDK | `sdk/python/soorma/context.py` | Medium - Add wrapper class |
 | **CLI Integration** | SDK CLI | `sdk/python/soorma/cli/commands/dev.py` | Small - Add service to docker-compose |
-| **research-advisor** | Example | `examples/research-advisor/planner.py` | Major - Refactor |
+| **10-choreography-basic** | Example | `examples/10-choreography-basic/` (NEW) | Medium - New example |
 | **soorma-common** | DTOs | ✅ Already exists: `tracking.py` | No change (schemas exist) |
 | **Integration Tests** | Tests | `sdk/python/tests/test_planner_flow.py` (NEW) | Medium - New tests |
 
@@ -1027,27 +1027,47 @@ await context.bus.publish(
 
 ---
 
-#### Day 3: Example Refactor & Integration Tests (4-5 hours)
+#### Day 3: Example Creation & Integration Tests (5-6 hours)
 
-**Task 8: Refactor research-advisor Planner**
+**Task 8: Create 10-choreography-basic Example**
 - **Status:** ⏳ Not Started
-- **Effort:** 2 hours
-- **TDD Phase:** REFACTOR
+- **Effort:** 3 hours
+- **TDD Phase:** GREEN (new example)
 - **Dependencies:** Phase 2 complete (ChoreographyPlanner exists)
 - **Files:**
-  - `examples/research-advisor/planner.py` (REFACTOR)
-  - `examples/research-advisor/planner_legacy.py` (RENAME - backup)
-  - `examples/research-advisor/README.md` (UPDATE)
+  - `examples/10-choreography-basic/README.md` (NEW)
+  - `examples/10-choreography-basic/planner.py` (NEW - ~50 lines)
+  - `examples/10-choreography-basic/fetcher.py` (NEW - ~30 lines)
+  - `examples/10-choreography-basic/analyzer.py` (NEW - ~40 lines)
+  - `examples/10-choreography-basic/reporter.py` (NEW - ~40 lines)
+  - `examples/10-choreography-basic/start.sh` (NEW)
 - **Steps:**
-  1. Rename current planner.py → planner_legacy.py (backup)
-  2. Create new planner.py using ChoreographyPlanner
-  3. Implement `on_goal` handler with `PlanContext.create_from_goal()`
-  4. Implement `on_transition` handler with LLM reasoning
-  5. Add optional tracker progress logging
-  6. Verify line count: ≤60 lines (target: ~50)
-  7. Update README with new usage
+  1. Create example directory structure
+  2. Implement Planner using ChoreographyPlanner:
+     - @on_goal("analyze.feedback") handler
+     - PlanContext.create_from_goal() usage
+     - Execute plan with ChoreographyPlanner
+  3. Implement Fetcher Worker:
+     - @on_task("data.fetch.requested") handler
+     - Simulates fetching customer feedback from database
+     - Publishes "data.fetched" event
+  4. Implement Analyzer Worker:
+     - @on_task("analysis.requested") handler
+     - Simulates sentiment analysis
+     - Publishes "analysis.completed" event
+  5. Implement Reporter Worker:
+     - @on_task("report.requested") handler
+     - Generates summary report
+     - Publishes "report.ready" event
+  6. Create comprehensive README:
+     - Scenario description (feedback analysis workflow)
+     - Architecture diagram
+     - Autonomous choreography explanation
+     - Usage instructions
+  7. Create start.sh script
   8. Manual test: `soorma dev` + run example end-to-end
-- **Acceptance:** Planner works, ≤60 lines, example README updated
+  9. Verify Tracker records plan progress
+- **Acceptance:** Example runs end-to-end, ~160 total lines, README complete, demonstrates ChoreographyPlanner pattern
 
 **Task 9: Integration Tests (RF-SDK-006 + RF-ARCH-010)**
 - **Status:** ⏳ Not Started
@@ -1080,16 +1100,18 @@ await context.bus.publish(
   - `sdk/python/CHANGELOG.md` (UPDATE)
   - `libs/soorma-common/CHANGELOG.md` (UPDATE)
   - `services/tracker/README.md` (NEW)
-  - `examples/research-advisor/ARCHITECTURE.md` (UPDATE)
+  - `examples/10-choreography-basic/README.md` (UPDATE - polish)
+  - `examples/README.md` (UPDATE - add 10-choreography-basic to learning path)
   - `docs/agent_patterns/plans/MASTER_PLAN_Stage4_Planner.md` (UPDATE - mark Phase 3 complete)
 - **Steps:**
   1. Add CHANGELOG entries for SDK (TrackerClient wrapper)
   2. Add CHANGELOG entries for soorma-common (tracker response DTOs)
   3. Create Tracker Service README (architecture, deployment, API docs)
-  4. Update research-advisor ARCHITECTURE.md (new ChoreographyPlanner design)
-  5. Update Master Plan: Phase 3 completion date, metrics
-  6. Run full test suite: `pytest` (all tests passing)
-  7. Run example: `soorma dev` + manual validation
+  4. Polish 10-choreography-basic README (fix typos, improve clarity)
+  5. Update examples/README.md: Add 10-choreography-basic to learning path table
+  6. Update Master Plan: Phase 3 completion date, metrics
+  7. Run full test suite: `pytest` (all tests passing)
+  8. Run example: `soorma dev` + manual validation
 - **Acceptance:** All docs updated, tests passing, example runs end-to-end
 
 ---
@@ -1591,7 +1613,7 @@ curl -H "X-Tenant-ID: $TENANT_ID" \
 - [ ] All 11 tasks completed
 - [ ] 37+ new tests passing (88+ total including Phase 1+2)
 - [ ] Test coverage ≥85% on new code
-- [ ] research-advisor planner refactored: ≤60 lines (≥85% reduction)
+- [ ] 10-choreography-basic example created (~160 lines total)
 - [ ] TrackerClient wrapper exists in PlatformContext
 - [ ] Tracker Service running and subscribing to events
 - [ ] Integration tests validate end-to-end flow
@@ -1600,8 +1622,8 @@ curl -H "X-Tenant-ID: $TENANT_ID" \
 
 - [ ] CHANGELOG.md updated (SDK, soorma-common, Tracker Service)
 - [ ] Tracker Service README.md created (API docs, deployment)
-- [ ] research-advisor README.md updated (new ChoreographyPlanner usage)
-- [ ] research-advisor ARCHITECTURE.md updated (design changes)
+- [ ] 10-choreography-basic README.md created (scenario, usage, architecture)
+- [ ] examples/README.md updated (add 10-choreography-basic to learning path)
 - [ ] Master Plan updated (Phase 3 completion date, metrics)
 
 ### Validation Complete
@@ -1613,7 +1635,7 @@ curl -H "X-Tenant-ID: $TENANT_ID" \
 
 ### Metrics Achieved
 
-- [ ] **Code Reduction:** 472 → ≤60 lines (≥85%)
+- [ ] **Example Size:** ~160 lines total (4 files)
 - [ ] **Test Count:** 88+ tests passing
 - [ ] **Coverage:** ≥85% on new code
 - [ ] **API Latency:** Tracker queries <200ms (manual test)
@@ -1624,11 +1646,11 @@ curl -H "X-Tenant-ID: $TENANT_ID" \
 
 Phase 3 is complete when:
 
-1. ✅ **Example Validates Design:** research-advisor demonstrates ChoreographyPlanner reducing code from ~472 lines to ≤60 lines
+1. ✅ **Example Validates Design:** 10-choreography-basic demonstrates ChoreographyPlanner pattern with autonomous LLM reasoning
 2. ✅ **Tracker Service Operational:** Service subscribes to events, stores progress, responds to queries
 3. ✅ **SDK Two-Layer Compliance:** TrackerClient wrapper in PlatformContext, examples use `context.tracker.*`
 4. ✅ **Integration Tests Pass:** End-to-end flow (goal → planner → worker → tracker query) validated
-5. ✅ **Documentation Complete:** READMEs, CHANGELOGs, ARCHITECTURE.md updated
+5. ✅ **Documentation Complete:** READMEs, CHANGELOGs updated
 6. ✅ **No Regressions:** All Phase 1+2 tests still pass (51+ tests)
 7. ✅ **Developer Approval:** PR reviewed and merged
 
@@ -1648,6 +1670,7 @@ Phase 3 is complete when:
 - EventSelector utility (RF-SDK-017, deferred from Phase 2)
 - Conditional state transitions (deferred from Phase 2)
 - Advanced metrics aggregation (deferred from Phase 3)
+- **11-app-research-advisor** (deferred from Phase 3) - See [DEFERRED_WORK.md](../../refactoring/DEFERRED_WORK.md#11-app-research-advisor-full-application)
 
 ---
 
