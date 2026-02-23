@@ -1,0 +1,895 @@
+# Action Plan: Phase 4 - Polish, Documentation, Migration & Release (SOOR-PLAN-004)
+
+**Status:** 📋 Planning  
+**Created:** February 23, 2026  
+**Parent Plan:** [MASTER_PLAN_Stage4_Planner.md](MASTER_PLAN_Stage4_Planner.md)  
+**Stage:** 4 (Agent Models - Planner)  
+**Phase:** 4 (Polish & Release)  
+**Estimated Duration:** 2 days (Days 11-12 of Stage 4)  
+**Dependencies:** Phase 3 Complete (ChoreographyPlanner + Tracker Service + 10-choreography-basic example)
+
+---
+
+## 1. Requirements & Core Objective
+
+### Problem Statement
+
+Phase 3 delivered the core implementation:
+- ✅ ChoreographyPlanner (SDK) - LLM-based autonomous orchestration
+- ✅ Tracker Service - Event-driven observability backend
+- ✅ TrackerClient wrapper (PlatformContext layer)
+- ✅ 10-choreography-basic example - End-to-end demonstration
+- ✅ 451 passing tests (423 SDK + 28 Tracker)
+
+**Gap:** Documentation and release artifacts are incomplete:
+- Agent patterns documentation doesn't cover Planner model yet
+- No migration guide for developers upgrading from v0.7.7 → v0.8.0
+- Examples README doesn't list new 10-choreography-basic example
+- Tracker Service lacks deployment guide and API documentation
+- All component versions still at 0.7.7 (need bump to 0.8.0)
+- CHANGELOGs don't document Phase 1-3 work comprehensively
+
+### Core Objective
+
+**Complete Stage 4 by preparing v0.8.0 release:**
+1. Update all documentation to reflect Planner patterns and ChoreographyPlanner
+2. Create migration guide for developers upgrading to v0.8.0
+3. Bump versions across all components (sdk, services, soorma-common)
+4. Update all CHANGELOGs with comprehensive Phase 1-3 feature summaries
+5. Validate all 451+ tests pass before release
+6. Mark Stage 4 complete in refactoring index
+
+### Acceptance Criteria
+
+- [ ] `docs/agent_patterns/README.md` includes Planner pattern section with code examples
+- [ ] `docs/agent_patterns/ARCHITECTURE.md` documents PlanContext and ChoreographyPlanner design
+- [ ] `docs/refactoring/README.md` marks Stage 4 as ✅ Complete
+- [ ] `docs/refactoring/sdk/09-PLANNER-MIGRATION.md` exists with before/after examples
+- [ ] `examples/README.md` lists 10-choreography-basic in learning path
+- [ ] `services/tracker/README.md` has deployment guide and API examples
+- [ ] All versions bumped to 0.8.0:
+  - `sdk/python/pyproject.toml`
+  - `libs/soorma-common/pyproject.toml`
+  - `services/tracker/pyproject.toml`
+  - `services/event-service/pyproject.toml`
+  - `services/memory/pyproject.toml`
+  - `services/registry/pyproject.toml`
+- [ ] All CHANGELOGs updated:
+  - `CHANGELOG.md` (root) - v0.8.0 release entry
+  - `sdk/python/CHANGELOG.md` - Phase 1-3 features consolidated
+  - `libs/soorma-common/CHANGELOG.md` - decisions.py, tracker.py additions
+  - `services/tracker/CHANGELOG.md` - new service v0.8.0 initial release
+  - `services/memory/CHANGELOG.md`, `services/event-service/CHANGELOG.md`, `services/registry/CHANGELOG.md` - version bump entries
+- [ ] All 451+ tests passing (no regressions)
+- [ ] Documentation review complete (no broken links, consistent terminology)
+
+---
+
+## 2. Technical Design
+
+### Component Impact Map
+
+| Component | Change Type | Files Modified | Effort |
+|-----------|-------------|----------------|--------|
+| **Agent Patterns Docs** | Enhancement | `docs/agent_patterns/README.md`, `ARCHITECTURE.md` | 2-3 hours |
+| **Refactoring Docs** | Enhancement | `docs/refactoring/README.md`, `sdk/09-PLANNER-MIGRATION.md` (new) | 2-3 hours |
+| **Examples Docs** | Enhancement | `examples/README.md` | 30 min |
+| **Tracker Service Docs** | New Documentation | `services/tracker/README.md` | 1-2 hours |
+| **Version Bumps** | Version Update | 6 `pyproject.toml` files | 30 min |
+| **CHANGELOGs** | Enhancement | 7 CHANGELOG.md files | 2-3 hours |
+| **Test Validation** | Verification | All test suites | 30 min |
+
+**Total Estimated Effort:** 10-12 hours (1.5 days, buffer to 2 days)
+
+### SDK Layer Verification (Not Applicable)
+
+**Phase 4 Scope:** This phase involves ONLY documentation and release artifacts. No service endpoints or SDK methods are being added.
+
+**Verification:**
+- [ ] **No new service methods:** This phase does not modify services (Tracker, Memory, Event, Registry)
+- [ ] **No new wrapper methods:** PlatformContext wrappers completed in Phase 3
+- [ ] **Examples compliance:** 10-choreography-basic uses `context.*` wrappers (verified in Phase 3)
+
+**Two-Layer Architecture Status:**
+- ✅ **Layer 1 (Service Clients):** TrackerServiceClient complete (Phase 3)
+- ✅ **Layer 2 (Wrappers):** TrackerClient in PlatformContext complete (Phase 3)
+- ✅ **Examples:** 10-choreography-basic uses `context.tracker.*` (Phase 3)
+
+**Conclusion:** No SDK layer work required in Phase 4. This is a documentation and release preparation phase.
+
+### Documentation Strategy
+
+#### 1. Agent Patterns Documentation (`docs/agent_patterns/`)
+
+**Files to Update:**
+- `README.md` - Add Planner pattern section (Section 4)
+- `ARCHITECTURE.md` - Add PlanContext and ChoreographyPlanner technical details
+
+**README.md Changes:**
+- Add Section 4: Planner Pattern (Orchestration)
+  - When to use: Goal decomposition, multi-step workflows
+  - Complexity: ⭐⭐⭐ Advanced
+  - Code example: `@planner.on_goal()` and `@planner.on_transition()`
+  - Link to [09-planner-basic](../../examples/09-planner-basic/)
+- Add Section 5: ChoreographyPlanner Pattern (Autonomous)
+  - When to use: LLM-based decision making, adaptive planning
+  - Complexity: ⭐⭐⭐⭐ Expert
+  - Code example: `ChoreographyPlanner` with `reason_next_action()`
+  - Link to [10-choreography-basic](../../examples/10-choreography-basic/)
+- Update Pattern Comparison Table (add Planner and ChoreographyPlanner rows)
+
+**ARCHITECTURE.md Changes:**
+- Add Section 6: Planner Pattern
+  - PlanContext state machine design (methods: save, restore, get_next_state, execute_next)
+  - Event-driven transitions (on_goal, on_transition decorators)
+  - State machine configuration (StateConfig, StateTransition, StateAction)
+  - Pause/Resume for HITL workflows
+  - Code examples from 09-planner-basic
+- Add Section 7: ChoreographyPlanner Pattern
+  - Autonomous decision making architecture
+  - Event discovery from Registry
+  - LLM reasoning with PlannerDecision types (PUBLISH, COMPLETE, WAIT, DELEGATE)
+  - Event validation (prevents hallucinations)
+  - BYO model credentials pattern (OpenAI, Azure, Anthropic, Ollama)
+  - System instructions and custom context injection
+  - Code examples from 10-choreography-basic
+
+#### 2. Refactoring Documentation (`docs/refactoring/`)
+
+**Files to Update:**
+- `README.md` - Mark Stage 4 complete
+- `sdk/09-PLANNER-MIGRATION.md` - New migration guide
+
+**README.md Changes:**
+- Update Stage 4 status: 🟡 In Progress → ✅ Complete
+- Update completion date: February XX, 2026
+- Update version reference: 0.7.7 → 0.8.0
+- Add Phase 4 completion note with deliverables summary
+
+**Migration Guide (NEW FILE: `sdk/09-PLANNER-MIGRATION.md`):**
+- Introduction: What changed in v0.8.0 Planner model
+- Breaking Changes:
+  - None (this is additive - new ChoreographyPlanner class)
+- New Features:
+  - PlanContext state machine (re-entrant plans)
+  - ChoreographyPlanner autonomous orchestration
+  - TrackerClient for observability
+- Migration Patterns:
+  - **Before:** 400-line manual planner (event discovery, LLM calls, validation)
+  - **After:** 50-line ChoreographyPlanner (SDK handles complexity)
+  - Code examples showing research-advisor pattern reduction
+- PlanContext Usage:
+  - Creating plans: `PlanContext.create_from_goal()`
+  - State transitions: `plan.get_next_state(event)`, `plan.execute_next()`
+  - Completion: `plan.finalize(result)`
+- ChoreographyPlanner Usage:
+  - Initialization with model selection
+  - `reason_next_action()` for LLM decisions
+  - `execute_decision()` for type-safe execution
+  - Event validation patterns
+- Tracker Integration:
+  - Querying plan progress: `context.tracker.get_plan_progress()`
+  - Timeline reconstruction: `context.tracker.get_plan_timeline()`
+- Examples Cross-Reference:
+  - Link to 09-planner-basic (basic state machine)
+  - Link to 10-choreography-basic (autonomous LLM)
+
+#### 3. Examples Documentation (`examples/README.md`)
+
+**Changes:**
+- Add entry for `10-choreography-basic` in Learning Path table
+  - Title: "10-choreography-basic"
+  - Concepts:
+    - ChoreographyPlanner pattern
+    - Autonomous LLM-based orchestration
+    - Event discovery from Registry
+    - Tracker integration
+    - PlannerDecision types (PUBLISH, COMPLETE, WAIT)
+  - Time: 15 min
+  - Prerequisites: 09-planner-basic
+- Update "Advanced Patterns" section to include link to choreography pattern
+
+#### 4. Tracker Service Documentation (Enhancement)
+
+**File:** `services/tracker/README.md` (already exists, needs enhancement)
+
+**Current State:** Basic API documentation exists (Phase 3)
+
+**Enhancements Needed:**
+- **Deployment Guide:**
+  - Docker deployment instructions
+  - Environment variables required (`DATABASE_URL`, `NATS_URL`, tenant/user headers)
+  - Health check endpoint (`/health`)
+  - Database migrations (`alembic upgrade head`)
+- **API Examples:**
+  - `curl` examples for each endpoint (plan progress, actions, timeline)
+  - Example responses (JSON samples)
+  - Error responses (404, 403, 500)
+- **Multi-Tenancy:**
+  - Required headers documentation (`X-Tenant-ID`, `X-User-ID`)
+  - RLS policy explanation
+  - Tenant isolation guarantees
+- **Integration Patterns:**
+  - How to use TrackerClient wrapper (not direct API)
+  - Code example: `context.tracker.get_plan_progress(plan_id)`
+  - Link to SDK documentation
+
+### Version Bump Strategy
+
+**Target Version:** 0.8.0
+
+**Rationale for Minor Version Bump:**
+- New major feature: ChoreographyPlanner (LLM-based autonomous planning)
+- New service: Tracker Service (observability backend)
+- New SDK APIs: TrackerClient wrapper, PlannerDecision types
+- Additive changes (no breaking changes to existing APIs)
+
+**Files to Update:**
+1. `sdk/python/pyproject.toml` - 0.7.7 → 0.8.0
+2. `libs/soorma-common/pyproject.toml` - 0.7.7 → 0.8.0
+3. `services/tracker/pyproject.toml` - 0.7.7 → 0.8.0 (initial release)
+4. `services/event-service/pyproject.toml` - 0.7.7 → 0.8.0
+5. `services/memory/pyproject.toml` - 0.7.7 → 0.8.0
+6. `services/registry/pyproject.toml` - 0.7.7 → 0.8.0
+
+**Process:**
+- Update `version = "0.7.7"` → `version = "0.8.0"` in each `pyproject.toml`
+- No dependency version updates needed (internal package versions auto-resolve)
+
+### CHANGELOG Update Strategy
+
+**Root CHANGELOG (`CHANGELOG.md`):**
+- Add new `[0.8.0] - 2026-02-XX` section
+- Summarize platform-level changes:
+  - Added: ChoreographyPlanner for autonomous orchestration
+  - Added: Tracker Service for event-driven observability
+  - Added: PlanContext state machine for re-entrant plans
+  - Updated: All services to 0.8.0 for compatibility
+- Include migration guide link
+
+**SDK CHANGELOG (`sdk/python/CHANGELOG.md`):**
+- Consolidate Phase 1-3 unreleased entries into v0.8.0 release
+- Structure by phase:
+  - Phase 1: PlanContext state machine (RF-SDK-006)
+  - Phase 2: ChoreographyPlanner + PlannerDecision (RF-SDK-015, 016)
+  - Phase 3: TrackerClient wrapper (RF-SDK-017) + integration tests
+- Include code examples for major features
+- Document breaking changes: None (all additive)
+
+**soorma-common CHANGELOG (`libs/soorma-common/CHANGELOG.md`):**
+- Add v0.8.0 section with new DTOs:
+  - `soorma_common.decisions.PlannerDecision` model
+  - `soorma_common.decisions.PlanAction` enum
+  - `soorma_common.tracker.*` response models (PlanProgress, TaskExecution, etc.)
+  - `soorma_common.events.EventEnvelope` additions (goal_id, plan_id fields)
+
+**Tracker Service CHANGELOG (`services/tracker/CHANGELOG.md`):**
+- Create new file (service introduced in v0.8.0)
+- Initial release notes:
+  - Event subscription (action-requests, action-results, system-events)
+  - Progress tracking (plan_progress, action_progress tables)
+  - Query APIs (plan progress, actions, timeline)
+  - Multi-tenancy via RLS
+  - Docker deployment support
+
+**Other Services CHANGELOGs:**
+- `services/memory/CHANGELOG.md` - Version bump entry (no feature changes)
+- `services/event-service/CHANGELOG.md` - Version bump entry (no feature changes)
+- `services/registry/CHANGELOG.md` - Version bump entry (no feature changes)
+
+---
+
+## 3. Task Tracking Matrix
+
+### Task Sequencing
+
+Phase 4 is documentation-focused. Tasks can run in parallel or sequential order. Recommended sequence:
+
+1. **Documentation Updates** (Tasks 1-4) - Can parallelize
+2. **Version Bumps** (Task 5) - Quick batch update
+3. **CHANGELOG Updates** (Task 6) - Reference completed docs
+4. **Validation** (Task 7) - Final verification
+5. **Review & Commit** (Task 8) - Package for release
+
+### Task Breakdown
+
+#### Task 1: Update Agent Patterns Documentation ⏳
+**Owner:** Agent  
+**Duration:** 2-3 hours  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Update `docs/agent_patterns/README.md`:
+  - Add Section 4: Planner Pattern (with code examples)
+  - Add Section 5: ChoreographyPlanner Pattern (with code examples)
+  - Update Pattern Comparison Table
+  - Add links to 09-planner-basic and 10-choreography-basic
+- [ ] Update `docs/agent_patterns/ARCHITECTURE.md`:
+  - Add Section 6: Planner Pattern (PlanContext design)
+  - Add Section 7: ChoreographyPlanner Pattern (autonomous architecture)
+  - Include mermaid diagrams for state transitions
+  - Add code examples from examples/
+
+**Deliverables:**
+- Updated README.md with Planner patterns
+- Updated ARCHITECTURE.md with technical design
+
+**Dependencies:** Phase 3 complete (implementation exists)
+
+---
+
+#### Task 2: Update Refactoring Documentation ⏳
+**Owner:** Agent  
+**Duration:** 2-3 hours  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Update `docs/refactoring/README.md`:
+  - Change Stage 4 status from 🟡 In Progress → ✅ Complete
+  - Add completion date (February XX, 2026)
+  - Update version references (0.7.7 → 0.8.0)
+  - Add Phase 4 completion summary
+- [ ] Create `docs/refactoring/sdk/09-PLANNER-MIGRATION.md`:
+  - Introduction to v0.8.0 Planner changes
+  - Breaking changes section (none)
+  - New features section (PlanContext, ChoreographyPlanner, Tracker)
+  - Before/after migration examples (400 lines → 50 lines)
+  - PlanContext usage patterns
+  - ChoreographyPlanner usage patterns
+  - Tracker integration patterns
+  - Cross-reference to examples
+
+**Deliverables:**
+- Updated refactoring/README.md marking Stage 4 complete
+- New migration guide (09-PLANNER-MIGRATION.md)
+
+**Dependencies:** Task 1 (reference updated architecture docs)
+
+---
+
+#### Task 3: Update Examples Documentation ⏳
+**Owner:** Agent  
+**Duration:** 30 minutes  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Update `examples/README.md`:
+  - Add 10-choreography-basic entry to Learning Path table
+  - Update Advanced Patterns section with choreography link
+  - Verify all example links are valid
+  - Update completion time estimates if needed
+
+**Deliverables:**
+- Updated examples/README.md with 10-choreography-basic entry
+
+**Dependencies:** None (can run in parallel with Task 1-2)
+
+---
+
+#### Task 4: Enhance Tracker Service Documentation ⏳
+**Owner:** Agent  
+**Duration:** 1-2 hours  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Update `services/tracker/README.md`:
+  - Add Deployment Guide section:
+    - Docker instructions
+    - Environment variables
+    - Database setup (Alembic migrations)
+    - Health check endpoint
+  - Enhance API Examples section:
+    - Add `curl` examples for each endpoint
+    - Add example JSON responses
+    - Document error responses (404, 403, 500)
+  - Enhance Multi-Tenancy section:
+    - Document required headers (`X-Tenant-ID`, `X-User-ID`)
+    - Explain RLS policies
+  - Add Integration Patterns section:
+    - How to use TrackerClient wrapper (not direct API)
+    - Code example: `context.tracker.get_plan_progress()`
+    - Link to SDK docs
+
+**Deliverables:**
+- Enhanced services/tracker/README.md with deployment guide and examples
+
+**Dependencies:** None (can run in parallel)
+
+---
+
+#### Task 48H: FDE Decision (Documentation Scope) ⏳
+**Owner:** Agent  
+**Duration:** 5 minutes  
+**Status:** 📋 Not Started  
+
+**FDE Decision:**
+
+**Question:** What documentation are we deferring to post-v0.8.0?
+
+**Deferred Items:**
+1. **Interactive Tutorial:** Defer web-based tutorial to post-launch
+   - **FDE:** Markdown-based examples in `examples/` directory (already exists)
+   - **Effort Saved:** 10-15 hours
+2. **Video Walkthroughs:** Defer video content creation
+   - **FDE:** Written README.md files with code examples
+   - **Effort Saved:** 20+ hours
+3. **API Reference Generator:** Defer automated API docs (Sphinx/MkDocs)
+   - **FDE:** Inline docstrings + README.md files (already exists)
+   - **Effort Saved:** 5-7 hours
+4. **Tracker Service UI:** Defer web dashboard (already deferred in Phase 3)
+   - **FDE:** `curl` examples in README (Task 4)
+   - **Effort Saved:** Already deferred
+
+**Committed Scope (Phase 4):**
+- ✅ Agent patterns documentation (README + ARCHITECTURE)
+- ✅ Migration guide (09-PLANNER-MIGRATION.md)
+- ✅ Examples README update (learning path)
+- ✅ Tracker README enhancement (deployment + API examples)
+- ✅ All CHANGELOGs updated
+- ✅ All versions bumped to 0.8.0
+
+**Rationale:** Focus on essential developer documentation (getting started, migration, deployment). Defer interactive/media content to post-launch when usage patterns are clearer.
+
+---
+
+#### Task 5: Bump All Versions to 0.8.0 ⏳
+**Owner:** Agent  
+**Duration:** 30 minutes  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Update `sdk/python/pyproject.toml` - version = "0.8.0"
+- [ ] Update `libs/soorma-common/pyproject.toml` - version = "0.8.0"
+- [ ] Update `services/tracker/pyproject.toml` - version = "0.8.0"
+- [ ] Update `services/event-service/pyproject.toml` - version = "0.8.0"
+- [ ] Update `services/memory/pyproject.toml` - version = "0.8.0"
+- [ ] Update `services/registry/pyproject.toml` - version = "0.8.0"
+
+**Deliverables:**
+- 6 `pyproject.toml` files updated to version 0.8.0
+
+**Dependencies:** None (can run anytime, recommend after docs)
+
+---
+
+#### Task 6: Update All CHANGELOGs ⏳
+**Owner:** Agent  
+**Duration:** 2-3 hours  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Update `CHANGELOG.md` (root):
+  - Add `[0.8.0] - 2026-02-XX` section
+  - Summarize platform-level changes (ChoreographyPlanner, Tracker Service, PlanContext)
+  - Link to migration guide
+- [ ] Update `sdk/python/CHANGELOG.md`:
+  - Consolidate Phase 1-3 unreleased entries into v0.8.0
+  - Structure by phase (Foundation, Implementation, Validation)
+  - Include code examples for major features
+- [ ] Update `libs/soorma-common/CHANGELOG.md`:
+  - Add v0.8.0 section with new DTOs (decisions.py, tracker.py, events.py additions)
+- [ ] Create `services/tracker/CHANGELOG.md`:
+  - Initial release v0.8.0
+  - Document event subscription, progress tracking, query APIs
+- [ ] Update `services/memory/CHANGELOG.md`:
+  - Version bump entry (0.7.7 → 0.8.0)
+- [ ] Update `services/event-service/CHANGELOG.md`:
+  - Version bump entry (0.7.7 → 0.8.0)
+- [ ] Update `services/registry/CHANGELOG.md`:
+  - Version bump entry (0.7.7 → 0.8.0)
+
+**Deliverables:**
+- 7 updated/created CHANGELOG files
+
+**Dependencies:** Task 1-4 (reference completed documentation), Task 5 (version numbers)
+
+---
+
+#### Task 7: Validation & Testing ⏳
+**Owner:** Agent  
+**Duration:** 30 minutes  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Run SDK test suite: `cd sdk/python && pytest -v`
+  - Expected: 423+ tests passing (no regressions)
+- [ ] Run Tracker Service test suite: `cd services/tracker && pytest -v`
+  - Expected: 28+ tests passing
+- [ ] Verify all example links in README.md files are valid
+- [ ] Verify all internal documentation cross-references work
+- [ ] Check for markdown syntax errors (linting)
+- [ ] Verify version consistency across all `pyproject.toml` files (all 0.8.0)
+
+**Deliverables:**
+- Test execution report (all passing)
+- Documentation link validation report
+- Version consistency verification
+
+**Dependencies:** Task 1-6 complete (all updates applied)
+
+---
+
+#### Task 8: Final Review & Commit ⏳
+**Owner:** Agent  
+**Duration:** 1 hour  
+**Status:** 📋 Not Started  
+
+**Sub-Tasks:**
+- [ ] Review all documentation changes for:
+  - Consistent terminology (Planner, ChoreographyPlanner, PlanContext)
+  - No broken links
+  - Code examples are correct (verified against implementation)
+  - Markdown formatting is clean
+- [ ] Create consolidated commit message:
+  - Subject: `release: bump version to 0.8.0 — ChoreographyPlanner + Tracker Service`
+  - Body: Bullet list of major changes (max 15 lines total)
+    - ChoreographyPlanner for autonomous orchestration
+    - Tracker Service for observability
+    - PlanContext state machine for re-entrant plans
+    - Updated documentation and migration guide
+- [ ] Commit all changes
+- [ ] Tag release: `git tag v0.8.0`
+- [ ] Push to main branch (after developer approval)
+
+**Deliverables:**
+- Committed changes on dev branch
+- v0.8.0 tag ready for release
+- Release notes ready
+
+**Dependencies:** Task 1-7 complete, developer approval
+
+---
+
+## 4. TDD Strategy
+
+**Not Applicable:** Phase 4 is documentation-only. No code changes = no TDD cycle required.
+
+**Quality Assurance Instead:**
+- **Documentation Testing:**
+  - Verify all code examples compile/run
+  - Verify all links resolve correctly
+  - Verify markdown syntax is valid
+- **Regression Testing:**
+  - Run full SDK test suite (423+ tests)
+  - Run Tracker Service test suite (28 tests)
+  - Ensure no test failures introduced by version bumps
+
+**Validation Approach:**
+1. After each documentation update (Task 1-4), validate:
+   - Code examples match actual implementation
+   - Links point to correct files/sections
+   - Terminology is consistent
+2. After version bumps (Task 5), validate:
+   - All tests still pass
+   - No import errors from version mismatches
+3. After CHANGELOG updates (Task 6), validate:
+   - All referenced features exist in code
+   - Version numbers are consistent
+
+---
+
+## 5. Forward Deployed Logic Decision
+
+### What Are We Building "Properly"?
+
+**Committed to Full Implementation:**
+1. ✅ **Agent Patterns Documentation** - Essential for developer onboarding
+2. ✅ **Migration Guide** - Critical for v0.7.7 → v0.8.0 upgrades
+3. ✅ **Tracker README Enhancement** - Deployment instructions needed for production use
+4. ✅ **Version Bumps** - Standard release process (no shortcuts)
+5. ✅ **CHANGELOG Updates** - Required for open source project transparency
+
+**Rationale:** All items are standard release hygiene for an open-source framework. No "platform bloat" risk here—these are essential artifacts.
+
+### What Are We Deferring? (FDE Alternatives)
+
+**Deferred to Post-v0.8.0:**
+
+| Full Implementation | FDE Alternative (Chosen) | Effort Saved | Decision Rationale |
+|---------------------|--------------------------|--------------|---------------------|
+| Interactive web tutorial | Markdown examples in `examples/` | 10-15 hrs | Examples already demonstrate patterns end-to-end |
+| Video walkthroughs | Written README files | 20+ hrs | Text docs are easier to maintain and search |
+| Automated API docs (Sphinx) | Inline docstrings + README | 5-7 hrs | Docstrings exist, README provides high-level guidance |
+| Tracker Service UI dashboard | `curl` examples in README | Already deferred | Phase 3 decision—developers use API directly for now |
+
+**Total Effort Saved:** 35-42 hours
+
+**Why This Works:**
+- **Developers can ship without video tutorials** - Markdown examples are sufficient
+- **Docstrings + README cover API reference needs** - Automated docs are polish, not MVP
+- **Tracker API is queryable via curl/Postman** - UI is convenience, not blocker
+- **Text-first documentation is searchable and maintainable** - Videos go stale quickly
+
+### FDE Success Criteria
+
+- [ ] Developers can understand Planner patterns from README.md alone (no video needed)
+- [ ] Migration guide enables v0.7.7 → v0.8.0 upgrade without support tickets
+- [ ] Tracker README enables Docker deployment without additional documentation
+- [ ] Code examples in docs match actual implementation (copy-paste works)
+
+---
+
+## 6. Risk Assessment
+
+### Documentation Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| **Code examples outdated** | Medium | High | Validate examples against actual implementation (Task 7) |
+| **Broken internal links** | Medium | Low | Run link validation (Task 7) |
+| **Inconsistent terminology** | Low | Medium | Use glossary: "Planner" (base), "ChoreographyPlanner" (autonomous) |
+| **Migration guide incomplete** | Low | High | Cross-reference all Phase 1-3 features in changelog |
+
+### Release Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| **Version mismatch after bump** | Low | High | Task 5 updates all 6 files in one batch, validate in Task 7 |
+| **Tests fail after version bump** | Very Low | High | Task 7 runs full test suite before commit |
+| **Incomplete CHANGELOG** | Medium | Medium | Task 6 references all Phase 1-3 commits |
+
+### Mitigation Plan
+
+1. **Code Example Validation:** Copy examples from docs into throwaway script, verify they run
+2. **Link Validation:** Use markdown linter or manual check (Task 7)
+3. **Version Consistency:** Automated grep check: `grep -r "version = \"0.8.0\"" */pyproject.toml | wc -l` should return 6
+4. **Test Suite:** Block commit on test failures (Task 8 depends on Task 7)
+
+---
+
+## 7. Success Metrics
+
+### Quantitative Metrics
+
+- [ ] **Documentation Coverage:** All 4 doc areas updated (agent_patterns, refactoring, examples, tracker)
+- [ ] **Version Consistency:** 6/6 `pyproject.toml` files at version 0.8.0
+- [ ] **CHANGELOG Completeness:** 7/7 CHANGELOG files updated (root + sdk + common + 4 services)
+- [ ] **Test Pass Rate:** 100% (451+ tests passing, zero regressions)
+- [ ] **Link Integrity:** Zero broken links in documentation
+
+### Qualitative Metrics
+
+- [ ] **Developer Experience:** A developer can read README.md and understand when to use ChoreographyPlanner vs base Planner
+- [ ] **Migration Clarity:** A developer can follow 09-PLANNER-MIGRATION.md and upgrade from v0.7.7 → v0.8.0 without additional help
+- [ ] **Deployment Readiness:** A developer can deploy Tracker Service to Docker using only services/tracker/README.md
+- [ ] **Code Example Quality:** All code examples in docs are copy-paste ready (no syntax errors, no missing imports)
+
+### Release Readiness Checklist
+
+Before marking Phase 4 complete, ALL items must be checked:
+
+- [ ] All documentation updates committed (Task 1-4)
+- [ ] All versions bumped to 0.8.0 (Task 5)
+- [ ] All CHANGELOGs updated (Task 6)
+- [ ] All 451+ tests passing (Task 7)
+- [ ] No broken links in documentation (Task 7)
+- [ ] Migration guide exists and is comprehensive (Task 2)
+- [ ] Tracker README has deployment guide (Task 4)
+- [ ] Commit message follows Conventional Commits (Task 8)
+- [ ] Tag v0.8.0 created (Task 8)
+- [ ] Developer approval received (Task 8)
+
+---
+
+## 8. Implementation Checklist
+
+### Pre-Implementation
+- [x] ✅ Read AGENT.md Section 2 (Workflow Rituals)
+- [x] ✅ Read Action Plan Template
+- [x] ✅ Review Master Plan Phase 4 requirements
+- [x] ✅ Verify Phase 3 complete (451 tests passing)
+- [ ] **THIS DOCUMENT:** Commit Action Plan for developer review
+- [ ] Developer approval to proceed
+
+### Task 1: Agent Patterns Documentation (2-3 hours)
+- [ ] Read current `docs/agent_patterns/README.md` (understand structure)
+- [ ] Read current `docs/agent_patterns/ARCHITECTURE.md` (understand sections)
+- [ ] Review `examples/09-planner-basic/` for code examples
+- [ ] Review `examples/10-choreography-basic/` for code examples
+- [ ] Add Section 4 to README.md (Planner Pattern)
+- [ ] Add Section 5 to README.md (ChoreographyPlanner Pattern)
+- [ ] Update Pattern Comparison Table in README.md
+- [ ] Add Section 6 to ARCHITECTURE.md (Planner technical design)
+- [ ] Add Section 7 to ARCHITECTURE.md (ChoreographyPlanner architecture)
+- [ ] Verify all links resolve correctly
+- [ ] Commit: `docs(agent_patterns): add Planner and ChoreographyPlanner patterns`
+
+### Task 2: Refactoring Documentation (2-3 hours)
+- [ ] Update `docs/refactoring/README.md` Stage 4 status to ✅ Complete
+- [ ] Add completion date to refactoring/README.md
+- [ ] Create `docs/refactoring/sdk/09-PLANNER-MIGRATION.md` (new file)
+- [ ] Write migration guide introduction
+- [ ] Document breaking changes (none)
+- [ ] Document new features (PlanContext, ChoreographyPlanner, Tracker)
+- [ ] Add before/after code examples (400 lines → 50 lines)
+- [ ] Add PlanContext usage patterns
+- [ ] Add ChoreographyPlanner usage patterns
+- [ ] Add Tracker integration examples
+- [ ] Cross-reference to examples (09, 10)
+- [ ] Commit: `docs(refactoring): mark Stage 4 complete, add migration guide`
+
+### Task 3: Examples Documentation (30 min)
+- [ ] Update `examples/README.md`
+- [ ] Add 10-choreography-basic entry to Learning Path table
+- [ ] Update Advanced Patterns section with choreography link
+- [ ] Verify all example links are valid
+- [ ] Commit: `docs(examples): add 10-choreography-basic to learning path`
+
+### Task 4: Tracker Service Documentation (1-2 hours)
+- [ ] Read current `services/tracker/README.md`
+- [ ] Add Deployment Guide section (Docker, env vars, migrations)
+- [ ] Enhance API Examples section (curl, JSON responses, errors)
+- [ ] Enhance Multi-Tenancy section (headers, RLS)
+- [ ] Add Integration Patterns section (TrackerClient usage)
+- [ ] Verify code examples match implementation
+- [ ] Commit: `docs(tracker): add deployment guide and integration examples`
+
+### Task 48H: FDE Decision (5 min)
+- [ ] Review deferred items list (Task 48H section above)
+- [ ] Confirm FDE decisions:
+  - ✅ No interactive tutorial (use Markdown examples)
+  - ✅ No video walkthroughs (use written README)
+  - ✅ No automated API docs (use docstrings + README)
+  - ✅ No Tracker UI (use curl examples)
+- [ ] Developer approval for FDE scope (if needed)
+
+### Task 5: Version Bumps (30 min)
+- [ ] Update `sdk/python/pyproject.toml` → 0.8.0
+- [ ] Update `libs/soorma-common/pyproject.toml` → 0.8.0
+- [ ] Update `services/tracker/pyproject.toml` → 0.8.0
+- [ ] Update `services/event-service/pyproject.toml` → 0.8.0
+- [ ] Update `services/memory/pyproject.toml` → 0.8.0
+- [ ] Update `services/registry/pyproject.toml` → 0.8.0
+- [ ] Verify consistency: `grep -r "version = \"0.8.0\"" */pyproject.toml | wc -l` == 6
+- [ ] Commit: `chore: bump all versions to 0.8.0`
+
+### Task 6: CHANGELOG Updates (2-3 hours)
+- [ ] Update `CHANGELOG.md` (root) - add v0.8.0 section
+- [ ] Update `sdk/python/CHANGELOG.md` - consolidate Phase 1-3
+- [ ] Update `libs/soorma-common/CHANGELOG.md` - add v0.8.0 DTOs
+- [ ] Create `services/tracker/CHANGELOG.md` - initial release
+- [ ] Update `services/memory/CHANGELOG.md` - version bump entry
+- [ ] Update `services/event-service/CHANGELOG.md` - version bump entry
+- [ ] Update `services/registry/CHANGELOG.md` - version bump entry
+- [ ] Verify all version numbers reference 0.8.0
+- [ ] Commit: `docs(changelog): update all changelogs for v0.8.0 release`
+
+### Task 7: Validation & Testing (30 min)
+- [ ] Run SDK tests: `cd sdk/python && source .venv/bin/activate && pytest -v`
+- [ ] Verify 423+ tests passing
+- [ ] Run Tracker tests: `cd services/tracker && source .venv/bin/activate && pytest -v`
+- [ ] Verify 28+ tests passing
+- [ ] Check documentation links (manual or automated)
+- [ ] Verify version consistency (all 0.8.0)
+- [ ] Document test results
+
+### Task 8: Final Review & Commit (1 hour)
+- [ ] Review all documentation for consistency
+- [ ] Verify code examples are correct
+- [ ] Verify no broken links
+- [ ] Create consolidated commit message (≤15 lines):
+  - Subject: `release: bump version to 0.8.0 — ChoreographyPlanner + Tracker Service`
+  - Body: Bullet list of major changes
+- [ ] Commit all changes
+- [ ] Create git tag: `git tag v0.8.0`
+- [ ] Push to dev branch (await developer approval)
+- [ ] Developer review and merge to main
+
+---
+
+## 9. Timeline & Milestones
+
+### Day 11 (February XX, 2026) - Documentation Updates
+
+**Morning (4 hours):**
+- Task 1: Agent Patterns Documentation (2-3 hours)
+- Task 3: Examples Documentation (30 min)
+- Task 48H: FDE Decision (5 min)
+
+**Afternoon (4 hours):**
+- Task 2: Refactoring Documentation (2-3 hours)
+- Task 4: Tracker Service Documentation (1-2 hours)
+
+**End of Day Milestone:** All documentation updated and committed
+
+---
+
+### Day 12 (February XX, 2026) - Version Bumps & Release
+
+**Morning (3 hours):**
+- Task 5: Version Bumps (30 min)
+- Task 6: CHANGELOG Updates (2-3 hours)
+
+**Afternoon (2 hours):**
+- Task 7: Validation & Testing (30 min)
+- Task 8: Final Review & Commit (1 hour)
+- Developer review and approval (30 min buffer)
+
+**End of Day Milestone:** v0.8.0 tagged and ready for release
+
+---
+
+## 10. Dependencies & Blockers
+
+### Upstream Dependencies (Complete)
+
+- ✅ **Phase 1:** PlanContext state machine (Foundation)
+- ✅ **Phase 2:** ChoreographyPlanner + PlannerDecision (Implementation)
+- ✅ **Phase 3:** Tracker Service + 10-choreography-basic example (Validation)
+
+**Status:** No blockers. All implementation work complete.
+
+### Downstream Impact (Enables)
+
+- **Stage 5 (Discovery):** EventSelector utility (RF-SDK-017, 018) — deferred
+- **Stage 6+ (Advanced Features):** Conditional transitions, prompt templates — deferred
+- **Post-Launch:** Tracker Service UI — deferred
+
+**Status:** Phase 4 unblocks v0.8.0 release, which is prerequisite for:
+- Production deployments (developers can now use ChoreographyPlanner)
+- Stage 5 planning (discovery enhancements build on Planner)
+- Community feedback (migration guide enables upgrades)
+
+### External Dependencies
+
+- **Developer Approval:** Required for Task 8 (final commit and tag)
+- **Test Infrastructure:** CI/CD pipeline must be running (Task 7)
+
+**Mitigation:** Schedule developer review window for Day 12 afternoon.
+
+---
+
+## 11. Related Documents
+
+### Master Plan
+- [MASTER_PLAN_Stage4_Planner.md](MASTER_PLAN_Stage4_Planner.md) - Parent plan with full context
+
+### Implementation Plans (Completed)
+- [ACTION_PLAN_Phase1_Foundation.md] (if exists) - PlanContext implementation
+- [ACTION_PLAN_Phase2_ChoreographyPlanner.md] (if exists) - Autonomous planning
+- [ACTION_PLAN_Phase3_Validation.md] (if exists) - Tracker + examples
+
+### Architecture Documentation (Will Update)
+- [docs/agent_patterns/README.md](../../README.md) - Pattern catalog (Task 1)
+- [docs/agent_patterns/ARCHITECTURE.md](../../ARCHITECTURE.md) - Technical design (Task 1)
+
+### Refactoring Documentation (Will Update)
+- [docs/refactoring/README.md](../../../refactoring/README.md) - Refactoring index (Task 2)
+- [docs/refactoring/sdk/06-PLANNER-MODEL.md](../../../refactoring/sdk/06-PLANNER-MODEL.md) - Original design (reference)
+
+### Standards & Templates
+- [AGENT.md](../../../../AGENT.md) - Developer constitution
+- [docs/CONTRIBUTING_REFERENCE.md](../../../CONTRIBUTING_REFERENCE.md) - Technical reference
+- [docs/templates/Action_Plan_Template.md](../../../templates/Action_Plan_Template.md) - This template
+
+---
+
+## 12. Open Questions & Decisions
+
+### Q1: Should we include mermaid diagrams in documentation updates?
+**Answer:** ✅ Yes, where they add clarity
+- Add state machine diagram in ARCHITECTURE.md (Section 6)
+- Add ChoreographyPlanner flow diagram in ARCHITECTURE.md (Section 7)
+- Reuse diagrams from Master Plan where applicable
+
+### Q2: Should migration guide include rollback instructions?
+**Answer:** 🟡 Optional (low priority)
+- Since v0.8.0 is additive (no breaking changes), rollback is simple: use v0.7.7
+- Add note: "v0.8.0 is backward compatible—no rollback needed for existing code"
+
+### Q3: Should we document roadmap (Stage 5+) in v0.8.0 release notes?
+**Answer:** ✅ Yes, briefly
+- Add "What's Next" section to root CHANGELOG
+- Mention: EventSelector utility (Stage 5), conditional transitions (Stage 6), Tracker UI (post-launch)
+- Link to DEFERRED_WORK.md for full roadmap
+
+### Q4: Should version bump be a separate commit or bundled with CHANGELOG?
+**Answer:** ✅ Separate commits (cleaner history)
+- Commit 1: `chore: bump all versions to 0.8.0`
+- Commit 2: `docs(changelog): update all changelogs for v0.8.0 release`
+- Commit 3: `release: bump version to 0.8.0 — ChoreographyPlanner + Tracker Service` (final tag commit)
+
+---
+
+**Status:** 📋 Planning — Ready for Developer Review  
+**Next Step:** Developer approves Action Plan → Begin Task 1 (Agent Patterns Documentation)
