@@ -5,6 +5,7 @@ Simulates loading customer feedback from a datastore.
 """
 
 import asyncio
+import logging
 from typing import Dict, List
 
 from soorma import Worker
@@ -53,10 +54,14 @@ async def handle_fetch(task: TaskContext, context: PlatformContext) -> None:
     product = task.data.get("product", "the product")
     sample_size = int(task.data.get("sample_size", 3))
 
+    print(f"\n[fetcher] ▶ Received: data.fetch.requested")
+    print(f"[fetcher] Task ID: {task.task_id}")
     print(f"[fetcher] Loading feedback for {product} (n={sample_size})")
     await asyncio.sleep(0.3)
 
     feedback = _sample_feedback(product)[:sample_size]
+    print(f"[fetcher] Fetched {len(feedback)} feedback entries")
+    print(f"[fetcher] ✓ Completing with data.fetched response")
     await task.complete(
         {
             "product": product,
@@ -70,7 +75,9 @@ async def handle_fetch(task: TaskContext, context: PlatformContext) -> None:
 @worker.on_startup
 async def startup() -> None:
     """Worker startup hook."""
-    print("[fetcher] feedback-fetcher started")
+    print("\n[fetcher] feedback-fetcher started")
+    print("[fetcher] Listening for: data.fetch.requested")
+    print("[fetcher] Produces: data.fetched")
 
 
 @worker.on_shutdown
@@ -80,4 +87,8 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:%(name)s:%(message)s",
+    )
     worker.run()

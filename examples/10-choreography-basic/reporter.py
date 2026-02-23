@@ -4,6 +4,7 @@ Feedback Reporter Worker.
 Generates a concise report from analysis results.
 """
 
+import logging
 from typing import Dict
 
 from soorma import Worker
@@ -62,9 +63,14 @@ async def handle_report(task: TaskContext, context: PlatformContext) -> None:
     _ = context
     product = task.data.get("product", "the product")
     summary = task.data.get("summary", {})
+    
+    print(f"\n[reporter] ▶ Received: report.requested")
+    print(f"[reporter] Task ID: {task.task_id}")
     print(f"[reporter] Building report for {product}")
 
     report = _format_report(product, summary)
+    print(f"[reporter] Report generated ({len(report)} chars)")
+    print(f"[reporter] ✓ Completing with report.ready response")
     await task.complete(
         {
             "product": product,
@@ -77,7 +83,9 @@ async def handle_report(task: TaskContext, context: PlatformContext) -> None:
 @worker.on_startup
 async def startup() -> None:
     """Worker startup hook."""
-    print("[reporter] feedback-reporter started")
+    print("\n[reporter] feedback-reporter started")
+    print("[reporter] Listening for: report.requested")
+    print("[reporter] Produces: report.ready")
 
 
 @worker.on_shutdown
@@ -87,85 +95,8 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
-    """
-    Feedback Reporter Worker.
-
-    Generates a concise report from analysis results.
-    """
-
-    from typing import Dict, List
-
-    from soorma import Worker
-    from soorma.context import PlatformContext
-    from soorma.task_context import TaskContext
-
-
-    worker = Worker(
-        name="feedback-reporter",
-        description="Summarizes analyzed feedback",
-        capabilities=["feedback_reporting"],
-        events_consumed=["report.requested"],
-        events_produced=["report.ready"],
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:%(name)s:%(message)s",
     )
-
-
-    def _build_report(product: str, summary: Dict[str, object], highlights: List[str]) -> Dict[str, object]:
-        """Create a concise report payload.
-
-        Args:
-            product: Product name.
-            summary: Sentiment summary data.
-            highlights: Highlight comments.
-
-        Returns:
-            Report payload dict.
-        """
-        return {
-            "product": product,
-            "sentiment": {
-                "positive": summary.get("positive", 0),
-                "negative": summary.get("negative", 0),
-                "neutral": summary.get("neutral", 0),
-                "average_rating": summary.get("average_rating", 0.0),
-            },
-            "highlights": highlights,
-            "summary": (
-                f"Feedback on {product}: avg rating "
-                f"{summary.get('average_rating', 0.0)} with "
-                f"{summary.get('positive', 0)} positive notes."
-            ),
-        }
-
-
-    @worker.on_task("report.requested")
-    async def handle_report(task: TaskContext, context: PlatformContext) -> None:
-        """Generate report from analysis results.
-
-        Args:
-            task: TaskContext containing analysis summary.
-            context: PlatformContext for service access (unused).
-        """
-        _ = context
-        product = task.data.get("product", "the product")
-        analysis = task.data.get("summary", {})
-        highlights = analysis.get("highlights", [])
-
-        print(f"[reporter] Building report for {product}")
-        report = _build_report(product, analysis, list(highlights))
-        await task.complete({"report": report})
-
-
-    @worker.on_startup
-    async def startup() -> None:
-        """Worker startup hook."""
-        print("[reporter] feedback-reporter started")
-
-
-    @worker.on_shutdown
-    async def shutdown() -> None:
-        """Worker shutdown hook."""
-        print("[reporter] feedback-reporter shutting down")
-
-
-    if __name__ == "__main__":
-        worker.run()
+    worker.run()

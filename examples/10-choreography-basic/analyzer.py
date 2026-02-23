@@ -4,6 +4,7 @@ Feedback Analyzer Worker.
 Simulates sentiment analysis for feedback items.
 """
 
+import logging
 from typing import Dict, List
 
 from soorma import Worker
@@ -70,9 +71,14 @@ async def handle_analysis(task: TaskContext, context: PlatformContext) -> None:
     _ = context
     product = task.data.get("product", "the product")
     entries = task.data.get("entries", [])
+    
+    print(f"\n[analyzer] ▶ Received: analysis.requested")
+    print(f"[analyzer] Task ID: {task.task_id}")
     print(f"[analyzer] Analyzing {len(entries)} entries for {product}")
 
     summary = _summarize(entries)
+    print(f"[analyzer] Summary: {summary['positive']} positive, {summary['negative']} negative, avg={summary['average_rating']}")
+    print(f"[analyzer] ✓ Completing with analysis.completed response")
     await task.complete(
         {
             "product": product,
@@ -85,7 +91,9 @@ async def handle_analysis(task: TaskContext, context: PlatformContext) -> None:
 @worker.on_startup
 async def startup() -> None:
     """Worker startup hook."""
-    print("[analyzer] feedback-analyzer started")
+    print("\n[analyzer] feedback-analyzer started")
+    print("[analyzer] Listening for: analysis.requested")
+    print("[analyzer] Produces: analysis.completed")
 
 
 @worker.on_shutdown
@@ -95,4 +103,8 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:%(name)s:%(message)s",
+    )
     worker.run()
