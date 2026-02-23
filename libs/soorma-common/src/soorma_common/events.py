@@ -109,6 +109,14 @@ class EventEnvelope(BaseDTO):
         default=None,
         description="Session ID for conversation/workflow correlation"
     )
+    goal_id: Optional[str] = Field(
+        default=None,
+        description="Goal ID for coordinated multi-step workflows"
+    )
+    plan_id: Optional[str] = Field(
+        default=None,
+        description="Plan ID for plan execution tracking and observability"
+    )
     
     # Response routing (DisCo pattern)
     response_event: Optional[str] = Field(

@@ -13,6 +13,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from soorma_common.events import EventEnvelope, EventTopic
+from soorma.events import EventClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -22,76 +23,70 @@ from tracker_service.models.db import ActionProgress, PlanProgress, ActionStatus
 
 logger = logging.getLogger(__name__)
 
-# Global subscription manager
-_subscription_ids: list[str] = []
-_bus_client: Optional[Any] = None
+# Global EventClient used for SSE subscription
+_event_client: Optional[Any] = None
 
 
-async def start_event_subscribers(bus_client: Any) -> None:
+async def start_event_subscribers(event_service_url: str) -> None:
     """
-    Start subscribing to events from the event bus.
-    
-    Called during application startup to begin listening for events.
-    
+    Start subscribing to events from the event bus via SSE.
+
+    Creates an EventClient, registers a catch-all dispatcher that routes
+    events to the appropriate handler by topic, then connects.
+
     Args:
-        bus_client: Event bus client instance (BusClient from SDK)
+        event_service_url: Base URL of the Event Service (e.g. "http://event-service:8082")
     """
-    global _bus_client, _subscription_ids
-    _bus_client = bus_client
-    
-    try:
-        # Subscribe to action-requests topic (all action start events)
-        action_req_sub = await bus_client.subscribe(
-            topics=[EventTopic.ACTION_REQUESTS],
-            handler=_create_db_handler(handle_action_request),
-        )
-        _subscription_ids.append(action_req_sub)
-        logger.info(f"Subscribed to {EventTopic.ACTION_REQUESTS}")
-        
-        # Subscribe to action-results topic (all action completion events)
-        action_res_sub = await bus_client.subscribe(
-            topics=[EventTopic.ACTION_RESULTS],
-            handler=_create_db_handler(handle_action_result),
-        )
-        _subscription_ids.append(action_res_sub)
-        logger.info(f"Subscribed to {EventTopic.ACTION_RESULTS}")
-        
-        # Subscribe to system-events topic (plan lifecycle events)
-        system_events_sub = await bus_client.subscribe(
-            topics=[EventTopic.SYSTEM_EVENTS],
-            handler=_create_db_handler(handle_plan_event),
-        )
-        _subscription_ids.append(system_events_sub)
-        logger.info(f"Subscribed to {EventTopic.SYSTEM_EVENTS}")
-        
-        logger.info(f"Tracker Service: All event subscribers started ({len(_subscription_ids)} subscriptions)")
-    except Exception as e:
-        logger.error(f"Failed to start event subscribers: {e}")
-        raise
+    global _event_client
+
+    _event_client = EventClient(
+        event_service_url=event_service_url,
+        agent_id="tracker-service",
+        source="tracker-service",
+    )
+
+    @_event_client.on_all_events
+    async def _dispatch(event: EventEnvelope) -> None:
+        """Route every inbound event to the correct handler by topic."""
+        topic_value = event.topic.value if isinstance(event.topic, EventTopic) else str(event.topic)
+
+        if topic_value == EventTopic.ACTION_REQUESTS.value:
+            handler = handle_action_request
+        elif topic_value == EventTopic.ACTION_RESULTS.value:
+            handler = handle_action_result
+        elif topic_value == EventTopic.SYSTEM_EVENTS.value:
+            handler = handle_plan_event
+        else:
+            logger.debug(f"Tracker: ignoring event on untracked topic '{topic_value}'")
+            return
+
+        await _create_db_handler(handler)(event)
+
+    await _event_client.connect([
+        EventTopic.ACTION_REQUESTS,
+        EventTopic.ACTION_RESULTS,
+        EventTopic.SYSTEM_EVENTS,
+    ])
+
+    logger.info(
+        f"Tracker Service: subscribed to "
+        f"{EventTopic.ACTION_REQUESTS.value}, "
+        f"{EventTopic.ACTION_RESULTS.value}, "
+        f"{EventTopic.SYSTEM_EVENTS.value} "
+        f"via {event_service_url}"
+    )
 
 
 async def stop_event_subscribers() -> None:
-    """
-   Stop all event subscriptions.
-    
-    Called during application shutdown to cleanly unsubscribe.
-    """
-    global _bus_client, _subscription_ids
-    
-    if not _bus_client:
-        logger.warning("No bus client to unsubscribe from")
-        return
-    
-    for sub_id in _subscription_ids:
-        try:
-            await _bus_client.unsubscribe(sub_id)
-            logger.info(f"Unsubscribed from {sub_id}")
-        except Exception as e:
-            logger.error(f"Failed to unsubscribe from {sub_id}: {e}")
-    
-    _subscription_ids.clear()
-    _bus_client = None
-    logger.info("Tracker Service: All event subscribers stopped")
+    """Stop all event subscriptions and disconnect from the event bus."""
+    global _event_client
+
+    if _event_client:
+        await _event_client.disconnect()
+        _event_client = None
+        logger.info("Tracker Service: event subscribers stopped")
+    else:
+        logger.debug("Tracker Service: no active event client to stop")
 
 
 def _create_db_handler(handler_func):
@@ -146,15 +141,42 @@ async def handle_action_request(
     tenant_id, user_id = _extract_tenant_user(event)
     data = event.data or {}
     
-    # Extract action metadata
+    # Extract action metadata from envelope and data
     action_id = data.get("action_id") or event.correlation_id or event.id
-    plan_id = data.get("plan_id")
+    plan_id = event.plan_id  # Read from envelope metadata (not data payload)
     action_name = data.get("action_name") or event.type
     action_type = event.type
     assigned_to = data.get("assigned_to")
     
     logger.debug(f"Tracking action request: {action_id} (plan: {plan_id})")
-    
+
+    # Tracker requires a plan_id to record progress — standalone/unplanned
+    # events (e.g. from direct worker publishers not under a planner) have no
+    # plan_id, so there is nothing to track. Skip silently.
+    if not plan_id:
+        logger.debug(
+            f"Tracker: skipping action_progress insert for {action_id} — "
+            "no plan_id in event envelope (unplanned task)"
+        )
+        return
+
+    # Auto-upsert plan_progress so action_progress FK is satisfied even when
+    # no explicit plan.started system event was published (choreography pattern).
+    if plan_id:
+        plan_stmt = pg_insert(PlanProgress).values(
+            plan_id=plan_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            status=PlanStatus.IN_PROGRESS,
+            total_actions=0,
+            started_at=event.time or datetime.now(timezone.utc),
+        )
+        plan_stmt = plan_stmt.on_conflict_do_update(
+            index_elements=["plan_id"],  # unique constraint uq_plan_id
+            set_={"updated_at": datetime.now(timezone.utc)},
+        )
+        await db_session.execute(plan_stmt)
+
     # Insert action_progress record
     stmt = pg_insert(ActionProgress).values(
         action_id=action_id,
@@ -206,9 +228,9 @@ async def handle_action_result(
     tenant_id, user_id = _extract_tenant_user(event)
     data = event.data or {}
     
-    # Extract action metadata
+    # Extract action metadata from envelope and data
     action_id = data.get("action_id") or event.correlation_id or event.id
-    plan_id = data.get("plan_id")
+    plan_id = event.plan_id  # Read from envelope metadata (not data payload)
     result_data = data.get("result")
     error = data.get("error")
     
@@ -232,10 +254,13 @@ async def handle_action_result(
         )
     )
     
-    await db_session.execute(stmt)
+    result_proxy = await db_session.execute(stmt)
+    rows_updated = result_proxy.rowcount
     
-    # If plan_id exists, increment completed/failed count
-    if plan_id:
+    # Only increment plan counters when we actually updated a known action row.
+    # Unmatched events (e.g. the final client response on ACTION_RESULTS) have
+    # no action_progress row, so rowcount == 0 and the counter must stay clean.
+    if plan_id and rows_updated > 0:
         if is_failed:
             await _increment_plan_failed_count(db_session, plan_id, tenant_id, user_id)
         else:
@@ -293,7 +318,7 @@ async def handle_plan_event(
         
         # On conflict, update to latest state
         stmt = stmt.on_conflict_do_update(
-            index_elements=["tenant_id", "plan_id"],
+            index_elements=["plan_id"],  # unique constraint uq_plan_id
             set_={
                 "status": PlanStatus.IN_PROGRESS,
                 "started_at": event.time or datetime.now(timezone.utc),

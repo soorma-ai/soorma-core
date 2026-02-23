@@ -296,7 +296,7 @@ class TaskContext:
         return cls(
             task_id=data.get("task_id", str(uuid4())),
             event_type=event.type,
-            plan_id=data.get("plan_id"),
+            plan_id=event.plan_id,  # Read from envelope metadata
             data=data,
             response_event=event.response_event or data.get("response_event"),
             response_topic=event.response_topic or data.get("response_topic", "action-results"),
@@ -306,7 +306,7 @@ class TaskContext:
             task_name=data.get("task_name"),
             correlation_id=event.correlation_id,
             session_id=event.session_id,
-            goal_id=data.get("goal_id"),
+            goal_id=event.goal_id,  # Read from envelope metadata
             timeout=data.get("timeout"),
             priority=data.get("priority", 0),
             _context=context,
@@ -718,10 +718,12 @@ class TaskContext:
             f"TaskContext.complete() publishing {self.response_event} "
             f"with correlation_id={final_correlation_id}"
         )
+        
         await self._context.bus.respond(
             event_type=self.response_event,
             data={
                 "task_id": self.task_id,
+                "action_id": self.data.get("action_id"),  # Echo back so tracker can correlate result→request
                 "status": "completed",
                 "result": result,
             },
@@ -729,6 +731,7 @@ class TaskContext:
             topic=self.response_topic,
             tenant_id=self.tenant_id,
             user_id=self.user_id,
+            plan_id=self.plan_id,  # Pass plan_id in envelope metadata
         )
         # Clean up persisted state
         await self._context.memory.delete_task_context(

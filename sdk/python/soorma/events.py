@@ -260,6 +260,8 @@ class EventClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Publish an event to the Event Service.
@@ -278,6 +280,8 @@ class EventClient:
             tenant_id: Tenant ID for multi-tenancy (overrides client default)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation (overrides client default)
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
         
         Returns:
             The event ID
@@ -324,6 +328,10 @@ class EventClient:
             event["user_id"] = user_id
         if session_id or self.session_id:
             event["session_id"] = session_id or self.session_id
+        if goal_id:
+            event["goal_id"] = goal_id
+        if plan_id:
+            event["plan_id"] = plan_id
         
         url = f"{self.event_service_url}/v1/events/publish"
         

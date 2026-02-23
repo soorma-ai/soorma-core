@@ -32,7 +32,8 @@ class FakeEventClient:
         self.tenant_id = tenant_id
         self.session_id = session_id
         self._handlers: Dict[str, List[Callable[[EventEnvelope], Awaitable[None]]]] = {}
-        self._catch_all_handlers: List[Callable[[EventEnvelope], Awaitable[None]]] = []
+        # Each entry is (handler, topic_filter) — topic_filter=None means all topics
+        self._catch_all_handlers: List[tuple] = []
 
     def on_event(
         self,
@@ -43,7 +44,11 @@ class FakeEventClient:
         """Register a handler for a specific event type."""
 
         def decorator(func: Callable[[EventEnvelope], Awaitable[None]]) -> Callable[[EventEnvelope], Awaitable[None]]:
-            self._handlers.setdefault(event_type, []).append(func)
+            if event_type == "*":
+                # Wildcard: store with topic so dispatch can filter
+                self._catch_all_handlers.append((func, topic))
+            else:
+                self._handlers.setdefault(event_type, []).append(func)
             return func
 
         return decorator
@@ -52,16 +57,18 @@ class FakeEventClient:
         self,
         func: Callable[[EventEnvelope], Awaitable[None]],
     ) -> Callable[[EventEnvelope], Awaitable[None]]:
-        """Register a catch-all handler."""
-        self._catch_all_handlers.append(func)
+        """Register a catch-all handler (no topic filter)."""
+        self._catch_all_handlers.append((func, None))
         return func
 
     async def dispatch(self, event: EventEnvelope) -> None:
-        """Dispatch an event to registered handlers."""
+        """Dispatch an event to registered handlers, respecting topic filters."""
         for handler in self._handlers.get(event.type, []):
             await handler(event)
-        for handler in self._catch_all_handlers:
-            await handler(event)
+        for handler, topic in self._catch_all_handlers:
+            # Only fire if no topic restriction, or topics match
+            if topic is None or event.topic == topic:
+                await handler(event)
 
 
 def _make_event(event_type: str, topic: EventTopic) -> EventEnvelope:
@@ -86,6 +93,7 @@ async def test_on_transition_wildcard_respects_topic(monkeypatch: pytest.MonkeyP
     async def mock_restore(*args: Any, **kwargs: Any) -> Any:
         plan = MagicMock()
         plan.get_next_state.return_value = "complete"
+        plan.is_complete.return_value = False
         return plan
 
     monkeypatch.setattr(planner_module.PlanContext, "restore_by_correlation", mock_restore)
@@ -120,6 +128,7 @@ async def test_on_transition_filters_by_transition_event(
     monkeypatch.setattr(base_module, "EventClient", FakeEventClient)
 
     plan = MagicMock()
+    plan.is_complete.return_value = False
 
     def next_state_for_event(event: EventEnvelope) -> Optional[str]:
         if event.type == "research.complete":

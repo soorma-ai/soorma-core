@@ -84,7 +84,9 @@ class TestChoreographyPlannerIntegration:
         context = MagicMock()
         context.memory.create_plan = AsyncMock(return_value=MagicMock(plan_id="plan-456"))
         context.memory.store_plan_context = AsyncMock()
-        context.toolkit.discover_actionable_events = AsyncMock(return_value=[])
+        context.toolkit.discover_actionable_events = AsyncMock(
+            return_value=[MagicMock(event_name="complete.action", description="Complete")]
+        )
         context.bus.respond = AsyncMock()
         
         # Mock goal
@@ -154,7 +156,9 @@ class TestChoreographyPlannerIntegration:
         
         # Mock context
         context = MagicMock()
-        context.toolkit.discover_actionable_events = AsyncMock(return_value=[])
+        context.toolkit.discover_actionable_events = AsyncMock(
+            return_value=[MagicMock(event_name="complete.action", description="Complete")]
+        )
         context.bus.publish = AsyncMock()
         
         # Mock plan

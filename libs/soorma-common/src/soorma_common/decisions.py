@@ -25,7 +25,7 @@ Usage:
 
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from soorma_common.events import EventTopic
 
@@ -81,6 +81,13 @@ class PublishAction(BaseModel):
     )
     reasoning: str = Field(..., description="Why this event should be published")
 
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reasoning(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reasoning"):
+            values["reasoning"] = ""
+        return values
+
 
 class CompleteAction(BaseModel):
     """Instruction to complete the plan.
@@ -97,6 +104,13 @@ class CompleteAction(BaseModel):
     action: Literal["complete"] = Field(default="complete", description="Action type")
     result: Dict[str, Any] = Field(..., description="Final result to return")
     reasoning: str = Field(..., description="Why the plan is now complete")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reasoning(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reasoning"):
+            values["reasoning"] = ""
+        return values
 
 
 class WaitAction(BaseModel):
@@ -120,6 +134,13 @@ class WaitAction(BaseModel):
         description="Timeout in seconds (default: 1 hour)"
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reason(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reason"):
+            values["reason"] = ""
+        return values
+
 
 class DelegateAction(BaseModel):
     """Instruction to delegate to another planner.
@@ -140,6 +161,13 @@ class DelegateAction(BaseModel):
     goal_event: str = Field(..., description="Goal event to send")
     goal_data: Dict[str, Any] = Field(..., description="Goal parameters")
     reasoning: str = Field(..., description="Why delegation is appropriate")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reasoning(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reasoning"):
+            values["reasoning"] = ""
+        return values
 
 
 # Union of all action types for discriminated union

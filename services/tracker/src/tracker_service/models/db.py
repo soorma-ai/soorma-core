@@ -66,7 +66,7 @@ class PlanProgress(Base):
     
     # Execution state
     status: Mapped[PlanStatus] = mapped_column(
-        SQLEnum(PlanStatus, name="plan_status_enum", create_type=False),
+        SQLEnum(PlanStatus, name="plan_status_enum", create_type=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
         default=PlanStatus.PENDING,
     )
@@ -147,7 +147,7 @@ class ActionProgress(Base):
     
     # Execution state
     status: Mapped[ActionStatus] = mapped_column(
-        SQLEnum(ActionStatus, name="action_status_enum", create_type=False),
+        SQLEnum(ActionStatus, name="action_status_enum", create_type=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
         default=ActionStatus.PENDING,
     )
@@ -186,6 +186,7 @@ class ActionProgress(Base):
     
     # Indexes for multi-tenant queries
     __table_args__ = (
+        UniqueConstraint("tenant_id", "action_id", name="uq_action_tenant_action"),
         Index("idx_action_tenant_action", "tenant_id", "action_id"),
         Index("idx_action_plan", "plan_id"),
         Index("idx_action_status", "status"),

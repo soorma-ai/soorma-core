@@ -185,7 +185,9 @@ class TestChoreographyPlannerReasoning:
         )
         
         context = MagicMock()
-        context.toolkit.discover_actionable_events = AsyncMock(return_value=[])
+        context.toolkit.discover_actionable_events = AsyncMock(
+            return_value=[MagicMock(event_name="complete.action", description="Complete")]
+        )
         
         # Mock LiteLLM
         mock_litellm = MagicMock()
@@ -216,7 +218,9 @@ class TestChoreographyPlannerReasoning:
         planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
         
         context = MagicMock()
-        context.toolkit.discover_actionable_events = AsyncMock(return_value=[])
+        context.toolkit.discover_actionable_events = AsyncMock(
+            return_value=[MagicMock(event_name="complete.action", description="Complete")]
+        )
         
         custom_context = {"customer": {"tier": "premium"}}
         
@@ -334,7 +338,8 @@ class TestChoreographyPlannerExecution:
         context.bus.publish.assert_called_once()
         call_args = context.bus.publish.call_args
         assert call_args.kwargs["event_type"] == "search.requested"
-        assert call_args.kwargs["data"] == {"query": "ai"}
+        assert call_args.kwargs["data"]["query"] == "ai"
+        assert "action_id" in call_args.kwargs["data"]  # Unique per-action ID injected for tracker
 
     @pytest.mark.asyncio
     async def test_execute_decision_publish_with_response_event(self):
@@ -531,6 +536,49 @@ class TestChoreographyPlannerExecution:
         call_args = context.bus.publish.call_args
         assert call_args.kwargs["event_type"] == "search.requested"
 
+    @pytest.mark.asyncio
+    async def test_execute_decision_plan_id_overridden_by_plan_context(self):
+        """execute_decision uses plan.plan_id (UUID) NOT decision.plan_id (LLM string).
+
+        The LLM may return any string as plan_id (e.g. 'feedback-analysis-001').
+        PlanContext.plan_id is the canonical UUID that the tracker client uses to
+        look up progress. Both must agree or get_plan_progress() returns 404.
+        """
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+
+        goal_event = MagicMock()
+        goal_event.tenant_id = "tenant-1"
+        goal_event.user_id = "user-1"
+        goal_event.session_id = "session-1"
+
+        # LLM hallucinates a semantic name
+        decision = PlannerDecision(
+            plan_id="feedback-analysis-001",  # LLM-generated string
+            current_state="s",
+            next_action=PublishAction(
+                event_type="search.requested",
+                data={"query": "ai"},
+                response_event="search.completed",
+                correlation_id="task-1",
+                reasoning="test",
+            ),
+            reasoning="test",
+        )
+
+        # PlanContext carries the authoritative UUID
+        plan = MagicMock()
+        plan.plan_id = "41339b18-3200-4292-bb5e-121cef1205c4"
+
+        await planner.execute_decision(decision, context, goal_event=goal_event, plan=plan)
+
+        context.bus.request.assert_called_once()
+        call_args = context.bus.request.call_args
+        # Must use the PlanContext UUID, NOT the LLM string
+        assert call_args.kwargs["plan_id"] == "41339b18-3200-4292-bb5e-121cef1205c4"
+
 
 class TestChoreographyPlannerCircuitBreaker:
     """Tests for circuit breaker (max_actions limit)."""
@@ -545,7 +593,9 @@ class TestChoreographyPlannerCircuitBreaker:
         )
         
         context = MagicMock()
-        context.toolkit.discover_actionable_events = AsyncMock(return_value=[])
+        context.toolkit.discover_actionable_events = AsyncMock(
+            return_value=[MagicMock(event_name="complete.action", description="Complete")]
+        )
         
         mock_litellm = MagicMock()
         mock_response = MagicMock()
@@ -1035,3 +1085,218 @@ class TestPlanContextCompleteStatus:
         )
         
         assert plan.is_complete() is True, "State machine terminal flag should make plan complete"
+
+
+class TestExecuteDecisionEnvelopeMetadata:
+    """Tests that plan_id and goal_id are propagated as envelope metadata in all action types.
+    
+    These tests guard against regressions where workflow correlation fields (plan_id, goal_id)
+    are dropped from event envelopes, breaking Tracker Service observability and goal tracing.
+    """
+
+    def _make_goal_event(self) -> MagicMock:
+        """Create a fully-populated goal event mock."""
+        goal = MagicMock()
+        goal.tenant_id = "tenant-1"
+        goal.user_id = "user-1"
+        goal.session_id = "session-1"
+        goal.goal_id = "goal-abc"
+        goal.response_event = "workflow.completed"
+        goal.correlation_id = "corr-123"
+        return goal
+
+    @pytest.mark.asyncio
+    async def test_publish_request_propagates_plan_id_and_goal_id(self):
+        """PUBLISH with response_event passes plan_id and goal_id in envelope."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+
+        decision = PlannerDecision(
+            plan_id="plan-xyz",
+            current_state="s",
+            next_action=PublishAction(
+                event_type="data.fetch.requested",
+                data={"product": "Widget"},
+                response_event="data.fetched",
+                correlation_id="task-1",
+                reasoning="fetch data",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, goal_event=self._make_goal_event())
+
+        context.bus.request.assert_called_once()
+        kwargs = context.bus.request.call_args.kwargs
+        assert kwargs["plan_id"] == "plan-xyz", "plan_id must be in envelope for Tracker"
+        assert kwargs["goal_id"] == "goal-abc", "goal_id must be in envelope for tracing"
+
+    @pytest.mark.asyncio
+    async def test_publish_fire_and_forget_propagates_plan_id_and_goal_id(self):
+        """PUBLISH without response_event (fire-and-forget) passes plan_id and goal_id."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        context = MagicMock()
+        context.bus.publish = AsyncMock()
+
+        decision = PlannerDecision(
+            plan_id="plan-xyz",
+            current_state="s",
+            next_action=PublishAction(
+                event_type="notification.sent",
+                data={"msg": "done"},
+                reasoning="notify",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, goal_event=self._make_goal_event())
+
+        context.bus.publish.assert_called_once()
+        kwargs = context.bus.publish.call_args.kwargs
+        assert kwargs["plan_id"] == "plan-xyz", "plan_id must be in fire-and-forget envelope"
+        assert kwargs["goal_id"] == "goal-abc", "goal_id must be in fire-and-forget envelope"
+
+    @pytest.mark.asyncio
+    async def test_complete_propagates_plan_id_and_goal_id(self):
+        """COMPLETE action passes plan_id and goal_id in respond() envelope."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        context = MagicMock()
+        context.bus.respond = AsyncMock()
+
+        decision = PlannerDecision(
+            plan_id="plan-xyz",
+            current_state="done",
+            next_action=CompleteAction(
+                result={"summary": "done"},
+                reasoning="complete",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, goal_event=self._make_goal_event())
+
+        context.bus.respond.assert_called_once()
+        kwargs = context.bus.respond.call_args.kwargs
+        assert kwargs["plan_id"] == "plan-xyz", "plan_id must be in COMPLETE envelope for Tracker"
+        assert kwargs["goal_id"] == "goal-abc", "goal_id must be in COMPLETE envelope for tracing"
+
+    @pytest.mark.asyncio
+    async def test_wait_propagates_tenant_and_plan_metadata(self):
+        """WAIT action system event carries tenant_id, user_id, session_id, and plan_id."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        context = MagicMock()
+        context.bus.publish = AsyncMock()
+
+        plan = MagicMock()
+        plan.plan_id = "plan-xyz"
+        plan.correlation_id = "corr-1"
+        plan.tenant_id = "tenant-1"
+        plan.user_id = "user-1"
+        plan.session_id = "session-1"
+        plan.results = {}
+        plan.pause = AsyncMock()
+        plan.save = AsyncMock()
+
+        decision = PlannerDecision(
+            plan_id="plan-xyz",
+            current_state="waiting",
+            next_action=WaitAction(
+                reason="Need approval",
+                expected_event="approval.granted",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, plan=plan)
+
+        context.bus.publish.assert_called_once()
+        kwargs = context.bus.publish.call_args.kwargs
+        assert kwargs["plan_id"] == "plan-xyz", "system event must carry plan_id"
+        assert kwargs["tenant_id"] == "tenant-1", "system event must carry tenant_id"
+        assert kwargs["user_id"] == "user-1", "system event must carry user_id"
+        assert kwargs["session_id"] == "session-1", "system event must carry session_id"
+
+    @pytest.mark.asyncio
+    async def test_delegate_propagates_all_metadata(self):
+        """DELEGATE action carries tenant, user, session, goal_id, and plan_id."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        context = MagicMock()
+        context.bus.publish = AsyncMock()
+
+        decision = PlannerDecision(
+            plan_id="plan-xyz",
+            current_state="delegating",
+            next_action=DelegateAction(
+                target_planner="specialist",
+                goal_event="analysis.goal",
+                goal_data={"dataset": "sales"},
+                reasoning="delegate to specialist",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, goal_event=self._make_goal_event())
+
+        context.bus.publish.assert_called_once()
+        kwargs = context.bus.publish.call_args.kwargs
+        assert kwargs["plan_id"] == "plan-xyz", "DELEGATE must carry plan_id"
+        assert kwargs["goal_id"] == "goal-abc", "DELEGATE must carry goal_id"
+        assert kwargs["tenant_id"] == "tenant-1", "DELEGATE must carry tenant_id"
+        assert kwargs["user_id"] == "user-1", "DELEGATE must carry user_id"
+        assert kwargs["session_id"] == "session-1", "DELEGATE must carry session_id"
+
+    @pytest.mark.asyncio
+    async def test_plan_id_not_in_data_payload(self):
+        """plan_id must be in envelope metadata, NOT in event data payload."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        context = MagicMock()
+        context.bus.request = AsyncMock()
+
+        decision = PlannerDecision(
+            plan_id="plan-xyz",
+            current_state="s",
+            next_action=PublishAction(
+                event_type="data.fetch.requested",
+                data={"product": "Widget"},
+                response_event="data.fetched",
+                correlation_id="task-1",
+                reasoning="test",
+            ),
+            reasoning="test",
+        )
+
+        await planner.execute_decision(decision, context, goal_event=self._make_goal_event())
+
+        kwargs = context.bus.request.call_args.kwargs
+        # plan_id should be envelope kwarg, not smuggled into data dict
+        assert "plan_id" not in kwargs["data"], \
+            "plan_id must be envelope metadata, not data payload"
+
+    def test_resolve_publish_metadata_extracts_goal_id(self):
+        """_resolve_publish_metadata extracts goal_id from goal_event."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+
+        action = PublishAction(
+            event_type="task.requested",
+            reasoning="test",
+        )
+        goal_event = MagicMock()
+        goal_event.tenant_id = "t1"
+        goal_event.user_id = "u1"
+        goal_event.session_id = "s1"
+        goal_event.goal_id = "goal-999"
+
+        metadata = planner._resolve_publish_metadata(action, goal_event, plan=None)
+
+        assert metadata["goal_id"] == "goal-999"
+
+    def test_resolve_publish_metadata_goal_id_none_when_no_goal_event(self):
+        """_resolve_publish_metadata returns None goal_id when no goal_event."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+
+        action = PublishAction(event_type="task.requested", reasoning="test")
+
+        metadata = planner._resolve_publish_metadata(action, goal_event=None, plan=None)
+
+        assert metadata["goal_id"] is None

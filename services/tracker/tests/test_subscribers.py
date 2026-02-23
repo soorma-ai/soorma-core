@@ -25,49 +25,51 @@ from tracker_service.models.db import ActionStatus, PlanStatus
 class TestEventSubscriberLifecycle:
     """Test subscriber startup and shutdown."""
 
-    async def test_start_subscribers_initializes_subscriptions(self):
-        """Test start_event_subscribers sets up event bus subscriptions."""
-        # Mock bus client
-        bus_client = AsyncMock()
-        bus_client.subscribe = AsyncMock(return_value="sub-123")
-        
-        # Start subscribers
-        await start_event_subscribers(bus_client)
-        
-        # Should subscribe to topics:
-        # - action-requests (for task tracking)
-        # - action-results (for completion tracking)
-        # - system-events (for plan lifecycle)
-        assert bus_client.subscribe.call_count >= 3
-        
-        # Verify subscription to expected topics
-        call_args_list = [call[1] for call in bus_client.subscribe.call_args_list]
-        topics_subscribed = set()
-        for kwargs in call_args_list:
-            if 'topics' in kwargs:
-                topics_subscribed.update(kwargs['topics'])
-            elif 'topic' in kwargs:
-                topics_subscribed.add(kwargs['topic'])
-        
-        assert EventTopic.ACTION_REQUESTS in topics_subscribed
-        assert EventTopic.ACTION_RESULTS in topics_subscribed
-        assert EventTopic.SYSTEM_EVENTS in topics_subscribed
-    
-    async def test_stop_subscribers_cleanup(self):
-        """Test stop_event_subscribers unsubscribes from all topics."""
-        # Setup: Start subscribers first
-        bus_client = AsyncMock()
-        bus_client.subscribe = AsyncMock(return_value="sub-123")
-        bus_client.unsubscribe = AsyncMock()
-        
-        await start_event_subscribers(bus_client)
-        
-        # Stop subscribers
-        await stop_event_subscribers()
-        
-        # Should unsubscribe from all subscriptions
-        # (exact count depends on implementation, but > 0)
-        assert bus_client.unsubscribe.call_count > 0
+    async def test_start_subscribers_initializes_subscriptions(self, monkeypatch):
+        """Test start_event_subscribers creates an EventClient and connects to required topics."""
+        from unittest.mock import patch, MagicMock
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.disconnect = AsyncMock()
+        mock_client.on_all_events = lambda fn: fn  # decorator passthrough
+
+        with patch(
+            "tracker_service.subscribers.event_handlers.EventClient",
+            return_value=mock_client,
+        ) as MockEventClient:
+            await start_event_subscribers("http://event-service:8082")
+
+        # EventClient created with expected agent_id
+        MockEventClient.assert_called_once()
+        call_kwargs = MockEventClient.call_args.kwargs
+        assert call_kwargs.get("agent_id") == "tracker-service"
+
+        # connect() called with the three expected topics
+        mock_client.connect.assert_awaited_once()
+        topics_arg = mock_client.connect.call_args.args[0]
+        topic_values = [t.value if hasattr(t, "value") else t for t in topics_arg]
+        assert EventTopic.ACTION_REQUESTS.value in topic_values
+        assert EventTopic.ACTION_RESULTS.value in topic_values
+        assert EventTopic.SYSTEM_EVENTS.value in topic_values
+
+    async def test_stop_subscribers_cleanup(self, monkeypatch):
+        """Test stop_event_subscribers disconnects the EventClient."""
+        from unittest.mock import patch
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.disconnect = AsyncMock()
+        mock_client.on_all_events = lambda fn: fn
+
+        with patch(
+            "tracker_service.subscribers.event_handlers.EventClient",
+            return_value=mock_client,
+        ):
+            await start_event_subscribers("http://event-service:8082")
+            await stop_event_subscribers()
+
+        mock_client.disconnect.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -89,12 +91,12 @@ class TestActionRequestHandler:
             topic=EventTopic.ACTION_REQUESTS,
             data={
                 "action_id": "action-456",
-                "plan_id": "plan-789",
                 "action_name": "Process customer data",
                 "assigned_to": "data-worker",
             },
             tenant_id="tenant-001",
             user_id="user-001",
+            plan_id="plan-789",
         )
         
         # Handle event
@@ -113,9 +115,10 @@ class TestActionRequestHandler:
             source="search-worker",
             type="search.requested",
             topic=EventTopic.ACTION_REQUESTS,
-            data={"action_id": "act-1", "plan_id": "plan-1"},
+            data={"action_id": "act-1"},
             tenant_id="tenant-ABC",
             user_id="user-XYZ",
+            plan_id="plan-1",
         )
         
         # Handle event
@@ -133,15 +136,41 @@ class TestActionRequestHandler:
             source="analyze-worker",
             type="analyze.requested",
             topic=EventTopic.ACTION_REQUESTS,
-            data={"action_id": "act-2", "plan_id": "plan-2"},
+            data={"action_id": "act-2"},
             tenant_id="tenant-001",
             user_id="user-001",
+            plan_id="plan-2",
         )
         
         await handle_action_request(event, db_session)
         
         # Should call database execute (action created with PENDING status)
         assert db_session.execute.called
+
+    async def test_handle_action_request_skips_when_no_plan_id(self):
+        """Test action request is silently skipped when event has no plan_id.
+
+        Standalone worker tasks (not dispatched by a planner) have no plan_id.
+        The tracker is plan-scoped, so there is nothing meaningful to record.
+        """
+        db_session = AsyncMock(spec=AsyncSession)
+        db_session.execute = AsyncMock()
+
+        event = EventEnvelope(
+            id="event-unplanned",
+            source="standalone-worker",
+            type="analyze.feedback",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"action_id": "act-unplanned"},
+            tenant_id="tenant-001",
+            user_id="user-001",
+            # plan_id intentionally omitted
+        )
+
+        await handle_action_request(event, db_session)
+
+        # No DB calls — unplanned task has nothing to track
+        assert not db_session.execute.called
 
 
 @pytest.mark.asyncio

@@ -901,6 +901,8 @@ class BusClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Emit a domain event with explicit topic.
@@ -919,6 +921,8 @@ class BusClient:
             tenant_id: Tenant ID for multi-tenancy (envelope metadata)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
             
         Returns:
             The event ID
@@ -937,6 +941,8 @@ class BusClient:
             tenant_id=tenant_id,
             user_id=user_id,
             session_id=session_id,
+            goal_id=goal_id,
+            plan_id=plan_id,
         )
     
     async def request(
@@ -952,6 +958,8 @@ class BusClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Publish to action-requests topic with mandatory response_event.
@@ -969,6 +977,8 @@ class BusClient:
             tenant_id: Tenant ID for multi-tenancy (envelope metadata)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
             
         Returns:
             The event ID
@@ -986,6 +996,8 @@ class BusClient:
             tenant_id=tenant_id,
             user_id=user_id,
             session_id=session_id,
+            goal_id=goal_id,
+            plan_id=plan_id,
         )
     
     async def respond(
@@ -1001,6 +1013,8 @@ class BusClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Publish to action-results topic with mandatory correlation_id.
@@ -1018,6 +1032,8 @@ class BusClient:
             tenant_id: Tenant ID for multi-tenancy (envelope metadata)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
             
         Returns:
             The event ID
@@ -1034,6 +1050,8 @@ class BusClient:
             tenant_id=tenant_id,
             user_id=user_id,
             session_id=session_id,
+            goal_id=goal_id,
+            plan_id=plan_id,
         )
     
     async def announce(

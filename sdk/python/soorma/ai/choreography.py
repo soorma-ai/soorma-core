@@ -39,6 +39,7 @@ Performance & Cost Notes:
 import json
 import logging
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from soorma.agents.planner import Planner
 from soorma.context import PlatformContext
@@ -193,7 +194,24 @@ class ChoreographyPlanner(Planner):
         # Will be lazily imported to avoid hard dependency
         self._litellm = None
         self._action_count: Dict[str, int] = {}  # plan_id -> action count
-    
+
+    def _get_next_state(self, plan: Any, event: Any) -> Any:
+        """Override: always fire through — LLM decides transitions, not a state machine.
+
+        ChoreographyPlanner has no declared state machine so every event on
+        ACTION_RESULTS that belongs to a known plan should reach the handler.
+        Returning None (not _SKIP_TRANSITION) passes next_state=None to the
+        handler, signalling that LLM reasoning drives the next step.
+
+        Args:
+            plan: Restored PlanContext instance.
+            event: Incoming EventEnvelope.
+
+        Returns:
+            None — always fire through; LLM decides the next action.
+        """
+        return None
+
     async def reason_next_action(
         self,
         trigger: str,
@@ -387,8 +405,14 @@ class ChoreographyPlanner(Planner):
         Examples:
             await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
         """
+        # Always use the PlanContext UUID as the authoritative plan_id.
+        # The LLM may write any string as decision.plan_id (e.g. "feedback-analysis-001").
+        # PlanContext.plan_id is the canonical UUID that the tracker client queries with.
+        if plan is not None and hasattr(plan, "plan_id"):
+            decision = decision.model_copy(update={"plan_id": str(plan.plan_id)})
+
         action = decision.next_action
-        
+
         logger.info(f"[ChoreographyPlanner] Executing {action.action} action for plan {decision.plan_id}")
         logger.debug(f"[ChoreographyPlanner] Action details: {type(action).__name__}")
         
@@ -397,10 +421,14 @@ class ChoreographyPlanner(Planner):
             publish_action = action  # Type hint for IDE
             metadata = self._resolve_publish_metadata(publish_action, goal_event, plan)
             
-            # Prepare data payload - inject task_id when correlation_id present
+            # Prepare data payload - inject task_id for worker tracking
             payload_data = dict(publish_action.data) if publish_action.data else {}
             if metadata.get("correlation_id"):
                 payload_data["task_id"] = metadata["correlation_id"]
+            # Inject a unique action_id so the tracker can distinguish each action row.
+            # All actions share the same plan.correlation_id (for plan restoration), so
+            # using correlation_id as action_id would cause all rows to collide.
+            payload_data.setdefault("action_id", str(uuid4()))
             
             logger.info(f"[ChoreographyPlanner] Publishing event: {publish_action.event_type}")
             logger.info(f"[ChoreographyPlanner] Correlation ID: {metadata.get('correlation_id')}")
@@ -416,6 +444,8 @@ class ChoreographyPlanner(Planner):
                     tenant_id=metadata.get("tenant_id"),
                     user_id=metadata.get("user_id"),
                     session_id=metadata.get("session_id"),
+                    goal_id=metadata.get("goal_id"),
+                    plan_id=decision.plan_id,
                 )
                 logger.info(f"[ChoreographyPlanner] Request published: {publish_action.event_type}")
             else:
@@ -427,6 +457,8 @@ class ChoreographyPlanner(Planner):
                     tenant_id=metadata.get("tenant_id"),
                     user_id=metadata.get("user_id"),
                     session_id=metadata.get("session_id"),
+                    goal_id=metadata.get("goal_id"),
+                    plan_id=decision.plan_id,
                 )
             logger.info(
                 f"[ChoreographyPlanner] ✓ Published {publish_action.event_type}: {publish_action.reasoning}"
@@ -465,6 +497,8 @@ class ChoreographyPlanner(Planner):
             if not session_id and plan:
                 session_id = plan.session_id
             
+            goal_id = getattr(goal_event, "goal_id", None) if goal_event else None
+            
             if response_event:
                 logger.info(f"[ChoreographyPlanner] Sending response to client: {response_event}")
                 await context.bus.respond(
@@ -474,6 +508,8 @@ class ChoreographyPlanner(Planner):
                     tenant_id=tenant_id,
                     user_id=user_id,
                     session_id=session_id,
+                    goal_id=goal_id,
+                    plan_id=decision.plan_id,
                 )
                 logger.info(
                     f"[ChoreographyPlanner] ✓ Plan {decision.plan_id} completed: {complete_action.reasoning}"
@@ -483,6 +519,26 @@ class ChoreographyPlanner(Planner):
                     f"[ChoreographyPlanner] COMPLETE action for plan {decision.plan_id} but no response_event found. "
                     f"Cannot send response. Ensure goal_event or plan has response_event set."
                 )
+
+            # Publish plan.completed system event so the Tracker Service can update
+            # plan_progress.status → 'completed'. Done after the client response so
+            # latency is not affected by the extra publish.
+            try:
+                await context.bus.publish(
+                    topic=EventTopic.SYSTEM_EVENTS,
+                    event_type="plan.completed",
+                    data={
+                        "plan_id": decision.plan_id,
+                        "result": complete_action.result,
+                    },
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    plan_id=decision.plan_id,
+                )
+                logger.debug(f"[ChoreographyPlanner] plan.completed system event published for {decision.plan_id}")
+            except Exception as sys_err:
+                # Non-fatal: tracker observability failure must not break the plan response
+                logger.warning(f"[ChoreographyPlanner] Failed to publish plan.completed system event: {sys_err}")
         
         elif action.action == PlanAction.WAIT:
             # WAIT: Pause plan and wait for external input
@@ -514,6 +570,10 @@ class ChoreographyPlanner(Planner):
                     "expected_event": wait_action.expected_event,
                     "timeout_seconds": wait_action.timeout_seconds,
                 },
+                tenant_id=plan.tenant_id,
+                user_id=plan.user_id,
+                session_id=plan.session_id,
+                plan_id=plan.plan_id,
             )
             
             logger.info(
@@ -525,10 +585,19 @@ class ChoreographyPlanner(Planner):
             # DELEGATE: Forward to another planner
             delegate_action = action  # Type hint for IDE
             logger.info(f"[ChoreographyPlanner] Delegating to planner: {delegate_action.target_planner}")
+            tenant_id = getattr(goal_event, "tenant_id", None) if goal_event else None
+            user_id = getattr(goal_event, "user_id", None) if goal_event else None
+            session_id = getattr(goal_event, "session_id", None) if goal_event else None
+            goal_id = getattr(goal_event, "goal_id", None) if goal_event else None
             await context.bus.publish(
                 topic="action-requests",
                 event_type=delegate_action.goal_event,
                 data=delegate_action.goal_data,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                session_id=session_id,
+                goal_id=goal_id,
+                plan_id=decision.plan_id,
             )
             logger.info(
                 f"[ChoreographyPlanner] ✓ Delegated to {delegate_action.target_planner} via {delegate_action.goal_event}: "
@@ -571,6 +640,7 @@ class ChoreographyPlanner(Planner):
             "tenant_id": getattr(goal_event, "tenant_id", None) if goal_event else None,
             "user_id": getattr(goal_event, "user_id", None) if goal_event else None,
             "session_id": getattr(goal_event, "session_id", None) if goal_event else None,
+            "goal_id": getattr(goal_event, "goal_id", None) if goal_event else None,
         }
         return metadata
     

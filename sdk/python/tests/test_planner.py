@@ -127,8 +127,9 @@ class TestPlannerOnTransitionDecorator:
         async def handle_transition(event, context, plan, next_state):
             pass
         
+        # _transition_handler is a guarded wrapper, not the raw user function
         assert planner._transition_handler is not None
-        assert planner._transition_handler == handle_transition
+        assert callable(planner._transition_handler)
     
     def test_on_transition_no_topics_in_events(self):
         """on_transition() should NOT add topics to events (RF-SDK-023)."""
@@ -174,6 +175,7 @@ class TestPlannerOnTransitionDecorator:
         
         # Mock plan with next_state
         mock_plan = MagicMock(plan_id="plan-123")
+        mock_plan.is_complete.return_value = False
         mock_plan.get_next_state.return_value = "summarize"
         
         # Call handler directly with required params
@@ -214,6 +216,7 @@ class TestPlannerOnTransitionDecorator:
         mock_plan = MagicMock()
         mock_plan.plan_id = "plan-completed-123"
         mock_plan.status = "completed"  # Already completed
+        mock_plan.is_complete.return_value = True
         
         # Call handler directly
         await planner._transition_handler(event, context, mock_plan, None)
@@ -251,6 +254,7 @@ class TestPlannerOnTransitionDecorator:
         mock_plan = MagicMock()
         mock_plan.plan_id = "plan-failed-456"
         mock_plan.status = "failed"  # Plan failed
+        mock_plan.is_complete.return_value = True
         
         # Call handler directly
         await planner._transition_handler(event, context, mock_plan, None)
@@ -288,6 +292,7 @@ class TestPlannerOnTransitionDecorator:
         mock_plan = MagicMock()
         mock_plan.plan_id = "plan-pending-789"
         mock_plan.status = "pending"  # Still running
+        mock_plan.is_complete.return_value = False
         
         # Call handler directly
         await planner._transition_handler(event, context, mock_plan, None)

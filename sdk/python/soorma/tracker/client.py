@@ -108,15 +108,20 @@ class TrackerServiceClient:
         Returns:
             List of TaskExecution records
         """
-        response = await self._client.get(
-            f"{self.base_url}/v1/tracker/plans/{plan_id}/tasks",
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
-        )
-        response.raise_for_status()
-        return [TaskExecution.model_validate(task) for task in response.json()]
+        try:
+            response = await self._client.get(
+                f"{self.base_url}/v1/tracker/plans/{plan_id}/actions",
+                headers={
+                    "X-Tenant-ID": tenant_id,
+                    "X-User-ID": user_id,
+                },
+            )
+            response.raise_for_status()
+            return [TaskExecution.model_validate(task) for task in response.json()]
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                return []
+            raise
     
     async def get_plan_timeline(
         self,

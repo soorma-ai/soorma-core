@@ -8,6 +8,10 @@ from tracker_service import __version__
 from tracker_service.core.config import settings
 from tracker_service.core.db import init_db, close_db
 from tracker_service.api.v1 import query
+from tracker_service.subscribers.event_handlers import (
+    start_event_subscribers,
+    stop_event_subscribers,
+)
 
 
 @asynccontextmanager
@@ -17,15 +21,18 @@ async def lifespan(app: FastAPI):
     print(f"Starting Tracker Service v{__version__}")
     print(f"Local testing mode: {settings.is_local_testing}")
     print(f"Database URL: {settings.database_url}")
-    
+
     # Initialize database connection
     await init_db()
+
+    # Start event subscribers to receive plan/action events
+    await start_event_subscribers(settings.event_service_url)
 
     yield
 
     # Shutdown
     print("Shutting down Tracker Service")
-    # Close database connection
+    await stop_event_subscribers()
     await close_db()
 
 

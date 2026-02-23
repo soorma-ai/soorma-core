@@ -484,7 +484,7 @@ INFO:soorma.ai.choreography:[ChoreographyPlanner] Publishing event: analysis.req
 
 **Notice:** Clean, readable progress output - NO `INFO:__main__:` prefixes or HTTP requests!
 
-### Client Terminal
+### Client Terminal (With Tracker Observability)
 
 ```bash
 python client.py
@@ -493,16 +493,32 @@ python client.py
 [client] Correlation ID: 4306472b-02d3-4f38-9b30-098d1ae46b37
 [client] Waiting for response (timeout: 30s)...
 
-[client] Received report:
-{
-  'status': 'success',
-  'product': 'Soorma Hub',  ← Data from fetcher
-  'report': 'Feedback Report for Soorma Hub\nSummary: Analyzed 3 feedback entries: 2 positive, 1 negative, 0 neutral (avg rating: 3.67)\nPositive: 2 | Negative: 1',  ← Data from all workers!
-  'timestamp': '2026-02-22T20:27:42.501150'
-}
+[client] ✅ Received report:
+{'status': 'success', 'product': 'Soorma Hub', 'report': 'Feedback Report for Soorma Hub\nSummary: Analyzed 3 feedback entries: 2 positive, 1 negative, 0 neutral (avg rating: 3.67)\nPositive: 2 | Negative: 1', 'timestamp': '2026-02-22T20:27:42.501150'}
+
+======================================================================
+  📊 WORKFLOW OBSERVABILITY (Tracker Service)
+======================================================================
+
+📋 Plan Progress:
+   Status: completed
+   Tasks: 3/3 completed
+   Started: 20:27:35
+   Duration: 7.99s
+
+⚡ Task Execution Timeline:
+   ✓ data.fetch.requested              0.35s
+   ✓ analysis.requested                0.00s
+   ✓ report.requested                  0.00s
+
+======================================================================
 ```
 
-**Success Indicator:** Report contains actual data (not "No summary available" or "Positive: 0").
+**Key Insights from Tracker:**
+- **Performance:** Each worker's execution time is visible — fetcher includes LLM warm-up latency
+- **Status:** All 3 tasks completed successfully under the same plan UUID
+- **Timing:** `analysis.requested` and `report.requested` show `0.00s` when workers complete faster than the timestamp resolution — this is correct behaviour, not a bug
+- **Debug:** If timeout occurred, you'd see which task is stuck and what succeeded!
 
 ### Experiment: Hot-Swap a Worker
 
@@ -556,6 +572,46 @@ logging.basicConfig(level=logging.INFO, ...)
 # To this:
 logging.basicConfig(level=logging.ERROR, ...)
 ```
+
+### Using Tracker Service for Debugging
+
+The client automatically queries Tracker Service after each run (success or timeout) to show:
+
+**On Success:**
+- ✅ Performance metrics: How long each worker took
+- ✅ Event sequence: Complete flow from goal to result
+- ✅ Verification: All tasks completed
+
+**On Timeout (KEY DEBUGGING FEATURE):**
+```
+⚠️  Timeout waiting for response
+
+======================================================================
+  📊 WORKFLOW OBSERVABILITY (Tracker Service)
+======================================================================
+
+📋 Plan Progress:
+   Status: in_progress
+   Tasks: 2/3 completed  ← Shows which task is stuck!
+   Started: 20:30:15
+
+⚡ Task Execution Timeline:
+   ✓ data.fetch.requested              0.35s
+   ✓ analysis.requested                1.21s
+   ⏳ report.requested                running  ← Reporter is stuck!
+
+======================================================================
+```
+
+**What This Tells You:**
+- **Stuck Task:** `report.requested` never completed → reporter worker issue
+- **Completed Tasks:** First 2 stages worked fine
+- **Diagnostic:** Check if reporter is running, check its logs
+
+**If Tracker Unavailable:**
+- Client shows: `⚠️ Tracker Service unavailable` (non-fatal)
+- Tracker provides observability but is optional
+- Run `soorma dev --build` to ensure tracker is running
 
 ### Client Reports "No summary available" or "Positive: 0"
 
@@ -684,6 +740,46 @@ Single correlation_id flows through entire pipeline:
 - Client receives final result matched by correlation_id
 
 **5. Two-Layer SDK Architecture**
+
+Planner uses high-level wrappers (never direct service clients):
+
+```python
+# ✅ CORRECT: Agent code uses wrappers
+await context.toolkit.discover_actionable_events(...)
+await context.bus.publish(event_type, data, ...)
+await context.memory.store_plan_context(...)
+
+# ❌ WRONG: Never import service clients in agent code
+from soorma.registry.client import RegistryClient  # Forbidden!
+```
+
+This abstraction enables testing, caching, and future service replacements.
+
+**6. Tracker Service (Observability Layer)**
+
+Passive event consumer that provides workflow insights:
+
+```python
+# Client queries tracker after execution
+progress = await tracker.get_plan_progress(plan_id, tenant_id, user_id)
+# Shows: 3/3 tasks completed in 7.99s
+
+tasks = await tracker.get_plan_tasks(plan_id, tenant_id, user_id)
+# Shows: Each worker's execution time and status
+```
+
+**How it works under the hood:**
+- Every `ACTION_REQUESTS` event with a `plan_id` creates/updates an `action_progress` row
+- Every `ACTION_RESULTS` event updates its matching row and increments the plan counter
+- When the planner sends `COMPLETE`, it publishes a `plan.completed` system event which marks the plan status `completed` in the tracker
+- `plan_id` is the `PlanContext` UUID — injected into every event envelope by `execute_decision()`; workers echo it back on results via `task.complete()`
+- Each action gets a unique `action_id` UUID in its payload so multiple concurrent actions under the same plan don't collide
+
+**Value for Autonomous Choreography:**
+- **Debug LLM Decisions:** See which events were chosen and when
+- **Performance Analysis:** Identify bottleneck workers
+- **Timeout Diagnosis:** Shows exactly which task is stuck
+- **Audit Trail:** Complete execution history for every workflow
 
 Planner uses high-level wrappers (never direct service clients):
 
