@@ -57,6 +57,9 @@ cd examples/10-choreography-basic
 ./start.sh
 ```
 
+**Important**: Workers start first to register their events in the Registry,
+then the planner starts. Wait for all agents to show "started" before sending goals.
+
 ### Terminal 3: Send a Goal
 
 ```bash

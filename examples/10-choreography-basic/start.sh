@@ -36,17 +36,7 @@ echo ""
 trap 'echo ""; echo "Stopping all agents..."; kill $(jobs -p) 2>/dev/null; exit 0' EXIT INT TERM
 
 echo "======================================================================"
-echo "  Starting Planner Agent"
-echo "======================================================================"
-echo ""
-
-python "$EXAMPLE_DIR/planner.py" &
-PLANNER_PID=$!
-sleep 2
-
-echo ""
-echo "======================================================================"
-echo "  Starting Worker Agents"
+echo "  Starting Worker Agents (must register events first)"
 echo "======================================================================"
 echo ""
 
@@ -60,7 +50,17 @@ sleep 1
 
 python "$EXAMPLE_DIR/reporter.py" &
 REPORTER_PID=$!
-sleep 1
+sleep 2  # Give workers time to register their events
+
+echo ""
+echo "======================================================================"
+echo "  Starting Planner Agent"
+echo "======================================================================"
+echo ""
+
+python "$EXAMPLE_DIR/planner.py" &
+PLANNER_PID=$!
+sleep 2  # Give planner time to discover registered events
 
 echo ""
 echo "======================================================================"

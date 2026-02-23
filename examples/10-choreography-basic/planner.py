@@ -9,6 +9,7 @@ When PublishAction includes response_event and correlation_id, the SDK routes th
 bus.request() for request/response choreography. No manual intervention needed.
 """
 
+import logging
 from typing import Optional
 from uuid import uuid4
 
@@ -46,6 +47,7 @@ async def handle_goal(goal: GoalContext, context: PlatformContext) -> None:
     print("\n[planner] Goal received: analyze.feedback")
     print(f"[planner] Correlation: {goal.correlation_id}")
 
+    print("[planner] Creating plan context...")
     plan = await PlanContext.create_from_goal(
         goal=goal,
         context=context,
@@ -53,13 +55,23 @@ async def handle_goal(goal: GoalContext, context: PlatformContext) -> None:
         current_state="reasoning",
         status="running",
     )
+    print(f"[planner] Plan created: {plan.plan_id}")
 
-    decision = await planner.reason_next_action(
-        trigger=f"New goal: {goal.data.get('objective', 'feedback analysis')}",
-        context=context,
-        plan_id=plan.plan_id,
-        custom_context={"goal": goal.data},
-    )
+    print("[planner] Calling ChoreographyPlanner.reason_next_action()...")
+    try:
+        decision = await planner.reason_next_action(
+            trigger=f"New goal: {goal.data.get('objective', 'feedback analysis')}",
+            context=context,
+            plan_id=plan.plan_id,
+            custom_context={"goal": goal.data},
+        )
+        print(f"[planner] Decision received: {decision.next_action.action}")
+    except Exception as e:
+        print(f"[planner] ERROR during reason_next_action: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+    
     plan.current_state = decision.current_state
     await plan.save()
 
@@ -135,4 +147,9 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
+    # Configure logging to see ChoreographyPlanner details
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:%(name)s:%(message)s",
+    )
     planner.run()
