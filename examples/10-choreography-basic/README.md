@@ -18,14 +18,37 @@ Client -> Planner -> Fetcher -> Analyzer -> Reporter -> Planner -> Client
 
 ## Event Flow
 
-1. Client publishes `analyze.feedback` with response_event `feedback.report.ready`
-2. Planner publishes `data.fetch.requested`
-3. Fetcher responds `data.fetched`
-4. Planner publishes `analysis.requested`
-5. Analyzer responds `analysis.completed`
-6. Planner publishes `report.requested`
-7. Reporter responds `report.ready`
-8. Planner completes with `feedback.report.ready`
+1. **Client** publishes `analyze.feedback` with `response_event: feedback.report.ready` and correlation_id
+2. **Planner** (`on_goal`) creates plan → **LLM decides** → PUBLISH `data.fetch.requested`
+3. **Fetcher** processes → responds with `data.fetched`
+4. **Planner** (`on_transition`) receives response → **LLM decides** → PUBLISH `analysis.requested`
+5. **Analyzer** processes → responds with `analysis.completed`
+6. **Planner** (`on_transition`) receives response → **LLM decides** → PUBLISH `report.requested`
+7. **Reporter** processes → responds with `report.ready`
+8. **Planner** (`on_transition`) receives response → **LLM decides** → COMPLETE with `feedback.report.ready`
+9. **Client** receives final report via correlation_id routing
+
+## How It Works
+
+### ChoreographyPlanner Decision Cycle
+
+The planner uses GPT-4o to autonomously decide what to do next:
+
+- **on_goal**: Receives initial client goal → Creates plan in Memory → LLM chooses first action
+- **on_transition**: Receives worker responses → Restores plan → LLM decides next action
+
+**LLM Actions:**
+- `PUBLISH` - Orchestrate a worker by publishing an event
+- `COMPLETE` - Send final result back to client
+- `WAIT` - Wait for more events
+- `DELEGATE` - Hand off to another planner
+
+### Key Patterns
+
+- **Correlation ID Tracking**: Client's correlation_id flows through all events for response routing
+- **Plan Persistence**: Plan state saved to Memory Service after each decision
+- **Loop Prevention**: Completed plans skip processing in `on_transition` handler
+- **Explicit Response Events**: Workers declare `response_event` in their requests
 
 ## Files
 
@@ -71,3 +94,39 @@ python client.py
 
 You should see the planner publish tasks in sequence and the final report
 returned to the client as `feedback.report.ready`.
+
+### Example Success Logs
+
+**Planner Terminal:**
+```
+[ChoreographyPlanner] ✓ Published data.fetch.requested
+[ChoreographyPlanner] ✓ Published analysis.requested
+[ChoreographyPlanner] ✓ Published report.requested
+[ChoreographyPlanner] ✓ Plan feedback-analysis-pipeline-001 completed
+[Planner.on_transition] Plan already completed, skipping event processing
+```
+
+**Client Terminal:**
+```
+[client] Sending feedback analysis goal...
+[client] Correlation ID: 3da318e8-3bc7-4679-a48d-67a19c505591
+[client] Waiting for response (timeout: 30s)...
+[client] Received report:
+{'task_id': '...', 'status': 'completed', 'report': 'Feedback Report...'}
+```
+
+## Troubleshooting
+
+**Client timeout waiting for response:**
+- Ensure all services are running: `soorma dev --build`
+- Verify all agents started successfully (Planner + 3 Workers)
+- Check LLM credentials are configured (`OPENAI_API_KEY`)
+
+**Planner stuck in loop:**
+- This should be fixed in v0.7.x+ (plan status persistence)
+- Check logs for "Plan already completed, skipping event processing"
+
+**Workers not responding:**
+- Ensure workers started BEFORE planner (start.sh does this)
+- Check Registry has worker events registered
+- Verify worker event names match planner's PUBLISH decisions
