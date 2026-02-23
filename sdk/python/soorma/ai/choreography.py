@@ -416,6 +416,13 @@ class ChoreographyPlanner(Planner):
             complete_action = action  # Type hint for IDE
             logger.info(f"[ChoreographyPlanner] Completing plan with result: {list(complete_action.result.keys())}")
             
+            # Update plan status to completed BEFORE sending response
+            # This prevents infinite loop when on_transition receives the response event
+            if plan:
+                plan.status = "completed"
+                await plan.save()
+                logger.debug(f"[ChoreographyPlanner] Plan status updated to 'completed' and saved")
+            
             # Get response metadata from goal_event or plan (for transitions)
             response_event = getattr(goal_event, "response_event", None) if goal_event else None
             if not response_event and plan:

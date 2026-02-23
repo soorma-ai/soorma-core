@@ -815,6 +815,7 @@ class TestChoreographyPlannerCompleteAction:
         plan.tenant_id = "tenant-1"
         plan.user_id = "user-1"
         plan.session_id = "session-1"
+        plan.save = AsyncMock()  # COMPLETE action calls save()
         
         # Mock goal_event as worker response (has no response_event)
         goal_event = MagicMock()
@@ -865,6 +866,7 @@ class TestChoreographyPlannerCompleteAction:
         plan.correlation_id = "plan-id"
         plan.tenant_id = "plan-tenant"
         plan.user_id = "plan-user"
+        plan.save = AsyncMock()  # COMPLETE action calls save()
         
         # Create goal_event with different metadata (should take precedence)
         goal_event = MagicMock()
@@ -885,6 +887,50 @@ class TestChoreographyPlannerCompleteAction:
             "Should prefer goal_event.correlation_id"
         assert call_kwargs["tenant_id"] == "goal-tenant"
         assert call_kwargs["user_id"] == "goal-user"
+    
+    @pytest.mark.asyncio
+    async def test_complete_updates_plan_status_to_completed(self):
+        """COMPLETE action sets plan.status = 'completed' and persists it."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        decision = PlannerDecision(
+            plan_id="plan-123",
+            current_state="final",
+            reasoning="Workflow complete",
+            confidence=1.0,
+            next_action=CompleteAction(
+                action="complete",
+                result={"output": "done"},
+                reasoning="All steps finished",
+            ),
+        )
+        
+        context = MagicMock()
+        context.bus = MagicMock()
+        context.bus.respond = AsyncMock()
+        
+        # Create plan mock with save() method
+        plan = MagicMock()
+        plan.response_event = "workflow.completed"
+        plan.correlation_id = "corr-123"
+        plan.tenant_id = "tenant-1"
+        plan.user_id = "user-1"
+        plan.status = "running"  # Initially running
+        plan.save = AsyncMock()
+        
+        # Execute COMPLETE action
+        await planner.execute_decision(decision, context, plan=plan)
+        
+        # Verify plan status was set to "completed"
+        assert plan.status == "completed", \
+            "Plan status should be set to 'completed' to prevent infinite loop"
+        
+        # Verify plan was saved to persist status change
+        plan.save.assert_called_once(), \
+            "Plan must be saved to persist completed status"
+        
+        # Verify response was still sent
+        context.bus.respond.assert_called_once()
 
 
 class TestPlanContextCompleteStatus:
