@@ -672,9 +672,9 @@ Planner (???) ← incomplete ❌
 
 ---
 
-### Phase 4: Polish - Documentation & Migration (Days 11-12)
+### Phase 4: Polish - Documentation, Migration & Release (Days 11-12)
 
-**Goal:** Update all documentation and create migration guide
+**Goal:** Update all documentation, create migration guide, and release v0.8.0
 
 **Tasks:**
 - [ ] Update `docs/agent_patterns/README.md`
@@ -692,18 +692,34 @@ Planner (???) ← incomplete ❌
   - Before/after code examples
   - Breaking changes list
   - Migration steps
-- [ ] Update `CHANGELOG.md` in SDK and soorma-common
-- [ ] Update example READMEs
+- [ ] Update `examples/README.md` — add `10-choreography-basic` to learning path
+- [ ] Create `services/tracker/README.md` — API docs and deployment guide
+- [ ] **Version Bump: `0.7.7` → `0.8.0`** (introduces ChoreographyPlanner + Tracker Service)
+  - `sdk/python/pyproject.toml`
+  - `libs/soorma-common/pyproject.toml`
+  - `services/tracker/pyproject.toml`
+  - `services/event-service/pyproject.toml`
+  - `services/memory/pyproject.toml`
+  - `services/registry/pyproject.toml`
+- [ ] **Update CHANGELOGs** for all components:
+  - `CHANGELOG.md` (root) — platform 0.8.0 release entry
+  - `sdk/python/CHANGELOG.md` — ChoreographyPlanner, TrackerClient, EventEnvelope fields
+  - `libs/soorma-common/CHANGELOG.md` — decisions.py, tracker.py, events.py additions
+  - `services/tracker/CHANGELOG.md` — new service (create file)
+  - `services/memory/CHANGELOG.md`, `services/event-service/CHANGELOG.md`, `services/registry/CHANGELOG.md` — version bump entries
 
 **Deliverables:**
-- Updated documentation (6 files)
-- Migration guide (1 file)
-- Updated CHANGELOGs (2 files)
+- Updated documentation (7 files)
+- Migration guide (1 new file)
+- Tracker Service README (1 new file)
+- Version bump across 6 `pyproject.toml` files
+- CHANGELOG entries across 7 files
 
 **Completion Criteria:**
 - [ ] All documentation reflects new Planner model
 - [ ] Migration guide complete with examples
-- [ ] CHANGELOG entries added
+- [ ] All versions at `0.8.0`
+- [ ] All CHANGELOGs updated
 - [ ] Documentation review complete
 
 ---
@@ -875,10 +891,13 @@ async def test_nested_plans_with_parent_plan_id()
 - [ ] Update docs/agent_patterns/ARCHITECTURE.md
 - [ ] Update docs/refactoring/README.md
 - [ ] Create docs/refactoring/sdk/09-PLANNER-MIGRATION.md
-- [ ] Update example READMEs
-- [ ] Final test run (all 40+ tests passing)
-- [ ] Commit: "docs: Complete Stage 4 Planner implementation documentation"
-- [ ] Tag release: v0.8.0
+- [ ] Update examples/README.md (add 10-choreography-basic)
+- [ ] Create services/tracker/README.md
+- [ ] Bump all versions 0.7.7 → 0.8.0 (sdk, soorma-common, all services)
+- [ ] Update all CHANGELOGs (root, sdk, soorma-common, tracker, memory, event-service, registry)
+- [ ] Final test run (all 451+ tests passing)
+- [ ] Commit: "release: bump version to 0.8.0 — ChoreographyPlanner + Tracker Service"
+- [ ] Merge dev → main and tag v0.8.0
 
 ---
 
