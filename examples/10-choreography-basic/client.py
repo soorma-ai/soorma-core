@@ -49,13 +49,24 @@ async def main() -> None:
     )
 
     print("[client] Waiting for response (timeout: 30s)...")
-    await asyncio.wait_for(response_event.wait(), timeout=30.0)
     
-    print("\n[client] Received report:")
-    print(response_payload.get("result", response_payload))
-    
-    await client.disconnect()
+    try:
+        await asyncio.wait_for(response_event.wait(), timeout=30.0)
+        
+        print("\n[client] Received report:")
+        print(response_payload.get("result", response_payload))
+        
+    except asyncio.TimeoutError:
+        print("\n⚠️  Timeout waiting for response")
+        print("   Make sure the Planner and Workers are running!")
+        print("   Run: ./start.sh")
+        print()
+    finally:
+        await client.disconnect()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n🛑 Interrupted\n")
