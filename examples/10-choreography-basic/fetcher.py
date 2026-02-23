@@ -56,6 +56,8 @@ async def handle_fetch(task: TaskContext, context: PlatformContext) -> None:
 
     print(f"\n[fetcher] ▶ Received: data.fetch.requested")
     print(f"[fetcher] Task ID: {task.task_id}")
+    print(f"[fetcher] Correlation ID: {task.correlation_id}")
+    print(f"[fetcher] Response event: {task.response_event}")
     print(f"[fetcher] Loading feedback for {product} (n={sample_size})")
     await asyncio.sleep(0.3)
 

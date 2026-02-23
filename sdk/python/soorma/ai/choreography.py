@@ -374,7 +374,7 @@ class ChoreographyPlanner(Planner):
         if action.action == PlanAction.PUBLISH:
             # PUBLISH: Publish new event to trigger workers
             publish_action = action  # Type hint for IDE
-            metadata = self._resolve_publish_metadata(publish_action, goal_event)
+            metadata = self._resolve_publish_metadata(publish_action, goal_event, plan)
             
             # Prepare data payload - inject task_id when correlation_id present
             payload_data = dict(publish_action.data) if publish_action.data else {}
@@ -382,6 +382,8 @@ class ChoreographyPlanner(Planner):
                 payload_data["task_id"] = metadata["correlation_id"]
             
             logger.info(f"[ChoreographyPlanner] Publishing event: {publish_action.event_type}")
+            logger.info(f"[ChoreographyPlanner] Correlation ID: {metadata.get('correlation_id')}")
+            logger.info(f"[ChoreographyPlanner] Response event: {metadata.get('response_event')}")
             if metadata.get("response_event"):
                 logger.debug(f"[ChoreographyPlanner] Request/response flow: expecting {metadata['response_event']}")
                 await context.bus.request(
@@ -487,6 +489,7 @@ class ChoreographyPlanner(Planner):
         self,
         action: PublishAction,
         goal_event: Optional[Any],
+        plan: Optional[Any] = None,
     ) -> Dict[str, Optional[str]]:
         """Resolve publish metadata for request/response choreography.
 
@@ -497,14 +500,23 @@ class ChoreographyPlanner(Planner):
         Args:
             action: PublishAction payload with optional response_event, correlation_id.
             goal_event: Optional event with tenant/user/session context to propagate.
+            plan: Optional PlanContext - if provided, uses plan.correlation_id for tracking.
 
         Returns:
             Metadata dict with keys: response_event, correlation_id, response_topic,
             tenant_id, user_id, session_id. None values are allowed (treated as absent).
         """
+        # Use plan's correlation_id to ensure responses can be correlated back
+        # Fall back to action.correlation_id (LLM suggestion) or None
+        correlation_id = None
+        if plan:
+            correlation_id = getattr(plan, "correlation_id", None)
+        if not correlation_id:
+            correlation_id = action.correlation_id
+        
         metadata = {
             "response_event": action.response_event,
-            "correlation_id": action.correlation_id,
+            "correlation_id": correlation_id,
             "response_topic": action.response_topic,
             "tenant_id": getattr(goal_event, "tenant_id", None) if goal_event else None,
             "user_id": getattr(goal_event, "user_id", None) if goal_event else None,

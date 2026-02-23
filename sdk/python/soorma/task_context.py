@@ -44,6 +44,7 @@ Related Patterns:
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Callable
 from uuid import uuid4
@@ -51,6 +52,9 @@ from uuid import uuid4
 from soorma_common.events import EventEnvelope
 
 from .context import PlatformContext
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -709,6 +713,11 @@ class TaskContext:
         if self._register_produced_event:
             self._register_produced_event(self.response_event)
         # Publish result event
+        final_correlation_id = self.correlation_id or self.task_id
+        logger.info(
+            f"TaskContext.complete() publishing {self.response_event} "
+            f"with correlation_id={final_correlation_id}"
+        )
         await self._context.bus.respond(
             event_type=self.response_event,
             data={
@@ -716,7 +725,7 @@ class TaskContext:
                 "status": "completed",
                 "result": result,
             },
-            correlation_id=self.correlation_id or self.task_id,
+            correlation_id=final_correlation_id,
             topic=self.response_topic,
             tenant_id=self.tenant_id,
             user_id=self.user_id,
