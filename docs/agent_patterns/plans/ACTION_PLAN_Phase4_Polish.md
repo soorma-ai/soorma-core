@@ -83,11 +83,11 @@ Phase 3 delivered the core implementation:
 | **Root README** | Enhancement | `README.md` (discoverability links) | 15 min |
 | **Examples Docs** | Enhancement | `examples/README.md` | 30 min |
 | **Tracker Service Docs** | Enhancement | `services/tracker/README.md` | 1-2 hours |
-| **Version Bumps** | Version Update | 6 `pyproject.toml` files | 30 min |
+| **Version Bumps** | Version Update | 17 files (6 pyproject.toml + 11 code/config/tests) | 1 hour |
 | **CHANGELOGs** | Enhancement | 7 CHANGELOG.md files | 2-3 hours |
 | **Test Validation** | Verification | All test suites | 30 min |
 
-**Total Estimated Effort:** 9-12 hours (1.5 days, buffer to 2 days)
+**Total Estimated Effort:** 9.5-13 hours (2 days with buffer)
 
 ### SDK Layer Verification (Not Applicable)
 
@@ -259,8 +259,27 @@ Phase 3 delivered the core implementation:
 5. `services/memory/pyproject.toml` - 0.7.7 → 0.8.0
 6. `services/registry/pyproject.toml` - 0.7.7 → 0.8.0
 
+**Additional Version Locations (Code & Docs):**
+7. `sdk/python/soorma/__init__.py` - `__version__ = "0.7.7"`
+8. `libs/soorma-common/src/soorma_common/__init__.py` - `__version__ = "0.7.7"`
+9. `services/tracker/src/tracker_service/__init__.py` - `__version__ = "0.7.7"`
+10. `services/tracker/src/tracker_service/core/config.py` - `version: str = "0.7.7"`
+11. `services/tracker/README.md` - `**Version:** 0.7.7`
+12. `services/tracker/tests/test_main.py` - test assertions (3 places)
+13. `services/memory/src/memory_service/__init__.py` - `__version__ = "0.7.7"`
+14. `services/memory/src/memory_service/core/config.py` - `version: str = "0.7.7"`
+15. `services/event-service/src/main.py` - hardcoded version (2 places: FastAPI metadata + health)
+16. `services/registry/src/registry_service/__init__.py` - `__version__ = "0.7.7"`
+
+**Total: 17 files** (6 pyproject.toml + 11 code/config/test files)
+
 **Process:**
 - Update `version = "0.7.7"` → `version = "0.8.0"` in each `pyproject.toml`
+- Update `__version__ = "0.7.7"` → `__version__ = "0.8.0"` in each `__init__.py`
+- Update `version: str = "0.7.7"` → `version: str = "0.8.0"` in config.py files
+- Update hardcoded versions in main.py files (event-service)
+- Update README version badges
+- Update test assertions
 - No dependency version updates needed (internal package versions auto-resolve)
 
 ### CHANGELOG Update Strategy
@@ -465,19 +484,41 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 
 #### Task 5: Bump All Versions to 0.8.0 ⏳
 **Owner:** Agent  
-**Duration:** 30 minutes  
+**Duration:** 1 hour (increased - 17 files total)  
 **Status:** 📋 Not Started  
 
 **Sub-Tasks:**
-- [ ] Update `sdk/python/pyproject.toml` - version = "0.8.0"
-- [ ] Update `libs/soorma-common/pyproject.toml` - version = "0.8.0"
-- [ ] Update `services/tracker/pyproject.toml` - version = "0.8.0"
-- [ ] Update `services/event-service/pyproject.toml` - version = "0.8.0"
-- [ ] Update `services/memory/pyproject.toml` - version = "0.8.0"
-- [ ] Update `services/registry/pyproject.toml` - version = "0.8.0"
+- [ ] **pyproject.toml files (6 files):**
+  - Update `sdk/python/pyproject.toml` → 0.8.0
+  - Update `libs/soorma-common/pyproject.toml` → 0.8.0
+  - Update `services/tracker/pyproject.toml` → 0.8.0
+  - Update `services/event-service/pyproject.toml` → 0.8.0
+  - Update `services/memory/pyproject.toml` → 0.8.0
+  - Update `services/registry/pyproject.toml` → 0.8.0
+- [ ] **__init__.py files (5 files):**
+  - Update `sdk/python/soorma/__init__.py` → `__version__ = "0.8.0"`
+  - Update `libs/soorma-common/src/soorma_common/__init__.py` → `__version__ = "0.8.0"`
+  - Update `services/tracker/src/tracker_service/__init__.py` → `__version__ = "0.8.0"`
+  - Update `services/memory/src/memory_service/__init__.py` → `__version__ = "0.8.0"`
+  - Update `services/registry/src/registry_service/__init__.py` → `__version__ = "0.8.0"`
+- [ ] **Service config.py files (2 files):**
+  - Update `services/tracker/src/tracker_service/core/config.py` → `version: str = "0.8.0"`
+  - Update `services/memory/src/memory_service/core/config.py` → `version: str = "0.8.0"`
+- [ ] **Service main.py files (1 file):**
+  - Update `services/event-service/src/main.py` → hardcoded versions (2 places: FastAPI metadata line 61 + health endpoint line 85)
+- [ ] **Documentation (1 file):**
+  - Update `services/tracker/README.md` → `**Version:** 0.8.0`
+- [ ] **Test files (1 file):**
+  - Update `services/tracker/tests/test_main.py` → test assertions (3 places: lines 17, 36, 94)
+- [ ] **Verification:**
+  - Run: `grep -r "0.7.7" --include="*.py" --include="*.toml" --include="*.md" . | grep -v CHANGELOG | grep -v "docs/" | wc -l`
+  - Expected: 0 (all versions updated, excluding CHANGELOGs and this plan)
+  - Run: `grep -r "0.8.0" --include="pyproject.toml" . | wc -l`
+  - Expected: 6 (all pyproject.toml files)
 
 **Deliverables:**
-- 6 `pyproject.toml` files updated to version 0.8.0
+- 17 files updated to version 0.8.0 (6 pyproject.toml + 11 code/config/test/doc files)
+- Zero stray 0.7.7 references in code
 
 **Dependencies:** None (can run anytime, recommend after docs)
 
@@ -675,7 +716,7 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 - [ ] **Documentation Coverage:** All 5 doc areas updated (agent_patterns, refactoring, root README, examples, tracker)
 - [ ] **Pattern Selection Framework:** Decision criteria, flowchart, and tradeoffs table complete
 - [ ] **Discoverability:** Root README links to pattern documentation
-- [ ] **Version Consistency:** 6/6 `pyproject.toml` files at version 0.8.0
+- [ ] **Version Consistency:** 17/17 files at version 0.8.0 (6 pyproject.toml + 5 __init__.py + 2 config.py + 1 main.py + 1 README + 1 test + 1 event-service hardcoded)
 - [ ] **CHANGELOG Completeness:** 7/7 CHANGELOG files updated (root + sdk + common + 4 services)
 - [ ] **Test Pass Rate:** 100% (451+ tests passing, zero regressions)
 - [ ] **Link Integrity:** Zero broken links in documentation
@@ -767,15 +808,15 @@ Before marking Phase 4 complete, ALL items must be checked:
   - ✅ No Tracker UI (use curl examples)
 - [ ] Developer approval for FDE scope (if needed)
 
-### Task 5: Version Bumps (30 min)
-- [ ] Update `sdk/python/pyproject.toml` → 0.8.0
-- [ ] Update `libs/soorma-common/pyproject.toml` → 0.8.0
-- [ ] Update `services/tracker/pyproject.toml` → 0.8.0
-- [ ] Update `services/event-service/pyproject.toml` → 0.8.0
-- [ ] Update `services/memory/pyproject.toml` → 0.8.0
-- [ ] Update `services/registry/pyproject.toml` → 0.8.0
-- [ ] Verify consistency: `grep -r "version = \"0.8.0\"" */pyproject.toml | wc -l` == 6
-- [ ] Commit: `chore: bump all versions to 0.8.0`
+### Task 5: Version Bumps (1 hour)
+- [ ] Update all 6 `pyproject.toml` files → 0.8.0
+- [ ] Update all 5 `__init__.py` files → `__version__ = "0.8.0"`
+- [ ] Update 2 service `config.py` files → `version: str = "0.8.0"`
+- [ ] Update `services/event-service/src/main.py` hardcoded versions (lines 61, 85)
+- [ ] Update `services/tracker/README.md` version badge
+- [ ] Update `services/tracker/tests/test_main.py` assertions (lines 17, 36, 94)
+- [ ] Verify: `grep -r "0.7.7" --include="*.py" --include="*.toml" --include="*.md" . | grep -v CHANGELOG | grep -v docs/ | wc -l` == 0
+- [ ] Commit: `chore: bump all versions to 0.8.0 (17 files)`
 
 ### Task 6: CHANGELOG Updates (2-3 hours)
 - [ ] Update `CHANGELOG.md` (root) - add v0.8.0 section
@@ -831,7 +872,7 @@ Before marking Phase 4 complete, ALL items must be checked:
 ### Day 12 (February XX, 2026) - Version Bumps & Release
 
 **Morning (3 hours):**
-- Task 5: Version Bumps (30 min)
+- Task 5: Version Bumps (1 hour)
 - Task 6: CHANGELOG Updates (2-3 hours)
 
 **Afternoon (2 hours):**
