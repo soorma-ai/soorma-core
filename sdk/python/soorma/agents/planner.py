@@ -351,6 +351,11 @@ class Planner(Agent):
             # because topics are not event types.
             @self.on_event("*", topic=EventTopic.ACTION_RESULTS)
             async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
+                logger.info(
+                    f"[Planner.on_transition] Received {event.type} "
+                    f"(correlation={event.correlation_id}, tenant={event.tenant_id}, user={event.user_id})"
+                )
+                
                 # Require tenant/user context to restore plans.
                 if not event.tenant_id or not event.user_id:
                     logger.warning(
@@ -358,6 +363,7 @@ class Planner(Agent):
                     )
                     return
 
+                logger.info(f"[Planner.on_transition] Restoring plan by correlation: {event.correlation_id}")
                 plan = await PlanContext.restore_by_correlation(
                     correlation_id=event.correlation_id,
                     context=context,
@@ -365,12 +371,20 @@ class Planner(Agent):
                     user_id=event.user_id,
                 )
                 if not plan:
+                    logger.warning(
+                        f"[Planner.on_transition] No plan found for correlation_id={event.correlation_id}"
+                    )
                     return
 
+                logger.info(f"[Planner.on_transition] Plan restored: {plan.plan_id}")
                 next_state = plan.get_next_state(event)
                 if not next_state:
-                    return
+                    logger.info(
+                        f"[Planner.on_transition] No next_state from state machine "
+                        f"(OK for ChoreographyPlanner - LLM decides autonomously)"
+                    )
 
+                logger.info(f"[Planner.on_transition] Calling user handler with next_state={next_state}")
                 await func(event, context, plan, next_state)
             
             # RF-SDK-023: Remove wildcard from events_consumed
