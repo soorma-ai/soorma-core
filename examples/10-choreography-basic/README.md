@@ -4,10 +4,13 @@
 
 ## What This Shows
 
-- Autonomous orchestration driven by LLM decisions
-- Explicit action request and response events
+- **Autonomous orchestration driven by LLM reasoning** - No hardcoded event sequences
+- **Capability-based event discovery** - LLM chooses events based on descriptions, not names
+- Explicit action request and response events for choreography
 - Planner + three Workers in a simple pipeline
 - Tracker Service queries for plan progress
+
+**🔍 See [AUTONOMOUS_DISCOVERY.md](AUTONOMOUS_DISCOVERY.md) for the discovery pattern deep-dive**
 
 ## Architecture
 
@@ -32,16 +35,29 @@ Client -> Planner -> Fetcher -> Analyzer -> Reporter -> Planner -> Client
 
 ### ChoreographyPlanner Decision Cycle
 
-The planner uses GPT-4o to autonomously decide what to do next:
+The planner uses GPT-4o to autonomously discover and orchestrate workers:
 
-- **on_goal**: Receives initial client goal → Creates plan in Memory → LLM chooses first action
-- **on_transition**: Receives worker responses → Restores plan → LLM decides next action
+- **on_goal**: Receives initial client goal → Creates plan in Memory → Queries Registry for available events → LLM chooses first action based on capability match
+- **on_transition**: Receives worker responses → Restores plan → Queries Registry → LLM decides next action
 
 **LLM Actions:**
-- `PUBLISH` - Orchestrate a worker by publishing an event
+- `PUBLISH` - Orchestrate a worker by publishing a discovered event
 - `COMPLETE` - Send final result back to client
 - `WAIT` - Wait for more events
 - `DELEGATE` - Hand off to another planner
+
+### Autonomous Event Discovery
+
+**Key Innovation:** The planner doesn't know event names in advance!
+
+1. **Workers Register Capabilities**: Events have rich descriptions like "Retrieve customer feedback entries from datastore. Use when you need to load raw feedback data..."
+2. **Planner Describes Logical Flow**: System instructions say "You need DATA RETRIEVAL capability" (not "call data.fetch.requested")
+3. **LLM Matches Capabilities**: Queries Registry, reads descriptions, chooses events that match needed capabilities
+4. **True Autonomy**: You can add new workers with different event names - planner discovers them automatically
+
+**Example:** If you create a new worker with event `feedback.load` (instead of `data.fetch.requested`) with the same capability description, the planner will discover and use it. No code changes needed!
+
+See [AUTONOMOUS_DISCOVERY.md](AUTONOMOUS_DISCOVERY.md) for detailed explanation and examples.
 
 ### Key Patterns
 

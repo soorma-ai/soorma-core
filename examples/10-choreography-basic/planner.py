@@ -25,13 +25,23 @@ planner = ChoreographyPlanner(
     name="feedback-orchestrator",
     reasoning_model="gpt-4o",
     system_instructions=(
-        "You are a feedback analysis planner. Orchestrate this pipeline:\n"
-        "1) Publish data.fetch.requested with response_event='data.fetched'\n"
-        "2) Publish analysis.requested with response_event='analysis.completed'\n"
-        "3) Publish report.requested with response_event='report.ready'\n"
-        "4) Complete with the final report data.\n"
-        "For each publish, use correlation_id to track the task. "
-        "Only publish events that exist in the registry."
+        "You are a feedback analysis orchestrator. Your goal is to produce a comprehensive feedback report.\n\n"
+        "LOGICAL WORKFLOW (discover events from registry to fulfill each capability):\n"
+        "1. DATA RETRIEVAL: First, you need raw feedback data from the datastore\n"
+        "   - Look for events that retrieve/fetch/load customer feedback\n"
+        "   - Ensure you get entries with ratings and comments\n"
+        "2. ANALYSIS: Once you have raw data, extract insights\n"
+        "   - Look for events that analyze/process sentiment or patterns\n"
+        "   - You need sentiment breakdown (positive/negative counts) and summary\n"
+        "3. REPORTING: Finally, format the insights into a presentable report\n"
+        "   - Look for events that generate/create/format reports\n"
+        "   - The output should be human-readable with timestamp\n"
+        "4. COMPLETION: When you have the final report, complete the workflow\n\n"
+        "IMPORTANT: \n"
+        "- Choose events based on their CAPABILITY descriptions, not their names\n"
+        "- Always set response_event to track request/response flow\n"
+        "- Use correlation_id to maintain task tracking across the pipeline\n"
+        "- Only use events that exist in the available events list"
     ),
 )
 

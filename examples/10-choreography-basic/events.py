@@ -63,7 +63,7 @@ class ReportReadyPayload(BaseModel):
 DATA_FETCH_REQUESTED_EVENT = EventDefinition(
     event_name="data.fetch.requested",
     topic=EventTopic.ACTION_REQUESTS,
-    description="Request to fetch customer feedback data",
+    description="Retrieve customer feedback entries from datastore. Use when you need to load raw feedback data for a product. Returns a collection of feedback entries with ratings and comments.",
     payload_schema=DataFetchRequestPayload.model_json_schema(),
     response_schema=DataFetchedPayload.model_json_schema()
 )
@@ -71,14 +71,14 @@ DATA_FETCH_REQUESTED_EVENT = EventDefinition(
 DATA_FETCHED_EVENT = EventDefinition(
     event_name="data.fetched",
     topic=EventTopic.ACTION_RESULTS,
-    description="Customer feedback data fetched successfully",
+    description="Feedback data successfully retrieved from datastore",
     payload_schema=DataFetchedPayload.model_json_schema()
 )
 
 ANALYSIS_REQUESTED_EVENT = EventDefinition(
     event_name="analysis.requested",
     topic=EventTopic.ACTION_REQUESTS,
-    description="Request to analyze feedback sentiment",
+    description="Analyze sentiment and patterns in customer feedback. Use when you have raw feedback data and need to extract insights like positive/negative sentiment counts and summary. Returns analysis with sentiment breakdown.",
     payload_schema=AnalysisRequestPayload.model_json_schema(),
     response_schema=AnalysisCompletedPayload.model_json_schema()
 )
@@ -86,14 +86,14 @@ ANALYSIS_REQUESTED_EVENT = EventDefinition(
 ANALYSIS_COMPLETED_EVENT = EventDefinition(
     event_name="analysis.completed",
     topic=EventTopic.ACTION_RESULTS,
-    description="Feedback analysis completed",
+    description="Sentiment analysis completed with insights extracted",
     payload_schema=AnalysisCompletedPayload.model_json_schema()
 )
 
 REPORT_REQUESTED_EVENT = EventDefinition(
     event_name="report.requested",
     topic=EventTopic.ACTION_REQUESTS,
-    description="Request to generate feedback report",
+    description="Generate a formatted feedback report for presentation. Use when you have analysis results and need a human-readable report document. Returns formatted report text with timestamp.",
     payload_schema=ReportRequestPayload.model_json_schema(),
     response_schema=ReportReadyPayload.model_json_schema()
 )
