@@ -240,6 +240,8 @@ class ChoreographyPlanner(Planner):
                 },
             )
         """
+        logger.info(f"[ChoreographyPlanner] Starting reasoning for trigger: {trigger}")
+        logger.debug(f"[ChoreographyPlanner] Plan ID: {plan_id}, Custom context: {bool(custom_context)}")
         # Lazy import to avoid hard dependency
         if not self._litellm:
             try:
@@ -268,10 +270,14 @@ class ChoreographyPlanner(Planner):
                 )
         
         # Discover available events from Registry
+        logger.info(f"[ChoreographyPlanner] Discovering actionable events from Registry...")
         events = await context.toolkit.discover_actionable_events(topic=EventTopic.ACTION_REQUESTS)
+        logger.info(f"[ChoreographyPlanner] Found {len(events)} actionable events")
         
         # Build schema-based prompt
+        logger.debug(f"[ChoreographyPlanner] Building prompt with {len(events)} events...")
         prompt = self._build_prompt(trigger, events, custom_context)
+        logger.debug(f"[ChoreographyPlanner] Prompt length: {len(prompt)} chars")
         
         # Build system message with strategy guidance
         system_msg = self.system_instructions or "You are a planning agent that decides the next step in a workflow."
@@ -298,7 +304,7 @@ class ChoreographyPlanner(Planner):
                 **self.llm_kwargs,
             )
         except Exception as e:
-            logger.error(f"LLM call failed: {e}")
+            logger.error(f"[ChoreographyPlanner] LLM call failed: {e}")
             logger.exception("LLM call exception details:")
             raise RuntimeError(
                 f"LLM reasoning failed for model {self.reasoning_model}. "
@@ -307,10 +313,12 @@ class ChoreographyPlanner(Planner):
         
         # Parse response into PlannerDecision
         decision_data = response.choices[0].message.content
+        logger.info(f"[ChoreographyPlanner] LLM response received ({len(decision_data)} chars)")
         logger.debug(f"LLM response: {decision_data[:200]}...")  # Log first 200 chars
         
         try:
             decision = PlannerDecision.model_validate_json(decision_data)
+            logger.info(f"[ChoreographyPlanner] Successfully parsed decision: action={decision.next_action.action}")
         except Exception as e:
             logger.error(f"Failed to parse LLM response as PlannerDecision: {e}")
             logger.exception("LLM response parsing exception details:")
@@ -321,10 +329,11 @@ class ChoreographyPlanner(Planner):
             ) from e
         
         # Validate that referenced events exist
+        logger.debug(f"[ChoreographyPlanner] Validating decision references...")
         await self._validate_decision_events(decision, events)
         
         logger.info(
-            f"Decision for plan {plan_id}: {decision.next_action.action} "
+            f"[ChoreographyPlanner] Reasoning complete: {decision.next_action.action} action for plan {decision.plan_id} "
             f"(confidence: {decision.confidence:.2f})"
         )
         
@@ -359,7 +368,8 @@ class ChoreographyPlanner(Planner):
         """
         action = decision.next_action
         
-        logger.info(f"Executing {action.action} action for plan {decision.plan_id}")
+        logger.info(f"[ChoreographyPlanner] Executing {action.action} action for plan {decision.plan_id}")
+        logger.debug(f"[ChoreographyPlanner] Action details: {type(action).__name__}")
         
         if action.action == PlanAction.PUBLISH:
             # PUBLISH: Publish new event to trigger workers
@@ -371,7 +381,9 @@ class ChoreographyPlanner(Planner):
             if metadata.get("correlation_id"):
                 payload_data["task_id"] = metadata["correlation_id"]
             
+            logger.info(f"[ChoreographyPlanner] Publishing event: {publish_action.event_type}")
             if metadata.get("response_event"):
+                logger.debug(f"[ChoreographyPlanner] Request/response flow: expecting {metadata['response_event']}")
                 await context.bus.request(
                     event_type=publish_action.event_type,
                     data=payload_data,
@@ -382,7 +394,9 @@ class ChoreographyPlanner(Planner):
                     user_id=metadata.get("user_id"),
                     session_id=metadata.get("session_id"),
                 )
+                logger.info(f"[ChoreographyPlanner] Request published: {publish_action.event_type}")
             else:
+                logger.debug(f"[ChoreographyPlanner] Fire-and-forget publish to topic: {publish_action.topic}")
                 await context.bus.publish(
                     topic=publish_action.topic or EventTopic.ACTION_REQUESTS,
                     event_type=publish_action.event_type,
@@ -391,15 +405,16 @@ class ChoreographyPlanner(Planner):
                     user_id=metadata.get("user_id"),
                     session_id=metadata.get("session_id"),
                 )
-            logger.debug(
-                f"Published {publish_action.event_type} to {publish_action.topic}: "
-                f"{publish_action.reasoning}"
+            logger.info(
+                f"[ChoreographyPlanner] ✓ Published {publish_action.event_type}: {publish_action.reasoning}"
             )
         
         elif action.action == PlanAction.COMPLETE:
             # COMPLETE: Finalize plan with response
             complete_action = action  # Type hint for IDE
+            logger.info(f"[ChoreographyPlanner] Completing plan with result: {list(complete_action.result.keys())}")
             if goal_event:
+                logger.debug(f"[ChoreographyPlanner] Sending response to: {goal_event.response_event}")
                 await context.bus.respond(
                     event_type=goal_event.response_event,
                     correlation_id=goal_event.correlation_id,
@@ -409,17 +424,18 @@ class ChoreographyPlanner(Planner):
                     session_id=goal_event.session_id,
                 )
                 logger.info(
-                    f"Plan {decision.plan_id} completed: {complete_action.reasoning}"
+                    f"[ChoreographyPlanner] ✓ Plan {decision.plan_id} completed: {complete_action.reasoning}"
                 )
             else:
                 logger.warning(
-                    f"COMPLETE action for plan {decision.plan_id} but no goal_event provided. "
+                    f"[ChoreographyPlanner] COMPLETE action for plan {decision.plan_id} but no goal_event provided. "
                     f"Cannot send response."
                 )
         
         elif action.action == PlanAction.WAIT:
             # WAIT: Pause plan and wait for external input
             wait_action = action  # Type hint for IDE
+            logger.info(f"[ChoreographyPlanner] Pausing plan, waiting for: {wait_action.expected_event}")
             
             if not plan:
                 raise ValueError(
@@ -449,20 +465,21 @@ class ChoreographyPlanner(Planner):
             )
             
             logger.info(
-                f"Plan {plan.plan_id} paused, waiting for {wait_action.expected_event}: "
+                f"[ChoreographyPlanner] ✓ Plan {plan.plan_id} paused, waiting for {wait_action.expected_event}: "
                 f"{wait_action.reason}"
             )
         
         elif action.action == PlanAction.DELEGATE:
             # DELEGATE: Forward to another planner
             delegate_action = action  # Type hint for IDE
+            logger.info(f"[ChoreographyPlanner] Delegating to planner: {delegate_action.target_planner}")
             await context.bus.publish(
                 topic="action-requests",
                 event_type=delegate_action.goal_event,
                 data=delegate_action.goal_data,
             )
             logger.info(
-                f"Delegated to {delegate_action.target_planner} via {delegate_action.goal_event}: "
+                f"[ChoreographyPlanner] ✓ Delegated to {delegate_action.target_planner} via {delegate_action.goal_event}: "
                 f"{delegate_action.reasoning}"
             )
 
