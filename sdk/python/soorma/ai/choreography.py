@@ -532,6 +532,9 @@ Additional Context:
 Consider this context when making decisions.
 """
         
+        # Get JSON schema for PlannerDecision
+        schema = PlannerDecision.model_json_schema()
+        
         return f"""
 {strategy_guidance}
 
@@ -548,13 +551,23 @@ Decide on the next action:
 - WAIT: Wait for external input (e.g., human approval)
 - DELEGATE: Forward to another planner
 
-Respond with JSON matching the PlannerDecision schema.
-Include:
+CRITICAL: Respond with JSON matching this exact schema:
+{json.dumps(schema, indent=2)}
+
+Required fields:
 - plan_id: (provide a unique identifier)
 - current_state: (current state in the plan)
-- next_action: (one of the action types above with required fields)
+- next_action: (object with "action" field set to "publish"/"complete"/"wait"/"delegate" plus action-specific fields)
 - reasoning: (explain why you chose this action)
 - confidence: (0.0-1.0, how confident are you in this decision)
+
+Example next_action for PUBLISH:
+{{
+  "action": "publish",
+  "event_type": "search.requested",
+  "data": {{"query": "example"}},
+  "reasoning": "Need to search"
+}}
 """
     
     def _get_strategy_guidance(self) -> str:

@@ -24,7 +24,7 @@ Usage:
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Literal
 from pydantic import BaseModel, Field
 
 from soorma_common.events import EventTopic
@@ -63,7 +63,7 @@ class PublishAction(BaseModel):
         reasoning: Why this event should be published
     """
     
-    action: PlanAction = Field(default=PlanAction.PUBLISH, description="Action type")
+    action: Literal["publish"] = Field(default="publish", description="Action type")
     event_type: str = Field(..., description="Event type to publish")
     topic: Optional[EventTopic] = Field(default=EventTopic.ACTION_REQUESTS, description="Topic for event")
     data: Dict[str, Any] = Field(default_factory=dict, description="Event payload")
@@ -94,7 +94,7 @@ class CompleteAction(BaseModel):
         reasoning: Why the plan is now complete
     """
     
-    action: PlanAction = Field(default=PlanAction.COMPLETE, description="Action type")
+    action: Literal["complete"] = Field(default="complete", description="Action type")
     result: Dict[str, Any] = Field(..., description="Final result to return")
     reasoning: str = Field(..., description="Why the plan is now complete")
 
@@ -112,7 +112,7 @@ class WaitAction(BaseModel):
         timeout_seconds: Timeout in seconds (default: 1 hour)
     """
     
-    action: PlanAction = Field(default=PlanAction.WAIT, description="Action type")
+    action: Literal["wait"] = Field(default="wait", description="Action type")
     reason: str = Field(..., description="Why we're waiting")
     expected_event: str = Field(..., description="Event type that will resume the plan")
     timeout_seconds: Optional[int] = Field(
@@ -135,7 +135,7 @@ class DelegateAction(BaseModel):
         reasoning: Why delegation is appropriate
     """
     
-    action: PlanAction = Field(default=PlanAction.DELEGATE, description="Action type")
+    action: Literal["delegate"] = Field(default="delegate", description="Action type")
     target_planner: str = Field(..., description="Name of planner to delegate to")
     goal_event: str = Field(..., description="Goal event to send")
     goal_data: Dict[str, Any] = Field(..., description="Goal parameters")
@@ -177,7 +177,7 @@ class PlannerDecision(BaseModel):
     
     plan_id: str = Field(..., description="Plan being executed")
     current_state: str = Field(..., description="Current state in the plan")
-    next_action: PlannerAction = Field(..., description="Action to take")
+    next_action: PlannerAction = Field(..., description="Action to take", discriminator="action")
     alternative_actions: Optional[List[PlannerAction]] = Field(
         default=None,
         description="Alternative actions the planner considered"
