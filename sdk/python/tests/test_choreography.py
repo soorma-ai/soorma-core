@@ -624,3 +624,119 @@ class TestChoreographyPlannerImportError:
         with patch('builtins.__import__', side_effect=mock_import):
             with pytest.raises(ImportError, match="litellm is required"):
                 await planner.reason_next_action("trigger", context)
+
+
+class TestChoreographyPlannerCorrelationId:
+    """Tests for correlation_id propagation in choreography (regression for plan restoration bug)."""
+    
+    def test_resolve_publish_metadata_uses_plan_correlation_id(self):
+        """_resolve_publish_metadata prioritizes plan.correlation_id over action.correlation_id."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        # Mock action with LLM-suggested correlation_id
+        action = PublishAction(
+            action="publish",
+            event_type="data.fetch.requested",
+            data={"product": "Widget"},
+            response_event="data.fetched",
+            correlation_id="fetch-001",  # LLM suggestion
+            reasoning="Fetch product data",
+        )
+        
+        # Mock plan with actual plan correlation_id
+        plan = MagicMock()
+        plan.correlation_id = "plan-abc-123"  # Actual plan ID
+        
+        # Mock goal event for tenant/user context
+        goal_event = MagicMock()
+        goal_event.tenant_id = "tenant-1"
+        goal_event.user_id = "user-1"
+        
+        metadata = planner._resolve_publish_metadata(action, goal_event, plan)
+        
+        # Should use plan's correlation_id, NOT action's
+        assert metadata["correlation_id"] == "plan-abc-123"
+        assert metadata["response_event"] == "data.fetched"
+    
+    def test_resolve_publish_metadata_falls_back_to_action_correlation_id(self):
+        """_resolve_publish_metadata uses action.correlation_id when no plan provided."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        action = PublishAction(
+            action="publish",
+            event_type="data.fetch.requested",
+            data={"product": "Widget"},
+            response_event="data.fetched",
+            correlation_id="fetch-001",
+            reasoning="Fetch data",
+        )
+        
+        goal_event = None
+        plan = None  # No plan context
+        
+        metadata = planner._resolve_publish_metadata(action, goal_event, plan)
+        
+        # Should fall back to action's correlation_id
+        assert metadata["correlation_id"] == "fetch-001"
+    
+    def test_resolve_publish_metadata_with_none_plan(self):
+        """_resolve_publish_metadata uses action.correlation_id when plan is None."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        action = PublishAction(
+            action="publish",
+            event_type="task.requested",
+            correlation_id="action-123",
+            reasoning="Execute task",
+        )
+        
+        # No plan provided
+        plan = None
+        
+        metadata = planner._resolve_publish_metadata(action, None, plan)
+        
+        # Should use action's correlation_id
+        assert metadata["correlation_id"] == "action-123"
+    
+    @pytest.mark.asyncio
+    async def test_execute_decision_passes_plan_to_metadata_resolver(self):
+        """execute_decision passes plan to _resolve_publish_metadata for correlation tracking."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        decision = PlannerDecision(
+            plan_id="plan-123",
+            current_state="executing",
+            reasoning="Test execution",
+            confidence=0.9,
+            next_action=PublishAction(
+                action="publish",
+                event_type="worker.requested",
+                data={"foo": "bar"},
+                response_event="worker.completed",
+                correlation_id="task-abc",
+                reasoning="Request worker execution",
+            ),
+        )
+        
+        # Mock context
+        context = MagicMock()
+        context.bus = MagicMock()
+        context.bus.request = AsyncMock()
+        
+        # Mock plan
+        plan = MagicMock()
+        plan.correlation_id = "plan-real-id"
+        
+        # Mock goal event
+        goal_event = MagicMock()
+        goal_event.tenant_id = "tenant-1"
+        goal_event.user_id = "user-1"
+        
+        # Execute decision with plan
+        await planner.execute_decision(decision, context, goal_event=goal_event, plan=plan)
+        
+        # Verify bus.request was called with plan's correlation_id
+        context.bus.request.assert_called_once()
+        call_kwargs = context.bus.request.call_args.kwargs
+        assert call_kwargs["correlation_id"] == "plan-real-id", \
+            "Should use plan correlation_id for worker request tracking"

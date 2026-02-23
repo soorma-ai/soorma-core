@@ -489,7 +489,7 @@ class ChoreographyPlanner(Planner):
         self,
         action: PublishAction,
         goal_event: Optional[Any],
-        plan: Optional[Any] = None,
+        plan: Optional[PlanContext] = None,
     ) -> Dict[str, Optional[str]]:
         """Resolve publish metadata for request/response choreography.
 
@@ -510,6 +510,8 @@ class ChoreographyPlanner(Planner):
         # Fall back to action.correlation_id (LLM suggestion) or None
         correlation_id = None
         if plan:
+            # Use getattr for defensive programming - handles edge cases
+            # where plan might not have correlation_id (e.g., incomplete mocks in tests)
             correlation_id = getattr(plan, "correlation_id", None)
         if not correlation_id:
             correlation_id = action.correlation_id
