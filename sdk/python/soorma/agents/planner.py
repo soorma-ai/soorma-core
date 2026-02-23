@@ -436,6 +436,7 @@ class Planner(Agent):
             
         except Exception as e:
             logger.error(f"Goal handling failed: {e}")
+            logger.exception("Goal handling exception details:")
             # Emit failure event
             await context.bus.publish(
                 event_type=f"{goal_type}.failed",

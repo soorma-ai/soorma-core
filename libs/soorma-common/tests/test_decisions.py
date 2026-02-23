@@ -9,6 +9,7 @@ from soorma_common.decisions import (
     DelegateAction,
     PlannerDecision,
 )
+from soorma_common.events import EventTopic
 
 
 def test_plan_action_enum_values():
@@ -28,21 +29,21 @@ def test_publish_action_validation():
     
     assert action.action == PlanAction.PUBLISH
     assert action.event_type == "search.requested"
-    assert action.topic == "action-requests"  # Default
+    assert action.topic == EventTopic.ACTION_REQUESTS  # Default
     assert action.data == {}  # Default
     assert action.reasoning == "Need to search for information"
 
 
 def test_publish_action_with_custom_topic():
-    """PublishAction accepts custom topic."""
+    """PublishAction accepts different EventTopic values."""
     action = PublishAction(
         event_type="search.requested",
-        topic="custom-topic",
+        topic=EventTopic.BUSINESS_FACTS,
         data={"query": "AI agents"},
         reasoning="Custom search",
     )
     
-    assert action.topic == "custom-topic"
+    assert action.topic == EventTopic.BUSINESS_FACTS
     assert action.data == {"query": "AI agents"}
 
 

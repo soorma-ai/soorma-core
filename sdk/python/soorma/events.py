@@ -503,6 +503,7 @@ class EventClient:
                 await handler(event_envelope)
             except Exception as e:
                 logger.error(f"Error in handler for {event_type}: {e}")
+                logger.exception(f"Handler exception details for {event_type}:")
         
         # Call catch-all handlers
         for handler in self._catch_all_handlers:
@@ -510,6 +511,7 @@ class EventClient:
                 await handler(event_envelope)
             except Exception as e:
                 logger.error(f"Error in catch-all handler: {e}")
+                logger.exception("Catch-all handler exception details:")
         
         if not handlers and not self._catch_all_handlers:
             logger.debug(f"No handlers for event type: {event_type}")

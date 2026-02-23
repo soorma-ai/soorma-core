@@ -27,6 +27,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
+from soorma_common.events import EventTopic
+
 
 class PlanAction(str, Enum):
     """Actions a Planner can take in response to events.
@@ -53,23 +55,23 @@ class PublishAction(BaseModel):
     Attributes:
         action: Action type (PUBLISH)
         event_type: Event type to publish (must exist in Registry)
-        topic: Topic for event (default: "action-requests")
+        topic: Topic for event (default: EventTopic.ACTION_REQUESTS)
         data: Event payload
         response_event: Optional response event for request/response flows
-        response_topic: Optional response topic (defaults to action-results)
+        response_topic: Optional response topic (defaults to EventTopic.ACTION_RESULTS)
         correlation_id: Optional correlation ID for request/response tracking
         reasoning: Why this event should be published
     """
     
     action: PlanAction = Field(default=PlanAction.PUBLISH, description="Action type")
     event_type: str = Field(..., description="Event type to publish")
-    topic: Optional[str] = Field(default="action-requests", description="Topic for event")
+    topic: Optional[EventTopic] = Field(default=EventTopic.ACTION_REQUESTS, description="Topic for event")
     data: Dict[str, Any] = Field(default_factory=dict, description="Event payload")
     response_event: Optional[str] = Field(
         default=None,
         description="Response event for action request flows",
     )
-    response_topic: Optional[str] = Field(
+    response_topic: Optional[EventTopic] = Field(
         default=None,
         description="Response topic (defaults to action-results)",
     )

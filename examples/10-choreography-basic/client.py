@@ -41,7 +41,7 @@ async def main() -> None:
         event_type="analyze.feedback",
         topic=EventTopic.ACTION_REQUESTS,
         response_event="feedback.report.ready",
-        response_topic="action-results",
+        response_topic=EventTopic.ACTION_RESULTS,
         correlation_id=correlation_id,
         data={"product": "Soorma Hub", "sample_size": 3},
         tenant_id=TENANT_ID,

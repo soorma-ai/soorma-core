@@ -497,6 +497,39 @@ class TestChoreographyPlannerExecution:
         call_args = context.bus.publish.call_args
         assert call_args.kwargs["event_type"] == "analysis.goal"
         assert call_args.kwargs["data"] == {"dataset": "sales"}
+    
+    @pytest.mark.asyncio
+    async def test_execute_decision_from_json_deserialization(self):
+        """execute_decision works with JSON-deserialized decisions (LLM path)."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        context = MagicMock()
+        context.bus.publish = AsyncMock()
+        
+        # Simulate LLM returning JSON string (real production path)
+        json_decision = '''{
+            "plan_id": "p1",
+            "current_state": "searching",
+            "next_action": {
+                "action": "publish",
+                "event_type": "search.requested",
+                "data": {"query": "test"},
+                "reasoning": "Need to search"
+            },
+            "reasoning": "Starting search",
+            "confidence": 0.9
+        }'''
+        
+        # Deserialize from JSON (this is what happens with LLM output)
+        decision = PlannerDecision.model_validate_json(json_decision)
+        
+        # Should not crash with AttributeError on .value
+        await planner.execute_decision(decision, context)
+        
+        # Verify it executed correctly
+        context.bus.publish.assert_called_once()
+        call_args = context.bus.publish.call_args
+        assert call_args.kwargs["event_type"] == "search.requested"
 
 
 class TestChoreographyPlannerCircuitBreaker:

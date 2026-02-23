@@ -51,7 +51,7 @@ from soorma_common.decisions import (
     WaitAction,
     DelegateAction,
 )
-from soorma_common.events import EventEnvelope
+from soorma_common.events import EventEnvelope, EventTopic
 
 logger = logging.getLogger(__name__)
 
@@ -268,7 +268,7 @@ class ChoreographyPlanner(Planner):
                 )
         
         # Discover available events from Registry
-        events = await context.toolkit.discover_actionable_events(topic="action-requests")
+        events = await context.toolkit.discover_actionable_events(topic=EventTopic.ACTION_REQUESTS)
         
         # Build schema-based prompt
         prompt = self._build_prompt(trigger, events, custom_context)
@@ -299,6 +299,7 @@ class ChoreographyPlanner(Planner):
             )
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
+            logger.exception("LLM call exception details:")
             raise RuntimeError(
                 f"LLM reasoning failed for model {self.reasoning_model}. "
                 f"Check API key and model availability. Error: {e}"
@@ -312,6 +313,7 @@ class ChoreographyPlanner(Planner):
             decision = PlannerDecision.model_validate_json(decision_data)
         except Exception as e:
             logger.error(f"Failed to parse LLM response as PlannerDecision: {e}")
+            logger.exception("LLM response parsing exception details:")
             logger.debug(f"Raw LLM output: {decision_data}")
             raise ValueError(
                 f"LLM returned invalid decision format. "
@@ -322,7 +324,7 @@ class ChoreographyPlanner(Planner):
         await self._validate_decision_events(decision, events)
         
         logger.info(
-            f"Decision for plan {plan_id}: {decision.next_action.action.value} "
+            f"Decision for plan {plan_id}: {decision.next_action.action} "
             f"(confidence: {decision.confidence:.2f})"
         )
         
@@ -357,7 +359,7 @@ class ChoreographyPlanner(Planner):
         """
         action = decision.next_action
         
-        logger.info(f"Executing {action.action.value} action for plan {decision.plan_id}")
+        logger.info(f"Executing {action.action} action for plan {decision.plan_id}")
         
         if action.action == PlanAction.PUBLISH:
             # PUBLISH: Publish new event to trigger workers
@@ -375,14 +377,14 @@ class ChoreographyPlanner(Planner):
                     data=payload_data,
                     response_event=metadata["response_event"],
                     correlation_id=metadata.get("correlation_id"),
-                    response_topic=metadata.get("response_topic") or "action-results",
+                    response_topic=metadata.get("response_topic") or EventTopic.ACTION_RESULTS,
                     tenant_id=metadata.get("tenant_id"),
                     user_id=metadata.get("user_id"),
                     session_id=metadata.get("session_id"),
                 )
             else:
                 await context.bus.publish(
-                    topic=publish_action.topic or "action-requests",
+                    topic=publish_action.topic or EventTopic.ACTION_REQUESTS,
                     event_type=publish_action.event_type,
                     data=payload_data,
                     tenant_id=metadata.get("tenant_id"),
