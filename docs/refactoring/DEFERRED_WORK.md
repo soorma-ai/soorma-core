@@ -1,7 +1,7 @@
 # Deferred Work Tracking
 
 **Purpose:** Track refactoring tasks deferred to future stages to prevent them from being lost.  
-**Last Updated:** February 22, 2026
+**Last Updated:** February 22, 2026 (Added Tracker NATS direct integration tech debt)
 
 ---
 
@@ -581,6 +581,104 @@ When deferring work during implementation:
 ---
 
 ## Stage 4 Phase 3 Deferrals
+
+### Tracker Service Direct NATS Integration (Architectural Tech Debt)
+
+**Description:** Tracker Service currently subscribes to event topics using `EventClient` — the same agent-facing abstraction used by workers and planners. Infrastructure services (Tracker, Memory, Registry) should communicate with NATS directly, not via the agent event abstraction layer.
+
+**Deferred From:** Stage 4 Phase 3 (February 2026) — identified during Phase 3 completion review
+
+**Priority:** High — this is an architectural violation, not just a feature gap
+
+**Target Stage:** Stage 5 (early)
+
+**Estimated Effort:** 1-2 days
+
+#### Problem
+
+The Event Service (`services/event-service/`) is the authoritative NATS adapter for Soorma. It exposes an HTTP API that **agents** consume via `EventClient`. This abstraction is intentional: agents should not know about NATS directly.
+
+However, Tracker Service currently connects to events via the same `EventClient` path:
+
+```python
+# CURRENT (WRONG) - Tracker uses agent abstraction
+from soorma.events import EventClient
+
+client = EventClient(base_url="http://event-service:8082")
+await client.subscribe(topic="action-requests", handler=handle_action_request)
+```
+
+This is wrong because:
+1. **Wrong abstraction layer:** Infrastructure services are peers of Event Service, not consumers
+2. **Circular dependency risk:** Tracker depends on Event Service being healthy to receive events
+3. **Latency:** Extra HTTP hop through Event Service for every event
+4. **Operational coupling:** Tracker cannot start subscribing until Event Service is fully ready
+
+#### Correct Pattern
+
+Infrastructure services should talk directly to NATS using the JetStream client, the same way Event Service does internally:
+
+```python
+# CORRECT - Infrastructure service talks directly to NATS/JetStream
+import nats
+from nats.js import JetStreamContext
+
+async def create_nats_subscriber():
+    nc = await nats.connect(servers=[os.getenv("NATS_URL", "nats://nats:4222")])
+    js: JetStreamContext = nc.jetstream()
+    
+    # Durable consumer on action-requests stream
+    await js.subscribe(
+        subject="action-requests.>",
+        durable="tracker-service",
+        cb=handle_action_request,
+    )
+```
+
+**Shared Code Strategy:** Extract shared NATS/JetStream patterns (connection management, durable consumer setup, error handling, reconnect logic) into a reusable library that both Event Service and Tracker Service (and future infrastructure services) can use:
+
+```
+libs/soorma-nats/          ← NEW shared library
+  src/
+    nats_client.py         # Connection factory + retry logic
+    jetstream.py           # Durable consumer helpers
+    serialization.py       # EventEnvelope serialization
+```
+
+**What stays the same:**
+- `EventClient` (HTTP) remains the correct pattern for **agents** (workers, planners)
+- Tracker Service internal logic (event_handlers.py, DB writes) unchanged
+- Only the subscription bootstrap changes
+
+**What changes:**
+- `services/tracker/src/tracker_service/main.py` — replace EventClient subscription with direct NATS JetStream consumers
+- `services/tracker/src/tracker_service/subscribers/` — subscription setup refactored
+- `docker-compose` — add `NATS_URL` env var to tracker service
+- (Optional) `libs/soorma-nats/` — shared NATS client library
+
+**Acceptance Criteria:**
+- [ ] Tracker subscribes directly to NATS JetStream (no EventClient dependency)
+- [ ] Durable consumer named `tracker-service` on each topic
+- [ ] Tracker starts independently of Event Service health
+- [ ] Existing event handler logic (`event_handlers.py`) unchanged
+- [ ] Shared NATS client code extracted if ≥2 services need it
+- [ ] 28 tracker tests still passing (handler logic unchanged)
+
+**Impact on Existing Tests:**
+- `test_subscribers.py` — no changes needed (tests mock DB, not NATS)
+- Integration test bootstrap code will change (start NATS consumer instead of EventClient)
+
+**References:**
+- Event Service NATS pattern: `services/event-service/src/`
+- Current incorrect pattern: `services/tracker/src/tracker_service/main.py`
+- Architecture boundary rule: [docs/ARCHITECTURE_PATTERNS.md Section 1](../ARCHITECTURE_PATTERNS.md)
+
+**Tracking:**
+- [ ] Create GitHub issue: "Refactor Tracker Service to use direct NATS JetStream subscription"
+- [ ] Evaluate whether Memory Service and Registry Service have the same issue
+- [ ] Create `libs/soorma-nats/` shared library in Stage 5 infrastructure pass
+
+---
 
 ### 11-app-research-advisor (Full Application)
 
