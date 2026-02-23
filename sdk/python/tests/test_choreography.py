@@ -740,3 +740,148 @@ class TestChoreographyPlannerCorrelationId:
         call_kwargs = context.bus.request.call_args.kwargs
         assert call_kwargs["correlation_id"] == "plan-real-id", \
             "Should use plan correlation_id for worker request tracking"
+
+
+class TestChoreographyPlannerCompleteAction:
+    """Tests for COMPLETE action metadata fallback (transition scenarios)."""
+    
+    @pytest.mark.asyncio
+    async def test_complete_uses_goal_event_metadata(self):
+        """COMPLETE uses goal_event metadata when available."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        decision = PlannerDecision(
+            plan_id="plan-123",
+            current_state="completed",
+            reasoning="Analysis complete",
+            confidence=1.0,
+            next_action=CompleteAction(
+                action="complete",
+                result={"status": "done", "summary": "Analysis finished"},
+                reasoning="All steps completed",
+            ),
+        )
+        
+        # Mock context with bus.respond
+        context = MagicMock()
+        context.bus = MagicMock()
+        context.bus.respond = AsyncMock()
+        
+        # Mock goal event (original client request)
+        goal_event = MagicMock()
+        goal_event.response_event = "feedback.report.ready"
+        goal_event.correlation_id = "client-123"
+        goal_event.tenant_id = "tenant-1"
+        goal_event.user_id = "user-1"
+        goal_event.session_id = "session-1"
+        
+        # Execute COMPLETE
+        await planner.execute_decision(decision, context, goal_event=goal_event, plan=None)
+        
+        # Verify response sent with goal_event metadata
+        context.bus.respond.assert_called_once()
+        call_kwargs = context.bus.respond.call_args.kwargs
+        assert call_kwargs["event_type"] == "feedback.report.ready"
+        assert call_kwargs["correlation_id"] == "client-123"
+        assert call_kwargs["tenant_id"] == "tenant-1"
+        assert call_kwargs["user_id"] == "user-1"
+    
+    @pytest.mark.asyncio
+    async def test_complete_falls_back_to_plan_metadata_in_transition(self):
+        """COMPLETE falls back to plan metadata when goal_event is a worker response."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        decision = PlannerDecision(
+            plan_id="plan-123",
+            current_state="completed",
+            reasoning="All workers done",
+            confidence=1.0,
+            next_action=CompleteAction(
+                action="complete",
+                result={"report": "Final analysis"},
+                reasoning="Workflow complete",
+            ),
+        )
+        
+        # Mock context
+        context = MagicMock()
+        context.bus = MagicMock()
+        context.bus.respond = AsyncMock()
+        
+        # Mock plan with original goal metadata
+        plan = MagicMock()
+        plan.response_event = "analyze.feedback.completed"
+        plan.correlation_id = "plan-goal-123"
+        plan.tenant_id = "tenant-1"
+        plan.user_id = "user-1"
+        plan.session_id = "session-1"
+        
+        # Mock goal_event as worker response (has no response_event)
+        goal_event = MagicMock()
+        goal_event.type = "report.ready"
+        goal_event.response_event = None  # Worker response, not client request
+        goal_event.correlation_id = None  # getattr will return None
+        goal_event.tenant_id = None
+        goal_event.user_id = None
+        goal_event.session_id = None
+        
+        # Execute COMPLETE from transition
+        await planner.execute_decision(decision, context, goal_event=goal_event, plan=plan)
+        
+        # Verify response sent with PLAN metadata (fallback)
+        context.bus.respond.assert_called_once()
+        call_kwargs = context.bus.respond.call_args.kwargs
+        assert call_kwargs["event_type"] == "analyze.feedback.completed", \
+            "Should use plan.response_event for final response"
+        assert call_kwargs["correlation_id"] == "plan-goal-123", \
+            "Should use plan.correlation_id to route response back to client"
+        assert call_kwargs["tenant_id"] == "tenant-1"
+        assert call_kwargs["user_id"] == "user-1"
+    
+    @pytest.mark.asyncio
+    async def test_complete_prefers_goal_event_over_plan(self):
+        """COMPLETE prefers goal_event metadata over plan metadata."""
+        planner = ChoreographyPlanner(name="test", reasoning_model="gpt-4o")
+        
+        decision = PlannerDecision(
+            plan_id="plan-123",
+            current_state="completed",
+            reasoning="Done",
+            confidence=1.0,
+            next_action=CompleteAction(
+                action="complete",
+                result={"result": "final"},
+                reasoning="Complete",
+            ),
+        )
+        
+        context = MagicMock()
+        context.bus = MagicMock()
+        context.bus.respond = AsyncMock()
+        
+        # Create plan with one set of metadata
+        plan = MagicMock()
+        plan.response_event = "plan.response"
+        plan.correlation_id = "plan-id"
+        plan.tenant_id = "plan-tenant"
+        plan.user_id = "plan-user"
+        
+        # Create goal_event with different metadata (should take precedence)
+        goal_event = MagicMock()
+        goal_event.response_event = "goal.response"
+        goal_event.correlation_id = "goal-id"
+        goal_event.tenant_id = "goal-tenant"
+        goal_event.user_id = "goal-user"
+        goal_event.session_id = "goal-session"
+        
+        # Execute
+        await planner.execute_decision(decision, context, goal_event=goal_event, plan=plan)
+        
+        # Verify GOAL_EVENT metadata was used, not plan
+        call_kwargs = context.bus.respond.call_args.kwargs
+        assert call_kwargs["event_type"] == "goal.response", \
+            "Should prefer goal_event.response_event"
+        assert call_kwargs["correlation_id"] == "goal-id", \
+            "Should prefer goal_event.correlation_id"
+        assert call_kwargs["tenant_id"] == "goal-tenant"
+        assert call_kwargs["user_id"] == "goal-user"

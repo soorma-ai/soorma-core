@@ -415,23 +415,45 @@ class ChoreographyPlanner(Planner):
             # COMPLETE: Finalize plan with response
             complete_action = action  # Type hint for IDE
             logger.info(f"[ChoreographyPlanner] Completing plan with result: {list(complete_action.result.keys())}")
-            if goal_event:
-                logger.debug(f"[ChoreographyPlanner] Sending response to: {goal_event.response_event}")
+            
+            # Get response metadata from goal_event or plan (for transitions)
+            response_event = getattr(goal_event, "response_event", None) if goal_event else None
+            if not response_event and plan:
+                response_event = plan.response_event
+            
+            correlation_id_val = getattr(goal_event, "correlation_id", None) if goal_event else None
+            if not correlation_id_val and plan:
+                correlation_id_val = plan.correlation_id
+            
+            tenant_id = getattr(goal_event, "tenant_id", None) if goal_event else None
+            if not tenant_id and plan:
+                tenant_id = plan.tenant_id
+                
+            user_id = getattr(goal_event, "user_id", None) if goal_event else None
+            if not user_id and plan:
+                user_id = plan.user_id
+                
+            session_id = getattr(goal_event, "session_id", None) if goal_event else None
+            if not session_id and plan:
+                session_id = plan.session_id
+            
+            if response_event:
+                logger.debug(f"[ChoreographyPlanner] Sending response to: {response_event}")
                 await context.bus.respond(
-                    event_type=goal_event.response_event,
-                    correlation_id=goal_event.correlation_id,
+                    event_type=response_event,
+                    correlation_id=correlation_id_val,
                     data=complete_action.result,
-                    tenant_id=goal_event.tenant_id,
-                    user_id=goal_event.user_id,
-                    session_id=goal_event.session_id,
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    session_id=session_id,
                 )
                 logger.info(
                     f"[ChoreographyPlanner] ✓ Plan {decision.plan_id} completed: {complete_action.reasoning}"
                 )
             else:
                 logger.warning(
-                    f"[ChoreographyPlanner] COMPLETE action for plan {decision.plan_id} but no goal_event provided. "
-                    f"Cannot send response."
+                    f"[ChoreographyPlanner] COMPLETE action for plan {decision.plan_id} but no response_event found. "
+                    f"Cannot send response. Ensure goal_event or plan has response_event set."
                 )
         
         elif action.action == PlanAction.WAIT:
@@ -510,9 +532,7 @@ class ChoreographyPlanner(Planner):
         # Fall back to action.correlation_id (LLM suggestion) or None
         correlation_id = None
         if plan:
-            # Use getattr for defensive programming - handles edge cases
-            # where plan might not have correlation_id (e.g., incomplete mocks in tests)
-            correlation_id = getattr(plan, "correlation_id", None)
+            correlation_id = plan.correlation_id
         if not correlation_id:
             correlation_id = action.correlation_id
         
