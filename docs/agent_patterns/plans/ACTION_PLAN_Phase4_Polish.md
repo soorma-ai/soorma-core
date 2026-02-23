@@ -1,7 +1,8 @@
-# Action Plan: Phase 4 - Polish, Documentation, Migration & Release (SOOR-PLAN-004)
+# Action Plan: Phase 4 - Polish, Documentation & Release (SOOR-PLAN-004)
 
 **Status:** 📋 Planning  
 **Created:** February 23, 2026  
+**Revised:** February 23, 2026 (removed migration guide - pre-release focus on pattern selection)  
 **Parent Plan:** [MASTER_PLAN_Stage4_Planner.md](MASTER_PLAN_Stage4_Planner.md)  
 **Stage:** 4 (Agent Models - Planner)  
 **Phase:** 4 (Polish & Release)  
@@ -23,28 +24,34 @@ Phase 3 delivered the core implementation:
 
 **Gap:** Documentation and release artifacts are incomplete:
 - Agent patterns documentation doesn't cover Planner model yet
-- No migration guide for developers upgrading from v0.7.7 → v0.8.0
+- **Pattern selection guidance missing** - developers need decision framework to choose right pattern
 - Examples README doesn't list new 10-choreography-basic example
 - Tracker Service lacks deployment guide and API documentation
 - All component versions still at 0.7.7 (need bump to 0.8.0)
 - CHANGELOGs don't document Phase 1-3 work comprehensively
+- Main README doesn't link to pattern documentation (discoverability issue)
 
 ### Core Objective
 
 **Complete Stage 4 by preparing v0.8.0 release:**
 1. Update all documentation to reflect Planner patterns and ChoreographyPlanner
-2. Create migration guide for developers upgrading to v0.8.0
-3. Bump versions across all components (sdk, services, soorma-common)
-4. Update all CHANGELOGs with comprehensive Phase 1-3 feature summaries
-5. Validate all 451+ tests pass before release
-6. Mark Stage 4 complete in refactoring index
+2. **Add pattern selection framework** - help developers choose the right pattern for their use case
+3. **Improve documentation discoverability** - link from main README to pattern docs
+4. Bump versions across all components (sdk, services, soorma-common)
+5. Update all CHANGELOGs with comprehensive Phase 1-3 feature summaries
+6. Validate all 451+ tests pass before release
+7. Mark Stage 4 complete in refactoring index
+
+**Note:** Migration guides deferred to post-launch (no users exist pre-release). Focus on pattern selection and getting-started documentation.
 
 ### Acceptance Criteria
 
 - [ ] `docs/agent_patterns/README.md` includes Planner pattern section with code examples
+- [ ] `docs/agent_patterns/README.md` includes **Pattern Selection Framework** with decision criteria
+- [ ] `docs/agent_patterns/README.md` includes decision flowchart (mermaid) and tradeoffs table
 - [ ] `docs/agent_patterns/ARCHITECTURE.md` documents PlanContext and ChoreographyPlanner design
 - [ ] `docs/refactoring/README.md` marks Stage 4 as ✅ Complete
-- [ ] `docs/refactoring/sdk/09-PLANNER-MIGRATION.md` exists with before/after examples
+- [ ] `README.md` (root) links to pattern documentation in Quick Start section
 - [ ] `examples/README.md` lists 10-choreography-basic in learning path
 - [ ] `services/tracker/README.md` has deployment guide and API examples
 - [ ] All versions bumped to 0.8.0:
@@ -71,15 +78,16 @@ Phase 3 delivered the core implementation:
 
 | Component | Change Type | Files Modified | Effort |
 |-----------|-------------|----------------|--------|
-| **Agent Patterns Docs** | Enhancement | `docs/agent_patterns/README.md`, `ARCHITECTURE.md` | 2-3 hours |
-| **Refactoring Docs** | Enhancement | `docs/refactoring/README.md`, `sdk/09-PLANNER-MIGRATION.md` (new) | 2-3 hours |
+| **Agent Patterns Docs** | Enhancement | `docs/agent_patterns/README.md`, `ARCHITECTURE.md` | 3-4 hours |
+| **Refactoring Docs** | Enhancement | `docs/refactoring/README.md` | 30 min |
+| **Root README** | Enhancement | `README.md` (discoverability links) | 15 min |
 | **Examples Docs** | Enhancement | `examples/README.md` | 30 min |
-| **Tracker Service Docs** | New Documentation | `services/tracker/README.md` | 1-2 hours |
+| **Tracker Service Docs** | Enhancement | `services/tracker/README.md` | 1-2 hours |
 | **Version Bumps** | Version Update | 6 `pyproject.toml` files | 30 min |
 | **CHANGELOGs** | Enhancement | 7 CHANGELOG.md files | 2-3 hours |
 | **Test Validation** | Verification | All test suites | 30 min |
 
-**Total Estimated Effort:** 10-12 hours (1.5 days, buffer to 2 days)
+**Total Estimated Effort:** 9-12 hours (1.5 days, buffer to 2 days)
 
 ### SDK Layer Verification (Not Applicable)
 
@@ -102,21 +110,60 @@ Phase 3 delivered the core implementation:
 #### 1. Agent Patterns Documentation (`docs/agent_patterns/`)
 
 **Files to Update:**
-- `README.md` - Add Planner pattern section (Section 4)
+- `README.md` - Add Planner patterns **WITH pattern selection framework**
 - `ARCHITECTURE.md` - Add PlanContext and ChoreographyPlanner technical details
 
-**README.md Changes:**
-- Add Section 4: Planner Pattern (Orchestration)
-  - When to use: Goal decomposition, multi-step workflows
+**README.md Changes (Pattern Selection Focus):**
+
+**Add Section 0: Pattern Selection Framework (NEW - Top Priority)**
+  - **When to use which pattern** - concrete decision criteria:
+    - Tool: Stateless, <5 sec execution, no delegation, simple I/O
+    - Worker: Stateful, async, needs to delegate sub-tasks, parallel execution
+    - Planner: Multi-step workflow, state machine control, manual orchestration
+    - ChoreographyPlanner: Autonomous decisions, LLM reasoning, adaptive planning
+  - **Decision Flowchart** (mermaid diagram):
+    ```mermaid
+    graph TD
+        A[Need to build agent] --> B{Stateless operation?}
+        B -->|Yes| C[Tool Pattern]
+        B -->|No| D{Need LLM decisions?}
+        D -->|Yes| E[ChoreographyPlanner]
+        D -->|No| F{Multi-step workflow?}
+        F -->|Yes| G{Want manual control?}
+        G -->|Yes| H[Planner Pattern]
+        G -->|No| E
+        F -->|No| I[Worker Pattern]
+    ```
+  - **Tradeoffs Table**:
+    | Pattern | Control | Complexity | Cost | Latency | Best For |
+    |---------|---------|------------|------|---------|----------|
+    | Tool | Full | Low (⭐) | Free | <100ms | Calculations, lookups, transformations |
+    | Worker | High | Medium (⭐⭐) | Free | 100ms-5s | Async tasks, delegation, aggregation |
+    | Planner | Full | High (⭐⭐⭐) | Free | Varies | State machines, manual orchestration |
+    | ChoreographyPlanner | Autonomous | Very High (⭐⭐⭐⭐) | LLM API | 1-10s | Adaptive workflows, LLM reasoning |
+  - **Real-World Examples**:
+    - "I need to validate user input" → Tool
+    - "I need to process orders with inventory+payment steps" → Worker
+    - "I need a multi-stage approval workflow" → Planner
+    - "I need autonomous research with adaptive queries" → ChoreographyPlanner
+
+**Add Section 4: Planner Pattern (Orchestration)**
+  - When to use: Goal decomposition, multi-step workflows, state machine control
   - Complexity: ⭐⭐⭐ Advanced
   - Code example: `@planner.on_goal()` and `@planner.on_transition()`
   - Link to [09-planner-basic](../../examples/09-planner-basic/)
-- Add Section 5: ChoreographyPlanner Pattern (Autonomous)
-  - When to use: LLM-based decision making, adaptive planning
+  - **Key differentiator:** Manual control over state transitions vs autonomous decisions
+
+**Add Section 5: ChoreographyPlanner Pattern (Autonomous)**
+  - When to use: LLM-based decision making, adaptive planning, autonomous workflows
   - Complexity: ⭐⭐⭐⭐ Expert
   - Code example: `ChoreographyPlanner` with `reason_next_action()`
   - Link to [10-choreography-basic](../../examples/10-choreography-basic/)
-- Update Pattern Comparison Table (add Planner and ChoreographyPlanner rows)
+  - **Key differentiator:** LLM decides next actions vs developer-defined state machine
+
+**Update Pattern Comparison Table**
+  - Add Planner and ChoreographyPlanner rows
+  - Include columns: Control Level, State Management, Decision Making, Cost Model
 
 **ARCHITECTURE.md Changes:**
 - Add Section 6: Planner Pattern
@@ -138,43 +185,23 @@ Phase 3 delivered the core implementation:
 
 **Files to Update:**
 - `README.md` - Mark Stage 4 complete
-- `sdk/09-PLANNER-MIGRATION.md` - New migration guide
 
 **README.md Changes:**
 - Update Stage 4 status: 🟡 In Progress → ✅ Complete
-- Update completion date: February XX, 2026
+- Add completion date: February XX, 2026
 - Update version reference: 0.7.7 → 0.8.0
-- Add Phase 4 completion note with deliverables summary
+- Add Phase 4 completion summary with deliverables
 
-**Migration Guide (NEW FILE: `sdk/09-PLANNER-MIGRATION.md`):**
-- Introduction: What changed in v0.8.0 Planner model
-- Breaking Changes:
-  - None (this is additive - new ChoreographyPlanner class)
-- New Features:
-  - PlanContext state machine (re-entrant plans)
-  - ChoreographyPlanner autonomous orchestration
-  - TrackerClient for observability
-- Migration Patterns:
-  - **Before:** 400-line manual planner (event discovery, LLM calls, validation)
-  - **After:** 50-line ChoreographyPlanner (SDK handles complexity)
-  - Code examples showing research-advisor pattern reduction
-- PlanContext Usage:
-  - Creating plans: `PlanContext.create_from_goal()`
-  - State transitions: `plan.get_next_state(event)`, `plan.execute_next()`
-  - Completion: `plan.finalize(result)`
-- ChoreographyPlanner Usage:
-  - Initialization with model selection
-  - `reason_next_action()` for LLM decisions
-  - `execute_decision()` for type-safe execution
-  - Event validation patterns
-- Tracker Integration:
-  - Querying plan progress: `context.tracker.get_plan_progress()`
-  - Timeline reconstruction: `context.tracker.get_plan_timeline()`
-- Examples Cross-Reference:
-  - Link to 09-planner-basic (basic state machine)
-  - Link to 10-choreography-basic (autonomous LLM)
+#### 3. Root README Documentation (Discoverability)
 
-#### 3. Examples Documentation (`examples/README.md`)
+**File:** `README.md` (root)
+
+**Changes:**
+- Add link to pattern documentation in "Quick Start" or "Getting Started" section
+- Text: "Choose the right agent pattern for your use case: [Agent Patterns Guide](docs/agent_patterns/README.md)"
+- Add pattern selection as a key step in developer onboarding flow
+
+#### 4. Examples Documentation (`examples/README.md`)
 
 **Changes:**
 - Add entry for `10-choreography-basic` in Learning Path table
@@ -189,7 +216,7 @@ Phase 3 delivered the core implementation:
   - Prerequisites: 09-planner-basic
 - Update "Advanced Patterns" section to include link to choreography pattern
 
-#### 4. Tracker Service Documentation (Enhancement)
+#### 5. Tracker Service Documentation (Enhancement)
 
 **File:** `services/tracker/README.md` (already exists, needs enhancement)
 
@@ -291,15 +318,22 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 4. **Validation** (Task 7) - Final verification
 5. **Review & Commit** (Task 8) - Package for release
 
+**Note:** Task 2 (migration guide) removed - pre-release focus shifted to pattern selection documentation.
+
 ### Task Breakdown
 
 #### Task 1: Update Agent Patterns Documentation ⏳
 **Owner:** Agent  
-**Duration:** 2-3 hours  
+**Duration:** 3-4 hours (increased - includes pattern selection framework)  
 **Status:** 📋 Not Started  
 
 **Sub-Tasks:**
 - [ ] Update `docs/agent_patterns/README.md`:
+  - **Add Section 0: Pattern Selection Framework (NEW)**
+    - Decision criteria for each pattern (Tool/Worker/Planner/ChoreographyPlanner)
+    - Decision flowchart (mermaid diagram)
+    - Tradeoffs table (control, complexity, cost, latency)
+    - Real-world use case examples
   - Add Section 4: Planner Pattern (with code examples)
   - Add Section 5: ChoreographyPlanner Pattern (with code examples)
   - Update Pattern Comparison Table
@@ -311,16 +345,16 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
   - Add code examples from examples/
 
 **Deliverables:**
-- Updated README.md with Planner patterns
+- Updated README.md with Planner patterns **AND pattern selection framework**
 - Updated ARCHITECTURE.md with technical design
 
 **Dependencies:** Phase 3 complete (implementation exists)
 
 ---
 
-#### Task 2: Update Refactoring Documentation ⏳
+#### Task 2: Update Refactoring & Root README Documentation ⏳
 **Owner:** Agent  
-**Duration:** 2-3 hours  
+**Duration:** 45 minutes  
 **Status:** 📋 Not Started  
 
 **Sub-Tasks:**
@@ -329,21 +363,16 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
   - Add completion date (February XX, 2026)
   - Update version references (0.7.7 → 0.8.0)
   - Add Phase 4 completion summary
-- [ ] Create `docs/refactoring/sdk/09-PLANNER-MIGRATION.md`:
-  - Introduction to v0.8.0 Planner changes
-  - Breaking changes section (none)
-  - New features section (PlanContext, ChoreographyPlanner, Tracker)
-  - Before/after migration examples (400 lines → 50 lines)
-  - PlanContext usage patterns
-  - ChoreographyPlanner usage patterns
-  - Tracker integration patterns
-  - Cross-reference to examples
+- [ ] Update `README.md` (root):
+  - Add link to pattern documentation in Quick Start section
+  - Text: "Choose the right agent pattern: [Agent Patterns Guide](docs/agent_patterns/README.md)"
+  - Improve discoverability of pattern selection framework
 
 **Deliverables:**
 - Updated refactoring/README.md marking Stage 4 complete
-- New migration guide (09-PLANNER-MIGRATION.md)
+- Updated root README with pattern docs link (discoverability)
 
-**Dependencies:** Task 1 (reference updated architecture docs)
+**Dependencies:** Task 1 (reference updated pattern docs)
 
 ---
 
@@ -422,13 +451,15 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 
 **Committed Scope (Phase 4):**
 - ✅ Agent patterns documentation (README + ARCHITECTURE)
-- ✅ Migration guide (09-PLANNER-MIGRATION.md)
+- ✅ **Pattern selection framework** (decision criteria, flowchart, tradeoffs) 
+- ✅ Root README discoverability (link to pattern docs)
 - ✅ Examples README update (learning path)
 - ✅ Tracker README enhancement (deployment + API examples)
+- ✅ Refactoring README update (mark Stage 4 complete)
 - ✅ All CHANGELOGs updated
 - ✅ All versions bumped to 0.8.0
 
-**Rationale:** Focus on essential developer documentation (getting started, migration, deployment). Defer interactive/media content to post-launch when usage patterns are clearer.
+**Rationale:** Focus on essential developer documentation (pattern selection, getting started, deployment). Defer interactive/media content to post-launch when usage patterns are clearer. **No migration guides pre-release** - no users exist yet.
 
 ---
 
@@ -641,7 +672,9 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 
 ### Quantitative Metrics
 
-- [ ] **Documentation Coverage:** All 4 doc areas updated (agent_patterns, refactoring, examples, tracker)
+- [ ] **Documentation Coverage:** All 5 doc areas updated (agent_patterns, refactoring, root README, examples, tracker)
+- [ ] **Pattern Selection Framework:** Decision criteria, flowchart, and tradeoffs table complete
+- [ ] **Discoverability:** Root README links to pattern documentation
 - [ ] **Version Consistency:** 6/6 `pyproject.toml` files at version 0.8.0
 - [ ] **CHANGELOG Completeness:** 7/7 CHANGELOG files updated (root + sdk + common + 4 services)
 - [ ] **Test Pass Rate:** 100% (451+ tests passing, zero regressions)
@@ -649,10 +682,11 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 
 ### Qualitative Metrics
 
-- [ ] **Developer Experience:** A developer can read README.md and understand when to use ChoreographyPlanner vs base Planner
-- [ ] **Migration Clarity:** A developer can follow 09-PLANNER-MIGRATION.md and upgrade from v0.7.7 → v0.8.0 without additional help
+- [ ] **Pattern Selection:** A developer can read README.md and understand **when to use** ChoreographyPlanner vs Planner vs Worker vs Tool
+- [ ] **Decision Framework:** Decision flowchart and tradeoffs table help developers choose the right pattern
 - [ ] **Deployment Readiness:** A developer can deploy Tracker Service to Docker using only services/tracker/README.md
 - [ ] **Code Example Quality:** All code examples in docs are copy-paste ready (no syntax errors, no missing imports)
+- [ ] **Discoverability:** Developers can find pattern documentation from root README without guessing
 
 ### Release Readiness Checklist
 
@@ -663,7 +697,8 @@ Before marking Phase 4 complete, ALL items must be checked:
 - [ ] All CHANGELOGs updated (Task 6)
 - [ ] All 451+ tests passing (Task 7)
 - [ ] No broken links in documentation (Task 7)
-- [ ] Migration guide exists and is comprehensive (Task 2)
+- [ ] **Pattern selection framework exists** (Task 1)
+- [ ] **Root README links to pattern docs** (Task 2)
 - [ ] Tracker README has deployment guide (Task 4)
 - [ ] Commit message follows Conventional Commits (Task 8)
 - [ ] Tag v0.8.0 created (Task 8)
@@ -681,32 +716,31 @@ Before marking Phase 4 complete, ALL items must be checked:
 - [ ] **THIS DOCUMENT:** Commit Action Plan for developer review
 - [ ] Developer approval to proceed
 
-### Task 1: Agent Patterns Documentation (2-3 hours)
+### Task 1: Agent Patterns Documentation (3-4 hours)
 - [ ] Read current `docs/agent_patterns/README.md` (understand structure)
 - [ ] Read current `docs/agent_patterns/ARCHITECTURE.md` (understand sections)
 - [ ] Review `examples/09-planner-basic/` for code examples
 - [ ] Review `examples/10-choreography-basic/` for code examples
+- [ ] **Add Section 0 to README.md: Pattern Selection Framework**
+  - Decision criteria for each pattern
+  - Decision flowchart (mermaid diagram)
+  - Tradeoffs table (control, complexity, cost, latency)
+  - Real-world use case examples
 - [ ] Add Section 4 to README.md (Planner Pattern)
 - [ ] Add Section 5 to README.md (ChoreographyPlanner Pattern)
 - [ ] Update Pattern Comparison Table in README.md
 - [ ] Add Section 6 to ARCHITECTURE.md (Planner technical design)
 - [ ] Add Section 7 to ARCHITECTURE.md (ChoreographyPlanner architecture)
 - [ ] Verify all links resolve correctly
-- [ ] Commit: `docs(agent_patterns): add Planner and ChoreographyPlanner patterns`
+- [ ] Commit: `docs(agent_patterns): add Planner patterns and selection framework`
 
-### Task 2: Refactoring Documentation (2-3 hours)
+### Task 2: Refactoring & Root README Documentation (45 min)
 - [ ] Update `docs/refactoring/README.md` Stage 4 status to ✅ Complete
 - [ ] Add completion date to refactoring/README.md
-- [ ] Create `docs/refactoring/sdk/09-PLANNER-MIGRATION.md` (new file)
-- [ ] Write migration guide introduction
-- [ ] Document breaking changes (none)
-- [ ] Document new features (PlanContext, ChoreographyPlanner, Tracker)
-- [ ] Add before/after code examples (400 lines → 50 lines)
-- [ ] Add PlanContext usage patterns
-- [ ] Add ChoreographyPlanner usage patterns
-- [ ] Add Tracker integration examples
-- [ ] Cross-reference to examples (09, 10)
-- [ ] Commit: `docs(refactoring): mark Stage 4 complete, add migration guide`
+- [ ] Update version references in refactoring/README.md (0.7.7 → 0.8.0)
+- [ ] Update `README.md` (root) to link to pattern documentation
+- [ ] Add pattern selection as key step in getting started flow
+- [ ] Commit: `docs: mark Stage 4 complete, improve pattern doc discoverability`
 
 ### Task 3: Examples Documentation (30 min)
 - [ ] Update `examples/README.md`
@@ -823,12 +857,12 @@ Before marking Phase 4 complete, ALL items must be checked:
 
 - **Stage 5 (Discovery):** EventSelector utility (RF-SDK-017, 018) — deferred
 - **Stage 6+ (Advanced Features):** Conditional transitions, prompt templates — deferred
-- **Post-Launch:** Tracker Service UI — deferred
+- **Post-Launch:** Tracker Service UI, migration guides — deferred
 
 **Status:** Phase 4 unblocks v0.8.0 release, which is prerequisite for:
 - Production deployments (developers can now use ChoreographyPlanner)
 - Stage 5 planning (discovery enhancements build on Planner)
-- Community feedback (migration guide enables upgrades)
+- **Pattern selection clarity** (developers choose right pattern from day 1)
 
 ### External Dependencies
 
@@ -850,7 +884,7 @@ Before marking Phase 4 complete, ALL items must be checked:
 - [ACTION_PLAN_Phase3_Validation.md] (if exists) - Tracker + examples
 
 ### Architecture Documentation (Will Update)
-- [docs/agent_patterns/README.md](../../README.md) - Pattern catalog (Task 1)
+- [docs/agent_patterns/README.md](../../README.md) - Pattern catalog + selection framework (Task 1)
 - [docs/agent_patterns/ARCHITECTURE.md](../../ARCHITECTURE.md) - Technical design (Task 1)
 
 ### Refactoring Documentation (Will Update)
@@ -872,18 +906,13 @@ Before marking Phase 4 complete, ALL items must be checked:
 - Add ChoreographyPlanner flow diagram in ARCHITECTURE.md (Section 7)
 - Reuse diagrams from Master Plan where applicable
 
-### Q2: Should migration guide include rollback instructions?
-**Answer:** 🟡 Optional (low priority)
-- Since v0.8.0 is additive (no breaking changes), rollback is simple: use v0.7.7
-- Add note: "v0.8.0 is backward compatible—no rollback needed for existing code"
-
-### Q3: Should we document roadmap (Stage 5+) in v0.8.0 release notes?
+### Q2: Should we document roadmap (Stage 5+) in v0.8.0 release notes?
 **Answer:** ✅ Yes, briefly
 - Add "What's Next" section to root CHANGELOG
 - Mention: EventSelector utility (Stage 5), conditional transitions (Stage 6), Tracker UI (post-launch)
 - Link to DEFERRED_WORK.md for full roadmap
 
-### Q4: Should version bump be a separate commit or bundled with CHANGELOG?
+### Q3: Should version bump be a separate commit or bundled with CHANGELOG?
 **Answer:** ✅ Separate commits (cleaner history)
 - Commit 1: `chore: bump all versions to 0.8.0`
 - Commit 2: `docs(changelog): update all changelogs for v0.8.0 release`
