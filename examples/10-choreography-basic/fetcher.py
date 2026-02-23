@@ -11,13 +11,15 @@ from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.task_context import TaskContext
 
+from events import DATA_FETCH_REQUESTED_EVENT, DATA_FETCHED_EVENT
+
 
 worker = Worker(
     name="feedback-fetcher",
     description="Fetches customer feedback entries",
     capabilities=["feedback_fetch"],
-    events_consumed=["data.fetch.requested"],
-    events_produced=["data.fetched"],
+    events_consumed=[DATA_FETCH_REQUESTED_EVENT],
+    events_produced=[DATA_FETCHED_EVENT],
 )
 
 

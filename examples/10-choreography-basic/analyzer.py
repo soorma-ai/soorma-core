@@ -10,13 +10,15 @@ from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.task_context import TaskContext
 
+from events import ANALYSIS_REQUESTED_EVENT, ANALYSIS_COMPLETED_EVENT
+
 
 worker = Worker(
     name="feedback-analyzer",
     description="Analyzes feedback sentiment",
     capabilities=["feedback_analysis"],
-    events_consumed=["analysis.requested"],
-    events_produced=["analysis.completed"],
+    events_consumed=[ANALYSIS_REQUESTED_EVENT],
+    events_produced=[ANALYSIS_COMPLETED_EVENT],
 )
 
 
