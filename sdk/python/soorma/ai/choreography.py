@@ -445,7 +445,7 @@ class ChoreographyPlanner(Planner):
                 session_id = plan.session_id
             
             if response_event:
-                logger.debug(f"[ChoreographyPlanner] Sending response to: {response_event}")
+                logger.info(f"[ChoreographyPlanner] Sending response to client: {response_event}")
                 await context.bus.respond(
                     event_type=response_event,
                     correlation_id=correlation_id_val,
