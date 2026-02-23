@@ -716,7 +716,7 @@ class TaskContext:
                 "status": "completed",
                 "result": result,
             },
-            correlation_id=self.task_id,
+            correlation_id=self.correlation_id or self.task_id,
             topic=self.response_topic,
             tenant_id=self.tenant_id,
             user_id=self.user_id,

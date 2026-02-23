@@ -98,6 +98,10 @@ async def handle_transition(
         plan: Restored PlanContext instance.
         next_state: Proposed next state name (unused for choreography).
     """
+    print(f"\n[planner] ▶ Transition triggered by: {event.type}")
+    print(f"[planner] Correlation: {event.correlation_id}")
+    print(f"[planner] Plan ID: {plan.plan_id}")
+    
     _ = next_state
     plan.results[event.type] = event.data or {}
 
@@ -116,12 +120,15 @@ async def handle_transition(
         except Exception as exc:
             print(f"[planner] Tracker query failed: {exc}")
 
+    print(f"[planner] Calling reason_next_action for event: {event.type}")
     decision = await planner.reason_next_action(
         trigger=f"Event: {event.type}",
         context=context,
         plan_id=plan.plan_id,
         custom_context={"last_event": event.type, "event_data": event.data or {}},
     )
+    print(f"[planner] Decision: {decision.next_action.action}")
+    
     plan.current_state = decision.current_state
     await plan.save()
 
