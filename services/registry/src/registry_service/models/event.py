@@ -3,7 +3,7 @@ SQLAlchemy model for event registry.
 """
 from datetime import datetime
 from typing import Dict, Any, Optional
-from sqlalchemy import Integer, String, DateTime, Text, JSON
+from sqlalchemy import Integer, String, DateTime, Text, JSON, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -13,6 +13,11 @@ from .base import Base
 class EventTable(Base):
     """Event definition storage."""
     __tablename__ = "events"
+    
+    # Composite unique constraint: same event_name can exist on different topics
+    __table_args__ = (
+        UniqueConstraint('event_name', 'topic', name='uix_event_name_topic'),
+    )
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -29,7 +34,6 @@ class EventTable(Base):
     event_name: Mapped[str] = mapped_column(
         String(255), 
         nullable=False, 
-        unique=True, 
         index=True
     )
     topic: Mapped[str] = mapped_column(

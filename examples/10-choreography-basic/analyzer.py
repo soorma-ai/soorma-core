@@ -11,7 +11,7 @@ from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.task_context import TaskContext
 
-from events import ANALYSIS_REQUESTED_EVENT, ANALYSIS_COMPLETED_EVENT
+from events import ANALYSIS_REQUESTED_EVENT, ANALYSIS_RESPONDED_EVENT
 
 
 worker = Worker(
@@ -19,7 +19,7 @@ worker = Worker(
     description="Analyzes feedback sentiment",
     capabilities=["feedback_analysis"],
     events_consumed=[ANALYSIS_REQUESTED_EVENT],
-    events_produced=[ANALYSIS_COMPLETED_EVENT],
+    events_produced=[ANALYSIS_RESPONDED_EVENT],
 )
 
 
@@ -70,20 +70,29 @@ async def handle_analysis(task: TaskContext, context: PlatformContext) -> None:
     """
     _ = context
     product = task.data.get("product", "the product")
-    entries = task.data.get("entries", [])
+    feedback = task.data.get("feedback", task.data.get("entries", []))  # Support both field names
     
     print(f"\n[analyzer] ▶ Received: analysis.requested")
     print(f"[analyzer] Task ID: {task.task_id}")
-    print(f"[analyzer] Analyzing {len(entries)} entries for {product}")
+    print(f"[analyzer] Analyzing {len(feedback)} entries for {product}")
 
-    summary = _summarize(entries)
+    summary = _summarize(feedback)
     print(f"[analyzer] Summary: {summary['positive']} positive, {summary['negative']} negative, avg={summary['average_rating']}")
-    print(f"[analyzer] ✓ Completing with analysis.completed response")
+    print(f"[analyzer] ✓ Completing with response_event={task.response_event}")
+    
+    # Build summary text for schema compliance
+    summary_text = (
+        f"Analyzed {len(feedback)} feedback entries: "
+        f"{summary['positive']} positive, {summary['negative']} negative, "
+        f"{summary['neutral']} neutral (avg rating: {summary['average_rating']})"
+    )
+    
     await task.complete(
         {
             "product": product,
-            "summary": summary,
-            "entries": entries,
+            "summary": summary_text,
+            "positive_count": summary['positive'],
+            "negative_count": summary['negative'],
         }
     )
 
@@ -103,8 +112,16 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
+    # Configure logging - show agent logic, suppress noisy SDK logs
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s:%(name)s:%(message)s",
     )
+    # Suppress noisy SDK/infrastructure logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("soorma.registry.client").setLevel(logging.WARNING)
+    logging.getLogger("soorma.agents.base").setLevel(logging.WARNING)
+    logging.getLogger("soorma.events").setLevel(logging.WARNING)
+    logging.getLogger("soorma.context").setLevel(logging.WARNING)
+    logging.getLogger("soorma.task_context").setLevel(logging.WARNING)
     worker.run()

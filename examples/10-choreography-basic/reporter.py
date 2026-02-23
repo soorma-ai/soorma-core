@@ -11,7 +11,7 @@ from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.task_context import TaskContext
 
-from events import REPORT_REQUESTED_EVENT, REPORT_READY_EVENT
+from events import REPORT_REQUESTED_EVENT, REPORT_RESPONDED_EVENT
 
 
 worker = Worker(
@@ -19,7 +19,7 @@ worker = Worker(
     description="Summarizes analyzed feedback",
     capabilities=["feedback_reporting"],
     events_consumed=[REPORT_REQUESTED_EVENT],
-    events_produced=[REPORT_READY_EVENT],
+    events_produced=[REPORT_RESPONDED_EVENT],
 )
 
 
@@ -62,20 +62,31 @@ async def handle_report(task: TaskContext, context: PlatformContext) -> None:
     """
     _ = context
     product = task.data.get("product", "the product")
-    summary = task.data.get("summary", {})
+    summary_text = task.data.get("summary", "No summary available")
+    positive_count = task.data.get("positive_count", 0)
+    negative_count = task.data.get("negative_count", 0)
     
     print(f"\n[reporter] ▶ Received: report.requested")
     print(f"[reporter] Task ID: {task.task_id}")
     print(f"[reporter] Building report for {product}")
 
-    report = _format_report(product, summary)
+    # Build report from individual fields (matching ReportRequestPayload schema)
+    lines = [
+        f"Feedback Report for {product}",
+        f"Summary: {summary_text}",
+        f"Positive: {positive_count} | Negative: {negative_count}",
+    ]
+    report = "\n".join(lines)
+    
     print(f"[reporter] Report generated ({len(report)} chars)")
-    print(f"[reporter] ✓ Completing with report.ready response")
+    print(f"[reporter] ✓ Completing with response_event={task.response_event}")
+    
+    from datetime import datetime
     await task.complete(
         {
             "product": product,
-            "summary": summary,
             "report": report,
+            "timestamp": datetime.now().isoformat(),
         }
     )
 
@@ -95,8 +106,16 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
+    # Configure logging - show agent logic, suppress noisy SDK logs
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s:%(name)s:%(message)s",
     )
+    # Suppress noisy SDK/infrastructure logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("soorma.registry.client").setLevel(logging.WARNING)
+    logging.getLogger("soorma.agents.base").setLevel(logging.WARNING)
+    logging.getLogger("soorma.events").setLevel(logging.WARNING)
+    logging.getLogger("soorma.context").setLevel(logging.WARNING)
+    logging.getLogger("soorma.task_context").setLevel(logging.WARNING)
     worker.run()

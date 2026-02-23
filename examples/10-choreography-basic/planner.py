@@ -164,9 +164,17 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
-    # Configure logging to see ChoreographyPlanner details
+    # Configure logging - show agent logic, suppress noisy SDK logs
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s:%(name)s:%(message)s",
     )
+    # Suppress noisy SDK/infrastructure logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("soorma.registry.client").setLevel(logging.WARNING)
+    logging.getLogger("soorma.agents.base").setLevel(logging.WARNING)
+    logging.getLogger("soorma.events").setLevel(logging.WARNING)
+    logging.getLogger("soorma.context").setLevel(logging.WARNING)
+    logging.getLogger("soorma.task_context").setLevel(logging.WARNING)
+    logging.getLogger("soorma.plan_context").setLevel(logging.WARNING)
     planner.run()

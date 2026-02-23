@@ -12,7 +12,7 @@ from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.task_context import TaskContext
 
-from events import DATA_FETCH_REQUESTED_EVENT, DATA_FETCHED_EVENT
+from events import DATA_FETCH_REQUESTED_EVENT, DATA_FETCH_RESPONDED_EVENT
 
 
 worker = Worker(
@@ -20,7 +20,7 @@ worker = Worker(
     description="Fetches customer feedback entries",
     capabilities=["feedback_fetch"],
     events_consumed=[DATA_FETCH_REQUESTED_EVENT],
-    events_produced=[DATA_FETCHED_EVENT],
+    events_produced=[DATA_FETCH_RESPONDED_EVENT],
 )
 
 
@@ -63,13 +63,11 @@ async def handle_fetch(task: TaskContext, context: PlatformContext) -> None:
 
     feedback = _sample_feedback(product)[:sample_size]
     print(f"[fetcher] Fetched {len(feedback)} feedback entries")
-    print(f"[fetcher] ✓ Completing with data.fetched response")
+    print(f"[fetcher] ✓ Completing with response_event={task.response_event}")
     await task.complete(
         {
             "product": product,
-            "sample_size": sample_size,
-            "entries": feedback,
-            "source": "mock-db",
+            "feedback": feedback,  # Align with schema (AnalysisRequestPayload expects 'feedback')
         }
     )
 
@@ -79,7 +77,7 @@ async def startup() -> None:
     """Worker startup hook."""
     print("\n[fetcher] feedback-fetcher started")
     print("[fetcher] Listening for: data.fetch.requested")
-    print("[fetcher] Produces: data.fetched")
+    print("[fetcher] Produces: data.fetch.requested (on action-results topic)")
 
 
 @worker.on_shutdown
@@ -89,8 +87,16 @@ async def shutdown() -> None:
 
 
 if __name__ == "__main__":
+    # Configure logging - show agent logic, suppress noisy SDK logs
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s:%(name)s:%(message)s",
     )
+    # Suppress noisy SDK/infrastructure logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("soorma.registry.client").setLevel(logging.WARNING)
+    logging.getLogger("soorma.agents.base").setLevel(logging.WARNING)
+    logging.getLogger("soorma.events").setLevel(logging.WARNING)
+    logging.getLogger("soorma.context").setLevel(logging.WARNING)
+    logging.getLogger("soorma.task_context").setLevel(logging.WARNING)
     worker.run()

@@ -274,6 +274,27 @@ class ChoreographyPlanner(Planner):
         events = await context.toolkit.discover_actionable_events(topic=EventTopic.ACTION_REQUESTS)
         logger.info(f"[ChoreographyPlanner] Found {len(events)} actionable events")
         
+        # Guard: Prevent LLM hallucination when no events available
+        if not events:
+            # Get diagnostic info
+            try:
+                agents = await context.registry.query_agents()
+                all_events = await context.registry.get_events_by_topic(EventTopic.ACTION_REQUESTS.value)
+                logger.error(
+                    f"[ChoreographyPlanner] Diagnostic info:\n"
+                    f"  - Active agents: {len(agents)} ({[a.name for a in agents]})\n"
+                    f"  - Events in ACTION_REQUESTS topic: {len(all_events)} ({[e.event_name for e in all_events]})\n"
+                    f"  - Consumed events by agents: {[a.consumed_events for a in agents]}"
+                )
+            except Exception as e:
+                logger.error(f"[ChoreographyPlanner] Failed to get diagnostic info: {e}")
+            
+            raise RuntimeError(
+                "No actionable events found in Registry. "
+                "Workers must start and register events before the planner can orchestrate. "
+                "Check that workers are running and have registered their events_consumed/events_produced."
+            )
+        
         # Build schema-based prompt
         logger.debug(f"[ChoreographyPlanner] Building prompt with {len(events)} events...")
         prompt = self._build_prompt(trigger, events, custom_context)
@@ -609,6 +630,17 @@ Decide on the next action:
 - WAIT: Wait for external input (e.g., human approval)
 - DELEGATE: Forward to another planner
 
+CRITICAL RULES FOR PUBLISH ACTIONS:
+1. Set response_event to the SAME event name as event_type (response on different topic, matched by correlation_id)
+2. ALWAYS extract data from 'Additional Context' > 'event_data' and include it in the 'data' field
+3. Look at the event schema's required fields and populate them from event_data
+4. Copy forward all relevant fields from previous responses (product, summary, counts, etc.)
+5. Data MUST flow through the pipeline - workers cannot access data from earlier steps
+
+Example: If event_data contains {{"product": "XYZ", "feedback": [...]}}
+         and you're publishing analysis.requested which needs product and feedback,
+         then data field MUST be: {{"product": "XYZ", "feedback": [...]}}
+
 CRITICAL: Respond with JSON matching this exact schema:
 {json.dumps(schema, indent=2)}
 
@@ -619,12 +651,38 @@ Required fields:
 - reasoning: (explain why you chose this action)
 - confidence: (0.0-1.0, how confident are you in this decision)
 
-Example next_action for PUBLISH:
+Example next_action for PUBLISH with response:
 {{
   "action": "publish",
   "event_type": "search.requested",
+  "response_event": "search.requested",
   "data": {{"query": "example"}},
-  "reasoning": "Need to search"
+  "reasoning": "Need to search for relevant documents"
+}}
+
+Example PUBLISH extracting data from previous response (event_data):
+Given event_data: {{"product": "Widget", "feedback": [{{"rating": 5}}, {{"rating": 3}}]}}
+{{
+  "action": "publish",
+  "event_type": "analysis.requested",
+  "response_event": "analysis.requested",
+  "data": {{"product": "Widget", "feedback": [{{"rating": 5}}, {{"rating": 3}}]}},
+  "reasoning": "Extract and forward product and feedback from data.fetched response to analyzer"
+}}
+
+Example next_action for PUBLISH without response (fire-and-forget):
+{{
+  "action": "publish",
+  "event_type": "notification.sent",
+  "data": {{"message": "Task complete"}},
+  "reasoning": "Notify user of completion"
+}}
+
+Example next_action for COMPLETE:
+{{
+  "action": "complete",
+  "result": {{"status": "success", "summary": "All tasks completed"}},
+  "reasoning": "All workflow steps have been successfully executed and the final report is ready"
 }}
 """
     

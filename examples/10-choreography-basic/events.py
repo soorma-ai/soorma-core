@@ -4,6 +4,10 @@ Event Definitions for Feedback Analysis Choreography.
 Defines the event schemas that workers consume and produce.
 These are registered with the Registry service so the ChoreographyPlanner
 can discover them and make intelligent routing decisions.
+
+NOTE: This example uses a simple pattern where request and response use the
+SAME event name on different topics (ACTION_REQUESTS vs ACTION_RESULTS).
+This keeps the example focused on choreography basics.
 """
 
 from typing import Dict, List, Any
@@ -60,6 +64,9 @@ class ReportReadyPayload(BaseModel):
 # Event Definitions
 # =============================================================================
 
+# Pattern: Request and response use SAME event name on different topics
+# This simplifies autonomous discovery - LLM sets response_event = event_type
+
 DATA_FETCH_REQUESTED_EVENT = EventDefinition(
     event_name="data.fetch.requested",
     topic=EventTopic.ACTION_REQUESTS,
@@ -68,8 +75,8 @@ DATA_FETCH_REQUESTED_EVENT = EventDefinition(
     response_schema=DataFetchedPayload.model_json_schema()
 )
 
-DATA_FETCHED_EVENT = EventDefinition(
-    event_name="data.fetched",
+DATA_FETCH_RESPONDED_EVENT = EventDefinition(
+    event_name="data.fetch.requested",  # Same name as request!
     topic=EventTopic.ACTION_RESULTS,
     description="Feedback data successfully retrieved from datastore",
     payload_schema=DataFetchedPayload.model_json_schema()
@@ -83,8 +90,8 @@ ANALYSIS_REQUESTED_EVENT = EventDefinition(
     response_schema=AnalysisCompletedPayload.model_json_schema()
 )
 
-ANALYSIS_COMPLETED_EVENT = EventDefinition(
-    event_name="analysis.completed",
+ANALYSIS_RESPONDED_EVENT = EventDefinition(
+    event_name="analysis.requested",  # Same name as request!
     topic=EventTopic.ACTION_RESULTS,
     description="Sentiment analysis completed with insights extracted",
     payload_schema=AnalysisCompletedPayload.model_json_schema()
@@ -98,8 +105,8 @@ REPORT_REQUESTED_EVENT = EventDefinition(
     response_schema=ReportReadyPayload.model_json_schema()
 )
 
-REPORT_READY_EVENT = EventDefinition(
-    event_name="report.ready",
+REPORT_RESPONDED_EVENT = EventDefinition(
+    event_name="report.requested",  # Same name as request!
     topic=EventTopic.ACTION_RESULTS,
     description="Feedback report generated and ready",
     payload_schema=ReportReadyPayload.model_json_schema()

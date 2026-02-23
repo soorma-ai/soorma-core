@@ -451,10 +451,11 @@ class Agent(ABC):
         # Register event definitions first
         for event_def in self.config.event_definitions:
             try:
+                logger.info(f"Registering event: {event_def.event_name} on topic {event_def.topic}")
                 await self.context.registry.register_event(event_def)
-                logger.debug(f"Registered event definition")
+                logger.debug(f"Registered event definition: {event_def.event_name}")
             except Exception as e:
-                logger.warning(f"Failed to register event definition: {e}")
+                logger.warning(f"Failed to register event definition {getattr(event_def, 'event_name', '?')}: {e}")
 
         # Build AgentDefinition from config
         from soorma_common import AgentDefinition, AgentCapability
