@@ -377,6 +377,14 @@ class Planner(Agent):
                     return
 
                 logger.info(f"[Planner.on_transition] Plan restored: {plan.plan_id}")
+                
+                # Skip processing if plan is already complete
+                if plan.is_complete():
+                    logger.info(
+                        f"[Planner.on_transition] Plan already {plan.status}, skipping event processing"
+                    )
+                    return
+                
                 next_state = plan.get_next_state(event)
                 if not next_state:
                     logger.info(

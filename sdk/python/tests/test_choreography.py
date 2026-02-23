@@ -885,3 +885,107 @@ class TestChoreographyPlannerCompleteAction:
             "Should prefer goal_event.correlation_id"
         assert call_kwargs["tenant_id"] == "goal-tenant"
         assert call_kwargs["user_id"] == "goal-user"
+
+
+class TestPlanContextCompleteStatus:
+    """Tests for PlanContext.is_complete() method (prevents infinite loops)."""
+    
+    def test_is_complete_returns_true_for_completed_status(self):
+        """PlanContext.is_complete() returns True when status='completed'."""
+        from soorma_common.state import StateConfig
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="goal",
+            goal_data={},
+            response_event="response",
+            status="completed",
+            state_machine={},
+            current_state="any",
+            results={},
+        )
+        
+        assert plan.is_complete() is True
+    
+    def test_is_complete_returns_true_for_failed_status(self):
+        """PlanContext.is_complete() returns True when status='failed'."""
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="goal",
+            goal_data={},
+            response_event="response",
+            status="failed",
+            state_machine={},
+            current_state="any",
+            results={},
+        )
+        
+        assert plan.is_complete() is True
+    
+    def test_is_complete_returns_false_for_pending_status(self):
+        """PlanContext.is_complete() returns False when status='pending'."""
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="goal",
+            goal_data={},
+            response_event="response",
+            status="pending",
+            state_machine={},
+            current_state="any",
+            results={},
+        )
+        
+        assert plan.is_complete() is False
+    
+    def test_is_complete_returns_false_for_running_status(self):
+        """PlanContext.is_complete() returns False when status='running'."""
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="goal",
+            goal_data={},
+            response_event="response",
+            status="running",
+            state_machine={},
+            current_state="any",
+            results={},
+        )
+        
+        assert plan.is_complete() is False
+    
+    def test_is_complete_returns_false_for_paused_status(self):
+        """PlanContext.is_complete() returns False when status='paused'."""
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="goal",
+            goal_data={},
+            response_event="response",
+            status="paused",
+            state_machine={},
+            current_state="any",
+            results={},
+        )
+        
+        assert plan.is_complete() is False
+    
+    def test_is_complete_returns_true_for_terminal_state(self):
+        """PlanContext.is_complete() returns True when state machine state is terminal."""
+        from soorma_common.state import StateConfig
+        
+        plan = PlanContext(
+            plan_id="plan-123",
+            goal_event="goal",
+            goal_data={},
+            response_event="response",
+            status="running",  # Status still running
+            state_machine={
+                "done": StateConfig(
+                    state_name="done",
+                    description="Terminal state",
+                    is_terminal=True,
+                )
+            },
+            current_state="done",  # But state is terminal
+            results={},
+        )
+        
+        assert plan.is_complete() is True, "State machine terminal flag should make plan complete"
