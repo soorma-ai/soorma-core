@@ -1,6 +1,6 @@
 [project]
 name = "tracker-service"
-version = "0.7.7"
+version = "0.8.0"
 description = "Tracker Service for Soorma platform - event-driven observability for autonomous agents"
 readme = "README.md"
 license = {text = "MIT"}

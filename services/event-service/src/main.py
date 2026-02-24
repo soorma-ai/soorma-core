@@ -16,6 +16,7 @@ from typing import AsyncGenerator, Dict
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from soorma_common import __version__
 
 from .core.config import settings
 from .services.event_manager import event_manager
@@ -58,7 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Soorma Event Service",
     description="Event proxy/gateway for the Soorma DisCo platform",
-    version="0.7.7",
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -82,7 +83,7 @@ async def root() -> Dict[str, str]:
     """Root endpoint with service info."""
     return {
         "service": "soorma-event-service",
-        "version": "0.7.7",
+        "version": __version__,
         "docs": "/docs",
     }
 

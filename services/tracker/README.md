@@ -208,7 +208,7 @@ curl http://localhost:8084/health
 ```json
 {
   "status": "healthy",
-  "version": "0.7.7",
+  "version": "0.8.0",
   "database": "connected",
   "event_service": "connected"
 }
@@ -263,7 +263,7 @@ The Tracker Service is deployed as a Docker container alongside other Soorma ser
 
 ```bash
 # From soorma-core root directory
-docker build -f services/tracker/Dockerfile -t tracker-service:0.7.7 .
+docker build -f services/tracker/Dockerfile -t tracker-service:0.8.0 .
 ```
 
 #### Run Container
@@ -275,7 +275,7 @@ docker run -d \
   -e DATABASE_URL="postgresql+asyncpg://user:pass@postgres:5432/soorma" \
   -e NATS_URL="nats://nats:4222" \
   -e EVENT_SERVICE_URL="http://event-service:8082" \
-  tracker-service:0.7.7
+  tracker-service:0.8.0
 ```
 
 #### Environment Variables
@@ -312,7 +312,7 @@ Configure your orchestrator (Kubernetes, Docker Compose) to use the health endpo
 # Docker Compose example
 services:
   tracker:
-    image: tracker-service:0.7.7
+    image: tracker-service:0.8.0
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
       interval: 30s

@@ -1,6 +1,9 @@
 """
 Soorma Common - Common models and DTOs for Soorma platform services.
 """
+
+__version__ = "0.8.0"
+
 from .models import (
     BaseDTO,
     # Agent Registry
@@ -200,5 +203,3 @@ __all__ = [
     "PlannerAction",
     "PlannerDecision",
 ]
-
-__version__ = "0.7.7"
