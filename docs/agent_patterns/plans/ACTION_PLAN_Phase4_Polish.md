@@ -401,20 +401,24 @@ Phase 4 is documentation-focused. Tasks can run in parallel or sequential order.
 
 ---
 
-#### Task 3: Update Examples Documentation ⏳
+#### Task 3: Update Examples Documentation ✅
 **Owner:** Agent  
 **Duration:** 30 minutes  
-**Status:** 📋 Not Started  
+**Status:** ✅ Complete (February 23, 2026)  
 
 **Sub-Tasks:**
-- [ ] Update `examples/README.md`:
-  - Add 10-choreography-basic entry to Learning Path table
-  - Update Advanced Patterns section with choreography link
+- [x] Update `examples/README.md`:
+  - Add 10-choreography-basic entry to Learning Path table (uncommented link)
+  - Update Pattern Catalog section with choreography link
+  - Update LLM-Powered Agents learning path
+  - Add Tracker Service integration note to 10-choreography-basic description
   - Verify all example links are valid
-  - Update completion time estimates if needed
 
 **Deliverables:**
-- Updated examples/README.md with 10-choreography-basic entry
+- ✅ Updated examples/README.md with 10-choreography-basic as available
+- ✅ Pattern Catalog updated with clickable choreography link
+- ✅ Learning paths updated with choreography example
+- ✅ All links verified
 
 **Dependencies:** None (can run in parallel with Task 1-2)
 
