@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-23
+
+### Changed
+- Bumped version to 0.8.0 to align with unified platform release (Stage 4 - Planner & ChoreographyPlanner complete)
+- Single source of truth for version: imports `__version__` from soorma-common
+- No functional changes to memory service
+
 ## [0.7.7] - 2026-02-19
 
 ### Fixed

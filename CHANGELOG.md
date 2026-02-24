@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-23
+
+### Added
+- **Stage 4 - Planner & ChoreographyPlanner (Agent Models)** (February 18-23, 2026)
+  - **PlanContext state machine** for multi-step workflows with pause/resume support
+  - **ChoreographyPlanner** for autonomous LLM-based orchestration (50+ model providers via LiteLLM)
+  - **Tracker Service** for event-driven observability and workflow monitoring
+  - **Pattern Selection Framework** with decision criteria, flowcharts, and tradeoffs documentation
+  - **BYO Model Credentials**: Developer-controlled LLM providers (OpenAI, Azure, Anthropic, Ollama)
+  - **Type-safe PlannerDecision types**: PUBLISH, COMPLETE, WAIT, DELEGATE actions
+  - **Event validation** prevents LLM hallucinations via Registry integration
+  - **Two-layer SDK architecture**: Service clients + PlatformContext wrappers for agent code
+  - **Comprehensive documentation**: Agent patterns guide, deployment guides, API examples
+
+### Components Updated
+- **SDK (soorma-core)**: PlanContext, ChoreographyPlanner, TrackerClient wrapper, Planner decorators
+- **soorma-common**: PlannerDecision DTOs, Tracker response models (PlanProgress, TaskExecution, EventTimeline)
+- **Tracker Service**: Initial release with PostgreSQL RLS, event subscription, progress tracking, query APIs
+- **Memory Service**: Plan context persistence, FK constraints with CASCADE delete
+- **Event Service**: Version alignment (0.8.0)
+- **Registry Service**: Version alignment (0.8.0)
+
+### Examples
+- **09-planner-basic**: Manual state machine orchestration with PlanContext
+- **10-choreography-basic**: Autonomous LLM-based planning with ChoreographyPlanner + Tracker integration
+
+### Documentation
+- **Pattern Selection Framework**: Choose between Tool, Worker, Planner, and ChoreographyPlanner patterns
+- **Deployment Guides**: Docker, environment variables, health checks, database migrations
+- **API Examples**: curl commands with JSON responses for all Tracker endpoints
+- **Integration Patterns**: TrackerClient wrapper usage, SDK two-layer architecture
+
+### Test Coverage
+- **SDK Tests**: 451+ passing (423 SDK + 28 Tracker)
+
 ## [0.7.7] - 2026-02-19
 
 ### Added

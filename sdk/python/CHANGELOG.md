@@ -7,96 +7,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Stage 4 Phase 3 Day 1 - Tracker Service Integration (RF-SDK-017)** (February 22, 2026)
-  - **TrackerServiceClient** (Layer 1 - Low-level HTTP client)
-    - `get_plan_progress()`: Plan execution summary
-    - `get_plan_tasks()`: Task history for a plan
-    - `get_plan_timeline()`: Event execution timeline
-    - `query_agent_metrics()`: Agent performance metrics
-    - `get_sub_plans()`: Child plan hierarchy
-    - `get_session_plans()`: All plans in a conversation session
-    - `get_delegation_group()`: Parallel delegation group status
-    - Includes `X-Tenant-ID`, `X-User-ID` headers on all requests
-    - 10 unit tests validating HTTP client behavior
-  - **TrackerClient** (Layer 2 - High-level wrapper)
-    - Replaces stub implementation in `context.py`
-    - Agent-friendly API in PlatformContext (`context.tracker.*`)
-    - Automatic tenant/user context extraction from events
-    - Lazy initialization with `_ensure_client()` pattern
-    - Delegates to TrackerServiceClient after validation
-    - 6 wrapper tests validating delegation behavior
-  - **Two-Layer Architecture Compliance**
-    - Service client (Layer 1) requires tenant_id/user_id parameters
-    - Wrapper (Layer 2) extracts context from event envelope
-    - Agent handlers MUST use `context.tracker.*`, not direct client
-  - **Integration with PlatformContext**
-    - `tracker` field added to PlatformContext dataclass
-    - Available via `from_env()` and explicit initialization
-
-- **Stage 4 Phase 2 - Autonomous Planning (RF-SDK-016)** (February 21, 2026)
-  - **ChoreographyPlanner** class for LLM-based autonomous orchestration
-    - Reduces planner boilerplate from ~400 lines → ~50 lines
-    - Automatic event discovery from Registry Service
-    - LLM reasoning via LiteLLM (50+ model providers supported)
-    - Event validation prevents LLM hallucinations
-    - Type-safe execution of PUBLISH, COMPLETE, WAIT, DELEGATE actions
-    - Circuit breaker (max_actions) prevents runaway loops
-  - **BYO Model Credentials** pattern
-    - Developer-controlled LLM provider & API keys
-    - Supports OpenAI, Azure OpenAI, Anthropic, local Ollama, etc.
-    - No API keys hardcoded in framework
-  - **Business Logic Injection**
-    - `system_instructions` parameter for domain-specific rules
-    - `planning_strategy` (balanced|conservative|aggressive)
-    - `custom_context` parameter for runtime decision context
-  - **WAIT Action** for Human-in-the-Loop workflows
-    - Pauses plan execution (`plan.pause()`)
-    - Tracks expected resume event
-    - Publishes notification for external systems
-  - **PlanContext.create_from_goal()** utility
-    - Standardizes plan creation across all planner handlers
-    - Creates Plan record + PlanContext in single call
-    - Auto-persists before returning
-    - Defaults plan_id to correlation_id or generates UUID
-  - **Optional LiteLLM dependency**
-    - Install: `pip install 'soorma-core[ai]'`
-    - Keeps core SDK lightweight for non-LLM use cases
-
-## [0.7.7] - 2026-02-19
+## [0.8.0] - 2026-02-23
 
 ### Added
-- **Stage 4 Phase 1 - Planner Foundation (RF-SDK-006)** (February 18, 2026)
-  - **PlanContext** class for state machine-based plan orchestration
-    - Creation from goal events with state machine definitions
-    - State persistence via Memory Service wrappers
-    - Event-driven state transitions with correlation routing
-    - Task execution based on state actions
-    - HITL workflows with pause/resume support
-    - Nested plans via parent_plan_id
-  - **Planner decorators** for goal handling and transition routing
-    - `@on_goal(goal_type)` - Creates GoalContext wrapper for goal events
-    - `@on_transition()` - Auto-filters to action-results, restores plan, validates transitions
-      - Handler signature: `async def(event, context, plan, next_state) -> None`
-      - SDK requires tenant_id/user_id for multi-tenant plan restoration
-      - SDK auto-filters to action-results topic only
-      - SDK validates transition exists in state machine before invoking
-    - `GoalContext` - Clean wrapper replacing old Goal class
-  - **Handler-only event registration** (RF-SDK-023)
-    - Only events with actual handlers appear in events_consumed
-    - Topics and wildcards excluded from consumed events list
-  - **Memory wrappers** for plan persistence
-    - `context.memory.store_plan_context()` - Persist plan state
-    - `context.memory.get_plan_context()` - Load plan by ID
-    - `context.memory.get_plan_by_correlation()` - Load by correlation_id
-  - **Comprehensive test coverage**
-    - 19 unit tests for PlanContext (persistence + execution)
-    - 11 unit tests for Planner decorators  
-    - 1 integration test for decorator orchestration
-    - Total: 31 passing tests
+
+**Stage 4 Phase 3 - Tracker Service Integration (RF-SDK-017)** (February 22, 2026)
+- **TrackerServiceClient** (Layer 1 - Low-level HTTP client)
+  - `get_plan_progress()`: Plan execution summary
+  - `get_plan_tasks()`: Task history for a plan
+  - `get_plan_timeline()`: Event execution timeline
+  - `query_agent_metrics()`: Agent performance metrics
+  - `get_sub_plans()`: Child plan hierarchy
+  - `get_session_plans()`: All plans in a conversation session
+  - `get_delegation_group()`: Parallel delegation group status
+  - Includes `X-Tenant-ID`, `X-User-ID` headers on all requests
+  - 10 unit tests validating HTTP client behavior
+- **TrackerClient** (Layer 2 - High-level wrapper)
+  - Replaces stub implementation in `context.py`
+  - Agent-friendly API in PlatformContext (`context.tracker.*`)
+  - Automatic tenant/user context extraction from events
+  - Lazy initialization with `_ensure_client()` pattern
+  - Delegates to TrackerServiceClient after validation
+  - 6 wrapper tests validating delegation behavior
+- **Two-Layer Architecture Compliance**
+  - Service client (Layer 1) requires tenant_id/user_id parameters
+  - Wrapper (Layer 2) extracts context from event envelope
+  - Agent handlers MUST use `context.tracker.*`, not direct client
+- **Integration with PlatformContext**
+  - `tracker` field added to PlatformContext dataclass
+  - Available via `from_env()` and explicit initialization
+- **Example: 10-choreography-basic**
+  - Autonomous research workflow with TrackerClient integration
+  - Demonstrates `context.tracker.get_plan_progress()` usage
+  - Shows progress tracking in LLM-based orchestration
+
+**Stage 4 Phase 2 - Autonomous Planning (RF-SDK-016)** (February 21, 2026)
+- **ChoreographyPlanner** class for LLM-based autonomous orchestration
+  - Reduces planner boilerplate from ~400 lines → ~50 lines
+  - Automatic event discovery from Registry Service
+  - LLM reasoning via LiteLLM (50+ model providers supported)
+  - Event validation prevents LLM hallucinations
+  - Type-safe execution of PUBLISH, COMPLETE, WAIT, DELEGATE actions
+  - Circuit breaker (max_actions) prevents runaway loops
+- **BYO Model Credentials** pattern
+  - Developer-controlled LLM provider & API keys
+  - Supports OpenAI, Azure OpenAI, Anthropic, local Ollama, etc.
+  - No API keys hardcoded in framework
+- **Business Logic Injection**
+  - `system_instructions` parameter for domain-specific rules
+  - `planning_strategy` (balanced|conservative|aggressive)
+  - `custom_context` parameter for runtime decision context
+- **WAIT Action** for Human-in-the-Loop workflows
+  - Pauses plan execution (`plan.pause()`)
+  - Tracks expected resume event
+  - Publishes notification for external systems
+- **PlanContext.create_from_goal()** utility
+  - Standardizes plan creation across all planner handlers
+  - Creates Plan record + PlanContext in single call
+  - Auto-persists before returning
+  - Defaults plan_id to correlation_id or generates UUID
+- **Optional LiteLLM dependency**
+  - Install: `pip install 'soorma-core[ai]'`
+  - Keeps core SDK lightweight for non-LLM use cases
+
+**Stage 4 Phase 1 - Planner Foundation (RF-SDK-006)** (February 18, 2026)
+- **PlanContext** class for state machine-based plan orchestration
+  - Creation from goal events with state machine definitions
+  - State persistence via Memory Service wrappers
+  - Event-driven state transitions with correlation routing
+  - Task execution based on state actions
+  - HITL workflows with pause/resume support
+  - Nested plans via parent_plan_id
+- **Planner decorators** for goal handling and transition routing
+  - `@on_goal(goal_type)` - Creates GoalContext wrapper for goal events
+  - `@on_transition()` - Auto-filters to action-results, restores plan, validates transitions
+    - Handler signature: `async def(event, context, plan, next_state) -> None`
+    - SDK requires tenant_id/user_id for multi-tenant plan restoration
+    - SDK auto-filters to action-results topic only
+    - SDK validates transition exists in state machine before invoking
+  - `GoalContext` - Clean wrapper replacing old Goal class
+- **Handler-only event registration** (RF-SDK-023)
+  - Only events with actual handlers appear in events_consumed
+  - Topics and wildcards excluded from consumed events list
+- **Memory wrappers** for plan persistence
+  - `context.memory.store_plan_context()` - Persist plan state
+  - `context.memory.get_plan_context()` - Load plan by ID
+  - `context.memory.get_plan_by_correlation()` - Load by correlation_id
+- **Comprehensive test coverage**
+  - 19 unit tests for PlanContext (persistence + execution)
+  - 11 unit tests for Planner decorators  
+  - 1 integration test for decorator orchestration
+  - Total: 31 passing tests
 
 ### Changed
-- **Memory Client - TaskContext DTOs Updated (February 12, 2026)**
+- **Memory Client - TaskContext DTOs Updated** (February 12, 2026)
   - `TaskContextCreate` and `TaskContextResponse` now include `user_id` field
   - `user_id` properly propagated through entire call chain (SDK → Memory Service)
   - Supports user-scoped task context isolation for async Worker operations

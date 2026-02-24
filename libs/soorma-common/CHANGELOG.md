@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-23
+
 ### Added
 - **Stage 4 Phase 3 - Tracker Response DTOs (RF-ARCH-011 extension)** (February 22, 2026)
   - **Tracker Service response models** for plan/task observability
