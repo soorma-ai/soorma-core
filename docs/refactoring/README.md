@@ -49,9 +49,9 @@ The SDK refactoring plan has been split into focused documents for implementatio
 | [sdk/03-COMMON-DTOS.md](sdk/03-COMMON-DTOS.md) | Shared DTOs in soorma-common | 🔴 Phase 1 | ✅ |
 | [sdk/04-TOOL-MODEL.md](sdk/04-TOOL-MODEL.md) | Tool synchronous model | 🟡 Phase 2 | ✅ |
 | [sdk/05-WORKER-MODEL.md](sdk/05-WORKER-MODEL.md) | Worker async model | 🟡 Phase 2 | ✅ |
-| [sdk/06-PLANNER-MODEL.md](sdk/06-PLANNER-MODEL.md) | Planner state machine | 🟢 Phase 3 | ⬜ |
+| [sdk/06-PLANNER-MODEL.md](sdk/06-PLANNER-MODEL.md) | Planner state machine | 🟢 Phase 3 | ✅ |
 | [sdk/07-DISCOVERY.md](sdk/07-DISCOVERY.md) | Discovery & A2A integration | 🟡 Phase 3 | ⬜ |
-| [sdk/08-MIGRATION.md](sdk/08-MIGRATION.md) | Migration guide | 🟢 Phase 4 | ⬜ |
+| [sdk/08-MIGRATION.md](sdk/08-MIGRATION.md) | Migration guide | 🟢 Phase 4 | 🟡 |
 | [sdk/README.md](sdk/README.md) | SDK docs index | Reference | 📋 |
 
 **📦 Archive:** [archive/SDK_REFACTORING_PLAN.md](archive/SDK_REFACTORING_PLAN.md) - Original monolithic plan (archived)
@@ -66,7 +66,7 @@ The architecture refactoring plan has been split into focused documents for impl
 | [arch/01-EVENT-SERVICE.md](arch/01-EVENT-SERVICE.md) | Event envelope enhancements | 🔴 Phase 1 | ✅ |
 | [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) | Task/plan context storage | 🔴 Phase 1 | ✅ |
 | [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) | Shared DTOs (soorma-common) | 🔴 Phase 1 | ✅ |
-| [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md) | Event-driven observability | 🟡 Phase 2 | ⏳ |
+| [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md) | Event-driven observability | 🟡 Phase 2 | ✅ |
 | [arch/05-REGISTRY-SERVICE.md](arch/05-REGISTRY-SERVICE.md) | Enhanced discovery & A2A | 🟢 Phase 3 | ⬜ |
 | [arch/06-USER-AGENT.md](arch/06-USER-AGENT.md) | HITL pattern | 🟢 Phase 4 | ⬜ |
 | [arch/README.md](arch/README.md) | Architecture docs index | Reference | 📋 |
@@ -558,6 +558,201 @@ Items intentionally deferred from Stage 4 for future implementation:
 | **RF-SDK-018:** EventToolkit.format_for_llm_selection() | Already exists in EventToolkit | ✅ Complete | N/A |
 | **Conditional state transitions** | Simple event-based transitions sufficient for MVP | Stage 5 or 6 | 2-3 days |
 | **Tracker Service UI** | FDE: Use curl/Postman for now | Post-launch | 1-2 weeks |
+| **Tracker advanced query endpoints** | Core 2 endpoints sufficient for MVP | Stage 5+ | 8-12 hours |
+| **Tracker NATS direct integration** | Architectural tech debt (uses EventClient) | Stage 5 (high priority) | 1-2 days |
+| **11-app-research-advisor** | Full application, needs dedicated planning | Stage 5+ or post-launch | 2-3 days |
+
+**Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.
+
+---
+
+## Remaining Work Summary
+
+### Current Status (February 23, 2026 - Release 0.8.0)
+
+**Completed Stages:**
+- ✅ Stage 1: Foundation - Event System (January 17, 2026)
+- ✅ Stage 2: Foundation - Memory & Common DTOs (January 21, 2026)
+- ✅ Stage 2.1: Memory Enhancements (January 30, 2026 - Release 0.7.5)
+- ✅ Stage 3: Agent Models - Tool & Worker (February 12, 2026)
+- ✅ Stage 4: Agent Models - Planner (February 23, 2026 - Release 0.8.0)
+
+**Test Coverage:** 451+ tests passing (423 SDK + 28 Tracker)  
+**Current Version:** 0.8.0  
+**Examples:** 10 working examples (01-hello-world → 10-choreography-basic)
+
+### Stage 5: Discovery & A2A (Not Started)
+
+**Priority:** 🔴 Next Stage  
+**Estimated Duration:** 2-3 weeks  
+**Target Release:** 0.9.0
+
+**Core Tasks:**
+
+1. **Registry Service Enhancements:**
+   - RF-ARCH-005: Schema registration by name (not event name)
+   - RF-ARCH-006: Structured capability with EventDefinition
+   - RF-ARCH-007: Discovery API for LLM reasoning
+   - **Effort:** 5-7 days
+
+2. **SDK Discovery:**
+   - RF-SDK-007: Event registration tied to agent startup
+   - RF-SDK-008: Agent discovery by capability (A2A pattern)
+   - **Effort:** 3-4 days
+
+3. **EventSelector Utility (Deferred from Stage 4):**
+   - RF-SDK-017: EventSelector class for LLM-based event selection
+   - Prompt templates, EventDecision types
+   - Registry validation before publishing
+   - **Effort:** 0.5-1 day (EventToolkit foundation already exists)
+
+4. **Tracker Service NATS Integration (Tech Debt):**
+   - Replace EventClient subscription with direct NATS JetStream
+   - Extract shared NATS client library (libs/soorma-nats/)
+   - Fix architectural violation (infrastructure services should use NATS directly)
+   - **Effort:** 1-2 days
+   - **Priority:** High - architectural correctness
+
+**Deliverables:**
+- Enhanced Registry Service with natural language discovery
+- A2A Agent Card publication
+- EventSelector for intelligent routing
+- Tracker Service architectural fix
+- Updated documentation
+- New example: 11-tool-discovery
+
+**Test Goals:** 500+ tests passing
+
+---
+
+### Stage 6: Migration & Polish (Not Started)
+
+**Priority:** 🟡 Final Stage  
+**Estimated Duration:** 1-2 weeks  
+**Target Release:** 1.0.0 (Production Ready)
+
+**Core Tasks:**
+
+1. **Migration Guide:**
+   - Create comprehensive migration guide (RF-SDK-008)
+   - Before/after code examples
+   - Breaking changes list
+   - Migration scripts where applicable
+   - **Effort:** 3-4 days
+
+2. **User-Agent Service Documentation:**
+   - RF-ARCH-002: Document HITL pattern contract
+   - Service will be implemented in soorma-cloud (not soorma-core)
+   - Subscribe to notification-events topic
+   - Human-in-the-loop approval workflows
+   - **Effort:** 1-2 days (documentation only)
+
+3. **Documentation Audit:**
+   - Update all ARCHITECTURE.md files
+   - Update all README files
+   - Verify all cross-references
+   - Update pattern catalog
+   - **Effort:** 2-3 days
+
+4. **Final Testing & Validation:**
+   - End-to-end integration tests
+   - Performance testing
+   - Security audit
+   - Documentation review
+   - **Effort:** 3-4 days
+
+**Deliverables:**
+- Comprehensive migration guide
+- User-Agent contract documentation
+- Updated documentation suite
+- All tests passing
+- Production-ready release
+
+**Test Goals:** 550+ tests passing
+
+---
+
+### Post-Stage 6: Examples Development
+
+**Priority:** 🟢 Post-Refactoring  
+**Estimated Duration:** 2-3 weeks  
+**Reference:** [EXAMPLES_REFACTOR_PLAN.md](../EXAMPLES_REFACTOR_PLAN.md)
+
+**What Remains:**
+
+1. **Phase 3: Memory Examples**
+   - 04-memory-semantic (RAG pattern)
+   - 05-memory-working (WorkflowState helper)
+   - 06-memory-episodic (Conversation history)
+
+2. **Phase 4: Advanced Examples**
+   - 07-tool-discovery (Dynamic capability discovery)
+   - 08-planner-worker-basic (Trinity pattern) - partially exists
+   - 09-app-research-advisor (ChoreographyPlanner refactor) - deferred from Stage 4
+   - 10-multi-turn-conversation (Stateful conversations)
+
+3. **Phase 5: Documentation & AI Tooling**
+   - `.cursorrules` for AI assistant guidance
+   - Pattern catalog (`docs/PATTERNS.md`)
+   - Blog post updates
+
+**Success Criteria:**
+- Developer can complete learning path in 2 hours
+- Each example runs independently with `soorma dev`
+- AI assistants recommend correct example for each task
+
+---
+
+### Technical Debt & Enhancements (Post-Launch)
+
+**From DEFERRED_WORK.md:**
+
+1. **Tracker Service Enhancements:**
+   - Advanced query endpoints (timeline, hierarchy, metrics) - 8-12 hours
+   - Web UI for plan visualization - 1-2 weeks
+   - Real-time WebSocket updates - 2-3 days
+   - Alerting & notifications - 2-3 days
+
+2. **State Machine Enhancements:**
+   - Conditional transitions - 2-3 days
+   - Expression evaluator - 1-2 days
+   - Advanced routing patterns - 2-3 days
+
+3. **Prompt Template System (RF-SDK-019):**
+   - Reusable prompt templates (Jinja2)
+   - Template registry for common patterns
+   - Few-shot example integration
+   - **Effort:** 2-3 days
+
+4. **Full Application Examples:**
+   - 11-app-research-advisor (production-grade) - 2-3 days
+   - 12-app-customer-support - TBD
+   - 13-app-data-pipeline - TBD
+
+**Priority:** Low - evaluate based on user feedback after v1.0.0 release
+
+---
+
+### Summary: Path to v1.0.0
+
+**Completed:**
+- ✅ Stages 1-4 (Foundation + Agent Models)
+- ✅ 451+ tests passing
+- ✅ 10 examples working
+- ✅ v0.8.0 released
+
+**Remaining for v1.0.0:**
+1. **Stage 5 (Discovery & A2A):** 2-3 weeks → v0.9.0
+2. **Stage 6 (Migration & Polish):** 1-2 weeks → v1.0.0
+3. **Examples Development:** 2-3 weeks (concurrent with Stage 6)
+
+**Total Estimated Time to v1.0.0:** 5-8 weeks
+
+**Key Milestones:**
+- v0.9.0: Discovery & A2A complete + Tracker architectural fix
+- v1.0.0: Production-ready with migration guide + complete examples
+
+**Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.
 
 **Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.ria:**
 - ✅ Planner supports on_goal() and on_transition()
@@ -765,12 +960,12 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-005 | Tool synchronous model simplify | Stage 3 | [04-TOOL-MODEL](sdk/04-TOOL-MODEL.md) | ✅ |
 | RF-SDK-004 | Worker async task model | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ✅ |
 | RF-SDK-022 | Worker handler-only event registration | Stage 3 | [05-WORKER-MODEL](sdk/05-WORKER-MODEL.md) | ✅ |
-| RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
-| RF-SDK-015 | PlannerDecision and PlanAction types | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
-| RF-SDK-016 | ChoreographyPlanner class | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
-| RF-SDK-023 | Planner handler-only event registration | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ⬜ |
-| RF-ARCH-010 | Tracker as event listener | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
-| RF-ARCH-011 | Task progress model | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ⬜ |
+| RF-SDK-006 | Planner on_goal and on_transition | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ✅ |
+| RF-SDK-015 | PlannerDecision and PlanAction types | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ✅ |
+| RF-SDK-016 | ChoreographyPlanner class | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ✅ |
+| RF-SDK-023 | Planner handler-only event registration | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ✅ |
+| RF-ARCH-010 | Tracker as event listener | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ✅ |
+| RF-ARCH-011 | Task progress model | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ✅ |
 | RF-ARCH-005 | Schema registration by name (not event name) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
 | RF-ARCH-006 | Structured capability with EventDefinition | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
 | RF-ARCH-007 | Discovery API for LLM reasoning | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
