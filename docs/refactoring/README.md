@@ -1,6 +1,6 @@
 # Soorma Core Refactoring Index
 
-**Status:** 📋 Stage 1-2.1 Complete | ✅ Stage 3 Complete | ✅ Stage 4 Complete | Release: 0.8.0 (February 23, 2026)  
+**Status:** 📋 Stage 1-4 Complete | Release: 0.8.0 (February 23, 2026)  
 **Last Updated:** February 23, 2026 - Stage 4 Complete (Planner & ChoreographyPlanner)
 
 ---
@@ -256,7 +256,7 @@ async def route_ticket(task, context):
 
 This section provides **order-based** guidance for implementing refactoring tasks. Each stage must be completed before moving to the next.
 
-### **Stage 1: Foundation - Event System** 🔴
+### **Stage 1: Foundation - Event System** ✅ COMPLETE
 
 **Documents:** [arch/01-EVENT-SERVICE.md](arch/01-EVENT-SERVICE.md) + [sdk/01-EVENT-SYSTEM.md](sdk/01-EVENT-SYSTEM.md)
 
@@ -301,7 +301,7 @@ Follow TDD: write tests first, then implement. Coordinate service and SDK change
 
 ---
 
-### **Stage 2: Foundation - Memory & Common DTOs** 🔴
+### **Stage 2: Foundation - Memory & Common DTOs** ✅ COMPLETE
 
 **Documents:** [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) + [sdk/02-MEMORY-SDK.md](sdk/02-MEMORY-SDK.md) + [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) + [sdk/03-COMMON-DTOS.md](sdk/03-COMMON-DTOS.md)
 
@@ -398,7 +398,7 @@ For detailed implementation notes, see [STAGE_2.1_WORKING_PLAN.md](STAGE_2.1_WOR
 
 ---
 
-### **Stage 3: Agent Models - Tool & Worker** 🟡
+### **Stage 3: Agent Models - Tool & Worker** ✅ COMPLETE
 
 **Documents:** [sdk/04-TOOL-MODEL.md](sdk/04-TOOL-MODEL.md) + [sdk/05-WORKER-MODEL.md](sdk/05-WORKER-MODEL.md)
 
@@ -751,103 +751,6 @@ Items intentionally deferred from Stage 4 for future implementation:
 **Key Milestones:**
 - v0.9.0: Discovery & A2A complete + Tracker architectural fix
 - v1.0.0: Production-ready with migration guide + complete examples
-
-**Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.
-
-**Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.ria:**
-- ✅ Planner supports on_goal() and on_transition()
-- ✅ PlanContext state machine works
-- ✅ PlannerDecision types provide type safety
-- ✅ ChoreographyPlanner handles autonomous orchestration
-- ✅ Tracker stores and queries progress events
-- ✅ All tests pass
-
----
-
-### **Stage 5: Discovery & A2A** 🟡
-
-**Documents:** [arch/05-REGISTRY-SERVICE.md](arch/05-REGISTRY-SERVICE.md) + [sdk/07-DISCOVERY.md](sdk/07-DISCOVERY.md)
-
-**Tasks:** RF-ARCH-005, RF-ARCH-006, RF-ARCH-007, RF-SDK-007, RF-SDK-008, RF-SDK-017, RF-SDK-018
-
-**Copilot Agent Prompt:**
-```
-Implement Stage 5 (Discovery & A2A) of the Soorma Core refactoring.
-
-Reference documents:
-- docs/refactoring/arch/05-REGISTRY-SERVICE.md (Registry enhancements)
-- docs/refactoring/sdk/07-DISCOVERY.md (Discovery & A2A gateway)
-
-Key deliverables:
-1. Update Registry Service:
-   - Schema registration by schema name (not event name)
-   - Events nested within capabilities (EventDefinition with payload_schema_name)
-   - Structured capability with input/output schemas
-   - Discovery API with natural language search
-   - A2AAgentCard publication
-2. Update SDK:
-   - Event registration tied to agent startup
-   - RegistryClient.discover() for capability-based discovery
-   - A2A Gateway for external protocol clients
-3. Add EventSelector utility for LLM-based event selection (RF-SDK-017):
-   - Customizable prompt templates
-   - Type-safe EventDecision output
-   - Registry validation before publishing
-4. Add EventToolkit.format_for_llm_selection() helper (RF-SDK-018)
-5. Event payloads include payload_schema_name for LLM schema lookup
-6. Update examples to use discovery and EventSelector
-7. Write tests for discovery, EventSelector, and A2A (TDD)
-
-Dependencies: Stage 1 (events), Stage 2 (common DTOs) must be complete.
-```
-
-**Completion Criteria:**
-- ✅ Registry supports schema registration by name
-- ✅ Events reference payload_schema_name (not embedded schemas)
-- ✅ Discovery API works with natural language
-- ✅ EventSelector provides LLM-based event selection
-- ✅ EventToolkit has LLM formatting helpers
-- ✅ A2A Gateway exposes agents
-- ✅ All tests pass
-
----
-
-### **Stage 6: Migration & Polish** 🟢
-
-**Documents:** [sdk/08-MIGRATION.md](sdk/08-MIGRATION.md) + [arch/06-USER-AGENT.md](arch/06-USER-AGENT.md)
-
-**Tasks:** RF-ARCH-002, Migration Guide
-
-**Copilot Agent Prompt:**
-```
-Implement Stage 6 (Migration & Polish) of the Soorma Core refactoring.
-
-Reference documents:
-- docs/refactoring/sdk/08-MIGRATION.md (Migration guide)
-- docs/refactoring/arch/06-USER-AGENT.md (HITL pattern reference)
-
-Key deliverables:
-1. Create comprehensive migration guide:
-   - Breaking changes list
-   - Before/after code examples
-   - Migration scripts where possible
-2. Note: User-Agent service will be implemented in soorma-cloud (not soorma-core)
-   - Document HITL pattern contract for soorma-cloud implementation
-   - Subscribe to notification-events topic
-   - Human-in-the-loop pattern
-   - Approval workflows
-3. Update all documentation (ARCHITECTURE.md, README.md, etc.)
-4. Final testing and validation
-
-Dependencies: All previous stages must be complete.
-```
-
-**Completion Criteria:**
-- ✅ Migration guide complete with examples
-- ✅ User-Agent service contract documented (for soorma-cloud)
-- ✅ All documentation updated
-- ✅ All examples working
-- ✅ All tests passing
 
 ---
 
