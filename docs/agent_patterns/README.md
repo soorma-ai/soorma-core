@@ -1,8 +1,8 @@
 # Agent Patterns
 
-**Status:** ✅ Stage 3 Complete (Tool & Worker) | 🟡 Stage 4 Planned (Planner)  
-**Last Updated:** February 15, 2026  
-**Related Stages:** Stage 3 (RF-SDK-004, RF-SDK-005, RF-SDK-022)
+**Status:** ✅ Stage 4 Complete (Planner & ChoreographyPlanner)  
+**Last Updated:** February 23, 2026  
+**Related Stages:** Stage 3 (RF-SDK-004, RF-SDK-005, RF-SDK-022), Stage 4 (RF-SDK-006, RF-SDK-015, RF-SDK-016)
 
 ---
 
@@ -11,6 +11,60 @@
 Soorma agents can be organized using various patterns depending on your use case. This guide helps you choose the right pattern for your needs.
 
 Agents are built on the **DisCo (Distributed Cognition)** pattern, where intelligence is distributed across specialized components that communicate through events. Instead of one monolithic agent doing everything, you compose systems of specialized agents that work together.
+
+---
+
+## Pattern Selection Framework
+
+**Choose the right pattern for your use case.** This framework helps you decide which agent pattern fits your requirements.
+
+### Decision Criteria
+
+| Pattern | When to Use | Execution | State | Decision Making | Cost |
+|---------|-------------|-----------|-------|-----------------|------|
+| **Tool** | Stateless operation, <5 sec, simple I/O | Synchronous | None | Deterministic | Free |
+| **Worker** | Async task, needs delegation, parallel work | Asynchronous | Persistent | Deterministic | Free |
+| **Planner** | Multi-step workflow, manual orchestration | Event-driven | State machine | Developer-defined | Free |
+| **ChoreographyPlanner** | Adaptive workflow, LLM reasoning | Event-driven | LLM-managed | Autonomous | LLM API |
+
+### Decision Flowchart
+
+```mermaid
+graph TD
+    A[Need to build agent] --> B{Stateless operation?}
+    B -->|Yes, <5 sec| C[Tool Pattern]
+    B -->|No| D{Need LLM decisions?}
+    D -->|Yes| E[ChoreographyPlanner]
+    D -->|No| F{Multi-step workflow?}
+    F -->|Yes| G{Want manual control?}
+    G -->|Yes| H[Planner Pattern]
+    G -->|No| E
+    F -->|No| I[Worker Pattern]
+```
+
+### Pattern Tradeoffs
+
+| Pattern | Control | Complexity | Latency | Best For |
+|---------|---------|------------|---------|----------|
+| **Tool** | Full | ⭐ Beginner | <100ms | Calculations, lookups, transformations |
+| **Worker** | High | ⭐⭐ Intermediate | 100ms-5s | Async tasks, delegation, aggregation |
+| **Planner** | Full | ⭐⭐⭐ Advanced | Varies | State machines, manual orchestration |
+| **ChoreographyPlanner** | Autonomous | ⭐⭐⭐⭐ Expert | 1-10s | Adaptive workflows, LLM reasoning |
+
+### Real-World Examples
+
+| Your Need | Choose This Pattern | Example Use Case |
+|-----------|---------------------|------------------|
+| "I need to validate user input" | **Tool** | Email validator, JSON schema checker |
+| "I need to process orders with inventory + payment steps" | **Worker** | E-commerce order processor with sequential delegation |
+| "I need a multi-stage approval workflow" | **Planner** | Document approval with states: draft → review → approved |
+| "I need autonomous research with adaptive queries" | **ChoreographyPlanner** | Research assistant that explores topics dynamically |
+
+**Quick Tips:**
+- Start simple: Use **Tool** for pure functions, **Worker** for delegation
+- Use **Planner** when you know all states/transitions upfront
+- Use **ChoreographyPlanner** when the path depends on intermediate results
+- Avoid ChoreographyPlanner for simple tasks (unnecessary LLM cost)
 
 ---
 
@@ -563,8 +617,9 @@ if any(indicator in result.lower() for indicator in vague_indicators):
 | Stateless calculation | Tool |
 | Simple event reaction | Agent (base) |
 | Multi-step task with delegation | Worker |
+| State machine orchestration | Planner |
 | Goal-driven orchestration | Trinity (Planner + Worker + Tool) |
-| Adaptive, LLM-driven workflow | Autonomous Choreography |
+| Adaptive, LLM-driven workflow | ChoreographyPlanner |
 | Distributed transaction with rollback | Saga |
 
 ### Complexity Progression
@@ -574,8 +629,9 @@ Start simple and add complexity only when needed:
 1. **Agent (Base)** → Learn event model
 2. **Tool** → Synchronous operations
 3. **Worker** → Asynchronous tasks
-4. **Trinity** → Structured orchestration
-5. **Autonomous Choreography** → LLM-driven adaptation
+4. **Planner** → State machine workflows
+5. **Trinity** → Structured orchestration
+6. **ChoreographyPlanner** → LLM-driven adaptation
 
 ---
 
@@ -586,8 +642,8 @@ Start simple and add complexity only when needed:
 | [01-hello-world](../../examples/01-hello-world/) | Agent | ✅ |
 | [01-hello-tool](../../examples/01-hello-tool/) | Tool | ✅ |
 | [08-worker-basic](../../examples/08-worker-basic/) | Worker | ✅ |
-| [08-planner-worker-basic](../../examples/08-planner-worker-basic/) | Trinity | 🟡 Stage 4 |
-| [09-app-research-advisor](../../examples/09-app-research-advisor/) | Autonomous Choreography | 🟡 Stage 4 |
+| [09-planner-basic](../../examples/09-planner-basic/) | Planner | ✅ |
+| [10-choreography-basic](../../examples/10-choreography-basic/) | ChoreographyPlanner | ✅ |
 
 ---
 
