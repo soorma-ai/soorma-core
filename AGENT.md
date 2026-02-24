@@ -115,16 +115,81 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
     - *Admin:* Use `sqlite3` CLI instead of building a UI.
     - *Memory:* Use local JSON/ChromaDB instead of a managed cluster.
 - **Mandate:** Always flag "Platform Bloat" to the developer during Plan Mode.
+- **⚠️ CRITICAL - Approval Required:** You MUST NOT implement a reduced scope or FDE alternative without explicit developer approval. If you discover an FDE opportunity during implementation (e.g., realizing a task has 8 endpoints but only 2 are critical), STOP and ask the developer before proceeding with the reduced scope.
 
 ### Step 3: Implementation & TDD
-- **Reference:** For technical "How-to" (CLI commands, testing syntax, patterns), refer to `docs/CONTRIBUTING_REFERENCE.md`.
-- **Strict Coding Standards:**
-    - **Type Hints:** EVERY function argument and return value MUST have explicit Python type hints (e.g., `def run(data: Dict[str, Any]) -> bool:`).
-    - **Docstrings:** All classes and public functions MUST have Google-style docstrings describing purpose, args, and returns.
-    - **Comments:** Use inline comments to explain "Why" a specific logic path was taken, especially for complex event choreography.
-- **RED:** Write a failing `pytest` test in the relevant component.
-- **GREEN:** Implement minimal logic to pass.
-- **REFACTOR:** Align imports (SDK -> Common -> Service) and update the feature's `ARCHITECTURE.md` if the design evolved.
+
+**Reference:** For technical "How-to" (CLI commands, testing syntax, patterns), refer to `docs/CONTRIBUTING_REFERENCE.md`.
+
+**Strict Coding Standards:**
+- **Type Hints:** EVERY function argument and return value MUST have explicit Python type hints (e.g., `def run(data: Dict[str, Any]) -> bool:`).
+- **Docstrings:** All classes and public functions MUST have Google-style docstrings describing purpose, args, and returns.
+- **Comments:** Use inline comments to explain "Why" a specific logic path was taken, especially for complex event choreography.
+
+**MANDATORY TDD Cycle (STUB → RED → GREEN → REFACTOR):**
+
+⚠️ **CRITICAL:** You MUST follow this exact sequence. Shortcuts violate the constitution.
+
+1. **STUB Phase:** Create skeleton code with `NotImplementedError` or placeholder returns
+   ```python
+   # Example: Create stub FIRST
+   def get_plan_progress(self, plan_id: str, tenant_id: str, user_id: str) -> Optional[PlanProgress]:
+       """Get plan execution progress (stub)."""
+       raise NotImplementedError("Tracker client not yet implemented")
+   ```
+   - Create ALL method signatures with proper type hints
+   - Raise `NotImplementedError` or return `None`/empty collections
+   - Run stub code to verify it imports without errors
+
+2. **RED Phase:** Write tests for REAL expected behavior that FAIL due to `NotImplementedError`
+   ```python
+   # Write tests for the REAL expected functionality (NOT for the stub)
+   def test_get_plan_progress():
+       client = TrackerServiceClient()
+       # Test the REAL expected behavior - this will fail with NotImplementedError
+       result = await client.get_plan_progress("plan-123", "tenant", "user")
+       assert result.plan_id == "plan-123"
+       assert result.status in ["running", "completed", "failed"]
+   ```
+   - **CRITICAL:** Do NOT test for the stub (no `pytest.raises(NotImplementedError)`)
+   - **CRITICAL:** Write tests that assert the REAL expected behavior
+   - **RUN the tests:** They MUST fail with `NotImplementedError` from the stub
+   - **VERIFY failure reason:** Check test output shows `NotImplementedError`, NOT:
+     - `ModuleNotFoundError` (missing imports)
+     - `ImportError` (package not installed)
+     - `AttributeError` (method doesn't exist)
+   - **Agent responsibility:** Review test execution output to confirm failure reason is correct
+
+3. **GREEN Phase:** Implement real logic to make tests pass
+   ```python
+   # Replace stub with real implementation
+   def get_plan_progress(self, plan_id: str, tenant_id: str, user_id: str) -> Optional[PlanProgress]:
+       """Get plan execution progress."""
+       response = await self._client.get(...)
+       return PlanProgress.model_validate(response.json())
+   ```
+   - Replace `NotImplementedError` with actual logic
+   - Run tests again - they MUST pass (same tests that failed in RED phase)
+   - Minimal code to pass (don't over-engineer)
+
+4. **REFACTOR Phase:** Clean up and align architecture
+   - Align imports (SDK -> Common -> Service)
+   - Extract duplicated code
+   - Update `ARCHITECTURE.md` if design evolved
+   - Run tests again to ensure refactoring didn't break anything
+
+**Enforcement:**
+- If RED phase shows `ImportError`/`ModuleNotFoundError` → You skipped STUB phase
+- If RED phase shows `AttributeError` → You skipped STUB phase
+- If tests PASS in RED phase → You wrote tests for the stub instead of real functionality (WRONG)
+- If tests fail due to wrong exception (not `NotImplementedError`) → Review test execution output
+- **Consequence:** Re-do the cycle correctly before moving to next task
+
+**RED Phase Verification Checklist:**
+- [ ] Tests written for REAL expected behavior (not stub behavior)
+- [ ] Tests executed and reviewed output
+- [ ] Tests FAIL due to `NotImplementedError` (not import/attribute errors)
+- [ ] Test failure output confirms stub is being called correctly
 
 ---
 
@@ -164,5 +229,10 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 ## 4. Documentation & Standards
 - **Feature Catalog:** Maintain the `docs/[feature-area]/` structure.
 - **Changelog:** Update the `CHANGELOG.md` in the specific component directory.
-- **Commits:** Use Conventional Commits (e.g., `feat(sdk): ...`).
+- **Commits:** Use Conventional Commits with succinct messages (≤15 lines total)
+  - Format: `type(scope): subject` (e.g., `feat(sdk): add TrackerClient wrapper`)
+  - Subject line: ≤72 characters, imperative mood
+  - Body: Optional, use bullet points for clarity
+  - **Maximum 15 lines total** (prevents terminal execution issues)
+  - Use `-m` flag multiple times for multi-paragraph messages: `git commit -m 'Subject' -m 'Body paragraph 1' -m 'Body paragraph 2'`
 - **15-Minute Rule:** If logic is too complex for a human to audit in 15 minutes, refactor it.

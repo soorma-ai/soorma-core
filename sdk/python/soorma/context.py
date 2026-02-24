@@ -901,6 +901,8 @@ class BusClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Emit a domain event with explicit topic.
@@ -919,6 +921,8 @@ class BusClient:
             tenant_id: Tenant ID for multi-tenancy (envelope metadata)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
             
         Returns:
             The event ID
@@ -937,6 +941,8 @@ class BusClient:
             tenant_id=tenant_id,
             user_id=user_id,
             session_id=session_id,
+            goal_id=goal_id,
+            plan_id=plan_id,
         )
     
     async def request(
@@ -952,6 +958,8 @@ class BusClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Publish to action-requests topic with mandatory response_event.
@@ -969,6 +977,8 @@ class BusClient:
             tenant_id: Tenant ID for multi-tenancy (envelope metadata)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
             
         Returns:
             The event ID
@@ -986,6 +996,8 @@ class BusClient:
             tenant_id=tenant_id,
             user_id=user_id,
             session_id=session_id,
+            goal_id=goal_id,
+            plan_id=plan_id,
         )
     
     async def respond(
@@ -1001,6 +1013,8 @@ class BusClient:
         tenant_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        goal_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
     ) -> str:
         """
         Publish to action-results topic with mandatory correlation_id.
@@ -1018,6 +1032,8 @@ class BusClient:
             tenant_id: Tenant ID for multi-tenancy (envelope metadata)
             user_id: User ID for authentication/authorization (envelope metadata)
             session_id: Session ID for conversation correlation
+            goal_id: Goal ID for coordinated multi-step workflows (envelope metadata)
+            plan_id: Plan ID for plan execution tracking and observability (envelope metadata)
             
         Returns:
             The event ID
@@ -1034,6 +1050,8 @@ class BusClient:
             tenant_id=tenant_id,
             user_id=user_id,
             session_id=session_id,
+            goal_id=goal_id,
+            plan_id=plan_id,
         )
     
     async def announce(
@@ -1202,202 +1220,187 @@ class BusClient:
 @dataclass
 class TrackerClient:
     """
-    Observability & State Machine client.
+    Tracker Service client wrapper (Layer 2 - High-level agent API).
     
-    Powered by: Time-series DB (in production)
+    Provides agent-friendly access to Tracker Service for plan/task observability.
+    Methods automatically handle tenant_id/user_id context extraction.
+    
+    For low-level HTTP access, use TrackerServiceClient directly.
+    For agent handlers, use this wrapper via context.tracker.*
     
     Methods:
-        start_plan(): Initialize execution trace
-        emit_progress(): Log checkpoints
-        detect_timeout(): Handle failures
-    
-    NOTE: Tracker Service is not yet implemented. This client provides
-    a no-op implementation that logs operations for development.
+        get_plan_progress(): Get plan execution summary
+        get_plan_tasks(): Get task history for a plan
+        get_plan_timeline(): Get event execution timeline
+        query_agent_metrics(): Get agent performance metrics
+        get_sub_plans(): Get child plans (hierarchy)
+        get_session_plans(): Get all plans in a conversation session
+        get_delegation_group(): Get parallel delegation group status
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"))
-    _http_client: Optional[httpx.AsyncClient] = field(default=None, repr=False)
-    _use_noop: bool = field(default=True, repr=False)  # Use no-op by default until service is implemented
+    _client: Optional["TrackerServiceClient"] = field(default=None, repr=False, init=False)
     
-    async def _ensure_client(self) -> httpx.AsyncClient:
-        if self._http_client is None:
-            self._http_client = httpx.AsyncClient()
-        return self._http_client
+    async def _ensure_client(self) -> "TrackerServiceClient":
+        """Lazy initialization of TrackerServiceClient."""
+        if self._client is None:
+            from .tracker.client import TrackerServiceClient
+            self._client = TrackerServiceClient(base_url=self.base_url)
+        return self._client
     
-    async def start_plan(
+    async def get_plan_progress(
         self,
         plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional["PlanProgress"]:
+        """
+        Get plan execution progress summary.
+        
+        Args:
+            plan_id: Plan identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
+            
+        Returns:
+            PlanProgress or None if not found
+        """
+        from soorma_common.tracker import PlanProgress
+        client = await self._ensure_client()
+        return await client.get_plan_progress(plan_id, tenant_id, user_id)
+    
+    async def get_plan_tasks(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> List["TaskExecution"]:
+        """
+        Get all tasks for a plan.
+        
+        Args:
+            plan_id: Plan identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
+            
+        Returns:
+            List of TaskExecution records
+        """
+        from soorma_common.tracker import TaskExecution
+        client = await self._ensure_client()
+        return await client.get_plan_tasks(plan_id, tenant_id, user_id)
+    
+    async def get_plan_timeline(
+        self,
+        plan_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional["EventTimeline"]:
+        """
+        Get event execution timeline for a plan.
+        
+        Args:
+            plan_id: Plan identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
+            
+        Returns:
+            EventTimeline or None if not found
+        """
+        from soorma_common.tracker import EventTimeline
+        client = await self._ensure_client()
+        return await client.get_plan_timeline(plan_id, tenant_id, user_id)
+    
+    async def query_agent_metrics(
+        self,
         agent_id: str,
-        goal: str,
-        tasks: List[Dict[str, Any]],
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> bool:
+        period: str = "7d",
+        tenant_id: str = None,
+        user_id: str = None,
+    ) -> Optional["AgentMetrics"]:
         """
-        Initialize execution trace for a plan.
+        Query agent performance metrics.
         
         Args:
-            plan_id: Unique plan identifier
-            agent_id: The planning agent ID
-            goal: The goal being solved
-            tasks: List of planned tasks
-            metadata: Optional additional metadata
+            agent_id: Agent identifier
+            period: Time period (default: "7d")
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
             
         Returns:
-            True if plan was started
+            AgentMetrics or None if not found
         """
-        # No-op for development
-        if self._use_noop:
-            logger.debug(f"Tracker start_plan (noop): {plan_id} with {len(tasks)} tasks")
-            return True
-        
+        from soorma_common.tracker import AgentMetrics
         client = await self._ensure_client()
-        try:
-            response = await client.post(
-                f"{self.base_url}/v1/plans",
-                json={
-                    "plan_id": plan_id,
-                    "agent_id": agent_id,
-                    "goal": goal,
-                    "tasks": tasks,
-                    "metadata": metadata or {},
-                },
-                timeout=10.0,
-            )
-            return response.status_code in (200, 201)
-        except Exception as e:
-            logger.debug(f"Tracker start_plan failed (continuing): {e}")
-            return True
+        return await client.query_agent_metrics(agent_id, period, tenant_id, user_id)
     
-    async def emit_progress(
+    async def get_sub_plans(
         self,
         plan_id: str,
-        task_id: str,
-        status: str,
-        progress: float = 0.0,
-        message: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> bool:
+        tenant_id: str,
+        user_id: str,
+    ) -> List["PlanExecution"]:
         """
-        Log a checkpoint/progress update.
+        Get child plans for a given plan (plan hierarchy).
         
         Args:
-            plan_id: The plan being executed
-            task_id: The specific task
-            status: Status (pending, running, completed, failed)
-            progress: Progress percentage (0.0 - 1.0)
-            message: Optional status message
-            data: Optional data payload
+            plan_id: Parent plan identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
             
         Returns:
-            True if progress was recorded
+            List of child PlanExecution records
         """
-        # No-op for development
-        if self._use_noop:
-            logger.debug(f"Tracker emit_progress (noop): {task_id} -> {status} ({progress:.0%})")
-            return True
-        
+        from soorma_common.tracker import PlanExecution
         client = await self._ensure_client()
-        try:
-            response = await client.post(
-                f"{self.base_url}/v1/plans/{plan_id}/progress",
-                json={
-                    "task_id": task_id,
-                    "status": status,
-                    "progress": progress,
-                    "message": message,
-                    "data": data or {},
-                },
-                timeout=10.0,
-            )
-            return response.status_code == 200
-        except Exception as e:
-            logger.debug(f"Tracker emit_progress failed (continuing): {e}")
-            return True
+        return await client.get_sub_plans(plan_id, tenant_id, user_id)
     
-    async def complete_task(
+    async def get_session_plans(
         self,
-        plan_id: str,
-        task_id: str,
-        result: Optional[Dict[str, Any]] = None,
-    ) -> bool:
+        session_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> List["PlanExecution"]:
         """
-        Mark a task as completed.
+        Get all plans in a conversation session.
         
         Args:
-            plan_id: The plan ID
-            task_id: The task ID
-            result: Optional result data
+            session_id: Session identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
             
         Returns:
-            True if task was marked complete
+            List of PlanExecution records in session
         """
-        return await self.emit_progress(
-            plan_id=plan_id,
-            task_id=task_id,
-            status="completed",
-            progress=1.0,
-            data=result,
-        )
-    
-    async def fail_task(
-        self,
-        plan_id: str,
-        task_id: str,
-        error: str,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> bool:
-        """
-        Mark a task as failed.
-        
-        Args:
-            plan_id: The plan ID
-            task_id: The task ID
-            error: Error message
-            data: Optional error data
-            
-        Returns:
-            True if task was marked failed
-        """
-        return await self.emit_progress(
-            plan_id=plan_id,
-            task_id=task_id,
-            status="failed",
-            message=error,
-            data=data,
-        )
-    
-    async def get_plan_status(self, plan_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get the current status of a plan.
-        
-        Args:
-            plan_id: The plan ID
-            
-        Returns:
-            Plan status dict if found, None otherwise
-        """
-        # No-op for development
-        if self._use_noop:
-            logger.debug(f"Tracker get_plan_status (noop): {plan_id}")
-            return {"plan_id": plan_id, "status": "unknown"}
-        
+        from soorma_common.tracker import PlanExecution
         client = await self._ensure_client()
-        try:
-            response = await client.get(
-                f"{self.base_url}/v1/plans/{plan_id}",
-                timeout=10.0,
-            )
-            if response.status_code == 200:
-                return response.json()
-            return None
-        except Exception as e:
-            logger.debug(f"Tracker get_plan_status failed: {e}")
-            return None
+        return await client.get_session_plans(session_id, tenant_id, user_id)
+    
+    async def get_delegation_group(
+        self,
+        group_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional["DelegationGroup"]:
+        """
+        Get parallel delegation group status.
+        
+        Args:
+            group_id: Delegation group identifier
+            tenant_id: Tenant ID (from event context)
+            user_id: User ID (from event context)
+            
+        Returns:
+            DelegationGroup or None if not found
+        """
+        from soorma_common.tracker import DelegationGroup
+        client = await self._ensure_client()
+        return await client.get_delegation_group(group_id, tenant_id, user_id)
     
     async def close(self) -> None:
-        """Close the HTTP client."""
-        if self._http_client:
-            await self._http_client.aclose()
-            self._http_client = None
+        """Close the underlying service client."""
+        if self._client:
+            await self._client.close()
+            self._client = None
 
 
 @dataclass

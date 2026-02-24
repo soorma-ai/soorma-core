@@ -145,6 +145,9 @@ class EventToolkit:
         Returns:
             List of EventDefinition objects for actionable events
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if not self._client:
             raise RuntimeError("Toolkit must be used as async context manager")
             
@@ -159,18 +162,24 @@ class EventToolkit:
                 
         if not consumed_event_names:
             return []
-            
-        # 3. Get details for these events
+        
+        logger.info(f"[EventToolkit] Consumed event names: {consumed_event_names}")
+        
+        # 3. Get events by topic
         if topic:
             all_events = await self._client.get_events_by_topic(topic.value)
         else:
             all_events = await self._client.get_all_events()
-            
+        
+        logger.info(f"[EventToolkit] Total events fetched: {len(all_events)}")
+        
         # 4. Filter to actionable events
         actionable_events = [
             e for e in all_events 
             if e.event_name in consumed_event_names
         ]
+        
+        logger.info(f"[EventToolkit] Actionable events: {len(actionable_events)}")
         
         return actionable_events
 

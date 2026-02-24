@@ -29,7 +29,8 @@
 > See [docs/refactoring/README.md](docs/refactoring/README.md) for details and status.  
 > - Stage 1 (Foundation - Event System) ✅ Complete (v0.6.0)
 > - Stage 2 (Foundation - Memory & Common DTOs) ✅ Complete (v0.7.0)
-> - Stage 3 (Agent Models - Tool & Worker) ✅ Complete (v0.7.7) - Tests, docs, validation done
+> - Stage 3 (Agent Models - Tool & Worker) ✅ Complete (v0.7.7)
+> - Stage 4 (Agent Models - Planner & ChoreographyPlanner) ✅ Complete (v0.8.0)
 >
 > **⚠️ Install from source during pre-launch:** Use `pip install -e sdk/python` to stay synchronized with breaking changes.
 
@@ -135,9 +136,12 @@ See the [Hello World Example](./examples/01-hello-world/README.md) for full deta
 **More Examples:**
 - [01-hello-tool](./examples/01-hello-tool/) - Synchronous Tool pattern (stateless calculator)
 - [08-worker-basic](./examples/08-worker-basic/) - Async Worker with parallel delegation (order processing)
-- [research-advisor](./examples/research-advisor/) - Advanced autonomous choreography
+- [09-planner-basic](./examples/09-planner-basic/) - State machine orchestration (research workflow)
+- [10-choreography-basic](./examples/10-choreography-basic/) - Autonomous LLM-driven orchestration (feedback analysis)
 
 **Full catalog:** See [examples/README.md](./examples/README.md) for complete learning path.
+
+**Choosing the Right Pattern:** Not sure which agent pattern to use? See the [Agent Patterns Guide](./docs/agent_patterns/README.md) for decision criteria, flowcharts, and tradeoffs.
 
 ### 3. Create Your Own Agent
 

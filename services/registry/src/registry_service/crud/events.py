@@ -59,12 +59,11 @@ class EventCRUD:
             Tuple of (EventTable instance, was_created: bool)
             was_created is True if a new event was created, False if updated
         """
-        # Check if event exists
-        existing = await self.get_event_by_name(db, event.event_name)
+        # Check if event exists (by both event_name AND topic)
+        existing = await self.get_event_by_name_and_topic(db, event.event_name, event.topic)
         
         if existing:
             # Update existing event
-            existing.topic = event.topic
             existing.description = event.description
             existing.payload_schema = event.payload_schema
             existing.response_schema = event.response_schema
@@ -79,6 +78,31 @@ class EventCRUD:
             event_table = await self.create_event(db, event)
             return event_table, True
     
+    async def get_event_by_name_and_topic(
+        self, 
+        db: AsyncSession, 
+        event_name: str,
+        topic: str
+    ) -> Optional[EventTable]:
+        """
+        Get an event by its name and topic.
+        
+        Args:
+            db: Database session
+            event_name: Name of the event
+            topic: Topic of the event
+            
+        Returns:
+            EventTable if found, None otherwise
+        """
+        result = await db.execute(
+            select(EventTable).where(
+                EventTable.event_name == event_name,
+                EventTable.topic == topic
+            )
+        )
+        return result.scalar_one_or_none()
+    
     @cache_event
     async def get_event_by_name(
         self, 
@@ -86,7 +110,7 @@ class EventCRUD:
         event_name: str
     ) -> Optional[EventTable]:
         """
-        Get an event by its name.
+        Get an event by its name (returns first match if multiple topics exist).
         
         Args:
             db: Database session

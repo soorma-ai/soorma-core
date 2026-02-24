@@ -127,8 +127,9 @@ class TestPlannerOnTransitionDecorator:
         async def handle_transition(event, context, plan, next_state):
             pass
         
+        # _transition_handler is a guarded wrapper, not the raw user function
         assert planner._transition_handler is not None
-        assert planner._transition_handler == handle_transition
+        assert callable(planner._transition_handler)
     
     def test_on_transition_no_topics_in_events(self):
         """on_transition() should NOT add topics to events (RF-SDK-023)."""
@@ -174,6 +175,7 @@ class TestPlannerOnTransitionDecorator:
         
         # Mock plan with next_state
         mock_plan = MagicMock(plan_id="plan-123")
+        mock_plan.is_complete.return_value = False
         mock_plan.get_next_state.return_value = "summarize"
         
         # Call handler directly with required params
@@ -183,6 +185,120 @@ class TestPlannerOnTransitionDecorator:
         assert restored_plan is not None
         assert restored_plan.plan_id == "plan-123"
         assert received_next_state == "summarize"
+    
+    @pytest.mark.asyncio
+    async def test_transition_skips_completed_plans(self):
+        """on_transition handler should skip plans with status=completed (prevent infinite loop)."""
+        planner = Planner(name="test-planner")
+        
+        handler_called = False
+        
+        @planner.on_transition()
+        async def handle_transition(event, context, plan, next_state):
+            nonlocal handler_called
+            handler_called = True
+        
+        # Mock event
+        event = EventEnvelope(
+            id="evt-789",
+            source="test-source",
+            type="feedback.report.ready",
+            topic=EventTopic.ACTION_RESULTS,
+            data={"report": "final"},
+            correlation_id="plan-completed-123",
+            user_id="user-1",
+            tenant_id="tenant-1",
+        )
+        
+        context = MagicMock()
+        
+        # Mock COMPLETED plan
+        mock_plan = MagicMock()
+        mock_plan.plan_id = "plan-completed-123"
+        mock_plan.status = "completed"  # Already completed
+        mock_plan.is_complete.return_value = True
+        
+        # Call handler directly
+        await planner._transition_handler(event, context, mock_plan, None)
+        
+        # Verify user handler was NOT called (plan is complete, don't re-process)
+        assert not handler_called, "Handler should not be called for completed plans"
+    
+    @pytest.mark.asyncio
+    async def test_transition_skips_failed_plans(self):
+        """on_transition handler should skip plans with status=failed."""
+        planner = Planner(name="test-planner")
+        
+        handler_called = False
+        
+        @planner.on_transition()
+        async def handle_transition(event, context, plan, next_state):
+            nonlocal handler_called
+            handler_called = True
+        
+        # Mock event
+        event = EventEnvelope(
+            id="evt-999",
+            source="test-source",
+            type="analysis.failed",
+            topic=EventTopic.ACTION_RESULTS,
+            data={"error": "analysis failed"},
+            correlation_id="plan-failed-456",
+            user_id="user-1",
+            tenant_id="tenant-1",
+        )
+        
+        context = MagicMock()
+        
+        # Mock FAILED plan
+        mock_plan = MagicMock()
+        mock_plan.plan_id = "plan-failed-456"
+        mock_plan.status = "failed"  # Plan failed
+        mock_plan.is_complete.return_value = True
+        
+        # Call handler directly
+        await planner._transition_handler(event, context, mock_plan, None)
+        
+        # Verify user handler was NOT called
+        assert not handler_called, "Handler should not be called for failed plans"
+    
+    @pytest.mark.asyncio
+    async def test_transition_processes_pending_plans(self):
+        """on_transition handler should process plans with status=pending."""
+        planner = Planner(name="test-planner")
+        
+        handler_called = False
+        
+        @planner.on_transition()
+        async def handle_transition(event, context, plan, next_state):
+            nonlocal handler_called
+            handler_called = True
+        
+        # Mock event
+        event = EventEnvelope(
+            id="evt-111",
+            source="test-source",
+            type="data.fetched",
+            topic=EventTopic.ACTION_RESULTS,
+            data={"data": "fetched"},
+            correlation_id="plan-pending-789",
+            user_id="user-1",
+            tenant_id="tenant-1",
+        )
+        
+        context = MagicMock()
+        
+        # Mock PENDING plan (still running)
+        mock_plan = MagicMock()
+        mock_plan.plan_id = "plan-pending-789"
+        mock_plan.status = "pending"  # Still running
+        mock_plan.is_complete.return_value = False
+        
+        # Call handler directly
+        await planner._transition_handler(event, context, mock_plan, None)
+        
+        # Verify user handler WAS called (plan is active)
+        assert handler_called, "Handler should be called for pending plans"
 
 
 class TestHandlerOnlyRegistration:

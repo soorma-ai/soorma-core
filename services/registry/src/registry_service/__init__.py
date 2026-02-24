@@ -2,7 +2,7 @@
 Registry Service - Event and Agent Registry for Soorma platform.
 """
 
-__version__ = "0.7.7"
+from soorma_common import __version__
 
 
 def get_app():

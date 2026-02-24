@@ -44,6 +44,7 @@ Related Patterns:
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Callable
 from uuid import uuid4
@@ -51,6 +52,9 @@ from uuid import uuid4
 from soorma_common.events import EventEnvelope
 
 from .context import PlatformContext
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -292,7 +296,7 @@ class TaskContext:
         return cls(
             task_id=data.get("task_id", str(uuid4())),
             event_type=event.type,
-            plan_id=data.get("plan_id"),
+            plan_id=event.plan_id,  # Read from envelope metadata
             data=data,
             response_event=event.response_event or data.get("response_event"),
             response_topic=event.response_topic or data.get("response_topic", "action-results"),
@@ -302,7 +306,7 @@ class TaskContext:
             task_name=data.get("task_name"),
             correlation_id=event.correlation_id,
             session_id=event.session_id,
-            goal_id=data.get("goal_id"),
+            goal_id=event.goal_id,  # Read from envelope metadata
             timeout=data.get("timeout"),
             priority=data.get("priority", 0),
             _context=context,
@@ -709,17 +713,25 @@ class TaskContext:
         if self._register_produced_event:
             self._register_produced_event(self.response_event)
         # Publish result event
+        final_correlation_id = self.correlation_id or self.task_id
+        logger.info(
+            f"TaskContext.complete() publishing {self.response_event} "
+            f"with correlation_id={final_correlation_id}"
+        )
+        
         await self._context.bus.respond(
             event_type=self.response_event,
             data={
                 "task_id": self.task_id,
+                "action_id": self.data.get("action_id"),  # Echo back so tracker can correlate result→request
                 "status": "completed",
                 "result": result,
             },
-            correlation_id=self.task_id,
+            correlation_id=final_correlation_id,
             topic=self.response_topic,
             tenant_id=self.tenant_id,
             user_id=self.user_id,
+            plan_id=self.plan_id,  # Pass plan_id in envelope metadata
         )
         # Clean up persisted state
         await self._context.memory.delete_task_context(

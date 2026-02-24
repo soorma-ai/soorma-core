@@ -39,6 +39,7 @@ Performance & Cost Notes:
 import json
 import logging
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from soorma.agents.planner import Planner
 from soorma.context import PlatformContext
@@ -51,7 +52,7 @@ from soorma_common.decisions import (
     WaitAction,
     DelegateAction,
 )
-from soorma_common.events import EventEnvelope
+from soorma_common.events import EventEnvelope, EventTopic
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +194,24 @@ class ChoreographyPlanner(Planner):
         # Will be lazily imported to avoid hard dependency
         self._litellm = None
         self._action_count: Dict[str, int] = {}  # plan_id -> action count
-    
+
+    def _get_next_state(self, plan: Any, event: Any) -> Any:
+        """Override: always fire through — LLM decides transitions, not a state machine.
+
+        ChoreographyPlanner has no declared state machine so every event on
+        ACTION_RESULTS that belongs to a known plan should reach the handler.
+        Returning None (not _SKIP_TRANSITION) passes next_state=None to the
+        handler, signalling that LLM reasoning drives the next step.
+
+        Args:
+            plan: Restored PlanContext instance.
+            event: Incoming EventEnvelope.
+
+        Returns:
+            None — always fire through; LLM decides the next action.
+        """
+        return None
+
     async def reason_next_action(
         self,
         trigger: str,
@@ -240,6 +258,8 @@ class ChoreographyPlanner(Planner):
                 },
             )
         """
+        logger.info(f"[ChoreographyPlanner] Starting reasoning for trigger: {trigger}")
+        logger.debug(f"[ChoreographyPlanner] Plan ID: {plan_id}, Custom context: {bool(custom_context)}")
         # Lazy import to avoid hard dependency
         if not self._litellm:
             try:
@@ -268,10 +288,35 @@ class ChoreographyPlanner(Planner):
                 )
         
         # Discover available events from Registry
-        events = await context.toolkit.discover_actionable_events(topic="action-requests")
+        logger.info(f"[ChoreographyPlanner] Discovering actionable events from Registry...")
+        events = await context.toolkit.discover_actionable_events(topic=EventTopic.ACTION_REQUESTS)
+        logger.info(f"[ChoreographyPlanner] Found {len(events)} actionable events")
+        
+        # Guard: Prevent LLM hallucination when no events available
+        if not events:
+            # Get diagnostic info
+            try:
+                agents = await context.registry.query_agents()
+                all_events = await context.registry.get_events_by_topic(EventTopic.ACTION_REQUESTS.value)
+                logger.error(
+                    f"[ChoreographyPlanner] Diagnostic info:\n"
+                    f"  - Active agents: {len(agents)} ({[a.name for a in agents]})\n"
+                    f"  - Events in ACTION_REQUESTS topic: {len(all_events)} ({[e.event_name for e in all_events]})\n"
+                    f"  - Consumed events by agents: {[a.consumed_events for a in agents]}"
+                )
+            except Exception as e:
+                logger.error(f"[ChoreographyPlanner] Failed to get diagnostic info: {e}")
+            
+            raise RuntimeError(
+                "No actionable events found in Registry. "
+                "Workers must start and register events before the planner can orchestrate. "
+                "Check that workers are running and have registered their events_consumed/events_produced."
+            )
         
         # Build schema-based prompt
+        logger.debug(f"[ChoreographyPlanner] Building prompt with {len(events)} events...")
         prompt = self._build_prompt(trigger, events, custom_context)
+        logger.debug(f"[ChoreographyPlanner] Prompt length: {len(prompt)} chars")
         
         # Build system message with strategy guidance
         system_msg = self.system_instructions or "You are a planning agent that decides the next step in a workflow."
@@ -298,7 +343,8 @@ class ChoreographyPlanner(Planner):
                 **self.llm_kwargs,
             )
         except Exception as e:
-            logger.error(f"LLM call failed: {e}")
+            logger.error(f"[ChoreographyPlanner] LLM call failed: {e}")
+            logger.exception("LLM call exception details:")
             raise RuntimeError(
                 f"LLM reasoning failed for model {self.reasoning_model}. "
                 f"Check API key and model availability. Error: {e}"
@@ -306,12 +352,15 @@ class ChoreographyPlanner(Planner):
         
         # Parse response into PlannerDecision
         decision_data = response.choices[0].message.content
+        logger.info(f"[ChoreographyPlanner] LLM response received ({len(decision_data)} chars)")
         logger.debug(f"LLM response: {decision_data[:200]}...")  # Log first 200 chars
         
         try:
             decision = PlannerDecision.model_validate_json(decision_data)
+            logger.info(f"[ChoreographyPlanner] Successfully parsed decision: action={decision.next_action.action}")
         except Exception as e:
             logger.error(f"Failed to parse LLM response as PlannerDecision: {e}")
+            logger.exception("LLM response parsing exception details:")
             logger.debug(f"Raw LLM output: {decision_data}")
             raise ValueError(
                 f"LLM returned invalid decision format. "
@@ -319,10 +368,11 @@ class ChoreographyPlanner(Planner):
             ) from e
         
         # Validate that referenced events exist
+        logger.debug(f"[ChoreographyPlanner] Validating decision references...")
         await self._validate_decision_events(decision, events)
         
         logger.info(
-            f"Decision for plan {plan_id}: {decision.next_action.action.value} "
+            f"[ChoreographyPlanner] Reasoning complete: {decision.next_action.action} action for plan {decision.plan_id} "
             f"(confidence: {decision.confidence:.2f})"
         )
         
@@ -355,44 +405,145 @@ class ChoreographyPlanner(Planner):
         Examples:
             await planner.execute_decision(decision, context, goal_event=goal, plan=plan)
         """
+        # Always use the PlanContext UUID as the authoritative plan_id.
+        # The LLM may write any string as decision.plan_id (e.g. "feedback-analysis-001").
+        # PlanContext.plan_id is the canonical UUID that the tracker client queries with.
+        if plan is not None and hasattr(plan, "plan_id"):
+            decision = decision.model_copy(update={"plan_id": str(plan.plan_id)})
+
         action = decision.next_action
-        
-        logger.info(f"Executing {action.action.value} action for plan {decision.plan_id}")
+
+        logger.info(f"[ChoreographyPlanner] Executing {action.action} action for plan {decision.plan_id}")
+        logger.debug(f"[ChoreographyPlanner] Action details: {type(action).__name__}")
         
         if action.action == PlanAction.PUBLISH:
             # PUBLISH: Publish new event to trigger workers
             publish_action = action  # Type hint for IDE
-            await context.bus.publish(
-                topic=publish_action.topic or "action-requests",
-                event_type=publish_action.event_type,
-                data=publish_action.data,
-            )
-            logger.debug(
-                f"Published {publish_action.event_type} to {publish_action.topic}: "
-                f"{publish_action.reasoning}"
+            metadata = self._resolve_publish_metadata(publish_action, goal_event, plan)
+            
+            # Prepare data payload - inject task_id for worker tracking
+            payload_data = dict(publish_action.data) if publish_action.data else {}
+            if metadata.get("correlation_id"):
+                payload_data["task_id"] = metadata["correlation_id"]
+            # Inject a unique action_id so the tracker can distinguish each action row.
+            # All actions share the same plan.correlation_id (for plan restoration), so
+            # using correlation_id as action_id would cause all rows to collide.
+            payload_data.setdefault("action_id", str(uuid4()))
+            
+            logger.info(f"[ChoreographyPlanner] Publishing event: {publish_action.event_type}")
+            logger.info(f"[ChoreographyPlanner] Correlation ID: {metadata.get('correlation_id')}")
+            logger.info(f"[ChoreographyPlanner] Response event: {metadata.get('response_event')}")
+            if metadata.get("response_event"):
+                logger.debug(f"[ChoreographyPlanner] Request/response flow: expecting {metadata['response_event']}")
+                await context.bus.request(
+                    event_type=publish_action.event_type,
+                    data=payload_data,
+                    response_event=metadata["response_event"],
+                    correlation_id=metadata.get("correlation_id"),
+                    response_topic=metadata.get("response_topic") or EventTopic.ACTION_RESULTS,
+                    tenant_id=metadata.get("tenant_id"),
+                    user_id=metadata.get("user_id"),
+                    session_id=metadata.get("session_id"),
+                    goal_id=metadata.get("goal_id"),
+                    plan_id=decision.plan_id,
+                )
+                logger.info(f"[ChoreographyPlanner] Request published: {publish_action.event_type}")
+            else:
+                logger.debug(f"[ChoreographyPlanner] Fire-and-forget publish to topic: {publish_action.topic}")
+                await context.bus.publish(
+                    topic=publish_action.topic or EventTopic.ACTION_REQUESTS,
+                    event_type=publish_action.event_type,
+                    data=payload_data,
+                    tenant_id=metadata.get("tenant_id"),
+                    user_id=metadata.get("user_id"),
+                    session_id=metadata.get("session_id"),
+                    goal_id=metadata.get("goal_id"),
+                    plan_id=decision.plan_id,
+                )
+            logger.info(
+                f"[ChoreographyPlanner] ✓ Published {publish_action.event_type}: {publish_action.reasoning}"
             )
         
         elif action.action == PlanAction.COMPLETE:
             # COMPLETE: Finalize plan with response
             complete_action = action  # Type hint for IDE
-            if goal_event:
+            logger.info(f"[ChoreographyPlanner] Completing plan with result: {list(complete_action.result.keys())}")
+            
+            # Update plan status to completed BEFORE sending response
+            # This prevents infinite loop when on_transition receives the response event
+            if plan:
+                plan.status = "completed"
+                await plan.save()
+                logger.debug(f"[ChoreographyPlanner] Plan status updated to 'completed' and saved")
+            
+            # Get response metadata from goal_event or plan (for transitions)
+            response_event = getattr(goal_event, "response_event", None) if goal_event else None
+            if not response_event and plan:
+                response_event = plan.response_event
+            
+            correlation_id_val = getattr(goal_event, "correlation_id", None) if goal_event else None
+            if not correlation_id_val and plan:
+                correlation_id_val = plan.correlation_id
+            
+            tenant_id = getattr(goal_event, "tenant_id", None) if goal_event else None
+            if not tenant_id and plan:
+                tenant_id = plan.tenant_id
+                
+            user_id = getattr(goal_event, "user_id", None) if goal_event else None
+            if not user_id and plan:
+                user_id = plan.user_id
+                
+            session_id = getattr(goal_event, "session_id", None) if goal_event else None
+            if not session_id and plan:
+                session_id = plan.session_id
+            
+            goal_id = getattr(goal_event, "goal_id", None) if goal_event else None
+            
+            if response_event:
+                logger.info(f"[ChoreographyPlanner] Sending response to client: {response_event}")
                 await context.bus.respond(
-                    event_type=goal_event.response_event,
-                    correlation_id=goal_event.correlation_id,
+                    event_type=response_event,
+                    correlation_id=correlation_id_val,
                     data=complete_action.result,
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    session_id=session_id,
+                    goal_id=goal_id,
+                    plan_id=decision.plan_id,
                 )
                 logger.info(
-                    f"Plan {decision.plan_id} completed: {complete_action.reasoning}"
+                    f"[ChoreographyPlanner] ✓ Plan {decision.plan_id} completed: {complete_action.reasoning}"
                 )
             else:
                 logger.warning(
-                    f"COMPLETE action for plan {decision.plan_id} but no goal_event provided. "
-                    f"Cannot send response."
+                    f"[ChoreographyPlanner] COMPLETE action for plan {decision.plan_id} but no response_event found. "
+                    f"Cannot send response. Ensure goal_event or plan has response_event set."
                 )
+
+            # Publish plan.completed system event so the Tracker Service can update
+            # plan_progress.status → 'completed'. Done after the client response so
+            # latency is not affected by the extra publish.
+            try:
+                await context.bus.publish(
+                    topic=EventTopic.SYSTEM_EVENTS,
+                    event_type="plan.completed",
+                    data={
+                        "plan_id": decision.plan_id,
+                        "result": complete_action.result,
+                    },
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    plan_id=decision.plan_id,
+                )
+                logger.debug(f"[ChoreographyPlanner] plan.completed system event published for {decision.plan_id}")
+            except Exception as sys_err:
+                # Non-fatal: tracker observability failure must not break the plan response
+                logger.warning(f"[ChoreographyPlanner] Failed to publish plan.completed system event: {sys_err}")
         
         elif action.action == PlanAction.WAIT:
             # WAIT: Pause plan and wait for external input
             wait_action = action  # Type hint for IDE
+            logger.info(f"[ChoreographyPlanner] Pausing plan, waiting for: {wait_action.expected_event}")
             
             if not plan:
                 raise ValueError(
@@ -419,25 +570,80 @@ class ChoreographyPlanner(Planner):
                     "expected_event": wait_action.expected_event,
                     "timeout_seconds": wait_action.timeout_seconds,
                 },
+                tenant_id=plan.tenant_id,
+                user_id=plan.user_id,
+                session_id=plan.session_id,
+                plan_id=plan.plan_id,
             )
             
             logger.info(
-                f"Plan {plan.plan_id} paused, waiting for {wait_action.expected_event}: "
+                f"[ChoreographyPlanner] ✓ Plan {plan.plan_id} paused, waiting for {wait_action.expected_event}: "
                 f"{wait_action.reason}"
             )
         
         elif action.action == PlanAction.DELEGATE:
             # DELEGATE: Forward to another planner
             delegate_action = action  # Type hint for IDE
+            logger.info(f"[ChoreographyPlanner] Delegating to planner: {delegate_action.target_planner}")
+            tenant_id = getattr(goal_event, "tenant_id", None) if goal_event else None
+            user_id = getattr(goal_event, "user_id", None) if goal_event else None
+            session_id = getattr(goal_event, "session_id", None) if goal_event else None
+            goal_id = getattr(goal_event, "goal_id", None) if goal_event else None
             await context.bus.publish(
                 topic="action-requests",
                 event_type=delegate_action.goal_event,
                 data=delegate_action.goal_data,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                session_id=session_id,
+                goal_id=goal_id,
+                plan_id=decision.plan_id,
             )
             logger.info(
-                f"Delegated to {delegate_action.target_planner} via {delegate_action.goal_event}: "
+                f"[ChoreographyPlanner] ✓ Delegated to {delegate_action.target_planner} via {delegate_action.goal_event}: "
                 f"{delegate_action.reasoning}"
             )
+
+    def _resolve_publish_metadata(
+        self,
+        action: PublishAction,
+        goal_event: Optional[Any],
+        plan: Optional[PlanContext] = None,
+    ) -> Dict[str, Optional[str]]:
+        """Resolve publish metadata for request/response choreography.
+
+        When PublishAction carries response_event, this method extracts and prepares
+        metadata needed for bus.request() to enable request/response choreography.
+        Falls back to broadcast (None response_event) if response contract not provided.
+
+        Args:
+            action: PublishAction payload with optional response_event, correlation_id.
+            goal_event: Optional event with tenant/user/session context to propagate.
+            plan: Optional PlanContext - if provided, uses plan.correlation_id for tracking.
+
+        Returns:
+            Metadata dict with keys: response_event, correlation_id, response_topic,
+            tenant_id, user_id, session_id. None values are allowed (treated as absent).
+        """
+        # Use plan's correlation_id to ensure responses can be correlated back
+        # Fall back to action.correlation_id (LLM suggestion) or None
+        correlation_id = None
+        if plan:
+            correlation_id = plan.correlation_id
+        if not correlation_id:
+            correlation_id = action.correlation_id
+        
+        metadata = {
+            "response_event": action.response_event,
+            "correlation_id": correlation_id,
+            "response_topic": action.response_topic,
+            "tenant_id": getattr(goal_event, "tenant_id", None) if goal_event else None,
+            "user_id": getattr(goal_event, "user_id", None) if goal_event else None,
+            "session_id": getattr(goal_event, "session_id", None) if goal_event else None,
+            "goal_id": getattr(goal_event, "goal_id", None) if goal_event else None,
+        }
+        return metadata
+    
     
     def _build_prompt(
         self,
@@ -475,6 +681,9 @@ Additional Context:
 Consider this context when making decisions.
 """
         
+        # Get JSON schema for PlannerDecision
+        schema = PlannerDecision.model_json_schema()
+        
         return f"""
 {strategy_guidance}
 
@@ -491,13 +700,60 @@ Decide on the next action:
 - WAIT: Wait for external input (e.g., human approval)
 - DELEGATE: Forward to another planner
 
-Respond with JSON matching the PlannerDecision schema.
-Include:
+CRITICAL RULES FOR PUBLISH ACTIONS:
+1. Set response_event to the SAME event name as event_type (response on different topic, matched by correlation_id)
+2. ALWAYS extract data from 'Additional Context' > 'event_data' and include it in the 'data' field
+3. Look at the event schema's required fields and populate them from event_data
+4. Copy forward all relevant fields from previous responses (product, summary, counts, etc.)
+5. Data MUST flow through the pipeline - workers cannot access data from earlier steps
+
+Example: If event_data contains {{"product": "XYZ", "feedback": [...]}}
+         and you're publishing analysis.requested which needs product and feedback,
+         then data field MUST be: {{"product": "XYZ", "feedback": [...]}}
+
+CRITICAL: Respond with JSON matching this exact schema:
+{json.dumps(schema, indent=2)}
+
+Required fields:
 - plan_id: (provide a unique identifier)
 - current_state: (current state in the plan)
-- next_action: (one of the action types above with required fields)
+- next_action: (object with "action" field set to "publish"/"complete"/"wait"/"delegate" plus action-specific fields)
 - reasoning: (explain why you chose this action)
 - confidence: (0.0-1.0, how confident are you in this decision)
+
+Example next_action for PUBLISH with response:
+{{
+  "action": "publish",
+  "event_type": "search.requested",
+  "response_event": "search.requested",
+  "data": {{"query": "example"}},
+  "reasoning": "Need to search for relevant documents"
+}}
+
+Example PUBLISH extracting data from previous response (event_data):
+Given event_data: {{"product": "Widget", "feedback": [{{"rating": 5}}, {{"rating": 3}}]}}
+{{
+  "action": "publish",
+  "event_type": "analysis.requested",
+  "response_event": "analysis.requested",
+  "data": {{"product": "Widget", "feedback": [{{"rating": 5}}, {{"rating": 3}}]}},
+  "reasoning": "Extract and forward product and feedback from data.fetched response to analyzer"
+}}
+
+Example next_action for PUBLISH without response (fire-and-forget):
+{{
+  "action": "publish",
+  "event_type": "notification.sent",
+  "data": {{"message": "Task complete"}},
+  "reasoning": "Notify user of completion"
+}}
+
+Example next_action for COMPLETE:
+{{
+  "action": "complete",
+  "result": {{"status": "success", "summary": "All tasks completed"}},
+  "reasoning": "All workflow steps have been successfully executed and the final report is ready"
+}}
 """
     
     def _get_strategy_guidance(self) -> str:

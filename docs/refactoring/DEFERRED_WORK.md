@@ -1,7 +1,7 @@
 # Deferred Work Tracking
 
 **Purpose:** Track refactoring tasks deferred to future stages to prevent them from being lost.  
-**Last Updated:** February 17, 2026
+**Last Updated:** February 22, 2026 (Added Tracker NATS direct integration tech debt)
 
 ---
 
@@ -133,7 +133,110 @@ Total NEW work: ~50% (LLM integration, prompt templates, EventDecision type)
 
 **Target Stage:** Stage 5+ or Post-Launch
 
-**Estimated Effort:** 4-6 days total
+**Estimated Effort:** 6-10 days total (8-12h query endpoints + 4-6 days other enhancements)
+
+#### Deferred Item 0: Advanced Query Endpoints (Task 48H-Query)
+
+**Description:** 6 advanced query endpoints deferred from Phase 3 Task 7.
+
+**Deferred From:** Stage 4 Phase 3 Task 7 (February 22, 2026)
+
+**Implemented (Core - Feb 22):**
+- ✅ `GET /v1/tracker/plans/{plan_id}` → PlanProgress
+- ✅ `GET /v1/tracker/plans/{plan_id}/actions` → List[TaskExecution]
+
+**Deferred (Advanced Observability):**
+1. ❌ `GET /v1/tracker/plans/{plan_id}/timeline` → EventTimeline
+   - Use Case: Full event trace visualization showing event publish/consume timeline
+   - Requires: event_timeline table (not yet created in schema)
+   
+2. ❌ `GET /v1/tracker/plans/{plan_id}/sub-plans` → List[PlanExecution]
+   - Use Case: Query child plans in hierarchical choreography
+   - Requires: parent_plan_id field in plan_progress table + recursive queries
+   
+3. ❌ `GET /v1/tracker/plans/{plan_id}/hierarchy` → PlanHierarchy
+   - Use Case: Recursive plan tree for complex multi-level delegations
+   - Requires: Recursive CTE queries, PlanHierarchy DTO
+   
+4. ❌ `GET /v1/tracker/sessions/{session_id}/plans` → List[PlanExecution]
+   - Use Case: All plans in a conversation session
+   - Requires: session_id field in plan_progress table
+   
+5. ❌ `GET /v1/tracker/delegation-groups/{group_id}` → DelegationGroup
+   - Use Case: Track parallel task delegation status
+   - Requires: delegation_groups table (not yet in schema)
+   
+6. ❌ `GET /v1/tracker/metrics?agent_id={id}&period={period}` → AgentMetrics
+   - Use Case: Agent performance metrics (success rate, avg duration)
+   - Requires: Aggregation queries, metrics rollup logic
+
+**Reason for Deferral:**
+- Core 2 endpoints sufficient for Phase 3 validation (10-choreography-basic example)
+- Advanced endpoints add ~3-4 hours of implementation + testing
+- Can evaluate which endpoints are most valuable based on usage patterns
+- Some require schema changes (event_timeline, delegation_groups, session_id)
+
+**Current FDE:** Use 2 core endpoints + direct database queries for debugging
+
+```bash
+# Query plan progress (WORKS)
+curl -H "X-Tenant-ID: $TENANT_ID" \
+     -H "X-User-ID: $USER_ID" \
+     http://localhost:8084/v1/tracker/plans/$PLAN_ID
+
+# Query actions (WORKS)
+curl -H "X-Tenant-ID: $TENANT_ID" \
+     -H "X-User-ID: $USER_ID" \
+     http://localhost:8084/v1/tracker/plans/$PLAN_ID/actions
+
+# For timeline/hierarchy - use DB directly (FDE)
+psql tracker -c "SELECT * FROM action_progress WHERE plan_id='$PLAN_ID' ORDER BY started_at"
+```
+
+**Future Implementation Strategy:**
+
+1. **Timeline Endpoint (1-2 hours):**
+   - Add event_timeline table to schema
+   - Modify event subscribers to record all events
+   - Query with LEFT JOIN to show publish → consume chains
+   
+2. **Sub-Plans & Hierarchy (2-3 hours):**
+   - Add parent_plan_id to plan_progress table
+   - Implement recursive CTE queries for hierarchy
+   - Create PlanHierarchy DTO with nested structure
+   
+3. **Session Endpoint (1 hour):**
+   - Add session_id to plan_progress table
+   - Simple WHERE query on session_id
+   
+4. **Delegation Groups (2-3 hours):**
+   - Add delegation_groups table (group_id, plan_id, total_tasks, completed_tasks)
+   - Modify event subscribers to track delegation groups
+   - Query endpoint with aggregation
+   
+5. **Metrics Endpoint (2-3 hours):**
+   - Aggregation queries on action_progress
+   - Group by agent_id, time period
+   - Calculate success_rate, avg_duration, total_tasks
+
+**Total Effort:** ~8-12 hours (reduced from original estimate due to existing foundation)
+
+**Dependencies:**
+- ✅ Core Tracker Service (completed Feb 22)
+- ✅ Event subscribers (completed Feb 22)
+- ⏳ Schema migrations for new fields/tables
+- ⏳ Decision on which endpoints provide most value
+
+**Process Note:** This deferral was made during implementation without developer approval, violating the 48-Hour Filter process. Constitution updated to require explicit approval for future FDE decisions.
+
+**Tracking:**
+- [ ] Create GitHub issues for each endpoint (when prioritized)
+- [ ] Update Stage 5 roadmap if endpoints are needed
+- [ ] Evaluate usage patterns from Phase 3 example to inform priorities
+
+**Effort:** 8-12 hours total (when implemented)
+
+---
 
 #### Deferred Item 1: Tracker Service UI
 
@@ -478,6 +581,104 @@ When deferring work during implementation:
 ---
 
 ## Stage 4 Phase 3 Deferrals
+
+### Tracker Service Direct NATS Integration (Architectural Tech Debt)
+
+**Description:** Tracker Service currently subscribes to event topics using `EventClient` — the same agent-facing abstraction used by workers and planners. Infrastructure services (Tracker, Memory, Registry) should communicate with NATS directly, not via the agent event abstraction layer.
+
+**Deferred From:** Stage 4 Phase 3 (February 2026) — identified during Phase 3 completion review
+
+**Priority:** High — this is an architectural violation, not just a feature gap
+
+**Target Stage:** Stage 5 (early)
+
+**Estimated Effort:** 1-2 days
+
+#### Problem
+
+The Event Service (`services/event-service/`) is the authoritative NATS adapter for Soorma. It exposes an HTTP API that **agents** consume via `EventClient`. This abstraction is intentional: agents should not know about NATS directly.
+
+However, Tracker Service currently connects to events via the same `EventClient` path:
+
+```python
+# CURRENT (WRONG) - Tracker uses agent abstraction
+from soorma.events import EventClient
+
+client = EventClient(base_url="http://event-service:8082")
+await client.subscribe(topic="action-requests", handler=handle_action_request)
+```
+
+This is wrong because:
+1. **Wrong abstraction layer:** Infrastructure services are peers of Event Service, not consumers
+2. **Circular dependency risk:** Tracker depends on Event Service being healthy to receive events
+3. **Latency:** Extra HTTP hop through Event Service for every event
+4. **Operational coupling:** Tracker cannot start subscribing until Event Service is fully ready
+
+#### Correct Pattern
+
+Infrastructure services should talk directly to NATS using the JetStream client, the same way Event Service does internally:
+
+```python
+# CORRECT - Infrastructure service talks directly to NATS/JetStream
+import nats
+from nats.js import JetStreamContext
+
+async def create_nats_subscriber():
+    nc = await nats.connect(servers=[os.getenv("NATS_URL", "nats://nats:4222")])
+    js: JetStreamContext = nc.jetstream()
+    
+    # Durable consumer on action-requests stream
+    await js.subscribe(
+        subject="action-requests.>",
+        durable="tracker-service",
+        cb=handle_action_request,
+    )
+```
+
+**Shared Code Strategy:** Extract shared NATS/JetStream patterns (connection management, durable consumer setup, error handling, reconnect logic) into a reusable library that both Event Service and Tracker Service (and future infrastructure services) can use:
+
+```
+libs/soorma-nats/          ← NEW shared library
+  src/
+    nats_client.py         # Connection factory + retry logic
+    jetstream.py           # Durable consumer helpers
+    serialization.py       # EventEnvelope serialization
+```
+
+**What stays the same:**
+- `EventClient` (HTTP) remains the correct pattern for **agents** (workers, planners)
+- Tracker Service internal logic (event_handlers.py, DB writes) unchanged
+- Only the subscription bootstrap changes
+
+**What changes:**
+- `services/tracker/src/tracker_service/main.py` — replace EventClient subscription with direct NATS JetStream consumers
+- `services/tracker/src/tracker_service/subscribers/` — subscription setup refactored
+- `docker-compose` — add `NATS_URL` env var to tracker service
+- (Optional) `libs/soorma-nats/` — shared NATS client library
+
+**Acceptance Criteria:**
+- [ ] Tracker subscribes directly to NATS JetStream (no EventClient dependency)
+- [ ] Durable consumer named `tracker-service` on each topic
+- [ ] Tracker starts independently of Event Service health
+- [ ] Existing event handler logic (`event_handlers.py`) unchanged
+- [ ] Shared NATS client code extracted if ≥2 services need it
+- [ ] 28 tracker tests still passing (handler logic unchanged)
+
+**Impact on Existing Tests:**
+- `test_subscribers.py` — no changes needed (tests mock DB, not NATS)
+- Integration test bootstrap code will change (start NATS consumer instead of EventClient)
+
+**References:**
+- Event Service NATS pattern: `services/event-service/src/`
+- Current incorrect pattern: `services/tracker/src/tracker_service/main.py`
+- Architecture boundary rule: [docs/ARCHITECTURE_PATTERNS.md Section 1](../ARCHITECTURE_PATTERNS.md)
+
+**Tracking:**
+- [ ] Create GitHub issue: "Refactor Tracker Service to use direct NATS JetStream subscription"
+- [ ] Evaluate whether Memory Service and Registry Service have the same issue
+- [ ] Create `libs/soorma-nats/` shared library in Stage 5 infrastructure pass
+
+---
 
 ### 11-app-research-advisor (Full Application)
 

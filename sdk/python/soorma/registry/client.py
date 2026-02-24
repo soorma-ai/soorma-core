@@ -58,12 +58,21 @@ class RegistryClient:
         Returns:
             EventRegistrationResponse with registration status
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[RegistryClient] Registering event: {event.event_name} on topic: {event.topic}")
+        
         request = EventRegistrationRequest(event=event)
+        request_json = request.model_dump(by_alias=True)
+        logger.debug(f"[RegistryClient] Request payload: {request_json}")
+        
         response = await self._client.post(
             f"{self.base_url}/v1/events",
-            json=request.model_dump(by_alias=True)
+            json=request_json
         )
         response.raise_for_status()
+        logger.info(f"[RegistryClient] Event {event.event_name} registered successfully")
+        
         return EventRegistrationResponse.model_validate(response.json())
     
     async def get_event(self, event_name: str) -> Optional[EventDefinition]:
@@ -94,12 +103,22 @@ class RegistryClient:
         Returns:
             List of EventDefinitions for the topic
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[RegistryClient] Querying events with topic={topic}")
+        
         response = await self._client.get(
             f"{self.base_url}/v1/events",
             params={"topic": topic}
         )
         response.raise_for_status()
+        
+        logger.info(f"[RegistryClient] Response status: {response.status_code}")
+        logger.info(f"[RegistryClient] Response body: {response.text[:500]}")  # First 500 chars
+        
         result = EventQueryResponse.model_validate(response.json())
+        logger.info(f"[RegistryClient] Parsed {len(result.events)} events")
+        
         return result.events
         
     async def get_all_events(self) -> List[EventDefinition]:

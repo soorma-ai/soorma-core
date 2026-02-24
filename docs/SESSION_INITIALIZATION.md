@@ -307,24 +307,28 @@ Before starting implementation, you (agent) MUST:
 
 1. **Read Constitution**: Read AGENT.md in full
 2. **Read Action Plan**: Read {ACTION_PLAN_FILE_PATH} including Section 2 (SDK Layer Verification)
-3. **Confirm TDD Workflow**: Follow strict Test-Driven Development:
-   - ❌ NEVER write implementation before tests
-   - ✅ RED: Write failing test first
-   - ✅ GREEN: Write minimal code to pass
-   - ✅ REFACTOR: Clean up
+3. **Confirm TDD Workflow**: Follow strict Test-Driven Development (4-phase cycle):
+   - ⚠️ **CRITICAL:** You MUST follow STUB → RED → GREEN → REFACTOR (see AGENT.md Step 3)
+   - ❌ NEVER write implementation before stubs and tests
+   - ✅ STUB: Create skeleton code with NotImplementedError
+   - ✅ RED: Write tests that fail on NotImplementedError (NOT import errors)
+   - ✅ GREEN: Implement real code to pass tests
+   - ✅ REFACTOR: Clean up and align architecture
+   - **Enforcement:** Import errors in RED phase = you skipped STUB phase
 
 4. **Task Tracking**: Use manage_todo_list for ALL tasks in the action plan
 5. **Technical Reference**: For CLI commands, testing syntax, and import patterns, see [CONTRIBUTING_REFERENCE.md](CONTRIBUTING_REFERENCE.md)
 
 # Workflow Validation
 Before you start Task 1, confirm you will:
-- Write tests FIRST for each component
-- Only implement after tests are written and failing
-- Follow the RED → GREEN → REFACTOR cycle
+- Create stub methods FIRST (with NotImplementedError)
+- Write tests that call stubs and fail on NotImplementedError (not import errors)
+- Only implement real code after tests are failing correctly
+- Follow the STUB → RED → GREEN → REFACTOR cycle
 - Use `context.*` wrappers (never direct service client imports in agent code)
 - Refer to CONTRIBUTING_REFERENCE.md for technical syntax as needed
 
-If you understand and will follow this process, acknowledge and begin Task 1 with RED (tests first).
+If you understand and will follow this process, acknowledge and begin Task 1 with STUB phase (skeleton code first).
 ```
 
 ---

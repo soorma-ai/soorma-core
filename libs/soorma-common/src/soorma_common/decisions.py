@@ -24,8 +24,10 @@ Usage:
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional, Union, Literal
+from pydantic import BaseModel, Field, model_validator
+
+from soorma_common.events import EventTopic
 
 
 class PlanAction(str, Enum):
@@ -53,16 +55,38 @@ class PublishAction(BaseModel):
     Attributes:
         action: Action type (PUBLISH)
         event_type: Event type to publish (must exist in Registry)
-        topic: Topic for event (default: "action-requests")
+        topic: Topic for event (default: EventTopic.ACTION_REQUESTS)
         data: Event payload
+        response_event: Optional response event for request/response flows
+        response_topic: Optional response topic (defaults to EventTopic.ACTION_RESULTS)
+        correlation_id: Optional correlation ID for request/response tracking
         reasoning: Why this event should be published
     """
     
-    action: PlanAction = Field(default=PlanAction.PUBLISH, description="Action type")
+    action: Literal["publish"] = Field(default="publish", description="Action type")
     event_type: str = Field(..., description="Event type to publish")
-    topic: Optional[str] = Field(default="action-requests", description="Topic for event")
+    topic: Optional[EventTopic] = Field(default=EventTopic.ACTION_REQUESTS, description="Topic for event")
     data: Dict[str, Any] = Field(default_factory=dict, description="Event payload")
+    response_event: Optional[str] = Field(
+        default=None,
+        description="Response event for action request flows",
+    )
+    response_topic: Optional[EventTopic] = Field(
+        default=None,
+        description="Response topic (defaults to action-results)",
+    )
+    correlation_id: Optional[str] = Field(
+        default=None,
+        description="Correlation ID for request/response flows",
+    )
     reasoning: str = Field(..., description="Why this event should be published")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reasoning(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reasoning"):
+            values["reasoning"] = ""
+        return values
 
 
 class CompleteAction(BaseModel):
@@ -77,9 +101,16 @@ class CompleteAction(BaseModel):
         reasoning: Why the plan is now complete
     """
     
-    action: PlanAction = Field(default=PlanAction.COMPLETE, description="Action type")
+    action: Literal["complete"] = Field(default="complete", description="Action type")
     result: Dict[str, Any] = Field(..., description="Final result to return")
     reasoning: str = Field(..., description="Why the plan is now complete")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reasoning(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reasoning"):
+            values["reasoning"] = ""
+        return values
 
 
 class WaitAction(BaseModel):
@@ -95,13 +126,20 @@ class WaitAction(BaseModel):
         timeout_seconds: Timeout in seconds (default: 1 hour)
     """
     
-    action: PlanAction = Field(default=PlanAction.WAIT, description="Action type")
+    action: Literal["wait"] = Field(default="wait", description="Action type")
     reason: str = Field(..., description="Why we're waiting")
     expected_event: str = Field(..., description="Event type that will resume the plan")
     timeout_seconds: Optional[int] = Field(
         default=3600,
         description="Timeout in seconds (default: 1 hour)"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reason(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reason"):
+            values["reason"] = ""
+        return values
 
 
 class DelegateAction(BaseModel):
@@ -118,11 +156,18 @@ class DelegateAction(BaseModel):
         reasoning: Why delegation is appropriate
     """
     
-    action: PlanAction = Field(default=PlanAction.DELEGATE, description="Action type")
+    action: Literal["delegate"] = Field(default="delegate", description="Action type")
     target_planner: str = Field(..., description="Name of planner to delegate to")
     goal_event: str = Field(..., description="Goal event to send")
     goal_data: Dict[str, Any] = Field(..., description="Goal parameters")
     reasoning: str = Field(..., description="Why delegation is appropriate")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_reasoning(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("reasoning"):
+            values["reasoning"] = ""
+        return values
 
 
 # Union of all action types for discriminated union
@@ -160,7 +205,7 @@ class PlannerDecision(BaseModel):
     
     plan_id: str = Field(..., description="Plan being executed")
     current_state: str = Field(..., description="Current state in the plan")
-    next_action: PlannerAction = Field(..., description="Action to take")
+    next_action: PlannerAction = Field(..., description="Action to take", discriminator="action")
     alternative_actions: Optional[List[PlannerAction]] = Field(
         default=None,
         description="Alternative actions the planner considered"

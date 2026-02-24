@@ -66,6 +66,11 @@ from ..plan_context import PlanContext
 
 logger = logging.getLogger(__name__)
 
+# Sentinel returned by _get_next_state() to signal the wrapper should skip
+# invoking the user's transition handler for this event.  Subclasses that
+# override _get_next_state() must return this sentinel (not None) to suppress.
+_SKIP_TRANSITION: object = object()
+
 
 @dataclass
 class GoalContext:
@@ -344,13 +349,36 @@ class Planner(Agent):
             Decorator function
         """
         def decorator(func: TransitionHandler) -> TransitionHandler:
-            self._transition_handler = func
-            
+            # Wrap user handler with plan-status guard to prevent re-processing
+            # completed/failed plans (avoids infinite event loops)
+            async def guarded_handler(
+                evt: EventEnvelope,
+                ctx: PlatformContext,
+                pln: Any,
+                ns: Any,
+            ) -> None:
+                # Guard against re-processing completed or failed plans to
+                # prevent infinite event loops.
+                if pln is not None and pln.is_complete():
+                    logger.info(
+                        f"[Planner.on_transition] Plan already {pln.status}, "
+                        "skipping event processing"
+                    )
+                    return
+                await func(evt, ctx, pln, ns)
+
+            self._transition_handler = guarded_handler
+
             # Subscribe to ALL events on action-results only.
             # NOTE: We don't add these topics to events_consumed (RF-SDK-023)
             # because topics are not event types.
             @self.on_event("*", topic=EventTopic.ACTION_RESULTS)
             async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
+                logger.info(
+                    f"[Planner.on_transition] Received {event.type} "
+                    f"(correlation={event.correlation_id}, tenant={event.tenant_id}, user={event.user_id})"
+                )
+                
                 # Require tenant/user context to restore plans.
                 if not event.tenant_id or not event.user_id:
                     logger.warning(
@@ -358,6 +386,7 @@ class Planner(Agent):
                     )
                     return
 
+                logger.info(f"[Planner.on_transition] Restoring plan by correlation: {event.correlation_id}")
                 plan = await PlanContext.restore_by_correlation(
                     correlation_id=event.correlation_id,
                     context=context,
@@ -365,13 +394,24 @@ class Planner(Agent):
                     user_id=event.user_id,
                 )
                 if not plan:
+                    logger.warning(
+                        f"[Planner.on_transition] No plan found for correlation_id={event.correlation_id}"
+                    )
                     return
 
-                next_state = plan.get_next_state(event)
-                if not next_state:
+                logger.info(f"[Planner.on_transition] Plan restored: {plan.plan_id}")
+
+                next_state = self._get_next_state(plan, event)
+                if next_state is _SKIP_TRANSITION:
+                    logger.info(
+                        f"[Planner.on_transition] No next_state for {event.type} "
+                        "— event does not match any transition in plan state machine, skipping"
+                    )
                     return
 
-                await func(event, context, plan, next_state)
+                logger.info(f"[Planner.on_transition] Calling user handler with next_state={next_state}")
+                # Call guarded handler (checks plan status before invoking user func)
+                await self._transition_handler(event, context, plan, next_state)
             
             # RF-SDK-023: Remove wildcard from events_consumed
             # Wildcard subscriptions are implementation details, not consumed events
@@ -381,7 +421,24 @@ class Planner(Agent):
             logger.debug("Registered transition handler for all events")
             return func
         return decorator
-    
+
+    def _get_next_state(self, plan: Any, event: EventEnvelope) -> Any:
+        """Resolve the next state for a restored plan and incoming event.
+
+        Returns the _SKIP_TRANSITION sentinel when the event does not match
+        any declared transition in the plan's state machine so the wrapper
+        can silently skip invocation.  Override in subclasses that do not use
+        a state machine (e.g., ChoreographyPlanner).
+
+        Args:
+            plan: Restored PlanContext instance.
+            event: Incoming EventEnvelope.
+
+        Returns:
+            Next state string, or _SKIP_TRANSITION to abort handler invocation.
+        """
+        return plan.get_next_state(event) or _SKIP_TRANSITION
+
     async def _handle_goal_event(
         self,
         goal_type: str,
@@ -436,6 +493,7 @@ class Planner(Agent):
             
         except Exception as e:
             logger.error(f"Goal handling failed: {e}")
+            logger.exception("Goal handling exception details:")
             # Emit failure event
             await context.bus.publish(
                 event_type=f"{goal_type}.failed",

@@ -475,11 +475,23 @@ class PlanContext:
     
     def is_complete(self) -> bool:
         """
-        Check if plan has reached a terminal state.
+        Check if plan execution is complete.
+        
+        A plan is complete if EITHER:
+        1. The execution status is terminal ("completed" or "failed"), OR
+        2. The current state in the state machine has is_terminal=True
+        
+        This handles both status-driven plans (e.g., ChoreographyPlanner)
+        and state-machine-driven plans (e.g., traditional workflow planners).
         
         Returns:
-            True if current state is terminal, False otherwise
+            True if plan is complete, False otherwise
         """
+        # Check execution status first (works for all plan types)
+        if self.status in ("completed", "failed"):
+            return True
+        
+        # Fallback: check state machine terminal flag (for state-driven plans)
         current_config = self.state_machine.get(self.current_state)
         if not current_config:
             return False

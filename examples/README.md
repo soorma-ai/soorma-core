@@ -167,12 +167,13 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./10-choreography-basic/"-->10-choreography-basic<!--/a--><br>(in progress)</td>
+<td><a href="./10-choreography-basic/">10-choreography-basic</a></td>
 <td>
 • ChoreographyPlanner pattern (Stage 4 Phase 2)<br>
 • Autonomous LLM-based orchestration<br>
 • Event discovery from Registry<br>
 • Multi-agent choreography (Planner + 3 Workers)<br>
+• Tracker Service integration for observability<br>
 <em>Requires: litellm, openai</em>
 </td>
 <td>20 min</td>
@@ -231,7 +232,7 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Handle async tasks with delegation | Worker Pattern | [08-worker-basic](./08-worker-basic/) |
 | Orchestrate tasks with state machines | Planner Pattern | [09-planner-basic](./09-planner-basic/) |
-| Build autonomous multi-agent systems | Choreography Pattern | 10-choreography-basic (in progress) |
+| Build autonomous multi-agent systems | Choreography Pattern | [10-choreography-basic](./10-choreography-basic/) |
 | Build production applications | Full Applications | 11-app-research-advisor (coming soon) |
 | Handle multi-turn conversations | Stateful Conversation | 12-multi-turn-conversation (coming soon) |
 
@@ -324,7 +325,7 @@ python client.py
 2. [03-events-structured](./03-events-structured/) - LLM event selection
 3. [04-memory-working](./04-memory-working/) - State management
 4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
-5. 10-choreography-basic (in progress) - Autonomous choreography
+5. [10-choreography-basic](./10-choreography-basic/) - Autonomous choreography with ChoreographyPlanner
 6. 11-app-research-advisor (coming soon) - Full research application
 
 ### Path 3: Memory Deep Dive (90 minutes)
