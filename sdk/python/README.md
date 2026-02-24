@@ -14,6 +14,16 @@ We're in active pre-launch refactoring to solidify architecture and APIs before 
 
 **Learn more:** [soorma.ai](https://soorma.ai)
 
+### What's New in v0.8.0
+
+- **🤖 ChoreographyPlanner** - LLM-based autonomous orchestration (50+ model providers via LiteLLM)
+- **📊 PlanContext** - State machine for multi-step workflows with pause/resume
+- **📈 TrackerClient** - Event-driven observability and progress tracking
+- **🎯 Pattern Selection Framework** - Choose the right pattern for your use case
+- **🔐 BYO Model Credentials** - Developer-controlled LLM providers (OpenAI, Azure, Anthropic, Ollama)
+
+**Install with LLM support:** `pip install soorma-core[ai]`
+
 ## Installation
 
 > **During Pre-Launch:** We recommend installing from local source to stay synchronized with breaking changes:
@@ -55,17 +65,18 @@ python client.py Alice
 
 ## Core Concepts
 
-Soorma provides three agent types for building distributed AI systems:
+Soorma provides **four agent patterns** for building distributed AI systems:
 
 - **Tool** - Synchronous, stateless operations (< 1 second)
 - **Worker** - Asynchronous, stateful tasks with delegation
-- **Planner** - Strategic reasoning and goal decomposition (Stage 4)
+- **Planner** - Multi-step workflows with manual state machine control
+- **ChoreographyPlanner** - Autonomous LLM-based orchestration
 
 **Platform Services:**
-- `context.registry` - Service discovery
-- `context.memory` - Distributed state (Semantic, Episodic, Working memory)
-- `context.bus` - Event choreography
-- `context.tracker` - Observability
+- `context.registry` - Service discovery & capability lookup
+- `context.memory` - Distributed state (Semantic, Episodic, Working, Plan context)
+- `context.bus` - Event choreography (pub/sub)
+- `context.tracker` - Observability & progress tracking
 
 **Learn more:** See the [comprehensive documentation](https://github.com/soorma-ai/soorma-core) for architecture details, patterns, and API references.
 
@@ -141,17 +152,95 @@ async def handle_result(result: ResultContext, context):
 
 **Example:** [08-worker-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/08-worker-basic)
 
-### Comparison
+### Planner Model (Multi-Step Workflows)
 
-| Feature | Tool | Worker |
-|---------|------|--------|
-| Execution | Synchronous | Asynchronous |
-| State | Stateless | Stateful (TaskContext) |
-| Completion | Auto | Manual (`task.complete()`) |
-| Delegation | ❌ No | ✅ Yes |
-| Memory I/O | ❌ No | ✅ Yes |
-| Latency | < 100ms | Seconds to minutes |
-| Example | Calculator | Order processing |
+Planners orchestrate multi-step workflows using state machines:
+
+```python
+from soorma import Planner
+from soorma.workflow import StateConfig, StateTransition, StateAction
+
+planner = Planner(name="approval-workflow")
+
+# Define state machine
+states = [
+    StateConfig(
+        name="pending_review",
+        transitions=[StateTransition(event="review.approved", next_state="pending_execution")],
+        actions=[StateAction(event="review.requested", data={...})]
+    ),
+    # ... more states
+]
+
+@planner.on_goal("approval.workflow.requested")
+async def start_workflow(goal, context):
+    plan = await PlanContext.create_from_goal(goal, states, context)
+    await plan.execute_next(context)  # Execute first state's actions
+
+@planner.on_transition()
+async def handle_transition(event, context, plan, next_state):
+    await plan.execute_next(context)  # Execute next state's actions
+```
+
+**Characteristics:**
+- 🎯 **Manual control:** Developer defines all state transitions
+- 💾 **Stateful:** PlanContext persists across events
+- 🔄 **Re-entrant:** Pause/resume for human-in-the-loop workflows
+- 📊 **Use cases:** Approval workflows, multi-stage pipelines
+
+**Example:** [09-planner-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/09-planner-basic)
+
+### ChoreographyPlanner Model (Autonomous Orchestration)
+
+ChoreographyPlanner uses LLMs to autonomously decide next actions:
+
+```python
+from soorma.agents.planner import ChoreographyPlanner
+
+planner = ChoreographyPlanner(
+    name="research-planner",
+    model="gpt-4",  # or azure/gpt-4, anthropic/claude-3, ollama/llama3, etc.
+    api_key=os.getenv("OPENAI_API_KEY"),  # BYO credentials
+    system_instructions="You are a research assistant...",
+    max_actions=10  # Circuit breaker
+)
+
+@planner.on_goal("research.requested")
+async def handle_research(goal, context):
+    plan = await planner.reason_and_execute(
+        goal=goal.data["query"],
+        context=context,
+        custom_context={"domain": "AI research"}  # Business logic injection
+    )
+```
+
+**Characteristics:**
+- 🤖 **Autonomous:** LLM decides which events to publish and when to complete
+- 🌐 **Event discovery:** Queries Registry for available capabilities
+- ✅ **Validation:** Prevents LLM hallucinations via event schema checks
+- 💰 **Cost-aware:** Configurable planning strategies (balanced|conservative|aggressive)
+- 🔐 **BYO credentials:** Developer controls LLM provider and API keys
+- 📊 **Use cases:** Research workflows, adaptive planning, dynamic orchestration
+
+**Installation:** `pip install soorma-core[ai]` (includes LiteLLM for 50+ model providers)
+
+**Example:** [10-choreography-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/10-choreography-basic)
+
+### Pattern Comparison
+
+| Feature | Tool | Worker | Planner | ChoreographyPlanner |
+|---------|------|--------|---------|---------------------|
+| Execution | Synchronous | Asynchronous | Multi-step | Multi-step |
+| State | Stateless | TaskContext | PlanContext | PlanContext |
+| Completion | Auto | Manual | Manual | Auto (LLM decides) |
+| Delegation | ❌ No | ✅ Yes | ✅ Yes | ✅ Yes |
+| Control | Full | High | Full | Autonomous |
+| LLM Required | ❌ No | ❌ No | ❌ No | ✅ Yes |
+| Latency | < 100ms | Seconds | Varies | 1-10s per decision |
+| Cost | Free | Free | Free | LLM API costs |
+| Example | Calculator | Order processing | Approval workflow | Research assistant |
+
+**Choosing a pattern:** See the [Pattern Selection Guide](https://github.com/soorma-ai/soorma-core/blob/main/docs/agent_patterns/README.md) for decision criteria and flowcharts.
 
 ## CLI Reference
 
@@ -182,11 +271,15 @@ The `soorma dev` command runs infrastructure (Registry, NATS, Event Service, Mem
 
 **🎓 Learning Path:**
 1. [01-hello-world](https://github.com/soorma-ai/soorma-core/tree/main/examples/01-hello-world) - Basic Worker pattern
-2. [02-events-simple](https://github.com/soorma-ai/soorma-core/tree/main/examples/02-events-simple) - Event pub/sub
-3. [03-events-structured](https://github.com/soorma-ai/soorma-core/tree/main/examples/03-events-structured) - LLM-based event selection
-4. [04-memory-working](https://github.com/soorma-ai/soorma-core/tree/main/examples/04-memory-working) - Workflow state
-5. [05-memory-semantic](https://github.com/soorma-ai/soorma-core/tree/main/examples/05-memory-semantic) - RAG patterns
-6. [06-memory-episodic](https://github.com/soorma-ai/soorma-core/tree/main/examples/06-memory-episodic) - Multi-agent chatbot
+2. [01-hello-tool](https://github.com/soorma-ai/soorma-core/tree/main/examples/01-hello-tool) - Stateless Tool pattern
+3. [02-events-simple](https://github.com/soorma-ai/soorma-core/tree/main/examples/02-events-simple) - Event pub/sub
+4. [03-events-structured](https://github.com/soorma-ai/soorma-core/tree/main/examples/03-events-structured) - LLM-based event selection
+5. [04-memory-working](https://github.com/soorma-ai/soorma-core/tree/main/examples/04-memory-working) - Workflow state
+6. [05-memory-semantic](https://github.com/soorma-ai/soorma-core/tree/main/examples/05-memory-semantic) - RAG patterns
+7. [06-memory-episodic](https://github.com/soorma-ai/soorma-core/tree/main/examples/06-memory-episodic) - Multi-agent chatbot
+8. [08-worker-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/08-worker-basic) - Task delegation (parallel)
+9. [09-planner-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/09-planner-basic) - State machine workflows
+10. [10-choreography-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/10-choreography-basic) - Autonomous LLM planning
 
 ## Contributing & Support
 
