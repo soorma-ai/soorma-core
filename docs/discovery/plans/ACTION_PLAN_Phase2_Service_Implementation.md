@@ -1,6 +1,6 @@
 # Action Plan: Phase 2 - Service Implementation (SOOR-DISC-P2)
 
-**Status:** 🔄 Phase 2C (GREEN) — Tasks 3.1/3.2/3.4 done, task 3.7 pending  
+**Status:** 🔄 Phase 2D (REFACTOR) — all GREEN tasks complete  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 2 of 5  
 **Estimated Duration:** 3-4 days  
@@ -227,8 +227,8 @@ if not settings.IS_LOCAL_TESTING:
 - [x] **Task 3.4:** Implement `services/agent_service.py::discover_agents()` — delegates to `query_agents(consumed_event=..., include_expired=False)`. 10/10 discovery tests pass ✅
 - [x] **Task 3.5:** `api/v1/agents.py` discover endpoint already correct (delegates to service); no changes needed ✅
 - [x] **Task 3.6:** Schema router registered in `api/v1/__init__.py` ✅ (done in Phase 2A)
-- [ ] **Task 3.7:** Implement SDK `RegistryClient` schema/discover methods ⏱️ 45 min
-- [ ] **Task 3.8:** Run all tests — confirm 70+ pass ⏱️ 10 min
+- [x] **Task 3.7:** Implement SDK `RegistryClient` schema/discover methods — `register_schema` (POST), `get_schema` (GET with optional version), `list_schemas` (GET with owner filter), `discover_agents` (GET with event filter) ✅
+- [x] **Task 3.8:** Full test suite — 80 passed, 0 failed, 1 warning (benign Pydantic field name shadow) ✅
 
 **Phase 2D: REFACTOR**
 

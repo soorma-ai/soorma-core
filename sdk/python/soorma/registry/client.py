@@ -288,10 +288,15 @@ class RegistryClient:
 
         Returns:
             PayloadSchemaResponse with success flag
-
-        STUB: Implementation in GREEN phase (Task 3.7).
         """
-        raise NotImplementedError("RegistryClient.register_schema not yet implemented")
+        request = PayloadSchemaRegistrationRequest(schema=schema)
+        response = await self._client.post(
+            f"{self.base_url}/v1/schemas",
+            json=request.model_dump(by_alias=True),
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        return PayloadSchemaResponse.model_validate(response.json())
 
     async def get_schema(
         self,
@@ -307,10 +312,16 @@ class RegistryClient:
 
         Returns:
             PayloadSchema DTO if found, None otherwise
-
-        STUB: Implementation in GREEN phase (Task 3.7).
         """
-        raise NotImplementedError("RegistryClient.get_schema not yet implemented")
+        if version is not None:
+            url = f"{self.base_url}/v1/schemas/{schema_name}/versions/{version}"
+        else:
+            url = f"{self.base_url}/v1/schemas/{schema_name}"
+        response = await self._client.get(url, headers=self._auth_headers)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return PayloadSchema.model_validate(response.json())
 
     async def list_schemas(
         self,
@@ -324,10 +335,18 @@ class RegistryClient:
 
         Returns:
             List of PayloadSchema DTOs
-
-        STUB: Implementation in GREEN phase (Task 3.7).
         """
-        raise NotImplementedError("RegistryClient.list_schemas not yet implemented")
+        params = {}
+        if owner_agent_id is not None:
+            params["owner_agent_id"] = owner_agent_id
+        response = await self._client.get(
+            f"{self.base_url}/v1/schemas",
+            params=params,
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        result = PayloadSchemaListResponse.model_validate(response.json())
+        return result.schemas
 
     async def discover_agents(
         self,
@@ -344,7 +363,15 @@ class RegistryClient:
 
         Returns:
             List of AgentDefinition DTOs for matching active agents
-
-        STUB: Implementation in GREEN phase (Task 3.7).
         """
-        raise NotImplementedError("RegistryClient.discover_agents not yet implemented")
+        params = {}
+        if consumed_event is not None:
+            params["consumed_event"] = consumed_event
+        response = await self._client.get(
+            f"{self.base_url}/v1/agents/discover",
+            params=params,
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        result = AgentQueryResponse.model_validate(response.json())
+        return result.agents
