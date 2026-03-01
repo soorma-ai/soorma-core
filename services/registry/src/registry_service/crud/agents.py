@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from soorma_common import AgentDefinition, AgentCapability
+from soorma_common import AgentDefinition, AgentCapability, EventDefinition
 from ..models import AgentTable, AgentCapabilityTable
 from ..core.cache import cache_agent, invalidate_agent_cache
 
@@ -495,30 +495,40 @@ class AgentCRUD:
         Returns:
             AgentDefinition DTO
         """
+        # AgentCapabilityTable.consumed_event is VARCHAR (stores event name string).
+        # Wrap strings back into EventDefinition for AgentCapability (v0.8.1+ requires EventDefinition).
         capabilities = [
             AgentCapability(
                 task_name=cap.task_name,
                 description=cap.description,
-                consumed_event=cap.consumed_event,
-                produced_events=cap.produced_events
+                consumed_event=(
+                    EventDefinition(event_name=cap.consumed_event, topic="action-requests", description="")
+                    if isinstance(cap.consumed_event, str) else cap.consumed_event
+                ),
+                produced_events=[
+                    EventDefinition(event_name=ev, topic="action-results", description="")
+                    if isinstance(ev, str) else ev
+                    for ev in cap.produced_events
+                ]
             )
             for cap in agent.capabilities
         ]
-        
-        # Derive agent-level events from capabilities
-        # If agent has legacy data in consumed_events/produced_events, use those
-        # Otherwise, derive from capabilities
+
+        # Derive agent-level event name lists from capabilities.
+        # EventDefinition objects are not hashable — use .event_name strings in the set.
         if agent.consumed_events and agent.produced_events:
             consumed_events = agent.consumed_events
             produced_events = agent.produced_events
         else:
-            # Derive from capabilities
-            consumed_events = list(set(cap.consumed_event for cap in capabilities))
-            produced_events = list(set(
-                event 
-                for cap in capabilities 
-                for event in cap.produced_events
-            ))
+            consumed_events = list({
+                cap.consumed_event.event_name if hasattr(cap.consumed_event, "event_name") else str(cap.consumed_event)
+                for cap in capabilities
+            })
+            produced_events = list({
+                ev.event_name if hasattr(ev, "event_name") else str(ev)
+                for cap in capabilities
+                for ev in cap.produced_events
+            })
         
         return AgentDefinition(
             agent_id=agent.agent_id,

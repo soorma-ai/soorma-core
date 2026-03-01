@@ -1,12 +1,12 @@
 # Action Plan: Phase 1 - Schema Registry & DTOs (SOOR-DISC-P1)
 
-**Status:** 🟡 In Progress (85% Complete)  
+**Status:** 🟡 In Progress (90% Complete)  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 1 of 5  
 **Estimated Duration:** 3-4 days (18-20 hours including examples update)  
-**Actual Duration:** 2 days (foundation complete, documentation pending)  
+**Actual Duration:** 3 days (foundation + examples complete, registry tests + docs pending)  
 **Target Release:** v0.8.1  
-**Last Updated:** February 28, 2026 (Updated: Work Progress)  
+**Last Updated:** March 1, 2026 (Updated: Post-Audit Progress Review)  
 **Approved By:** Developer  
 **Approval Date:** February 28, 2026
 
@@ -389,15 +389,22 @@ Phase 1 focuses on **foundation only** (DTOs and database):
 - [x] **Task 4.4:** REFACTOR - Align with base model patterns ⏱️ 30 min ✅
 
 **Documentation Phase**
-- [ ] **Task 5.1:** Update `soorma-common` CHANGELOG.md ⏱️ 15 min
-- [ ] **Task 5.2:** Update Registry Service CHANGELOG.md ⏱️ 15 min
+- [x] **Task 5.1:** Update `soorma-common` CHANGELOG.md ✅ Done (v0.8.1 entry exists)
+- [ ] **Task 5.2:** Update Registry Service CHANGELOG.md ⏱️ 15 min (file does not exist yet)
 - [ ] **Task 5.3:** Document migration guide (breaking changes) ⏱️ 30 min
-- [ ] **Task 5.4:** Update all examples (01-10) with new DTO format ⏱️ 2 hours
-- [ ] **Task 5.5:** Update docs/discovery/README.md ⏱️ 30 min
+- [x] **Task 5.4:** Update all examples (01-10) with new DTO format ✅ Done (commit e8bc19e, Feb 28)
+- [ ] **Task 5.5:** Create docs/discovery/ directory + README.md ⏱️ 30 min (directory does not exist)
 - [ ] **Task 5.6:** Plan review and approval ⏱️ 30 min
 
+**Registry Tests Fix (DISCOVERED - not in original plan)**
+- [ ] **Task 6.1:** Fix registry service test fixtures (35 failing, 7 errors) ⏱️ 1-2 hours
+  - All failures: `AgentCapability` fixtures use string `consumed_event`/`produced_events` — must be `EventDefinition` objects
+  - Affects: `test_agent_ttl.py`, `test_orphaned_capability_bug.py`, `test_expired_agent_cascade_delete.py`, and all other test files with `AgentCapability` fixtures
+  - 8 tests currently passing (no `AgentCapability` in fixtures)
+
 **48-Hour Filter Decision:**
-- [ ] **Task 48H:** FDE Decision - All components are CRITICAL (see Section 5)
+- [x] **Task 48H:** FDE Decision - All components are CRITICAL (see Section 5)  
+  ✅ No deferrals taken — confirmed still correct
 
 ---
 
@@ -788,7 +795,7 @@ All Phase 1 components are foundational and interdependent. Deferring any compon
    - Verify all examples run successfully after changes
 
 **Deliverables:**
-- [ ] All 10 examples updated and tested
+- [x] All 10 examples updated and tested (commit `e8bc19e`, Feb 28)
 - [ ] `examples/README.md` updated with migration notes
 
 **Note:** This day is CRITICAL - examples serve as documentation and must work before merge to main.
@@ -836,32 +843,34 @@ All components must be updated to maintain compatibility:
 #### ✅ Registry Service
 - [x] `services/registry/alembic/versions/003_*.py` - Migration script (complete)
 - [x] `services/registry/src/registry_service/models/schema.py` - New SQLAlchemy model (complete)
-- [ ] `services/registry/CHANGELOG.md` - Document schema changes
-- [ ] `services/registry/tests/` - All tests passing (unit + integration + RLS)
+- [x] Auth model corrected: developer tenant only, `user_id` removed (commits `f1b49aa`, `e0f0394`)
+- [ ] `services/registry/CHANGELOG.md` - ❌ File does not exist — needs creation
+- [ ] `services/registry/tests/` - ❌ 35 failing, 7 errors (AgentCapability fixtures use string events)
 
 #### ✅ SDK (No Changes in Phase 1, but verify compatibility)
 - [ ] `sdk/python/soorma/registry/client.py` - Verify works with new DTOs
 - [ ] `sdk/python/tests/` - Existing tests still pass
 
-#### ✅ Examples (CRITICAL - All must be updated)
-- [ ] `examples/01-hello-world/` - Update agent registration
-- [ ] `examples/02-events-simple/` - Update event definitions
-- [ ] `examples/03-events-structured/` - Update capabilities
-- [ ] `examples/04-memory-working/` - Update agent/event registration
-- [ ] `examples/05-memory-semantic/` - Update agent/event registration
-- [ ] `examples/06-tool-basic/` - Update agent registration
-- [ ] `examples/07-tool-weather/` - Update agent registration
-- [ ] `examples/08-worker-basic/` - Update capabilities
-- [ ] `examples/09-planner-basic/` - Update planner registration
-- [ ] `examples/10-planner-tracker/` - Update planner registration
-- [ ] `examples/README.md` - Update documentation
+#### ✅ Examples (CRITICAL - All updated)
+- [x] `examples/01-hello-world/` - Updated (commit `e8bc19e`)
+- [x] `examples/02-events-simple/` - Updated (commit `e8bc19e`)
+- [x] `examples/03-events-structured/` - Already used EventDefinition, no change needed
+- [x] `examples/04-memory-working/` - Updated (commit `e8bc19e`)
+- [x] `examples/05-memory-semantic/` - Already used EventDefinition, no change needed
+- [x] `examples/06-tool-basic/` - Updated (commit `e8bc19e`)
+- [x] `examples/07-tool-weather/` - Verified no change needed
+- [x] `examples/08-worker-basic/` - Verified no change needed
+- [x] `examples/09-planner-basic/` - Updated (commit `e8bc19e`)
+- [x] `examples/10-choreography-basic/` - Already used EventDefinition, no change needed
+- [x] `examples/research-advisor/` - Updated in prior commit
+- [ ] `examples/README.md` - Migration notes not yet added
 
 #### ✅ Documentation
-- [ ] `docs/discovery/README.md` - Update with new patterns
-- [ ] `docs/discovery/ARCHITECTURE.md` - Document schema registry
-- [ ] `docs/ARCHITECTURE_PATTERNS.md` - Update Section 4 (multi-tenancy)
+- [ ] `docs/discovery/` - ❌ Directory does not exist — needs creation with README.md
+- [ ] `docs/discovery/ARCHITECTURE.md` - Document schema registry (Phase 2 dependency)
+- [ ] `docs/ARCHITECTURE_PATTERNS.md` - Update Section 4 (multi-tenancy) — auth model changed: developer tenant only
 - [ ] `CHANGELOG.md` (root) - Release notes for v0.8.1
-- [ ] Migration guide document (new)
+- [ ] Migration guide document (Task 5.3 — not yet done)
 
 #### ✅ Infrastructure
 - [ ] `services/registry/Dockerfile` - Verify no changes needed
@@ -996,15 +1005,16 @@ alembic upgrade head
 - [x] Migration script implemented with upgrade() and downgrade() functions
 - [ ] Migration manually tested (alembic upgrade/downgrade - pending)
 - [x] Total test count: 22 tests (aligned with existing service patterns)
+- [ ] Registry service tests: ❌ 35 failing, 7 errors, 8 passing — test fixtures need EventDefinition update
 
 **Note:** Migration tests removed to align with Memory/Event/Tracker service patterns (see Decision 9).
 
 ### Documentation
 
-- [ ] CHANGELOG.md updated in `soorma-common`
-- [ ] CHANGELOG.md updated in `services/registry`
+- [x] CHANGELOG.md updated in `soorma-common` ✅ Done (v0.8.1 entry)
+- [ ] CHANGELOG.md updated in `services/registry` ❌ File does not exist
 - [ ] Migration guide documented for breaking changes
-- [ ] Database schema documented in migration file
+- [x] Database schema documented in migration file
 
 ### Performance
 
@@ -1024,21 +1034,24 @@ Before marking Phase 1 complete and proceeding to Phase 2:
 - [x] RLS policies implemented in migration
 - [x] Tenant-scoped uniqueness implemented (composite unique constraints)
 - [x] SQLAlchemy models created and aligned
+- [x] Auth model corrected: developer tenant only (out-of-band, commits `f1b49aa`, `e0f0394`)
+- [x] Agent lifecycle bugs fixed: POST 200, DELETE 204, heartbeat 200 (out-of-band, commit `e0f0394`)
 
 **Documentation:**
-- [ ] CHANGELOGs updated (soorma-common, Registry Service)
-- [ ] Migration guide documented for breaking changes
+- [x] `soorma-common` CHANGELOG.md updated (v0.8.1 entry exists)
+- [ ] `services/registry` CHANGELOG.md — file does not exist, needs creation
+- [ ] Migration guide not yet documented (Task 5.3)
 - [x] Database schema documented in migration file
 
 **Examples (CRITICAL for Main Merge):**
-- [ ] All 10 examples updated with new DTO format
-- [ ] All examples execute successfully
-- [ ] `examples/README.md` updated
+- [x] All examples updated with EventDefinition format (commit `e8bc19e`, Feb 28)
+- [x] Examples verified running successfully (08-worker-basic, 09-planner-basic confirmed)
+- [ ] `examples/README.md` migration notes not yet added
 
 **Quality Gates:**
 - [x] Breaking changes clearly documented (AgentCapability DTO changes)
 - [x] Foundation code complete (DTOs, migration, models)
-- [ ] Registry service tests updated (1 failure from breaking DTO changes)
+- [ ] Registry service tests: ❌ 35 failing (all fixtures need EventDefinition — discovered March 1)
 - [ ] Code review completed (if applicable)
 
 **Note:** CI/CD workflow for Registry Service deferred to Docker image publishing phase (not a blocker for Phase 1 completion).

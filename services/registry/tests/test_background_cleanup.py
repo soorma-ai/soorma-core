@@ -13,6 +13,7 @@ from registry_service.crud import agent_crud
 from registry_service.services.agent_service import AgentRegistryService
 from registry_service.models.agent import AgentTable
 from soorma_common import AgentDefinition, AgentCapability
+from tests.conftest import TEST_TENANT_ID
 
 
 @pytest.mark.asyncio
@@ -71,8 +72,8 @@ async def test_cleanup_expired_agents():
         )
         
         # Register both agents
-        await AgentRegistryService.register_agent(db, active_agent)
-        await AgentRegistryService.register_agent(db, expired_agent)
+        await AgentRegistryService.register_agent(db, active_agent, TEST_TENANT_ID)
+        await AgentRegistryService.register_agent(db, expired_agent, TEST_TENANT_ID)
         
         # Expire one agent using SQL update
         old_heartbeat = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=2)
@@ -93,15 +94,17 @@ async def test_cleanup_expired_agents():
         expired_check = await agent_crud.get_agent_by_id(
             db,
             "cleanup-expired",
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert expired_check is None
-        
+
         # Verify active agent still exists
         active_check = await agent_crud.get_agent_by_id(
             db,
             "cleanup-active",
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert active_check is not None
 
@@ -119,20 +122,21 @@ async def test_cleanup_with_no_expired_agents():
             consumed_events=[],
             produced_events=[]
         )
-        await AgentRegistryService.register_agent(db, active_agent)
-        
+        await AgentRegistryService.register_agent(db, active_agent, TEST_TENANT_ID)
+
         # Run cleanup
         deleted_count = await agent_crud.delete_expired_agents(db, ttl_seconds=300)
         await db.commit()
-        
+
         # No agents should be deleted
         assert deleted_count == 0
-        
+
         # Agent should still exist
         agent_check = await agent_crud.get_agent_by_id(
             db,
             "cleanup-active-only",
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert agent_check is not None
 
@@ -182,7 +186,7 @@ async def test_multiple_expired_agents_cleanup():
                 consumed_events=[],
                 produced_events=[]
             )
-            await AgentRegistryService.register_agent(db, agent)
+            await AgentRegistryService.register_agent(db, agent, TEST_TENANT_ID)
             
             # Expire it using SQL update
             old_heartbeat = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)

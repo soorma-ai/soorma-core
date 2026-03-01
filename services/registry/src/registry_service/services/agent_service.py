@@ -45,16 +45,20 @@ class AgentRegistryService:
             AgentRegistrationResponse with registration status
         """
         try:
-            # Derive agent-level events from capabilities if not provided
+            # Derive agent-level events from capabilities if not provided.
+            # EventDefinition objects are not hashable, so extract event_name strings.
             if not agent.consumed_events:
-                agent.consumed_events = list(set(cap.consumed_event for cap in agent.capabilities))
-            
+                agent.consumed_events = list({
+                    cap.consumed_event.event_name if hasattr(cap.consumed_event, "event_name") else str(cap.consumed_event)
+                    for cap in agent.capabilities
+                })
+
             if not agent.produced_events:
-                agent.produced_events = list(set(
-                    event 
-                    for cap in agent.capabilities 
-                    for event in cap.produced_events
-                ))
+                agent.produced_events = list({
+                    ev.event_name if hasattr(ev, "event_name") else str(ev)
+                    for cap in agent.capabilities
+                    for ev in cap.produced_events
+                })
             
             # Upsert the agent
             agent_table, was_created = await agent_crud.upsert_agent(

@@ -14,7 +14,7 @@ from soorma_common import AgentRegistrationRequest, AgentDefinition, AgentCapabi
 
 @pytest.fixture
 def sample_agent_request():
-    """Create a sample agent registration request (SDK format)."""
+    """Create a sample agent registration request (SDK format, v0.8.1+)."""
     return {
         "agent": {
             "agentId": "api-test-agent",
@@ -24,12 +24,22 @@ def sample_agent_request():
                 {
                     "taskName": "api_task",
                     "description": "API Task",
-                    "consumedEvent": "api.event",
-                    "producedEvents": ["api.result"]
+                    "consumedEvent": {
+                        "eventName": "api.event",
+                        "topic": "action-requests",
+                        "description": "Triggers api task",
+                    },
+                    "producedEvents": [
+                        {
+                            "eventName": "api.result",
+                            "topic": "action-results",
+                            "description": "Result of api task",
+                        }
+                    ],
                 }
             ],
             "consumedEvents": ["api.event"],
-            "producedEvents": ["api.result"]
+            "producedEvents": ["api.result"],
         }
     }
 

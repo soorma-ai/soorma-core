@@ -4,8 +4,12 @@ Test configuration and fixtures.
 import pytest
 import os
 import asyncio
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from fastapi.testclient import TestClient
+
+# Sentinel developer tenant UUID used by all tests (matches env fallback)
+TEST_TENANT_ID = UUID("00000000-0000-0000-0000-000000000000")
 
 # Use a test-specific SQLite database file
 TEST_DB_FILE = "test_registry.db"
@@ -61,10 +65,9 @@ def setup_test_db():
 @pytest.fixture
 def client():
     """
-    Create a test client.
-    The app already uses the test database via environment variables.
+    Create a test client with sentinel X-Tenant-ID header.
+    All API calls automatically include the developer tenant header.
     """
-    # Create test client
-    with TestClient(app) as test_client:
+    with TestClient(app, headers={"X-Tenant-ID": str(TEST_TENANT_ID)}) as test_client:
         yield test_client
 

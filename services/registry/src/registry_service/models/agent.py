@@ -4,8 +4,7 @@ SQLAlchemy models for agent registry.
 from datetime import datetime
 from typing import List
 from uuid import UUID
-from sqlalchemy import Integer, String, DateTime, Text, ForeignKey, JSON
-from sqlalchemy.dialects import postgresql
+from sqlalchemy import Integer, String, DateTime, Text, ForeignKey, JSON, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -63,7 +62,7 @@ class AgentTable(Base):
     # Registry is scoped to the developer's own tenant — not end-user sessions.
     # See ARCHITECTURE_PATTERNS.md Section 1 for the developer-tenant vs user-tenant distinction.
     tenant_id: Mapped[UUID] = mapped_column(
-        postgresql.UUID(),
+        Uuid(as_uuid=True, native_uuid=True),  # native_uuid=True: PostgreSQL native UUID; SQLite CHAR(32) TEXT affinity (avoids numeric coercion bug)
         nullable=False,
         index=True,
         comment="Developer tenant identifier — registry is developer-scoped, not user-session-scoped"
