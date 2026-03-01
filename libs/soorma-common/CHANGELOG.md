@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-02-28
+
+### Added
+- **Phase 1 - Schema Registry & DTOs Foundation (February 28, 2026)**
+  - **Schema Registry models** for dynamic event type discovery (RF-ARCH-005)
+    - `PayloadSchema` model with semantic versioning support
+    - `PayloadSchemaRegistration` request model for schema submission
+    - `PayloadSchemaResponse` response model with success/error details
+    - Schema versioning pattern: "1.0.0" (semantic versioning for agent-to-agent compatibility)
+  - **Enhanced EventDefinition** with schema references (RF-ARCH-006)
+    - `payload_schema_name` field for referencing registered schemas by name
+    - `response_schema_name` field for response schema references
+    - Deprecated fields: `payload_schema`, `response_schema` (embedded schemas, will be removed in v1.0.0)
+    - Enables dynamic event type discovery without code changes
+  - **Enhanced AgentCapability** with structured event definitions
+    - `consumed_event` now accepts `EventDefinition` object (backward compatible with strings during transition)
+    - `produced_events` now accepts `List[EventDefinition]` (backward compatible with string lists)
+    - Enables rich event metadata for discovery and validation
+  - **DiscoveredAgent** model for agent discovery results
+    - Full capability metadata with structured event definitions
+    - `get_consumed_schemas()` helper method to extract payload schema names
+    - `get_produced_schemas()` helper method to extract response schema names
+    - Supports A2A discovery protocol patterns
+  - **22 validation tests** covering all new DTOs and helper methods
+  - All tests passing (93/93 tests across entire soorma-common library)
+
+### Changed
+- **BREAKING: AgentCapability structure** (v0.8.1 clean break for pre-launch)
+  - `consumed_event` field now requires `EventDefinition` object (strings no longer accepted)
+  - `produced_events` field now requires `List[EventDefinition]` (string lists no longer accepted)
+  - Migration required: All agent registration code must be updated
+  - Rationale: Pre-launch phase allows clean architectural break for long-term maintainability
+  - Impact: All 10 examples require updates (Day 4 of Phase 1 implementation)
+
+### Migration Guide
+- **Agent Registration Updates Required:**
+  ```python
+  # OLD (v0.8.0)
+  AgentCapability(
+      consumed_event="research.requested",
+      produced_events=["research.completed"]
+  )
+  
+  # NEW (v0.8.1+)
+  AgentCapability(
+      consumed_event=EventDefinition(
+          event_name="research.requested",
+          topic="action-requests",
+          description="...",
+          payload_schema_name="research_request_v1"
+      ),
+      produced_events=[
+          EventDefinition(
+              event_name="research.completed",
+              topic="action-results",
+              description="...",
+              payload_schema_name="research_result_v1"
+          )
+      ]
+  )
+  ```
+
 ## [0.8.0] - 2026-02-23
 
 ### Added
