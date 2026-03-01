@@ -173,8 +173,6 @@ async def discover_agents(
 
     Returns:
         AgentQueryResponse with matching active agents
-
-    STUB: Calls AgentRegistryService.discover_agents() which raises NotImplementedError.
     """
     return await AgentRegistryService.discover_agents(
         db=db,

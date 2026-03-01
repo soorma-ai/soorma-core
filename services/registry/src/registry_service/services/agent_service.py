@@ -279,8 +279,6 @@ class AgentRegistryService:
 
         Returns:
             AgentQueryResponse with matching active agents
-
-        STUB: NotImplementedError until Task 3.4 (GREEN phase).
         """
         # Delegate to query_agents which handles TTL filtering, deduplication, and
         # the consumed_event filter. Discovery always excludes expired agents.

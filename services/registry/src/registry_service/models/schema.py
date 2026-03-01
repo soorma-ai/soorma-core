@@ -40,7 +40,7 @@ class PayloadSchemaTable(Base):
         comment="Last update timestamp"
     )
     
-    # Schema identification (STUB - constraints in migration)
+    # Schema identification (unique constraint: schema_name, version, tenant_id)
     schema_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
@@ -52,7 +52,7 @@ class PayloadSchemaTable(Base):
         comment="Semantic version (e.g., '1.0.0')"
     )
     
-    # Schema content (STUB - JSON validation in service layer)
+    # Schema content (JSON validation handled in service layer)
     json_schema: Mapped[Dict[str, Any]] = mapped_column(
         JSON,
         nullable=False,
@@ -64,7 +64,7 @@ class PayloadSchemaTable(Base):
         comment="Human-readable description"
     )
     
-    # Ownership (STUB - no FK constraint, see action plan decision 7)
+    # Ownership (no FK constraint — microservices independence; see action plan decision D7)
     owner_agent_id: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,

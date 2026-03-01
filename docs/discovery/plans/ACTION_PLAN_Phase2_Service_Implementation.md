@@ -1,6 +1,6 @@
 # Action Plan: Phase 2 - Service Implementation (SOOR-DISC-P2)
 
-**Status:** 🔄 Phase 2D (REFACTOR) — all GREEN tasks complete  
+**Status:** ✅ Phase 2 COMPLETE — all tasks (2A/2B/2C/2D) done, 80 tests passing  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 2 of 5  
 **Estimated Duration:** 3-4 days  
@@ -230,11 +230,11 @@ if not settings.IS_LOCAL_TESTING:
 - [x] **Task 3.7:** Implement SDK `RegistryClient` schema/discover methods — `register_schema` (POST), `get_schema` (GET with optional version), `list_schemas` (GET with owner filter), `discover_agents` (GET with event filter) ✅
 - [x] **Task 3.8:** Full test suite — 80 passed, 0 failed, 1 warning (benign Pydantic field name shadow) ✅
 
-**Phase 2D: REFACTOR**
+**Phase 2D: REFACTOR** ✅ COMPLETE
 
-- [ ] **Task 4.1:** Review CRUD layer for code duplication; extract shared helpers ⏱️ 30 min
-- [ ] **Task 4.2:** Update `services/registry/CHANGELOG.md` ⏱️ 15 min
-- [ ] **Task 4.3:** Update `docs/discovery/MIGRATION_GUIDE_v0.8.1.md` with new endpoints ⏱️ 20 min
+- [x] **Task 4.1:** CRUD layer reviewed — no significant duplication; `SchemaCRUD` follows same clean pattern as `AgentCRUD`. Removed all STUB phase comments from production source files (×5 files) ✅
+- [x] **Task 4.2:** `services/registry/CHANGELOG.md` updated with v0.8.2 entry: all new endpoints, SDK methods, SQLite precision fix ✅
+- [x] **Task 4.3:** `docs/discovery/MIGRATION_GUIDE_v0.8.1.md` updated with v0.8.2 addendum: new endpoints table, SDK usage examples, duplicate-409 behavior, discover agents pattern ✅
 
 **48-Hour Filter Decision:**
 

@@ -1,8 +1,5 @@
 """
 API endpoints for payload schema registry.
-
-STUB: Route handlers defined, implementation delegates to SchemaRegistryService.
-GREEN: SchemaRegistryService implements real logic in Task 3.2.
 """
 from typing import Optional
 from uuid import UUID
