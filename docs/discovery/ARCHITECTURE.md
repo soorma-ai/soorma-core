@@ -1,8 +1,18 @@
 # Discovery: Technical Architecture
 
-**Status:** � Stage 5 Planned  
-**Last Updated:** February 15, 2026  
-**Related Stages:** Stage 5 (RF-ARCH-005, RF-ARCH-006, RF-ARCH-007, RF-SDK-015, RF-SDK-016, RF-SDK-017)
+**Status:** 🟢 Implementation In Progress (Phases 1 & 2 ✅, Phase 3 📋 Planning)  
+**Last Updated:** March 1, 2026  
+**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 📋 | RF-SDK-017 📋
+
+### Phase Progress
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | Foundation — DTOs, DB Schema, RLS, Alembic migrations | ✅ Complete |
+| Phase 2 | Service — Schema endpoints, Discovery endpoint, multi-tenancy middleware | ✅ Complete |
+| Phase 3 | SDK — `discover()`, `EventSelector`, `A2AGatewayHelper` | 📋 [Plan](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
+| Phase 4 | Tracker NATS integration | ⬜ Not started |
+| Phase 5 | Examples 11–13, full documentation | ⬜ Not started |
 
 ---
 
@@ -16,7 +26,9 @@ The Discovery System provides dynamic agent and capability discovery through the
 
 **Current Status:**
 - ✅ Basic Registry Service operational (Stages 0-3)
-- 🔄 Stage 5 enhancements planned (schema-based discovery, A2A integration)
+- ✅ **Phase 1 complete:** `PayloadSchema` DTOs, `payload_schemas` table, RLS policies on `agents`, `events`, and `payload_schemas` tables, Alembic migration 003
+- ✅ **Phase 2 complete:** Schema CRUD endpoints, `GET /v1/agents/discover`, multi-tenancy middleware, `RegistryClient` schema methods
+- 📋 **Phase 3 in planning:** `discover() -> List[DiscoveredAgent]`, `EventSelector`, `A2AGatewayHelper`
 
 ---
 
@@ -60,31 +72,44 @@ The Discovery System provides dynamic agent and capability discovery through the
 - **ORM:** SQLAlchemy async
 - **Background Tasks:** asyncio for TTL cleanup
 
-### Core Components
+### Core Components (Current — Phases 1 & 2)
 
 ```
 services/registry/
 ├── src/registry_service/
-│   ├── api/v1/              # REST endpoints
-│   │   ├── agents.py        # Agent registration, query, heartbeat
-│   │   └── events.py        # Event registration, query
+│   ├── api/v1/                  # REST endpoints
+│   │   ├── agents.py            # Registration, query, heartbeat, discover
+│   │   ├── events.py            # Event registration, query
+│   │   └── schemas.py           # NEW (Phase 2): Schema CRUD endpoints
 │   ├── services/
-│   │   ├── agent_service.py # Agent business logic
-│   │   └── event_service.py # Event business logic
+│   │   ├── agent_service.py     # Agent business logic + discover_agents()
+│   │   ├── event_service.py     # Event business logic
+│   │   └── schema_service.py    # NEW (Phase 2): Schema CRUD business logic
+│   ├── middleware/
+│   │   └── tenant.py            # NEW (Phase 2): X-Tenant-ID extraction + RLS session vars
 │   ├── models/
-│   │   ├── agent.py         # Agent DB model
-│   │   └── event.py         # Event DB model
+│   │   ├── agent.py             # Agent DB model (+ developer tenant_id, version columns)
+│   │   ├── event.py             # Event DB model (+ developer tenant_id, owner_agent_id)
+│   │   └── schema.py            # NEW (Phase 1): PayloadSchema DB model
 │   ├── core/
-│   │   └── database.py      # SQLAlchemy session management
-│   └── main.py              # FastAPI app + background tasks
-└── migrations/              # Alembic migrations
+│   └── main.py
+└── migrations/              # Alembic migrations 001–003
+
+libs/soorma-common/
+└── models.py                # PayloadSchema, DiscoveredAgent, AgentCapability (EventDefinition)
+
+sdk/python/soorma/
+├── registry/client.py       # RegistryClient (register_schema, get_schema, discover_agents)
+├── ai/event_toolkit.py      # EventToolkit (discover_events, format_for_llm) — reused by Phase 3
+├── ai/selection.py          # COMING Phase 3: EventSelector
+└── gateway.py               # COMING Phase 3: A2AGatewayHelper
 ```
 
 ---
 
-## Database Schema (Current)
+## Database Schema (Current — Post Phase 1 & 2)
 
-### Agents Table
+### Agents Table (updated in Phase 1)
 
 ```sql
 CREATE TABLE agents (
@@ -95,9 +120,21 @@ CREATE TABLE agents (
     capabilities JSONB NOT NULL DEFAULT '[]',
     status VARCHAR(50) DEFAULT 'active',
     last_heartbeat TIMESTAMPTZ DEFAULT NOW(),
+    -- Added Phase 1 (developer tenant isolation — no user_id):
+    tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    -- NOTE: No user_id — Registry is scoped to the *developer tenant* only.
+    -- The developer tenant UUID comes from SOORMA_DEVELOPER_TENANT_ID (env var)
+    -- or a future Developer API Key. It is NOT an end-user or client tenant ID.
+    version VARCHAR(50) NOT NULL DEFAULT '1.0.0',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- RLS policies (Phase 1): developer tenant isolation only
+ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY agents_tenant_isolation ON agents
+    USING (tenant_id = current_setting('app.tenant_id')::UUID);
+-- (app.tenant_id is set from the X-Tenant-ID header, which carries the developer tenant UUID)
 
 CREATE INDEX agents_agent_id_idx ON agents (agent_id);
 CREATE INDEX agents_last_heartbeat_idx ON agents (last_heartbeat);
@@ -131,9 +168,79 @@ CREATE INDEX events_event_name_idx ON events (event_name);
 
 ---
 
-## Stage 5 Database Enhancements
+### Payload Schemas Table (New — Phase 1)
 
-### Payload Schemas Table (RF-ARCH-005)
+```sql
+CREATE TABLE payload_schemas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    schema_name VARCHAR(255) NOT NULL,
+    version VARCHAR(50) NOT NULL,
+    json_schema JSONB NOT NULL,
+    description TEXT,
+    owner_agent_id VARCHAR(255),               -- References agents.agent_id (no FK constraint)
+    tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    -- NOTE: No user_id — schemas are scoped to the *developer tenant* only.
+    -- Uniqueness and RLS use only tenant_id (developer UUID).
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (schema_name, version, tenant_id)   -- Developer-tenant-scoped uniqueness
+);
+
+ALTER TABLE payload_schemas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY schemas_tenant_isolation ON payload_schemas
+    USING (tenant_id = current_setting('app.tenant_id')::UUID);
+-- (app.tenant_id is set from X-Tenant-ID header carrying the developer tenant UUID)
+```
+
+---
+
+## SDK Layer Architecture (v0.8.1)
+
+Reference: ARCHITECTURE_PATTERNS.md Section 1 (Two-Tier Tenancy) and Section 2 (Two-Layer SDK).
+
+**Tenancy model:** Registry Service uses **Tier 1 — Developer Tenant** isolation only. It does NOT carry client tenant or user context. The developer tenant UUID (`SOORMA_DEVELOPER_TENANT_ID`) identifies *who built the agents*, not *whose data is being processed*.
+
+```
+Agent Startup Code
+    ↓ context.registry.*
+RegistryClient  (sdk/python/soorma/registry/client.py)
+    ↓ HTTP + X-Tenant-ID: <developer_tenant_uuid>   (NO X-User-ID)
+Registry Service (FastAPI)
+    ↓ tenant middleware: SET app.tenant_id = developer_tenant_uuid
+PostgreSQL + RLS (developer tenant isolation only)
+```
+
+**Contrast with Memory/Tracker (Tier 2 — Client Tenant + User):**
+```
+Agent Handler  (processing an end-user's request)
+    ↓ context.memory.*
+MemoryClient wrapper  (context.py)
+    ↓ HTTP + X-Tenant-ID: <client_tenant_uuid> + X-User-ID: <user_uuid>
+Memory Service (FastAPI)
+    ↓ middleware: SET app.tenant_id = client_tenant_uuid, SET app.user_id = user_uuid
+PostgreSQL + RLS (client tenant + user isolation)
+```
+
+**Key design:** `RegistryClient` IS the agent-facing wrapper. There is no separate low-level service client class. `PlatformContext.registry` is initialized as `RegistryClient(base_url=...)` directly.
+
+### Current `RegistryClient` Methods (Phase 2)
+
+| Method | Endpoint | Status |
+|--------|----------|--------|
+| `register_event(event)` | `POST /v1/events` | ✅ |
+| `get_event(name)` | `GET /v1/events?event_name=` | ✅ |
+| `get_events_by_topic(topic)` | `GET /v1/events?topic=` | ✅ |
+| `register_agent(agent)` | `POST /v1/agents` | ✅ |
+| `get_agent(agent_id)` | `GET /v1/agents?agent_id=` | ✅ |
+| `query_agents(...)` | `GET /v1/agents` | ✅ |
+| `deregister_agent(agent_id)` | `DELETE /v1/agents/{id}` | ✅ |
+| `refresh_heartbeat(agent_id)` | `PUT /v1/agents/{id}/heartbeat` | ✅ |
+| `register_schema(schema)` | `POST /v1/schemas` | ✅ Phase 2 |
+| `get_schema(name, version)` | `GET /v1/schemas/{name}[/versions/{ver}]` | ✅ Phase 2 |
+| `list_schemas(owner_agent_id)` | `GET /v1/schemas` | ✅ Phase 2 |
+| `discover_agents(consumed_event)` | `GET /v1/agents/discover` | ✅ Phase 2 (⚠️ returns `List[AgentDefinition]`) |
+| `discover(requirements, include_schemas)` | `GET /v1/agents/discover` | 📋 Phase 3 (returns `List[DiscoveredAgent]`) |
+
 
 **Purpose:** Decouple schemas from event names for dynamic event types.
 
@@ -553,23 +660,37 @@ selection = await selector.select_event(
 
 ## Implementation Status
 
-### Current (Stages 0-3)
+### Completed
 
-- ✅ Registry Service operational
+- ✅ Registry Service operational (Stages 0-3)
 - ✅ Agent/Event registration endpoints
 - ✅ Heartbeat TTL and cleanup
 - ✅ Basic query API by capability
 - ✅ Agent deduplication
+- ✅ **Phase 1:** `PayloadSchema` DTO + `payload_schemas` table + Alembic migration 003
+- ✅ **Phase 1:** `AgentCapability` with `EventDefinition` objects (RF-ARCH-006 DTOs)
+- ✅ **Phase 1:** RLS policies on `agents`, `events`, `payload_schemas` tables
+- ✅ **Phase 2:** `POST /v1/schemas`, `GET /v1/schemas/{name}`, `GET /v1/schemas/{name}/versions/{ver}` (RF-ARCH-005)
+- ✅ **Phase 2:** `GET /v1/agents/discover` capability-based discovery (RF-ARCH-007)
+- ✅ **Phase 2:** Multi-tenancy middleware (X-Tenant-ID → PostgreSQL session vars)
+- ✅ **Phase 2:** `RegistryClient.register_schema()`, `get_schema()`, `list_schemas()`, `discover_agents()`
 
-### Stage 5 (Planned)
+### In Progress
 
-- ⬜ RF-ARCH-005: Schema registration by name
-- ⬜ RF-ARCH-006: Structured capabilities with EventDefinition
-- ⬜ RF-ARCH-007: Enhanced discovery API with schemas
-- ⬜ RF-SDK-015: DiscoveryClient in SDK
-- ⬜ RF-SDK-016: Schema validation helpers
-- ⬜ RF-SDK-017: EventSelector utility
-- ⬜ A2A Gateway integration
+- 📋 **Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
+- 📋 **Phase 3:** `EventDecision` DTO in `soorma_common.decisions`
+- 📋 **Phase 3:** `EventSelector` utility (RF-SDK-017) — `sdk/python/soorma/ai/selection.py`
+- 📋 **Phase 3:** `A2AGatewayHelper` — `sdk/python/soorma/gateway.py`
+- 📋 **Phase 3:** 40+ SDK unit tests
+
+### Not Started
+
+- ⬜ Phase 4: Tracker Service NATS direct integration (TECH-DEBT-001)
+- ⬜ Phase 4: `soorma-nats` shared library
+- ⬜ Phase 5: Example 11 (LLM-based discovery)
+- ⬜ Phase 5: Example 12 (EventSelector routing)
+- ⬜ Phase 5: Example 13 (A2A Gateway)
+- ⬜ Phase 5: End-to-end integration tests
 
 ---
 

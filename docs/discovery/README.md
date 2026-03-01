@@ -1,8 +1,18 @@
 # Service Discovery: User Guide
 
-**Status:** 🔄 Stage 5 Planned  
-**Last Updated:** February 15, 2026  
-**Related Stages:** Stage 5 (RF-ARCH-005, RF-ARCH-006, RF-ARCH-007, RF-SDK-015, RF-SDK-016, RF-SDK-017)
+**Status:** � Implementation In Progress (Phase 3 - SDK)
+**Last Updated:** March 1, 2026  
+**Stage Progress:** Phase 1 ✅ | Phase 2 ✅ | Phase 3 📋
+
+### Phase Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | Foundation - DTOs, Database, RLS | ✅ Complete (50 tests passing) |
+| Phase 2 | Service Implementation - Schema & Discovery endpoints | ✅ Complete (80 tests passing) |
+| Phase 3 | SDK Methods, EventSelector, A2A Gateway | 📋 Planning — [ACTION_PLAN_Phase3](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
+| Phase 4 | Tracker NATS Integration | ⬜ Not started |
+| Phase 5 | Examples & Documentation | ⬜ Not started |
 
 ---
 
@@ -15,8 +25,14 @@ The Discovery System enables **dynamic agent discovery** and **capability-based 
 - **Discovery API:** Find agents by capability for LLM-based delegation
 
 **Current Implementation:**
-- ✅ Basic Registry Service with Event and Agent registration
-- 🔄 Stage 5 enhancements planned (schema-based discovery, structured capabilities)
+- ✅ Basic Registry Service operational with Event and Agent registration
+- ✅ Schema Registry implemented (`POST/GET /v1/schemas`)
+- ✅ Enhanced agent discovery endpoint (`GET /v1/agents/discover`)
+- ✅ `AgentCapability` with structured `EventDefinition` objects (breaking change in v0.8.1)
+- ✅ PostgreSQL RLS enforcing multi-tenant isolation
+- 📋 `context.registry.discover()` returning `List[DiscoveredAgent]` (Phase 3)
+- 📋 `EventSelector` utility for LLM-based routing (Phase 3)
+- 📋 `A2AGatewayHelper` for external protocol conversion (Phase 3)
 
 ---
 
@@ -53,36 +69,87 @@ A capability describes:
 
 ---
 
-## Current API (Stages 0-3)
+## Current API (v0.8.1 — Phases 1 & 2 Complete)
 
-### Agent Registration
+### Agent Registration (Breaking Change in v0.8.1)
 
 ```python
 from soorma import PlatformContext
+from soorma_common import AgentDefinition, AgentCapability, EventDefinition
 
 async with PlatformContext() as context:
-    # Register agent with capabilities
+    # v0.8.1: capabilities use EventDefinition objects (not strings)
     await context.registry.register_agent(
-        agent_id="research-worker-001",
-        name="Research Worker",
-        capabilities=[
-            {
-                "taskName": "web_research",
-                "description": "Performs web research",
-                "consumedEvent": "web.research.requested",
-                "producedEvents": ["research.completed"]
-            }
-        ]
+        AgentDefinition(
+            agent_id="research-worker-001",
+            name="Research Worker",
+            description="Performs web research",
+            capabilities=[
+                AgentCapability(
+                    task_name="web_research",
+                    description="Web research capability",
+                    consumed_event=EventDefinition(
+                        event_name="web.research.requested",
+                        topic="action-requests",
+                        description="Research request",
+                        payload_schema_name="research_request_v1",  # Schema reference
+                    ),
+                    produced_events=[
+                        EventDefinition(
+                            event_name="research.completed",
+                            topic="action-results",
+                            description="Research results",
+                        )
+                    ],
+                )
+            ],
+        )
     )
-    
-    # Send heartbeat (keeps agent active)
-    await context.registry.heartbeat(agent_id="research-worker-001")
 ```
 
-**Endpoints:**
-- `POST /api/v1/agents` - Register agent
-- `GET /api/v1/agents` - Query agents
-- `PUT /api/v1/agents/{agent_id}/heartbeat` - Refresh heartbeat
+### Schema Registration (New in v0.8.1)
+
+```python
+from soorma_common import PayloadSchema
+
+# Register payload schema
+schema = PayloadSchema(
+    schema_name="research_request_v1",
+    version="1.0.0",
+    json_schema={
+        "type": "object",
+        "properties": {
+            "topic": {"type": "string"},
+            "max_results": {"type": "integer"},
+        },
+        "required": ["topic"],
+    },
+    description="Schema for web research requests",
+)
+await context.registry.register_schema(schema)
+
+# Retrieve schema by name
+schema = await context.registry.get_schema("research_request_v1")
+schema_v1 = await context.registry.get_schema("research_request_v1", version="1.0.0")
+```
+
+### Agent Discovery (Phase 3 — coming soon)
+
+```python
+# Phase 3: discover() with requirements (returns List[DiscoveredAgent])
+agents = await context.registry.discover(
+    requirements=["web_research"],
+    include_schemas=True,
+)
+for agent in agents:
+    schemas = agent.get_consumed_schemas()  # ["research_request_v1"]
+    schema = await context.registry.get_schema(schemas[0])
+
+# Current: discover_agents() — returns basic AgentDefinition list
+agents = await context.registry.discover_agents(
+    consumed_event="web.research.requested"
+)
+```
 
 **Key Characteristics:**
 - **TTL:** Agent registration expires after 5 minutes without heartbeat
@@ -170,32 +237,36 @@ async def plan_research(goal: GoalEvent, ctx: PlatformContext):
 **Pros:** Flexible, adapts to available agents
 **Cons:** Requires registry query, more complex
 
-### Pattern 3: LLM-based Selection
+### Pattern 3: LLM-based Selection (Phase 3 — `EventSelector`)
 
-**Use Case:** Complex workflows where LLM chooses best agent.
+**Use Case:** Complex workflows where LLM chooses best event/agent.
 
 ```python
-from soorma.discovery import EventSelector
+from soorma.ai.selection import EventSelector  # Phase 3
+from soorma_common.events import EventTopic
 
-@planner.on_goal("research.goal")
-async def plan_research(goal: GoalEvent, ctx: PlatformContext):
-    # LLM selects best event/agent for goal
+@planner.on_goal("support.ticket.received")
+async def route_ticket(goal: GoalEvent, ctx: PlatformContext):
+    # EventSelector discovers available events and uses LLM to route
     selector = EventSelector(
-        registry_client=ctx.registry,
-        llm_client=ctx.llm
-    )
-    
-    selected_event = await selector.select_event(
-        goal_description="Perform web research on AI trends",
-        capabilities=["web_research", "academic_search"]
-    )
-    
-    # Use LLM-selected event
-    await ctx.bus.request(
+        context=ctx,
         topic=EventTopic.ACTION_REQUESTS,
-        event_type=selected_event.event_type,
-        data=selected_event.suggested_payload,
-        response_event="research.done"
+        prompt_template=None,  # Uses default template
+        model="gpt-4o-mini",
+    )
+    
+    decision = await selector.select_event(
+        state={
+            "ticket": goal.data["description"],
+            "priority": goal.data["priority"],
+        }
+    )
+    
+    # decision.event_type validated against registry (no hallucinations)
+    await selector.publish_decision(
+        decision=decision,
+        correlation_id=goal.event_id,
+        response_event="ticket.routed",
     )
 ```
 
@@ -204,47 +275,40 @@ async def plan_research(goal: GoalEvent, ctx: PlatformContext):
 
 ---
 
-## EventSelector Utility
+## EventSelector Utility (Phase 3)
 
-**Purpose:** LLM-driven event selection from Registry.
+**Purpose:** LLM-driven event selection from Registry. Prevents hallucinations by validating selected events exist before publishing.
+
+**Status:** 📋 Phase 3 — [ACTION_PLAN_Phase3](plans/ACTION_PLAN_Phase3_SDK_Implementation.md)
 
 **Features:**
-- Queries Registry for available capabilities
-- Uses LLM to select best match for goal
-- Generates suggested payload based on schema
-- Validates selection against Registry
+- Queries Registry via `context.toolkit.discover_events()` (existing `EventToolkit`)
+- Uses LiteLLM — BYO model (gpt-4o-mini, ollama, claude, etc.)
+- Returns `EventDecision` DTO with `event_type`, `payload`, `reasoning`, `confidence`
+- Validates LLM-selected event exists in discovered list before returning
+- Custom prompt templates via f-string substitution
 
-**Implementation (Stage 5 Planned):**
+**Planned API:**
 
 ```python
-class EventSelector:
-    def __init__(self, registry_client, llm_client):
-        self.registry = registry_client
-        self.llm = llm_client
-    
-    async def select_event(
-        self,
-        goal_description: str,
-        capabilities: List[str],
-        custom_prompt: Optional[str] = None
-    ) -> EventSelection:
-        # 1. Query Registry for capabilities
-        agents = await self.registry.query_agents(capabilities)
-        
-        # 2. Build LLM prompt with schemas
-        prompt = self._build_prompt(goal_description, agents, custom_prompt)
-        
-        # 3. LLM selects best event
-        response = await self.llm.complete(prompt)
-        
-        # 4. Parse and validate
-        selection = self._parse_selection(response)
-        self._validate_selection(selection, agents)
-        
-        return selection
-```
+from soorma.ai.selection import EventSelector
+from soorma_common.events import EventTopic
 
-**Example:** [examples/09-app-research-advisor](../../examples/09-app-research-advisor/)
+selector = EventSelector(
+    context=context,          # PlatformContext
+    topic=EventTopic.ACTION_REQUESTS,
+    model="gpt-4o-mini",
+)
+
+decision = await selector.select_event(state={"input": "route this ticket"})
+# EventDecision(event_type="billing.issue.requested", payload={...}, reasoning="...")
+
+await selector.publish_decision(
+    decision=decision,
+    correlation_id="corr-001",
+    response_event="ticket.routed",
+)
+```
 
 ---
 
@@ -444,22 +508,32 @@ Environment variables for Registry Service:
 
 ## Implementation Status
 
-### Current (Stages 0-3)
+### Completed
 
 - ✅ Registry Service operational
 - ✅ Event and Agent registration endpoints
 - ✅ Heartbeat TTL and cleanup
 - ✅ Basic query API
 - ✅ Agent deduplication by name
+- ✅ **v0.8.1:** `PayloadSchema` DTO and `payload_schemas` table (Phase 1)
+- ✅ **v0.8.1:** `AgentCapability` with `EventDefinition` objects — breaking change (Phase 1)
+- ✅ **v0.8.1:** PostgreSQL RLS for multi-tenant isolation (Phase 1)
+- ✅ **v0.8.1:** `POST /v1/schemas`, `GET /v1/schemas/{name}`, `GET /v1/schemas/{name}/versions/{ver}` (Phase 2)
+- ✅ **v0.8.1:** `GET /v1/agents/discover` capability-based discovery endpoint (Phase 2)
+- ✅ **v0.8.1:** `RegistryClient.register_schema()`, `get_schema()`, `list_schemas()`, `discover_agents()` (Phase 2)
 
-### Stage 5 (Planned)
+### In Progress
 
-- ⬜ RF-ARCH-005: Schema registration by name
-- ⬜ RF-ARCH-006: Structured capabilities with EventDefinition
-- ⬜ RF-ARCH-007: Enhanced discovery API with schemas
-- ⬜ RF-SDK-015: DiscoveryClient in SDK
-- ⬜ RF-SDK-016: Schema validation helpers
-- ⬜ RF-SDK-017: EventSelector utility
+- 📋 **Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
+- 📋 **Phase 3:** `EventSelector` utility (RF-SDK-017)
+- 📋 **Phase 3:** `A2AGatewayHelper` for A2A protocol conversion
+- 📋 **Phase 3:** `EventDecision` DTO
+
+### Not Started
+
+- ⬜ Phase 4: Tracker Service NATS integration (TECH-DEBT-001)
+- ⬜ Phase 5: Examples 11 (LLM discovery), 12 (EventSelector), 13 (A2A gateway)
+- ⬜ Phase 5: Documentation updates
 
 ---
 
