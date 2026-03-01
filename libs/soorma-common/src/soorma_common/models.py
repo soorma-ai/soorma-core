@@ -4,7 +4,8 @@ Common Pydantic DTOs for Soorma platform services.
 These models are decoupled from database-specific ORM code and can be used
 by services, SDKs, and clients across the platform.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
@@ -28,17 +29,20 @@ class BaseDTO(BaseModel):
 
 
 class AgentCapability(BaseDTO):
-    """Describes a single capability or task an agent can perform with its event contract."""
+    """Describes a single capability with structured event definitions.
+    
+    BREAKING CHANGE (v0.8.1): consumed_event and produced_events MUST be EventDefinition objects.
+    Strings are no longer accepted and will raise ValidationError.
+    """
     task_name: str = Field(..., description="Name of the task the agent can handle.")
     description: str = Field(..., description="Detailed description of the task and its purpose.")
-    consumed_event: str = Field(
+    consumed_event: "EventDefinition" = Field(
         ..., 
-        description="Event name (from EventRegistry) that triggers this capability."
+        description="Event definition that triggers this capability (EventDefinition object required in v0.8.1+)"
     )
-    produced_events: List[str] = Field(
+    produced_events: List["EventDefinition"] = Field(
         ..., 
-        description="List of event names (from EventRegistry) that this capability can produce "
-                    "(e.g., success, failure, or partial result events)."
+        description="List of event definitions this capability produces (List[EventDefinition] required in v0.8.1+)"
     )
 
 
@@ -116,19 +120,117 @@ class AgentQueryResponse(BaseDTO):
 
 
 # =============================================================================
+# Schema Registry DTOs (v0.8.1+)
+# =============================================================================
+
+
+class PayloadSchema(BaseDTO):
+    """Payload schema definition with versioning.
+    
+    STUB: Core fields defined, validation logic to be implemented.
+    """
+    schema_name: str = Field(..., description="Unique schema name (e.g., 'research_request_v1')")
+    version: str = Field(..., description="Semantic version (e.g., '1.0.0')")
+    json_schema: Dict[str, Any] = Field(..., description="JSON Schema definition")
+    description: Optional[str] = Field(None, description="Human-readable description")
+    owner_agent_id: Optional[str] = Field(None, description="Agent ID that owns this schema")
+    created_at: Optional[datetime] = Field(None, description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+
+
+class PayloadSchemaRegistration(BaseDTO):
+    """Request to register a payload schema.
+    
+    STUB: Core fields defined, tenant_id/user_id extracted from auth headers.
+    """
+    schema_name: str = Field(..., description="Unique schema name")
+    version: str = Field(..., description="Schema version (semantic versioning)")
+    json_schema: Dict[str, Any] = Field(..., description="JSON Schema object")
+    description: Optional[str] = Field(None, description="Schema description")
+    # Note: tenant_id/user_id come from authentication headers, not request body
+
+
+class PayloadSchemaResponse(BaseDTO):
+    """Response after schema registration.
+    
+    STUB: Basic response structure defined.
+    """
+    schema_name: str = Field(..., description="Registered schema name")
+    version: str = Field(..., description="Schema version")
+    success: bool = Field(..., description="Whether registration was successful")
+    message: str = Field(..., description="Success or error message")
+
+
+class DiscoveredAgent(BaseDTO):
+    """Agent discovery result with full capability metadata.
+    
+    Helper methods extract schema names from capabilities.
+    """
+    agent_id: str = Field(..., description="Agent identifier")
+    name: str = Field(..., description="Agent name with version")
+    description: str = Field(..., description="Agent description")
+    version: str = Field(..., description="Agent version")
+    capabilities: List[AgentCapability] = Field(..., description="Capabilities with full event definitions")
+    
+    def get_consumed_schemas(self) -> List[str]:
+        """Extract all payload schema names from consumed events.
+        
+        Returns:
+            List of unique schema names (filtered for None, deduplicated).
+        """
+        schemas = []
+        for capability in self.capabilities:
+            schema_name = capability.consumed_event.payload_schema_name
+            if schema_name is not None:
+                schemas.append(schema_name)
+        # Deduplicate while preserving order
+        return list(dict.fromkeys(schemas))
+    
+    def get_produced_schemas(self) -> List[str]:
+        """Extract all payload schema names from produced events.
+        
+        Returns:
+            List of unique schema names (filtered for None, deduplicated).
+        """
+        schemas = []
+        for capability in self.capabilities:
+            for event in capability.produced_events:
+                schema_name = event.payload_schema_name
+                if schema_name is not None:
+                    schemas.append(schema_name)
+        # Deduplicate while preserving order
+        return list(dict.fromkeys(schemas))
+
+
+# =============================================================================
 # Event Registry DTOs
 # =============================================================================
 
 
 class EventDefinition(BaseDTO):
-    """Defines a single event in the system."""
+    """Defines a single event in the system with schema registry support."""
     event_name: str = Field(..., description="Unique name of the event (e.g., 'user.created').")
     topic: str = Field(..., description="PubSub topic this event belongs to (from PubSubTopic enum).")
     description: str = Field(..., description="Description of what this event represents.")
-    payload_schema: Dict[str, Any] = Field(..., description="JSON schema for the event payload.")
+    
+    # NEW: Schema references (v0.8.1+)
+    payload_schema_name: Optional[str] = Field(
+        None, 
+        description="Reference to registered payload schema by name (v0.8.1+)"
+    )
+    response_schema_name: Optional[str] = Field(
+        None,
+        description="Reference to registered response schema by name (v0.8.1+)"
+    )
+    
+    # DEPRECATED: Embedded schemas (keep for backward compatibility)
+    payload_schema: Optional[Dict[str, Any]] = Field(
+        None, 
+        description="[DEPRECATED v0.8.1] Embedded JSON schema - use payload_schema_name instead"
+    )
     response_schema: Optional[Dict[str, Any]] = Field(
-        default=None, 
-        description="JSON schema for the response payload, required for action_request events."
+        None, 
+        description="[DEPRECATED v0.8.1] JSON schema for response - use response_schema_name instead"
     )
 
 

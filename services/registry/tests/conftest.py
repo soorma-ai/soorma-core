@@ -67,3 +67,4 @@ def client():
     # Create test client
     with TestClient(app) as test_client:
         yield test_client
+
