@@ -773,6 +773,135 @@ Full Application (11-app-research-advisor): 1,500+ lines, real integrations
 
 ---
 
+## Stage 5: Discovery & Schema Registry Deferrals (February 2026)
+
+### Registry Service CI Workflow
+
+**Description:** GitHub Actions workflow for Registry Service tests with testcontainers support.
+
+**Deferred From:** Stage 5 Phase 1 (ACTION_PLAN_Phase1_Foundation.md)
+
+**Target Stage:** When preparing to publish service Docker images
+
+**Estimated Effort:** 2-3 hours
+
+**Reason for Deferral:**
+- Current CI only covers SDK and soorma-common packages
+- Registry Service tests use testcontainers (PostgreSQL) which GitHub Actions supports natively
+- No technical blockers - `ubuntu-latest` runners include Docker by default
+- Deferring until ready to publish service Docker images (not needed for Phase 1 development)
+
+**Current FDE:** Run Registry Service tests locally during development
+
+```bash
+# Local testing workflow
+cd services/registry
+pip install -e ".[dev]"
+pip install testcontainers[postgres]
+
+# Docker must be running
+docker info
+
+# Run tests with testcontainers
+pytest tests/ -v --tb=short
+```
+
+**Future Implementation:**
+
+```yaml
+# .github/workflows/ci-registry-service.yaml
+name: Registry Service CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/registry/**'
+      - 'libs/soorma-common/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/registry/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: services/registry
+        run: |
+          pip install -e ".[dev]"
+          pip install testcontainers[postgres]
+      
+      - name: Run tests with testcontainers
+        working-directory: services/registry
+        run: |
+          pytest tests/ -v --tb=short
+        env:
+          # testcontainers automatically uses GitHub Actions Docker
+          TESTCONTAINERS_RYUK_DISABLED: false
+  
+  build-image:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: services/registry
+        run: |
+          docker build -t soorma-registry:${{ github.sha }} .
+      
+      - name: Test Docker image
+        run: |
+          docker run --rm soorma-registry:${{ github.sha }} --version
+```
+
+**testcontainers Compatibility:**
+- ✅ GitHub Actions `ubuntu-latest` includes Docker daemon (runs automatically)
+- ✅ testcontainers detects GitHub Actions environment
+- ✅ Ryuk container cleanup works out-of-the-box
+- ✅ No special Docker permissions needed
+- ✅ PostgreSQL image pulled on first test run (cached in runner)
+
+**When to Implement:**
+- When adding `services/registry/Dockerfile`
+- When ready to publish Registry Service to container registry
+- When setting up multi-service deployment (docker-compose, k8s)
+- When CI/CD pipeline needs to build service images
+
+**Pattern to Follow:**
+```
+Similar workflows needed for:
+- services/memory/ (when publishing)
+- services/event-service/ (when publishing)
+- services/tracker/ (when publishing)
+```
+
+**Acceptance Criteria:**
+- [ ] Workflow triggers on service code changes
+- [ ] Tests run successfully with testcontainers
+- [ ] Docker image builds successfully
+- [ ] Workflow completes in <5 minutes
+- [ ] Failed tests block PR merges
+
+**Tracking:**
+- [ ] Create GitHub issue: "Add CI workflow for Registry Service" (label: `ci`, `deferred`)
+- [ ] Add to Docker image publishing milestone
+- [ ] Create similar issues for other services when ready
+
+---
+
 ## Review Cadence
 
 - **During stage planning:** Review deferred items, promote to current stage if priorities changed
