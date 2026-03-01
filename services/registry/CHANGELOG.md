@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-03-01
+
+### Fixed
+- **SQLite UUID NUMERIC affinity bug** (discovered during test harness work)
+  - `postgresql.UUID()` in `models/agent.py` and `models/event.py` caused SQLite to assign NUMERIC affinity to tenant_id columns
+  - All-zeros UUID (`00000000-0000-0000-0000-000000000000`) was coerced to integer `0` on storage, making every tenant-scoped query return zero rows
+  - Fix: replaced `postgresql.UUID()` with `Uuid(as_uuid=True, native_uuid=True)` — SQLite uses CHAR(32)/TEXT affinity, PostgreSQL uses native UUID (no DDL change in production)
+- **`set(EventDefinition)` unhashable type error** in `agent_service.py`
+  - `register_agent()` derived `consumed_events`/`produced_events` via `list(set(cap.consumed_event ...))` — fails because `EventDefinition` objects are not hashable
+  - Fix: extract `.event_name` strings before deduplication
+- **`agent_to_dto()` string-to-EventDefinition coercion** in `crud/agents.py`
+  - `AgentCapabilityTable.consumed_event` stores event name strings; `AgentCapability` v0.8.1 requires `EventDefinition` objects
+  - Fix: wrap DB varchar strings as `EventDefinition` objects when building `AgentCapability` in `agent_to_dto()`
+- **Registry test suite**: all 50 tests now pass (was 35 failing + 7 errors pre-fix)
+  - Added `TEST_TENANT_ID` sentinel (`00000000-0000-0000-0000-000000000000`) to `conftest.py`
+  - Updated all test fixtures to use `EventDefinition` objects (v0.8.1 breaking change)
+  - Added `developer_tenant_id` as required 3rd arg to all `register_agent()` and CRUD call sites
+
 ## [0.8.1] - 2026-02-28
 
 ### Added

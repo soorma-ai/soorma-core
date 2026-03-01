@@ -1,12 +1,12 @@
 # Action Plan: Phase 1 - Schema Registry & DTOs (SOOR-DISC-P1)
 
-**Status:** 🟡 In Progress (90% Complete)  
+**Status:** ✅ Complete (100%)  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 1 of 5  
 **Estimated Duration:** 3-4 days (18-20 hours including examples update)  
-**Actual Duration:** 3 days (foundation + examples complete, registry tests + docs pending)  
+**Actual Duration:** 3 days (complete March 1, 2026)  
 **Target Release:** v0.8.1  
-**Last Updated:** March 1, 2026 (Updated: Post-Audit Progress Review)  
+**Last Updated:** March 1, 2026 (Phase 1 complete — all 50 registry tests passing)  
 **Approved By:** Developer  
 **Approval Date:** February 28, 2026
 
@@ -390,17 +390,18 @@ Phase 1 focuses on **foundation only** (DTOs and database):
 
 **Documentation Phase**
 - [x] **Task 5.1:** Update `soorma-common` CHANGELOG.md ✅ Done (v0.8.1 entry exists)
-- [ ] **Task 5.2:** Update Registry Service CHANGELOG.md ⏱️ 15 min (file does not exist yet)
-- [ ] **Task 5.3:** Document migration guide (breaking changes) ⏱️ 30 min
+- [x] **Task 5.2:** Update Registry Service CHANGELOG.md ✅ Done (file existed; updated March 1 with bug fix entries)
+- [x] **Task 5.3:** Document migration guide (breaking changes) ✅ Done (`docs/discovery/MIGRATION_GUIDE_v0.8.1.md` exists, comprehensive)
 - [x] **Task 5.4:** Update all examples (01-10) with new DTO format ✅ Done (commit e8bc19e, Feb 28)
-- [ ] **Task 5.5:** Create docs/discovery/ directory + README.md ⏱️ 30 min (directory does not exist)
-- [ ] **Task 5.6:** Plan review and approval ⏱️ 30 min
+- [x] **Task 5.5:** Create docs/discovery/ directory + README.md ✅ Done (directory + README.md + MIGRATION_GUIDE_v0.8.1.md exist)
+- [x] **Task 5.6:** Plan review and approval ✅ Done (March 1, 2026)
 
 **Registry Tests Fix (DISCOVERED - not in original plan)**
-- [ ] **Task 6.1:** Fix registry service test fixtures (35 failing, 7 errors) ⏱️ 1-2 hours
-  - All failures: `AgentCapability` fixtures use string `consumed_event`/`produced_events` — must be `EventDefinition` objects
-  - Affects: `test_agent_ttl.py`, `test_orphaned_capability_bug.py`, `test_expired_agent_cascade_delete.py`, and all other test files with `AgentCapability` fixtures
-  - 8 tests currently passing (no `AgentCapability` in fixtures)
+- [x] **Task 6.1:** Fix registry service test fixtures (35 failing → 50 passing) ✅ Done (commit 86b111f, March 1)
+  - Root cause A: `postgresql.UUID()` NUMERIC affinity bug in SQLite (models) → replaced with `Uuid(as_uuid=True)`
+  - Root cause B: `set(EventDefinition)` unhashable in `agent_service.py` → extract `.event_name` strings
+  - Root cause C: `agent_to_dto()` passed DB varchar strings to `AgentCapability(consumed_event=...)` → wrap as `EventDefinition`
+  - Root cause D: Test fixtures missing `EventDefinition` objects + `developer_tenant_id` args → updated all 9 test files
 
 **48-Hour Filter Decision:**
 - [x] **Task 48H:** FDE Decision - All components are CRITICAL (see Section 5)  
