@@ -8,20 +8,20 @@ from events import (
 RESEARCH_CAPABILITY = AgentCapability(
     task_name="perform_web_research",
     description="Performs web research on a given topic",
-    consumed_event=RESEARCH_REQUEST_EVENT.event_name,
-    produced_events=[RESEARCH_RESULT_EVENT.event_name]
+    consumed_event=RESEARCH_REQUEST_EVENT,  # ✅ EventDefinition object
+    produced_events=[RESEARCH_RESULT_EVENT]  # ✅ List[EventDefinition]
 )
 
 ADVICE_CAPABILITY = AgentCapability(
     task_name="draft_response",
     description="Drafts a response or advice based on research context",
-    consumed_event=ADVICE_REQUEST_EVENT.event_name,
-    produced_events=[ADVICE_RESULT_EVENT.event_name]
+    consumed_event=ADVICE_REQUEST_EVENT,  # ✅ EventDefinition object
+    produced_events=[ADVICE_RESULT_EVENT]  # ✅ List[EventDefinition]
 )
 
 VALIDATION_CAPABILITY = AgentCapability(
     task_name="validate_content",
     description="Validates content accuracy against source material",
-    consumed_event=VALIDATION_REQUEST_EVENT.event_name,
-    produced_events=[VALIDATION_RESULT_EVENT.event_name]
+    consumed_event=VALIDATION_REQUEST_EVENT,  # ✅ EventDefinition object
+    produced_events=[VALIDATION_RESULT_EVENT]  # ✅ List[EventDefinition]
 )

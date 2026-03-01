@@ -8,7 +8,34 @@ This simulates various services reacting to events in an order workflow.
 
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+
+# Define event types
+ORDER_PLACED_EVENT = EventDefinition(
+    event_name="order.placed",
+    topic=EventTopic.BUSINESS_FACTS,
+    description="Order has been placed"
+)
+
+INVENTORY_RESERVED_EVENT = EventDefinition(
+    event_name="inventory.reserved",
+    topic=EventTopic.BUSINESS_FACTS,
+    description="Inventory has been reserved for the order"
+)
+
+PAYMENT_COMPLETED_EVENT = EventDefinition(
+    event_name="payment.completed",
+    topic=EventTopic.BUSINESS_FACTS,
+    description="Payment has been processed"
+)
+
+ORDER_COMPLETED_EVENT = EventDefinition(
+    event_name="order.completed",
+    topic=EventTopic.BUSINESS_FACTS,
+    description="Order processing completed"
+)
 
 
 # Create a Worker that handles multiple event types
@@ -17,15 +44,15 @@ worker = Worker(
     description="Processes order workflow events in a chain",
     capabilities=["order-processing", "inventory", "payment"],
     events_consumed=[
-        "order.placed",
-        "inventory.reserved",
-        "payment.completed",
-        "order.completed",
+        ORDER_PLACED_EVENT,
+        INVENTORY_RESERVED_EVENT,
+        PAYMENT_COMPLETED_EVENT,
+        ORDER_COMPLETED_EVENT,
     ],
     events_produced=[
-        "inventory.reserved",
-        "payment.completed",
-        "order.completed",
+        INVENTORY_RESERVED_EVENT,
+        PAYMENT_COMPLETED_EVENT,
+        ORDER_COMPLETED_EVENT,
     ],
 )
 

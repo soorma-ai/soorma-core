@@ -8,7 +8,22 @@ A Worker listens for events and responds to them.
 
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+
+# Define event types
+GREETING_REQUESTED_EVENT = EventDefinition(
+    event_name="greeting.requested",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Request to generate a greeting"
+)
+
+GREETING_COMPLETED_EVENT = EventDefinition(
+    event_name="greeting.completed",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Greeting generation completed"
+)
 
 
 # Create a Worker instance
@@ -16,8 +31,8 @@ worker = Worker(
     name="hello-worker",
     description="A simple greeting agent",
     capabilities=["greeting"],
-    events_consumed=["greeting.requested"],
-    events_produced=["greeting.completed"],
+    events_consumed=[GREETING_REQUESTED_EVENT],
+    events_produced=[GREETING_COMPLETED_EVENT],
 )
 
 

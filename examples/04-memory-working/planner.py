@@ -22,15 +22,42 @@ import uuid
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.workflow import WorkflowState
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+
+# Define event types
+WORKFLOW_START_EVENT = EventDefinition(
+    event_name="workflow.start",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Start a new workflow"
+)
+
+TASK_COMPLETED_EVENT = EventDefinition(
+    event_name="task.completed",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Task execution completed"
+)
+
+TASK_ASSIGNED_EVENT = EventDefinition(
+    event_name="task.assigned",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Task assigned to worker"
+)
+
+WORKFLOW_COMPLETED_EVENT = EventDefinition(
+    event_name="workflow.completed",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Workflow orchestration completed"
+)
 
 
 planner = Worker(
     name="workflow-planner",
     description="Orchestrates workflows with request/response pattern",
     capabilities=["planning", "orchestration"],
-    events_consumed=["workflow.start", "task.completed"],
-    events_produced=["task.assigned", "workflow.completed"],
+    events_consumed=[WORKFLOW_START_EVENT, TASK_COMPLETED_EVENT],
+    events_produced=[TASK_ASSIGNED_EVENT, WORKFLOW_COMPLETED_EVENT],
 )
 
 

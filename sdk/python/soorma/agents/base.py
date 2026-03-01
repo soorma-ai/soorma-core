@@ -458,17 +458,23 @@ class Agent(ABC):
                 logger.warning(f"Failed to register event definition {getattr(event_def, 'event_name', '?')}: {e}")
 
         # Build AgentDefinition from config
-        from soorma_common import AgentDefinition, AgentCapability
+        from soorma_common import AgentDefinition, AgentCapability, EventDefinition
         
         # Convert capabilities to AgentCapability objects
         structured_capabilities = []
         for cap in self.config.capabilities:
             if isinstance(cap, str):
+                # Create a placeholder EventDefinition for string capabilities
+                unknown_event = EventDefinition(
+                    event_name="unknown",
+                    topic="action-requests",
+                    description=f"Placeholder event for capability: {cap}"
+                )
                 structured_capabilities.append(
                     AgentCapability(
                         task_name=cap,
                         description=f"Capability: {cap}",
-                        consumed_event="unknown",
+                        consumed_event=unknown_event,  # ✅ EventDefinition object
                         produced_events=[]
                     )
                 )

@@ -16,16 +16,49 @@ from typing import Any, Dict
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
+
+
+# Define event types
+CHAT_MESSAGE_EVENT = EventDefinition(
+    event_name="chat.message",
+    topic=EventTopic.BUSINESS_FACTS,
+    description="User chat message"
+)
+
+KNOWLEDGE_STORE_EVENT = EventDefinition(
+    event_name="knowledge.store",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Request to store knowledge"
+)
+
+QUESTION_ANSWER_EVENT = EventDefinition(
+    event_name="question.answer",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Request to answer question"
+)
+
+CONCIERGE_QUERY_EVENT = EventDefinition(
+    event_name="concierge.query",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Query for concierge service"
+)
+
+CHAT_RESPONSE_EVENT = EventDefinition(
+    event_name="chat.response",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Chat response to user"
+)
 
 
 router = Worker(
     name="chatbot-router",
     description="Classifies user intent and routes to appropriate handler",
     capabilities=["intent-classification", "routing"],
-    events_consumed=["chat.message"],
-    events_produced=["knowledge.store", "question.answer", "concierge.query", "chat.response"],
+    events_consumed=[CHAT_MESSAGE_EVENT],
+    events_produced=[KNOWLEDGE_STORE_EVENT, QUESTION_ANSWER_EVENT, CONCIERGE_QUERY_EVENT, CHAT_RESPONSE_EVENT],
 )
 
 

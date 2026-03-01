@@ -8,7 +8,22 @@ In a real system, this would call external APIs, databases, etc.
 import asyncio
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+
+# Define event types
+RESEARCH_TASK_EVENT = EventDefinition(
+    event_name="research.task",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Research task assignment"
+)
+
+RESEARCH_COMPLETE_EVENT = EventDefinition(
+    event_name="research.complete",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Research task completed"
+)
 
 
 # Create Worker agent
@@ -16,8 +31,8 @@ worker = Worker(
     name="research-worker",
     description="Performs research tasks",
     capabilities=["research"],
-    events_consumed=["research.task"],
-    events_produced=["research.complete"],
+    events_consumed=[RESEARCH_TASK_EVENT],
+    events_produced=[RESEARCH_COMPLETE_EVENT],
 )
 
 
