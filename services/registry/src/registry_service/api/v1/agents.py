@@ -152,3 +152,30 @@ async def delete_agent(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agent '{agent_id}' not found"
         )
+
+
+@router.get("/discover", response_model=AgentQueryResponse)
+async def discover_agents(
+    consumed_event: Optional[str] = Query(None, description="Filter by consumed event (capability-based discovery)"),
+    db: AsyncSession = Depends(get_db),
+    developer_tenant_id: UUID = Depends(get_developer_tenant_id),
+) -> AgentQueryResponse:
+    """
+    Discover agents by capability.
+
+    Phase 2: Returns AgentDefinition[] matching the consumed_event filter.
+    Phase 3: Will return DiscoveredAgent[] with full schema enrichment.
+
+    Args:
+        consumed_event: Event name — returns agents that consume this event
+        db: Database session (injected)
+        developer_tenant_id: Developer tenant UUID from X-Tenant-ID header
+
+    Returns:
+        AgentQueryResponse with matching active agents
+    """
+    return await AgentRegistryService.discover_agents(
+        db=db,
+        tenant_id=developer_tenant_id,
+        consumed_event=consumed_event,
+    )

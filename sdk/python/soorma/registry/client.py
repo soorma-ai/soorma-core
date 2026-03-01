@@ -14,6 +14,10 @@ from soorma_common import (
     AgentRegistrationRequest,
     AgentRegistrationResponse,
     AgentQueryResponse,
+    PayloadSchema,
+    PayloadSchemaRegistrationRequest,
+    PayloadSchemaResponse,
+    PayloadSchemaListResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -272,3 +276,102 @@ class RegistryClient:
             headers=self._auth_headers
         )
         return response.status_code == 200
+
+    # Schema Registry Methods (v0.8.1+)
+
+    async def register_schema(self, schema: PayloadSchema) -> PayloadSchemaResponse:
+        """
+        Register a payload schema with the Registry Service.
+
+        Args:
+            schema: Payload schema definition to register
+
+        Returns:
+            PayloadSchemaResponse with success flag
+        """
+        request = PayloadSchemaRegistrationRequest(schema=schema)
+        response = await self._client.post(
+            f"{self.base_url}/v1/schemas",
+            json=request.model_dump(by_alias=True),
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        return PayloadSchemaResponse.model_validate(response.json())
+
+    async def get_schema(
+        self,
+        schema_name: str,
+        version: Optional[str] = None,
+    ) -> Optional[PayloadSchema]:
+        """
+        Retrieve a schema by name (latest version) or by name + version.
+
+        Args:
+            schema_name: Schema name to look up
+            version: Optional version string; latest version returned if omitted
+
+        Returns:
+            PayloadSchema DTO if found, None otherwise
+        """
+        if version is not None:
+            url = f"{self.base_url}/v1/schemas/{schema_name}/versions/{version}"
+        else:
+            url = f"{self.base_url}/v1/schemas/{schema_name}"
+        response = await self._client.get(url, headers=self._auth_headers)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return PayloadSchema.model_validate(response.json())
+
+    async def list_schemas(
+        self,
+        owner_agent_id: Optional[str] = None,
+    ) -> List[PayloadSchema]:
+        """
+        List schemas for this developer tenant, optionally filtered by owner agent.
+
+        Args:
+            owner_agent_id: Optional agent ID filter
+
+        Returns:
+            List of PayloadSchema DTOs
+        """
+        params = {}
+        if owner_agent_id is not None:
+            params["owner_agent_id"] = owner_agent_id
+        response = await self._client.get(
+            f"{self.base_url}/v1/schemas",
+            params=params,
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        result = PayloadSchemaListResponse.model_validate(response.json())
+        return result.schemas
+
+    async def discover_agents(
+        self,
+        consumed_event: Optional[str] = None,
+    ) -> List[AgentDefinition]:
+        """
+        Discover active agents by capability (consumed event).
+
+        Phase 2: Returns AgentDefinition list.
+        Phase 3: Will return DiscoveredAgent list with full schema enrichment.
+
+        Args:
+            consumed_event: Optional event name filter
+
+        Returns:
+            List of AgentDefinition DTOs for matching active agents
+        """
+        params = {}
+        if consumed_event is not None:
+            params["consumed_event"] = consumed_event
+        response = await self._client.get(
+            f"{self.base_url}/v1/agents/discover",
+            params=params,
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        result = AgentQueryResponse.model_validate(response.json())
+        return result.agents

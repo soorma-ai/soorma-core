@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-03-01
+
+### Added
+- **Phase 2 - Schema Registry Service Endpoints**
+  - `POST /v1/schemas` — Register a new payload schema (returns 409 on duplicate name+version per tenant)
+  - `GET /v1/schemas/{name}` — Retrieve latest version of a schema by name (returns 404 if not found)
+  - `GET /v1/schemas/{name}/versions/{version}` — Retrieve a specific (name, version) schema
+  - `GET /v1/schemas` — List schemas for the tenant (optional `?owner_agent_id=` filter)
+  - `GET /v1/agents/discover` — Discover active agents by consumed event (optional `?consumed_event=` filter)
+- **`SchemaCRUD`** (`crud/schemas.py`) — SQLAlchemy async CRUD layer for `payload_schemas` table
+- **`SchemaRegistryService`** (`services/schema_service.py`) — Business logic: duplicate detection, DTO mapping
+- **`AgentRegistryService.discover_agents()`** — Capability-based agent discovery; delegates to `query_agents()` with TTL filtering and deduplication
+- **SDK `RegistryClient`** — 4 new methods: `register_schema`, `get_schema`, `list_schemas`, `discover_agents`
+- **Test coverage** — 30 new tests (20 schema endpoints + 10 discovery); 80 total passing
+
+### Fixed
+- **SQLite `created_at` ordering precision bug** in `SchemaCRUD.create_schema`
+  - `server_default=func.now()` has second-level precision in SQLite; rapid sequential inserts within the same second share identical timestamps, making `ORDER BY created_at DESC LIMIT 1` non-deterministic
+  - Fix: set `created_at=datetime.now(timezone.utc)` explicitly on the Python side (microsecond precision)
+
 ## [0.8.1] - 2026-03-01
 
 ### Fixed

@@ -434,6 +434,73 @@ Check the action plan or consult the Soorma Core team.
 
 ---
 
-**Last Updated:** February 28, 2026  
-**Version:** 0.8.1  
+**Last Updated:** March 1, 2026  
+**Version:** 0.8.2  
 **Author:** Soorma Core Team
+
+---
+
+## v0.8.2 Addendum — Schema Registry Endpoints & Agent Discovery
+
+**Released:** March 1, 2026 | **Phase 2 of Enhanced Discovery**
+
+### New Endpoints (No Breaking Changes)
+
+All endpoints are additive. Existing code does not require changes; authentication pattern is unchanged (`X-Tenant-ID` header).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/schemas` | Register a payload schema |
+| `GET` | `/v1/schemas/{name}` | Get latest version of a schema |
+| `GET` | `/v1/schemas/{name}/versions/{version}` | Get specific schema version |
+| `GET` | `/v1/schemas` | List schemas (optional `?owner_agent_id=`) |
+| `GET` | `/v1/agents/discover` | Discover active agents (optional `?consumed_event=`) |
+
+### Register a Schema
+
+```python
+from soorma_common import PayloadSchema
+
+schema = PayloadSchema(
+    schema_name="research_request_v1",
+    version="1.0.0",
+    json_schema={
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"]
+    },
+    description="Research task request payload",
+    owner_agent_id="research-planner-001",
+)
+response = await context.registry.register_schema(schema)
+# PayloadSchemaResponse(schema_name="research_request_v1", version="1.0.0", success=True, ...)
+```
+
+**Duplicate behavior:** Registering the same `(schema_name, version)` pair twice returns `409 Conflict`. Schemas are immutable once registered (Decision D1).
+
+### Discover Agents
+
+```python
+# Discover all active agents that consume "research.requested"
+agents: List[AgentDefinition] = await context.registry.discover_agents(
+    consumed_event="research.requested"
+)
+
+# Discover all active agents (no filter)
+all_agents = await context.registry.discover_agents()
+```
+
+Expired agents (beyond TTL) are excluded automatically.
+
+### SDK Methods Added
+
+```python
+# In agent handlers via context.registry:
+await context.registry.register_schema(schema)           # Register
+await context.registry.get_schema("research_request_v1") # Get latest
+await context.registry.get_schema("research_request_v1", "1.0.0")  # Get specific
+await context.registry.list_schemas(owner_agent_id="planner-001")   # List by owner
+await context.registry.discover_agents(consumed_event="my.event")   # Discover
+```
+
+

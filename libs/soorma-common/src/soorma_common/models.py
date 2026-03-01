@@ -202,6 +202,25 @@ class DiscoveredAgent(BaseDTO):
         return list(dict.fromkeys(schemas))
 
 
+class PayloadSchemaRegistrationRequest(BaseDTO):
+    """Request to register a new payload schema.
+
+    Wraps PayloadSchema in a 'schema' key, mirroring AgentRegistrationRequest /
+    EventRegistrationRequest envelope pattern.
+
+    Example::
+
+        {"schema": {"schemaName": "research_request_v1", "version": "1.0.0", "jsonSchema": {...}}}
+    """
+    schema: PayloadSchema = Field(..., description="Payload schema definition to register.")
+
+
+class PayloadSchemaListResponse(BaseDTO):
+    """Response containing a list of payload schemas."""
+    schemas: List[PayloadSchema] = Field(..., description="List of payload schemas.")
+    count: int = Field(..., description="Number of schemas returned.")
+
+
 # =============================================================================
 # Event Registry DTOs
 # =============================================================================

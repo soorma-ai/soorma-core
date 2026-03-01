@@ -14,6 +14,13 @@ from .models import (
     AgentRegistrationResponse,
     AgentQueryRequest,
     AgentQueryResponse,
+    # Schema Registry (v0.8.1+)
+    PayloadSchema,
+    PayloadSchemaRegistration,
+    PayloadSchemaRegistrationRequest,
+    PayloadSchemaResponse,
+    PayloadSchemaListResponse,
+    DiscoveredAgent,
     # Event Registry
     EventDefinition,
     EventRegistrationRequest,
@@ -123,6 +130,13 @@ __all__ = [
     "AgentRegistrationResponse",
     "AgentQueryRequest",
     "AgentQueryResponse",
+    # Schema Registry (v0.8.1+)
+    "PayloadSchema",
+    "PayloadSchemaRegistration",
+    "PayloadSchemaRegistrationRequest",
+    "PayloadSchemaResponse",
+    "PayloadSchemaListResponse",
+    "DiscoveredAgent",
     # Event Registry
     "EventDefinition",
     "EventRegistrationRequest",

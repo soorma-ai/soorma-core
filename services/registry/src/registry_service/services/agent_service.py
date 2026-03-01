@@ -259,7 +259,36 @@ class AgentRegistryService:
                 agents=[],
                 count=0
             )
-    
+
+    @staticmethod
+    async def discover_agents(
+        db: AsyncSession,
+        tenant_id: UUID,
+        consumed_event: Optional[str] = None,
+    ) -> AgentQueryResponse:
+        """
+        Discover active agents by capability.
+
+        Phase 2 returns AgentDefinition[] (via AgentQueryResponse).
+        Phase 3 will upgrade to DiscoveredAgent[] with full schema enrichment.
+
+        Args:
+            db: Database session
+            tenant_id: Developer tenant UUID
+            consumed_event: Optional event name filter — returns agents that consume this event
+
+        Returns:
+            AgentQueryResponse with matching active agents
+        """
+        # Delegate to query_agents which handles TTL filtering, deduplication, and
+        # the consumed_event filter. Discovery always excludes expired agents.
+        return await AgentRegistryService.query_agents(
+            db=db,
+            tenant_id=tenant_id,
+            consumed_event=consumed_event,
+            include_expired=False,
+        )
+
     @staticmethod
     async def cleanup_expired_agents(
         db: AsyncSession,
