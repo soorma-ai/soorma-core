@@ -1,11 +1,28 @@
 # Action Plan: Phase 1 - Schema Registry & DTOs (SOOR-DISC-P1)
 
-**Status:** 📋 Planning  
+**Status:** ✅ Approved  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 1 of 5  
-**Estimated Duration:** 2-3 days (16 hours)  
+**Estimated Duration:** 3-4 days (18-20 hours including examples update)  
 **Target Release:** v0.8.1  
-**Last Updated:** February 28, 2026
+**Last Updated:** February 28, 2026  
+**Approved By:** Developer  
+**Approval Date:** February 28, 2026
+
+### Approved Decisions Summary
+
+| # | Decision | Approach | Impact |
+|---|----------|----------|---------|
+| 1 | Breaking Changes | **Clean break** (no Union types) | All examples must be updated |
+| 2 | Uniqueness Scope | **Tenant-scoped** unique constraints | Multi-tenant namespaces |
+| 3 | Migration Strategy | **Default UUIDs** approach | Safe rollback, no data loss |
+| 4 | Test Infrastructure | **testcontainers** (Docker PostgreSQL) | Automatic setup/teardown |
+| 5 | Schema Versioning | **Semantic versioning** (e.g., "1.0.0") | A2A compatibility |
+| 6 | Timeline | **2-3 days** (16 hours) | Accepted |
+| 7 | RLS Pattern | **PostgreSQL session variables** | Consistent with Memory/Tracker |
+| 8 | FK Constraints | **No FK** to agents.agent_id | Simpler lifecycle management |
+
+**Merge Readiness:** All affected components identified (DTOs, services, SDK, examples, docs)
 
 ---
 
@@ -135,16 +152,16 @@ class AgentCapability(BaseDTO):
     task_name: str = ...  # Existing
     description: str = ...  # Existing
     
-    # BREAKING CHANGE: consumed_event becomes EventDefinition object
-    consumed_event: Union[str, EventDefinition] = Field(
+    # BREAKING CHANGE: consumed_event must be EventDefinition object (no backward compatibility)
+    consumed_event: EventDefinition = Field(
         ...,
-        description="Event that triggers this capability (string for backward compat, EventDefinition for v0.8.1+)"
+        description="Event that triggers this capability (EventDefinition object required in v0.8.1+)"
     )
     
-    # BREAKING CHANGE: produced_events become EventDefinition objects
-    produced_events: Union[List[str], List[EventDefinition]] = Field(
+    # BREAKING CHANGE: produced_events must be EventDefinition objects (no backward compatibility)
+    produced_events: List[EventDefinition] = Field(
         ...,
-        description="Events produced by this capability (strings for backward compat, EventDefinition for v0.8.1+)"
+        description="Events produced by this capability (List[EventDefinition] required in v0.8.1+)"
     )
 ```
 
@@ -186,18 +203,24 @@ CREATE TABLE payload_schemas (
     description TEXT,
     
     -- Ownership and multi-tenancy
-    owner_agent_id VARCHAR(255),  -- Foreign key to agents.agent_id (optional)
-    tenant_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    owner_agent_id VARCHAR(255),  -- Reference to agents.agent_id (optional, no FK constraint)
+    tenant_id UUID NOT NULL,      -- Authentication context from JWT (validated by Identity service upstream)
+    user_id UUID NOT NULL,        -- Authentication context from JWT (validated by Identity service upstream)
     
     -- Constraints
     CONSTRAINT uq_schema_name_version_tenant UNIQUE (schema_name, version, tenant_id)
 );
 
--- Indexes
-CREATE INDEX idx_payload_schemas_schema_name ON payload_schemas(schema_name);
-CREATE INDEX idx_payload_schemas_tenant_id ON payload_schemas(tenant_id);
+-- Add column comments for clarity
+COMMENT ON COLUMN payload_schemas.tenant_id IS 'Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)';
+COMMENT ON COLUMN payload_schemas.user_id IS 'User identifier from validated JWT/API Key (no FK - Identity service owns user entity)';
+
+-- Indexes optimized for RLS query patterns
+-- Composite index: RLS queries filter by tenant_id first, then schema_name
+CREATE INDEX idx_payload_schemas_tenant_schema ON payload_schemas(tenant_id, schema_name);
 CREATE INDEX idx_payload_schemas_owner_agent_id ON payload_schemas(owner_agent_id);
+
+-- Note: Standalone tenant_id index is redundant (covered by composite index above)
 ```
 
 **Alter Table: `agents`** (add multi-tenancy)
@@ -207,9 +230,21 @@ ALTER TABLE agents
     ADD COLUMN user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
     ADD COLUMN version VARCHAR(50) DEFAULT '1.0.0';
 
--- Indexes
-CREATE INDEX idx_agents_tenant_id ON agents(tenant_id);
+-- Add column comments for clarity
+COMMENT ON COLUMN agents.tenant_id IS 'Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)';
+COMMENT ON COLUMN agents.user_id IS 'User identifier from validated JWT/API Key (no FK - Identity service owns user entity)';
+
+-- Indexes optimized for RLS query patterns
+-- Composite index: RLS queries filter by tenant_id first, then agent_id
+CREATE INDEX idx_agents_tenant_agent ON agents(tenant_id, agent_id);
+CREATE INDEX idx_agents_tenant_name ON agents(tenant_id, name);
 CREATE INDEX idx_agents_version ON agents(version);
+
+-- BREAKING CHANGE: Remove global unique constraint on agent_id
+DROP INDEX IF EXISTS ix_agents_agent_id;
+
+-- Add tenant-scoped unique constraint
+CREATE UNIQUE INDEX uq_agents_agent_tenant ON agents(agent_id, tenant_id);
 
 -- After migration, remove defaults
 ALTER TABLE agents ALTER COLUMN tenant_id DROP DEFAULT;
@@ -225,10 +260,22 @@ ALTER TABLE events
     ADD COLUMN payload_schema_name VARCHAR(255),
     ADD COLUMN response_schema_name VARCHAR(255);
 
--- Indexes
-CREATE INDEX idx_events_tenant_id ON events(tenant_id);
+-- Add column comments for clarity
+COMMENT ON COLUMN events.tenant_id IS 'Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)';
+COMMENT ON COLUMN events.user_id IS 'User identifier from validated JWT/API Key (no FK - Identity service owns user entity)';
+
+-- Indexes optimized for RLS query patterns
+-- Composite indexes: RLS queries filter by tenant_id first
+CREATE INDEX idx_events_tenant_event ON events(tenant_id, event_name);
+CREATE INDEX idx_events_tenant_topic ON events(tenant_id, topic);
 CREATE INDEX idx_events_owner_agent_id ON events(owner_agent_id);
 CREATE INDEX idx_events_payload_schema_name ON events(payload_schema_name);
+
+-- BREAKING CHANGE: Remove global unique constraint on event_name
+DROP INDEX IF EXISTS ix_events_event_name;
+
+-- Add tenant-scoped unique constraint
+CREATE UNIQUE INDEX uq_events_event_tenant ON events(event_name, tenant_id);
 
 -- After migration, remove defaults
 ALTER TABLE events ALTER COLUMN tenant_id DROP DEFAULT;
@@ -344,7 +391,9 @@ Phase 1 focuses on **foundation only** (DTOs and database):
 - [ ] **Task 5.1:** Update `soorma-common` CHANGELOG.md ⏱️ 15 min
 - [ ] **Task 5.2:** Update Registry Service CHANGELOG.md ⏱️ 15 min
 - [ ] **Task 5.3:** Document migration guide (breaking changes) ⏱️ 30 min
-- [ ] **Task 5.4:** Plan review and approval ⏱️ 30 min
+- [ ] **Task 5.4:** Update all examples (01-10) with new DTO format ⏱️ 2 hours
+- [ ] **Task 5.5:** Update docs/discovery/README.md ⏱️ 30 min
+- [ ] **Task 5.6:** Plan review and approval ⏱️ 30 min
 
 **48-Hour Filter Decision:**
 - [ ] **Task 48H:** FDE Decision - All components are CRITICAL (see Section 5)
@@ -537,6 +586,24 @@ services/registry/tests/
            assert "version" in columns
    
    @pytest.mark.asyncio
+   async def test_migration_003_creates_optimized_indexes(db_engine):
+       """Migration creates composite indexes for RLS query patterns."""
+       async with db_engine.begin() as conn:
+           # Check payload_schemas composite index
+           result = await conn.execute(text(
+               "SELECT indexname FROM pg_indexes "
+               "WHERE tablename = 'payload_schemas' AND indexname = 'idx_payload_schemas_tenant_schema'"
+           ))
+           assert result.scalar() == "idx_payload_schemas_tenant_schema"
+           
+           # Check agents composite index
+           result = await conn.execute(text(
+               "SELECT indexname FROM pg_indexes "
+               "WHERE tablename = 'agents' AND indexname = 'idx_agents_tenant_agent'"
+           ))
+           assert result.scalar() == "idx_agents_tenant_agent"
+   
+   @pytest.mark.asyncio
    async def test_migration_003_rollback(db_engine):
        """Migration rollback removes changes."""
        alembic_cfg = Config("alembic.ini")
@@ -550,7 +617,7 @@ services/registry/tests/
            assert result.scalar() is None
    ```
 
-**Expected Test Count:** 6-8 integration tests
+**Expected Test Count:** 7-9 integration tests
 
 ### Integration Tests: RLS Policies
 
@@ -604,21 +671,43 @@ services/registry/tests/
 
 import pytest
 from testcontainers.postgres import PostgresContainer
+from alembic import command
+from alembic.config import Config
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    """PostgreSQL container for RLS testing."""
+    """PostgreSQL container for RLS testing.
+    
+    Setup/teardown is automatic:
+    - Container starts when first test runs
+    - Creates temporary PostgreSQL instance in Docker
+    - Container stops and removes when pytest session ends
+    - No manual cleanup needed
+    """
     with PostgresContainer("postgres:15") as postgres:
         yield postgres
 
 @pytest.fixture(scope="session")
 def db_engine(postgres_container):
-    """Database engine with test database."""
+    """Database engine with test database.
+    
+    Runs Alembic migrations automatically before tests.
+    """
     from sqlalchemy.ext.asyncio import create_async_engine
+    
+    # Create async engine
     engine = create_async_engine(
         postgres_container.get_connection_url().replace("postgresql://", "postgresql+asyncpg://")
     )
+    
+    # Run migrations
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", postgres_container.get_connection_url())
+    command.upgrade(alembic_cfg, "head")
+    
     yield engine
+    
+    # Cleanup
     engine.sync_engine.dispose()
 
 @pytest.fixture
@@ -702,37 +791,105 @@ All Phase 1 components are foundational and interdependent. Deferring any compon
 1. Task 4.2: RED - Write RLS policy tests
 2. Implement RLS policies in migration
 
-**Afternoon (1-2 hours):**
+**Afternoon (3-4 hours):**
 3. Task 4.4: REFACTOR - Integration testing
-4. Task 5.1-5.4: Documentation updates
+4. Task 5.1-5.3: Documentation updates (CHANGELOGs, migration guide)
 
 **Deliverables:**
 - [ ] RLS tests: `services/registry/tests/test_rls_policies.py`
-- [ ] Updated CHANGELOGs
+- [ ] Updated CHANGELOGs (soorma-common, Registry Service)
 - [ ] Migration guide for breaking changes
+
+### Day 4: Examples Update (2-3 hours) - CRITICAL FOR MAIN MERGE
+
+**All Day:**
+1. Task 5.4: Update all examples with new DTO format
+   - Update `AgentCapability` to use `EventDefinition` objects (not strings)
+   - Add `version` field to agent definitions
+   - Verify all examples run successfully after changes
+
+**Deliverables:**
+- [ ] All 10 examples updated and tested
+- [ ] `examples/README.md` updated with migration notes
+
+**Note:** This day is CRITICAL - examples serve as documentation and must work before merge to main.
 
 ---
 
 ## 7. Breaking Changes & Migration Guide
 
-### Breaking Changes in v0.8.1
+### Breaking Changes in v0.8.1 (APPROVED: Clean Break)
 
-**1. AgentCapability Structure**
-- **Old:** `consumed_event` is a `string`
-- **New:** `consumed_event` is an `EventDefinition` object
-- **Backward Compatibility:** Union type `Union[str, EventDefinition]` during transition
-- **Migration Deadline:** v1.0.0 (strings will be removed)
+**Decision:** Pre-launch phase allows clean break with no backward compatibility.
 
-**2. EventDefinition Schema References**
-- **Old:** `payload_schema` is an embedded JSON object
-- **New:** `payload_schema_name` is a string reference to registered schema
-- **Backward Compatibility:** Both fields supported during transition
-- **Migration Deadline:** v1.0.0 (embedded schemas will be removed)
+**1. AgentCapability Structure (BREAKING)**
+- **Old (v0.8.0):** `consumed_event` is a `string`
+- **New (v0.8.1):** `consumed_event` MUST be an `EventDefinition` object
+- **No Backward Compatibility:** Strings will raise `ValidationError`
+- **Action Required:** All agent registration code must be updated
 
-**3. Database Schema**
+**2. EventDefinition Schema References (BREAKING)**
+- **Old (v0.8.0):** `payload_schema` is an embedded JSON object
+- **New (v0.8.1):** `payload_schema_name` is a string reference to registered schema
+- **Backward Compatibility:** Both fields supported during transition (keep deprecated fields)
+- **Deprecation Timeline:** v1.0.0 will remove embedded schema fields
+
+**3. Database Schema (BREAKING)**
 - **Breaking:** `agents` and `events` tables require `tenant_id` and `user_id`
-- **Migration Strategy:** Pre-launch phase allows clean break (no backfill)
-- **Action Required:** Users must recreate agent/event registrations with new authentication headers
+- **Migration Strategy:** Default UUIDs during migration, then drop defaults
+- **Action Required:** Users must recreate agent/event registrations with valid tenant/user headers
+
+**4. Uniqueness Scope (BREAKING)**
+- **Old (v0.8.0):** `agent_id` and `event_name` globally unique across all tenants
+- **New (v0.8.1):** `agent_id` and `event_name` unique within tenant only
+- **Impact:** Different tenants can now use same agent_id/event_name
+- **Benefit:** True multi-tenancy isolation
+
+### Affected Components Checklist (Main Merge Readiness)
+
+All components must be updated to maintain compatibility:
+
+#### ✅ Core Libraries
+- [ ] `libs/soorma-common/src/soorma_common/models.py` - Updated DTOs
+- [ ] `libs/soorma-common/CHANGELOG.md` - Document breaking changes
+- [ ] `libs/soorma-common/tests/` - All tests passing
+
+#### ✅ Registry Service
+- [ ] `services/registry/alembic/versions/003_*.py` - Migration script
+- [ ] `services/registry/src/registry_service/models/schema.py` - New SQLAlchemy model
+- [ ] `services/registry/CHANGELOG.md` - Document schema changes
+- [ ] `services/registry/tests/` - All tests passing (unit + integration + RLS)
+
+#### ✅ SDK (No Changes in Phase 1, but verify compatibility)
+- [ ] `sdk/python/soorma/registry/client.py` - Verify works with new DTOs
+- [ ] `sdk/python/tests/` - Existing tests still pass
+
+#### ✅ Examples (CRITICAL - All must be updated)
+- [ ] `examples/01-hello-world/` - Update agent registration
+- [ ] `examples/02-events-simple/` - Update event definitions
+- [ ] `examples/03-events-structured/` - Update capabilities
+- [ ] `examples/04-memory-working/` - Update agent/event registration
+- [ ] `examples/05-memory-semantic/` - Update agent/event registration
+- [ ] `examples/06-tool-basic/` - Update agent registration
+- [ ] `examples/07-tool-weather/` - Update agent registration
+- [ ] `examples/08-worker-basic/` - Update capabilities
+- [ ] `examples/09-planner-basic/` - Update planner registration
+- [ ] `examples/10-planner-tracker/` - Update planner registration
+- [ ] `examples/README.md` - Update documentation
+
+#### ✅ Documentation
+- [ ] `docs/discovery/README.md` - Update with new patterns
+- [ ] `docs/discovery/ARCHITECTURE.md` - Document schema registry
+- [ ] `docs/ARCHITECTURE_PATTERNS.md` - Update Section 4 (multi-tenancy)
+- [ ] `CHANGELOG.md` (root) - Release notes for v0.8.1
+- [ ] Migration guide document (new)
+
+#### ✅ Infrastructure
+- [ ] `services/registry/Dockerfile` - Verify no changes needed
+- [ ] `services/registry/entrypoint.sh` - Verify migration runs
+- [ ] **CI/CD** - Deferred to Docker image publishing phase (see DEFERRED_WORK.md)
+  - Phase 1: Tests run locally with Docker
+  - Future: Add `.github/workflows/ci-registry-service.yaml` when publishing images
 
 ### Migration Steps for Developers
 
@@ -816,12 +973,25 @@ alembic upgrade head
 
 | Dependency | Version | Purpose | Status |
 |------------|---------|---------|--------|
+| **Docker** | 20.10+ | **Required for testcontainers** | ⚠️ Must be running |
 | PostgreSQL | 15+ | Database with RLS support | ✅ Available |
 | SQLAlchemy | 2.0+ | ORM for database models | ✅ Installed |
 | Alembic | 1.13+ | Database migrations | ✅ Installed |
 | Pydantic | 2.0+ | DTO validation | ✅ Installed |
 | pytest | 8.0+ | Testing framework | ✅ Installed |
 | testcontainers | 3.7+ | PostgreSQL test container | ⚠️ Need to install |
+
+**CRITICAL: Docker Requirement**
+- testcontainers spawns PostgreSQL container during tests
+- Docker daemon must be running when executing `pytest`
+- Container lifecycle is automatic (pytest manages start/stop)
+- Installation: `pip install testcontainers[postgres]`
+
+**CI/CD Note:**
+- GitHub Actions `ubuntu-latest` includes Docker (testcontainers works out-of-the-box)
+- Registry Service CI workflow deferred until Docker image publishing phase
+- See: [docs/refactoring/DEFERRED_WORK.md](../../refactoring/DEFERRED_WORK.md) (Stage 5 deferrals)
+- For Phase 1: Run tests locally with Docker
 
 ### Blockers
 
@@ -831,8 +1001,10 @@ alembic upgrade head
 
 - [x] ARCHITECTURE_PATTERNS.md reviewed (mandatory gateway)
 - [x] Master Plan approved by developer
-- [x] PostgreSQL 15+ database available for testing
-- [ ] `testcontainers` Python package installed for RLS tests
+- [x] All design decisions approved (see Approved Decisions Summary above)
+- [ ] PostgreSQL 15+ database available for local development
+- [ ] Docker installed and running (required for testcontainers)
+- [ ] `testcontainers` Python package installed: `pip install testcontainers[postgres]`
 
 ---
 
@@ -850,7 +1022,8 @@ alembic upgrade head
 - [ ] Unit tests: 100% coverage for DTOs
 - [ ] Integration tests: Migration script tested with rollback
 - [ ] Integration tests: RLS policies verified for tenant isolation
-- [ ] Total test count: 25+ tests
+- [ ] Integration tests: Composite indexes verified for correct creation
+- [ ] Total test count: 27-30 tests (15-20 unit, 7-9 migration, 6-9 RLS)
 
 ### Documentation
 
@@ -870,13 +1043,32 @@ alembic upgrade head
 
 Before marking Phase 1 complete and proceeding to Phase 2:
 
+**Core Implementation:**
 - [ ] All tasks marked as completed in Section 3
-- [ ] All tests passing (unit + integration)
+- [ ] All tests passing (unit + integration + RLS)
 - [ ] Migration tested forward and backward (upgrade + downgrade)
 - [ ] RLS policies verified (no cross-tenant leakage)
-- [ ] CHANGELOGs updated
+- [ ] Tenant-scoped uniqueness verified (different tenants can use same agent_id)
+
+**Documentation:**
+- [ ] CHANGELOGs updated (soorma-common, Registry Service)
+- [ ] Migration guide documented for breaking changes
+- [ ] Database schema documented in migration file
+
+**Examples (CRITICAL for Main Merge):**
+- [ ] All 10 examples updated with new DTO format
+- [ ] All examples execute successfully
+- [ ] `examples/README.md` updated
+
+**Quality Gates:**
 - [ ] Code review completed (if applicable)
-- [ ] Breaking changes documented
+- [ ] Breaking changes clearly documented
+- [ ] Docker/testcontainers requirement documented
+- [ ] Tests run successfully locally (Docker required)
+
+**Note:** CI/CD workflow for Registry Service deferred to Docker image publishing phase (not a blocker for Phase 1 completion).
+
+**Release:**
 - [ ] Tag release: `v0.8.1-alpha.1` (Phase 1 complete)
 
 **Next Phase:** [ACTION_PLAN_Phase2_Service.md](ACTION_PLAN_Phase2_Service.md) (to be created)
@@ -887,37 +1079,77 @@ Before marking Phase 1 complete and proceeding to Phase 2:
 
 ### Design Decisions
 
-**Decision 1: Union Types for Backward Compatibility**
-- **Rationale:** Allow gradual migration from string-based to object-based event definitions
-- **Tradeoff:** Slightly more complex validation logic
-- **Expiration:** v1.0.0 (remove string support)
+**Decision 1: Clean Break (No Backward Compatibility) - APPROVED**
+- **Rationale:** Pre-launch phase allows breaking changes for architectural correctness
+- **Implementation:** `AgentCapability` requires `EventDefinition` objects (no Union types)
+- **Tradeoff:** All examples must be updated immediately
+- **Benefit:** Simpler code, no technical debt from deprecated patterns
+- **Migration:** All agent registration code must be updated in v0.8.1
+- **Developer Approved:** February 28, 2026
 
-**Decision 2: Breaking Changes Acceptable in Pre-Launch**
+**Decision 2: Breaking Changes Acceptable in Pre-Launch - APPROVED**
 - **Rationale:** Per refactoring principles, architectural correctness > backward compatibility
 - **Impact:** Small user base (mostly internal), clean break simplifies future maintenance
 - **Mitigation:** Comprehensive migration guide in documentation
+- **Developer Approved:** February 28, 2026
 
-**Decision 3: RLS at Database Layer**
+**Decision 3: Tenant-Scoped Uniqueness - APPROVED**
+- **Rationale:** True multi-tenancy requires independent namespaces per tenant
+- **Implementation:** `(agent_id, tenant_id)` and `(event_name, tenant_id)` unique constraints
+- **Benefit:** Different tenants can use same agent_id/event_name without conflicts
+- **Tradeoff:** Cannot enforce global naming conventions
+- **Developer Approved:** February 28, 2026
+
+**Decision 4: RLS at Database Layer - APPROVED**
 - **Rationale:** PostgreSQL RLS enforces tenant isolation at query level (bulletproof)
 - **Tradeoff:** Minor performance overhead (~5-10%)
 - **Alternative Rejected:** App-level filtering (error-prone, security gaps)
+- **Developer Approved:** February 28, 2026
 
-**Decision 4: Schema Registry as Separate Table**
+**Decision 5: Schema Registry as Separate Table - APPROVED**
 - **Rationale:** Enables dynamic event types with discoverable schemas
 - **Tradeoff:** Additional JOIN queries for schema lookups
 - **Alternative Rejected:** Embedded schemas (loses core Stage 5 value)
+- **Developer Approved:** February 28, 2026
+
+**Decision 6: Composite Indexes for RLS Queries - APPROVED**
+- **Rationale:** RLS policies automatically filter by `tenant_id` first, then by query criteria
+- **Optimization:** Composite indexes `(tenant_id, column_name)` match query patterns exactly
+- **Example:** `SELECT * FROM payload_schemas WHERE tenant_id = ? AND schema_name = ?`
+- **Performance:** Avoids table scans, reduces index size (tenant subset), improves cache locality
+- **Pattern Applied:** All multi-tenant tables (payload_schemas, agents, events)
+- **Developer Approved:** February 28, 2026
+
+**Decision 7: No Foreign Keys to tenants/users Tables - APPROVED**
+- **Rationale:** Microservices pattern - Identity service owns tenant/user entities (separate database)
+- **Design:** tenant_id/user_id are cached authentication context from validated JWT/API Keys
+- **Validation:** Identity service validates tenant/user existence before issuing tokens
+- **Isolation:** RLS policies enforce tenant isolation using cached IDs (no FK needed)
+- **Tradeoff:** No cascading deletes, no referential integrity at database level
+- **Acceptable:** Tenant lifecycle managed by Identity service, not Registry service
+- **Future-proof:** No cross-database FK constraints (violates microservices independence)
+- **Developer Approved:** February 28, 2026
+
+**Decision 8: testcontainers for RLS Testing - APPROVED**
+- **Rationale:** Docker-based PostgreSQL for isolated integration tests
+- **Setup/Teardown:** Automatic via pytest fixtures (no manual cleanup)
+- **Requirement:** Docker must be running locally during test execution
+- **Container Lifecycle:** Starts on first test, stops after pytest session ends
+- **Developer Approved:** February 28, 2026
 
 ### Technical Debt
 
-**Debt Item 1: Union Types (Temporary)**
-- **Location:** `AgentCapability` consumed_event/produced_events
-- **Cleanup:** v1.0.0 - remove string support, require EventDefinition objects
-- **Tracking:** DEFERRED_WORK.md
-
-**Debt Item 2: Deprecated Fields**
+**Debt Item 1: Deprecated Fields**
 - **Location:** `EventDefinition` payload_schema/response_schema
 - **Cleanup:** v1.0.0 - remove embedded schema fields
 - **Tracking:** DEFERRED_WORK.md
+
+**Debt Item 2: Registry Service CI Workflow**
+- **Location:** `.github/workflows/` (missing)
+- **Cleanup:** Add when publishing service Docker images
+- **Currently:** Tests run locally with Docker/testcontainers
+- **Tracking:** [DEFERRED_WORK.md](../../refactoring/DEFERRED_WORK.md) (Stage 5 deferrals)
+- **Impact:** Low - testcontainers works on GitHub Actions when workflow added
 
 ### Questions & Answers
 
@@ -929,6 +1161,38 @@ Before marking Phase 1 complete and proceeding to Phase 2:
 
 **Q3: Can we skip schema versioning?**
 - **A:** No. Schema versioning is core to A2A protocol compatibility and allows schema evolution without breaking existing agents.
+
+**Q4: Should agent_id and event_name be globally unique or tenant-scoped? - RESOLVED**
+- **A:** **APPROVED: Tenant-scoped unique**
+  - **Decision:** `(agent_id, tenant_id)` and `(event_name, tenant_id)` unique constraints
+  - **Breaking Change:** Migration drops global unique indexes on `agent_id` and `event_name`
+  - **Rationale:** True multi-tenancy requires independent namespaces per tenant
+  - **Benefit:** Different tenants can use same agent_id/event_name (e.g., all tenants can have "worker-001")
+  - **Implementation:** Phase 1 migration script removes global unique constraints
+  - **Developer Approved:** February 28, 2026
+
+**Q5: Why no foreign key constraints to tenants/users tables?**
+- **A:** **Microservices pattern - tenant_id/user_id are authentication context, not relational data**
+  - **Identity Service** (future): Separate infrastructure service owns tenant/user data
+  - **Registry Service** (current): Receives validated tenant_id/user_id from JWT/API Key headers
+  - **Authentication flow:**
+    1. Client authenticates with Identity Service → receives JWT
+    2. JWT contains `{"tenant_id": "...", "user_id": "..."}` (already validated)
+    3. Registry Service extracts tenant_id/user_id from JWT (trusted context)
+    4. RLS policies enforce isolation using these cached IDs
+  - **No FK constraints needed:** tenant_id/user_id validation happens upstream
+  - **No cross-database FKs:** Services maintain separate databases (microservices best practice)
+  - **RLS enforces isolation:** Even if invalid tenant_id exists, RLS prevents cross-tenant queries
+
+**Q6: Will testcontainers work with GitHub Actions CI?**
+- **A:** **Yes - GitHub Actions fully supports testcontainers**
+  - **Environment:** `ubuntu-latest` runners include Docker daemon (pre-installed and running)
+  - **No configuration needed:** testcontainers auto-detects GitHub Actions environment
+  - **Container cleanup:** Ryuk container handles automatic cleanup between test runs
+  - **Performance:** PostgreSQL image cached after first run
+  - **Deferral:** Registry Service CI workflow deferred to Docker image publishing phase
+  - **Phase 1 approach:** Run tests locally with Docker (manual validation)
+  - **Future workflow:** See example in [DEFERRED_WORK.md](../../refactoring/DEFERRED_WORK.md)
 
 ---
 
