@@ -435,7 +435,9 @@ class Agent(ABC):
         from ..context import RegistryClient, MemoryClient, BusClient, TrackerClient
         
         self._context = PlatformContext(
-            registry=RegistryClient(base_url=self.config.registry_url),
+            registry=RegistryClient(
+                base_url=self.config.registry_url,
+            ),
             memory=MemoryClient(base_url=self.config.memory_url),
             bus=BusClient(event_client=event_client),
             tracker=TrackerClient(base_url=self.config.tracker_url),

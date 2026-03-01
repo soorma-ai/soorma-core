@@ -1,7 +1,9 @@
 """
 Client library for interacting with the Registry Service.
 """
-from typing import Any, Dict, List, Optional
+import logging
+import os
+from typing import List, Optional
 import httpx
 from soorma_common import (
     EventDefinition,
@@ -14,24 +16,40 @@ from soorma_common import (
     AgentQueryResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class RegistryClient:
     """
     Client for interacting with the Registry Service API.
-    
-    This client allows other services to register and query events and agents.
+
+    Authentication context (tenant_id, user_id) is set at construction time
+    from environment variables SOORMA_TENANT_ID / SOORMA_USER_ID. These
+    represent the agent developer's deployment identity and are used for
+    startup registration calls only.
+
+    TODO: Replace env-var placeholder with API key / machine token once that
+    auth flow is implemented (v0.8.0+).
     """
-    
+
     def __init__(self, base_url: str, timeout: float = 30.0):
         """
         Initialize the registry client.
-        
+
+        tenant_id and user_id are read from the environment at construction
+        time so that the running agent process gets a stable identity for its
+        lifetime without leaking credentials into agent config or AgentDefinition.
+
         Args:
-            base_url: Base URL of the registry service (e.g., "http://localhost:8000")
+            base_url: Base URL of the registry service (e.g., "http://localhost:8081")
             timeout: HTTP request timeout in seconds
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        # Deployment identity — placeholder until API key auth is available
+        self._tenant_id = os.getenv("SOORMA_TENANT_ID", "00000000-0000-0000-0000-000000000000")
+        self._user_id = os.getenv("SOORMA_USER_ID", "00000000-0000-0000-0000-000000000000")
+        self._auth_headers = {"X-Tenant-ID": self._tenant_id, "X-User-ID": self._user_id}
         self._client = httpx.AsyncClient(timeout=timeout)
     
     async def close(self):
@@ -58,8 +76,6 @@ class RegistryClient:
         Returns:
             EventRegistrationResponse with registration status
         """
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"[RegistryClient] Registering event: {event.event_name} on topic: {event.topic}")
         
         request = EventRegistrationRequest(event=event)
@@ -68,7 +84,8 @@ class RegistryClient:
         
         response = await self._client.post(
             f"{self.base_url}/v1/events",
-            json=request_json
+            json=request_json,
+            headers=self._auth_headers
         )
         response.raise_for_status()
         logger.info(f"[RegistryClient] Event {event.event_name} registered successfully")
@@ -87,7 +104,8 @@ class RegistryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/events",
-            params={"event_name": event_name}
+            params={"event_name": event_name},
+            headers=self._auth_headers
         )
         response.raise_for_status()
         result = EventQueryResponse.model_validate(response.json())
@@ -103,22 +121,16 @@ class RegistryClient:
         Returns:
             List of EventDefinitions for the topic
         """
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"[RegistryClient] Querying events with topic={topic}")
         
         response = await self._client.get(
             f"{self.base_url}/v1/events",
-            params={"topic": topic}
+            params={"topic": topic},
+            headers=self._auth_headers
         )
         response.raise_for_status()
-        
-        logger.info(f"[RegistryClient] Response status: {response.status_code}")
-        logger.info(f"[RegistryClient] Response body: {response.text[:500]}")  # First 500 chars
-        
         result = EventQueryResponse.model_validate(response.json())
         logger.info(f"[RegistryClient] Parsed {len(result.events)} events")
-        
         return result.events
         
     async def get_all_events(self) -> List[EventDefinition]:
@@ -128,7 +140,10 @@ class RegistryClient:
         Returns:
             List of all EventDefinitions
         """
-        response = await self._client.get(f"{self.base_url}/v1/events")
+        response = await self._client.get(
+            f"{self.base_url}/v1/events",
+            headers=self._auth_headers
+        )
         response.raise_for_status()
         result = EventQueryResponse.model_validate(response.json())
         return result.events
@@ -148,7 +163,8 @@ class RegistryClient:
         request = AgentRegistrationRequest(agent=agent)
         response = await self._client.post(
             f"{self.base_url}/v1/agents",
-            json=request.model_dump(by_alias=True)
+            json=request.model_dump(by_alias=True),
+            headers=self._auth_headers
         )
         response.raise_for_status()
         return AgentRegistrationResponse.model_validate(response.json())
@@ -165,7 +181,8 @@ class RegistryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/agents",
-            params={"agent_id": agent_id}
+            params={"agent_id": agent_id},
+            headers=self._auth_headers
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
@@ -198,7 +215,8 @@ class RegistryClient:
             
         response = await self._client.get(
             f"{self.base_url}/v1/agents",
-            params=params
+            params=params,
+            headers=self._auth_headers
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
