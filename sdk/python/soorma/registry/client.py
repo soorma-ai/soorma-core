@@ -14,6 +14,10 @@ from soorma_common import (
     AgentRegistrationRequest,
     AgentRegistrationResponse,
     AgentQueryResponse,
+    PayloadSchema,
+    PayloadSchemaRegistrationRequest,
+    PayloadSchemaResponse,
+    PayloadSchemaListResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -272,3 +276,75 @@ class RegistryClient:
             headers=self._auth_headers
         )
         return response.status_code == 200
+
+    # Schema Registry Methods (v0.8.1+)
+
+    async def register_schema(self, schema: PayloadSchema) -> PayloadSchemaResponse:
+        """
+        Register a payload schema with the Registry Service.
+
+        Args:
+            schema: Payload schema definition to register
+
+        Returns:
+            PayloadSchemaResponse with success flag
+
+        STUB: Implementation in GREEN phase (Task 3.7).
+        """
+        raise NotImplementedError("RegistryClient.register_schema not yet implemented")
+
+    async def get_schema(
+        self,
+        schema_name: str,
+        version: Optional[str] = None,
+    ) -> Optional[PayloadSchema]:
+        """
+        Retrieve a schema by name (latest version) or by name + version.
+
+        Args:
+            schema_name: Schema name to look up
+            version: Optional version string; latest version returned if omitted
+
+        Returns:
+            PayloadSchema DTO if found, None otherwise
+
+        STUB: Implementation in GREEN phase (Task 3.7).
+        """
+        raise NotImplementedError("RegistryClient.get_schema not yet implemented")
+
+    async def list_schemas(
+        self,
+        owner_agent_id: Optional[str] = None,
+    ) -> List[PayloadSchema]:
+        """
+        List schemas for this developer tenant, optionally filtered by owner agent.
+
+        Args:
+            owner_agent_id: Optional agent ID filter
+
+        Returns:
+            List of PayloadSchema DTOs
+
+        STUB: Implementation in GREEN phase (Task 3.7).
+        """
+        raise NotImplementedError("RegistryClient.list_schemas not yet implemented")
+
+    async def discover_agents(
+        self,
+        consumed_event: Optional[str] = None,
+    ) -> List[AgentDefinition]:
+        """
+        Discover active agents by capability (consumed event).
+
+        Phase 2: Returns AgentDefinition list.
+        Phase 3: Will return DiscoveredAgent list with full schema enrichment.
+
+        Args:
+            consumed_event: Optional event name filter
+
+        Returns:
+            List of AgentDefinition DTOs for matching active agents
+
+        STUB: Implementation in GREEN phase (Task 3.7).
+        """
+        raise NotImplementedError("RegistryClient.discover_agents not yet implemented")

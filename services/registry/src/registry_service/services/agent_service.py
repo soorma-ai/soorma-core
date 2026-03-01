@@ -259,7 +259,31 @@ class AgentRegistryService:
                 agents=[],
                 count=0
             )
-    
+
+    @staticmethod
+    async def discover_agents(
+        db: AsyncSession,
+        tenant_id: UUID,
+        consumed_event: Optional[str] = None,
+    ) -> AgentQueryResponse:
+        """
+        Discover active agents by capability.
+
+        Phase 2 returns AgentDefinition[] (via AgentQueryResponse).
+        Phase 3 will upgrade to DiscoveredAgent[] with full schema enrichment.
+
+        Args:
+            db: Database session
+            tenant_id: Developer tenant UUID
+            consumed_event: Optional event name filter — returns agents that consume this event
+
+        Returns:
+            AgentQueryResponse with matching active agents
+
+        STUB: NotImplementedError until Task 3.4 (GREEN phase).
+        """
+        raise NotImplementedError("AgentRegistryService.discover_agents not yet implemented")
+
     @staticmethod
     async def cleanup_expired_agents(
         db: AsyncSession,
