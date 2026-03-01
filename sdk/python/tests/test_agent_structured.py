@@ -14,8 +14,16 @@ class TestAgentStructured:
         cap = AgentCapability(
             task_name="structured_cap",
             description="A structured capability",
-            consumed_event="structured.request",
-            produced_events=["structured.response"]
+            consumed_event=EventDefinition(
+                event_name="structured.request",
+                topic="action-requests",
+                description="Structured request event"
+            ),
+            produced_events=[EventDefinition(
+                event_name="structured.response",
+                topic="action-results",
+                description="Structured response event"
+            )]
         )
 
         agent = Agent(
@@ -32,8 +40,16 @@ class TestAgentStructured:
         cap = AgentCapability(
             task_name="structured_cap",
             description="A structured capability",
-            consumed_event="structured.request",
-            produced_events=["structured.response"]
+            consumed_event=EventDefinition(
+                event_name="structured.request",
+                topic="action-requests",
+                description="Structured request event"
+            ),
+            produced_events=[EventDefinition(
+                event_name="structured.response",
+                topic="action-results",
+                description="Structured response event"
+            )]
         )
 
         agent = Agent(
@@ -118,8 +134,16 @@ class TestAgentStructured:
         cap = AgentCapability(
             task_name="planning_cap",
             description="Planning capability",
-            consumed_event="plan.request",
-            produced_events=["plan.result"]
+            consumed_event=EventDefinition(
+                event_name="plan.request",
+                topic="action-requests",
+                description="Plan request event"
+            ),
+            produced_events=[EventDefinition(
+                event_name="plan.result",
+                topic="action-results",
+                description="Plan result event"
+            )]
         )
         planner = Planner(name="test-planner", capabilities=[cap])
         
@@ -132,8 +156,16 @@ class TestAgentStructured:
         cap = AgentCapability(
             task_name="worker_cap",
             description="Worker capability",
-            consumed_event="work.request",
-            produced_events=["work.result"]
+            consumed_event=EventDefinition(
+                event_name="work.request",
+                topic="action-requests",
+                description="Work request event"
+            ),
+            produced_events=[EventDefinition(
+                event_name="work.result",
+                topic="action-results",
+                description="Work result event"
+            )]
         )
         worker = Worker(name="test-worker", capabilities=[cap])
         
@@ -147,8 +179,16 @@ class TestAgentStructured:
         cap = AgentCapability(
             task_name="tool_cap",
             description="Tool capability",
-            consumed_event="tool.request",
-            produced_events=["tool.response"]
+            consumed_event=EventDefinition(
+                event_name="tool.request",
+                topic="action-requests",
+                description="Tool request event"
+            ),
+            produced_events=[EventDefinition(
+                event_name="tool.response",
+                topic="action-results",
+                description="Tool response event"
+            )]
         )
         tool = Tool(name="test-tool", capabilities=[cap])
         
