@@ -222,7 +222,8 @@ class AgentCRUD:
     async def get_agents_by_consumed_event(
         self, 
         db: AsyncSession, 
-        event_name: str
+        event_name: str,
+        tenant_id: UUID
     ) -> List[AgentTable]:
         """
         Get agents that consume a specific event.
@@ -230,20 +231,22 @@ class AgentCRUD:
         Args:
             db: Database session
             event_name: Name of the event
+            tenant_id: Tenant ID from authentication
             
         Returns:
             List of AgentTable instances
         """
         # Get all agents and filter in Python for SQLite compatibility
         # (JSON columns don't support array contains operations)
-        all_agents = await self.get_all_agents(db)
+        all_agents = await self.get_all_agents(db, tenant_id)
         return [a for a in all_agents if event_name in a.consumed_events]
     
     @cache_agent
     async def get_agents_by_produced_event(
         self, 
         db: AsyncSession, 
-        event_name: str
+        event_name: str,
+        tenant_id: UUID
     ) -> List[AgentTable]:
         """
         Get agents that produce a specific event.
@@ -251,18 +254,20 @@ class AgentCRUD:
         Args:
             db: Database session
             event_name: Name of the event
+            tenant_id: Tenant ID from authentication
             
         Returns:
             List of AgentTable instances
         """
         # Get all agents and filter in Python for SQLite compatibility
-        all_agents = await self.get_all_agents(db)
+        all_agents = await self.get_all_agents(db, tenant_id)
         return [a for a in all_agents if event_name in a.produced_events]
     
     @cache_agent
     async def get_all_agents(
         self, 
         db: AsyncSession,
+        tenant_id: UUID,
         include_expired: bool = False,
         ttl_seconds: Optional[int] = None
     ) -> List[AgentTable]:
@@ -271,13 +276,16 @@ class AgentCRUD:
         
         Args:
             db: Database session
+            tenant_id: Tenant ID from authentication (filter)
             include_expired: If False, exclude expired agents
             ttl_seconds: TTL in seconds (required if include_expired=False)
             
         Returns:
-            List of all AgentTable instances
+            List of all AgentTable instances for this tenant
         """
-        query = select(AgentTable)
+        query = select(AgentTable).where(
+            AgentTable.tenant_id == tenant_id
+        )
         
         if not include_expired and ttl_seconds is not None:
             expiry_threshold = _now_utc() - timedelta(seconds=ttl_seconds)
@@ -312,7 +320,8 @@ class AgentCRUD:
     async def update_heartbeat(
         self,
         db: AsyncSession,
-        agent_id: str
+        agent_id: str,
+        tenant_id: UUID
     ) -> bool:
         """
         Update the heartbeat timestamp for an agent.
@@ -320,11 +329,14 @@ class AgentCRUD:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication
             
         Returns:
             True if agent was found and updated, False otherwise
         """
-        agent = await self.get_agent_by_id(db, agent_id, include_expired=True)
+        agent = await self.get_agent_by_id(
+            db, agent_id, tenant_id, include_expired=True
+        )
         if not agent:
             return False
         
@@ -339,7 +351,8 @@ class AgentCRUD:
     async def delete_agent(
         self,
         db: AsyncSession,
-        agent_id: str
+        agent_id: str,
+        tenant_id: UUID
     ) -> bool:
         """
         Delete an agent by ID.
@@ -347,11 +360,14 @@ class AgentCRUD:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication
             
         Returns:
             True if agent was found and deleted, False otherwise
         """
-        agent = await self.get_agent_by_id(db, agent_id, include_expired=True)
+        agent = await self.get_agent_by_id(
+            db, agent_id, tenant_id, include_expired=True
+        )
         if not agent:
             return False
             

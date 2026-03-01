@@ -1,8 +1,7 @@
 """
 CRUD operations for event registry.
 """
-from typing import List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Optionalfrom uuid import UUIDfrom sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from soorma_common import EventDefinition
@@ -16,7 +15,9 @@ class EventCRUD:
     async def create_event(
         self, 
         db: AsyncSession, 
-        event: EventDefinition
+        event: EventDefinition,
+        tenant_id: UUID,
+        user_id: UUID
     ) -> EventTable:
         """
         Create a new event in the database.
@@ -24,6 +25,8 @@ class EventCRUD:
         Args:
             db: Database session
             event: Event definition to create
+            tenant_id: Tenant ID from authentication
+            user_id: User ID from authentication
             
         Returns:
             Created EventTable instance
@@ -33,7 +36,9 @@ class EventCRUD:
             topic=event.topic,
             description=event.description,
             payload_schema=event.payload_schema,
-            response_schema=event.response_schema
+            response_schema=event.response_schema,
+            tenant_id=tenant_id,
+            user_id=user_id
         )
         db.add(event_table)
         await db.flush()
@@ -46,7 +51,9 @@ class EventCRUD:
     async def upsert_event(
         self, 
         db: AsyncSession, 
-        event: EventDefinition
+        event: EventDefinition,
+        tenant_id: UUID,
+        user_id: UUID
     ) -> tuple[EventTable, bool]:
         """
         Create or update an event in the database.
@@ -54,13 +61,15 @@ class EventCRUD:
         Args:
             db: Database session
             event: Event definition to upsert
+            tenant_id: Tenant ID from authentication
+            user_id: User ID from authentication
             
         Returns:
             Tuple of (EventTable instance, was_created: bool)
             was_created is True if a new event was created, False if updated
         """
-        # Check if event exists (by both event_name AND topic)
-        existing = await self.get_event_by_name_and_topic(db, event.event_name, event.topic)
+        # Check if event exists (by event_name and tenant_id - new unique constraint)
+        existing = await self.get_event_by_name(db, event.event_name, tenant_id)
         
         if existing:
             # Update existing event
@@ -75,7 +84,7 @@ class EventCRUD:
             return existing, False
         else:
             # Create new event
-            event_table = await self.create_event(db, event)
+            event_table = await self.create_event(db, event, tenant_id, user_id)
             return event_table, True
     
     async def get_event_by_name_and_topic(
@@ -107,20 +116,25 @@ class EventCRUD:
     async def get_event_by_name(
         self, 
         db: AsyncSession, 
-        event_name: str
+        event_name: str,
+        tenant_id: UUID
     ) -> Optional[EventTable]:
         """
-        Get an event by its name (returns first match if multiple topics exist).
+        Get an event by its name within a tenant.
         
         Args:
             db: Database session
             event_name: Name of the event
+            tenant_id: Tenant ID from authentication
             
         Returns:
             EventTable if found, None otherwise
         """
         result = await db.execute(
-            select(EventTable).where(EventTable.event_name == event_name)
+            select(EventTable).where(
+                EventTable.event_name == event_name,
+                EventTable.tenant_id == tenant_id
+            )
         )
         return result.scalar_one_or_none()
     
@@ -128,7 +142,8 @@ class EventCRUD:
     async def get_events_by_topic(
         self, 
         db: AsyncSession, 
-        topic: str
+        topic: str,
+        tenant_id: UUID
     ) -> List[EventTable]:
         """
         Get all events for a specific topic.
@@ -136,13 +151,17 @@ class EventCRUD:
         Args:
             db: Database session
             topic: Topic to filter by
+            tenant_id: Tenant ID from authentication
             
         Returns:
             List of EventTable instances
         """
         result = await db.execute(
             select(EventTable)
-            .where(EventTable.topic == topic)
+            .where(
+                EventTable.topic == topic,
+                EventTable.tenant_id == tenant_id
+            )
             .order_by(EventTable.event_name)
         )
         return list(result.scalars().all())
@@ -150,19 +169,23 @@ class EventCRUD:
     @cache_event
     async def get_all_events(
         self, 
-        db: AsyncSession
+        db: AsyncSession,
+        tenant_id: UUID
     ) -> List[EventTable]:
         """
-        Get all events.
+        Get all events for a tenant.
         
         Args:
             db: Database session
+            tenant_id: Tenant ID from authentication
             
         Returns:
-            List of all EventTable instances
+            List of all EventTable instances for this tenant
         """
         result = await db.execute(
-            select(EventTable).order_by(EventTable.event_name)
+            select(EventTable)
+            .where(EventTable.tenant_id == tenant_id)
+            .order_by(EventTable.event_name)
         )
         return list(result.scalars().all())
     
