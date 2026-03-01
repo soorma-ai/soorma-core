@@ -1,11 +1,10 @@
 """
 CRUD operations for payload schema registry.
-
-STUB: All method signatures defined with NotImplementedError.
-GREEN: Real implementation in Task 3.1.
 """
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
+from datetime import datetime, timezone
+from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from soorma_common import PayloadSchema
@@ -32,7 +31,22 @@ class SchemaCRUD:
         Returns:
             Newly created PayloadSchemaTable instance
         """
-        raise NotImplementedError("SchemaCRUD.create_schema not yet implemented")
+        row = PayloadSchemaTable(
+            id=uuid4(),
+            # Use Python-side datetime for microsecond precision — SQLite's func.now()
+            # only has second precision, making get_latest_schema ordering unreliable
+            # when multiple schemas are inserted in the same second.
+            created_at=datetime.now(timezone.utc),
+            schema_name=schema.schema_name,
+            version=schema.version,
+            json_schema=schema.json_schema,
+            description=schema.description,
+            owner_agent_id=schema.owner_agent_id,
+            tenant_id=tenant_id,
+        )
+        db.add(row)
+        await db.flush()
+        return row
 
     async def get_schema_by_name_version(
         self,
@@ -53,7 +67,14 @@ class SchemaCRUD:
         Returns:
             PayloadSchemaTable if found, None otherwise
         """
-        raise NotImplementedError("SchemaCRUD.get_schema_by_name_version not yet implemented")
+        result = await db.execute(
+            select(PayloadSchemaTable).where(
+                PayloadSchemaTable.schema_name == schema_name,
+                PayloadSchemaTable.version == version,
+                PayloadSchemaTable.tenant_id == tenant_id,
+            )
+        )
+        return result.scalar_one_or_none()
 
     async def get_latest_schema_by_name(
         self,
@@ -72,7 +93,16 @@ class SchemaCRUD:
         Returns:
             PayloadSchemaTable if found, None otherwise
         """
-        raise NotImplementedError("SchemaCRUD.get_latest_schema_by_name not yet implemented")
+        result = await db.execute(
+            select(PayloadSchemaTable)
+            .where(
+                PayloadSchemaTable.schema_name == schema_name,
+                PayloadSchemaTable.tenant_id == tenant_id,
+            )
+            .order_by(desc(PayloadSchemaTable.created_at))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
 
     async def list_schemas_by_owner(
         self,
@@ -91,7 +121,13 @@ class SchemaCRUD:
         Returns:
             List of PayloadSchemaTable rows
         """
-        raise NotImplementedError("SchemaCRUD.list_schemas_by_owner not yet implemented")
+        result = await db.execute(
+            select(PayloadSchemaTable).where(
+                PayloadSchemaTable.owner_agent_id == owner_agent_id,
+                PayloadSchemaTable.tenant_id == tenant_id,
+            ).order_by(PayloadSchemaTable.schema_name)
+        )
+        return list(result.scalars().all())
 
     async def list_all_schemas(
         self,
@@ -108,7 +144,12 @@ class SchemaCRUD:
         Returns:
             List of all PayloadSchemaTable rows for the tenant
         """
-        raise NotImplementedError("SchemaCRUD.list_all_schemas not yet implemented")
+        result = await db.execute(
+            select(PayloadSchemaTable)
+            .where(PayloadSchemaTable.tenant_id == tenant_id)
+            .order_by(PayloadSchemaTable.schema_name)
+        )
+        return list(result.scalars().all())
 
 
 # Module-level singleton (matches pattern of agent_crud, event_crud)

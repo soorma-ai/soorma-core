@@ -1,8 +1,5 @@
 """
 Service layer for schema registry operations.
-
-STUB: All method signatures defined with NotImplementedError.
-GREEN: Real implementation in Task 3.2.
 """
 from typing import List, Optional
 from uuid import UUID
@@ -10,6 +7,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from soorma_common import PayloadSchema, PayloadSchemaResponse
 from ..crud import schema_crud
+from ..models import PayloadSchemaTable
+
+
+def _table_to_dto(row: PayloadSchemaTable) -> PayloadSchema:
+    """Map a PayloadSchemaTable ORM row to a PayloadSchema DTO.
+
+    Args:
+        row: ORM row from the payload_schemas table
+
+    Returns:
+        PayloadSchema Pydantic DTO
+    """
+    return PayloadSchema(
+        schema_name=row.schema_name,
+        version=row.version,
+        json_schema=row.json_schema,
+        description=row.description,
+        owner_agent_id=row.owner_agent_id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
 
 
 class SchemaRegistryService:
@@ -35,7 +53,23 @@ class SchemaRegistryService:
         Returns:
             PayloadSchemaResponse with success=True or raises ValueError on duplicate
         """
-        raise NotImplementedError("SchemaRegistryService.register_schema not yet implemented")
+        # Decision D1: schemas are immutable once registered — duplicate = 409 Conflict
+        existing = await schema_crud.get_schema_by_name_version(
+            db, schema.schema_name, schema.version, tenant_id
+        )
+        if existing is not None:
+            raise ValueError(
+                f"Schema '{schema.schema_name}@{schema.version}' already exists for this tenant"
+            )
+
+        await schema_crud.create_schema(db, schema, tenant_id)
+        await db.commit()
+        return PayloadSchemaResponse(
+            schema_name=schema.schema_name,
+            version=schema.version,
+            success=True,
+            message=f"Schema '{schema.schema_name}@{schema.version}' registered successfully.",
+        )
 
     @staticmethod
     async def get_schema_by_name(
@@ -54,7 +88,8 @@ class SchemaRegistryService:
         Returns:
             PayloadSchema DTO if found, None otherwise
         """
-        raise NotImplementedError("SchemaRegistryService.get_schema_by_name not yet implemented")
+        row = await schema_crud.get_latest_schema_by_name(db, schema_name, tenant_id)
+        return _table_to_dto(row) if row is not None else None
 
     @staticmethod
     async def get_schema_by_name_version(
@@ -75,7 +110,8 @@ class SchemaRegistryService:
         Returns:
             PayloadSchema DTO if found, None otherwise
         """
-        raise NotImplementedError("SchemaRegistryService.get_schema_by_name_version not yet implemented")
+        row = await schema_crud.get_schema_by_name_version(db, schema_name, version, tenant_id)
+        return _table_to_dto(row) if row is not None else None
 
     @staticmethod
     async def list_schemas(
@@ -94,4 +130,8 @@ class SchemaRegistryService:
         Returns:
             List of PayloadSchema DTOs
         """
-        raise NotImplementedError("SchemaRegistryService.list_schemas not yet implemented")
+        if owner_agent_id is not None:
+            rows = await schema_crud.list_schemas_by_owner(db, owner_agent_id, tenant_id)
+        else:
+            rows = await schema_crud.list_all_schemas(db, tenant_id)
+        return [_table_to_dto(row) for row in rows]
