@@ -282,7 +282,14 @@ class AgentRegistryService:
 
         STUB: NotImplementedError until Task 3.4 (GREEN phase).
         """
-        raise NotImplementedError("AgentRegistryService.discover_agents not yet implemented")
+        # Delegate to query_agents which handles TTL filtering, deduplication, and
+        # the consumed_event filter. Discovery always excludes expired agents.
+        return await AgentRegistryService.query_agents(
+            db=db,
+            tenant_id=tenant_id,
+            consumed_event=consumed_event,
+            include_expired=False,
+        )
 
     @staticmethod
     async def cleanup_expired_agents(

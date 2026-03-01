@@ -1,6 +1,6 @@
 # Action Plan: Phase 2 - Service Implementation (SOOR-DISC-P2)
 
-**Status:** 🔄 Phase 2C (GREEN) — Tasks 3.1/3.2 done, tasks 3.4/3.7 pending  
+**Status:** 🔄 Phase 2C (GREEN) — Tasks 3.1/3.2/3.4 done, task 3.7 pending  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 2 of 5  
 **Estimated Duration:** 3-4 days  
@@ -224,7 +224,7 @@ if not settings.IS_LOCAL_TESTING:
 - [x] **Task 3.1:** Implement `crud/schemas.py` — SQLAlchemy async queries for all 5 SchemaCRUD methods. Fixed `created_at` to use Python-side `datetime.now(timezone.utc)` for microsecond precision (SQLite's `func.now()` has second resolution; two rapid inserts in same test would be unorderable) ✅
 - [x] **Task 3.2:** Implement `services/schema_service.py` — `_table_to_dto()` helper + 4 static methods (register with duplicate detection → 409, get_by_name, get_by_name_version, list_schemas). 20/20 schema tests pass ✅
 - [x] **Task 3.3:** `api/v1/schemas.py` — HTTP layer already correct (delegates to service); no changes needed ✅
-- [ ] **Task 3.4:** Implement `services/agent_service.py::discover_agents()` ⏱️ 45 min
+- [x] **Task 3.4:** Implement `services/agent_service.py::discover_agents()` — delegates to `query_agents(consumed_event=..., include_expired=False)`. 10/10 discovery tests pass ✅
 - [x] **Task 3.5:** `api/v1/agents.py` discover endpoint already correct (delegates to service); no changes needed ✅
 - [x] **Task 3.6:** Schema router registered in `api/v1/__init__.py` ✅ (done in Phase 2A)
 - [ ] **Task 3.7:** Implement SDK `RegistryClient` schema/discover methods ⏱️ 45 min
