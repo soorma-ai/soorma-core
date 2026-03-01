@@ -1,6 +1,6 @@
 # Action Plan: Phase 2 - Service Implementation (SOOR-DISC-P2)
 
-**Status:** ✅ Approved — Implementation in Progress  
+**Status:** 🔄 Phase 2C (GREEN) — In Progress  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 2 of 5  
 **Estimated Duration:** 3-4 days  
@@ -29,10 +29,18 @@ Per CONTRIBUTING constitution, this plan is submitted AFTER reading ARCHITECTURE
 
 `context.registry` is `RegistryClient` directly (not a thin wrapper class). This is the approved pattern for the registry — the registry is developer-scoped, not user-session-scoped, and the client already includes auth headers automatically.
 
-- [ ] `RegistryClient.register_schema()` — MISSING, must add in Task 2.1 before implementing service
-- [ ] `RegistryClient.get_schema()` — MISSING, must add in Task 2.1
-- [ ] `RegistryClient.list_schemas()` — MISSING, must add in Task 2.1
-- [ ] `RegistryClient.discover_agents()` — MISSING, must add in Task 2.1
+- [x] `RegistryClient.register_schema()` — ✅ Stubbed (Task 1.5); GREEN in Task 3.7
+- [x] `RegistryClient.get_schema()` — ✅ Stubbed (Task 1.5); GREEN in Task 3.7
+- [x] `RegistryClient.list_schemas()` — ✅ Stubbed (Task 1.5); GREEN in Task 3.7
+- [x] `RegistryClient.discover_agents()` — ✅ Stubbed (Task 1.5); GREEN in Task 3.7
+
+**Additional items completed beyond plan:**
+- [x] `PayloadSchemaRegistrationRequest` + `PayloadSchemaListResponse` added to `soorma_common/models.py`
+- [x] Both exported from `soorma_common/__init__.py`
+- [x] `DiscoveredAgent.get_consumed_schemas()` / `get_produced_schemas()` implemented (were already in models.py)
+- [x] `AgentRegistryService.discover_agents()` stub added to `agent_service.py`
+- [x] `GET /v1/agents/discover` endpoint stub added to `api/v1/agents.py`
+- [x] Schema router registered in `api/v1/__init__.py` (Task 3.6 done early)
 
 ---
 
@@ -177,42 +185,48 @@ if not settings.IS_LOCAL_TESTING:
 
 ## 3. Task Tracking Matrix
 
-**Phase 2A: Fix + Stub (Pre-condition)**
+**Phase 2A: Fix + Stub (Pre-condition)** ✅ COMPLETE
 
-- [ ] **Task 1.1:** Fix `PayloadSchemaTable` — replace bare column type with `Uuid(as_uuid=True)` ⏱️ 5 min
-- [ ] **Task 1.2:** STUB — Create `crud/schemas.py` with `NotImplementedError` stubs ⏱️ 20 min
-- [ ] **Task 1.3:** STUB — Create `services/schema_service.py` with `NotImplementedError` stubs ⏱️ 20 min
-- [ ] **Task 1.4:** STUB — Create `api/v1/schemas.py` with placeholder endpoints ⏱️ 20 min
-- [ ] **Task 1.5:** STUB — Add SDK `RegistryClient` schema/discover method stubs ⏱️ 20 min
-- [ ] **Task 1.6:** Implement `DiscoveredAgent.get_consumed_schemas()` / `get_produced_schemas()` in soorma-common ⏱️ 15 min
+- [x] **Task 1.1:** Fix `PayloadSchemaTable` — `Uuid(as_uuid=True, native_uuid=True)` + `default=uuid4` (Decision D4) ✅
+- [x] **Task 1.2:** STUB — `crud/schemas.py` with `NotImplementedError` stubs ✅
+- [x] **Task 1.3:** STUB — `services/schema_service.py` with `NotImplementedError` stubs ✅
+- [x] **Task 1.4:** STUB — `api/v1/schemas.py` with placeholder endpoints ✅
+- [x] **Task 1.5:** STUB — SDK `RegistryClient` schema/discover method stubs ✅
+- [x] **Task 1.6:** `DiscoveredAgent.get_consumed_schemas()` / `get_produced_schemas()` — already implemented ✅
+- [x] **Task 1.6b (extra):** `PayloadSchemaRegistrationRequest` + `PayloadSchemaListResponse` added to soorma-common ✅
+- [x] **Task 1.6c (extra):** `AgentRegistryService.discover_agents()` stub + `GET /v1/agents/discover` endpoint stub ✅
+- [x] **Task 3.6 (done early):** Schema router registered in `api/v1/__init__.py` ✅
 
-**Phase 2B: RED (Write Failing Tests)**
+**Phase 2B: RED (Write Failing Tests)** ✅ COMPLETE
 
-- [ ] **Task 2.1:** Write `tests/test_schema_endpoints.py` — 15 tests for schema CRUD ⏱️ 1.5 hours
-  - `test_register_schema_success`
-  - `test_register_schema_duplicate_409`
-  - `test_get_schema_by_name`
-  - `test_get_schema_by_name_version`
-  - `test_list_schemas_by_owner`
-  - `test_schema_requires_tenant_header_422`
-  - `test_schema_cross_tenant_isolation` (two tenants, verify no bleed)
-  - + 8 more edge cases
-- [ ] **Task 2.2:** Write `tests/test_agent_discovery.py` — 10 tests for discovery ⏱️ 1 hour
-  - `test_discover_agents_by_consumed_event`
-  - `test_discover_agents_returns_full_capability_metadata`
-  - `test_discover_agents_no_match_returns_empty`
-  - `test_discover_agents_requires_tenant_header`
-  - + 6 more
-- [ ] **Task 2.3:** Run all tests — confirm NEW tests fail with `NotImplementedError` ⏱️ 10 min
+- [x] **Task 2.1:** `tests/test_schema_endpoints.py` — 20 tests (17 schema CRUD + 3 cross-tenant isolation) ✅
+  - `test_register_schema_success`, `test_register_schema_returns_message`
+  - `test_register_schema_duplicate_409`, `test_register_schema_different_versions_ok`
+  - `test_register_schema_requires_tenant_header` (PASSES — auth guard)
+  - `test_register_schema_with_owner_agent_id`, `test_register_multiple_schemas`
+  - `test_get_schema_by_name_success`, `test_get_schema_not_found_404`
+  - `test_get_schema_returns_latest_version`, `test_get_schema_requires_tenant_header` (PASSES)
+  - `test_get_specific_version_success`, `test_get_specific_version_not_found_404`
+  - `test_list_schemas_by_owner`, `test_list_schemas_all_for_tenant`
+  - `test_list_schemas_empty_without_owner_filter`, `test_list_schemas_requires_tenant_header` (PASSES)
+  - `test_schema_cross_tenant_isolation`, `test_same_schema_name_different_tenants`
+  - `test_list_schemas_tenant_scoped`
+- [x] **Task 2.2:** `tests/test_agent_discovery.py` — 10 discovery tests ✅
+  - `test_discover_agents_by_consumed_event`, `test_discover_agents_returns_count`
+  - `test_discover_agents_no_match_returns_empty`, `test_discover_agents_returns_full_capability_metadata`
+  - `test_discover_agents_no_filter_returns_all_active`, `test_discover_agents_requires_tenant_header` (PASSES)
+  - `test_discover_agents_multiple_consumers`, `test_discover_agents_cross_tenant_isolation`
+  - `test_discover_agents_response_schema_structure`, `test_discover_endpoint_is_separate_from_query`
+- [x] **Task 2.3:** RED verified — 26 fail on `NotImplementedError`, 4 pass (auth-only), 0 `ImportError` ✅
 
-**Phase 2C: GREEN (Implement)**
+**Phase 2C: GREEN (Implement)** 🔄 IN PROGRESS
 
 - [ ] **Task 3.1:** Implement `crud/schemas.py` — create, get by name, get by name+version, list by owner ⏱️ 1 hour
 - [ ] **Task 3.2:** Implement `services/schema_service.py` — business logic, duplicate detection, error handling ⏱️ 1 hour
-- [ ] **Task 3.3:** Implement `api/v1/schemas.py` — POST/GET endpoints with proper HTTP codes ⏱️ 1 hour
+- [ ] **Task 3.3:** `api/v1/schemas.py` — HTTP layer already correct (delegates to service); no changes needed ✅
 - [ ] **Task 3.4:** Implement `services/agent_service.py::discover_agents()` ⏱️ 45 min
-- [ ] **Task 3.5:** Add `GET /v1/agents/discover` to `api/v1/agents.py` ⏱️ 30 min
-- [ ] **Task 3.6:** Register schema router in `main.py` ⏱️ 10 min
+- [ ] **Task 3.5:** `api/v1/agents.py` discover endpoint already correct (delegates to service); no changes needed ✅
+- [x] **Task 3.6:** Schema router registered in `api/v1/__init__.py` ✅ (done in Phase 2A)
 - [ ] **Task 3.7:** Implement SDK `RegistryClient` schema/discover methods ⏱️ 45 min
 - [ ] **Task 3.8:** Run all tests — confirm 70+ pass ⏱️ 10 min
 
