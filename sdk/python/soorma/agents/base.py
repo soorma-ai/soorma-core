@@ -509,13 +509,8 @@ class Agent(ABC):
             return
         
         logger.info(f"Deregistering {self.name} from Registry")
-        # Use DELETE endpoint directly
         try:
-            response = await self.context.registry._client.delete(
-                f"{self.context.registry.base_url}/v1/agents/{self.agent_id}"
-            )
-            if response.status_code not in (200, 204):
-                logger.warning(f"Failed to deregister: HTTP {response.status_code}")
+            await self.context.registry.deregister_agent(self.agent_id)
         except Exception as e:
             logger.warning(f"Failed to deregister: {e}")
     
@@ -529,10 +524,9 @@ class Agent(ABC):
                     if self._running:
                         # Send heartbeat via PUT endpoint
                         try:
-                            response = await self.context.registry._client.put(
-                                f"{self.context.registry.base_url}/v1/agents/{self.agent_id}/heartbeat"
+                            success = await self.context.registry.refresh_heartbeat(
+                                self.agent_id
                             )
-                            success = response.status_code == 200
                         except Exception:
                             success = False
                         

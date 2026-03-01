@@ -1,7 +1,7 @@
 """
 CRUD operations for agent registry.
 """
-from typing import List, Optional
+from typing import Any, List, Optional
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +24,30 @@ def _now_utc() -> datetime:
     """Get current UTC time without timezone info (for SQLite compatibility)."""
     # For SQLite, we store naive datetimes but represent UTC time
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _event_to_name(event: Any) -> str:
+    """Extract event_name string from an EventDefinition object or plain string.
+
+    AgentCapabilityTable.consumed_event is VARCHAR — the DB stores only the
+    event name. Full EventDefinition schemas are stored separately in the
+    events table via register_event().
+    """
+    if isinstance(event, str):
+        return event
+    if hasattr(event, "event_name"):
+        return event.event_name
+    return str(event)
+
+
+def _events_to_names(events: Any) -> list:
+    """Convert a list of EventDefinition objects or strings to a list of event name strings.
+
+    AgentCapabilityTable.produced_events is JSON[List[str]] — stores event names only.
+    """
+    if not events:
+        return []
+    return [_event_to_name(e) for e in events]
 
 
 class AgentCRUD:
@@ -74,8 +98,10 @@ class AgentCRUD:
                 agent_table_id=agent_table.id,
                 task_name=capability.task_name,
                 description=capability.description,
-                consumed_event=capability.consumed_event,
-                produced_events=capability.produced_events
+                # consumed_event is VARCHAR — extract event name from EventDefinition
+                consumed_event=_event_to_name(capability.consumed_event),
+                # produced_events is JSON[List[str]] — store event names only
+                produced_events=_events_to_names(capability.produced_events)
             )
             db.add(capability_table)
         
@@ -134,8 +160,10 @@ class AgentCRUD:
                     agent_table_id=existing.id,
                     task_name=capability.task_name,
                     description=capability.description,
-                    consumed_event=capability.consumed_event,
-                    produced_events=capability.produced_events
+                    # consumed_event is VARCHAR — extract event name from EventDefinition
+                    consumed_event=_event_to_name(capability.consumed_event),
+                    # produced_events is JSON[List[str]] — store event names only
+                    produced_events=_events_to_names(capability.produced_events)
                 )
                 db.add(capability_table)
             

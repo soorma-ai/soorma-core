@@ -231,3 +231,44 @@ class RegistryClient:
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
         return result.agents
+
+    async def deregister_agent(self, agent_id: str) -> bool:
+        """
+        Deregister (delete) an agent from the registry.
+
+        Must include auth headers (X-Tenant-ID) — the agent belongs to the
+        developer tenant and can only be removed within that tenant scope.
+
+        Args:
+            agent_id: ID of the agent to deregister
+
+        Returns:
+            True if deregistered successfully, False if agent not found
+        """
+        response = await self._client.delete(
+            f"{self.base_url}/v1/agents/{agent_id}",
+            headers=self._auth_headers
+        )
+        if response.status_code == 404:
+            return False
+        response.raise_for_status()
+        return True
+
+    async def refresh_heartbeat(self, agent_id: str) -> bool:
+        """
+        Refresh an agent's heartbeat to extend its TTL.
+
+        Must include auth headers so the registry can verify the request is
+        within the correct developer tenant scope.
+
+        Args:
+            agent_id: ID of the agent to refresh
+
+        Returns:
+            True if heartbeat refreshed successfully, False otherwise
+        """
+        response = await self._client.put(
+            f"{self.base_url}/v1/agents/{agent_id}/heartbeat",
+            headers=self._auth_headers
+        )
+        return response.status_code == 200
