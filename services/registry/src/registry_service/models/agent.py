@@ -3,7 +3,9 @@ SQLAlchemy models for agent registry.
 """
 from datetime import datetime
 from typing import List
+from uuid import UUID
 from sqlalchemy import Integer, String, DateTime, Text, ForeignKey, JSON
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -35,9 +37,9 @@ class AgentTable(Base):
     # Agent identification
     agent_id: Mapped[str] = mapped_column(
         String(255), 
-        nullable=False, 
-        unique=True, 
-        index=True
+        nullable=False,
+        index=True,
+        comment="Agent ID (unique per tenant)"
     )
     name: Mapped[str] = mapped_column(
         String(255), 
@@ -55,6 +57,25 @@ class AgentTable(Base):
     produced_events: Mapped[List[str]] = mapped_column(
         JSON,
         nullable=False
+    )
+    
+    # Multi-tenancy columns (added in migration 003)
+    tenant_id: Mapped[UUID] = mapped_column(
+        postgresql.UUID(),
+        nullable=False,
+        index=True,
+        comment="Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)"
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        postgresql.UUID(),
+        nullable=False,
+        comment="User identifier from validated JWT/API Key (no FK - Identity service owns user entity)"
+    )
+    version: Mapped[str] = mapped_column(
+        String(50),
+        nullable=True,
+        server_default="1.0.0",
+        comment="Agent version for compatibility tracking"
     )
     
     # Relationship to capabilities
