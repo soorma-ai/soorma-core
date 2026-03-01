@@ -75,10 +75,10 @@ def upgrade() -> None:
     
     # Step 2: Add multi-tenancy columns to agents table (with defaults for existing rows)
     op.add_column('agents', sa.Column('tenant_id', postgresql.UUID(), nullable=False,
-                                       server_default="'00000000-0000-0000-0000-000000000000'::uuid",
+                                       server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
                                        comment='Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)'))
     op.add_column('agents', sa.Column('user_id', postgresql.UUID(), nullable=False,
-                                       server_default="'00000000-0000-0000-0000-000000000000'::uuid",
+                                       server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
                                        comment='User identifier from validated JWT/API Key (no FK - Identity service owns user entity)'))
     op.add_column('agents', sa.Column('version', sa.String(50), server_default='1.0.0'))
     
@@ -90,6 +90,15 @@ def upgrade() -> None:
     # BREAKING CHANGE: Remove global unique constraint on agent_id
     op.drop_index('ix_agents_agent_id', table_name='agents')
     
+    # Deduplicate agents before adding unique constraint
+    # Keep the most recent agent for each (agent_id, tenant_id) combination
+    op.execute("""
+        DELETE FROM agents a USING agents b
+        WHERE a.id < b.id 
+        AND a.agent_id = b.agent_id 
+        AND a.tenant_id = b.tenant_id
+    """)
+    
     # Add tenant-scoped unique constraint
     op.create_index('uq_agents_agent_tenant', 'agents', ['agent_id', 'tenant_id'], unique=True)
     
@@ -100,10 +109,10 @@ def upgrade() -> None:
     # Step 3: Add multi-tenancy and schema columns to events table
     op.add_column('events', sa.Column('owner_agent_id', sa.String(255), nullable=True))
     op.add_column('events', sa.Column('tenant_id', postgresql.UUID(), nullable=False,
-                                       server_default="'00000000-0000-0000-0000-000000000000'::uuid",
+                                       server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
                                        comment='Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)'))
     op.add_column('events', sa.Column('user_id', postgresql.UUID(), nullable=False,
-                                       server_default="'00000000-0000-0000-0000-000000000000'::uuid",
+                                       server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
                                        comment='User identifier from validated JWT/API Key (no FK - Identity service owns user entity)'))
     op.add_column('events', sa.Column('payload_schema_name', sa.String(255), nullable=True))
     op.add_column('events', sa.Column('response_schema_name', sa.String(255), nullable=True))
@@ -116,6 +125,15 @@ def upgrade() -> None:
     
     # BREAKING CHANGE: Remove global unique constraint on (event_name, topic)
     op.drop_constraint('uix_event_name_topic', 'events', type_='unique')
+    
+    # Deduplicate events before adding unique constraint
+    # Keep the most recent event for each (event_name, tenant_id) combination
+    op.execute("""
+        DELETE FROM events a USING events b
+        WHERE a.id < b.id 
+        AND a.event_name = b.event_name 
+        AND a.tenant_id = b.tenant_id
+    """)
     
     # Add tenant-scoped unique constraint
     op.create_index('uq_events_event_tenant', 'events', ['event_name', 'tenant_id'], unique=True)
