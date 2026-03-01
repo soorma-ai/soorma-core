@@ -1,12 +1,10 @@
 """
 SQLAlchemy model for payload schema registry.
-
-STUB: Model structure defined, implementation in GREEN phase.
 """
 from datetime import datetime
 from typing import Dict, Any, Optional
-from uuid import UUID
-from sqlalchemy import String, DateTime, Text, JSON
+from uuid import UUID, uuid4
+from sqlalchemy import String, DateTime, Text, JSON, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -16,17 +14,18 @@ from .base import Base
 class PayloadSchemaTable(Base):
     """
     Payload schema storage with versioning and multi-tenancy support.
-    
-    STUB: Table structure defined, RLS policies to be added in migration.
+
+    Multi-tenancy: tenant_id uses Uuid(as_uuid=True) — same pattern as AgentTable.
+    Primary key: uses Python-side uuid4() for SQLite compatibility (Decision D4 in action plan).
     """
     __tablename__ = "payload_schemas"
-    
-    # Primary key and timestamps (STUB - implementation in GREEN phase)
+
+    # Primary key: Python-side uuid4() so PostgreSQL and SQLite both work correctly.
+    # gen_random_uuid() is PostgreSQL-only and breaks SQLite test runs.
     id: Mapped[UUID] = mapped_column(
-        "id",
-        nullable=False,
+        Uuid(as_uuid=True, native_uuid=True),
         primary_key=True,
-        server_default=func.gen_random_uuid(),
+        default=uuid4,
         comment="Primary key (UUID)"
     )
     created_at: Mapped[datetime] = mapped_column(
@@ -73,10 +72,12 @@ class PayloadSchemaTable(Base):
     )
     
     # Developer tenancy (registry is scoped to the developer, not end-user sessions)
+    # Uses Uuid(as_uuid=True, native_uuid=True) — same pattern as AgentTable (§4 multi-tenancy)
     tenant_id: Mapped[UUID] = mapped_column(
-        "tenant_id",
+        Uuid(as_uuid=True, native_uuid=True),
         nullable=False,
-        comment="Developer tenant identifier \u2014 registry is developer-scoped, not user-session-scoped"
+        index=True,
+        comment="Developer tenant identifier — registry is developer-scoped, not user-session-scoped"
     )
     
     def __repr__(self) -> str:
