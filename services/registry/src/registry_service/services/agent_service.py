@@ -2,6 +2,7 @@
 Service layer for agent registry operations.
 """
 from typing import Optional
+from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,7 +26,9 @@ class AgentRegistryService:
     @staticmethod
     async def register_agent(
         db: AsyncSession,
-        agent: AgentDefinition
+        agent: AgentDefinition,
+        tenant_id: UUID,
+        user_id: UUID
     ) -> AgentRegistrationResponse:
         """
         Register or update an agent in the registry (upsert operation).
@@ -33,6 +36,8 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent: Agent definition to register/update
+            tenant_id: Tenant ID from authentication
+            user_id: User ID from authentication
             
         Returns:
             AgentRegistrationResponse with registration status
@@ -50,7 +55,9 @@ class AgentRegistryService:
                 ))
             
             # Upsert the agent
-            agent_table, was_created = await agent_crud.upsert_agent(db, agent)
+            agent_table, was_created = await agent_crud.upsert_agent(
+                db, agent, tenant_id, user_id
+            )
             await db.commit()
             
             if was_created:
@@ -76,7 +83,8 @@ class AgentRegistryService:
     @staticmethod
     async def refresh_agent_heartbeat(
         db: AsyncSession,
-        agent_id: str
+        agent_id: str,
+        tenant_id: UUID
     ) -> AgentRegistrationResponse:
         """
         Refresh an agent's heartbeat to extend its TTL.
@@ -84,12 +92,13 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent_id: ID of the agent to refresh
+            tenant_id: Tenant ID from authentication
             
         Returns:
             AgentRegistrationResponse with refresh status
         """
         try:
-            success = await agent_crud.update_heartbeat(db, agent_id)
+            success = await agent_crud.update_heartbeat(db, agent_id, tenant_id)
             
             if not success:
                 return AgentRegistrationResponse(
@@ -116,7 +125,8 @@ class AgentRegistryService:
     @staticmethod
     async def delete_agent(
         db: AsyncSession,
-        agent_id: str
+        agent_id: str,
+        tenant_id: UUID
     ) -> bool:
         """
         Delete an agent.
@@ -124,12 +134,13 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication
             
         Returns:
             True if deleted, False if not found
         """
         try:
-            success = await agent_crud.delete_agent(db, agent_id)
+            success = await agent_crud.delete_agent(db, agent_id, tenant_id)
             await db.commit()
             return success
         except Exception:
@@ -154,6 +165,7 @@ class AgentRegistryService:
     @staticmethod
     async def query_agents(
         db: AsyncSession,
+        tenant_id: UUID,
         agent_id: Optional[str] = None,
         name: Optional[str] = None,
         consumed_event: Optional[str] = None,
@@ -165,6 +177,7 @@ class AgentRegistryService:
         
         Args:
             db: Database session
+            tenant_id: Tenant ID from authentication (automatic filter)
             agent_id: Specific agent ID to query
             name: Filter by agent name
             consumed_event: Filter by consumed event
@@ -181,12 +194,13 @@ class AgentRegistryService:
                 agent_table = await agent_crud.get_agent_by_id(
                     db, 
                     agent_id,
+                    tenant_id,
                     include_expired=include_expired,
                     ttl_seconds=ttl_seconds
                 )
                 agents = [agent_crud.agent_to_dto(agent_table)] if agent_table else []
             elif name:
-                agent_tables = await agent_crud.get_agents_by_name(db, name)
+                agent_tables = await agent_crud.get_agents_by_name(db, name, tenant_id)
                 # Filter expired agents manually for name search
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
@@ -196,7 +210,9 @@ class AgentRegistryService:
                 agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
                 agents = [agent_crud.agent_to_dto(a) for a in agent_tables]
             elif consumed_event:
-                agent_tables = await agent_crud.get_agents_by_consumed_event(db, consumed_event)
+                agent_tables = await agent_crud.get_agents_by_consumed_event(
+                    db, consumed_event, tenant_id
+                )
                 # Filter expired agents manually
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
@@ -206,7 +222,9 @@ class AgentRegistryService:
                 agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
                 agents = [agent_crud.agent_to_dto(a) for a in agent_tables]
             elif produced_event:
-                agent_tables = await agent_crud.get_agents_by_produced_event(db, produced_event)
+                agent_tables = await agent_crud.get_agents_by_produced_event(
+                    db, produced_event, tenant_id
+                )
                 # Filter expired agents manually
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
@@ -218,6 +236,7 @@ class AgentRegistryService:
             else:
                 agent_tables = await agent_crud.get_all_agents(
                     db,
+                    tenant_id,
                     include_expired=include_expired,
                     ttl_seconds=ttl_seconds
                 )

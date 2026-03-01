@@ -2,6 +2,7 @@
 CRUD operations for agent registry.
 """
 from typing import List, Optional
+from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
@@ -31,7 +32,9 @@ class AgentCRUD:
     async def create_agent(
         self, 
         db: AsyncSession, 
-        agent: AgentDefinition
+        agent: AgentDefinition,
+        tenant_id: UUID,
+        user_id: UUID
     ) -> AgentTable:
         """
         Create a new agent in the database.
@@ -39,6 +42,8 @@ class AgentCRUD:
         Args:
             db: Database session
             agent: Agent definition to create
+            tenant_id: Tenant ID from authentication
+            user_id: User ID from authentication
             
         Returns:
             Created AgentTable instance
@@ -50,6 +55,8 @@ class AgentCRUD:
             description=agent.description,
             consumed_events=agent.consumed_events,
             produced_events=agent.produced_events,
+            tenant_id=tenant_id,
+            user_id=user_id,
             last_heartbeat=_now_utc()
         )
         db.add(agent_table)
@@ -88,7 +95,9 @@ class AgentCRUD:
     async def upsert_agent(
         self, 
         db: AsyncSession, 
-        agent: AgentDefinition
+        agent: AgentDefinition,
+        tenant_id: UUID,
+        user_id: UUID
     ) -> tuple[AgentTable, bool]:
         """
         Create or update an agent in the database.
@@ -96,13 +105,17 @@ class AgentCRUD:
         Args:
             db: Database session
             agent: Agent definition to upsert
+            tenant_id: Tenant ID from authentication
+            user_id: User ID from authentication
             
         Returns:
             Tuple of (AgentTable instance, was_created: bool)
             was_created is True if a new agent was created, False if updated
         """
-        # Check if agent exists (including expired ones)
-        existing = await self.get_agent_by_id(db, agent.agent_id, include_expired=True)
+        # Check if agent exists (including expired ones) in this tenant
+        existing = await self.get_agent_by_id(
+            db, agent.agent_id, tenant_id, include_expired=True
+        )
         
         if existing:
             # Update existing agent
@@ -142,7 +155,7 @@ class AgentCRUD:
             return existing, False
         else:
             # Create new agent
-            agent_table = await self.create_agent(db, agent)
+            agent_table = await self.create_agent(db, agent, tenant_id, user_id)
             return agent_table, True
     
     @cache_agent
@@ -150,6 +163,7 @@ class AgentCRUD:
         self, 
         db: AsyncSession, 
         agent_id: str,
+        tenant_id: UUID,
         include_expired: bool = False,
         ttl_seconds: Optional[int] = None
     ) -> Optional[AgentTable]:
@@ -159,13 +173,17 @@ class AgentCRUD:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication (filter)
             include_expired: If False, exclude expired agents
             ttl_seconds: TTL in seconds (required if include_expired=False)
             
         Returns:
             AgentTable if found, None otherwise
         """
-        query = select(AgentTable).where(AgentTable.agent_id == agent_id)
+        query = select(AgentTable).where(
+            AgentTable.agent_id == agent_id,
+            AgentTable.tenant_id == tenant_id
+        )
         
         if not include_expired and ttl_seconds is not None:
             expiry_threshold = _now_utc() - timedelta(seconds=ttl_seconds)
