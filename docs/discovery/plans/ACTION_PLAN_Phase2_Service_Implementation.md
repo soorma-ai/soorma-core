@@ -1,13 +1,13 @@
 # Action Plan: Phase 2 - Service Implementation (SOOR-DISC-P2)
 
-**Status:** 📋 Planning — Awaiting Developer Approval  
+**Status:** ✅ Approved — Implementation in Progress  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 2 of 5  
 **Estimated Duration:** 3-4 days  
 **Target Release:** v0.8.2  
 **Created:** March 1, 2026  
-**Approved By:** (pending)  
-**Approval Date:** (pending)
+**Approved By:** Developer  
+**Approval Date:** March 1, 2026
 
 ---
 
@@ -344,23 +344,24 @@ async def discover_agents(
 
 ## 6. Decisions & Risks
 
-| # | Decision | Rationale |
-|---|----------|-----------|
-| D1 | No upsert for schemas | Schemas are versioned; `POST` with same `(name, version, tenant)` = 409. Immutable once registered. |
-| D2 | Discovery returns `AgentDefinition[]` in Phase 2, `DiscoveredAgent[]` in Phase 3 | Avoids re-implementing agent-to-dto logic; `DiscoveredAgent` is a richer wrapper added in Phase 3 |
-| D3 | RLS session var set via `get_db` dependency (not middleware) | Middleware has no DB access; dependency injection pattern is cleaner |
-| D4 | `gen_random_uuid()` not available in SQLite | `PayloadSchemaTable.id` server_default will fail on SQLite. Fix: generate UUID in Python before insert, don't rely on `server_default` for SQLite tests |
+| # | Decision | Rationale | Status |
+|---|----------|-----------|--------|
+| D1 | No upsert for schemas — `POST` with same `(name, version, tenant)` = 409 Conflict. Schemas are immutable once registered. | Versioned schemas must not be silently overwritten. New version = new registration. | ✅ Approved |
+| D2 | Discovery returns `AgentDefinition[]` in Phase 2, `DiscoveredAgent[]` in Phase 3 | Avoids re-implementing agent-to-dto logic; `DiscoveredAgent` is a richer wrapper added in Phase 3 | ✅ Approved |
+| D3 | RLS session var set via `get_db` dependency (not middleware) | Middleware has no DB access; dependency injection pattern is cleaner | ✅ Approved |
+| D4 | `PayloadSchemaTable.id` uses `default=uuid4` (Python-side) instead of `server_default=func.gen_random_uuid()` (DB-side) | `gen_random_uuid()` is PostgreSQL-only and fails on SQLite. Python-side `uuid4()` generates the UUID before INSERT and passes it as a bind parameter — PostgreSQL stores it in the native UUID column identically. Same compatibility guarantee as the Phase 1 `Uuid(as_uuid=True)` column type fix. | ✅ Approved |
 
 ---
 
-## 7. Open Questions (Resolve Before Task 3.1)
+## 7. Open Questions
 
-1. **D4 workaround**: Should `PayloadSchemaTable.id` use `default=uuid.uuid4` (Python-side) instead of `server_default=func.gen_random_uuid()` (DB-side)? This avoids the SQLite compatibility issue.
-   - **Proposed answer:** Yes — use `default=uuid4` in Python column definition. PostgreSQL will use it too.
+All questions resolved. No blockers.
 
-2. **Schema uniqueness**: On duplicate `(schema_name, version, tenant_id)`, should `POST /v1/schemas` upsert (update) or return 409?
-   - **Proposed answer:** 409 Conflict — schemas are immutable once registered. To update, use a new version.
+| # | Question | Resolution |
+|---|----------|------------|
+| Q1 | `PayloadSchemaTable.id` — Python-side `uuid4` vs DB-side `gen_random_uuid()`? | ✅ Use `default=uuid4` (Python-side). PostgreSQL-compatible: SQLAlchemy passes UUID as bind parameter; native UUID column stores it identically. |
+| Q2 | Duplicate `(schema_name, version, tenant_id)` on `POST /v1/schemas` — upsert or 409? | ✅ 409 Conflict. Schemas are immutable once registered; new version = new registration. |
 
 ---
 
-**This plan is READY FOR APPROVAL.** Implementation begins after developer commits to proceed.
+**This plan is APPROVED.** Implementation begins with Task 1.1 (Phase 2A — Fix + Stub).
