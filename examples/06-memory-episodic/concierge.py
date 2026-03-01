@@ -13,16 +13,31 @@ from typing import Any, Dict, List
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
+
+
+# Define event types
+CONCIERGE_QUERY_EVENT = EventDefinition(
+    event_name="concierge.query",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Query for concierge service"
+)
+
+CHAT_RESPONSE_EVENT = EventDefinition(
+    event_name="chat.response",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Chat response to user"
+)
 
 
 concierge = Worker(
     name="chatbot-concierge",
     description="Helps users explore and understand their conversation history",
     capabilities=["conversation-analysis", "history-retrieval"],
-    events_consumed=["concierge.query"],
-    events_produced=["chat.response"],
+    events_consumed=[CONCIERGE_QUERY_EVENT],
+    events_produced=[CHAT_RESPONSE_EVENT],
 )
 
 

@@ -1,13 +1,14 @@
 """
 CRUD operations for agent registry.
 """
-from typing import List, Optional
+from typing import Any, List, Optional
+from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from soorma_common import AgentDefinition, AgentCapability
+from soorma_common import AgentDefinition, AgentCapability, EventDefinition
 from ..models import AgentTable, AgentCapabilityTable
 from ..core.cache import cache_agent, invalidate_agent_cache
 
@@ -25,13 +26,38 @@ def _now_utc() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _event_to_name(event: Any) -> str:
+    """Extract event_name string from an EventDefinition object or plain string.
+
+    AgentCapabilityTable.consumed_event is VARCHAR — the DB stores only the
+    event name. Full EventDefinition schemas are stored separately in the
+    events table via register_event().
+    """
+    if isinstance(event, str):
+        return event
+    if hasattr(event, "event_name"):
+        return event.event_name
+    return str(event)
+
+
+def _events_to_names(events: Any) -> list:
+    """Convert a list of EventDefinition objects or strings to a list of event name strings.
+
+    AgentCapabilityTable.produced_events is JSON[List[str]] — stores event names only.
+    """
+    if not events:
+        return []
+    return [_event_to_name(e) for e in events]
+
+
 class AgentCRUD:
     """CRUD operations for agents."""
     
     async def create_agent(
         self, 
         db: AsyncSession, 
-        agent: AgentDefinition
+        agent: AgentDefinition,
+        developer_tenant_id: UUID
     ) -> AgentTable:
         """
         Create a new agent in the database.
@@ -39,6 +65,7 @@ class AgentCRUD:
         Args:
             db: Database session
             agent: Agent definition to create
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             Created AgentTable instance
@@ -50,6 +77,7 @@ class AgentCRUD:
             description=agent.description,
             consumed_events=agent.consumed_events,
             produced_events=agent.produced_events,
+            tenant_id=developer_tenant_id,
             last_heartbeat=_now_utc()
         )
         db.add(agent_table)
@@ -70,8 +98,10 @@ class AgentCRUD:
                 agent_table_id=agent_table.id,
                 task_name=capability.task_name,
                 description=capability.description,
-                consumed_event=capability.consumed_event,
-                produced_events=capability.produced_events
+                # consumed_event is VARCHAR — extract event name from EventDefinition
+                consumed_event=_event_to_name(capability.consumed_event),
+                # produced_events is JSON[List[str]] — store event names only
+                produced_events=_events_to_names(capability.produced_events)
             )
             db.add(capability_table)
         
@@ -88,7 +118,8 @@ class AgentCRUD:
     async def upsert_agent(
         self, 
         db: AsyncSession, 
-        agent: AgentDefinition
+        agent: AgentDefinition,
+        developer_tenant_id: UUID
     ) -> tuple[AgentTable, bool]:
         """
         Create or update an agent in the database.
@@ -96,13 +127,16 @@ class AgentCRUD:
         Args:
             db: Database session
             agent: Agent definition to upsert
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             Tuple of (AgentTable instance, was_created: bool)
             was_created is True if a new agent was created, False if updated
         """
-        # Check if agent exists (including expired ones)
-        existing = await self.get_agent_by_id(db, agent.agent_id, include_expired=True)
+        # Check if agent exists (including expired ones) in this tenant
+        existing = await self.get_agent_by_id(
+            db, agent.agent_id, developer_tenant_id, include_expired=True
+        )
         
         if existing:
             # Update existing agent
@@ -126,8 +160,10 @@ class AgentCRUD:
                     agent_table_id=existing.id,
                     task_name=capability.task_name,
                     description=capability.description,
-                    consumed_event=capability.consumed_event,
-                    produced_events=capability.produced_events
+                    # consumed_event is VARCHAR — extract event name from EventDefinition
+                    consumed_event=_event_to_name(capability.consumed_event),
+                    # produced_events is JSON[List[str]] — store event names only
+                    produced_events=_events_to_names(capability.produced_events)
                 )
                 db.add(capability_table)
             
@@ -142,7 +178,7 @@ class AgentCRUD:
             return existing, False
         else:
             # Create new agent
-            agent_table = await self.create_agent(db, agent)
+            agent_table = await self.create_agent(db, agent, developer_tenant_id)
             return agent_table, True
     
     @cache_agent
@@ -150,6 +186,7 @@ class AgentCRUD:
         self, 
         db: AsyncSession, 
         agent_id: str,
+        tenant_id: UUID,
         include_expired: bool = False,
         ttl_seconds: Optional[int] = None
     ) -> Optional[AgentTable]:
@@ -159,13 +196,17 @@ class AgentCRUD:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication (filter)
             include_expired: If False, exclude expired agents
             ttl_seconds: TTL in seconds (required if include_expired=False)
             
         Returns:
             AgentTable if found, None otherwise
         """
-        query = select(AgentTable).where(AgentTable.agent_id == agent_id)
+        query = select(AgentTable).where(
+            AgentTable.agent_id == agent_id,
+            AgentTable.tenant_id == tenant_id
+        )
         
         if not include_expired and ttl_seconds is not None:
             expiry_threshold = _now_utc() - timedelta(seconds=ttl_seconds)
@@ -204,7 +245,8 @@ class AgentCRUD:
     async def get_agents_by_consumed_event(
         self, 
         db: AsyncSession, 
-        event_name: str
+        event_name: str,
+        tenant_id: UUID
     ) -> List[AgentTable]:
         """
         Get agents that consume a specific event.
@@ -212,20 +254,22 @@ class AgentCRUD:
         Args:
             db: Database session
             event_name: Name of the event
+            tenant_id: Tenant ID from authentication
             
         Returns:
             List of AgentTable instances
         """
         # Get all agents and filter in Python for SQLite compatibility
         # (JSON columns don't support array contains operations)
-        all_agents = await self.get_all_agents(db)
+        all_agents = await self.get_all_agents(db, tenant_id)
         return [a for a in all_agents if event_name in a.consumed_events]
     
     @cache_agent
     async def get_agents_by_produced_event(
         self, 
         db: AsyncSession, 
-        event_name: str
+        event_name: str,
+        tenant_id: UUID
     ) -> List[AgentTable]:
         """
         Get agents that produce a specific event.
@@ -233,18 +277,20 @@ class AgentCRUD:
         Args:
             db: Database session
             event_name: Name of the event
+            tenant_id: Tenant ID from authentication
             
         Returns:
             List of AgentTable instances
         """
         # Get all agents and filter in Python for SQLite compatibility
-        all_agents = await self.get_all_agents(db)
+        all_agents = await self.get_all_agents(db, tenant_id)
         return [a for a in all_agents if event_name in a.produced_events]
     
     @cache_agent
     async def get_all_agents(
         self, 
         db: AsyncSession,
+        tenant_id: UUID,
         include_expired: bool = False,
         ttl_seconds: Optional[int] = None
     ) -> List[AgentTable]:
@@ -253,13 +299,16 @@ class AgentCRUD:
         
         Args:
             db: Database session
+            tenant_id: Tenant ID from authentication (filter)
             include_expired: If False, exclude expired agents
             ttl_seconds: TTL in seconds (required if include_expired=False)
             
         Returns:
-            List of all AgentTable instances
+            List of all AgentTable instances for this tenant
         """
-        query = select(AgentTable)
+        query = select(AgentTable).where(
+            AgentTable.tenant_id == tenant_id
+        )
         
         if not include_expired and ttl_seconds is not None:
             expiry_threshold = _now_utc() - timedelta(seconds=ttl_seconds)
@@ -294,7 +343,8 @@ class AgentCRUD:
     async def update_heartbeat(
         self,
         db: AsyncSession,
-        agent_id: str
+        agent_id: str,
+        tenant_id: UUID
     ) -> bool:
         """
         Update the heartbeat timestamp for an agent.
@@ -302,11 +352,14 @@ class AgentCRUD:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication
             
         Returns:
             True if agent was found and updated, False otherwise
         """
-        agent = await self.get_agent_by_id(db, agent_id, include_expired=True)
+        agent = await self.get_agent_by_id(
+            db, agent_id, tenant_id, include_expired=True
+        )
         if not agent:
             return False
         
@@ -321,7 +374,8 @@ class AgentCRUD:
     async def delete_agent(
         self,
         db: AsyncSession,
-        agent_id: str
+        agent_id: str,
+        tenant_id: UUID
     ) -> bool:
         """
         Delete an agent by ID.
@@ -329,11 +383,14 @@ class AgentCRUD:
         Args:
             db: Database session
             agent_id: ID of the agent
+            tenant_id: Tenant ID from authentication
             
         Returns:
             True if agent was found and deleted, False otherwise
         """
-        agent = await self.get_agent_by_id(db, agent_id, include_expired=True)
+        agent = await self.get_agent_by_id(
+            db, agent_id, tenant_id, include_expired=True
+        )
         if not agent:
             return False
             
@@ -438,30 +495,40 @@ class AgentCRUD:
         Returns:
             AgentDefinition DTO
         """
+        # AgentCapabilityTable.consumed_event is VARCHAR (stores event name string).
+        # Wrap strings back into EventDefinition for AgentCapability (v0.8.1+ requires EventDefinition).
         capabilities = [
             AgentCapability(
                 task_name=cap.task_name,
                 description=cap.description,
-                consumed_event=cap.consumed_event,
-                produced_events=cap.produced_events
+                consumed_event=(
+                    EventDefinition(event_name=cap.consumed_event, topic="action-requests", description="")
+                    if isinstance(cap.consumed_event, str) else cap.consumed_event
+                ),
+                produced_events=[
+                    EventDefinition(event_name=ev, topic="action-results", description="")
+                    if isinstance(ev, str) else ev
+                    for ev in cap.produced_events
+                ]
             )
             for cap in agent.capabilities
         ]
-        
-        # Derive agent-level events from capabilities
-        # If agent has legacy data in consumed_events/produced_events, use those
-        # Otherwise, derive from capabilities
+
+        # Derive agent-level event name lists from capabilities.
+        # EventDefinition objects are not hashable — use .event_name strings in the set.
         if agent.consumed_events and agent.produced_events:
             consumed_events = agent.consumed_events
             produced_events = agent.produced_events
         else:
-            # Derive from capabilities
-            consumed_events = list(set(cap.consumed_event for cap in capabilities))
-            produced_events = list(set(
-                event 
-                for cap in capabilities 
-                for event in cap.produced_events
-            ))
+            consumed_events = list({
+                cap.consumed_event.event_name if hasattr(cap.consumed_event, "event_name") else str(cap.consumed_event)
+                for cap in capabilities
+            })
+            produced_events = list({
+                ev.event_name if hasattr(ev, "event_name") else str(ev)
+                for cap in capabilities
+                for ev in cap.produced_events
+            })
         
         return AgentDefinition(
             agent_id=agent.agent_id,

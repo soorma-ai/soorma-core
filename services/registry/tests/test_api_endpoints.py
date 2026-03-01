@@ -7,12 +7,6 @@ from fastapi.testclient import TestClient
 from registry_service.main import app
 
 
-@pytest.fixture
-def client():
-    """Create a test client for the FastAPI app."""
-    return TestClient(app)
-
-
 class TestHealthEndpoints:
     """Tests for health and root endpoints."""
     
@@ -133,12 +127,22 @@ class TestAgentEndpoints:
                     {
                         "taskName": "test_task",
                         "description": "Test Task",
-                        "consumedEvent": "test.event",
-                        "producedEvents": ["test.response"]
+                        "consumedEvent": {
+                            "eventName": "test.event",
+                            "topic": "action-requests",
+                            "description": "Triggers test task",
+                        },
+                        "producedEvents": [
+                            {
+                                "eventName": "test.response",
+                                "topic": "action-results",
+                                "description": "Result of test task",
+                            }
+                        ],
                     }
                 ],
                 "consumedEvents": ["test.event"],
-                "producedEvents": ["test.response"]
+                "producedEvents": ["test.response"],
             }
         }
         
@@ -160,12 +164,22 @@ class TestAgentEndpoints:
                     {
                         "taskName": "test_task",
                         "description": "Test Task",
-                        "consumedEvent": "test.event",
-                        "producedEvents": ["test.response"]
+                        "consumedEvent": {
+                            "eventName": "test.event",
+                            "topic": "action-requests",
+                            "description": "Triggers test task",
+                        },
+                        "producedEvents": [
+                            {
+                                "eventName": "test.response",
+                                "topic": "action-results",
+                                "description": "Result of test task",
+                            }
+                        ],
                     }
                 ],
                 "consumedEvents": ["test.event"],
-                "producedEvents": ["test.response"]
+                "producedEvents": ["test.response"],
             }
         }
         client.post("/v1/agents", json=agent_data)
@@ -221,16 +235,26 @@ class TestAgentEndpoints:
                     {
                         "taskName": "query_test",
                         "description": "Query Test",
-                        "consumedEvent": "query.test.event",
-                        "producedEvents": ["query.test.response"]
+                        "consumedEvent": {
+                            "eventName": "query.test.event",
+                            "topic": "action-requests",
+                            "description": "Triggers query test",
+                        },
+                        "producedEvents": [
+                            {
+                                "eventName": "query.test.response",
+                                "topic": "action-results",
+                                "description": "Query test result",
+                            }
+                        ],
                     }
                 ],
                 "consumedEvents": ["query.test.event"],
-                "producedEvents": ["query.test.response"]
+                "producedEvents": ["query.test.response"],
             }
         }
         client.post("/v1/agents", json=agent_data)
-        
+
         # Then query by agent_id
         response = client.get("/v1/agents", params={"agent_id": "query-test-agent-v1"})
         assert response.status_code == 200
@@ -250,16 +274,26 @@ class TestAgentEndpoints:
                     {
                         "taskName": "consume",
                         "description": "Consume Task",
-                        "consumedEvent": "unique.consumed.event",
-                        "producedEvents": ["result.event"]
+                        "consumedEvent": {
+                            "eventName": "unique.consumed.event",
+                            "topic": "action-requests",
+                            "description": "Triggers consume task",
+                        },
+                        "producedEvents": [
+                            {
+                                "eventName": "result.event",
+                                "topic": "action-results",
+                                "description": "Consume result",
+                            }
+                        ],
                     }
                 ],
                 "consumedEvents": ["unique.consumed.event"],
-                "producedEvents": ["result.event"]
+                "producedEvents": ["result.event"],
             }
         }
         client.post("/v1/agents", json=agent_data)
-        
+
         # Then query by consumed event
         response = client.get("/v1/agents", params={"consumed_event": "unique.consumed.event"})
         assert response.status_code == 200
@@ -285,16 +319,26 @@ class TestAgentEndpoints:
                     {
                         "taskName": "produce",
                         "description": "Produce Task",
-                        "consumedEvent": "input.event",
-                        "producedEvents": ["unique.produced.event"]
+                        "consumedEvent": {
+                            "eventName": "input.event",
+                            "topic": "action-requests",
+                            "description": "Triggers produce task",
+                        },
+                        "producedEvents": [
+                            {
+                                "eventName": "unique.produced.event",
+                                "topic": "action-results",
+                                "description": "Produced output",
+                            }
+                        ],
                     }
                 ],
                 "consumedEvents": ["input.event"],
-                "producedEvents": ["unique.produced.event"]
+                "producedEvents": ["unique.produced.event"],
             }
         }
         client.post("/v1/agents", json=agent_data)
-        
+
         # Then query by produced event
         response = client.get("/v1/agents", params={"produced_event": "unique.produced.event"})
         assert response.status_code == 200

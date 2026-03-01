@@ -12,7 +12,8 @@ from registry_service.core.cache import invalidate_agent_cache
 from registry_service.crud import agent_crud
 from registry_service.services.agent_service import AgentRegistryService
 from registry_service.models.agent import AgentTable
-from soorma_common import AgentDefinition, AgentCapability
+from soorma_common import AgentDefinition, AgentCapability, EventDefinition
+from tests.conftest import TEST_TENANT_ID
 
 
 @pytest.fixture
@@ -26,10 +27,20 @@ def sample_agent():
             AgentCapability(
                 task_name="test_task",
                 description="Test task",
-                consumed_event="test.event",
-                produced_events=["test.result"]
+                consumed_event=EventDefinition(
+                    event_name="test.event",
+                    topic="action-requests",
+                    description="Triggers test task",
+                ),
+                produced_events=[
+                    EventDefinition(
+                        event_name="test.result",
+                        topic="action-results",
+                        description="Result of test task",
+                )
+                ],
             )
-        ]
+        ],
     )
 
 
@@ -38,14 +49,15 @@ async def test_agent_creation_sets_heartbeat(sample_agent):
     """Test that creating an agent sets the last_heartbeat timestamp."""
     async with AsyncSessionLocal() as db:
         # Register agent
-        result = await AgentRegistryService.register_agent(db, sample_agent)
+        result = await AgentRegistryService.register_agent(db, sample_agent, TEST_TENANT_ID)
         assert result.success is True
-        
+
         # Retrieve agent and check last_heartbeat
         agent_table = await agent_crud.get_agent_by_id(
-            db, 
+            db,
             sample_agent.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert agent_table is not None
         assert agent_table.last_heartbeat is not None
@@ -61,29 +73,31 @@ async def test_update_heartbeat(sample_agent):
     """Test updating an agent's heartbeat."""
     async with AsyncSessionLocal() as db:
         # Register agent
-        await AgentRegistryService.register_agent(db, sample_agent)
-        
+        await AgentRegistryService.register_agent(db, sample_agent, TEST_TENANT_ID)
+
         # Get initial heartbeat
         agent_table = await agent_crud.get_agent_by_id(
             db,
             sample_agent.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         initial_heartbeat = agent_table.last_heartbeat
-        
+
         # Wait a moment
         await asyncio.sleep(0.1)
-        
+
         # Update heartbeat
-        success = await agent_crud.update_heartbeat(db, sample_agent.agent_id)
+        success = await agent_crud.update_heartbeat(db, sample_agent.agent_id, TEST_TENANT_ID)
         await db.commit()
         assert success is True
-        
+
         # Re-fetch agent to check heartbeat was updated
         updated_agent_table = await agent_crud.get_agent_by_id(
             db,
             sample_agent.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert updated_agent_table.last_heartbeat > initial_heartbeat
 
@@ -93,12 +107,13 @@ async def test_refresh_agent_heartbeat_service(sample_agent):
     """Test the service layer heartbeat refresh."""
     async with AsyncSessionLocal() as db:
         # Register agent
-        await AgentRegistryService.register_agent(db, sample_agent)
-        
+        await AgentRegistryService.register_agent(db, sample_agent, TEST_TENANT_ID)
+
         # Refresh heartbeat via service
         result = await AgentRegistryService.refresh_agent_heartbeat(
             db,
-            sample_agent.agent_id
+            sample_agent.agent_id,
+            TEST_TENANT_ID,
         )
         
         assert result.success is True
@@ -111,7 +126,8 @@ async def test_refresh_nonexistent_agent():
     async with AsyncSessionLocal() as db:
         result = await AgentRegistryService.refresh_agent_heartbeat(
             db,
-            "nonexistent-agent"
+            "nonexistent-agent",
+            TEST_TENANT_ID,
         )
         
         assert result.success is False
@@ -123,13 +139,14 @@ async def test_get_expired_agents(sample_agent):
     """Test retrieving expired agents."""
     async with AsyncSessionLocal() as db:
         # Register agent
-        await AgentRegistryService.register_agent(db, sample_agent)
-        
+        await AgentRegistryService.register_agent(db, sample_agent, TEST_TENANT_ID)
+
         # Get agent and manually set old heartbeat
         agent_table = await agent_crud.get_agent_by_id(
             db,
             sample_agent.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         
         # Set heartbeat to 1 hour ago
@@ -156,7 +173,7 @@ async def test_get_expired_agents_excludes_active(sample_agent):
     """Test that get_expired_agents doesn't return active agents."""
     async with AsyncSessionLocal() as db:
         # Register agent (with current heartbeat)
-        await AgentRegistryService.register_agent(db, sample_agent)
+        await AgentRegistryService.register_agent(db, sample_agent, TEST_TENANT_ID)
         
         # Get expired agents with short TTL (should not include our agent)
         expired = await agent_crud.get_expired_agents(db, ttl_seconds=3600)
@@ -174,8 +191,8 @@ async def test_delete_expired_agents(sample_agent):
     
     async with AsyncSessionLocal() as db:
         # Register agent
-        await AgentRegistryService.register_agent(db, sample_agent)
-        
+        await AgentRegistryService.register_agent(db, sample_agent, TEST_TENANT_ID)
+
         # Set old heartbeat using SQL update
         old_heartbeat = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
         await db.execute(
@@ -184,13 +201,13 @@ async def test_delete_expired_agents(sample_agent):
             .values(last_heartbeat=old_heartbeat)
         )
         await db.commit()
-        
+
         # Delete expired agents
         deleted_count = await agent_crud.delete_expired_agents(db, ttl_seconds=1800)
         await db.commit()
-        
+
         assert deleted_count > 0
-    
+
     # Clear cache and use fresh session to verify deletion
     _agent_cache.clear()
     async with AsyncSessionLocal() as db:
@@ -198,6 +215,7 @@ async def test_delete_expired_agents(sample_agent):
         agent_table = await agent_crud.get_agent_by_id(
             db,
             sample_agent.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert agent_table is None

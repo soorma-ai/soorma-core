@@ -14,7 +14,8 @@ from registry_service.core.cache import invalidate_agent_cache
 from registry_service.crud import agent_crud
 from registry_service.services.agent_service import AgentRegistryService
 from registry_service.models.agent import AgentTable, AgentCapabilityTable
-from soorma_common import AgentDefinition, AgentCapability
+from soorma_common import AgentDefinition, AgentCapability, EventDefinition
+from tests.conftest import TEST_TENANT_ID
 
 
 @pytest.fixture
@@ -28,22 +29,57 @@ def agent_with_multiple_capabilities():
             AgentCapability(
                 task_name="capability_one",
                 description="First capability",
-                consumed_event="event.one",
-                produced_events=["result.one"]
+                consumed_event=EventDefinition(
+                    event_name="event.one",
+                    topic="action-requests",
+                    description="Triggers capability one",
+                ),
+                produced_events=[
+                    EventDefinition(
+                        event_name="result.one",
+                        topic="action-results",
+                        description="Result one",
+                    )
+                ],
             ),
             AgentCapability(
                 task_name="capability_two",
                 description="Second capability",
-                consumed_event="event.two",
-                produced_events=["result.two", "result.three"]
+                consumed_event=EventDefinition(
+                    event_name="event.two",
+                    topic="action-requests",
+                    description="Triggers capability two",
+                ),
+                produced_events=[
+                    EventDefinition(
+                        event_name="result.two",
+                        topic="action-results",
+                        description="Result two",
+                    ),
+                    EventDefinition(
+                        event_name="result.three",
+                        topic="action-results",
+                        description="Result three",
+                    ),
+                ],
             ),
             AgentCapability(
                 task_name="capability_three",
                 description="Third capability",
-                consumed_event="event.three",
-                produced_events=["result.four"]
-            )
-        ]
+                consumed_event=EventDefinition(
+                    event_name="event.three",
+                    topic="action-requests",
+                    description="Triggers capability three",
+                ),
+                produced_events=[
+                    EventDefinition(
+                        event_name="result.four",
+                        topic="action-results",
+                        description="Result four",
+                    )
+                ],
+            ),
+        ],
     )
 
 
@@ -57,14 +93,15 @@ async def test_expired_agent_cleanup_deletes_capabilities(agent_with_multiple_ca
     """
     async with AsyncSessionLocal() as db:
         # Register agent with capabilities
-        result = await AgentRegistryService.register_agent(db, agent_with_multiple_capabilities)
+        result = await AgentRegistryService.register_agent(db, agent_with_multiple_capabilities, TEST_TENANT_ID)
         assert result.success is True
-        
+
         # Get the agent and verify capabilities exist
         agent_table = await agent_crud.get_agent_by_id(
             db,
             agent_with_multiple_capabilities.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert agent_table is not None
         agent_table_id = agent_table.id
@@ -99,7 +136,8 @@ async def test_expired_agent_cleanup_deletes_capabilities(agent_with_multiple_ca
         agent_check = await agent_crud.get_agent_by_id(
             db,
             agent_with_multiple_capabilities.agent_id,
-            include_expired=True
+            TEST_TENANT_ID,
+            include_expired=True,
         )
         assert agent_check is None
         
@@ -132,12 +170,22 @@ async def test_capabilities_not_orphaned_across_agents():
                 AgentCapability(
                     task_name="agent_one_task",
                     description="Task for agent one",
-                    consumed_event="event.agent.one",
-                    produced_events=["result.agent.one"]
+                    consumed_event=EventDefinition(
+                        event_name="event.agent.one",
+                        topic="action-requests",
+                        description="Triggers agent one task",
+                    ),
+                    produced_events=[
+                        EventDefinition(
+                            event_name="result.agent.one",
+                            topic="action-results",
+                            description="Agent one result",
+                        )
+                    ],
                 )
-            ]
+            ],
         )
-        
+
         agent2 = AgentDefinition(
             agent_id="agent-two",
             name="Agent Two",
@@ -146,18 +194,28 @@ async def test_capabilities_not_orphaned_across_agents():
                 AgentCapability(
                     task_name="agent_two_task",
                     description="Task for agent two",
-                    consumed_event="event.agent.two",
-                    produced_events=["result.agent.two"]
+                    consumed_event=EventDefinition(
+                        event_name="event.agent.two",
+                        topic="action-requests",
+                        description="Triggers agent two task",
+                    ),
+                    produced_events=[
+                        EventDefinition(
+                            event_name="result.agent.two",
+                            topic="action-results",
+                            description="Agent two result",
+                        )
+                    ],
                 )
-            ]
+            ],
         )
-        
+
         # Register both agents
-        await AgentRegistryService.register_agent(db, agent1)
-        await AgentRegistryService.register_agent(db, agent2)
-        
+        await AgentRegistryService.register_agent(db, agent1, TEST_TENANT_ID)
+        await AgentRegistryService.register_agent(db, agent2, TEST_TENANT_ID)
+
         # Get agent1's capability ID for later verification
-        agent1_table = await agent_crud.get_agent_by_id(db, "agent-one", include_expired=True)
+        agent1_table = await agent_crud.get_agent_by_id(db, "agent-one", TEST_TENANT_ID, include_expired=True)
         agent1_capability_ids = [cap.id for cap in agent1_table.capabilities]
         
         # Expire agent1
@@ -178,14 +236,14 @@ async def test_capabilities_not_orphaned_across_agents():
         assert deleted_count == 1
         
         # Verify agent1 is deleted
-        agent1_check = await agent_crud.get_agent_by_id(db, "agent-one", include_expired=True)
+        agent1_check = await agent_crud.get_agent_by_id(db, "agent-one", TEST_TENANT_ID, include_expired=True)
         assert agent1_check is None
-        
+
         # Clear cache again to ensure fresh fetch
         invalidate_agent_cache("agent-two")
-        
+
         # Get agent2 with fresh query
-        agent2_table = await agent_crud.get_agent_by_id(db, "agent-two", include_expired=True)
+        agent2_table = await agent_crud.get_agent_by_id(db, "agent-two", TEST_TENANT_ID, include_expired=True)
         assert agent2_table is not None
         
         # CRITICAL: Verify agent2's capabilities don't include agent1's orphaned capabilities

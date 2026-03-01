@@ -18,12 +18,22 @@ def test_agent_deduplication_by_name(client: TestClient):
                 {
                     "taskName": "planning",
                     "description": "Planning capability",
-                    "consumedEvent": "goal.created",
-                    "producedEvents": ["task.created"]
+                    "consumedEvent": {
+                        "eventName": "goal.created",
+                        "topic": "action-requests",
+                        "description": "Triggers planning",
+                    },
+                    "producedEvents": [
+                        {
+                            "eventName": "task.created",
+                            "topic": "action-results",
+                            "description": "Planning result",
+                        }
+                    ],
                 }
             ],
             "consumedEvents": ["goal.created"],
-            "producedEvents": ["task.created"]
+            "producedEvents": ["task.created"],
         }
     }
     response = client.post("/v1/agents", json=planner1)
@@ -41,12 +51,22 @@ def test_agent_deduplication_by_name(client: TestClient):
                 {
                     "taskName": "planning",
                     "description": "Planning capability",
-                    "consumedEvent": "goal.created",
-                    "producedEvents": ["task.created"]
+                    "consumedEvent": {
+                        "eventName": "goal.created",
+                        "topic": "action-requests",
+                        "description": "Triggers planning",
+                    },
+                    "producedEvents": [
+                        {
+                            "eventName": "task.created",
+                            "topic": "action-results",
+                            "description": "Planning result",
+                        }
+                    ],
                 }
             ],
             "consumedEvents": ["goal.created"],
-            "producedEvents": ["task.created"]
+            "producedEvents": ["task.created"],
         }
     }
     response = client.post("/v1/agents", json=planner2)
@@ -62,12 +82,22 @@ def test_agent_deduplication_by_name(client: TestClient):
                 {
                     "taskName": "execution",
                     "description": "Execution capability",
-                    "consumedEvent": "task.created",
-                    "producedEvents": ["task.completed"]
+                    "consumedEvent": {
+                        "eventName": "task.created",
+                        "topic": "action-requests",
+                        "description": "Triggers execution",
+                    },
+                    "producedEvents": [
+                        {
+                            "eventName": "task.completed",
+                            "topic": "action-results",
+                            "description": "Execution result",
+                        }
+                    ],
                 }
             ],
             "consumedEvents": ["task.created"],
-            "producedEvents": ["task.completed"]
+            "producedEvents": ["task.completed"],
         }
     }
     response = client.post("/v1/agents", json=worker1)

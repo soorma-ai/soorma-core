@@ -14,16 +14,31 @@ from typing import Any, Dict, List
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
+
+
+# Define event types
+QUESTION_ANSWER_EVENT = EventDefinition(
+    event_name="question.answer",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Request to answer question"
+)
+
+CHAT_RESPONSE_EVENT = EventDefinition(
+    event_name="chat.response",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Chat response to user"
+)
 
 
 rag_agent = Worker(
     name="chatbot-rag",
     description="Answers questions using context from episodic and semantic memory",
     capabilities=["question-answering", "retrieval", "context-synthesis"],
-    events_consumed=["question.answer"],
-    events_produced=["chat.response"],
+    events_consumed=[QUESTION_ANSWER_EVENT],
+    events_produced=[CHAT_RESPONSE_EVENT],
 )
 
 

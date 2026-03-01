@@ -16,15 +16,30 @@ from typing import Any, Dict
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.workflow import WorkflowState
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+
+# Define event types
+TASK_ASSIGNED_EVENT = EventDefinition(
+    event_name="task.assigned",
+    topic=EventTopic.ACTION_REQUESTS,
+    description="Task assigned to worker"
+)
+
+TASK_COMPLETED_EVENT = EventDefinition(
+    event_name="task.completed",
+    topic=EventTopic.ACTION_RESULTS,
+    description="Task execution completed"
+)
 
 
 worker = Worker(
     name="task-worker",
     description="Executes tasks from workflow plans",
     capabilities=["task-execution", "research", "drafting", "review"],
-    events_consumed=["task.assigned"],
-    events_produced=["task.completed"],
+    events_consumed=[TASK_ASSIGNED_EVENT],
+    events_produced=[TASK_COMPLETED_EVENT],
 )
 
 

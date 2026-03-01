@@ -17,7 +17,8 @@ from registry_service.core.database import AsyncSessionLocal
 from registry_service.crud import agent_crud
 from registry_service.services.agent_service import AgentRegistryService
 from registry_service.models.agent import AgentTable, AgentCapabilityTable
-from soorma_common import AgentDefinition, AgentCapability
+from soorma_common import AgentDefinition, AgentCapability, EventDefinition
+from tests.conftest import TEST_TENANT_ID
 
 
 def _now_utc() -> datetime:
@@ -45,16 +46,26 @@ async def test_orphaned_capabilities_cleaned_on_agent_creation():
                 AgentCapability(
                     task_name="orphaned_capability",
                     description="This will become orphaned",
-                    consumed_event="event.orphaned",
-                    produced_events=["result.orphaned"]
+                    consumed_event=EventDefinition(
+                        event_name="event.orphaned",
+                        topic="action-requests",
+                        description="Triggers orphaned task",
+                    ),
+                    produced_events=[
+                        EventDefinition(
+                            event_name="result.orphaned",
+                            topic="action-results",
+                            description="Orphaned result",
+                        )
+                    ],
                 )
-            ]
+            ],
         )
-        await AgentRegistryService.register_agent(db, original_agent)
+        await AgentRegistryService.register_agent(db, original_agent, TEST_TENANT_ID)
         
         # Get the agent's database ID
         original_agent_table = await agent_crud.get_agent_by_id(
-            db, "original-agent", include_expired=True
+            db, "original-agent", TEST_TENANT_ID, include_expired=True
         )
         original_agent_db_id = original_agent_table.id
         
@@ -88,18 +99,28 @@ async def test_orphaned_capabilities_cleaned_on_agent_creation():
                 AgentCapability(
                     task_name="new_capability",
                     description="This is the only capability it should have after cleanup",
-                    consumed_event="event.new",
-                    produced_events=["result.new"]
+                    consumed_event=EventDefinition(
+                        event_name="event.new",
+                        topic="action-requests",
+                        description="Triggers new task",
+                    ),
+                    produced_events=[
+                        EventDefinition(
+                            event_name="result.new",
+                            topic="action-results",
+                            description="New task result",
+                        )
+                    ],
                 )
-            ]
+            ],
         )
-        
-        result = await AgentRegistryService.register_agent(db, new_agent)
+
+        result = await AgentRegistryService.register_agent(db, new_agent, TEST_TENANT_ID)
         assert result.success is True
         
         # Get the new agent
         new_agent_table = await agent_crud.get_agent_by_id(
-            db, "new-agent-proper", include_expired=True
+            db, "new-agent-proper", TEST_TENANT_ID, include_expired=True
         )
         
         # At this point, if IDs were reused, the agent might show orphaned capabilities
@@ -117,7 +138,7 @@ async def test_orphaned_capabilities_cleaned_on_agent_creation():
         invalidate_agent_cache("new-agent-proper")
         
         new_agent_table_after_cleanup = await agent_crud.get_agent_by_id(
-            db, "new-agent-proper", include_expired=True
+            db, "new-agent-proper", TEST_TENANT_ID, include_expired=True
         )
         
         # CRITICAL CHECK: After cleanup, agent should only have its own capability
@@ -158,15 +179,25 @@ async def test_cleanup_removes_orphaned_capabilities():
                 AgentCapability(
                     task_name="legitimate_task",
                     description="Legitimate capability",
-                    consumed_event="event.legitimate",
-                    produced_events=["result.legitimate"]
+                    consumed_event=EventDefinition(
+                        event_name="event.legitimate",
+                        topic="action-requests",
+                        description="Triggers legitimate task",
+                    ),
+                    produced_events=[
+                        EventDefinition(
+                            event_name="result.legitimate",
+                            topic="action-results",
+                            description="Legitimate result",
+                        )
+                    ],
                 )
-            ]
+            ],
         )
-        await AgentRegistryService.register_agent(db, agent)
-        
+        await AgentRegistryService.register_agent(db, agent, TEST_TENANT_ID)
+
         # Get agent DB ID
-        agent_table = await agent_crud.get_agent_by_id(db, "cleanup-test-agent", include_expired=True)
+        agent_table = await agent_crud.get_agent_by_id(db, "cleanup-test-agent", TEST_TENANT_ID, include_expired=True)
         agent_db_id = agent_table.id
         
         # Manually insert an orphaned capability with a non-existent agent_table_id

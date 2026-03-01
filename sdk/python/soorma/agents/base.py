@@ -435,7 +435,9 @@ class Agent(ABC):
         from ..context import RegistryClient, MemoryClient, BusClient, TrackerClient
         
         self._context = PlatformContext(
-            registry=RegistryClient(base_url=self.config.registry_url),
+            registry=RegistryClient(
+                base_url=self.config.registry_url,
+            ),
             memory=MemoryClient(base_url=self.config.memory_url),
             bus=BusClient(event_client=event_client),
             tracker=TrackerClient(base_url=self.config.tracker_url),
@@ -458,17 +460,23 @@ class Agent(ABC):
                 logger.warning(f"Failed to register event definition {getattr(event_def, 'event_name', '?')}: {e}")
 
         # Build AgentDefinition from config
-        from soorma_common import AgentDefinition, AgentCapability
+        from soorma_common import AgentDefinition, AgentCapability, EventDefinition
         
         # Convert capabilities to AgentCapability objects
         structured_capabilities = []
         for cap in self.config.capabilities:
             if isinstance(cap, str):
+                # Create a placeholder EventDefinition for string capabilities
+                unknown_event = EventDefinition(
+                    event_name="unknown",
+                    topic="action-requests",
+                    description=f"Placeholder event for capability: {cap}"
+                )
                 structured_capabilities.append(
                     AgentCapability(
                         task_name=cap,
                         description=f"Capability: {cap}",
-                        consumed_event="unknown",
+                        consumed_event=unknown_event,  # ✅ EventDefinition object
                         produced_events=[]
                     )
                 )
@@ -501,13 +509,8 @@ class Agent(ABC):
             return
         
         logger.info(f"Deregistering {self.name} from Registry")
-        # Use DELETE endpoint directly
         try:
-            response = await self.context.registry._client.delete(
-                f"{self.context.registry.base_url}/v1/agents/{self.agent_id}"
-            )
-            if response.status_code not in (200, 204):
-                logger.warning(f"Failed to deregister: HTTP {response.status_code}")
+            await self.context.registry.deregister_agent(self.agent_id)
         except Exception as e:
             logger.warning(f"Failed to deregister: {e}")
     
@@ -521,10 +524,9 @@ class Agent(ABC):
                     if self._running:
                         # Send heartbeat via PUT endpoint
                         try:
-                            response = await self.context.registry._client.put(
-                                f"{self.context.registry.base_url}/v1/agents/{self.agent_id}/heartbeat"
+                            success = await self.context.registry.refresh_heartbeat(
+                                self.agent_id
                             )
-                            success = response.status_code == 200
                         except Exception:
                             success = False
                         
