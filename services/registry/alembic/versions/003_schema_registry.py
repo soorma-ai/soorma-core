@@ -6,7 +6,7 @@ Create Date: 2026-02-28
 
 This migration implements Phase 1 of the Discovery & Schema Registry system:
 - Creates payload_schemas table for schema versioning
-- Adds multi-tenancy columns (tenant_id, user_id, version) to agents table
+- Adds developer_tenant_id column (tenant_id) to agents and events tables (no user_id — registry is developer-scoped)
 - Adds multi-tenancy and schema reference columns to events table
 - Implements PostgreSQL Row-Level Security (RLS) policies
 - Changes uniqueness constraints to tenant-scoped
@@ -15,12 +15,12 @@ This migration implements Phase 1 of the Discovery & Schema Registry system:
 BREAKING CHANGES (v0.8.1):
 - agents.agent_id now unique per tenant (not globally unique)
 - events.event_name now unique per tenant (not globally unique)
-- All tables require tenant_id/user_id (from authentication headers)
+- Registry tables require developer tenant_id only (no user scope — registry is developer-scoped)
 
 Migration Strategy:
-- Uses default UUIDs during migration (safe rollback)
-- After migration, default values are removed
-- Existing data gets '00000000-0000-0000-0000-000000000000' tenant/user
+- Uses default UUID during migration (safe rollback)
+- After migration, default value is removed from tenant_id
+- Existing data gets '00000000-0000-0000-0000-000000000000' developer tenant
 """
 from typing import Sequence, Union
 
@@ -47,7 +47,7 @@ def upgrade() -> None:
     4. Update uniqueness constraints to tenant-scoped
     5. Create composite indexes for RLS query patterns
     6. Enable RLS and create policies
-    7. Remove default values from tenant_id/user_id columns
+    7. Remove default value from tenant_id column
     """
     
     # Step 1: Create payload_schemas table
@@ -62,9 +62,7 @@ def upgrade() -> None:
         sa.Column('description', sa.Text(), nullable=True, comment='Human-readable description'),
         sa.Column('owner_agent_id', sa.String(255), nullable=True, comment='Agent ID that owns this schema'),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False, 
-                  comment='Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)'),
-        sa.Column('user_id', postgresql.UUID(), nullable=False,
-                  comment='User identifier from validated JWT/API Key (no FK - Identity service owns user entity)'),
+                  comment='Developer tenant identifier — registry is scoped to the developer, not end-user sessions'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('schema_name', 'version', 'tenant_id', name='uq_schema_name_version_tenant')
     )
@@ -76,10 +74,7 @@ def upgrade() -> None:
     # Step 2: Add multi-tenancy columns to agents table (with defaults for existing rows)
     op.add_column('agents', sa.Column('tenant_id', postgresql.UUID(), nullable=False,
                                        server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
-                                       comment='Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)'))
-    op.add_column('agents', sa.Column('user_id', postgresql.UUID(), nullable=False,
-                                       server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
-                                       comment='User identifier from validated JWT/API Key (no FK - Identity service owns user entity)'))
+                                       comment='Developer tenant identifier — registry is scoped to the developer, not end-user sessions'))
     op.add_column('agents', sa.Column('version', sa.String(50), server_default='1.0.0'))
     
     # Create composite indexes for agents (RLS query patterns)
@@ -102,18 +97,14 @@ def upgrade() -> None:
     # Add tenant-scoped unique constraint
     op.create_index('uq_agents_agent_tenant', 'agents', ['agent_id', 'tenant_id'], unique=True)
     
-    # Remove defaults after migration (force explicit tenant/user context)
+    # Remove default after migration (force explicit developer tenant context)
     op.alter_column('agents', 'tenant_id', server_default=None)
-    op.alter_column('agents', 'user_id', server_default=None)
     
     # Step 3: Add multi-tenancy and schema columns to events table
     op.add_column('events', sa.Column('owner_agent_id', sa.String(255), nullable=True))
     op.add_column('events', sa.Column('tenant_id', postgresql.UUID(), nullable=False,
                                        server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
-                                       comment='Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)'))
-    op.add_column('events', sa.Column('user_id', postgresql.UUID(), nullable=False,
-                                       server_default=sa.text("'00000000-0000-0000-0000-000000000000'::uuid"),
-                                       comment='User identifier from validated JWT/API Key (no FK - Identity service owns user entity)'))
+                                       comment='Developer tenant identifier — registry is scoped to the developer, not end-user sessions'))
     op.add_column('events', sa.Column('payload_schema_name', sa.String(255), nullable=True))
     op.add_column('events', sa.Column('response_schema_name', sa.String(255), nullable=True))
     
@@ -138,9 +129,8 @@ def upgrade() -> None:
     # Add tenant-scoped unique constraint
     op.create_index('uq_events_event_tenant', 'events', ['event_name', 'tenant_id'], unique=True)
     
-    # Remove defaults
+    # Remove default after migration (force explicit developer tenant context)
     op.alter_column('events', 'tenant_id', server_default=None)
-    op.alter_column('events', 'user_id', server_default=None)
     
     # Step 4: Enable RLS and create policies
     
@@ -151,11 +141,10 @@ def upgrade() -> None:
             USING (tenant_id = current_setting('app.tenant_id', true)::UUID)
     """)
     op.execute("""
-        CREATE POLICY payload_schemas_user_write ON payload_schemas
+        CREATE POLICY payload_schemas_developer_write ON payload_schemas
             FOR INSERT
             WITH CHECK (
-                tenant_id = current_setting('app.tenant_id', true)::UUID 
-                AND user_id = current_setting('app.user_id', true)::UUID
+                tenant_id = current_setting('app.tenant_id', true)::UUID
             )
     """)
     
@@ -166,11 +155,10 @@ def upgrade() -> None:
             USING (tenant_id = current_setting('app.tenant_id', true)::UUID)
     """)
     op.execute("""
-        CREATE POLICY agents_user_write ON agents
+        CREATE POLICY agents_developer_write ON agents
             FOR INSERT
             WITH CHECK (
-                tenant_id = current_setting('app.tenant_id', true)::UUID 
-                AND user_id = current_setting('app.tenant_id', true)::UUID
+                tenant_id = current_setting('app.tenant_id', true)::UUID
             )
     """)
     
@@ -181,11 +169,10 @@ def upgrade() -> None:
             USING (tenant_id = current_setting('app.tenant_id', true)::UUID)
     """)
     op.execute("""
-        CREATE POLICY events_user_write ON events
+        CREATE POLICY events_developer_write ON events
             FOR INSERT
             WITH CHECK (
-                tenant_id = current_setting('app.tenant_id', true)::UUID 
-                AND user_id = current_setting('app.user_id', true)::UUID
+                tenant_id = current_setting('app.tenant_id', true)::UUID
             )
     """)
 
@@ -205,17 +192,17 @@ def downgrade() -> None:
     """
     
     # Step 1: Drop RLS policies (events)
-    op.execute("DROP POLICY IF EXISTS events_user_write ON events")
+    op.execute("DROP POLICY IF EXISTS events_developer_write ON events")
     op.execute("DROP POLICY IF EXISTS events_tenant_isolation ON events")
     op.execute("ALTER TABLE events DISABLE ROW LEVEL SECURITY")
     
     # Drop RLS policies (agents)
-    op.execute("DROP POLICY IF EXISTS agents_user_write ON agents")
+    op.execute("DROP POLICY IF EXISTS agents_developer_write ON agents")
     op.execute("DROP POLICY IF EXISTS agents_tenant_isolation ON agents")
     op.execute("ALTER TABLE agents DISABLE ROW LEVEL SECURITY")
     
     # Drop RLS policies (payload_schemas)
-    op.execute("DROP POLICY IF EXISTS payload_schemas_user_write ON payload_schemas")
+    op.execute("DROP POLICY IF EXISTS payload_schemas_developer_write ON payload_schemas")
     op.execute("DROP POLICY IF EXISTS payload_schemas_tenant_isolation ON payload_schemas")
     op.execute("ALTER TABLE payload_schemas DISABLE ROW LEVEL SECURITY")
     
@@ -231,7 +218,6 @@ def downgrade() -> None:
     
     op.drop_column('events', 'response_schema_name')
     op.drop_column('events', 'payload_schema_name')
-    op.drop_column('events', 'user_id')
     op.drop_column('events', 'tenant_id')
     op.drop_column('events', 'owner_agent_id')
     
@@ -245,7 +231,6 @@ def downgrade() -> None:
     op.drop_index('idx_agents_tenant_agent', table_name='agents')
     
     op.drop_column('agents', 'version')
-    op.drop_column('agents', 'user_id')
     op.drop_column('agents', 'tenant_id')
     
     # Step 6: Drop payload_schemas table (with indexes)

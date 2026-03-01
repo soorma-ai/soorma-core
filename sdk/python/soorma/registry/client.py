@@ -23,10 +23,14 @@ class RegistryClient:
     """
     Client for interacting with the Registry Service API.
 
-    Authentication context (tenant_id, user_id) is set at construction time
-    from environment variables SOORMA_TENANT_ID / SOORMA_USER_ID. These
-    represent the agent developer's deployment identity and are used for
-    startup registration calls only.
+    Authentication Model:
+      Registry Service is scoped to the **developer's own tenant** — not to any
+      end-user session. The developer tenant UUID is read from the environment at
+      construction time and sent as X-Tenant-ID on every request.
+
+      Conceptual model (see ARCHITECTURE_PATTERNS.md Section 1):
+        - SOORMA_DEVELOPER_TENANT_ID  → X-Tenant-ID  (this client)
+        - User Tenant / User ID       → from event envelope (Memory, Tracker, Bus)
 
     TODO: Replace env-var placeholder with API key / machine token once that
     auth flow is implemented (v0.8.0+).
@@ -36,9 +40,12 @@ class RegistryClient:
         """
         Initialize the registry client.
 
-        tenant_id and user_id are read from the environment at construction
-        time so that the running agent process gets a stable identity for its
-        lifetime without leaking credentials into agent config or AgentDefinition.
+        The developer tenant UUID is read from SOORMA_DEVELOPER_TENANT_ID at
+        construction time. This represents the developer's own identity for
+        startup registration — not the identity of any end-user or session.
+
+        Falls back to the sentinel UUID 00000000-... for local development when
+        the env var is not set.
 
         Args:
             base_url: Base URL of the registry service (e.g., "http://localhost:8081")
@@ -46,10 +53,13 @@ class RegistryClient:
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        # Deployment identity — placeholder until API key auth is available
-        self._tenant_id = os.getenv("SOORMA_TENANT_ID", "00000000-0000-0000-0000-000000000000")
-        self._user_id = os.getenv("SOORMA_USER_ID", "00000000-0000-0000-0000-000000000000")
-        self._auth_headers = {"X-Tenant-ID": self._tenant_id, "X-User-ID": self._user_id}
+        # Developer deployment identity — placeholder until API key auth is available.
+        # SOORMA_DEVELOPER_TENANT_ID identifies whose agents/events are being registered.
+        _developer_tenant_id = os.getenv(
+            "SOORMA_DEVELOPER_TENANT_ID",
+            "00000000-0000-0000-0000-000000000000"
+        )
+        self._auth_headers = {"X-Tenant-ID": _developer_tenant_id}
         self._client = httpx.AsyncClient(timeout=timeout)
     
     async def close(self):

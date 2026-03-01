@@ -72,16 +72,11 @@ class PayloadSchemaTable(Base):
         comment="Agent ID that owns this schema (no FK to agents table)"
     )
     
-    # Multi-tenancy (STUB - RLS policies in migration)
+    # Developer tenancy (registry is scoped to the developer, not end-user sessions)
     tenant_id: Mapped[UUID] = mapped_column(
         "tenant_id",
         nullable=False,
-        comment="Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)"
-    )
-    user_id: Mapped[UUID] = mapped_column(
-        "user_id",
-        nullable=False,
-        comment="User identifier from validated JWT/API Key (no FK - Identity service owns user entity)"
+        comment="Developer tenant identifier \u2014 registry is developer-scoped, not user-session-scoped"
     )
     
     def __repr__(self) -> str:

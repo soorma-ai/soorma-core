@@ -27,18 +27,20 @@ class AgentRegistryService:
     async def register_agent(
         db: AsyncSession,
         agent: AgentDefinition,
-        tenant_id: UUID,
-        user_id: UUID
+        developer_tenant_id: UUID
     ) -> AgentRegistrationResponse:
         """
         Register or update an agent in the registry (upsert operation).
-        
+
+        The registry is developer-tenant-scoped. There is no user_id concept here:
+        agents are owned by the developer (identified by developer_tenant_id), not
+        by an end-user session.
+
         Args:
             db: Database session
             agent: Agent definition to register/update
-            tenant_id: Tenant ID from authentication
-            user_id: User ID from authentication
-            
+            developer_tenant_id: Developer's own tenant UUID from X-Tenant-ID header
+
         Returns:
             AgentRegistrationResponse with registration status
         """
@@ -56,7 +58,7 @@ class AgentRegistryService:
             
             # Upsert the agent
             agent_table, was_created = await agent_crud.upsert_agent(
-                db, agent, tenant_id, user_id
+                db, agent, developer_tenant_id
             )
             await db.commit()
             
@@ -84,7 +86,7 @@ class AgentRegistryService:
     async def refresh_agent_heartbeat(
         db: AsyncSession,
         agent_id: str,
-        tenant_id: UUID
+        developer_tenant_id: UUID
     ) -> AgentRegistrationResponse:
         """
         Refresh an agent's heartbeat to extend its TTL.
@@ -92,13 +94,13 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent_id: ID of the agent to refresh
-            tenant_id: Tenant ID from authentication
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             AgentRegistrationResponse with refresh status
         """
         try:
-            success = await agent_crud.update_heartbeat(db, agent_id, tenant_id)
+            success = await agent_crud.update_heartbeat(db, agent_id, developer_tenant_id)
             
             if not success:
                 return AgentRegistrationResponse(
@@ -126,7 +128,7 @@ class AgentRegistryService:
     async def delete_agent(
         db: AsyncSession,
         agent_id: str,
-        tenant_id: UUID
+        developer_tenant_id: UUID
     ) -> bool:
         """
         Delete an agent.
@@ -134,13 +136,13 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent_id: ID of the agent
-            tenant_id: Tenant ID from authentication
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             True if deleted, False if not found
         """
         try:
-            success = await agent_crud.delete_agent(db, agent_id, tenant_id)
+            success = await agent_crud.delete_agent(db, agent_id, developer_tenant_id)
             await db.commit()
             return success
         except Exception:
@@ -177,7 +179,7 @@ class AgentRegistryService:
         
         Args:
             db: Database session
-            tenant_id: Tenant ID from authentication (automatic filter)
+            tenant_id: Developer's own tenant UUID (automatic filter)
             agent_id: Specific agent ID to query
             name: Filter by agent name
             consumed_event: Filter by consumed event

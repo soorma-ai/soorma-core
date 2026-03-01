@@ -59,17 +59,14 @@ class AgentTable(Base):
         nullable=False
     )
     
-    # Multi-tenancy columns (added in migration 003)
+    # Developer tenancy column (added in migration 003)
+    # Registry is scoped to the developer's own tenant — not end-user sessions.
+    # See ARCHITECTURE_PATTERNS.md Section 1 for the developer-tenant vs user-tenant distinction.
     tenant_id: Mapped[UUID] = mapped_column(
         postgresql.UUID(),
         nullable=False,
         index=True,
-        comment="Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)"
-    )
-    user_id: Mapped[UUID] = mapped_column(
-        postgresql.UUID(),
-        nullable=False,
-        comment="User identifier from validated JWT/API Key (no FK - Identity service owns user entity)"
+        comment="Developer tenant identifier — registry is developer-scoped, not user-session-scoped"
     )
     version: Mapped[str] = mapped_column(
         String(50),

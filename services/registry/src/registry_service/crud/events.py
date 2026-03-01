@@ -1,7 +1,9 @@
 """
 CRUD operations for event registry.
 """
-from typing import List, Optionalfrom uuid import UUIDfrom sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Optional
+from uuid import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from soorma_common import EventDefinition
@@ -16,8 +18,7 @@ class EventCRUD:
         self, 
         db: AsyncSession, 
         event: EventDefinition,
-        tenant_id: UUID,
-        user_id: UUID
+        developer_tenant_id: UUID
     ) -> EventTable:
         """
         Create a new event in the database.
@@ -25,8 +26,7 @@ class EventCRUD:
         Args:
             db: Database session
             event: Event definition to create
-            tenant_id: Tenant ID from authentication
-            user_id: User ID from authentication
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             Created EventTable instance
@@ -37,8 +37,7 @@ class EventCRUD:
             description=event.description,
             payload_schema=event.payload_schema,
             response_schema=event.response_schema,
-            tenant_id=tenant_id,
-            user_id=user_id
+            tenant_id=developer_tenant_id
         )
         db.add(event_table)
         await db.flush()
@@ -52,8 +51,7 @@ class EventCRUD:
         self, 
         db: AsyncSession, 
         event: EventDefinition,
-        tenant_id: UUID,
-        user_id: UUID
+        developer_tenant_id: UUID
     ) -> tuple[EventTable, bool]:
         """
         Create or update an event in the database.
@@ -61,15 +59,14 @@ class EventCRUD:
         Args:
             db: Database session
             event: Event definition to upsert
-            tenant_id: Tenant ID from authentication
-            user_id: User ID from authentication
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             Tuple of (EventTable instance, was_created: bool)
             was_created is True if a new event was created, False if updated
         """
-        # Check if event exists (by event_name and tenant_id - new unique constraint)
-        existing = await self.get_event_by_name(db, event.event_name, tenant_id)
+        # Check if event exists (by event_name and developer_tenant_id - new unique constraint)
+        existing = await self.get_event_by_name(db, event.event_name, developer_tenant_id)
         
         if existing:
             # Update existing event
@@ -84,7 +81,7 @@ class EventCRUD:
             return existing, False
         else:
             # Create new event
-            event_table = await self.create_event(db, event, tenant_id, user_id)
+            event_table = await self.create_event(db, event, developer_tenant_id)
             return event_table, True
     
     async def get_event_by_name_and_topic(

@@ -33,8 +33,7 @@ class AgentCRUD:
         self, 
         db: AsyncSession, 
         agent: AgentDefinition,
-        tenant_id: UUID,
-        user_id: UUID
+        developer_tenant_id: UUID
     ) -> AgentTable:
         """
         Create a new agent in the database.
@@ -42,8 +41,7 @@ class AgentCRUD:
         Args:
             db: Database session
             agent: Agent definition to create
-            tenant_id: Tenant ID from authentication
-            user_id: User ID from authentication
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             Created AgentTable instance
@@ -55,8 +53,7 @@ class AgentCRUD:
             description=agent.description,
             consumed_events=agent.consumed_events,
             produced_events=agent.produced_events,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            tenant_id=developer_tenant_id,
             last_heartbeat=_now_utc()
         )
         db.add(agent_table)
@@ -96,8 +93,7 @@ class AgentCRUD:
         self, 
         db: AsyncSession, 
         agent: AgentDefinition,
-        tenant_id: UUID,
-        user_id: UUID
+        developer_tenant_id: UUID
     ) -> tuple[AgentTable, bool]:
         """
         Create or update an agent in the database.
@@ -105,8 +101,7 @@ class AgentCRUD:
         Args:
             db: Database session
             agent: Agent definition to upsert
-            tenant_id: Tenant ID from authentication
-            user_id: User ID from authentication
+            developer_tenant_id: Developer's own tenant UUID
             
         Returns:
             Tuple of (AgentTable instance, was_created: bool)
@@ -114,7 +109,7 @@ class AgentCRUD:
         """
         # Check if agent exists (including expired ones) in this tenant
         existing = await self.get_agent_by_id(
-            db, agent.agent_id, tenant_id, include_expired=True
+            db, agent.agent_id, developer_tenant_id, include_expired=True
         )
         
         if existing:
@@ -155,7 +150,7 @@ class AgentCRUD:
             return existing, False
         else:
             # Create new agent
-            agent_table = await self.create_agent(db, agent, tenant_id, user_id)
+            agent_table = await self.create_agent(db, agent, developer_tenant_id)
             return agent_table, True
     
     @cache_agent

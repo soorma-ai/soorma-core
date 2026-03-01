@@ -54,7 +54,9 @@ class EventTable(Base):
         nullable=True
     )
     
-    # Multi-tenancy and schema registry columns (added in migration 003)
+    # Developer tenancy and schema registry columns (added in migration 003)
+    # Registry is scoped to the developer's own tenant — not end-user sessions.
+    # See ARCHITECTURE_PATTERNS.md Section 1 for the developer-tenant vs user-tenant distinction.
     owner_agent_id: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,
@@ -65,12 +67,7 @@ class EventTable(Base):
         postgresql.UUID(),
         nullable=False,
         index=True,
-        comment="Tenant identifier from validated JWT/API Key (no FK - Identity service owns tenant entity)"
-    )
-    user_id: Mapped[UUID] = mapped_column(
-        postgresql.UUID(),
-        nullable=False,
-        comment="User identifier from validated JWT/API Key (no FK - Identity service owns user entity)"
+        comment="Developer tenant identifier — registry is developer-scoped, not user-session-scoped"
     )
     payload_schema_name: Mapped[Optional[str]] = mapped_column(
         String(255),
