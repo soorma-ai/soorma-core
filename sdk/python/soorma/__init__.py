@@ -56,6 +56,8 @@ from .agents.planner import Goal, Plan, Task
 from .task_context import TaskContext
 from .agents.tool import InvocationContext
 from .workflow import WorkflowState
+from .ai.selection import EventSelector, EventSelectionError
+from .gateway import A2AGatewayHelper
 
 # Public API
 __all__ = [
@@ -84,6 +86,11 @@ __all__ = [
     "InvocationContext",
     # Helpers
     "WorkflowState",
+    # AI / LLM routing
+    "EventSelector",
+    "EventSelectionError",
+    # A2A protocol helpers
+    "A2AGatewayHelper",
     # Functions
     "hello",
     "event_handler",

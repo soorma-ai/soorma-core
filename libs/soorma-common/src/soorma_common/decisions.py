@@ -225,3 +225,31 @@ class PlannerDecision(BaseModel):
             "description": "Decision on next action in plan execution",
         }
     }
+
+
+class EventDecision(BaseModel):
+    """LLM-selected event routing decision produced by EventSelector.
+
+    EventSelector uses this type to return a fully validated routing decision
+    after the LLM picks the most appropriate event for a given agent state.
+    The event_type field is always validated against the registry (i.e., it
+    references a real event) before this object is constructed.
+
+    Attributes:
+        event_type: Validated event name that exists in the registry.
+        topic: PubSub topic for the event (e.g., "action-requests").
+        payload: LLM-generated payload conforming to the event schema.
+        reasoning: LLM explanation for selecting this event.
+        confidence: Optional confidence score in [0.0, 1.0].
+    """
+
+    event_type: str = Field(..., description="Validated event name from registry")
+    topic: str = Field(..., description="PubSub topic for the event")
+    payload: Dict[str, Any] = Field(..., description="LLM-generated payload")
+    reasoning: str = Field(..., description="LLM explanation for this selection")
+    confidence: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Optional confidence score (0.0–1.0)",
+    )

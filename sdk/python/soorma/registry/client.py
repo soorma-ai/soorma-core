@@ -14,6 +14,7 @@ from soorma_common import (
     AgentRegistrationRequest,
     AgentRegistrationResponse,
     AgentQueryResponse,
+    DiscoveredAgent,
     PayloadSchema,
     PayloadSchemaRegistrationRequest,
     PayloadSchemaResponse,
@@ -348,23 +349,50 @@ class RegistryClient:
         result = PayloadSchemaListResponse.model_validate(response.json())
         return result.schemas
 
+    def _map_agent_to_discovered(self, agent: AgentDefinition) -> DiscoveredAgent:
+        """Map AgentDefinition to DiscoveredAgent, parsing version from name.
+
+        Name format is ``"AgentName:version"`` (e.g. ``"SearchWorker:1.0.0"``).
+        When no version suffix is present, defaults to ``"1.0.0"``.
+
+        Args:
+            agent: Raw AgentDefinition from the service response.
+
+        Returns:
+            DiscoveredAgent with separate name and version fields.
+        """
+        # Parse version from name using the established Name:version convention
+        # (service does not yet return version as a separate field — see FDE-2)
+        name_parts = agent.name.split(":")
+        name = name_parts[0]
+        version = name_parts[1] if len(name_parts) > 1 else "1.0.0"
+        return DiscoveredAgent(
+            agent_id=agent.agent_id,
+            name=name,
+            description=agent.description,
+            version=version,
+            capabilities=agent.capabilities,
+        )
+
     async def discover_agents(
         self,
         consumed_event: Optional[str] = None,
-    ) -> List[AgentDefinition]:
-        """
-        Discover active agents by capability (consumed event).
+    ) -> List[DiscoveredAgent]:
+        """Discover active agents by capability (consumed event).
 
-        Phase 2: Returns AgentDefinition list.
-        Phase 3: Will return DiscoveredAgent list with full schema enrichment.
+        Backward-compatible discovery entry point. Retained for callers that
+        specify a consumed event directly rather than using requirements-based
+        discovery (see ``discover()``). Both methods return ``DiscoveredAgent``
+        since Phase 3.
 
         Args:
-            consumed_event: Optional event name filter
+            consumed_event: Optional event name to filter agents by their
+                            consumed event.
 
         Returns:
-            List of AgentDefinition DTOs for matching active agents
+            List of DiscoveredAgent DTOs for matching active agents.
         """
-        params = {}
+        params: dict = {}
         if consumed_event is not None:
             params["consumed_event"] = consumed_event
         response = await self._client.get(
@@ -374,4 +402,37 @@ class RegistryClient:
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
-        return result.agents
+        return [self._map_agent_to_discovered(agent) for agent in result.agents]
+
+    async def discover(
+        self,
+        requirements: List[str],
+        include_schemas: bool = True,
+    ) -> List[DiscoveredAgent]:
+        """Discover agents by capability requirements.
+
+        High-level discovery API that accepts a list of capability keywords and
+        returns fully-enriched DiscoveredAgent objects, optionally with schema
+        references. Uses ``GET /v1/agents/discover`` with ``requirements`` query
+        params.
+
+        Args:
+            requirements: List of capability keywords, e.g. ``["web_search"]``.
+            include_schemas: Whether to include schema references in results
+                             (default True).
+
+        Returns:
+            List of DiscoveredAgent DTOs matching at least one requirement.
+        """
+        params: dict = {
+            "requirements": requirements,
+            "include_schemas": include_schemas,
+        }
+        response = await self._client.get(
+            f"{self.base_url}/v1/agents/discover",
+            params=params,
+            headers=self._auth_headers,
+        )
+        response.raise_for_status()
+        result = AgentQueryResponse.model_validate(response.json())
+        return [self._map_agent_to_discovered(agent) for agent in result.agents]
