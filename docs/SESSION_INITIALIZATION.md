@@ -234,7 +234,7 @@ Create Action Plan for {Specific Task Name}
 
 # Requirements (from Human)
 {One of the following:
-1. Reference to Master Plan phase: "Implement Phase 2 from MASTER_PLAN_SemanticSearch.md"
+1. Reference to Master Plan {Master plan file}
 2. Standalone feature/fix: "Fix event service error handling for offline subscribers"
 3. Bug report: "Events to offline subscribers cause 500 errors - should gracefully skip"}
 
@@ -279,8 +279,19 @@ Before creating the Action Plan, you (agent) MUST:
    - Status: 📋 Planning
    - Await developer approval before implementation
 
+7. **Update Master Plan Status:**
+   - Review the master plan and update document status for completed work and current status based on new action plan created
+
+8. **Update feature README and ARCHITECTURE:**
+   - for the feature area being worked on with master plan and action plan, update the README and ARCHITECTURE document for the feature
+   - if README or ARCHITECTURE documentdoes not exists, then create them
+   - README describes what the feature area is, what it does
+   - ARCHITECTURE describes how the feature area works / implemented
+
 # Deliverable
-A complete Action Plan with wrapper verification checklist, task sequence, TDD strategy, and FDE decisions.
+   - A complete Action Plan with wrapper verification checklist, task sequence, TDD strategy, and FDE decisions.
+   - Updated master plan status based on past completed work and new action plan
+   - Updated ARCHITECTURE.md and README.md for the feature area based on detailed action plan
 ```
 
 ---
@@ -297,10 +308,10 @@ A complete Action Plan with wrapper verification checklist, task sequence, TDD s
 
 ```markdown
 # Session Goal
-Implement {ACTION_PLAN_NAME} from {ACTION_PLAN_FILE_PATH}
+Implement the action plan from {ACTION_PLAN_FILE_PATH}
 
 # Human Approval
-I (human) have reviewed and approve the action plan at {ACTION_PLAN_FILE_PATH}.
+Review the action plan to make sure I (human) have reviewed and approve the action plan. If not, ask for approval before proceeding.
 
 # Constitutional Requirements (MANDATORY)
 Before starting implementation, you (agent) MUST:
@@ -318,6 +329,7 @@ Before starting implementation, you (agent) MUST:
 
 4. **Task Tracking**: Use manage_todo_list for ALL tasks in the action plan
 5. **Technical Reference**: For CLI commands, testing syntax, and import patterns, see [CONTRIBUTING_REFERENCE.md](CONTRIBUTING_REFERENCE.md)
+6. **Milestone Commits:** After completion of tasks within each logical phase in the action plan, make sure to commit the work, before proceeding to next phase / set of tasks in the action plan.
 
 # Workflow Validation
 Before you start Task 1, confirm you will:
