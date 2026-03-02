@@ -14,7 +14,7 @@
 |-------|-------------|--------|------------|
 | Phase 1 | Foundation - Schema Registry & DTOs | ✅ Complete | March 1, 2026 (50 tests passing) |
 | Phase 2 | Service Implementation | ✅ Complete | March 1, 2026 (80 tests passing) |
-| Phase 3 | SDK Implementation & A2A Gateway | 📋 Planning | Action plan created March 1, 2026 |
+| Phase 3 | SDK Implementation & A2A Gateway | ✅ Complete | March 1, 2026 (49 tests passing) |
 | Phase 4 | Tracker Service NATS Integration | ⬜ Not started | — |
 | Phase 5 | Validation & Documentation | ⬜ Not started | — |
 
@@ -243,12 +243,12 @@ async def deregister(self, agent_id: str) -> None:
   - No need for separate service client wrapper ✅
   - Maintains two-layer pattern principle (high-level API for agents) ✅
   
-- [ ] **Action Plan includes:**
-  - [ ] Wrapper method implementation for new discovery endpoints
-  - [ ] Update existing examples to use `discover()` instead of `query_agents()`
-  - [ ] Verify all methods include tenant/user context in headers
+- [x] **Action Plan includes:**
+  - [x] Wrapper method implementation for new discovery endpoints — `discover()`, `discover_agents()`, `get_schema()`, `register_schema()`, `list_schemas()` all implemented and tested ✅
+  - [ ] Update existing examples to use `discover()` instead of `query_agents()` — **deferred to Phase 5** (examples & validation phase)
+  - [x] Verify all methods include tenant/user context in headers — all `RegistryClient` methods inject `self._auth_headers` (`X-Tenant-ID`) ✅
 
-- [ ] **Documentation Updates:**
+- [ ] **Documentation Updates** — **deferred to Phase 5:**
   - [ ] Update `docs/discovery/README.md` with new discovery patterns
   - [ ] Update `docs/discovery/ARCHITECTURE.md` with schema registry design
   - [ ] Add examples to `examples/*/` demonstrating LLM-based discovery

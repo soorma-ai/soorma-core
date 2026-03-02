@@ -1,13 +1,15 @@
 # Action Plan: Phase 3 - SDK Implementation & A2A Gateway (SOOR-DISC-P3)
 
-**Status:** ✅ Approved — Ready for Implementation  
+**Status:** ✅ Complete  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 3 of 5  
 **Refactoring Tasks:** RF-SDK-007, RF-SDK-008, RF-SDK-017  
 **Estimated Duration:** 3-4 days (26 hours)  
+**Actual Duration:** ~1 session (~6h)  
 **Target Release:** v0.8.1  
 **Created:** March 1, 2026  
 **Approved:** March 1, 2026  
+**Completed:** March 1, 2026  
 **Prerequisites:** Phase 1 ✅ Complete, Phase 2 ✅ Complete
 
 ---
@@ -47,25 +49,25 @@ Implement SDK-level discovery methods, the `EventSelector` intelligent routing u
 
 ### Acceptance Criteria
 
-- [ ] `context.registry.discover(requirements=["web_search"])` returns `List[DiscoveredAgent]` with full capabilities
-- [ ] `context.registry.discover(requirements=..., include_schemas=True)` includes schema references in results
-- [ ] `context.registry.get_schema("search_request_v1")` retrieves a `PayloadSchema` from service
-- [ ] `EventSelector.select_event()` returns an `EventDecision` with validated `event_type`, `payload`, `reasoning`
-- [ ] `EventSelector` validates selected event exists in registry before returning decision
-- [ ] `A2AGatewayHelper.agent_to_card()` converts `AgentDefinition` to a valid `A2AAgentCard`
-- [ ] `A2AGatewayHelper.task_to_event()` converts `A2ATask` → `EventEnvelope` with correlation tracking
-- [ ] `A2AGatewayHelper.event_to_response()` converts `EventEnvelope` → `A2ATaskResponse`
-- [ ] All new methods have Google-style docstrings and full type hints
-- [ ] 40+ unit tests passing (15 discovery, 10 schema client, 10 EventSelector, 10 A2AGateway)
-- [ ] No agent/example code imports `RegistryClient` directly — all use `context.registry.*`
+- [x] `context.registry.discover(requirements=["web_search"])` returns `List[DiscoveredAgent]` with full capabilities
+- [x] `context.registry.discover(requirements=..., include_schemas=True)` includes schema references in results
+- [x] `context.registry.get_schema("search_request_v1")` retrieves a `PayloadSchema` from service
+- [x] `EventSelector.select_event()` returns an `EventDecision` with validated `event_type`, `payload`, `reasoning`
+- [x] `EventSelector` validates selected event exists in registry before returning decision
+- [x] `A2AGatewayHelper.agent_to_card()` converts `AgentDefinition` to a valid `A2AAgentCard`
+- [x] `A2AGatewayHelper.task_to_event()` converts `A2ATask` → `EventEnvelope` with correlation tracking
+- [x] `A2AGatewayHelper.event_to_response()` converts `EventEnvelope` → `A2ATaskResponse`
+- [x] All new methods have Google-style docstrings and full type hints
+- [x] 49 unit tests passing (8 discovery, 11 schema client, 10 EventSelector, 10 A2AGateway, 10 EventDecision) — exceeded 40+ target
+- [x] No agent/example code imports `RegistryClient` directly — all use `context.registry.*`
 
 ### Refactoring Tasks Addressed
 
 | Task ID | Description | Status |
 |---------|-------------|--------|
 | RF-SDK-007 | Event registration tied to agent startup (schema references) | 🟡 Partial — `RegistryClient` already supports `EventDefinition.payload_schema_name`. Phase 3 verifies example agents use schema names, not embedded schemas. |
-| RF-SDK-008 | Agent discovery by capability (`DiscoveredAgent` return type) | 🎯 This phase |
-| RF-SDK-017 | EventSelector utility (deferred from Stage 4) | 🎯 This phase |
+| RF-SDK-008 | Agent discovery by capability (`DiscoveredAgent` return type) | ✅ Complete |
+| RF-SDK-017 | EventSelector utility (deferred from Stage 4) | ✅ Complete |
 
 ---
 
@@ -225,7 +227,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
 
 **STUB → RED → GREEN → REFACTOR cycle:**
 
-- [ ] **STUB (0.5h):** Add `discover()` stub to `RegistryClient` with `NotImplementedError`. Update `discover_agents()` return type annotation to `List[DiscoveredAgent]` (implementation raises `NotImplementedError`).
+- [x] **STUB (0.5h):** Add `discover()` stub to `RegistryClient` with `NotImplementedError`. Update `discover_agents()` return type annotation to `List[DiscoveredAgent]` (implementation raises `NotImplementedError`).
   ```python
   async def discover(
       self,
@@ -236,7 +238,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
       raise NotImplementedError("Phase 3 discovery not yet implemented")
   ```
 
-- [ ] **RED (1h):** Write tests in `tests/test_registry_discover.py`. Tests MUST fail with `NotImplementedError`:
+- [x] **RED (1h):** Write tests in `tests/test_registry_discover.py`. Tests MUST fail with `NotImplementedError`:
   - `test_discover_returns_discovered_agent_list` — asserts return type is `List[DiscoveredAgent]`
   - `test_discover_with_requirements_sends_query_param` — verifies `requirements` becomes query param
   - `test_discover_include_schemas_true_passes_param` — verifies `include_schemas=True` in request
@@ -246,12 +248,12 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
   - `test_discover_parses_version_from_name` — `"SearchWorker:1.0.0"` → `version="1.0.0"`
   - `test_discover_defaults_version_when_no_suffix` — `"SearchWorker"` → `version="1.0.0"`
 
-- [ ] **GREEN (1.5h):** Implement real logic:
+- [x] **GREEN (1.5h):** Implement real logic:
   - `discover()`: GET `/v1/agents/discover?requirements[]=web_search&include_schemas=true`
   - Map `AgentQueryResponse.agents` → `List[DiscoveredAgent]` (parse version from `name:version`)
   - `discover_agents()`: delegates to `discover()` or uses consumed_event param on `/v1/agents/discover`
 
-- [ ] **REFACTOR (0.5h):** Extract `_map_agent_to_discovered(agent: AgentDefinition) -> DiscoveredAgent` helper. Ensure docstrings present. Update `discover_agents()` docstring to note backward-compat status.
+- [x] **REFACTOR (0.5h):** Extract `_map_agent_to_discovered(agent: AgentDefinition) -> DiscoveredAgent` helper. Ensure docstrings present. Update `discover_agents()` docstring to note backward-compat status.
 
 **Files Modified:**
 - `sdk/python/soorma/registry/client.py` — add `discover()`, update `discover_agents()`
@@ -263,7 +265,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
 
 **Scope:** Add `EventDecision` model to `soorma_common/decisions.py` and export from `__init__.py`.
 
-- [ ] **STUB (0.25h):** Add `EventDecision` class with field stubs (no validation logic yet):
+- [x] **STUB (0.25h):** Add `EventDecision` class with field stubs (no validation logic yet):
   ```python
   class EventDecision(BaseModel):
       event_type: str
@@ -273,16 +275,16 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
       confidence: Optional[float] = None
   ```
 
-- [ ] **RED (0.5h):** Write tests in `libs/soorma-common/tests/test_decisions.py` (extend existing file if present, else create):
+- [x] **RED (0.5h):** Write tests in `libs/soorma-common/tests/test_decisions.py` (extend existing file if present, else create):
   - `test_event_decision_requires_event_type` — missing field raises ValidationError
   - `test_event_decision_requires_topic` — missing field raises ValidationError
   - `test_event_decision_requires_payload_dict` — non-dict payload raises ValidationError
   - `test_event_decision_confidence_optional` — confidence defaults to None
   - `test_event_decision_exported_from_soorma_common` — `from soorma_common import EventDecision`
 
-- [ ] **GREEN (0.25h):** Model is trivially correct — tests should pass immediately after STUB if fields are defined. Confirm export added to `soorma_common/__init__.py`.
+- [x] **GREEN (0.25h):** Model is trivially correct — tests pass immediately after STUB. Export confirmed in `soorma_common/__init__.py`. 10 tests written (5 additional coverage tests beyond plan).
 
-- [ ] **REFACTOR (0.25h):** Add Google-style docstring. Add model_config for alias generation (inherit `BaseModel` or check if `BaseDTO` needed).
+- [x] **REFACTOR (0.25h):** Added Google-style docstring. Inherits `BaseDTO` (camelCase alias generation). Uses `Field(ge=0.0, le=1.0)` for `confidence` validation.
 
 **Files Modified:**
 - `libs/soorma-common/src/soorma_common/decisions.py`
@@ -302,7 +304,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
 
 **STUB → RED → GREEN → REFACTOR cycle:**
 
-- [ ] **STUB (0.5h):** Create `sdk/python/soorma/ai/selection.py` with skeleton:
+- [x] **STUB (0.5h):** Create `sdk/python/soorma/ai/selection.py` with skeleton:
   ```python
   class EventSelector:
       def __init__(
@@ -332,7 +334,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
           raise NotImplementedError("EventSelector.publish_decision not yet implemented")
   ```
 
-- [ ] **RED (1.5h):** Write tests in `sdk/python/tests/test_event_selector.py`. All MUST fail with `NotImplementedError`:
+- [x] **RED (1.5h):** Write tests in `sdk/python/tests/test_event_selector.py`. All MUST fail with `NotImplementedError`:
   - `test_select_event_returns_event_decision` — basic selection returns `EventDecision`
   - `test_select_event_validates_event_exists_in_registry` — selected event not in discovered list raises `ValueError`
   - `test_select_event_uses_default_prompt_when_none_given` — default template applied
@@ -344,20 +346,13 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
   - `test_publish_decision_passes_response_event` — `response_event` forwarded to bus publish
   - `test_selector_reuses_context_toolkit` — no new `RegistryClient` instantiated
 
-- [ ] **GREEN (3h):** Implement real logic:
-  1. `__init__`: Store `context`, `topic`, `prompt_template`, LiteLLM config
-  2. `select_event()`:
-     - `events = await context.toolkit.discover_events(topic=self.topic)`
-     - `events_json = context.toolkit.format_for_llm(events)`
-     - Build prompt: substitute `state` dict and `events_json` into template
-     - Call LiteLLM: `response = await litellm.acompletion(model=..., messages=[...])`
-     - Parse JSON from response into `EventDecision`
-     - Validate `event_type` exists in discovered list — if not, raise `EventSelectionError`
-     - Return `EventDecision`
-  3. `publish_decision()`:
-     - `await context.bus.publish(topic=decision.topic, event_type=decision.event_type, data=decision.payload, response_event=response_event, ...)`
+- [x] **GREEN (3h):** Implemented real logic:
+  1. `__init__`: Stores `context`, `topic`, `prompt_template`, LiteLLM config (model, api_key, api_base)
+  2. `select_event()`: discovers events → builds prompt → calls litellm → `_parse_llm_response()` → validates event → returns `EventDecision`
+  3. `publish_decision()`: calls `context.bus.publish(...)` with explicit `response_event` (§3 compliance)
+  - litellm imported at module level via `try/except ImportError` for patchability
 
-- [ ] **REFACTOR (0.5h):** Extract `_build_prompt()` and `_parse_llm_response()` helpers. Add `EventSelectionError` exception class (in same file or `soorma.exceptions`). Export `EventSelector` from `sdk/python/soorma/__init__.py`.
+- [x] **REFACTOR (0.5h):** Extracted `_build_prompt()` and `_parse_llm_response()` helpers. `EventSelectionError` co-located in `selection.py` (FDE-3). `EventSelector` exported from `sdk/python/soorma/__init__.py`.
 
 **Files Created/Modified:**
 - `sdk/python/soorma/ai/selection.py` — new file
@@ -378,7 +373,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
 
 **STUB → RED → GREEN → REFACTOR cycle:**
 
-- [ ] **STUB (0.25h):** Create `sdk/python/soorma/gateway.py`:
+- [x] **STUB (0.25h):** Create `sdk/python/soorma/gateway.py`:
   ```python
   class A2AGatewayHelper:
       @staticmethod
@@ -394,7 +389,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
           raise NotImplementedError
   ```
 
-- [ ] **RED (0.75h):** Write tests in `sdk/python/tests/test_a2a_gateway_helper.py`:
+- [x] **RED (0.75h):** Write tests in `sdk/python/tests/test_a2a_gateway_helper.py`:
   - `test_agent_to_card_name_and_description` — basic field mapping
   - `test_agent_to_card_sets_gateway_url` — `url` field populated from arg
   - `test_agent_to_card_capabilities_become_skills` — 2 capabilities → 2 skills
@@ -406,9 +401,9 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
   - `test_event_to_response_completed_when_data_present` — `status == COMPLETED`
   - `test_event_to_response_failed_when_empty` — `status == FAILED`
 
-- [ ] **GREEN (1.5h):** Implement all three static methods with correct field mapping.
+- [x] **GREEN (1.5h):** Implemented all three static methods with correct field mapping. Fixed missing `EventTopic` import (NameError caught in post-RED run).
 
-- [ ] **REFACTOR (0.25h):** Add docstrings. Export `A2AGatewayHelper` from `sdk/python/soorma/__init__.py`. Add imports to `soorma_common/__init__.py` if any new models added (none expected).
+- [x] **REFACTOR (0.25h):** Added docstrings. `A2AGatewayHelper` exported from `sdk/python/soorma/__init__.py`. No new `soorma_common` models needed.
 
 **Files Created/Modified:**
 - `sdk/python/soorma/gateway.py` — new file
@@ -421,15 +416,18 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
 
 **Scope:** The `register_schema()`, `get_schema()`, `list_schemas()` methods in `RegistryClient` were implemented in Phase 2 but tested only at the service level. This task adds SDK-layer unit tests.
 
-- [ ] **Write tests** in `sdk/python/tests/test_registry_schema_client.py`:
-  - `test_register_schema_sends_correct_payload` — mock HTTP, verify camelCase aliasing
-  - `test_register_schema_returns_payload_schema_response` — return type verified
-  - `test_get_schema_latest_version` — calls `GET /v1/schemas/{name}`
-  - `test_get_schema_specific_version` — calls `GET /v1/schemas/{name}/versions/{ver}`
+- [x] **Write tests** in `sdk/python/tests/test_registry_schema_client.py` — 11 tests written (3 extra for fuller coverage):
+  - `test_register_schema_posts_to_correct_url` — URL contains `/v1/schemas`
+  - `test_register_schema_sends_schema_in_envelope` — body has `{"schema": {"schemaName": ...}}` (camelCase)
+  - `test_register_schema_returns_payload_schema_response` — return type + `success=True`
+  - `test_get_schema_latest_version_calls_name_url` — calls `GET /v1/schemas/{name}` (no `versions`)
+  - `test_get_schema_specific_version_calls_versioned_url` — calls `GET /v1/schemas/{name}/versions/{ver}`
+  - `test_get_schema_returns_payload_schema_dto` — return type `PayloadSchema` with correct fields
   - `test_get_schema_returns_none_on_404` — 404 → `None` (not exception)
-  - `test_list_schemas_no_filter` — calls `GET /v1/schemas` with no params
-  - `test_list_schemas_with_owner_filter` — `owner_agent_id` becomes query param
-  - `test_list_schemas_returns_list` — return type `List[PayloadSchema]`
+  - `test_list_schemas_calls_schemas_endpoint` — URL ends with `/v1/schemas`
+  - `test_list_schemas_with_owner_filter_passes_param` — `owner_agent_id` in query params
+  - `test_list_schemas_no_filter_sends_empty_params` — `owner_agent_id` absent when not provided
+  - `test_list_schemas_returns_list_of_payload_schemas` — list of `PayloadSchema` DTOs, correct names
 
 These are **coverage gap tests** for existing, working code. Per developer decision (March 1, 2026): STUB→RED→GREEN cycle applies to new code and refactoring only. When addressing tech debt by adding missing tests for pre-existing implementations, write tests directly against the expected behaviour without forcing the TDD cycle.
 
@@ -442,13 +440,13 @@ These are **coverage gap tests** for existing, working code. Per developer decis
 
 | Task | Duration | Priority | Status |
 |------|----------|----------|--------|
-| **3A:** `discover()` + `discover_agents()` return type | 3.5h | 🔴 Critical | 📋 Not started |
-| **3B:** `EventDecision` DTO | 1.25h | 🔴 Critical (blocks 3C) | 📋 Not started |
-| **3C:** `EventSelector` | 5.5h | 🟡 High | 📋 Not started |
-| **3D:** `A2AGatewayHelper` | 2.75h | 🟡 High | 📋 Not started |
-| **3E:** Schema client tests | 2h | 🟢 Medium | 📋 Not started |
-| **FDE check:** Verify `litellm` installed | 0.25h | 🟡 High | 📋 Not started |
-| **Exports:** `__init__.py` updates | 0.5h | 🟢 Medium | 📋 Not started |
+| **3A:** `discover()` + `discover_agents()` return type | 3.5h | 🔴 Critical | ✅ Complete |
+| **3B:** `EventDecision` DTO | 1.25h | 🔴 Critical (blocks 3C) | ✅ Complete |
+| **3C:** `EventSelector` | 5.5h | 🟡 High | ✅ Complete |
+| **3D:** `A2AGatewayHelper` | 2.75h | 🟡 High | ✅ Complete |
+| **3E:** Schema client tests | 2h | 🟢 Medium | ✅ Complete (11 tests, not 8) |
+| **FDE check:** Verify `litellm` installed | 0.25h | 🟡 High | ✅ Complete |
+| **Exports:** `__init__.py` updates | 0.5h | 🟢 Medium | ✅ Complete |
 
 **Total estimated:** 15.75h (~2 days)
 
@@ -643,29 +641,32 @@ def _map_agent_to_discovered(self, agent: AgentDefinition) -> DiscoveredAgent:
 
 ### Pre-Implementation Checklist
 
-- [ ] Phase 2 Registry Service tests still passing (`cd services/registry && pytest`)
+- [x] Phase 2 Registry Service tests still passing — 80/80 passing (confirmed post-Phase 3, March 1, 2026). Tests were failing initially due to `registry-service` package not being installed in the venv (`pip install -e ".[dev]"` required from `services/registry/`). Phase 3 made no changes to `services/registry/` — zero regressions introduced.
 - [x] `soorma_common` A2A DTOs verified in `libs/soorma-common/src/soorma_common/a2a.py`: `A2AAgentCard` ✅, `A2APart` ✅, `A2AMessage` ✅, `A2ATask` ✅, `A2ATaskStatus` ✅, `A2ATaskResponse` ✅ — Verified March 1, 2026. Still need to confirm `DiscoveredAgent`, `PayloadSchema`, `PayloadSchemaResponse` exports.
 - [x] `litellm` is in `sdk/python/pyproject.toml` as an optional dep under `[ai]` extras: `litellm = {version = "^1.36", optional = true}` — `EventSelector` must be documented as requiring `pip install soorma-core[ai]` ✅ Verified March 1, 2026
 
 ### Post-Implementation Checklist
 
-- [ ] `pytest sdk/python/tests/test_registry_discover.py` — all 8 tests green
-- [ ] `pytest sdk/python/tests/test_registry_schema_client.py` — all 8 tests green
-- [ ] `pytest sdk/python/tests/test_event_selector.py` — all 10 tests green
-- [ ] `pytest sdk/python/tests/test_a2a_gateway_helper.py` — all 10 tests green
-- [ ] `pytest libs/soorma-common/tests/ -k test_event_decision` — all 5 tests green
-- [ ] No `from soorma.registry.client import RegistryClient` in any example agent handler
-- [ ] `EventSelector` and `A2AGatewayHelper` exported from top-level `soorma`
+- [x] `pytest sdk/python/tests/test_registry_discover.py` — 8/8 tests green
+- [x] `pytest sdk/python/tests/test_registry_schema_client.py` — 11/11 tests green
+- [x] `pytest sdk/python/tests/test_event_selector.py` — 10/10 tests green
+- [x] `pytest sdk/python/tests/test_a2a_gateway_helper.py` — 10/10 tests green
+- [x] `pytest libs/soorma-common/tests/test_decisions.py -k TestEventDecision` — 10/10 tests green
+- [x] No `from soorma.registry.client import RegistryClient` in any example agent handler
+- [x] `EventSelector`, `EventSelectionError`, and `A2AGatewayHelper` exported from top-level `soorma`
+
+**Total: 49 tests passing** (target was 40+)
 
 ### CHANGELOG Entry (to be added on completion)
 
 ```
-## [0.8.1] - 2026-03-XX
+## [0.8.1] - 2026-03-01
 
 ### Added
 - `RegistryClient.discover()` — capability-based agent discovery returning `List[DiscoveredAgent]`
 - `RegistryClient.discover_agents()` — updated return type to `List[DiscoveredAgent]`
 - `EventSelector` — LLM-based event routing utility (`soorma.ai.selection`)
+- `EventSelectionError` — exception for LLM routing failures (`soorma.ai.selection`)
 - `A2AGatewayHelper` — A2A protocol conversion helpers (`soorma.gateway`)
 - `EventDecision` DTO — LLM routing decision model (`soorma_common.decisions`)
 ```
@@ -687,5 +688,6 @@ def _map_agent_to_discovered(self, agent: AgentDefinition) -> DiscoveredAgent:
 ---
 
 **Plan Author:** GitHub Copilot (Soorma Senior Architect)  
-**Status:** 📋 Planning — Awaiting developer approval before implementation  
-**Next Step:** Developer approval → start Task 3B (EventDecision DTO) → Task 3A → Task 3C → Task 3D → Task 3E
+**Status:** ✅ Complete — Committed to `dev` as `538949c`  
+**Completed:** March 1, 2026  
+**Next Step:** Phase 4 — [ACTION_PLAN_Phase4_Examples.md](ACTION_PLAN_Phase4_Examples.md)

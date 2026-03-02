@@ -118,6 +118,7 @@ from .decisions import (
     DelegateAction,
     PlannerAction,
     PlannerDecision,
+    EventDecision,
 )
 
 __all__ = [
@@ -216,4 +217,5 @@ __all__ = [
     "DelegateAction",
     "PlannerAction",
     "PlannerDecision",
+    "EventDecision",
 ]

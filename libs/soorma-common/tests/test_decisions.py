@@ -1,6 +1,7 @@
 """Tests for decision types."""
 
 import pytest
+from pydantic import ValidationError
 from soorma_common.decisions import (
     PlanAction,
     PublishAction,
@@ -8,6 +9,7 @@ from soorma_common.decisions import (
     WaitAction,
     DelegateAction,
     PlannerDecision,
+    EventDecision,
 )
 from soorma_common.events import EventTopic
 
@@ -324,3 +326,120 @@ def test_planner_decision_serialization():
     
     assert restored.plan_id == decision.plan_id
     assert restored.next_action.event_type == action.event_type
+
+
+# ---------------------------------------------------------------------------
+# EventDecision Tests (Phase 3 — RF-SDK-017)
+# ---------------------------------------------------------------------------
+
+class TestEventDecision:
+    """Tests for EventDecision DTO used by EventSelector (RF-SDK-017)."""
+
+    def test_event_decision_valid_construction(self):
+        """EventDecision constructs correctly with required fields."""
+        decision = EventDecision(
+            event_type="research.requested",
+            topic="action-requests",
+            payload={"query": "AI trends"},
+            reasoning="Best match for research requirements",
+        )
+        assert decision.event_type == "research.requested"
+        assert decision.topic == "action-requests"
+        assert decision.payload == {"query": "AI trends"}
+        assert decision.reasoning == "Best match for research requirements"
+        assert decision.confidence is None
+
+    def test_event_decision_requires_event_type(self):
+        """Missing event_type raises ValidationError."""
+        with pytest.raises(ValidationError):
+            EventDecision(
+                topic="action-requests",
+                payload={"query": "test"},
+                reasoning="Some reason",
+            )
+
+    def test_event_decision_requires_topic(self):
+        """Missing topic raises ValidationError."""
+        with pytest.raises(ValidationError):
+            EventDecision(
+                event_type="research.requested",
+                payload={"query": "test"},
+                reasoning="Some reason",
+            )
+
+    def test_event_decision_requires_payload_dict(self):
+        """Non-dict payload raises ValidationError."""
+        with pytest.raises(ValidationError):
+            EventDecision(
+                event_type="research.requested",
+                topic="action-requests",
+                payload="not-a-dict",  # type: ignore[arg-type]
+                reasoning="Some reason",
+            )
+
+    def test_event_decision_confidence_optional(self):
+        """confidence field defaults to None when not provided."""
+        decision = EventDecision(
+            event_type="research.requested",
+            topic="action-requests",
+            payload={},
+            reasoning="reason",
+        )
+        assert decision.confidence is None
+
+    def test_event_decision_confidence_valid_range(self):
+        """confidence accepts values between 0.0 and 1.0 inclusive."""
+        low = EventDecision(
+            event_type="e", topic="t", payload={}, reasoning="r", confidence=0.0
+        )
+        high = EventDecision(
+            event_type="e", topic="t", payload={}, reasoning="r", confidence=1.0
+        )
+        mid = EventDecision(
+            event_type="e", topic="t", payload={}, reasoning="r", confidence=0.75
+        )
+        assert low.confidence == 0.0
+        assert high.confidence == 1.0
+        assert mid.confidence == 0.75
+
+    def test_event_decision_confidence_out_of_range(self):
+        """confidence values outside [0.0, 1.0] raise ValidationError."""
+        with pytest.raises(ValidationError):
+            EventDecision(
+                event_type="e", topic="t", payload={}, reasoning="r", confidence=-0.1
+            )
+        with pytest.raises(ValidationError):
+            EventDecision(
+                event_type="e", topic="t", payload={}, reasoning="r", confidence=1.01
+            )
+
+    def test_event_decision_exported_from_soorma_common(self):
+        """EventDecision is importable from the top-level soorma_common package."""
+        from soorma_common import EventDecision as ImportedEventDecision
+        assert ImportedEventDecision is EventDecision
+
+    def test_event_decision_payload_can_be_empty_dict(self):
+        """Empty payload dict is valid (some events may have no required fields)."""
+        decision = EventDecision(
+            event_type="ping.requested",
+            topic="action-requests",
+            payload={},
+            reasoning="No data required",
+        )
+        assert decision.payload == {}
+
+    def test_event_decision_serialization(self):
+        """EventDecision serializes to dict correctly."""
+        decision = EventDecision(
+            event_type="research.requested",
+            topic="action-requests",
+            payload={"query": "AI"},
+            reasoning="Best match",
+            confidence=0.9,
+        )
+        data = decision.model_dump()
+        assert data["event_type"] == "research.requested"
+        assert data["topic"] == "action-requests"
+        assert data["payload"] == {"query": "AI"}
+        assert data["reasoning"] == "Best match"
+        assert data["confidence"] == 0.9
