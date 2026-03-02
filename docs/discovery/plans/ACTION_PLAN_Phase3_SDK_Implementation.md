@@ -641,7 +641,7 @@ def _map_agent_to_discovered(self, agent: AgentDefinition) -> DiscoveredAgent:
 
 ### Pre-Implementation Checklist
 
-- [x] Phase 2 Registry Service tests still passing — Phase 2 committed to `dev` before Phase 3 work began; tests were green at handoff. (Post-hoc confirmation: Phase 3 did not modify any `services/registry/` code.)
+- [x] Phase 2 Registry Service tests still passing — 80/80 passing (confirmed post-Phase 3, March 1, 2026). Tests were failing initially due to `registry-service` package not being installed in the venv (`pip install -e ".[dev]"` required from `services/registry/`). Phase 3 made no changes to `services/registry/` — zero regressions introduced.
 - [x] `soorma_common` A2A DTOs verified in `libs/soorma-common/src/soorma_common/a2a.py`: `A2AAgentCard` ✅, `A2APart` ✅, `A2AMessage` ✅, `A2ATask` ✅, `A2ATaskStatus` ✅, `A2ATaskResponse` ✅ — Verified March 1, 2026. Still need to confirm `DiscoveredAgent`, `PayloadSchema`, `PayloadSchemaResponse` exports.
 - [x] `litellm` is in `sdk/python/pyproject.toml` as an optional dep under `[ai]` extras: `litellm = {version = "^1.36", optional = true}` — `EventSelector` must be documented as requiring `pip install soorma-core[ai]` ✅ Verified March 1, 2026
 
