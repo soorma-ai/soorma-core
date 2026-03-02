@@ -1,12 +1,13 @@
 # Action Plan: Phase 3 - SDK Implementation & A2A Gateway (SOOR-DISC-P3)
 
-**Status:** 📋 Planning  
+**Status:** ✅ Approved — Ready for Implementation  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 3 of 5  
 **Refactoring Tasks:** RF-SDK-007, RF-SDK-008, RF-SDK-017  
 **Estimated Duration:** 3-4 days (26 hours)  
 **Target Release:** v0.8.1  
 **Created:** March 1, 2026  
+**Approved:** March 1, 2026  
 **Prerequisites:** Phase 1 ✅ Complete, Phase 2 ✅ Complete
 
 ---
@@ -220,7 +221,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
 
 **Scope:** Update `discover_agents()` return type and add `discover()` with requirements parameter.
 
-**Why both methods?** `discover()` is the new high-level API (requirements-based). `discover_agents()` stays for backward compatibility with existing code in Phases 1–2 but now returns `DiscoveredAgent` instead of `AgentDefinition`.
+**Why both methods?** `discover()` is the new high-level API (requirements-based). `discover_agents()` is retained for two reasons: (1) backward compatibility with existing code in Phases 1–2, and (2) explicit orchestration flows where agents specify a consumed event directly rather than discovering dynamically by capability (developer-confirmed requirement, March 1, 2026). Both methods now return `DiscoveredAgent` instead of `AgentDefinition`.
 
 **STUB → RED → GREEN → REFACTOR cycle:**
 
@@ -430,7 +431,7 @@ This section verifies compliance with ARCHITECTURE_PATTERNS.md Section 2 before 
   - `test_list_schemas_with_owner_filter` — `owner_agent_id` becomes query param
   - `test_list_schemas_returns_list` — return type `List[PayloadSchema]`
 
-These are **pure GREEN** tests (no STUB/RED cycle needed — code already implemented, tests filling coverage gap).
+These are **coverage gap tests** for existing, working code. Per developer decision (March 1, 2026): STUB→RED→GREEN cycle applies to new code and refactoring only. When addressing tech debt by adding missing tests for pre-existing implementations, write tests directly against the expected behaviour without forcing the TDD cycle.
 
 **Files Created:**
 - `sdk/python/tests/test_registry_schema_client.py` — new test file
@@ -562,7 +563,8 @@ async def test_discover_agents_live():
 
 ### FDE-1: Prompt Templates — f-strings instead of Jinja2
 
-**Decision:** ✅ Use Python f-strings for `EventSelector` prompt templates. Do NOT add Jinja2 as a dependency.
+**Decision:** ✅ Use Python f-strings for `EventSelector` prompt templates. Do NOT add Jinja2 as a dependency.  
+**Developer Approval:** ✅ Approved March 1, 2026
 
 **Rationale:**
 - Jinja2 adds a new package dependency for marginal benefit (templates are short, single-level substitutions)
@@ -597,13 +599,13 @@ Respond with a JSON object:
 
 ### FDE-2: `DiscoveredAgent.version` parsing — `name:version` convention
 
-**Decision:** ✅ Parse `version` from `AgentDefinition.name` using the `name:version` suffix convention established in `AgentDefinition.__init__()`.
+**Decision:** ✅ Parse `version` from `AgentDefinition.name` using the `name:version` suffix convention established in `AgentDefinition.__init__()`.  
+**Developer Approval:** ✅ Approved March 1, 2026 — confirmed service does not yet return version as a separate field; name-parsing approach is correct for now.
 
 **Rationale:**
 - `AgentDefinition.__init__` appends `:version` to the name (e.g., `"ResearchWorker:1.0.0"`)
-- The database does not store version as a separate column (Phase 1 migration adds `version` column — but let's check if the API returns it)
-
-**Lookup:** From Phase 1 migration: `version VARCHAR DEFAULT '1.0.0'` added to `agents` table. The `AgentQueryResponse` currently returns `AgentDefinition` objects. The service may need to populate `version` from the DB column.
+- Service does not yet return `version` as a separate field in `AgentQueryResponse` (confirmed March 1, 2026)
+- When service is updated to return explicit version, the `_map_agent_to_discovered()` helper can be updated to prefer the explicit field with name-parsing as fallback
 
 **Implementation in SDK:**
 ```python
@@ -627,7 +629,8 @@ def _map_agent_to_discovered(self, agent: AgentDefinition) -> DiscoveredAgent:
 
 ### FDE-3: `EventSelector` error handling — `EventSelectionError` in same file
 
-**Decision:** ✅ Define `EventSelectionError` exception class in `sdk/python/soorma/ai/selection.py` (co-located with `EventSelector`).
+**Decision:** ✅ Define `EventSelectionError` exception class in `sdk/python/soorma/ai/selection.py` (co-located with `EventSelector`).  
+**Developer Approval:** ✅ Approved March 1, 2026
 
 **Rationale:**
 - Creating a separate `soorma.exceptions` module is premature (Phase 3 is the first consumer)
@@ -641,8 +644,8 @@ def _map_agent_to_discovered(self, agent: AgentDefinition) -> DiscoveredAgent:
 ### Pre-Implementation Checklist
 
 - [ ] Phase 2 Registry Service tests still passing (`cd services/registry && pytest`)
-- [ ] `soorma_common` exports `DiscoveredAgent`, `PayloadSchema`, `PayloadSchemaResponse`, `A2AAgentCard`, `A2ATask`, `A2ATaskResponse`
-- [ ] `litellm` is in `sdk/python/pyproject.toml` (same dep as `ChoreographyPlanner`)
+- [x] `soorma_common` A2A DTOs verified in `libs/soorma-common/src/soorma_common/a2a.py`: `A2AAgentCard` ✅, `A2APart` ✅, `A2AMessage` ✅, `A2ATask` ✅, `A2ATaskStatus` ✅, `A2ATaskResponse` ✅ — Verified March 1, 2026. Still need to confirm `DiscoveredAgent`, `PayloadSchema`, `PayloadSchemaResponse` exports.
+- [x] `litellm` is in `sdk/python/pyproject.toml` as an optional dep under `[ai]` extras: `litellm = {version = "^1.36", optional = true}` — `EventSelector` must be documented as requiring `pip install soorma-core[ai]` ✅ Verified March 1, 2026
 
 ### Post-Implementation Checklist
 
