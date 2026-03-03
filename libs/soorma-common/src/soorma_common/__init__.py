@@ -2,7 +2,7 @@
 Soorma Common - Common models and DTOs for Soorma platform services.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 from .models import (
     BaseDTO,

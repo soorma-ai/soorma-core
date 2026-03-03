@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-03-02
+
+### Added
+- **Stage 5 - Discovery & A2A Integration** (March 1–2, 2026)
+  - **Schema Registry** (soorma-common + Registry Service): `PayloadSchema` model, `POST /v1/schemas`, `GET /v1/schemas`, schema versioning with semantic versioning support
+  - **Agent Discovery** (Registry Service + SDK): `GET /v1/agents/discover`, `RegistryClient.discover_agents()`, `context.registry.discover()` wrapper
+  - **A2A Gateway** (SDK): `A2AGateway` adapter for exposing Soorma agents via the A2A protocol
+  - **`soorma-nats` library** (`libs/soorma-nats/`): New shared NATS client for infrastructure services; 33 unit tests, 100% coverage
+
+### Changed
+- **TECH-DEBT-001:** Tracker Service now subscribes to NATS directly via `soorma-nats` library; `soorma-core` SDK dependency removed from `services/tracker/`
+- **BREAKING: `AgentCapability` structure** (soorma-common v0.8.1): `consumed_event` and `produced_events` now require `EventDefinition` objects; string fields no longer accepted
+- **Registry Service**: All tables require `tenant_id` + `user_id`; unique constraints now tenant-scoped (multi-tenancy)
+- Tracker Service: `EVENT_SERVICE_URL` → `NATS_URL` environment variable
+
+### Fixed
+- **`PayloadSchemaRegistrationRequest.schema`** field renamed to `payload_schema` with `alias="schema"` (suppresses Pydantic v2 `UserWarning`)
+- **Registry Service**: SQLite UUID NUMERIC affinity bug; `EventDefinition` hashability; `agent_to_dto()` coercion
+- **soorma-common**: `[Errno 111] Connection refused` on tracker startup resolved by direct NATS connection
+
+### Components Updated
+- **soorma-common**: Schema Registry DTOs, enhanced `EventDefinition`, `DiscoveredAgent`, `AgentCapability` breaking change
+- **Registry Service**: Schema CRUD, `SchemaRegistryService`, `AgentRegistryService.discover_agents()`, RLS multi-tenancy, DB migration 003
+- **SDK (soorma-core)**: `RegistryClient` extended with 4 schema/discovery methods; `A2AGateway`; `soorma dev` CLI NATS fix
+- **Tracker Service**: Replaced `EventClient` (SDK) with `NATSClient` (`soorma-nats`)
+- **soorma-nats**: New library v0.8.1 — shared NATS client for infrastructure services
+- **Memory Service**: Version alignment (0.8.1)
+- **Event Service**: Version alignment (0.8.1)
+
+### Test Coverage
+- 33 soorma-nats unit tests (100% coverage)
+- 41 Tracker Service tests (28 original + 13 new NATS subscriber tests)
+- 80 Registry Service tests (50 original + 30 Phase 2 schema/discovery tests)
+
 ## [0.8.0] - 2026-02-23
 
 ### Added

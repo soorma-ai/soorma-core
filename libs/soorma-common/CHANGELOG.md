@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [Unreleased]
 
 ## [0.8.1] - 2026-02-28
+
+### Fixed
+- **`PayloadSchemaRegistrationRequest.schema` field renamed to `payload_schema`** (March 2, 2026)
+  - Pydantic v2 `BaseModel` has a `schema()` class method; a field named `schema` shadows it and raises `UserWarning`
+  - Fix: field renamed to `payload_schema` with `alias="schema"` — JSON serialization unchanged (`model_dump(by_alias=True)` still produces `{"schema": ...}`)
+  - Updated call sites: `registry_service/api/v1/schemas.py`, `sdk/python/soorma/registry/client.py`
 
 ### Added
 - **Phase 1 - Schema Registry & DTOs Foundation (February 28, 2026)**
