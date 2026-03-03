@@ -49,7 +49,8 @@ Target (CORRECT):
 4. All existing Tracker Service tests pass (event handler logic is unchanged).
 5. New tests validate NATS subscription lifecycle (connect, receive, reconnect, disconnect).
 6. `soorma-core` removed from `services/tracker/pyproject.toml` dependencies.
-7. NATS URL configured via `NATS_URL` environment variable (replaces `EVENT_SERVICE_URL` for subscriptions).
+7. `NATS_URL` environment variable added; `EVENT_SERVICE_URL` removed from Tracker config (dead config — no other callers).
+8. Event Service `NatsAdapter` extraction deferred to Stage 6 (see [DEFERRED_WORK.md](../../refactoring/DEFERRED_WORK.md#event-service-nats-adapter-extraction)).
 
 ---
 
@@ -58,7 +59,8 @@ Target (CORRECT):
 **Components affected:**
 - **New:** `libs/soorma-nats/` — shared NATS client library
 - **Modified:** `services/tracker/` — remove SDK dependency, replace `EventClient` with `NATSClient`
-- **No change:** Event Service, Registry Service, SDK
+- **No change:** Registry Service, SDK
+- **Deferred to Stage 6:** Event Service `NatsAdapter` extraction to `soorma-nats` — cosmetic cleanup only, not a correctness fix; tracked in [DEFERRED_WORK.md](../../refactoring/DEFERRED_WORK.md#event-service-nats-adapter-extraction)
 
 ### Current Architecture (Before)
 
@@ -525,8 +527,8 @@ __all__ = ["NATSClient", "NATSConnectionError", "NATSSubscriptionError"]
 # ADD
 nats_url: str = os.environ.get("NATS_URL", "nats://localhost:4222")
 
-# KEEP (for backward compatibility or remove if unused after refactor)
-# event_service_url: str = ...  ← can be removed  
+# REMOVE — dead config after refactor, no other callers in Tracker
+# event_service_url: str = os.environ.get("EVENT_SERVICE_URL", "http://localhost:8082")
 ```
 
 **`main.py` changes:**
@@ -650,6 +652,7 @@ tracker:
 - [ ] 10+ new NATS subscriber tests pass (unit + integration)
 - [ ] Tracker Service starts successfully in Docker Compose with NATS
 - [ ] `CHANGELOG.md` updated for both `soorma-nats` (new) and `tracker-service` (modified)
+- [ ] `EVENT_SERVICE_URL` does not appear in `services/tracker/src/` after refactor
 
 ---
 
