@@ -14,14 +14,14 @@ COPY libs/soorma-common /app/soorma-common/
 WORKDIR /app/soorma-common
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
-# Copy SDK (needed for event bus subscription)
-COPY sdk/python /app/sdk/
+# Copy soorma-nats package (shared NATS client for infrastructure services)
+COPY libs/soorma-nats /app/soorma-nats/
 
-# Build SDK
-WORKDIR /app/sdk
+# Build soorma-nats
+WORKDIR /app/soorma-nats
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
-# Copy tracker service (copy last so changes don't rebuild SDK)
+# Copy tracker service (copy last so changes don't rebuild libs)
 COPY services/tracker /app/tracker/
 
 # Build tracker service
@@ -29,13 +29,14 @@ WORKDIR /app/tracker
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
 # Download all dependencies as wheels (excluding the packages we just built)
-RUN pip wheel --wheel-dir /app/wheels . \
-    && rm -f /app/wheels/soorma_common-*.whl /app/wheels/soorma_core-*.whl /app/wheels/tracker_service-*.whl
+# --find-links ensures locally-built wheels (soorma-common, soorma-nats) are used instead of PyPI
+RUN pip wheel --wheel-dir /app/wheels --find-links /app/wheels . \
+    && rm -f /app/wheels/soorma_common-*.whl /app/wheels/soorma_nats-*.whl /app/wheels/tracker_service-*.whl
 
 # Re-add our built packages (ensures we use local versions, not PyPI)
 WORKDIR /app/soorma-common
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
-WORKDIR /app/sdk
+WORKDIR /app/soorma-nats
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 WORKDIR /app/tracker
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
@@ -55,7 +56,7 @@ COPY --from=builder /app/wheels /app/wheels
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir --no-index --find-links=/app/wheels \
         /app/wheels/soorma_common-*.whl \
-        /app/wheels/soorma_core-*.whl \
+        /app/wheels/soorma_nats-*.whl \
         /app/wheels/tracker_service-*.whl \
     && rm -rf /app/wheels
 

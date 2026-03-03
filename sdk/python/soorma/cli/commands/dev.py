@@ -132,7 +132,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/tracker
       - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/tracker
-      - EVENT_SERVICE_URL=http://event-service:8082
+      - NATS_URL=nats://nats:4222
       - IS_LOCAL_TESTING=true
       - IS_PROD=false
     depends_on:
@@ -140,8 +140,6 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
-      event-service:
-        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health').read()"]
       interval: 10s
