@@ -290,7 +290,7 @@ class RegistryClient:
         Returns:
             PayloadSchemaResponse with success flag
         """
-        request = PayloadSchemaRegistrationRequest(schema=schema)
+        request = PayloadSchemaRegistrationRequest(payload_schema=schema)
         response = await self._client.post(
             f"{self.base_url}/v1/schemas",
             json=request.model_dump(by_alias=True),

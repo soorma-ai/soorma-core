@@ -212,7 +212,7 @@ class PayloadSchemaRegistrationRequest(BaseDTO):
 
         {"schema": {"schemaName": "research_request_v1", "version": "1.0.0", "jsonSchema": {...}}}
     """
-    schema: PayloadSchema = Field(..., description="Payload schema definition to register.")
+    payload_schema: PayloadSchema = Field(..., alias="schema", description="Payload schema definition to register.")
 
 
 class PayloadSchemaListResponse(BaseDTO):
