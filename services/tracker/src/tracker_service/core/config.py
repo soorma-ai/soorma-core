@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     )
     sync_database_url: Optional[str] = os.environ.get("SYNC_DATABASE_URL")
 
-    # Event Service
-    event_service_url: str = os.environ.get("EVENT_SERVICE_URL", "http://localhost:8082")
+    # NATS — direct message bus subscription (replaces SDK Event Service HTTP/SSE)
+    nats_url: str = os.environ.get("NATS_URL", "nats://localhost:4222")
 
     # Tenancy
     default_tenant_id: str = os.environ.get(

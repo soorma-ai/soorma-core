@@ -15,7 +15,7 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "pyjwt>=2.8.0",       # JWT token parsing
     "soorma-common",      # Shared DTOs
-    "soorma-core",        # SDK for event bus subscription
+    "soorma-nats",        # Shared NATS client for infrastructure services
 ]
 
 [project.optional-dependencies]

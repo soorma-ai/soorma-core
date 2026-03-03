@@ -13,7 +13,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from soorma_common.events import EventEnvelope, EventTopic
-from soorma.events import EventClient
+from soorma_nats import NATSClient  # Direct NATS subscription — no SDK dependency
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -23,70 +23,76 @@ from tracker_service.models.db import ActionProgress, PlanProgress, ActionStatus
 
 logger = logging.getLogger(__name__)
 
-# Global EventClient used for SSE subscription
-_event_client: Optional[Any] = None
+# Global NATSClient — set by start_event_subscribers(), cleared by stop_event_subscribers()
+_nats_client: NATSClient | None = None
 
 
-async def start_event_subscribers(event_service_url: str) -> None:
-    """
-    Start subscribing to events from the event bus via SSE.
+async def start_event_subscribers(nats_url: str) -> None:
+    """Start NATS subscription for Tracker Service.
 
-    Creates an EventClient, registers a catch-all dispatcher that routes
-    events to the appropriate handler by topic, then connects.
+    Creates a NATSClient, connects to the NATS broker, and subscribes to
+    action-requests, action-results, and system-events topics.
+
+    Each inbound message is deserialized to an EventEnvelope, routed to the
+    appropriate handler by topic, and processed in a short-lived DB session
+    via _create_db_handler.
 
     Args:
-        event_service_url: Base URL of the Event Service (e.g. "http://event-service:8082")
+        nats_url: NATS server URL (e.g. "nats://nats:4222").
     """
-    global _event_client
+    global _nats_client
 
-    _event_client = EventClient(
-        event_service_url=event_service_url,
-        agent_id="tracker-service",
-        source="tracker-service",
-    )
+    _nats_client = NATSClient(url=nats_url)
+    await _nats_client.connect()
 
-    @_event_client.on_all_events
-    async def _dispatch(event: EventEnvelope) -> None:
-        """Route every inbound event to the correct handler by topic."""
-        topic_value = event.topic.value if isinstance(event.topic, EventTopic) else str(event.topic)
+    async def _dispatch(subject: str, message: dict) -> None:
+        """Route raw NATS messages to the correct event handler by topic."""
+        # Strip the soorma.events. prefix to get the topic name
+        topic = subject.removeprefix("soorma.events.")
 
-        if topic_value == EventTopic.ACTION_REQUESTS.value:
+        if topic == EventTopic.ACTION_REQUESTS.value:
             handler = handle_action_request
-        elif topic_value == EventTopic.ACTION_RESULTS.value:
+        elif topic == EventTopic.ACTION_RESULTS.value:
             handler = handle_action_result
-        elif topic_value == EventTopic.SYSTEM_EVENTS.value:
+        elif topic == EventTopic.SYSTEM_EVENTS.value:
             handler = handle_plan_event
         else:
-            logger.debug(f"Tracker: ignoring event on untracked topic '{topic_value}'")
+            logger.debug(f"Tracker: ignoring message on untracked subject '{subject}'")
             return
 
+        # Deserialize to EventEnvelope and delegate to DB-wrapped handler
+        event = EventEnvelope.model_validate(message)
         await _create_db_handler(handler)(event)
 
-    await _event_client.connect([
-        EventTopic.ACTION_REQUESTS,
-        EventTopic.ACTION_RESULTS,
-        EventTopic.SYSTEM_EVENTS,
-    ])
+    await _nats_client.subscribe(
+        topics=[
+            EventTopic.ACTION_REQUESTS.value,
+            EventTopic.ACTION_RESULTS.value,
+            EventTopic.SYSTEM_EVENTS.value,
+        ],
+        callback=_dispatch,
+        queue_group="tracker-service",
+    )
 
     logger.info(
         f"Tracker Service: subscribed to "
         f"{EventTopic.ACTION_REQUESTS.value}, "
         f"{EventTopic.ACTION_RESULTS.value}, "
         f"{EventTopic.SYSTEM_EVENTS.value} "
-        f"via {event_service_url}"
+        f"via NATS at {nats_url}"
     )
 
 
 async def stop_event_subscribers() -> None:
-    """Stop all event subscriptions and disconnect from the event bus."""
-    global _event_client
+    """Disconnect NATS client and stop all event subscriptions."""
+    global _nats_client
 
-    if _event_client:
-        await _event_client.disconnect()
-        _event_client = None
-        logger.info("Tracker Service: event subscribers stopped")
+    if _nats_client:
+        await _nats_client.disconnect()
+        _nats_client = None
+        logger.info("Tracker Service: NATS event subscribers stopped")
     else:
-        logger.debug("Tracker Service: no active event client to stop")
+        logger.debug("Tracker Service: no active NATS client to stop")
 
 
 def _create_db_handler(handler_func):

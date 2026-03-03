@@ -41,7 +41,7 @@ async def register_schema(
     """
     try:
         return await SchemaRegistryService.register_schema(
-            db, request.schema, developer_tenant_id
+            db, request.payload_schema, developer_tenant_id
         )
     except ValueError as exc:
         # Duplicate (name, version, tenant) → 409 Conflict

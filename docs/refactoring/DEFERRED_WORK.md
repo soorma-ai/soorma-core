@@ -1,7 +1,7 @@
 # Deferred Work Tracking
 
 **Purpose:** Track refactoring tasks deferred to future stages to prevent them from being lost.  
-**Last Updated:** February 22, 2026 (Added Tracker NATS direct integration tech debt)
+**Last Updated:** March 2, 2026 (Added Event Service NATS adapter extraction deferral)
 
 ---
 
@@ -899,6 +899,51 @@ Similar workflows needed for:
 - [ ] Create GitHub issue: "Add CI workflow for Registry Service" (label: `ci`, `deferred`)
 - [ ] Add to Docker image publishing milestone
 - [ ] Create similar issues for other services when ready
+
+---
+
+### Event Service NATS Adapter Extraction
+
+**Description:** Migrate Event Service's internal `NatsAdapter` to use the new `libs/soorma-nats/` shared library, removing code duplication.
+
+**Deferred From:** Stage 5 Phase 4 (March 2, 2026) — explicit developer decision
+
+**Target Stage:** Stage 6
+
+**Estimated Effort:** 2–3 hours
+
+**Reason for Deferral:**
+- `NatsAdapter` in `services/event-service/src/adapters/nats_adapter.py` already works correctly
+- This is cosmetic deduplication, not an architectural violation
+- The only *violation* being fixed in Phase 4 is Tracker's SDK dependency
+- Deferring avoids touching a working service during Phase 4 scope
+
+**Current State:**
+- Event Service uses `NatsAdapter` (internal class) — ✅ correct (infrastructure service, direct NATS)
+- Tracker Service uses `soorma-nats` library after Phase 4 — ✅ correct
+- `NatsAdapter` and `NATSClient` have 80%+ overlapping logic — ⚠️ duplication
+
+**Future Work:**
+1. Replace `services/event-service/src/adapters/nats_adapter.py` with `from soorma_nats import NATSClient`
+2. The `NatsAdapter` currently has a `publish()` method; ensure `NATSClient` gains publish support first
+3. Update `services/event-service/pyproject.toml` to add `soorma-nats` dependency
+4. Remove `adapters/nats_adapter.py` and update imports in Event Service
+
+**Dependencies:**
+- ✅ `libs/soorma-nats/` library (Phase 4 deliverable)
+- ⏳ `NATSClient.publish()` method — Phase 4 only implements subscribe-only client (Tracker is subscribe-only)
+
+**Acceptance Criteria (future):**
+- [ ] Event Service no longer contains `NatsAdapter` class
+- [ ] Event Service uses `soorma_nats.NATSClient` for NATS operations
+- [ ] All Event Service tests pass
+- [ ] `NATSClient` has `publish()` method for Event Service publish path
+
+**Reference:** [ACTION_PLAN_Phase4_Tracker_NATS_Integration.md](../discovery/plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md)
+
+**Tracking:**
+- [ ] Add `publish()` to `NATSClient` in Stage 6
+- [ ] Create GitHub issue: "Migrate Event Service NatsAdapter to soorma-nats library"
 
 ---
 

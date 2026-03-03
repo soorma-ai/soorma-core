@@ -1,8 +1,8 @@
 # Discovery: Technical Architecture
 
-**Status:** 🟢 Implementation In Progress (Phases 1 & 2 ✅, Phase 3 📋 Planning)  
+**Status:** 🟢 Implementation In Progress (Phases 1 & 2 ✅, Phase 3 📋 Planning, Phase 4 📋 Planning)  
 **Last Updated:** March 1, 2026  
-**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 📋 | RF-SDK-017 📋
+**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 📋 | RF-SDK-017 📋 | TECH-DEBT-001 📋
 
 ### Phase Progress
 
@@ -11,7 +11,7 @@
 | Phase 1 | Foundation — DTOs, DB Schema, RLS, Alembic migrations | ✅ Complete |
 | Phase 2 | Service — Schema endpoints, Discovery endpoint, multi-tenancy middleware | ✅ Complete |
 | Phase 3 | SDK — `discover()`, `EventSelector`, `A2AGatewayHelper` | 📋 [Plan](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
-| Phase 4 | Tracker NATS integration | ⬜ Not started |
+| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | � [In Progress](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
 | Phase 5 | Examples 11–13, full documentation | ⬜ Not started |
 
 ---
@@ -97,6 +97,11 @@ services/registry/
 
 libs/soorma-common/
 └── models.py                # PayloadSchema, DiscoveredAgent, AgentCapability (EventDefinition)
+
+libs/soorma-nats/            # COMING Phase 4: shared NATS client for infrastructure services
+└── src/soorma_nats/
+    ├── client.py            # NATSClient (connect, subscribe, disconnect)
+    └── exceptions.py        # NATSConnectionError, NATSSubscriptionError
 
 sdk/python/soorma/
 ├── registry/client.py       # RegistryClient (register_schema, get_schema, discover_agents)
@@ -682,11 +687,11 @@ selection = await selector.select_event(
 - 📋 **Phase 3:** `EventSelector` utility (RF-SDK-017) — `sdk/python/soorma/ai/selection.py`
 - 📋 **Phase 3:** `A2AGatewayHelper` — `sdk/python/soorma/gateway.py`
 - 📋 **Phase 3:** 40+ SDK unit tests
+- 📋 **Phase 4:** Tracker Service NATS direct integration (TECH-DEBT-001) — [Plan](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md)
+- 📋 **Phase 4:** `libs/soorma-nats/` shared NATS client library (v0.1.0)
 
 ### Not Started
 
-- ⬜ Phase 4: Tracker Service NATS direct integration (TECH-DEBT-001)
-- ⬜ Phase 4: `soorma-nats` shared library
 - ⬜ Phase 5: Example 11 (LLM-based discovery)
 - ⬜ Phase 5: Example 12 (EventSelector routing)
 - ⬜ Phase 5: Example 13 (A2A Gateway)
