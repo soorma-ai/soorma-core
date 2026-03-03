@@ -11,7 +11,7 @@
 | Phase 1 | Foundation — DTOs, DB Schema, RLS, Alembic migrations | ✅ Complete |
 | Phase 2 | Service — Schema endpoints, Discovery endpoint, multi-tenancy middleware | ✅ Complete |
 | Phase 3 | SDK — `discover()`, `EventSelector`, `A2AGatewayHelper` | 📋 [Plan](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
-| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | 📋 [Plan](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
+| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | � [In Progress](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
 | Phase 5 | Examples 11–13, full documentation | ⬜ Not started |
 
 ---
