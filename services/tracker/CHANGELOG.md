@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - Unreleased
+
+### Changed
+- **TECH-DEBT-001:** Replace `soorma-core` (SDK) dependency with `soorma-nats` (infrastructure library)
+- Tracker Service now subscribes to NATS directly instead of via Event Service HTTP/SSE
+- `start_event_subscribers` now accepts `nats_url: str` (was `event_service_url: str`)
+- Add `NATS_URL` environment variable (default: `nats://localhost:4222`)
+
+### Removed
+- `EVENT_SERVICE_URL` environment variable removed from Tracker Service configuration
+- `soorma-core` removed from runtime dependencies
+
 ## [0.8.0] - 2026-02-23
 
 ### Added

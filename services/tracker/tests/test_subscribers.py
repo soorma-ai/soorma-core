@@ -21,55 +21,111 @@ from tracker_service.subscribers.event_handlers import (
 from tracker_service.models.db import ActionStatus, PlanStatus
 
 
+"""Tests for Tracker Service event subscribers (GREEN phase — NATS).
+
+Handler tests (handle_action_request, etc.) are unchanged — database logic
+is identical regardless of subscription mechanism.
+
+Lifecycle tests are updated for the NATS-based start_event_subscribers signature.
+"""
+
+import pytest
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+from sqlalchemy.ext.asyncio import AsyncSession
+from soorma_common.events import EventEnvelope, EventTopic
+
+from tracker_service.subscribers.event_handlers import (
+    handle_action_request,
+    handle_action_result,
+    handle_plan_event,
+    start_event_subscribers,
+    stop_event_subscribers,
+    _extract_tenant_user,
+)
+from tracker_service.models.db import ActionStatus, PlanStatus
+
+
 @pytest.mark.asyncio
 class TestEventSubscriberLifecycle:
-    """Test subscriber startup and shutdown."""
+    """Test subscriber startup and shutdown (NATS-based)."""
 
-    async def test_start_subscribers_initializes_subscriptions(self, monkeypatch):
-        """Test start_event_subscribers creates an EventClient and connects to required topics."""
-        from unittest.mock import patch, MagicMock
+    async def test_start_subscribers_creates_nats_client_and_subscribes(self, monkeypatch):
+        """start_event_subscribers creates a NATSClient and subscribes to all three topics.
 
-        mock_client = AsyncMock()
-        mock_client.connect = AsyncMock()
-        mock_client.disconnect = AsyncMock()
-        mock_client.on_all_events = lambda fn: fn  # decorator passthrough
-
-        with patch(
-            "tracker_service.subscribers.event_handlers.EventClient",
-            return_value=mock_client,
-        ) as MockEventClient:
-            await start_event_subscribers("http://event-service:8082")
-
-        # EventClient created with expected agent_id
-        MockEventClient.assert_called_once()
-        call_kwargs = MockEventClient.call_args.kwargs
-        assert call_kwargs.get("agent_id") == "tracker-service"
-
-        # connect() called with the three expected topics
-        mock_client.connect.assert_awaited_once()
-        topics_arg = mock_client.connect.call_args.args[0]
-        topic_values = [t.value if hasattr(t, "value") else t for t in topics_arg]
-        assert EventTopic.ACTION_REQUESTS.value in topic_values
-        assert EventTopic.ACTION_RESULTS.value in topic_values
-        assert EventTopic.SYSTEM_EVENTS.value in topic_values
-
-    async def test_stop_subscribers_cleanup(self, monkeypatch):
-        """Test stop_event_subscribers disconnects the EventClient."""
-        from unittest.mock import patch
-
-        mock_client = AsyncMock()
-        mock_client.connect = AsyncMock()
-        mock_client.disconnect = AsyncMock()
-        mock_client.on_all_events = lambda fn: fn
+        GREEN phase: NATSClient is instantiated, connect() and subscribe() are called.
+        STUB phase: raises NotImplementedError.
+        """
+        mock_nats = AsyncMock()
+        mock_nats.is_connected = True
 
         with patch(
-            "tracker_service.subscribers.event_handlers.EventClient",
-            return_value=mock_client,
+            "tracker_service.subscribers.event_handlers.NATSClient",
+            return_value=mock_nats,
+        ) as MockNATSClient:
+            await start_event_subscribers("nats://localhost:4222")
+
+        # NATSClient created with the given nats_url
+        MockNATSClient.assert_called_once_with(url="nats://localhost:4222")
+
+        # connect() was awaited
+        mock_nats.connect.assert_awaited_once()
+
+        # subscribe() was called with all three topics
+        mock_nats.subscribe.assert_awaited_once()
+        call_kwargs = mock_nats.subscribe.call_args.kwargs
+        topics_arg = call_kwargs.get("topics") or mock_nats.subscribe.call_args.args[0]
+        assert EventTopic.ACTION_REQUESTS.value in topics_arg
+        assert EventTopic.ACTION_RESULTS.value in topics_arg
+        assert EventTopic.SYSTEM_EVENTS.value in topics_arg
+
+    async def test_start_subscribers_passes_queue_group(self, monkeypatch):
+        """start_event_subscribers passes 'tracker-service' as queue_group.
+
+        GREEN phase: queue_group='tracker-service' is forwarded to NATSClient.subscribe().
+        STUB phase: raises NotImplementedError.
+        """
+        mock_nats = AsyncMock()
+        mock_nats.is_connected = True
+
+        with patch(
+            "tracker_service.subscribers.event_handlers.NATSClient",
+            return_value=mock_nats,
         ):
-            await start_event_subscribers("http://event-service:8082")
+            await start_event_subscribers("nats://localhost:4222")
+
+        call_kwargs = mock_nats.subscribe.call_args.kwargs
+        queue_arg = call_kwargs.get("queue_group")
+        assert queue_arg == "tracker-service"
+
+    async def test_stop_subscribers_disconnects_nats_client(self, monkeypatch):
+        """stop_event_subscribers calls NATSClient.disconnect() and clears global.
+
+        GREEN phase: disconnect() is awaited and _nats_client becomes None.
+        STUB phase: raises NotImplementedError from start_event_subscribers.
+        """
+        mock_nats = AsyncMock()
+        mock_nats.is_connected = True
+
+        with patch(
+            "tracker_service.subscribers.event_handlers.NATSClient",
+            return_value=mock_nats,
+        ):
+            await start_event_subscribers("nats://localhost:4222")
             await stop_event_subscribers()
 
-        mock_client.disconnect.assert_awaited_once()
+        mock_nats.disconnect.assert_awaited_once()
+
+    async def test_stop_subscribers_noop_when_not_started(self):
+        """stop_event_subscribers is a no-op when called before start_event_subscribers.
+
+        GREEN phase: no error, no disconnect called (client is None).
+        """
+        import tracker_service.subscribers.event_handlers as eh
+        # Ensure global client is None
+        eh._nats_client = None
+        # Should not raise
+        await stop_event_subscribers()
 
 
 @pytest.mark.asyncio

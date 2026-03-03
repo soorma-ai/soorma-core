@@ -89,9 +89,9 @@ async def test_get_db_raises_when_not_initialized():
 def test_settings_configuration():
     """Test that settings are configured correctly."""
     from tracker_service.core.config import settings
-    
+
     assert settings.service_name == "tracker-service"
     assert "tracker" in settings.database_url
-    assert "8082" in settings.event_service_url
+    assert "nats://" in settings.nats_url
     assert settings.default_tenant_id is not None
     assert settings.default_user_id is not None

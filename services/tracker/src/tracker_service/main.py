@@ -25,8 +25,8 @@ async def lifespan(app: FastAPI):
     # Initialize database connection
     await init_db()
 
-    # Start event subscribers to receive plan/action events
-    await start_event_subscribers(settings.event_service_url)
+    # Start NATS subscribers to receive plan/action events directly from the broker
+    await start_event_subscribers(settings.nats_url)
 
     yield
 
