@@ -34,6 +34,10 @@ include = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: requires a live NATS server (deselected by default; run with -m integration)",
+]
 
 [tool.ruff]
 line-length = 100
