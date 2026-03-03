@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-03-02
+
+### Added
+- **Phase 3 - SDK RegistryClient Extensions (RF-SDK-018)** (March 1, 2026)
+  - `RegistryClient.register_schema()`: Register payload schemas with the Registry Service
+  - `RegistryClient.get_schema()`: Retrieve a schema by name (latest version)
+  - `RegistryClient.list_schemas()`: List all schemas for the tenant
+  - `RegistryClient.discover_agents()`: Discover active agents by consumed event capability
+  - `PlatformContext.registry.discover()`: High-level wrapper for agent discovery
+  - `A2AGateway`: Adapter for exposing Soorma agents via the A2A protocol
+- **`soorma-nats` library** (`libs/soorma-nats/`): Shared NATS client for infrastructure services
+
+### Fixed
+- **`PayloadSchemaRegistrationRequest` Pydantic field shadow** (March 2, 2026)
+  - Field `schema` renamed to `payload_schema` with `alias="schema"` to suppress Pydantic v2 `UserWarning`
+  - JSON serialization unchanged: `model_dump(by_alias=True)` still produces `{"schema": ...}`
+- **`soorma dev` docker-compose**: Tracker Service now uses `NATS_URL=nats://nats:4222` instead of `EVENT_SERVICE_URL`; `event-service` removed from tracker's `depends_on`
+
 ## [0.8.0] - 2026-02-23
 
 ### Added

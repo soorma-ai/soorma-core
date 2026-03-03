@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.2] - 2026-03-01
+## [0.8.1] - 2026-03-02
 
 ### Added
 - **Phase 2 - Schema Registry Service Endpoints**
@@ -27,9 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `server_default=func.now()` has second-level precision in SQLite; rapid sequential inserts within the same second share identical timestamps, making `ORDER BY created_at DESC LIMIT 1` non-deterministic
   - Fix: set `created_at=datetime.now(timezone.utc)` explicitly on the Python side (microsecond precision)
 
-## [0.8.1] - 2026-03-01
-
-### Fixed
+### Fixed (March 1, 2026)
 - **SQLite UUID NUMERIC affinity bug** (discovered during test harness work)
   - `postgresql.UUID()` in `models/agent.py` and `models/event.py` caused SQLite to assign NUMERIC affinity to tenant_id columns
   - All-zeros UUID (`00000000-0000-0000-0000-000000000000`) was coerced to integer `0` on storage, making every tenant-scoped query return zero rows
@@ -45,9 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated all test fixtures to use `EventDefinition` objects (v0.8.1 breaking change)
   - Added `developer_tenant_id` as required 3rd arg to all `register_agent()` and CRUD call sites
 
-## [0.8.1] - 2026-02-28
-
-### Added
+### Added (February 28, 2026)
 - **Phase 1 - Schema Registry Foundation (February 28, 2026)**
   - **Database migration 003_schema_registry** (RF-ARCH-005, RF-ARCH-006)
     - New `payload_schemas` table for dynamic schema registration

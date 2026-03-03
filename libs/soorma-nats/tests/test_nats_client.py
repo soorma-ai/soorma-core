@@ -15,6 +15,7 @@ RED Phase verification:
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+import json
 
 from soorma_nats import NATSClient, NATSConnectionError, NATSSubscriptionError
 
@@ -286,3 +287,241 @@ class TestNATSClientDisconnect:
         client = NATSClient()
         # Should complete without error in GREEN phase
         await client.disconnect()  # STUB: raises NotImplementedError
+
+
+class TestNATSClientUnsubscribe:
+    """Test unsubscribe() real behavior."""
+
+    @pytest.mark.asyncio
+    async def test_unsubscribe_removes_subscription(self):
+        """unsubscribe() calls sub.unsubscribe() and removes from internal store."""
+        mock_sub = AsyncMock()
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        mock_nc.subscribe = AsyncMock(return_value=mock_sub)
+
+        client = NATSClient()
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            sub_id = await client.subscribe(["action-requests"], callback=AsyncMock())
+            await client.unsubscribe(sub_id)
+
+        mock_sub.unsubscribe.assert_awaited_once()
+        assert not any(k.startswith(sub_id) for k in client._subscriptions)
+
+    @pytest.mark.asyncio
+    async def test_unsubscribe_unknown_id_is_noop(self):
+        """unsubscribe() with unknown ID logs a warning and does not raise."""
+        client = NATSClient()
+        # Should complete without error
+        await client.unsubscribe("nonexistent-id")
+
+    @pytest.mark.asyncio
+    async def test_unsubscribe_handles_error_gracefully(self):
+        """unsubscribe() logs a warning if sub.unsubscribe() raises, then continues."""
+        mock_sub = AsyncMock()
+        mock_sub.unsubscribe = AsyncMock(side_effect=Exception("drain error"))
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        mock_nc.subscribe = AsyncMock(return_value=mock_sub)
+
+        client = NATSClient()
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            sub_id = await client.subscribe(["action-requests"], callback=AsyncMock())
+            # Should NOT raise — errors are swallowed with a warning
+            await client.unsubscribe(sub_id)
+
+
+class TestNATSClientErrorPaths:
+    """Test error branches in subscribe() and disconnect()."""
+
+    @pytest.mark.asyncio
+    async def test_subscribe_failure_raises_nats_subscription_error(self):
+        """subscribe() raises NATSSubscriptionError when nats.subscribe() fails."""
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        mock_nc.subscribe = AsyncMock(side_effect=Exception("subscription refused"))
+
+        client = NATSClient()
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            with pytest.raises(NATSSubscriptionError):
+                await client.subscribe(["action-requests"], callback=AsyncMock())
+
+    @pytest.mark.asyncio
+    async def test_subscribe_failure_cleans_up_partial_subscriptions(self):
+        """subscribe() cleans up any subscriptions already created when one fails."""
+        mock_sub_ok = AsyncMock()
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        # First topic subscribes OK, second fails
+        mock_nc.subscribe = AsyncMock(side_effect=[mock_sub_ok, Exception("fail")])
+
+        client = NATSClient()
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            with pytest.raises(NATSSubscriptionError):
+                await client.subscribe(
+                    ["action-requests", "action-results"], callback=AsyncMock()
+                )
+
+        # Partial subscription must have been cleaned up
+        assert len(client._subscriptions) == 0
+        mock_sub_ok.unsubscribe.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_disconnect_continues_after_drain_error(self):
+        """disconnect() clears client even when drain() raises."""
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        mock_nc.drain = AsyncMock(side_effect=Exception("drain failed"))
+
+        client = NATSClient()
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            # Should NOT raise — drain error is swallowed
+            await client.disconnect()
+
+        assert client._client is None
+
+    @pytest.mark.asyncio
+    async def test_subscribe_failure_cleanup_tolerates_unsubscribe_error(self):
+        """_cleanup_partial_subscription swallows errors from sub.unsubscribe()."""
+        mock_sub_ok = AsyncMock()
+        mock_sub_ok.unsubscribe = AsyncMock(side_effect=Exception("cleanup also fails"))
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        # First subscribe OK, second fails → triggers cleanup of first
+        mock_nc.subscribe = AsyncMock(side_effect=[mock_sub_ok, Exception("subscribe fail")])
+
+        client = NATSClient()
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            # NATSSubscriptionError from subscribe, NOT from cleanup
+            with pytest.raises(NATSSubscriptionError):
+                await client.subscribe(
+                    ["action-requests", "action-results"], callback=AsyncMock()
+                )
+        # Cleanup ran silently despite sub.unsubscribe() raising
+        assert len(client._subscriptions) == 0
+
+
+class TestNATSMessageHandler:
+    """Test the internal _nats_handler callback wired during subscribe()."""
+
+    def _make_connected_client(self) -> tuple:
+        """Return (client, mock_nc) with a connected client."""
+        mock_nc = MagicMock()
+        mock_nc.is_connected = True
+        mock_nc.connected_url = "nats://localhost:4222"
+        mock_nc.subscribe = AsyncMock(return_value=MagicMock())
+        return NATSClient(), mock_nc
+
+    @pytest.mark.asyncio
+    async def test_handler_delivers_decoded_message_to_callback(self):
+        """_nats_handler decodes JSON and invokes the user callback."""
+        received = []
+
+        async def callback(subject: str, message: dict) -> None:
+            received.append((subject, message))
+
+        client, mock_nc = self._make_connected_client()
+
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            await client.subscribe(["action-requests"], callback=callback)
+
+        # Capture the cb= kwarg passed to nats client.subscribe
+        nats_handler = mock_nc.subscribe.call_args.kwargs["cb"]
+
+        # Build a fake nats Msg
+        msg = MagicMock()
+        msg.subject = "soorma.events.action-requests"
+        msg.data = json.dumps({"task_id": "t1"}).encode()
+
+        await nats_handler(msg)
+
+        assert len(received) == 1
+        assert received[0][0] == "soorma.events.action-requests"
+        assert received[0][1] == {"task_id": "t1"}
+
+    @pytest.mark.asyncio
+    async def test_handler_swallows_json_decode_error(self):
+        """_nats_handler logs and swallows JSONDecodeError — does not propagate."""
+        callback = AsyncMock()
+        client, mock_nc = self._make_connected_client()
+
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            await client.subscribe(["action-requests"], callback=callback)
+
+        nats_handler = mock_nc.subscribe.call_args.kwargs["cb"]
+
+        msg = MagicMock()
+        msg.subject = "soorma.events.action-requests"
+        msg.data = b"not valid json {"
+
+        # Should NOT raise
+        await nats_handler(msg)
+        callback.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_handler_swallows_callback_exception(self):
+        """_nats_handler catches exceptions in the user callback."""
+        async def bad_callback(subject, message):
+            raise ValueError("handler blew up")
+
+        client, mock_nc = self._make_connected_client()
+
+        with patch("soorma_nats.client.nats") as mock_nats_mod:
+            mock_nats_mod.connect = AsyncMock(return_value=mock_nc)
+            await client.connect()
+            await client.subscribe(["action-requests"], callback=bad_callback)
+
+        nats_handler = mock_nc.subscribe.call_args.kwargs["cb"]
+
+        msg = MagicMock()
+        msg.subject = "soorma.events.action-requests"
+        msg.data = json.dumps({"x": 1}).encode()
+
+        # Should NOT raise — exception is caught and logged
+        await nats_handler(msg)
+
+
+class TestNATSLifecycleCallbacks:
+    """Test NATS connection lifecycle callbacks are called without error."""
+
+    @pytest.mark.asyncio
+    async def test_error_callback_does_not_raise(self):
+        client = NATSClient()
+        await client._error_callback(Exception("test error"))
+
+    @pytest.mark.asyncio
+    async def test_disconnected_callback_does_not_raise(self):
+        client = NATSClient()
+        await client._disconnected_callback()
+
+    @pytest.mark.asyncio
+    async def test_reconnected_callback_does_not_raise(self):
+        client = NATSClient()
+        await client._reconnected_callback()
+
+    @pytest.mark.asyncio
+    async def test_closed_callback_does_not_raise(self):
+        client = NATSClient()
+        await client._closed_callback()

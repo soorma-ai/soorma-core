@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.8.1] - 2026-03-02
+
+### Changed
+- Version bumped to 0.8.1 to align with unified platform release (Stage 5 - Discovery & A2A Integration complete)
+- No functional changes to event service
+
 ## [0.8.0] - 2026-02-23
 
 ### Changed
