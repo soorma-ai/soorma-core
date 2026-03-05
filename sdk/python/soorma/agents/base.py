@@ -460,7 +460,7 @@ class Agent(ABC):
                 logger.warning(f"Failed to register event definition {getattr(event_def, 'event_name', '?')}: {e}")
 
         # Build AgentDefinition from config
-        from soorma_common import AgentDefinition, AgentCapability, EventDefinition
+        from soorma_common import AgentDefinition, AgentCapability, EventDefinition, PayloadSchema
         
         # Convert capabilities to AgentCapability objects
         structured_capabilities = []
@@ -484,7 +484,13 @@ class Agent(ABC):
                 structured_capabilities.append(cap)
             elif isinstance(cap, dict):
                 structured_capabilities.append(AgentCapability(**cap))
-        
+
+        # Auto-register inline schemas from capabilities (RF-SDK-007 / T0 Phase 5).
+        # When an EventDefinition carries both payload_schema_name (the registry key)
+        # AND payload_schema (the inline JSON Schema body), the SDK registers it so
+        # the agent developer never needs to call ctx.registry.register_schema() explicitly.
+        await self._auto_register_inline_schemas(structured_capabilities)
+
         agent_def = AgentDefinition(
             agent_id=self.agent_id,
             name=self.name,
@@ -502,6 +508,60 @@ class Agent(ABC):
         except Exception as e:
             logger.warning(f"⚠ Failed to register with Registry: {e} (continuing in offline mode)")
             return False
+
+    async def _auto_register_inline_schemas(self, capabilities: list) -> None:
+        """Auto-register inline payload schemas from AgentCapability event definitions.
+
+        For each EventDefinition in consumed_event and produced_events that carries
+        both payload_schema_name (the registry key) and payload_schema (inline JSON
+        Schema body), this method calls context.registry.register_schema() so the
+        agent developer never has to do it explicitly.
+
+        Schemas without an inline body (payload_schema is None) are skipped —
+        they reference a schema that must already be registered independently.
+
+        Failures are non-fatal: logged as warnings so the agent can still start
+        in environments where the Registry is temporarily unavailable.
+
+        Args:
+            capabilities: Resolved list of AgentCapability objects to scan.
+        """
+        from soorma_common import PayloadSchema
+
+        # Collect all event definitions across consumed + produced, deduplicated by schema name
+        seen_schema_names: set = set()
+        events_to_check = []
+        for cap in capabilities:
+            from soorma_common import AgentCapability
+            if not isinstance(cap, AgentCapability):
+                continue
+            events_to_check.append(cap.consumed_event)
+            events_to_check.extend(cap.produced_events)
+
+        for event_def in events_to_check:
+            if event_def is None:
+                continue
+            schema_name = getattr(event_def, "payload_schema_name", None)
+            inline_body = getattr(event_def, "payload_schema", None)
+            # Only register when BOTH name and inline body are present
+            if not schema_name or not inline_body:
+                continue
+            # Deduplicate: same schema name declared on multiple capabilities
+            if schema_name in seen_schema_names:
+                continue
+            seen_schema_names.add(schema_name)
+            try:
+                schema = PayloadSchema(
+                    schema_name=schema_name,
+                    version=getattr(event_def, "version", "1.0.0") or "1.0.0",
+                    json_schema=inline_body,
+                    description=getattr(event_def, "description", None),
+                    owner_agent_id=self.agent_id,
+                )
+                await self.context.registry.register_schema(schema)
+                logger.debug(f"Auto-registered inline schema: {schema_name}")
+            except Exception as e:
+                logger.warning(f"Failed to auto-register schema '{schema_name}': {e} (continuing)")
     
     async def _deregister_from_registry(self) -> None:
         """Deregister from the Registry service."""

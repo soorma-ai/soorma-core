@@ -168,7 +168,7 @@ Validate the complete Stage 5 implementation through working examples, end-to-en
 
 | Task | Description | Files Affected | Estimate | TDD Phase | Status |
 |------|-------------|----------------|----------|-----------|--------|
-| **T0** | Extend `_register_with_registry()` to auto-register inline `json_schema` bodies from `AgentCapability.consumed_event` — agent declares schema inline, SDK calls `register_schema`; delete `schema_registration.py` standalone script concept | `sdk/python/soorma/agents/base.py`, `sdk/python/tests/test_agents.py` | 1.5h | RED → GREEN | 📋 |
+| **T0** | Extend `_register_with_registry()` to auto-register inline `json_schema` bodies from `AgentCapability.consumed_event` — agent declares schema inline, SDK calls `register_schema`; delete `schema_registration.py` standalone script concept | `sdk/python/soorma/agents/base.py`, `sdk/python/tests/test_agents.py` | 1.5h | RED → GREEN | ✅ |
 | **T1** | Scaffold `examples/11-discovery-llm/` — `.env.example`, `requirements.txt`, stub `*.py`, `start.sh`, `README.md` stub | `examples/11-discovery-llm/` | 30m | N/A | 📋 |
 | **T2** | Implement `worker.py` — declares inline `json_schema` on `AgentCapability.consumed_event`; SDK auto-registers schema + agent via `_register_with_registry()`. No explicit `ctx.registry.register_schema()` call. | `examples/11-discovery-llm/worker.py` | 1h | STUB → GREEN | 📋 |
 | **T3** | Implement `planner.py` — `ctx.registry.discover()`, `ctx.registry.get_schema()`, `ctx.ai.generate_payload()` (NO manual prompt), `ctx.bus.request()` with explicit `response_event` | `examples/11-discovery-llm/planner.py` | 2h | STUB → GREEN | 📋 |
