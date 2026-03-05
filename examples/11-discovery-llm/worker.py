@@ -99,14 +99,75 @@ worker = Worker(
 async def handle_research(task: TaskContext, context: PlatformContext) -> None:
     """Handle an incoming research request.
 
+    Extracts the topic from the validated payload, simulates web research,
+    and publishes findings back via ctx.bus.complete().
+
     Args:
-        task: TaskContext containing the research payload.
+        task: TaskContext containing the research payload
+              (validated against research_request_v1 schema).
         context: PlatformContext for service access.
     """
-    raise NotImplementedError(
-        "Implement handle_research: extract topic from task.data, simulate "
-        "or perform web research, call ctx.bus.complete() with findings"
+    topic: str = task.data.get("topic", "")
+    max_results: int = int(task.data.get("max_results", 5))
+    depth: str = task.data.get("depth", "standard")
+
+    print(f"\n[worker]  ▶ Received: research.requested")
+    print(f"[worker]  Task ID: {task.task_id}")
+    print(f"[worker]  Topic: {topic!r}  depth={depth}  max_results={max_results}")
+
+    # Simulate research — replace with real retrieval/search logic as needed
+    findings: List[Dict[str, Any]] = _simulate_research(topic, max_results)
+
+    print(f"[worker]  ✓ Research complete — {len(findings)} finding(s)")
+
+    await context.bus.complete(
+        task=task,
+        result={
+            "topic": topic,
+            "findings": findings,
+            "result_count": len(findings),
+        },
     )
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _simulate_research(topic: str, max_results: int) -> List[Dict[str, Any]]:
+    """Return mock research findings for demonstration purposes.
+
+    In a real implementation this would call a search API, web scraper,
+    or knowledge base.  The return structure is intentionally simple so
+    the planner can summarise it without additional context.
+
+    Args:
+        topic: Research topic.
+        max_results: Maximum number of findings to return.
+
+    Returns:
+        List of finding dicts with 'title', 'summary', and 'source' keys.
+    """
+    templates = [
+        "Overview of {topic}: key concepts and recent developments",
+        "Expert analysis: {topic} in 2025",
+        "{topic} — practical applications and case studies",
+        "Challenges and opportunities in {topic}",
+        "Future directions for {topic}: what researchers are saying",
+        "Comparison of approaches to {topic}",
+        "Industry impact of {topic}",
+    ]
+    return [
+        {
+            "title": templates[i % len(templates)].format(topic=topic),
+            "summary": (
+                f"Simulated finding {i + 1} about {topic!r}. "
+                "Replace with real search results."
+            ),
+            "source": f"https://example.com/research/{i + 1}",
+        }
+        for i in range(min(max_results, len(templates)))
+    ]
 
 
 # ---------------------------------------------------------------------------

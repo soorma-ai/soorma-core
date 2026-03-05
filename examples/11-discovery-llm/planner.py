@@ -60,21 +60,72 @@ planner = ChoreographyPlanner(
 async def handle_research_goal(goal: GoalContext, context: PlatformContext) -> None:
     """Discover a research worker and dispatch a research request.
 
+    Full discovery loop:
+      1. Discover agents capable of 'web_research'.
+      2. Fetch the consumed event schema from the Registry.
+      3. Use the LLM to generate a conforming payload from the goal description.
+      4. Publish the request with an explicit response_event.
+
     Args:
         goal: GoalContext containing the research objective.
         context: PlatformContext for Registry, AI, and bus access.
     """
-    raise NotImplementedError(
-        "Implement handle_research_goal:\n"
-        "  1. agents = await context.registry.discover(requirements=['web_research'], include_schemas=True)\n"
-        "  2. schema  = await context.registry.get_schema(agents[0].get_consumed_schemas()[0])\n"
-        "  3. payload = await context.ai.generate_payload(schema=schema, context=goal.description)\n"
-        "  4. await context.bus.request(\n"
-        "         event_type=agents[0].capabilities[0].consumed_event.event_name,\n"
-        "         payload=payload,\n"
-        "         response_event=f'research.completed.{goal.correlation_id}',\n"
-        "     )\n"
+    description: str = goal.data.get("description", "")
+    print(f"\n[planner] Goal received: research.goal")
+    print(f"[planner] Description: {description!r}")
+
+    # Step 1 — Dynamic discovery: find agents by capability, not by name.
+    # The Registry returns agents whose AgentCapability.task_name matches any
+    # entry in requirements.  include_schemas=True attaches schema payloads to
+    # avoid a separate round-trip in most cases.
+    agents = await context.registry.discover(
+        requirements=["web_research"],
+        include_schemas=True,
     )
+    if not agents:
+        raise RuntimeError(
+            "No agents found with capability 'web_research'. "
+            "Is the worker running and registered?"
+        )
+    print(f"[planner] Discovered {len(agents)} agent(s) with capability: web_research")
+
+    # Pick the first matching agent (production code would apply ranking logic)
+    agent = agents[0]
+
+    # Step 2 — Fetch the schema the agent expects on its consumed event.
+    # get_consumed_schemas() returns schema names declared on capabilities.
+    schema_names = agent.get_consumed_schemas()
+    if not schema_names:
+        raise RuntimeError(
+            f"Agent '{agent.name}' has no consumed schemas registered. "
+            "Check that the worker declared payload_schema_name on its capability."
+        )
+    schema = await context.registry.get_schema(schema_names[0])
+    print(f"[planner] Schema fetched: {schema.schema_name}")
+
+    # Step 3 — Ask the LLM to generate a payload that conforms to the schema.
+    # The SDK builds the prompt internally from schema.json_schema and context;
+    # the planner never hand-crafts prompt strings.
+    payload = await context.ai.generate_payload(
+        schema=schema,
+        context=description,
+    )
+    print(f"[planner] LLM generated payload: {payload}")
+
+    # Step 4 — Publish the research request with an explicit response_event.
+    # Using an explicit response_event is mandatory per §3 Event Choreography.
+    consumed_event_name = agent.capabilities[0].consumed_event.event_name
+    response_event = f"research.completed.{goal.correlation_id}"
+    print(f"[planner] Publishing: {consumed_event_name} → awaiting {response_event}")
+
+    response = await context.bus.request(
+        event_type=consumed_event_name,
+        payload=payload,
+        response_event=response_event,
+        timeout=30.0,
+    )
+    print(f"[planner] ✓ Response received on {response_event}")
+    print(f"[planner] Findings: {response.data.get('result_count', '?')} result(s)")
 
 
 # ---------------------------------------------------------------------------
