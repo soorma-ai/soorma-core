@@ -92,15 +92,18 @@ async def handle_research_goal(goal: GoalContext, context: PlatformContext) -> N
     # Pick the first matching agent (production code would apply ranking logic)
     agent = agents[0]
 
-    # Step 2 — Fetch the schema the agent expects on its consumed event.
-    # get_consumed_schemas() returns schema names declared on capabilities.
-    schema_names = agent.get_consumed_schemas()
-    if not schema_names:
+    # Step 2 — Look up the consumed event definition from the event registry.
+    # The events table is the authoritative source for event_name → payload_schema_name.
+    # The SDK auto-registers these EventDefinitions at worker startup, so the
+    # planner never needs to know about schema names in advance.
+    consumed_event_name = agent.capabilities[0].consumed_event.event_name
+    event_def = await context.registry.get_event(consumed_event_name)
+    if not event_def or not event_def.payload_schema_name:
         raise RuntimeError(
-            f"Agent '{agent.name}' has no consumed schemas registered. "
+            f"Event '{consumed_event_name}' has no schema registered. "
             "Check that the worker declared payload_schema_name on its capability."
         )
-    schema = await context.registry.get_schema(schema_names[0])
+    schema = await context.registry.get_schema(event_def.payload_schema_name)
     print(f"[planner] Schema fetched: {schema.schema_name}")
 
     # Step 3 — Ask the LLM to generate a payload that conforms to the schema.

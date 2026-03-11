@@ -450,7 +450,7 @@ class Agent(ABC):
         
         logger.info(f"Registering {self.name} with Registry")
         
-        # Register event definitions first
+        # Register event definitions first — explicit config.event_definitions
         for event_def in self.config.event_definitions:
             try:
                 logger.info(f"Registering event: {event_def.event_name} on topic {event_def.topic}")
@@ -486,10 +486,40 @@ class Agent(ABC):
                 structured_capabilities.append(AgentCapability(**cap))
 
         # Auto-register inline schemas from capabilities (RF-SDK-007 / T0 Phase 5).
-        # When an EventDefinition carries both payload_schema_name (the registry key)
-        # AND payload_schema (the inline JSON Schema body), the SDK registers it so
-        # the agent developer never needs to call ctx.registry.register_schema() explicitly.
         await self._auto_register_inline_schemas(structured_capabilities)
+
+        # Register EventDefinitions embedded in capabilities that carry payload_schema_name.
+        # This is the authoritative event→schema mapping: the events table holds
+        # event_name → payload_schema_name; agent_capabilities holds only the event name.
+        # Agents that pass EventDefinition objects directly in their capabilities list
+        # (e.g. example 11 worker) might not populate config.event_definitions, so we
+        # extract and register them here to ensure the events table has the full record.
+        _explicit_event_names = {
+            getattr(ed, "event_name", None) for ed in self.config.event_definitions
+        }
+        for cap in structured_capabilities:
+            if not isinstance(cap, AgentCapability):
+                continue
+            events_to_register = [cap.consumed_event] + list(cap.produced_events)
+            for event_def in events_to_register:
+                if event_def is None:
+                    continue
+                name = getattr(event_def, "event_name", None)
+                schema_ref = getattr(event_def, "payload_schema_name", None)
+                # Only register if it carries a schema reference and wasn't already
+                # registered via config.event_definitions above.
+                if not schema_ref or name in _explicit_event_names:
+                    continue
+                try:
+                    await self.context.registry.register_event(event_def)
+                    logger.debug(f"Registered capability event definition: {name}")
+                    _explicit_event_names.add(name)
+                except Exception as e:
+                    status_code = getattr(getattr(e, "response", None), "status_code", None)
+                    if status_code == 409:
+                        logger.debug(f"Event '{name}' already registered (409) — skipping")
+                    else:
+                        logger.warning(f"Failed to register capability event '{name}': {e} (continuing)")
 
         agent_def = AgentDefinition(
             agent_id=self.agent_id,
