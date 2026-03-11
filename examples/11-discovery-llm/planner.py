@@ -1,33 +1,33 @@
 """
 Research Planner — Example 11: LLM-Based Dynamic Discovery.
 
-Demonstrates the full LLM-driven dynamic discovery loop with correct
-request/response ownership:
+Demonstrates fully symmetric schema-driven dispatch:
 
-  CLIENT → research.goal (response_event="research.completed")
-    └─ PLANNER on_goal: discover worker, generate payload, dispatch
-       PLANNER → research.requested (response_event="research.worker.completed")
-         └─ WORKER: process, task.complete() → research.worker.completed
-           └─ PLANNER on_event: normalize result, respond to client
-              PLANNER → research.completed → CLIENT
+  CLIENT → research.goal
+    └─ PLANNER on_goal:
+         discover worker → get worker schema → generate_payload() → dispatch
+         PLANNER → research.requested
+           └─ WORKER: task.complete() → research.worker.completed
+             └─ PLANNER on_event:
+                  look up research.completed schema → generate_payload() → respond
+                  PLANNER → research.completed → CLIENT
 
-Key design principles:
-  - 1:1 request/response ownership: the planner responds to the client;
-    the worker NEVER has a direct path back to the client.
-  - The planner translates the worker's internal result into the client
-    contract schema — critical for dynamic discovery where the client has
-    no knowledge of the worker's schema.
-  - correlation_id threads through the entire chain so all parties can
-    correlate request → result without embedding IDs in event names.
+Both directions use the same dynamic pattern:
+  - Outbound to worker:  discover schema at runtime → LLM generates conforming payload
+  - Outbound to client:  look up declared response schema → LLM normalizes worker result
+
+The planner owns the client contract by declaring RESEARCH_COMPLETED_EVENT
+(with inline schema) in events_produced.  The SDK auto-registers it at startup
+— exactly as the worker auto-registers its consumed event schema.
 
 SDK patterns shown:
   - ctx.registry.discover(requirements=...) — capability-based lookup
   - ctx.registry.get_event(name) → payload_schema_name
   - ctx.registry.get_schema(name) → PayloadSchema
-  - planner.generate_payload(schema, context) — LLM payload generation
-  - ctx.bus.request(event_type, data, response_event, correlation_id)
+  - planner.generate_payload(schema, context) — LLM payload generation (both directions)
+  - events_produced=[EventDefinition(...)] — planner declares + auto-registers response schema
   - @planner.on_event(event, topic=ACTION_RESULTS) — receive worker result
-  - ctx.bus.respond(event_type, data, correlation_id) — reply to client
+  - ctx.bus.respond(...) — reply to client
 """
 
 import logging
@@ -39,6 +39,7 @@ from dotenv import load_dotenv
 from soorma.ai.choreography import ChoreographyPlanner
 from soorma.agents.planner import GoalContext
 from soorma.context import PlatformContext
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 
 load_dotenv()
@@ -47,12 +48,61 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Event definitions
+# ---------------------------------------------------------------------------
+
+# Planner owns the client contract: it declares and registers the response
+# schema for research.completed.  The client can discover this schema from
+# the Registry just as the planner discovers the worker's schema.
+RESEARCH_COMPLETED_EVENT = EventDefinition(
+    event_name="research.completed",
+    topic="action-results",
+    description="Normalized research results returned to the client by the planner",
+    payload_schema_name="research_result_v1",
+    payload_schema={
+        "type": "object",
+        "properties": {
+            "topic": {
+                "type": "string",
+                "description": "The research topic that was investigated",
+            },
+            "summary": {
+                "type": "string",
+                "description": "A brief summary of the key findings",
+            },
+            "findings": {
+                "type": "array",
+                "description": "List of individual research findings",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "summary": {"type": "string"},
+                        "source": {"type": "string"},
+                    },
+                    "required": ["title", "summary", "source"],
+                },
+            },
+            "result_count": {
+                "type": "integer",
+                "description": "Total number of findings returned",
+            },
+        },
+        "required": ["topic", "findings", "result_count"],
+    },
+)
+
+# ---------------------------------------------------------------------------
 # Planner declaration
 # ---------------------------------------------------------------------------
 
 planner = ChoreographyPlanner(
     name="research-planner",
     reasoning_model=os.environ.get("LLM_MODEL", "gpt-4o-mini"),
+    # Declaring RESEARCH_COMPLETED_EVENT here causes the SDK to auto-register
+    # both the event definition and its inline schema at startup — the same
+    # mechanism used by the worker for its consumed event.
+    events_produced=[RESEARCH_COMPLETED_EVENT],
     system_instructions=(
         "You are a research orchestrator. Your goal is to dispatch a research "
         "request to the most appropriate worker discovered from the Registry.\n\n"
@@ -139,36 +189,51 @@ async def handle_research_goal(goal: GoalContext, context: PlatformContext) -> N
 
 @planner.on_event("research.worker.completed", topic=EventTopic.ACTION_RESULTS)
 async def handle_research_worker_result(event: EventEnvelope, context: PlatformContext) -> None:
-    """Receive the worker's result, normalize it, and deliver to the client.
+    """Receive the worker's result, normalize it via schema + LLM, and deliver to the client.
 
-    The planner translates the worker's internal task.complete() envelope
-    into the canonical research.completed schema that the client expects.
-    This decouples the client from any knowledge of the worker or its schema.
+    Mirrors the inbound path exactly:
+      - Inbound  (goal → worker):    discover worker schema → generate_payload() → dispatch
+      - Outbound (worker → client):  look up client response schema → generate_payload() → respond
+
+    This ensures the planner never hardcodes the client response shape.  Any
+    change to research_result_v1 schema is automatically picked up here
+    without touching this handler.
 
     Args:
         event: EventEnvelope from the worker (via task.complete()).
-              Contains correlation_id matching the original client goal.
-        context: PlatformContext for bus access.
+               data["result"] contains the raw findings.
+        context: PlatformContext for registry and bus access.
     """
     data = event.data or {}
-    # task.complete() wraps the result dict under the "result" key
-    result: Dict[str, Any] = data.get("result", {})
+    # task.complete() wraps the caller's dict under "result"
+    raw_result: Dict[str, Any] = data.get("result", {})
+    result_count = raw_result.get("result_count", len(raw_result.get("findings", [])))
+    print(f"\n[planner] Worker result received: {result_count} finding(s)")
 
-    topic = result.get("topic", "")
-    findings = result.get("findings", [])
-    result_count = result.get("result_count", len(findings))
+    # Look up the schema the client expects for research.completed.
+    # The planner registered this schema at startup (events_produced above),
+    # so it is always available in the Registry.
+    event_def = await context.registry.get_event(RESEARCH_COMPLETED_EVENT.event_name)
+    if event_def and event_def.payload_schema_name:
+        schema = await context.registry.get_schema(event_def.payload_schema_name)
+        # Use LLM to produce a response that conforms to research_result_v1.
+        # Pass the raw worker result as context so the LLM can extract and
+        # reformat it — adding a summary field, normalizing finding structure, etc.
+        import json
+        context_str = (
+            f"Raw research result from worker (reformat this into the required schema):\n"
+            f"{json.dumps(raw_result, indent=2)}"
+        )
+        response_payload = await planner.generate_payload(schema=schema, context=context_str)
+        print(f"[planner] LLM normalized response to schema: {event_def.payload_schema_name}")
+    else:
+        # Schema not available — pass through raw result as fallback
+        logger.warning("research.completed schema not found in registry; using raw worker result")
+        response_payload = raw_result
 
-    print(f"\n[planner] Worker result received: {result_count} finding(s) on {topic!r}")
-
-    # Respond to the client using the canonical event name and the same
-    # correlation_id that arrived from the client (threaded by bus.request).
     await context.bus.respond(
-        event_type="research.completed",
-        data={
-            "topic": topic,
-            "findings": findings,
-            "result_count": result_count,
-        },
+        event_type=RESEARCH_COMPLETED_EVENT.event_name,
+        data=response_payload,
         correlation_id=event.correlation_id,
         tenant_id=event.tenant_id,
         user_id=event.user_id,

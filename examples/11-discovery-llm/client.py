@@ -5,10 +5,13 @@ Sends a research goal to the planner and waits for the response.
 The planner owns both ends of the client contract:
   - receives research.goal from the client
   - discovers the worker, generates the payload, dispatches internally
-  - normalizes the worker result and publishes research.completed back here
+  - receives the worker result, normalizes it via the research_result_v1 schema,
+    and publishes research.completed back here
 
 The client has no knowledge of the worker, its schema, or the internal
-research.worker.completed event — it only speaks the planner's API.
+research.worker.completed event.  It only speaks the planner's API.
+The response schema (research_result_v1) is discoverable from the Registry:
+  ctx.registry.get_event("research.completed") → payload_schema_name
 
 Usage:
     python client.py "Latest advances in quantum computing"

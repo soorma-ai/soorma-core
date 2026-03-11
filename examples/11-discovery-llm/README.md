@@ -18,46 +18,50 @@ detail that the client never knows about.
 | Concept | Where |
 |---|---|
 | Inline JSON Schema on `AgentCapability` — SDK auto-registers | `worker.py` |
-| `task.complete()` — high-level response helper, auto-propagates metadata | `worker.py` |
+| `task.complete()` — high-level response, auto-propagates all metadata | `worker.py` |
+| `events_produced=[EventDefinition(...)]` — planner declares + auto-registers response schema | `planner.py` |
 | `ctx.registry.discover()` — find agents by capability at runtime | `planner.py` |
 | `ctx.registry.get_event()` + `get_schema()` — resolve schema from event name | `planner.py` |
-| `planner.generate_payload()` — SDK LLM helper, no boilerplate | `planner.py` |
-| `ctx.bus.request()` with internal `response_event` | `planner.py` |
-| `@planner.on_event()` — receive worker result, normalize, forward to client | `planner.py` |
-| Canonical event names + `correlation_id` filtering (not per-request event types) | `client.py` |
+| `planner.generate_payload()` — LLM generates conforming payload **(both directions)** | `planner.py` |
+| `@planner.on_event()` — receive worker result, normalize via schema + LLM, forward to client | `planner.py` |
+| Canonical event names + `correlation_id` filtering | `client.py` |
 
 ---
 
 ## Architecture
 
 ```
-client.py                planner.py                    worker.py
-─────────                ──────────                    ─────────
+client.py                planner.py                         worker.py
+─────────                ──────────                         ─────────
 publish                  @on_goal("research.goal")
-research.goal    ──────► discover() → get_schema()
-(response_event=         generate_payload()
+research.goal    ──────► discover() → get worker schema
+(response_event=         generate_payload()  ← LLM
  research.completed)     bus.request(
                            "research.requested",
-                           response_event=             @on_task("research.requested")
-                           "research.worker.completed")──────► task.complete(findings)
-                                                                      │
-                         @on_event(                                   │
-                           "research.worker.completed") ◄─────────────┘
-                         normalize result
+                           response_event=                  @on_task("research.requested")
+                           "research.worker.completed") ───► task.complete(raw_findings)
+                                                                       │
+                         @on_event(                                    │
+                           "research.worker.completed")  ◄─────────────┘
+                         get_event("research.completed")
+                           → get_schema("research_result_v1")
+                         generate_payload()  ← LLM normalizes raw result
                          bus.respond(
-◄────────────────────────  "research.completed",
-research.completed         correlation_id=...)
+◄────────────────────────  "research.completed", ...)
+research.completed
 ```
 
-**Key principle — 1:1 request/response ownership:**
-- The planner responds to `research.goal` with `research.completed`. It owns that contract.
-- `research.worker.completed` is an internal planner↔worker event. The client never sees it.
-- The planner normalizes the worker's result into the schema the client expects — essential for
-  dynamic discovery where the client has no knowledge of the worker's internal schema.
+**Symmetric schema-driven dispatch — both directions use the same pattern:**
+- Outbound to worker: discover worker schema at runtime → LLM generates conforming request payload
+- Outbound to client: look up planner's declared response schema → LLM normalizes worker result
 
-**No `schema_registration.py` script.** The worker declares `payload_schema`
-(inline JSON Schema body) on its `AgentCapability.consumed_event`. The SDK calls
-`register_schema()` automatically at startup — the worker developer never does it explicitly.
+**Key principles:**
+- The planner owns the client contract on both sides. It declares `RESEARCH_COMPLETED_EVENT`
+  with inline schema in `events_produced` — the SDK auto-registers it at startup, exactly as
+  the worker auto-registers its consumed event schema.
+- The client can discover the `research.completed` schema from the Registry.
+- `research.worker.completed` is an internal planner↔worker event. The client never sees it.
+- Canonical event names throughout; `correlation_id` ties request to response.
 
 ---
 
