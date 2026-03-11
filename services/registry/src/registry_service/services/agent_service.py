@@ -16,19 +16,20 @@ from ..core.config import settings
 
 
 def _now_utc() -> datetime:
-    """Get current UTC time.
-
-    Returns a timezone-aware UTC datetime so it can be compared with
-    ``last_heartbeat`` columns loaded from PostgreSQL (``timestamp with time
-    zone`` → always timezone-aware via asyncpg/SQLAlchemy).
-
-    Historical note: an earlier version stripped ``tzinfo`` for SQLite
-    compatibility.  The registry runs against PostgreSQL; naive/aware
-    comparisons raise ``TypeError`` which was silently swallowed by the
-    ``query_agents`` try/except, causing all capability-filtered discover
-    calls to return an empty list.
-    """
+    """Get current UTC time as a timezone-aware UTC datetime."""
     return datetime.now(timezone.utc)
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """Return dt as timezone-aware UTC, assuming naive datetimes are already UTC.
+
+    SQLite stores datetimes without timezone info (naive); PostgreSQL
+    ``timestamp with time zone`` columns return tz-aware datetimes. This
+    function normalises both so TTL comparisons work with either backend.
+    """
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 class AgentRegistryService:
@@ -221,7 +222,7 @@ class AgentRegistryService:
                 # Filter expired agents manually for name search
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
-                    agent_tables = [a for a in agent_tables if a.last_heartbeat >= expiry_threshold]
+                    agent_tables = [a for a in agent_tables if _as_utc(a.last_heartbeat) >= expiry_threshold]
                 
                 # Deduplicate by name (show only one instance per agent type)
                 agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
@@ -233,7 +234,7 @@ class AgentRegistryService:
                 # Filter expired agents manually
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
-                    agent_tables = [a for a in agent_tables if a.last_heartbeat >= expiry_threshold]
+                    agent_tables = [a for a in agent_tables if _as_utc(a.last_heartbeat) >= expiry_threshold]
                 
                 # Deduplicate by name
                 agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)
@@ -245,7 +246,7 @@ class AgentRegistryService:
                 # Filter expired agents manually
                 if not include_expired:
                     expiry_threshold = _now_utc() - timedelta(seconds=settings.AGENT_TTL_SECONDS)
-                    agent_tables = [a for a in agent_tables if a.last_heartbeat >= expiry_threshold]
+                    agent_tables = [a for a in agent_tables if _as_utc(a.last_heartbeat) >= expiry_threshold]
                 
                 # Deduplicate by name
                 agent_tables = AgentRegistryService._deduplicate_by_name(agent_tables)

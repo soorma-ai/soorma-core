@@ -79,19 +79,12 @@ Registry, then starts the planner.
 
 To trigger a research goal from a second terminal:
 
-```python
-# publish_goal.py  (run from inside examples/11-discovery-llm/)
-import asyncio
-from soorma.context import PlatformContext
+```bash
+# Default topic
+python client.py
 
-async def main():
-    async with PlatformContext() as ctx:
-        await ctx.bus.publish(
-            event_type="research.goal",
-            payload={"description": "Latest advances in quantum computing, 2025"},
-        )
-
-asyncio.run(main())
+# Custom topic
+python client.py "Your research question here"
 ```
 
 ---
@@ -118,6 +111,7 @@ asyncio.run(main())
 |---|---|
 | `worker.py` | Research worker — inline schema, handler, `worker.run()` |
 | `planner.py` | Discovery planner — discover → schema → LLM → dispatch |
+| `client.py` | Sends a research goal; waits for and pretty-prints the response |
 | `start.sh` | Starts worker (sleep 2) then planner; Ctrl-C stops all |
 | `.env.example` | Environment variable template |
 | `requirements.txt` | Python dependencies |
