@@ -87,8 +87,13 @@ async def test_discover_returns_discovered_agent_list():
 
 
 @pytest.mark.asyncio
-async def test_discover_with_requirements_sends_query_param():
-    """discover(requirements=[...]) sends requirements as query params to /v1/agents/discover."""
+async def test_discover_calls_discover_endpoint_without_filter_params():
+    """discover() calls /v1/agents/discover with no query params and filters client-side.
+
+    The service endpoint only supports consumed_event filtering (by event name),
+    not task_name filtering.  discover() fetches all agents and applies the
+    requirements filter in Python, so no query params should be sent.
+    """
     client = _make_registry_client()
     client._client.get.return_value = _make_agent_mock_response([])
 
@@ -97,23 +102,35 @@ async def test_discover_with_requirements_sends_query_param():
     client._client.get.assert_called_once()
     call_kwargs = client._client.get.call_args
     url = call_kwargs[0][0]
-    params = call_kwargs[1].get("params", call_kwargs[0][1] if len(call_kwargs[0]) > 1 else {})
+    # No requirements/include_schemas params sent to the service
+    params = call_kwargs[1].get("params", {})
     assert "/v1/agents/discover" in url
-    # Requirements should appear in params (as list under "requirements" key)
-    assert "requirements" in params
+    assert "requirements" not in params
+    assert "include_schemas" not in params
 
 
 @pytest.mark.asyncio
-async def test_discover_include_schemas_true_passes_param():
-    """discover(include_schemas=True) passes that flag to the service."""
+async def test_discover_filters_by_task_name_client_side():
+    """discover(requirements=[...]) returns only agents whose capability task_name matches."""
     client = _make_registry_client()
-    client._client.get.return_value = _make_agent_mock_response([])
+    matching = _sample_agent_dict("SearchWorker:1.0.0")   # task_name=web_search
+    non_matching = dict(_sample_agent_dict("OtherWorker:1.0.0"))  # will be patched
+    non_matching["agentId"] = "other-001"
+    non_matching["capabilities"] = [
+        {
+            "taskName": "billing",
+            "description": "Handle billing",
+            "consumedEvent": {"eventName": "billing.requested", "topic": "action-requests", "description": ""},
+            "producedEvents": [],
+        }
+    ]
+    client._client.get.return_value = _make_agent_mock_response([matching, non_matching])
 
-    await client.discover(requirements=["web_search"], include_schemas=True)
+    result = await client.discover(requirements=["web_search"])
 
-    call_kwargs = client._client.get.call_args
-    params = call_kwargs[1].get("params", {})
-    assert params.get("include_schemas") is True
+    # Only the agent with task_name containing "web_search" should be returned
+    assert len(result) == 1
+    assert result[0].agent_id == "search-worker-001"
 
 
 @pytest.mark.asyncio

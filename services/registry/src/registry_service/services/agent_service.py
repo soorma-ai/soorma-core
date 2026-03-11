@@ -16,8 +16,19 @@ from ..core.config import settings
 
 
 def _now_utc() -> datetime:
-    """Get current UTC time without timezone info (for SQLite compatibility)."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    """Get current UTC time.
+
+    Returns a timezone-aware UTC datetime so it can be compared with
+    ``last_heartbeat`` columns loaded from PostgreSQL (``timestamp with time
+    zone`` → always timezone-aware via asyncpg/SQLAlchemy).
+
+    Historical note: an earlier version stripped ``tzinfo`` for SQLite
+    compatibility.  The registry runs against PostgreSQL; naive/aware
+    comparisons raise ``TypeError`` which was silently swallowed by the
+    ``query_agents`` try/except, causing all capability-filtered discover
+    calls to return an empty list.
+    """
+    return datetime.now(timezone.utc)
 
 
 class AgentRegistryService:

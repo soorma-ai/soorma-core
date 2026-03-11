@@ -411,28 +411,46 @@ class RegistryClient:
     ) -> List[DiscoveredAgent]:
         """Discover agents by capability requirements.
 
-        High-level discovery API that accepts a list of capability keywords and
-        returns fully-enriched DiscoveredAgent objects, optionally with schema
-        references. Uses ``GET /v1/agents/discover`` with ``requirements`` query
-        params.
+        High-level discovery API that accepts a list of capability task_name
+        keywords and returns DiscoveredAgent objects whose capabilities match
+        at least one requirement.
+
+        The service's ``GET /v1/agents/discover`` endpoint filters by
+        ``consumed_event`` (event name), not by ``task_name``.  This method
+        fetches all agents and applies the task_name filter client-side so
+        callers can use human-readable capability names (e.g. ``"web_research"``)
+        rather than internal event names (e.g. ``"research.requested"``).
 
         Args:
-            requirements: List of capability keywords, e.g. ``["web_search"]``.
-            include_schemas: Whether to include schema references in results
-                             (default True).
+            requirements: List of capability task_name keywords to match,
+                          e.g. ``["web_research"]``.  An agent is included if
+                          ANY of its capabilities' task_name matches ANY entry
+                          in this list (case-insensitive substring match).
+            include_schemas: Unused at this layer (reserved for future schema
+                             enrichment pass).  Kept for API compatibility.
 
         Returns:
-            List of DiscoveredAgent DTOs matching at least one requirement.
+            List of DiscoveredAgent DTOs whose capabilities match at least one
+            requirement.
         """
-        params: dict = {
-            "requirements": requirements,
-            "include_schemas": include_schemas,
-        }
+        # Fetch all active agents for this tenant — the service has no task_name
+        # filter, so we apply it client-side below.
         response = await self._client.get(
             f"{self.base_url}/v1/agents/discover",
-            params=params,
             headers=self._auth_headers,
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
-        return [self._map_agent_to_discovered(agent) for agent in result.agents]
+
+        lower_reqs = [r.lower() for r in requirements]
+
+        def _matches(agent: AgentDefinition) -> bool:
+            """Return True if any capability task_name matches any requirement."""
+            for cap in agent.capabilities:
+                task = (cap.task_name or "").lower()
+                if any(req in task or task in req for req in lower_reqs):
+                    return True
+            return False
+
+        matching = [a for a in result.agents if _matches(a)]
+        return [self._map_agent_to_discovered(a) for a in matching]
