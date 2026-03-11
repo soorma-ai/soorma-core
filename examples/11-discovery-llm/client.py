@@ -2,16 +2,21 @@
 Client — Example 11: LLM-Based Dynamic Discovery.
 
 Sends a research goal to the planner and waits for the response.
-The planner owns both ends of the client contract:
-  - receives research.goal from the client
-  - discovers the worker, generates the payload, dispatches internally
-  - receives the worker result, normalizes it via the research_result_v1 schema,
-    and publishes research.completed back here
+The CLIENT owns the response schema contract:
+  - declares RESEARCH_COMPLETED_EVENT with research_result_v1 inline schema
+  - registers the schema with the Registry on connect (via events_consumed)
+  - passes response_schema_name="research_result_v1" in the goal envelope
+
+The planner reads response_schema_name from the goal metadata (auto-saved by
+the SDK's on_goal decorator), looks up the schema, and calls generate_payload()
+to produce a conforming response — without hardcoding any schema of its own.
 
 The client has no knowledge of the worker, its schema, or the internal
 research.worker.completed event.  It only speaks the planner's API.
-The response schema (research_result_v1) is discoverable from the Registry:
+
+The response schema is discoverable from the Registry:
   ctx.registry.get_event("research.completed") → payload_schema_name
+  ctx.registry.get_schema("research_result_v1") → JSON Schema
 
 Usage:
     python client.py "Latest advances in quantum computing"
@@ -23,6 +28,7 @@ import sys
 from uuid import uuid4
 
 from soorma import EventClient
+from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 
 
@@ -32,6 +38,52 @@ USER_ID = "00000000-0000-0000-0000-000000000001"
 
 DEFAULT_TOPIC = "Latest advances in quantum computing, 2025"
 TIMEOUT_SECONDS = 30.0
+
+# ---------------------------------------------------------------------------
+# Client-owned response schema
+# ---------------------------------------------------------------------------
+# The client declares the shape it expects for research.completed responses.
+# Passing this in events_consumed causes EventClient.connect() to auto-register
+# both the event definition and the inline schema with the Registry — the same
+# mechanism workers use for their consumed events.
+
+RESEARCH_COMPLETED_EVENT = EventDefinition(
+    event_name="research.completed",
+    topic="action-results",
+    description="Normalized research results returned to the client by the planner",
+    payload_schema_name="research_result_v1",
+    payload_schema={
+        "type": "object",
+        "properties": {
+            "topic": {
+                "type": "string",
+                "description": "The research topic that was investigated",
+            },
+            "summary": {
+                "type": "string",
+                "description": "A brief summary of the key findings",
+            },
+            "findings": {
+                "type": "array",
+                "description": "List of individual research findings",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "summary": {"type": "string"},
+                        "source": {"type": "string"},
+                    },
+                    "required": ["title", "summary", "source"],
+                },
+            },
+            "result_count": {
+                "type": "integer",
+                "description": "Total number of findings returned",
+            },
+        },
+        "required": ["topic", "findings", "result_count"],
+    },
+)
 
 
 async def send_research_goal(description: str) -> None:
@@ -43,6 +95,9 @@ async def send_research_goal(description: str) -> None:
     client = EventClient(
         agent_id="discovery-llm-client",
         source="discovery-llm-client",
+        # Register our response schema with the Registry on connect so the
+        # planner can look it up when generating its response payload.
+        events_consumed=[RESEARCH_COMPLETED_EVENT],
     )
 
     print("=" * 60)
@@ -75,7 +130,10 @@ async def send_research_goal(description: str) -> None:
     print(f"   Correlation ID: {correlation_id}")
     print()
 
-    # Publish the goal — planner discovers the worker and dispatches dynamically
+    # Publish the goal — planner discovers the worker and dispatches dynamically.
+    # response_schema_name tells the planner which schema to use when generating
+    # its response payload — it reads this from goal metadata, not from its own
+    # events_produced declaration.
     await client.publish(
         event_type="research.goal",
         topic=EventTopic.ACTION_REQUESTS,
@@ -83,6 +141,7 @@ async def send_research_goal(description: str) -> None:
         correlation_id=correlation_id,
         response_event="research.completed",
         response_topic=EventTopic.ACTION_RESULTS,
+        response_schema_name="research_result_v1",
         tenant_id=TENANT_ID,
         user_id=USER_ID,
     )

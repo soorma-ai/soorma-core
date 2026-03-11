@@ -860,6 +860,33 @@ class MemoryClient:
             parent_plan_id=parent_plan_id,
         )
     
+    async def get_goal_metadata(
+        self,
+        correlation_id: str,
+        tenant_id: str,
+        user_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve goal routing metadata saved automatically by the on_goal decorator.
+
+        Returns a dict with keys: correlation_id, response_event,
+        response_schema_name, tenant_id, user_id.  Returns None if not found
+        (e.g. Memory Service unavailable, or goal handler hadn't persisted
+        metadata yet).
+
+        Args:
+            correlation_id: Correlation ID from the incoming event.
+            tenant_id: Tenant ID from the incoming event context.
+            user_id: User ID from the incoming event context.
+
+        Returns:
+            Dict of goal routing metadata, or None if not found.
+        """
+        return await self.retrieve(
+            key=f"_soorma:goal:{correlation_id}",
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+
     async def close(self) -> None:
         """Close the Memory Service client connection."""
         if self._client is not None:
@@ -894,6 +921,7 @@ class BusClient:
         correlation_id: Optional[str] = None,
         response_event: Optional[str] = None,
         response_topic: Optional[str] = None,
+        response_schema_name: Optional[str] = None,
         trace_id: Optional[str] = None,
         parent_event_id: Optional[str] = None,
         payload_schema_name: Optional[str] = None,
@@ -914,6 +942,7 @@ class BusClient:
             correlation_id: Optional correlation ID for tracing
             response_event: Event type for response (DisCo pattern)
             response_topic: Topic for response (defaults to action-results)
+            response_schema_name: Registered schema name the caller expects for the response payload
             trace_id: Root trace ID for distributed tracing
             parent_event_id: ID of parent event in trace tree
             payload_schema_name: Registered schema name for payload
@@ -934,6 +963,7 @@ class BusClient:
             correlation_id=correlation_id,
             response_event=response_event,
             response_topic=response_topic,
+            response_schema_name=response_schema_name,
             trace_id=trace_id,
             parent_event_id=parent_event_id,
             payload_schema_name=payload_schema_name,

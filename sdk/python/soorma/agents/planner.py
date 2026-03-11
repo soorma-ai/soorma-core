@@ -84,6 +84,7 @@ class GoalContext:
         data: Goal parameters
         correlation_id: Correlation ID for tracking
         response_event: Event type for final result (from original request)
+        response_schema_name: Registered schema name the caller expects for the response
         session_id: Optional session identifier
         user_id: User authentication context
         tenant_id: Tenant isolation context
@@ -94,6 +95,7 @@ class GoalContext:
     data: Dict[str, Any]
     correlation_id: str
     response_event: str
+    response_schema_name: Optional[str]
     session_id: Optional[str]
     user_id: str
     tenant_id: str
@@ -117,6 +119,7 @@ class GoalContext:
             data=event.data or {},
             correlation_id=event.correlation_id or "",
             response_event=event.response_event or "",  # Direct field, not metadata
+            response_schema_name=event.response_schema_name,
             session_id=event.session_id,
             user_id=event.user_id or "",
             tenant_id=event.tenant_id or "",
@@ -322,6 +325,25 @@ class Planner(Agent):
             async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
                 # Convert event to GoalContext
                 goal = GoalContext.from_event(event, context)
+                # Auto-save goal routing metadata so result handlers can read
+                # response_event and response_schema_name by correlation_id
+                # without manual boilerplate. Non-fatal if Memory Service is down.
+                if goal.tenant_id and goal.user_id:
+                    try:
+                        await context.memory.store(
+                            key=f"_soorma:goal:{goal.correlation_id}",
+                            value={
+                                "correlation_id": goal.correlation_id,
+                                "response_event": goal.response_event,
+                                "response_schema_name": goal.response_schema_name,
+                                "tenant_id": goal.tenant_id,
+                                "user_id": goal.user_id,
+                            },
+                            tenant_id=goal.tenant_id,
+                            user_id=goal.user_id,
+                        )
+                    except Exception as _e:
+                        logger.debug(f"Could not auto-save goal metadata: {_e}")
                 await func(goal, context)
             
             logger.debug(f"Registered goal handler: {goal_type}")

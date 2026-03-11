@@ -69,6 +69,7 @@ class EventClient:
         source: Optional[str] = None,
         tenant_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        events_consumed: Optional[List[Any]] = None,
         max_reconnect_attempts: int = -1,  # -1 = infinite
         reconnect_base_delay: float = 1.0,
         reconnect_max_delay: float = 60.0,
@@ -82,6 +83,8 @@ class EventClient:
             source: Source identifier for events (defaults to agent_id)
             tenant_id: Default tenant ID for multi-tenancy
             session_id: Default session ID for correlation
+            events_consumed: Optional list of EventDefinition objects to auto-register
+                with the Registry on connect (inline schemas are registered too).
             max_reconnect_attempts: Max reconnection attempts (-1 for infinite)
             reconnect_base_delay: Initial delay between reconnection attempts (seconds)
             reconnect_max_delay: Maximum delay between reconnection attempts (seconds)
@@ -111,6 +114,13 @@ class EventClient:
         
         # HTTP client (lazy initialized)
         self._http_client = None
+
+        # EventDefinitions to auto-register with the Registry on connect()
+        self._pending_event_definitions: List[Any] = []
+        if events_consumed:
+            for e in events_consumed:
+                if hasattr(e, "event_name"):
+                    self._pending_event_definitions.append(e)
     
     # =========================================================================
     # Decorator for registering handlers
@@ -189,7 +199,11 @@ class EventClient:
         if self._connected:
             logger.warning("Already connected")
             return
-        
+
+        # Auto-register event definitions (+ inline schemas) with Registry
+        if self._pending_event_definitions:
+            await self._register_event_definitions()
+
         # Convert EventTopic enums to strings
         self._subscribed_topics = [t.value if isinstance(t, EventTopic) else t for t in topics]
         
@@ -210,6 +224,53 @@ class EventClient:
         if not self._connected:
             logger.warning("Connection not yet established, will retry in background")
     
+    async def _register_event_definitions(self) -> None:
+        """Auto-register event definitions (and inline schemas) with the Registry.
+
+        Called automatically by connect() when events_consumed was supplied.
+        Mirrors the auto-registration performed by BaseAgent at startup.
+        Failures are non-fatal — logged as warnings.
+        """
+        import os as _os
+        from soorma.registry.client import RegistryServiceClient
+        from soorma_common import PayloadSchema
+
+        registry_url = _os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081")
+        registry_client = RegistryServiceClient(base_url=registry_url)
+
+        for event_def in self._pending_event_definitions:
+            # Register event definition
+            try:
+                await registry_client.register_event(event_def)
+                logger.debug(f"EventClient: registered event '{event_def.event_name}'")
+            except Exception as e:
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                if status == 409:
+                    logger.debug(f"EventClient: event '{event_def.event_name}' already registered")
+                else:
+                    logger.warning(f"EventClient: failed to register event '{event_def.event_name}': {e}")
+
+            # Register inline schema if present
+            schema_name = getattr(event_def, "payload_schema_name", None)
+            inline_body = getattr(event_def, "payload_schema", None)
+            if schema_name and inline_body:
+                try:
+                    schema = PayloadSchema(
+                        schema_name=schema_name,
+                        version=getattr(event_def, "version", "1.0.0") or "1.0.0",
+                        json_schema=inline_body,
+                        description=getattr(event_def, "description", None),
+                        owner_agent_id=self.agent_id,
+                    )
+                    await registry_client.register_schema(schema)
+                    logger.debug(f"EventClient: registered inline schema '{schema_name}'")
+                except Exception as e:
+                    status = getattr(getattr(e, "response", None), "status_code", None)
+                    if status == 409:
+                        logger.debug(f"EventClient: schema '{schema_name}' already registered")
+                    else:
+                        logger.warning(f"EventClient: failed to register schema '{schema_name}': {e}")
+
     async def disconnect(self) -> None:
         """
         Disconnect from the Event Service.
@@ -254,6 +315,7 @@ class EventClient:
         subject: Optional[str] = None,
         response_event: Optional[str] = None,
         response_topic: Optional[str] = None,
+        response_schema_name: Optional[str] = None,
         trace_id: Optional[str] = None,
         parent_event_id: Optional[str] = None,
         payload_schema_name: Optional[str] = None,
@@ -314,6 +376,8 @@ class EventClient:
             event["response_event"] = response_event
         if response_topic:
             event["response_topic"] = response_topic
+        if response_schema_name:
+            event["response_schema_name"] = response_schema_name
         if trace_id:
             event["trace_id"] = trace_id
         if parent_event_id:

@@ -1,35 +1,39 @@
 """
 Research Planner — Example 11: LLM-Based Dynamic Discovery.
 
-Demonstrates fully symmetric schema-driven dispatch:
+Demonstrates symmetric schema-driven dispatch where the CLIENT owns the
+response schema, not the planner:
 
-  CLIENT → research.goal
+  CLIENT → research.goal  (envelope: response_schema_name="research_result_v1")
     └─ PLANNER on_goal:
+         SDK auto-saves {response_schema_name, response_event, …} to working memory
          discover worker → get worker schema → generate_payload() → dispatch
          PLANNER → research.requested
            └─ WORKER: task.complete() → research.worker.completed
              └─ PLANNER on_event:
-                  look up research.completed schema → generate_payload() → respond
+                  read response_schema_name from goal metadata (working memory)
+                  registry.get_schema(name) → generate_payload() → respond
                   PLANNER → research.completed → CLIENT
 
-Both directions use the same dynamic pattern:
-  - Outbound to worker:  discover schema at runtime → LLM generates conforming payload
-  - Outbound to client:  look up declared response schema → LLM normalizes worker result
+The planner is completely schema-agnostic on the outbound side:
+  - It does not declare any response schema of its own
+  - It reads the client’s requested schema name from goal metadata
+  - It adapts its output to whatever schema the current client registered
 
-The planner owns the client contract by declaring RESEARCH_COMPLETED_EVENT
-(with inline schema) in events_produced.  The SDK auto-registers it at startup
-— exactly as the worker auto-registers its consumed event schema.
+This makes the planner reusable across clients with different response shapes
+without any planner code changes.
 
 SDK patterns shown:
   - ctx.registry.discover(requirements=...) — capability-based lookup
   - ctx.registry.get_event(name) → payload_schema_name
   - ctx.registry.get_schema(name) → PayloadSchema
   - planner.generate_payload(schema, context) — LLM payload generation (both directions)
-  - events_produced=[EventDefinition(...)] — planner declares + auto-registers response schema
+  - ctx.memory.get_goal_metadata(correlation_id, ...) — retrieve client routing metadata
   - @planner.on_event(event, topic=ACTION_RESULTS) — receive worker result
   - ctx.bus.respond(...) — reply to client
 """
 
+import json
 import logging
 import os
 from typing import Any, Dict
@@ -39,7 +43,6 @@ from dotenv import load_dotenv
 from soorma.ai.choreography import ChoreographyPlanner
 from soorma.agents.planner import GoalContext
 from soorma.context import PlatformContext
-from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 
 load_dotenv()
@@ -48,61 +51,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Event definitions
-# ---------------------------------------------------------------------------
-
-# Planner owns the client contract: it declares and registers the response
-# schema for research.completed.  The client can discover this schema from
-# the Registry just as the planner discovers the worker's schema.
-RESEARCH_COMPLETED_EVENT = EventDefinition(
-    event_name="research.completed",
-    topic="action-results",
-    description="Normalized research results returned to the client by the planner",
-    payload_schema_name="research_result_v1",
-    payload_schema={
-        "type": "object",
-        "properties": {
-            "topic": {
-                "type": "string",
-                "description": "The research topic that was investigated",
-            },
-            "summary": {
-                "type": "string",
-                "description": "A brief summary of the key findings",
-            },
-            "findings": {
-                "type": "array",
-                "description": "List of individual research findings",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "title": {"type": "string"},
-                        "summary": {"type": "string"},
-                        "source": {"type": "string"},
-                    },
-                    "required": ["title", "summary", "source"],
-                },
-            },
-            "result_count": {
-                "type": "integer",
-                "description": "Total number of findings returned",
-            },
-        },
-        "required": ["topic", "findings", "result_count"],
-    },
-)
-
-# ---------------------------------------------------------------------------
 # Planner declaration
 # ---------------------------------------------------------------------------
 
 planner = ChoreographyPlanner(
     name="research-planner",
     reasoning_model=os.environ.get("LLM_MODEL", "gpt-4o-mini"),
-    # Declaring RESEARCH_COMPLETED_EVENT here causes the SDK to auto-register
-    # both the event definition and its inline schema at startup — the same
-    # mechanism used by the worker for its consumed event.
-    events_produced=[RESEARCH_COMPLETED_EVENT],
+    # No events_produced — the client owns the response schema contract.
+    # The planner reads response_schema_name from goal metadata at runtime.
     system_instructions=(
         "You are a research orchestrator. Your goal is to dispatch a research "
         "request to the most appropriate worker discovered from the Registry.\n\n"
@@ -124,16 +80,18 @@ planner = ChoreographyPlanner(
 async def handle_research_goal(goal: GoalContext, context: PlatformContext) -> None:
     """Receive client goal, discover a capable worker, and dispatch the request.
 
-    The planner owns the client contract.  It translates the client's
-    high-level goal into a worker-specific payload determined at runtime via
-    Registry discovery and LLM-driven schema population.
+    The planner translates the client's high-level goal into a worker-specific
+    payload determined at runtime via Registry discovery and LLM-driven schema
+    population.  The SDK's on_goal hook auto-saves goal routing metadata
+    (including response_schema_name) to working memory so the result handler
+    can retrieve it without any manual plumbing here.
 
     This handler does NOT respond to the client — that is the responsibility
     of handle_research_worker_result() once the worker's result arrives.
 
     Args:
         goal: GoalContext containing the research objective and client metadata
-              (correlation_id, response_event, tenant_id, user_id).
+              (correlation_id, response_event, response_schema_name, etc.).
         context: PlatformContext for Registry, bus, and AI access.
     """
     description: str = goal.data.get("description", "")
@@ -189,20 +147,21 @@ async def handle_research_goal(goal: GoalContext, context: PlatformContext) -> N
 
 @planner.on_event("research.worker.completed", topic=EventTopic.ACTION_RESULTS)
 async def handle_research_worker_result(event: EventEnvelope, context: PlatformContext) -> None:
-    """Receive the worker's result, normalize it via schema + LLM, and deliver to the client.
+    """Receive the worker's result, normalize it via the client's schema, and respond.
 
-    Mirrors the inbound path exactly:
-      - Inbound  (goal → worker):    discover worker schema → generate_payload() → dispatch
-      - Outbound (worker → client):  look up client response schema → generate_payload() → respond
+    The planner is schema-agnostic on the outbound side:
+      1. Reads response_schema_name from goal metadata (saved by on_goal SDK hook)
+      2. Fetches the schema the CLIENT registered — planner owns nothing here
+      3. Calls generate_payload() to conform the raw result to that schema
+      4. Publishes to the canonical response_event so the client receives it
 
-    This ensures the planner never hardcodes the client response shape.  Any
-    change to research_result_v1 schema is automatically picked up here
-    without touching this handler.
+    This means the same planner code works for any client with any response
+    schema — no planner changes needed when the schema evolves.
 
     Args:
         event: EventEnvelope from the worker (via task.complete()).
                data["result"] contains the raw findings.
-        context: PlatformContext for registry and bus access.
+        context: PlatformContext for registry, memory, and bus access.
     """
     data = event.data or {}
     # task.complete() wraps the caller's dict under "result"
@@ -210,35 +169,44 @@ async def handle_research_worker_result(event: EventEnvelope, context: PlatformC
     result_count = raw_result.get("result_count", len(raw_result.get("findings", [])))
     print(f"\n[planner] Worker result received: {result_count} finding(s)")
 
-    # Look up the schema the client expects for research.completed.
-    # The planner registered this schema at startup (events_produced above),
-    # so it is always available in the Registry.
-    event_def = await context.registry.get_event(RESEARCH_COMPLETED_EVENT.event_name)
-    if event_def and event_def.payload_schema_name:
-        schema = await context.registry.get_schema(event_def.payload_schema_name)
-        # Use LLM to produce a response that conforms to research_result_v1.
-        # Pass the raw worker result as context so the LLM can extract and
-        # reformat it — adding a summary field, normalizing finding structure, etc.
-        import json
-        context_str = (
-            f"Raw research result from worker (reformat this into the required schema):\n"
-            f"{json.dumps(raw_result, indent=2)}"
-        )
-        response_payload = await planner.generate_payload(schema=schema, context=context_str)
-        print(f"[planner] LLM normalized response to schema: {event_def.payload_schema_name}")
+    # Retrieve the client's requested response schema name from goal metadata.
+    # The on_goal SDK hook auto-saved this when the goal arrived — no manual
+    # store/retrieve boilerplate needed in goal handler or here.
+    goal_meta = await context.memory.get_goal_metadata(
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
+    response_schema_name = (goal_meta or {}).get("response_schema_name")
+    response_event = (goal_meta or {}).get("response_event", "research.completed")
+
+    if response_schema_name:
+        schema = await context.registry.get_schema(response_schema_name)
+        if schema:
+            # Use LLM to produce a payload conforming to the client's schema.
+            # The raw worker result is passed as context so the LLM can extract
+            # and reformat it (add summary field, normalize finding structure, etc.)
+            context_str = (
+                f"Raw research result from worker (reformat into the required schema):\n"
+                f"{json.dumps(raw_result, indent=2)}"
+            )
+            response_payload = await planner.generate_payload(schema=schema, context=context_str)
+            print(f"[planner] LLM normalized response to schema: {response_schema_name}")
+        else:
+            logger.warning(f"Schema '{response_schema_name}' not found; using raw result")
+            response_payload = raw_result
     else:
-        # Schema not available — pass through raw result as fallback
-        logger.warning("research.completed schema not found in registry; using raw worker result")
+        # No schema requested — pass through raw result
         response_payload = raw_result
 
     await context.bus.respond(
-        event_type=RESEARCH_COMPLETED_EVENT.event_name,
+        event_type=response_event,
         data=response_payload,
         correlation_id=event.correlation_id,
         tenant_id=event.tenant_id,
         user_id=event.user_id,
     )
-    print(f"[planner] ✓ research.completed sent to client (correlation: {event.correlation_id})")
+    print(f"[planner] ✓ {response_event} sent to client (correlation: {event.correlation_id})")
 
 
 # ---------------------------------------------------------------------------
