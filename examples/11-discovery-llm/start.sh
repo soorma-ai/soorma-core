@@ -67,3 +67,5 @@ echo "  See README.md for the publish snippet"
 echo ""
 
 wait
+
+sleep 2 # give agents time to print final logs before exiting

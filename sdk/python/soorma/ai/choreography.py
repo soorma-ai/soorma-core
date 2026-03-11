@@ -644,7 +644,87 @@ class ChoreographyPlanner(Planner):
         }
         return metadata
     
-    
+    async def generate_payload(
+        self,
+        schema: Any,
+        context: str,
+    ) -> Dict[str, Any]:
+        """Generate a JSON payload that conforms to a registered schema.
+
+        Uses the same LLM and credentials already configured on this planner
+        (``reasoning_model``, ``api_key``, ``api_base``, ``temperature``,
+        ``llm_kwargs``).  The schema's ``json_schema`` body is injected into the
+        system prompt; the model is instructed to return raw JSON only.
+
+        Args:
+            schema: ``PayloadSchema`` instance (as returned by
+                ``context.registry.get_schema()``) whose ``json_schema`` field
+                describes the expected payload structure.
+            context: Natural-language description of what the payload should
+                represent (e.g. the goal description from a GoalContext).
+
+        Returns:
+            Dict containing the generated payload, validated to be parseable JSON.
+
+        Raises:
+            RuntimeError: If the LLM call fails or returns non-JSON content.
+
+        Example::
+
+            schema = await ctx.registry.get_schema(schema_name)
+            payload = await planner.generate_payload(schema=schema, context=goal.description)
+            await ctx.bus.request(event_type=event_name, payload=payload, ...)
+        """
+        import json
+
+        if self._litellm is None:
+            try:
+                import litellm
+                self._litellm = litellm
+            except ImportError:
+                raise ImportError(
+                    "litellm is required for generate_payload. "
+                    "Install it with: pip install litellm"
+                )
+
+        schema_str = json.dumps(getattr(schema, "json_schema", schema), indent=2)
+
+        try:
+            response = await self._litellm.acompletion(
+                model=self.reasoning_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a payload generator. Given a goal description and a "
+                            "JSON Schema, respond with ONLY a valid JSON object that "
+                            "conforms to the schema. No explanation, no markdown fences "
+                            "— raw JSON only.\n\nSchema:\n" + schema_str
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Generate a conforming payload for: {context}",
+                    },
+                ],
+                temperature=self.temperature,
+                api_key=self.api_key,
+                api_base=self.api_base,
+                response_format={"type": "json_object"},
+                **self.llm_kwargs,
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"generate_payload LLM call failed for model {self.reasoning_model}: {e}"
+            ) from e
+
+        try:
+            return json.loads(response.choices[0].message.content)
+        except Exception as e:
+            raise RuntimeError(
+                f"generate_payload: LLM returned non-JSON content. Error: {e}"
+            ) from e
+
     def _build_prompt(
         self,
         trigger: str,

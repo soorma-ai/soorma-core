@@ -2,9 +2,13 @@
 Client — Example 11: LLM-Based Dynamic Discovery.
 
 Sends a research goal to the planner and waits for the response.
-The planner dynamically discovers the research worker via the Registry,
-fetches its schema, and uses an LLM to build the request payload —
-the client only needs to know the goal event name.
+The planner owns both ends of the client contract:
+  - receives research.goal from the client
+  - discovers the worker, generates the payload, dispatches internally
+  - normalizes the worker result and publishes research.completed back here
+
+The client has no knowledge of the worker, its schema, or the internal
+research.worker.completed event — it only speaks the planner's API.
 
 Usage:
     python client.py "Latest advances in quantum computing"
@@ -44,19 +48,19 @@ async def send_research_goal(description: str) -> None:
     print()
 
     correlation_id = str(uuid4())
-    response_event_name = f"research.completed.{correlation_id}"
 
     response_received = asyncio.Event()
     response_data: dict = {}
 
     @client.on_event("research.completed", topic=EventTopic.ACTION_RESULTS)
     async def on_response(event: EventEnvelope) -> None:
-        """Receive the research result from the worker.
+        """Receive the normalized research result from the planner.
 
         Args:
-            event: EventEnvelope from the research worker.
+            event: EventEnvelope published by the planner after it receives
+                   and normalizes the worker's internal result.
         """
-        # Only process the response that belongs to this request
+        # Filter by correlation_id — canonical event name shared by all responses
         if event.correlation_id != correlation_id:
             return
         response_data.update(event.data or {})
@@ -74,7 +78,7 @@ async def send_research_goal(description: str) -> None:
         topic=EventTopic.ACTION_REQUESTS,
         data={"description": description},
         correlation_id=correlation_id,
-        response_event=response_event_name,
+        response_event="research.completed",
         response_topic=EventTopic.ACTION_RESULTS,
         tenant_id=TENANT_ID,
         user_id=USER_ID,

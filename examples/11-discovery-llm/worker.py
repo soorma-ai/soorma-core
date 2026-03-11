@@ -9,7 +9,7 @@ ctx.registry.register_schema() explicitly — that is the SDK's responsibility
 Key SDK usage:
   - AgentCapability with payload_schema_name + payload_schema (inline body)
   - Worker.on_task() handler — receives TaskContext and PlatformContext
-  - ctx.bus.complete() to publish the response back to the planner
+  - task.complete() to publish the response (auto-propagates all metadata)
 """
 
 import asyncio
@@ -100,12 +100,15 @@ async def handle_research(task: TaskContext, context: PlatformContext) -> None:
     """Handle an incoming research request.
 
     Extracts the topic from the validated payload, simulates web research,
-    and publishes findings back via ctx.bus.complete().
+    Extracts the topic from the validated payload, simulates web research,
+    and publishes findings back via task.complete() — which auto-propagates
+    tenant_id, user_id, plan_id, correlation_id and cleans up any persisted state.
 
     Args:
         task: TaskContext containing the research payload
               (validated against research_request_v1 schema).
-        context: PlatformContext for service access.
+        context: PlatformContext for service access (unused directly;
+                 task.complete() uses it internally).
     """
     topic: str = task.data.get("topic", "")
     max_results: int = int(task.data.get("max_results", 5))
@@ -120,14 +123,13 @@ async def handle_research(task: TaskContext, context: PlatformContext) -> None:
 
     print(f"[worker]  ✓ Research complete — {len(findings)} finding(s)")
 
-    await context.bus.complete(
-        task=task,
-        result={
-            "topic": topic,
-            "findings": findings,
-            "result_count": len(findings),
-        },
-    )
+    # task.complete() auto-propagates tenant_id, user_id, plan_id, correlation_id
+    # and cleans up any persisted TaskContext from memory.
+    await task.complete({
+        "topic": topic,
+        "findings": findings,
+        "result_count": len(findings),
+    })
 
 
 # ---------------------------------------------------------------------------
