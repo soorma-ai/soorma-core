@@ -175,8 +175,20 @@ class Worker(Agent):
                 )
                 await func(task, context)
 
-            # Add to capabilities if not already there
-            if event_type not in self.config.capabilities:
+            # Add event_type as string capability for routing (_should_handle_task),
+            # but only if no AgentCapability already declares this as its consumed_event.
+            # Without this guard, on_task() creates a duplicate phantom capability with
+            # consumed_event=unknown alongside the structured AgentCapability.
+            def _already_covered(ev: str) -> bool:
+                for cap in self.config.capabilities:
+                    if isinstance(cap, str) and cap == ev:
+                        return True
+                    consumed = getattr(cap, 'consumed_event', None)
+                    if consumed and getattr(consumed, 'event_name', None) == ev:
+                        return True
+                return False
+
+            if not _already_covered(event_type):
                 self.config.capabilities.append(event_type)
 
             logger.debug(f"Registered task handler: {event_type}")

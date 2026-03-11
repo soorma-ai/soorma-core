@@ -561,7 +561,13 @@ class Agent(ABC):
                 await self.context.registry.register_schema(schema)
                 logger.debug(f"Auto-registered inline schema: {schema_name}")
             except Exception as e:
-                logger.warning(f"Failed to auto-register schema '{schema_name}': {e} (continuing)")
+                # 409 = schema already registered; expected when an agent restarts
+                # against a persistent registry — not an error condition.
+                status_code = getattr(getattr(e, 'response', None), 'status_code', None)
+                if status_code == 409:
+                    logger.debug(f"Schema '{schema_name}' already registered (409) — skipping")
+                else:
+                    logger.warning(f"Failed to auto-register schema '{schema_name}': {e} (continuing)")
     
     async def _deregister_from_registry(self) -> None:
         """Deregister from the Registry service."""
