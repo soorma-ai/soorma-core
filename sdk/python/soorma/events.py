@@ -232,11 +232,11 @@ class EventClient:
         Failures are non-fatal — logged as warnings.
         """
         import os as _os
-        from soorma.registry.client import RegistryServiceClient
+        from soorma.registry.client import RegistryClient
         from soorma_common import PayloadSchema
 
         registry_url = _os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081")
-        registry_client = RegistryServiceClient(base_url=registry_url)
+        registry_client = RegistryClient(base_url=registry_url)
 
         for event_def in self._pending_event_definitions:
             # Register event definition

@@ -127,6 +127,41 @@ class GoalContext:
             _context=context,
         )
 
+    async def dispatch(
+        self,
+        event_type: str,
+        data: Dict[str, Any],
+        response_event: str,
+        response_topic: str = "action-results",
+    ) -> str:
+        """Dispatch a worker request, automatically propagating tenant/user context.
+
+        Mirror of TaskContext.delegate() for the planner side: callers never pass
+        tenant_id, user_id, or correlation_id manually — those come from the goal
+        envelope so the full context chain is preserved end-to-end.
+
+        Args:
+            event_type: Action request event type (e.g., "research.requested")
+            data: Request payload for the target worker
+            response_event: Expected result event type (e.g., "research.worker.completed")
+            response_topic: Topic for the result event (default: "action-results")
+
+        Returns:
+            The published event ID
+
+        Raises:
+            RuntimeError: If called outside a goal handler (no _context available)
+        """
+        return await self._context.bus.request(
+            event_type=event_type,
+            data=data,
+            response_event=response_event,
+            correlation_id=self.correlation_id,
+            response_topic=response_topic,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
+            session_id=self.session_id,
+        )
 
 
 @dataclass
@@ -339,6 +374,10 @@ class Planner(Agent):
                                 "tenant_id": goal.tenant_id,
                                 "user_id": goal.user_id,
                             },
+                            # Use correlation_id as the plan scope: it's a valid UUID
+                            # and naturally isolates this goal's metadata from all others.
+                            # The planner may not have created a formal PlanContext here.
+                            plan_id=goal.correlation_id,
                             tenant_id=goal.tenant_id,
                             user_id=goal.user_id,
                         )

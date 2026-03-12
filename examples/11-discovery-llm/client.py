@@ -110,7 +110,7 @@ async def send_research_goal(description: str) -> None:
     response_received = asyncio.Event()
     response_data: dict = {}
 
-    @client.on_event("research.completed", topic=EventTopic.ACTION_RESULTS)
+    @client.on_event(RESEARCH_COMPLETED_EVENT.event_name, topic=EventTopic.ACTION_RESULTS)
     async def on_response(event: EventEnvelope) -> None:
         """Receive the normalized research result from the planner.
 
@@ -139,9 +139,9 @@ async def send_research_goal(description: str) -> None:
         topic=EventTopic.ACTION_REQUESTS,
         data={"description": description},
         correlation_id=correlation_id,
-        response_event="research.completed",
+        response_event=RESEARCH_COMPLETED_EVENT.event_name,
         response_topic=EventTopic.ACTION_RESULTS,
-        response_schema_name="research_result_v1",
+        response_schema_name=RESEARCH_COMPLETED_EVENT.payload_schema_name,
         tenant_id=TENANT_ID,
         user_id=USER_ID,
     )

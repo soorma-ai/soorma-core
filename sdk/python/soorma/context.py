@@ -41,6 +41,11 @@ from .ai.event_toolkit import EventToolkit
 
 logger = logging.getLogger(__name__)
 
+# Well-known UUID used as the plan_id for unscoped working memory operations
+# (i.e. when no explicit plan_id is provided). Must be a valid UUID because
+# the memory service stores plan_id in a UUID column.
+DEFAULT_PLAN_ID = "00000000-0000-0000-0000-000000000000"
+
 
 # Legacy RegistryClient wrapper removed - now using full RegistryClient from soorma.registry.client
 # The full client provides all the same methods plus proper Pydantic models and event discovery
@@ -128,7 +133,7 @@ class MemoryClient:
             
         client = await self._ensure_client()
         try:
-            plan = plan_id or "default"
+            plan = plan_id or DEFAULT_PLAN_ID
             result = await client.get_plan_state(plan, key, tenant_id, user_id)
             # Return value directly - no unwrapping needed
             return result.value
@@ -162,7 +167,7 @@ class MemoryClient:
             raise ValueError("tenant_id and user_id are required (get from event context)")
             
         client = await self._ensure_client()
-        plan = plan_id or "default"
+        plan = plan_id or DEFAULT_PLAN_ID
         # Pass value directly - set_plan_state wraps it in WorkingMemorySet
         await client.set_plan_state(plan, key, value, tenant_id, user_id)
         return True
@@ -883,6 +888,8 @@ class MemoryClient:
         """
         return await self.retrieve(
             key=f"_soorma:goal:{correlation_id}",
+            # Must match the plan_id used by on_goal when storing this metadata.
+            plan_id=correlation_id,
             tenant_id=tenant_id,
             user_id=user_id,
         )

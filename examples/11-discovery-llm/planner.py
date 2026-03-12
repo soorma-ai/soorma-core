@@ -132,11 +132,10 @@ async def handle_research_goal(goal: GoalContext, context: PlatformContext) -> N
     # never sees it.  The same correlation_id from the client is threaded
     # through so the result handler can correlate back to this goal.
     print(f"[planner] Dispatching → {consumed_event_name} (internal response: research.worker.completed)")
-    await context.bus.request(
+    await goal.dispatch(
         event_type=consumed_event_name,
         data=payload,
         response_event="research.worker.completed",
-        correlation_id=goal.correlation_id,
     )
     print(f"[planner] ✓ Worker request published; awaiting research.worker.completed")
 
