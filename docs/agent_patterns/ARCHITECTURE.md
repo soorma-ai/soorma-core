@@ -811,29 +811,64 @@ class Planner(Agent):
 ```python
 @dataclass
 class GoalContext:
-    """Wrapper for clean goal access in handlers."""
-    goal_id: str
+    """Wrapper for clean goal access in on_goal handlers."""
     event_type: str
     data: Dict[str, Any]
-    response_event: str
     correlation_id: str
-    
-    # Auth context
-    tenant_id: str
+    response_event: str
+    response_schema_name: Optional[str]   # Schema the caller expects for the response
+    session_id: Optional[str]
     user_id: str
-    
+    tenant_id: str
+    _raw_event: EventEnvelope
+    _context: PlatformContext
+
     @classmethod
-    def from_event(cls, event: EventEnvelope) -> "GoalContext":
+    def from_event(cls, event: EventEnvelope, context: PlatformContext) -> "GoalContext":
         return cls(
-            goal_id=event.data.get("goal_id", str(uuid4())),
             event_type=event.type,
-            data=event.data,
-            response_event=event.data.get("response_event"),
-            correlation_id=event.correlation_id,
-            tenant_id=event.tenant_id,
-            user_id=event.user_id,
+            data=event.data or {},
+            correlation_id=event.correlation_id or "",
+            response_event=event.response_event or "",
+            response_schema_name=event.response_schema_name,
+            session_id=event.session_id,
+            user_id=event.user_id or "",
+            tenant_id=event.tenant_id or "",
+            _raw_event=event,
+            _context=context,
+        )
+
+    async def dispatch(
+        self,
+        event_type: str,
+        data: Dict[str, Any],
+        response_event: str,
+        response_topic: str = "action-results",
+    ) -> str:
+        """Dispatch a worker request, auto-propagating tenant/user context.
+
+        Planner-side mirror of TaskContext.delegate().
+        Never use context.bus.request() directly in an on_goal handler.
+        """
+        return await self._context.bus.request(
+            event_type=event_type,
+            data=data,
+            response_event=response_event,
+            correlation_id=self.correlation_id,
+            response_topic=response_topic,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
+            session_id=self.session_id,
         )
 ```
+
+**`on_goal` hook: auto-save goal metadata**
+
+Before calling your `@on_goal` handler, the SDK automatically stores goal routing
+metadata (`response_event`, `response_schema_name`, `tenant_id`, `user_id`) to
+working memory under `key=_soorma:goal:{correlation_id}`, `plan_id=correlation_id`.
+This lets result handlers call `context.memory.get_goal_metadata()` without any
+manual boilerplate in the goal handler.
 
 ### Usage Example (09-planner-basic)
 

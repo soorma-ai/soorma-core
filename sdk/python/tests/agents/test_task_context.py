@@ -213,7 +213,7 @@ async def test_task_context_save_idempotent():
 
 @pytest.mark.asyncio
 async def test_task_context_delete_after_complete():
-    """TaskContext.complete() should delete task context from memory."""
+    """TaskContext.complete() should delete task context from memory only if save() was called."""
     context = MagicMock()
     context.memory = AsyncMock()
     context.bus = AsyncMock()
@@ -230,12 +230,14 @@ async def test_task_context_delete_after_complete():
         _context=context,
     )
 
+    # Simulate a task that saved state (e.g., for delegation/resumption)
+    await task.save()
     await task.complete({"status": "completed"})
 
     # Should publish result using respond()
     context.bus.respond.assert_awaited_once()
-    
-    # Should delete task context
+
+    # Should delete task context because save() was previously called
     context.memory.delete_task_context.assert_awaited_once_with(
         "task-delete-1", tenant_id="tenant-1", user_id="user-1"
     )
@@ -607,6 +609,7 @@ async def test_complete_twice():
     await task.complete({"status": "completed"})
     await task.complete({"status": "completed"})
 
-    # Should respond twice (or handle gracefully)
+    # Should respond both times
     assert context.bus.respond.await_count >= 1
-    assert context.memory.delete_task_context.await_count >= 1
+    # No save() was called, so delete_task_context should NOT be called
+    context.memory.delete_task_context.assert_not_awaited()

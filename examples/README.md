@@ -181,17 +181,17 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./11-app-research-advisor/"-->11-app-research-advisor<!--/a--><br>(coming soon)</td>
+<td><a href="./11-discovery-llm/">11-discovery-llm</a></td>
 <td>
-• Full autonomous research application<br>
-• Web scraping with Playwright<br>
-• Fact-checking pipeline<br>
-• Citation management<br>
-• Tracker Service integration<br>
-<em>Requires: litellm, openai, playwright</em>
+• Lightweight dispatch planner pattern (no PlanContext)<br>
+• <code>goal.dispatch()</code> — auto-propagates tenant/user/correlation context<br>
+• Client-owned response schema contract<br>
+• Runtime worker discovery + LLM payload generation (both directions)<br>
+• <code>ctx.memory.get_goal_metadata()</code> for result handler routing<br>
+<em>Requires: litellm, openai</em>
 </td>
-<td>45 min</td>
-<td>10-choreography-basic<br>06-memory-episodic</td>
+<td>20 min</td>
+<td>10-choreography-basic</td>
 </tr>
 
 <tr>
@@ -231,9 +231,11 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Build multi-agent chatbot with all memory types | Multi-Agent + All Memory Types | [06-memory-episodic](./06-memory-episodic/) |
 | Discover and use tools at runtime | Tool Discovery | 07-tool-discovery (coming soon) |
 | Handle async tasks with delegation | Worker Pattern | [08-worker-basic](./08-worker-basic/) |
-| Orchestrate tasks with state machines | Planner Pattern | [09-planner-basic](./09-planner-basic/) |
-| Build autonomous multi-agent systems | Choreography Pattern | [10-choreography-basic](./10-choreography-basic/) |
-| Build production applications | Full Applications | 11-app-research-advisor (coming soon) |
+| Orchestrate tasks with state machines | Planner + PlanContext state machine | [09-planner-basic](./09-planner-basic/) |
+| Build autonomous multi-agent systems | ChoreographyPlanner + PlanContext | [10-choreography-basic](./10-choreography-basic/) |
+| Single-hop planner without a state machine | Lightweight Dispatch (`goal.dispatch()`) | [11-discovery-llm](./11-discovery-llm/) |
+| Discover workers + generate payloads at runtime | LLM-Based Dynamic Discovery | [11-discovery-llm](./11-discovery-llm/) |
+| Let the client define the response schema | Client-Owned Schema Contract | [11-discovery-llm](./11-discovery-llm/) |
 | Handle multi-turn conversations | Stateful Conversation | 12-multi-turn-conversation (coming soon) |
 
 ---
@@ -320,13 +322,19 @@ python client.py
 2. [02-events-simple](./02-events-simple/) - Learn event pub/sub
 3. [03-events-structured](./03-events-structured/) - LLM event selection
 
-### Path 2: LLM-Powered Agents (70 minutes)
+### Path 2: LLM-Powered Agents (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [03-events-structured](./03-events-structured/) - LLM event selection
 3. [04-memory-working](./04-memory-working/) - State management
 4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
 5. [10-choreography-basic](./10-choreography-basic/) - Autonomous choreography with ChoreographyPlanner
-6. 11-app-research-advisor (coming soon) - Full research application
+6. [11-discovery-llm](./11-discovery-llm/) - Lightweight dispatch + client-owned schema contract
+
+### Path 2b: Planner Patterns (45 minutes)
+1. [08-worker-basic](./08-worker-basic/) - Worker/TaskContext foundation
+2. [09-planner-basic](./09-planner-basic/) - PlanContext state machine (multi-step, durable)
+3. [10-choreography-basic](./10-choreography-basic/) - ChoreographyPlanner (LLM-driven state machine)
+4. [11-discovery-llm](./11-discovery-llm/) - Lightweight dispatch (single-hop, no state machine)
 
 ### Path 3: Memory Deep Dive (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics

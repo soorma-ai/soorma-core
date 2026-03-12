@@ -269,6 +269,7 @@ class TaskContext:
     # Internal fields (not persisted)
     _context: Optional[PlatformContext] = field(default=None, repr=False)
     _register_produced_event: Optional[Callable[[str], None]] = field(default=None, repr=False)
+    _persisted: bool = field(default=False, init=False, repr=False)
 
     @classmethod
     def from_event(
@@ -414,6 +415,7 @@ class TaskContext:
             tenant_id=self.tenant_id,
             user_id=self.user_id,
         )
+        self._persisted = True
 
     @classmethod
     async def restore(
@@ -733,12 +735,13 @@ class TaskContext:
             user_id=self.user_id,
             plan_id=self.plan_id,  # Pass plan_id in envelope metadata
         )
-        # Clean up persisted state
-        await self._context.memory.delete_task_context(
-            self.task_id,
-            tenant_id=self.tenant_id,
-            user_id=self.user_id,
-        )
+        # Clean up persisted state — only if save() was called (delegation pattern)
+        if self._persisted:
+            await self._context.memory.delete_task_context(
+                self.task_id,
+                tenant_id=self.tenant_id,
+                user_id=self.user_id,
+            )
 
 
 @dataclass

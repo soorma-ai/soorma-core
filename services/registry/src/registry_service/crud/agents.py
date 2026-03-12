@@ -30,8 +30,8 @@ def _event_to_name(event: Any) -> str:
     """Extract event_name string from an EventDefinition object or plain string.
 
     AgentCapabilityTable.consumed_event is VARCHAR — the DB stores only the
-    event name. Full EventDefinition schemas are stored separately in the
-    events table via register_event().
+    event name. Full EventDefinition schemas (including payload_schema_name)
+    are registered separately in the events table via register_event().
     """
     if isinstance(event, str):
         return event

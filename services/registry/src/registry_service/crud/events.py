@@ -37,6 +37,8 @@ class EventCRUD:
             description=event.description,
             payload_schema=event.payload_schema,
             response_schema=event.response_schema,
+            payload_schema_name=event.payload_schema_name,
+            response_schema_name=event.response_schema_name,
             tenant_id=developer_tenant_id
         )
         db.add(event_table)
@@ -73,6 +75,8 @@ class EventCRUD:
             existing.description = event.description
             existing.payload_schema = event.payload_schema
             existing.response_schema = event.response_schema
+            existing.payload_schema_name = event.payload_schema_name
+            existing.response_schema_name = event.response_schema_name
             await db.flush()
             
             # Invalidate cache
@@ -222,7 +226,9 @@ class EventCRUD:
             topic=event.topic,
             description=event.description,
             payload_schema=event.payload_schema,
-            response_schema=event.response_schema
+            response_schema=event.response_schema,
+            payload_schema_name=event.payload_schema_name,
+            response_schema_name=event.response_schema_name,
         )
 
 

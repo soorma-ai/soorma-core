@@ -355,3 +355,208 @@ class TestDataClasses:
         assert request.event_type == "calculate"
         assert request.data["expression"] == "2 + 2"
         assert request.request_id == "req-123"
+
+
+class TestAutoSchemaRegistration:
+    """Tests for automatic schema registration in _register_with_registry().
+
+    T0 (Phase 5): When an AgentCapability's consumed_event or produced_events
+    carry both payload_schema_name AND an inline payload_schema body, the SDK
+    must call register_schema() automatically during agent startup — the agent
+    code must NOT have to call ctx.registry.register_schema() explicitly.
+    """
+
+    def _make_mock_context(self):
+        """Create a MagicMock PlatformContext with async registry methods."""
+        ctx = MagicMock()
+        ctx.registry = AsyncMock()
+        ctx.registry.register_schema = AsyncMock()
+        ctx.registry.register_agent = AsyncMock()
+        ctx.registry.register_event = AsyncMock()
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_inline_schema_on_consumed_event_is_auto_registered(self):
+        """Worker with inline payload_schema body triggers register_schema() at startup."""
+        from soorma import Worker
+        from soorma_common import AgentCapability, EventDefinition
+
+        worker = Worker(
+            name="schema-test-worker",
+            agent_id="schema-test-worker-001",
+            capabilities=[
+                AgentCapability(
+                    task_name="web_research",
+                    description="Performs web research",
+                    consumed_event=EventDefinition(
+                        event_name="research.requested",
+                        topic="action-requests",
+                        description="Research request",
+                        payload_schema_name="research_request_v1",
+                        payload_schema={
+                            "type": "object",
+                            "properties": {"topic": {"type": "string"}},
+                            "required": ["topic"],
+                        },
+                    ),
+                    produced_events=[],
+                )
+            ],
+        )
+        worker._context = self._make_mock_context()
+
+        await worker._register_with_registry()
+
+        # register_schema MUST be called with the inline schema body
+        worker._context.registry.register_schema.assert_called_once()
+        registered_schema = worker._context.registry.register_schema.call_args.args[0]
+        assert registered_schema.schema_name == "research_request_v1"
+        assert registered_schema.json_schema["type"] == "object"
+
+    @pytest.mark.asyncio
+    async def test_inline_schema_on_produced_event_is_auto_registered(self):
+        """Worker with inline schema on a produced_event triggers register_schema()."""
+        from soorma import Worker
+        from soorma_common import AgentCapability, EventDefinition
+
+        consumed_event = EventDefinition(
+            event_name="research.requested",
+            topic="action-requests",
+            description="Input",
+            payload_schema_name="research_request_v1",
+        )
+        produced_event = EventDefinition(
+            event_name="research.completed",
+            topic="action-results",
+            description="Output",
+            payload_schema_name="research_result_v1",
+            payload_schema={
+                "type": "object",
+                "properties": {"summary": {"type": "string"}},
+                "required": ["summary"],
+            },
+        )
+        worker = Worker(
+            name="schema-test-worker-2",
+            agent_id="schema-test-worker-002",
+            capabilities=[
+                AgentCapability(
+                    task_name="web_research",
+                    description="Performs web research",
+                    consumed_event=consumed_event,
+                    produced_events=[produced_event],
+                )
+            ],
+        )
+        worker._context = self._make_mock_context()
+
+        await worker._register_with_registry()
+
+        # register_schema called once for the produced_event inline schema
+        worker._context.registry.register_schema.assert_called_once()
+        registered_schema = worker._context.registry.register_schema.call_args.args[0]
+        assert registered_schema.schema_name == "research_result_v1"
+
+    @pytest.mark.asyncio
+    async def test_multiple_inline_schemas_all_registered(self):
+        """Multiple capabilities with inline schemas each get registered."""
+        from soorma import Worker
+        from soorma_common import AgentCapability, EventDefinition
+
+        def _cap(task_name: str, event_name: str, schema_name: str) -> AgentCapability:
+            return AgentCapability(
+                task_name=task_name,
+                description=task_name,
+                consumed_event=EventDefinition(
+                    event_name=event_name,
+                    topic="action-requests",
+                    description=event_name,
+                    payload_schema_name=schema_name,
+                    payload_schema={"type": "object", "properties": {}},
+                ),
+                produced_events=[],
+            )
+
+        worker = Worker(
+            name="multi-schema-worker",
+            agent_id="multi-schema-worker-001",
+            capabilities=[
+                _cap("task_a", "task_a.requested", "task_a_schema_v1"),
+                _cap("task_b", "task_b.requested", "task_b_schema_v1"),
+            ],
+        )
+        worker._context = self._make_mock_context()
+
+        await worker._register_with_registry()
+
+        assert worker._context.registry.register_schema.call_count == 2
+        registered_names = {
+            call.args[0].schema_name
+            for call in worker._context.registry.register_schema.call_args_list
+        }
+        assert registered_names == {"task_a_schema_v1", "task_b_schema_v1"}
+
+    @pytest.mark.asyncio
+    async def test_no_inline_schema_skips_register_schema(self):
+        """Capability with only payload_schema_name (no body) does NOT call register_schema."""
+        from soorma import Worker
+        from soorma_common import AgentCapability, EventDefinition
+
+        worker = Worker(
+            name="ref-only-worker",
+            agent_id="ref-only-worker-001",
+            capabilities=[
+                AgentCapability(
+                    task_name="ref_task",
+                    description="Reference only",
+                    consumed_event=EventDefinition(
+                        event_name="ref.requested",
+                        topic="action-requests",
+                        description="Reference only — schema already registered",
+                        payload_schema_name="already_registered_schema_v1",
+                        # No payload_schema body — schema is pre-registered, reference only
+                    ),
+                    produced_events=[],
+                )
+            ],
+        )
+        worker._context = self._make_mock_context()
+
+        await worker._register_with_registry()
+
+        worker._context.registry.register_schema.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_schema_registration_failure_does_not_abort_agent_registration(self):
+        """A register_schema failure is logged as a warning; agent still registers."""
+        from soorma import Worker
+        from soorma_common import AgentCapability, EventDefinition
+
+        worker = Worker(
+            name="fault-tolerant-worker",
+            agent_id="fault-tolerant-worker-001",
+            capabilities=[
+                AgentCapability(
+                    task_name="fault_task",
+                    description="Fault test",
+                    consumed_event=EventDefinition(
+                        event_name="fault.requested",
+                        topic="action-requests",
+                        description="Fault test",
+                        payload_schema_name="fault_schema_v1",
+                        payload_schema={"type": "object", "properties": {}},
+                    ),
+                    produced_events=[],
+                )
+            ],
+        )
+        ctx = self._make_mock_context()
+        ctx.registry.register_schema = AsyncMock(side_effect=Exception("Registry unavailable"))
+        worker._context = ctx
+
+        # Must not raise — failure is non-fatal (same as event/agent registration)
+        result = await worker._register_with_registry()
+
+        # Agent registration still proceeds despite schema failure
+        worker._context.registry.register_agent.assert_called_once()
+        assert result is True

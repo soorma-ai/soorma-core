@@ -84,6 +84,7 @@ class GoalContext:
         data: Goal parameters
         correlation_id: Correlation ID for tracking
         response_event: Event type for final result (from original request)
+        response_schema_name: Registered schema name the caller expects for the response
         session_id: Optional session identifier
         user_id: User authentication context
         tenant_id: Tenant isolation context
@@ -94,6 +95,7 @@ class GoalContext:
     data: Dict[str, Any]
     correlation_id: str
     response_event: str
+    response_schema_name: Optional[str]
     session_id: Optional[str]
     user_id: str
     tenant_id: str
@@ -117,6 +119,7 @@ class GoalContext:
             data=event.data or {},
             correlation_id=event.correlation_id or "",
             response_event=event.response_event or "",  # Direct field, not metadata
+            response_schema_name=event.response_schema_name,
             session_id=event.session_id,
             user_id=event.user_id or "",
             tenant_id=event.tenant_id or "",
@@ -124,6 +127,41 @@ class GoalContext:
             _context=context,
         )
 
+    async def dispatch(
+        self,
+        event_type: str,
+        data: Dict[str, Any],
+        response_event: str,
+        response_topic: str = "action-results",
+    ) -> str:
+        """Dispatch a worker request, automatically propagating tenant/user context.
+
+        Mirror of TaskContext.delegate() for the planner side: callers never pass
+        tenant_id, user_id, or correlation_id manually — those come from the goal
+        envelope so the full context chain is preserved end-to-end.
+
+        Args:
+            event_type: Action request event type (e.g., "research.requested")
+            data: Request payload for the target worker
+            response_event: Expected result event type (e.g., "research.worker.completed")
+            response_topic: Topic for the result event (default: "action-results")
+
+        Returns:
+            The published event ID
+
+        Raises:
+            RuntimeError: If called outside a goal handler (no _context available)
+        """
+        return await self._context.bus.request(
+            event_type=event_type,
+            data=data,
+            response_event=response_event,
+            correlation_id=self.correlation_id,
+            response_topic=response_topic,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
+            session_id=self.session_id,
+        )
 
 
 @dataclass
@@ -322,6 +360,29 @@ class Planner(Agent):
             async def wrapper(event: EventEnvelope, context: PlatformContext) -> None:
                 # Convert event to GoalContext
                 goal = GoalContext.from_event(event, context)
+                # Auto-save goal routing metadata so result handlers can read
+                # response_event and response_schema_name by correlation_id
+                # without manual boilerplate. Non-fatal if Memory Service is down.
+                if goal.tenant_id and goal.user_id:
+                    try:
+                        await context.memory.store(
+                            key=f"_soorma:goal:{goal.correlation_id}",
+                            value={
+                                "correlation_id": goal.correlation_id,
+                                "response_event": goal.response_event,
+                                "response_schema_name": goal.response_schema_name,
+                                "tenant_id": goal.tenant_id,
+                                "user_id": goal.user_id,
+                            },
+                            # Use correlation_id as the plan scope: it's a valid UUID
+                            # and naturally isolates this goal's metadata from all others.
+                            # The planner may not have created a formal PlanContext here.
+                            plan_id=goal.correlation_id,
+                            tenant_id=goal.tenant_id,
+                            user_id=goal.user_id,
+                        )
+                    except Exception as _e:
+                        logger.debug(f"Could not auto-save goal metadata: {_e}")
                 await func(goal, context)
             
             logger.debug(f"Registered goal handler: {goal_type}")

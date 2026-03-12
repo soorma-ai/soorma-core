@@ -127,7 +127,11 @@ class EventEnvelope(BaseDTO):
         default=None,
         description="Topic for response (defaults to action-results if not specified)"
     )
-    
+    response_schema_name: Optional[str] = Field(
+        default=None,
+        description="Registered schema name the caller expects for the response payload",
+    )
+
     # Distributed tracing
     trace_id: Optional[str] = Field(
         default=None,
@@ -176,6 +180,8 @@ class EventEnvelope(BaseDTO):
             result["responseevent"] = self.response_event
         if self.response_topic:
             result["responsetopic"] = self.response_topic
+        if self.response_schema_name:
+            result["responseschemaname"] = self.response_schema_name
         if self.trace_id:
             result["traceid"] = self.trace_id
         if self.parent_event_id:

@@ -24,7 +24,8 @@ Agents are built on the **DisCo (Distributed Cognition)** pattern, where intelli
 |---------|-------------|-----------|-------|-----------------|------|
 | **Tool** | Stateless operation, <5 sec, simple I/O | Synchronous | None | Deterministic | Free |
 | **Worker** | Async task, needs delegation, parallel work | Asynchronous | Persistent | Deterministic | Free |
-| **Planner** | Multi-step workflow, manual orchestration | Event-driven | State machine | Developer-defined | Free |
+| **Planner (Lightweight Dispatch)** | Single-hop, no branching, fits in two handlers | Event-driven | None (working memory only) | Developer-defined | Free |
+| **Planner (State Machine)** | Multi-step workflow, explicit states, durable | Event-driven | State machine | Developer-defined | Free |
 | **ChoreographyPlanner** | Adaptive workflow, LLM reasoning | Event-driven | LLM-managed | Autonomous | LLM API |
 
 ### Decision Flowchart
@@ -36,10 +37,11 @@ graph TD
     B -->|No| D{Need LLM decisions?}
     D -->|Yes| E[ChoreographyPlanner]
     D -->|No| F{Multi-step workflow?}
-    F -->|Yes| G{Want manual control?}
-    G -->|Yes| H[Planner Pattern]
-    G -->|No| E
-    F -->|No| I[Worker Pattern]
+    F -->|No, single hop| G[Lightweight Dispatch Planner]
+    F -->|Yes| H{Want manual control?}
+    H -->|Yes| I[Planner + PlanContext State Machine]
+    H -->|No| E
+    F --> J[Worker Pattern]
 ```
 
 ### Pattern Tradeoffs
@@ -48,7 +50,8 @@ graph TD
 |---------|---------|------------|---------|----------|
 | **Tool** | Full | ⭐ Beginner | <100ms | Calculations, lookups, transformations |
 | **Worker** | High | ⭐⭐ Intermediate | 100ms-5s | Async tasks, delegation, aggregation |
-| **Planner** | Full | ⭐⭐⭐ Advanced | Varies | State machines, manual orchestration |
+| **Planner (Lightweight)** | High | ⭐⭐ Intermediate | 100ms-5s | Single-hop orchestration, dynamic discovery |
+| **Planner (State Machine)** | Full | ⭐⭐⭐ Advanced | Varies | Durable multi-step workflows |
 | **ChoreographyPlanner** | Autonomous | ⭐⭐⭐⭐ Expert | 1-10s | Adaptive workflows, LLM reasoning |
 
 ### Real-World Examples
@@ -57,7 +60,8 @@ graph TD
 |-----------|---------------------|------------------|
 | "I need to validate user input" | **Tool** | Email validator, JSON schema checker |
 | "I need to process orders with inventory + payment steps" | **Worker** | E-commerce order processor with sequential delegation |
-| "I need a multi-stage approval workflow" | **Planner** | Document approval with states: draft → review → approved |
+| "I need a single-hop planner: discover worker, dispatch, respond" | **Lightweight Dispatch Planner** | Research planner with runtime worker discovery |
+| "I need a multi-stage approval workflow" | **Planner + State Machine** | Document approval with states: draft → review → approved |
 | "I need autonomous research with adaptive queries" | **ChoreographyPlanner** | Research assistant that explores topics dynamically |
 
 **Quick Tips:**
@@ -334,7 +338,104 @@ await context.bus.respond(
 
 ---
 
-### 5. Trinity Pattern (Planner-Worker-Tool)
+### 4b. Lightweight Dispatch Planner
+
+**Use when:** Single-hop orchestration — one worker, no branching, fits in two handlers
+
+**Complexity:** ⭐⭐ Intermediate
+
+**Example:** [11-discovery-llm](../../examples/11-discovery-llm/)
+
+```python
+from soorma.ai.choreography import ChoreographyPlanner
+from soorma.agents.planner import GoalContext
+from soorma.context import PlatformContext
+from soorma_common.events import EventEnvelope, EventTopic
+
+planner = ChoreographyPlanner(name="research-planner", ...)
+
+# Handler 1: receive goal, dispatch to worker
+@planner.on_goal("research.goal")
+async def handle_goal(goal: GoalContext, context: PlatformContext):
+    # SDK on_goal hook auto-saves goal metadata to working memory
+    # (response_event, response_schema_name, tenant_id, user_id)
+    # under plan_id=correlation_id — no manual store needed
+    payload = await planner.generate_payload(schema=schema, context=description)
+    await goal.dispatch(
+        event_type="research.requested",
+        data=payload,
+        response_event="research.worker.completed",
+    )
+    # Handler returns — no state machine, no PlanContext
+
+# Handler 2: receive worker result, respond to client
+@planner.on_event("research.worker.completed", topic=EventTopic.ACTION_RESULTS)
+async def handle_result(event: EventEnvelope, context: PlatformContext):
+    goal_meta = await context.memory.get_goal_metadata(
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
+    await context.bus.respond(
+        event_type=goal_meta["response_event"],
+        data=result,
+        correlation_id=event.correlation_id,
+        tenant_id=event.tenant_id,
+        user_id=event.user_id,
+    )
+```
+
+**`goal.dispatch()` — the key primitive**
+
+`goal.dispatch()` is the planner-side mirror of `task.delegate()` on the Worker side.
+It wraps `context.bus.request()` and auto-propagates `tenant_id`, `user_id`,
+`correlation_id`, and `session_id` from the `GoalContext` — identical to how
+`task.delegate()` auto-propagates context from `TaskContext`. Never use
+`context.bus.request()` directly in an `on_goal` handler.
+
+```python
+# ✅ Correct
+await goal.dispatch(event_type="research.requested", data=payload,
+                   response_event="research.worker.completed")
+
+# ❌ Wrong — manual threading is fragile
+await context.bus.request(event_type="research.requested", data=payload,
+                          response_event="research.worker.completed",
+                          correlation_id=goal.correlation_id,   # easy to forget
+                          tenant_id=goal.tenant_id,             # easy to forget
+                          user_id=goal.user_id)                 # easy to forget
+```
+
+**How goal metadata storage works**
+
+The `@on_goal` SDK hook automatically stores goal routing metadata
+(`response_event`, `response_schema_name`, `tenant_id`, `user_id`) to working
+memory before calling your handler. The `correlation_id` is used as `plan_id`
+because no formal `PlanContext` (and therefore no generated UUID `plan_id`) exists.
+The result handler retrieves this via `context.memory.get_goal_metadata()`.
+
+**Characteristics:**
+- No `PlanContext` or state machine — two plain event handlers
+- `@on_goal` SDK hook auto-saves goal routing metadata to working memory
+- `goal.dispatch()` auto-propagates full auth/correlation context
+- `context.memory.get_goal_metadata()` retrieves routing info in the result handler
+- Client can own the response schema (passed via `response_schema_name` in the goal envelope)
+
+**Contrast with PlanContext pattern:**
+
+| | Lightweight Dispatch | PlanContext State Machine |
+|---|---|---|
+| Workflow steps | 1 worker, 1 hop | Multiple workers, multiple steps |
+| State persistence | Working memory only | Full plan record in Memory Service |
+| Resumability | No | Yes (survives restarts) |
+| Handler structure | 2 `@on_event` handlers | `@on_goal` + `@on_transition` |
+| Memory scope | `plan_id=correlation_id` | `plan_id=plan.plan_id` (generated UUID) |
+
+**Best for:**
+- Runtime worker discovery + LLM-generated payloads
+- Client-owned response schema contracts
+- Single-hop: request → result → respond to client
+- When workflow fits in two event handlers
 
 **Use when:** Goal-driven task decomposition with clear steps
 
