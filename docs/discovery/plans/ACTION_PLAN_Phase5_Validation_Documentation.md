@@ -1,6 +1,6 @@
 # Action Plan: Phase 5 — Validation & Documentation (SOOR-DISC-P5)
 
-**Status:** 📋 Planning  
+**Status:** � In Progress (T5 next — example 12)  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 5 of 5  
 **Refactoring Tasks:** RF-SDK-007 (final verification), RF-SDK-017 (examples), End-to-End Validation  
@@ -169,10 +169,10 @@ Validate the complete Stage 5 implementation through working examples, end-to-en
 | Task | Description | Files Affected | Estimate | TDD Phase | Status |
 |------|-------------|----------------|----------|-----------|--------|
 | **T0** | Extend `_register_with_registry()` to auto-register inline `json_schema` bodies from `AgentCapability.consumed_event` — agent declares schema inline, SDK calls `register_schema`; delete `schema_registration.py` standalone script concept | `sdk/python/soorma/agents/base.py`, `sdk/python/tests/test_agents.py` | 1.5h | RED → GREEN | ✅ |
-| **T1** | Scaffold `examples/11-discovery-llm/` — `.env.example`, `requirements.txt`, stub `*.py`, `start.sh`, `README.md` stub | `examples/11-discovery-llm/` | 30m | N/A | 📋 |
-| **T2** | Implement `worker.py` — declares inline `json_schema` on `AgentCapability.consumed_event`; SDK auto-registers schema + agent via `_register_with_registry()`. No explicit `ctx.registry.register_schema()` call. | `examples/11-discovery-llm/worker.py` | 1h | STUB → GREEN | 📋 |
-| **T3** | Implement `planner.py` — `ctx.registry.discover()`, `ctx.registry.get_schema()`, `ctx.ai.generate_payload()` (NO manual prompt), `ctx.bus.request()` with explicit `response_event` | `examples/11-discovery-llm/planner.py` | 2h | STUB → GREEN | 📋 |
-| **T4** | Complete `README.md` with expected output; verify `./start.sh` runs end-to-end | `examples/11-discovery-llm/README.md`, `start.sh` | 45m | N/A | 📋 |
+| **T1** | Scaffold `examples/11-discovery-llm/` — `.env.example`, `requirements.txt`, stub `*.py`, `start.sh`, `README.md` stub | `examples/11-discovery-llm/` | 30m | N/A | ✅ |
+| **T2** | Implement `worker.py` — declares inline `json_schema` on `AgentCapability.consumed_event`; SDK auto-registers schema + agent via `_register_with_registry()`. No explicit `ctx.registry.register_schema()` call. | `examples/11-discovery-llm/worker.py` | 1h | STUB → GREEN | ✅ |
+| **T3** | Implement `planner.py` — `ctx.registry.discover()`, `ctx.registry.get_schema()`, `ctx.ai.generate_payload()` (NO manual prompt), `goal.dispatch()` with explicit `response_event`; fixed `plan_id=correlation_id` for goal metadata scope | `examples/11-discovery-llm/planner.py` | 2h | STUB → GREEN | ✅ |
+| **T4** | Complete `README.md` with expected output; verify `./start.sh` runs end-to-end | `examples/11-discovery-llm/README.md`, `start.sh` | 45m | N/A | ✅ |
 | **T5** | Scaffold `examples/12-event-selector/` — stub `*.py`, `start.sh`, `.env.example`, `README.md` stub. No `prompts/` dir. | `examples/12-event-selector/` | 30m | N/A | 📋 |
 | **T6** | Implement three workers using `ctx.registry.register_agent()` at startup; each handles its event type | `examples/12-event-selector/technical_worker.py`, `billing_worker.py`, `escalation_worker.py` | 1.5h | STUB → GREEN | 📋 |
 | **T7** | Implement `router.py` — `EventSelector(context=ctx, topic=..., model=...)`, `selector.select_event(state={...})`, `selector.publish_decision(...)`. Zero Jinja2, zero raw LiteLLM. | `examples/12-event-selector/router.py` | 1h | STUB → GREEN | 📋 |
