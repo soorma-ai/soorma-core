@@ -60,6 +60,8 @@ echo ""
 python "$EXAMPLE_DIR/router.py" &
 ROUTER_PID=$!
 
+sleep 2  # Allow router to start and subscribe to events before clients start sending tickets
+
 echo ""
 echo "======================================================================"
 echo "  All Agents Running"
