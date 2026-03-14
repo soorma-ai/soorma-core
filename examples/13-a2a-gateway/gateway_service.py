@@ -5,8 +5,8 @@ Exposes two HTTP endpoints that implement the Google A2A (Agent-to-Agent)
 protocol, bridging external HTTP clients into the Soorma internal event bus.
 
 Endpoints:
-  GET  /.well-known/agent.json  — Publish an A2A Agent Card describing the
-                                   internal research agent's capabilities.
+  GET  /.well-known/agent.json  — Publish an A2A Agent Card aggregating skills
+                                   from all currently registered internal agents.
   POST /a2a/tasks/send          — Accept an A2A Task, route it as an internal
                                    Soorma event, and return the A2A response.
 
@@ -31,7 +31,14 @@ from fastapi import FastAPI, HTTPException
 from soorma.events import EventClient
 from soorma.gateway import A2AGatewayHelper
 from soorma.registry.client import RegistryClient
-from soorma_common.a2a import A2AAgentCard, A2ATask, A2ATaskResponse, A2ATaskStatus
+from soorma_common.a2a import (
+    A2AAgentCard,
+    A2AAuthentication,
+    A2AAuthType,
+    A2ATask,
+    A2ATaskResponse,
+    A2ATaskStatus,
+)
 from soorma_common.events import EventEnvelope, EventTopic
 
 load_dotenv()
@@ -130,31 +137,51 @@ app = FastAPI(
 
 @app.get("/.well-known/agent.json", response_model=Dict[str, Any])
 async def get_agent_card() -> Dict[str, Any]:
-    """Return the A2A Agent Card for the internal research agent.
+    """Return a gateway-level A2A Agent Card aggregating all registered internal agents.
 
-    Queries the Soorma Registry for the first agent named "research-agent",
-    converts the AgentDefinition to an A2A Agent Card, and returns the JSON
-    representation.  External A2A clients use this endpoint to learn what
-    capabilities the gateway exposes.
+    Queries the Soorma Registry with no filter to discover every currently
+    registered agent, converts each AgentDefinition to an A2A Agent Card via
+    A2AGatewayHelper, and merges all their skills into a single gateway card.
+
+    External A2A clients use this endpoint to learn the full set of capabilities
+    the gateway exposes, regardless of how many internal agents are running.
 
     Returns:
         A2A Agent Card JSON as a plain dictionary.
 
     Raises:
-        HTTPException: 404 if no internal agent is registered yet.
+        HTTPException: 503 if no agents are registered yet.
     """
     registry = RegistryClient(base_url=REGISTRY_URL)
-    # Query by name — the internal agent registers as "research-agent"
-    agents = await registry.query_agents(name="research-agent")
+    # No filter — discover every agent currently registered in this tenant
+    agents = await registry.query_agents()
     if not agents:
         raise HTTPException(
-            status_code=404,
-            detail="Internal agent not registered yet — start internal_agent.py first",
+            status_code=503,
+            detail="No agents registered yet — start internal_agent.py first",
         )
-    agent_def = agents[0]
-    card: A2AAgentCard = A2AGatewayHelper.agent_to_card(agent_def, gateway_url=GATEWAY_URL)
-    logger.info("[gateway] Agent Card requested for %s", agent_def.name)
-    return card.model_dump()
+
+    # Aggregate skills from all internal agents into a single gateway-level card.
+    # The gateway IS the A2A endpoint; its skills are the union of all agent capabilities.
+    all_skills = []
+    for agent_def in agents:
+        per_agent_card = A2AGatewayHelper.agent_to_card(agent_def, gateway_url=GATEWAY_URL)
+        all_skills.extend(per_agent_card.skills)
+
+    gateway_card = A2AAgentCard(
+        name="Soorma A2A Gateway",
+        description="Gateway exposing Soorma internal agents via the A2A protocol.",
+        url=GATEWAY_URL,
+        version="1.0.0",
+        skills=all_skills,
+        authentication=A2AAuthentication(schemes=[A2AAuthType.NONE]),
+    )
+    logger.info(
+        "[gateway] Agent Card requested — %d skill(s) from %d agent(s)",
+        len(all_skills),
+        len(agents),
+    )
+    return gateway_card.model_dump()
 
 
 @app.post("/a2a/tasks/send", response_model=Dict[str, Any])
