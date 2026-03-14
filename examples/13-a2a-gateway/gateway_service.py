@@ -15,7 +15,7 @@ SDK patterns shown:
   - A2AGatewayHelper.task_to_event()   — A2ATask         → EventEnvelope
   - A2AGatewayHelper.event_to_response() — EventEnvelope  → A2ATaskResponse
   - EventClient (lifespan)             — NATS pub/sub without requiring a Worker
-  - pending_requests dict              — async Future-per-task response routing
+  - pending_requests dict              — asyncio.Future per task, matched by correlation_id
 """
 
 import asyncio
@@ -190,10 +190,11 @@ async def send_task(task: A2ATask) -> Dict[str, Any]:
 
     The flow is:
       1. Convert the A2A Task to an EventEnvelope via A2AGatewayHelper.
-      2. Register a Future keyed by task.id in _pending_requests.
-      3. Publish the event to the action-requests topic (correlation_id = task.id,
-         response_event = "a2a.response.<task.id>" so the internal agent knows
-         where to publish its result).
+      2. Register a Future keyed by task.id (= correlation_id) in _pending_requests.
+      3. Publish to action-requests with correlation_id=task.id and the canonical
+         response_event="a2a.response" — the internal agent publishes its result
+         to that stable event type, and the lifespan catch-all handler matches
+         the right Future using correlation_id (Soorma standard pattern).
       4. Await the Future with RESPONSE_TIMEOUT seconds.
       5. Convert the response EventEnvelope to an A2ATaskResponse and return.
 
@@ -221,9 +222,10 @@ async def send_task(task: A2ATask) -> Dict[str, Any]:
         user_id=USER_ID,
     )
 
-    # The internal agent publishes its response to this event type on action-results.
-    # We embed the task.id in the event type so it is unique per request.
-    response_event_name: str = f"a2a.response.{task.id}"
+    # Canonical response event type — stable name, not per-task.
+    # Response matching is done on correlation_id (= task.id) by the lifespan
+    # catch-all handler, consistent with the Soorma request/response pattern.
+    response_event_name: str = "a2a.response"
 
     # Register a Future before publishing to avoid a race window
     future: asyncio.Future[EventEnvelope] = asyncio.get_running_loop().create_future()
@@ -241,7 +243,7 @@ async def send_task(task: A2ATask) -> Dict[str, Any]:
             user_id=USER_ID,
         )
         logger.info(
-            "[gateway] Published %s (correlation=%s, response_event=%s)",
+            "[gateway] Published %s (correlation_id=%s, response_event=%s)",
             INTERNAL_EVENT_TYPE,
             task.id,
             response_event_name,

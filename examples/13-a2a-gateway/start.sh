@@ -40,7 +40,7 @@ echo "▶ Starting A2A gateway service on port ${GATEWAY_PORT:-9000}..."
 python gateway_service.py &
 GATEWAY_PID=$!
 
-sleep 1
+sleep 3
 
 echo ""
 echo "============================================================"

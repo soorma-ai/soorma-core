@@ -247,8 +247,9 @@ This separation means:
 The gateway uses a `Dict[str, asyncio.Future]` keyed by `task.id` (= `correlation_id`).
 
 1. Before publishing, the gateway registers a `Future` for the task.
-2. The NATS catch-all handler resolves the appropriate `Future` when a
-   matching correlation_id arrives on `action-results`.
+2. The NATS catch-all handler resolves the appropriate `Future` when an event
+   arrives on `action-results` with a matching `correlation_id` — the standard
+   Soorma request/response pattern.
 3. `asyncio.wait_for()` provides the 30-second timeout.
 
 This pattern is safe for concurrent requests because each `task.id` is unique
@@ -257,11 +258,15 @@ timeout.
 
 ### `response_event` naming convention
 
-The gateway sets `response_event=f"a2a.response.{task.id}"`.  This embeds
-the task ID in the event type, making the response event unique per request.
-The internal agent's `task.complete()` publishes to exactly this event type
-on the `action-results` topic, so the gateway's catch-all handler can match
-it by `correlation_id`.
+The gateway sets `response_event="a2a.response"` — a stable, canonical event
+type name shared across all tasks.  The internal agent's `task.complete()`
+publishes to that event type on the `action-results` topic, carrying the
+original `correlation_id` in the envelope.  The catch-all handler matches the
+right waiting `Future` using `correlation_id`, not the event type name.
+
+This is consistent with how all Soorma worker/planner pairs communicate — the
+event type is semantic ("what happened"), the `correlation_id` is the per-request
+tracking key.
 
 ---
 
