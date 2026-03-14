@@ -117,12 +117,12 @@ spec, not anything about NATS, Soorma events, or internal agent topology.
 curl -s http://localhost:9000/.well-known/agent.json | python -m json.tool
 ```
 
-**Expected response:**
+**Expected response** (skills aggregated from all registered internal agents):
 
 ```json
 {
-  "name": "research-agent",
-  "description": "Performs structured research ...",
+  "name": "Soorma A2A Gateway",
+  "description": "Gateway exposing Soorma internal agents via the A2A protocol.",
   "url": "http://localhost:9000",
   "version": "1.0.0",
   "skills": [
@@ -152,14 +152,26 @@ curl -s -X POST http://localhost:9000/a2a/tasks/send \
   }' | python -m json.tool
 ```
 
-**Expected response:**
+**Expected response** (result data carried in `message.parts`):
 
 ```json
 {
   "id": "task-001",
   "sessionId": null,
   "status": "completed",
-  "message": null,
+  "message": {
+    "role": "agent",
+    "parts": [
+      {
+        "type": "data",
+        "data": {
+          "summary": "Quantum computing leverages superposition and entanglement...",
+          "topic": "Research quantum computing",
+          "sources_consulted": 3
+        }
+      }
+    ]
+  },
   "error": null
 }
 ```
@@ -195,7 +207,7 @@ curl -s -X POST http://localhost:9000/a2a/tasks/send \
 [research-agent] ▶ Research requested: 'Research quantum computing'
 [research-agent]   task_id=<uuid>
 [research-agent]   correlation_id=task-001
-[research-agent]   response_event=a2a.response.task-001
+[research-agent]   response_event=a2a.response
 [research-agent] ✓ Research complete — publishing result
 ```
 
@@ -206,8 +218,8 @@ INFO:     Application startup complete.
 [gateway] EventClient connected — subscribed to action-results
 ...
 [gateway] Received A2A task id=task-001
-[gateway] Published research.requested (correlation=task-001, response_event=a2a.response.task-001)
-[gateway] Received response for task task-001 (event_type=a2a.response.task-001)
+[gateway] Published research.requested (correlation_id=task-001, response_event=a2a.response)
+[gateway] Received response for task task-001 (event_type=a2a.response)
 [gateway] ✓ Returning A2A response for task task-001 (status=completed)
 ```
 

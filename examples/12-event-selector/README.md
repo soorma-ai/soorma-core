@@ -126,8 +126,6 @@ python client.py billing
 python client.py escalation
 ```
 
-Or send a raw event manually:
-
 ## Expected Output
 
 ```
