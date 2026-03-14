@@ -1,8 +1,8 @@
 # Service Discovery: User Guide
 
-**Status:** 🟢 Implementation In Progress (Phase 4 📋 Planning)
-**Last Updated:** March 1, 2026  
-**Stage Progress:** Phase 1 ✅ | Phase 2 ✅ | Phase 3 📋 | Phase 4 📋
+**Status:** 🟢 Implementation In Progress (Phase 4 �, Phase 5 🟡)
+**Last Updated:** March 14, 2026  
+**Stage Progress:** Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 🔄 | Phase 5 🟡
 
 ### Phase Status
 
@@ -12,7 +12,7 @@
 | Phase 2 | Service Implementation - Schema & Discovery endpoints | ✅ Complete (80 tests passing) |
 | Phase 3 | SDK Methods, EventSelector, A2A Gateway | ✅ Complete — [ACTION_PLAN_Phase3](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
 | Phase 4 | Tracker NATS Integration | � In Progress — [ACTION_PLAN_Phase4](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
-| Phase 5 | Examples & Documentation | ⬜ Not started |
+| Phase 5 | Examples & Documentation | 🟡 In Progress (T9–T12 ✅, T13 next) — [ACTION_PLAN_Phase5](plans/ACTION_PLAN_Phase5_Validation_Documentation.md) |
 
 ---
 
@@ -30,9 +30,9 @@ The Discovery System enables **dynamic agent discovery** and **capability-based 
 - ✅ Enhanced agent discovery endpoint (`GET /v1/agents/discover`)
 - ✅ `AgentCapability` with structured `EventDefinition` objects (breaking change in v0.8.1)
 - ✅ PostgreSQL RLS enforcing multi-tenant isolation
-- 📋 `context.registry.discover()` returning `List[DiscoveredAgent]` (Phase 3)
-- 📋 `EventSelector` utility for LLM-based routing (Phase 3)
-- 📋 `A2AGatewayHelper` for external protocol conversion (Phase 3)
+- ✅ `context.registry.discover()` returning `List[DiscoveredAgent]` (Phase 3)
+- ✅ `EventSelector` utility for LLM-based routing (Phase 3 — `soorma.ai.selection`)
+- ✅ `A2AGatewayHelper` for external protocol conversion (Phase 3 — `soorma.gateway`)
 
 ---
 
@@ -133,10 +133,10 @@ schema = await context.registry.get_schema("research_request_v1")
 schema_v1 = await context.registry.get_schema("research_request_v1", version="1.0.0")
 ```
 
-### Agent Discovery (Phase 3 — coming soon)
+### Agent Discovery (Phase 3 — Available)
 
 ```python
-# Phase 3: discover() with requirements (returns List[DiscoveredAgent])
+# discover() — returns List[DiscoveredAgent] with full schema info (Phase 3)
 agents = await context.registry.discover(
     requirements=["web_research"],
     include_schemas=True,
@@ -145,9 +145,14 @@ for agent in agents:
     schemas = agent.get_consumed_schemas()  # ["research_request_v1"]
     schema = await context.registry.get_schema(schemas[0])
 
-# Current: discover_agents() — returns basic AgentDefinition list
+# discover_agents() — returns basic AgentDefinition list (lower-level)
 agents = await context.registry.discover_agents(
     consumed_event="web.research.requested"
+)
+
+# query_agents() — query by capability name
+agents = await context.registry.query_agents(
+    capabilities=["web_research"]
 )
 ```
 
@@ -275,23 +280,26 @@ async def route_ticket(goal: GoalEvent, ctx: PlatformContext):
 
 ---
 
-## EventSelector Utility (Phase 3)
+## EventSelector Utility
 
 **Purpose:** LLM-driven event selection from Registry. Prevents hallucinations by validating selected events exist before publishing.
 
-**Status:** 📋 Phase 3 — [ACTION_PLAN_Phase3](plans/ACTION_PLAN_Phase3_SDK_Implementation.md)
+**Status:** ✅ Phase 3 Complete — `sdk/python/soorma/ai/selection.py`
+
+**See also:** [Example 12: EventSelector Routing](../../examples/12-event-selector/)
 
 **Features:**
-- Queries Registry via `context.toolkit.discover_events()` (existing `EventToolkit`)
+- Queries Registry via `context.toolkit.discover_events()` (reuses `EventToolkit`)
 - Uses LiteLLM — BYO model (gpt-4o-mini, ollama, claude, etc.)
-- Returns `EventDecision` DTO with `event_type`, `payload`, `reasoning`, `confidence`
-- Validates LLM-selected event exists in discovered list before returning
+- Returns `EventDecision` DTO with `event_type`, `payload`, `reasoning`
+- Validates LLM-selected event exists in discovered list before publishing (no hallucinations)
 - Custom prompt templates via f-string substitution
+- Raises `EventSelectionError` on failure for caller to handle gracefully
 
-**Planned API:**
+**API:**
 
 ```python
-from soorma.ai.selection import EventSelector
+from soorma.ai.selection import EventSelector, EventSelectionError
 from soorma_common.events import EventTopic
 
 selector = EventSelector(
@@ -300,27 +308,31 @@ selector = EventSelector(
     model="gpt-4o-mini",
 )
 
-decision = await selector.select_event(state={"input": "route this ticket"})
-# EventDecision(event_type="billing.issue.requested", payload={...}, reasoning="...")
+try:
+    decision = await selector.select_event(state={"input": "route this ticket"})
+    # EventDecision(event_type="billing.issue.requested", payload={...}, reasoning="...")
 
-await selector.publish_decision(
-    decision=decision,
-    correlation_id="corr-001",
-    response_event="ticket.routed",
-)
+    await selector.publish_decision(
+        decision=decision,
+        correlation_id="corr-001",
+        response_event="ticket.routed",
+    )
+except EventSelectionError as e:
+    # Handle gracefully — e.g., route to escalation
+    logger.warning(f"EventSelector failed: {e}")
 ```
 
 ---
 
-## Stage 5 Enhancements (Planned)
+## Implemented Features (Phase 1 & 2)
 
-### RF-ARCH-005: Schema Registration by Name
+The following capabilities were introduced in **Phase 1** and **Phase 2** as part of the v0.8.1 release. They are now stable and fully operational.
 
-**Change:** Register **payload schemas by schema name**, not event name.
+### ✅ RF-ARCH-005: Schema Registration by Name
 
-**Rationale:** Dynamic event names (caller-specified `response_event`) require schemas to be decoupled from event names.
+**Implemented in Phase 1/2.** Payload schemas are registered by name, decoupled from event names. This supports dynamic `response_event` names that vary per call.
 
-**Planned Schema:**
+**Schema:**
 
 ```python
 class PayloadSchema(BaseDTO):
@@ -356,17 +368,17 @@ await context.registry.register_event(
 )
 ```
 
-### RF-ARCH-006: Structured Capabilities
+### ✅ RF-ARCH-006: Structured Capabilities
 
-**Change:** Capabilities include full `EventDefinition` objects, not just names.
+**Implemented in Phase 1.** Capabilities include full `EventDefinition` objects (not just string names), enabling LLM agents to reason about consumed and produced event schemas without additional lookups.
 
-**Planned Structure:**
+**Structure:**
 
 ```python
 class AgentCapability(BaseDTO):
     task_name: str
     description: str
-    consumed_event: EventDefinition  # Full schema
+    consumed_event: EventDefinition  # Full schema reference
     produced_events: List[EventDefinition]
     examples: Optional[List[Dict[str, Any]]]
 
@@ -382,11 +394,11 @@ class EventDefinition(BaseDTO):
 - No separate schema lookup required
 - Examples guide payload generation
 
-### RF-ARCH-007: Enhanced Discovery API
+### ✅ RF-ARCH-007: Enhanced Discovery API
 
-**Change:** Discovery returns full schemas for LLM-based delegation.
+**Implemented in Phase 2.** `GET /v1/agents/discover` returns full structured capabilities (capabilities with `EventDefinition` objects) for LLM-based delegation.
 
-**Planned Endpoint:**
+**Endpoint:**
 
 ```python
 GET /v1/agents/discover?capabilities=web_search&include_events=true
@@ -419,6 +431,48 @@ Response:
         }
     ]
 }
+```
+
+---
+
+## A2A Gateway Helper
+
+**Purpose:** Convert between Soorma DTOs and the [Google A2A (Agent-to-Agent) protocol](https://google.github.io/agent-to-agent/), enabling external systems to interact with Soorma agents via a standard protocol.
+
+**Status:** ✅ Phase 3 Complete — `sdk/python/soorma/gateway.py`
+
+**See also:** [Example 13: A2A Gateway](../../examples/13-a2a-gateway/)
+
+**All methods are static helpers — no constructor or service calls needed.**
+
+| Method | Purpose |
+|--------|---------|
+| `agent_to_card(agent, gateway_url)` | `AgentDefinition` → `A2AAgentCard` (skills from capabilities) |
+| `task_to_event(task, event_type)` | `A2ATask` → `EventEnvelope` for internal dispatch |
+| `event_to_response(event, task_id)` | `EventEnvelope` → `A2ATaskResponse` with `message` populated |
+
+**Usage:**
+
+```python
+from soorma.gateway import A2AGatewayHelper
+
+# Serve an agent card for external discovery
+card = A2AGatewayHelper.agent_to_card(
+    agent=my_agent_definition,
+    gateway_url="https://gateway.example.com/a2a",
+)
+
+# Convert incoming A2A task to Soorma event
+envelope = A2AGatewayHelper.task_to_event(
+    task=incoming_a2a_task,
+    event_type="research.requested",
+)
+
+# Convert Soorma result event back to A2A response
+response = A2AGatewayHelper.event_to_response(
+    event=result_envelope,
+    task_id=incoming_a2a_task.id,
+)
 ```
 
 ---
@@ -469,7 +523,7 @@ async def heartbeat_loop(context, agent_id):
 asyncio.create_task(heartbeat_loop(context, "my-agent"))
 ```
 
-### Pattern: Schema Validation (Stage 5)
+### Pattern: Schema Validation
 
 ```python
 # Get schema for validation
@@ -501,8 +555,11 @@ Environment variables for Registry Service:
 
 ## Examples
 
-- [examples/07-tool-discovery](../../examples/07-tool-discovery/) - Dynamic capability discovery
-- [examples/09-app-research-advisor](../../examples/09-app-research-advisor/) - Uses EventSelector
+| Example | Pattern | What It Shows |
+|---------|---------|---------------|
+| [11-discovery-llm](../../examples/11-discovery-llm/) | Lightweight Dispatch + Dynamic Discovery | ChoreographyPlanner discovers a Worker at runtime via `context.registry.query_agents()` and uses `generate_payload()` to build LLM-generated event payloads |
+| [12-event-selector](../../examples/12-event-selector/) | EventSelector LLM Routing | Router receives a generic ticket event and uses `EventSelector` to route it to the best specialist worker using LLM reasoning over discovered events |
+| [13-a2a-gateway](../../examples/13-a2a-gateway/) | A2A Protocol Gateway | FastAPI gateway exposes an A2A-compatible endpoint (`/.well-known/agent.json`, `POST /a2a/tasks/send`) using `A2AGatewayHelper` to convert between A2A protocol and internal Soorma events |
 
 ---
 
@@ -515,25 +572,30 @@ Environment variables for Registry Service:
 - ✅ Heartbeat TTL and cleanup
 - ✅ Basic query API
 - ✅ Agent deduplication by name
-- ✅ **v0.8.1:** `PayloadSchema` DTO and `payload_schemas` table (Phase 1)
-- ✅ **v0.8.1:** `AgentCapability` with `EventDefinition` objects — breaking change (Phase 1)
-- ✅ **v0.8.1:** PostgreSQL RLS for multi-tenant isolation (Phase 1)
-- ✅ **v0.8.1:** `POST /v1/schemas`, `GET /v1/schemas/{name}`, `GET /v1/schemas/{name}/versions/{ver}` (Phase 2)
-- ✅ **v0.8.1:** `GET /v1/agents/discover` capability-based discovery endpoint (Phase 2)
-- ✅ **v0.8.1:** `RegistryClient.register_schema()`, `get_schema()`, `list_schemas()`, `discover_agents()` (Phase 2)
+- ✅ **v0.8.1 Phase 1:** `PayloadSchema` DTO and `payload_schemas` table
+- ✅ **v0.8.1 Phase 1:** `AgentCapability` with `EventDefinition` objects (breaking change)
+- ✅ **v0.8.1 Phase 1:** PostgreSQL RLS for multi-tenant isolation
+- ✅ **v0.8.1 Phase 2:** `POST /v1/schemas`, `GET /v1/schemas/{name}`, `GET /v1/schemas/{name}/versions/{ver}`
+- ✅ **v0.8.1 Phase 2:** `GET /v1/agents/discover` capability-based discovery endpoint
+- ✅ **v0.8.1 Phase 2:** `RegistryClient.register_schema()`, `get_schema()`, `list_schemas()`, `discover_agents()`
+- ✅ **v0.8.1 Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
+- ✅ **v0.8.1 Phase 3:** `EventSelector` utility — `soorma.ai.selection` (RF-SDK-017)
+- ✅ **v0.8.1 Phase 3:** `A2AGatewayHelper` — `soorma.gateway`
+- ✅ **v0.8.1 Phase 3:** `EventDecision` DTO in `soorma_common.decisions`
+- ✅ **v0.8.1 Phase 5 (T0–T12):** Auto-registration in `_register_with_registry()` with schema inference
+- ✅ **v0.8.1 Phase 5 (T9–T12):** Examples 11 (LLM discovery), 12 (EventSelector), 13 (A2A Gateway)
 
 ### In Progress
 
-- 📋 **Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
-- 📋 **Phase 3:** `EventSelector` utility (RF-SDK-017)
-- 📋 **Phase 3:** `A2AGatewayHelper` for A2A protocol conversion
-- 📋 **Phase 3:** `EventDecision` DTO
+- 🔄 **Phase 4:** Tracker Service NATS integration (TECH-DEBT-001)
+- 🟡 **Phase 5 (T13):** Integration test `test_e2e_discovery.py`
+- 🟡 **Phase 5 (T14):** Integration test `test_multi_tenant_isolation.py`
+- 🟡 **Phase 5 (T15):** Integration test `test_a2a_gateway_roundtrip.py`
+- 🟡 **Phase 5 (T16–T17):** Final doc and CHANGELOG updates
 
 ### Not Started
 
 - ⬜ Phase 4: Tracker Service NATS integration (TECH-DEBT-001)
-- ⬜ Phase 5: Examples 11 (LLM discovery), 12 (EventSelector), 13 (A2A gateway)
-- ⬜ Phase 5: Documentation updates
 
 ---
 
