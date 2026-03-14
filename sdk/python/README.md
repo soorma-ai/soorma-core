@@ -14,7 +14,16 @@ We're in active pre-launch refactoring to solidify architecture and APIs before 
 
 **Learn more:** [soorma.ai](https://soorma.ai)
 
-### What's New in v0.8.0
+### What's New in v0.8.2
+
+- **🔍 Agent Discovery** - `context.registry.discover()` finds active agents by consumed event; returns `DiscoveredAgent` list with schema helpers
+- **📋 Schema Registry** - Register and retrieve JSON payload schemas via `context.registry.register_schema()` / `get_schema()` / `list_schemas()`
+- **🔗 A2A Gateway** - `A2AGateway` adapter exposes any Soorma agent via the Agent-to-Agent (A2A) protocol (`GET /.well-known/agent.json`, `POST /`)
+- **🔌 EventSelector** - Discover agents that handle a specific event before publishing
+- **📦 soorma-nats** - New shared `NATSClient` library (`libs/soorma-nats/`); Tracker Service no longer depends on SDK
+- **✅ Integration Test Suite** - 11 in-process tests (E2E discovery, multi-tenant isolation, A2A round-trip)
+
+### What's New in v0.8.1
 
 - **🤖 ChoreographyPlanner** - LLM-based autonomous orchestration (50+ model providers via LiteLLM)
 - **📊 PlanContext** - State machine for multi-step workflows with pause/resume
@@ -73,7 +82,7 @@ Soorma provides **four agent patterns** for building distributed AI systems:
 - **ChoreographyPlanner** - Autonomous LLM-based orchestration
 
 **Platform Services:**
-- `context.registry` - Service discovery & capability lookup
+- `context.registry` - Service discovery, agent registration, schema registry & A2A discovery (`discover()`, `register_schema()`, `list_schemas()`)
 - `context.memory` - Distributed state (Semantic, Episodic, Working, Plan context)
 - `context.bus` - Event choreography (pub/sub)
 - `context.tracker` - Observability & progress tracking
@@ -112,7 +121,7 @@ Workers handle multi-step, stateful tasks with delegation:
 
 ```python
 from soorma import Worker
-from soorma.task_context import TaskContext, ResultContext
+from soorma.task_context import TaskContext, ResultContext, DelegationSpec
 
 worker = Worker(name="order-processor")
 
@@ -158,7 +167,8 @@ Planners orchestrate multi-step workflows using state machines:
 
 ```python
 from soorma import Planner
-from soorma.workflow import StateConfig, StateTransition, StateAction
+from soorma.plan_context import PlanContext
+from soorma_common.state import StateConfig, StateTransition, StateAction
 
 planner = Planner(name="approval-workflow")
 
@@ -195,11 +205,11 @@ async def handle_transition(event, context, plan, next_state):
 ChoreographyPlanner uses LLMs to autonomously decide next actions:
 
 ```python
-from soorma.agents.planner import ChoreographyPlanner
+from soorma.ai.choreography import ChoreographyPlanner
 
 planner = ChoreographyPlanner(
     name="research-planner",
-    model="gpt-4",  # or azure/gpt-4, anthropic/claude-3, ollama/llama3, etc.
+    reasoning_model="gpt-4o",  # or azure/gpt-4o, anthropic/claude-3-opus, ollama/llama2, etc.
     api_key=os.getenv("OPENAI_API_KEY"),  # BYO credentials
     system_instructions="You are a research assistant...",
     max_actions=10  # Circuit breaker
@@ -280,6 +290,9 @@ The `soorma dev` command runs infrastructure (Registry, NATS, Event Service, Mem
 8. [08-worker-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/08-worker-basic) - Task delegation (parallel)
 9. [09-planner-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/09-planner-basic) - State machine workflows
 10. [10-choreography-basic](https://github.com/soorma-ai/soorma-core/tree/main/examples/10-choreography-basic) - Autonomous LLM planning
+11. [11-discovery-llm](https://github.com/soorma-ai/soorma-core/tree/main/examples/11-discovery-llm) - LLM-based dynamic discovery & lightweight dispatch
+12. [12-event-selector](https://github.com/soorma-ai/soorma-core/tree/main/examples/12-event-selector) - Intelligent event routing with EventSelector
+13. [13-a2a-gateway](https://github.com/soorma-ai/soorma-core/tree/main/examples/13-a2a-gateway) - A2A protocol gateway integration
 
 ## Contributing & Support
 

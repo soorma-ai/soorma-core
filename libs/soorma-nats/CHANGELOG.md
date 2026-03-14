@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-03-02
+## [0.8.2] - 2026-03-14
+
+### Changed
+- Version alignment: bumped to 0.8.2 (all components synchronized)
+
+
 
 ### Added
 - Initial release: `NATSClient` for Soorma infrastructure services

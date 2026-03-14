@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-03-14
+## [0.8.2] - 2026-03-14
+
+### Changed
+- **Version alignment**: All components bumped to 0.8.2 to align with integration test suite completion
+  - `soorma-common`, `soorma-nats`, `soorma-core` SDK: 0.8.1 → 0.8.2
+  - Registry, Tracker, Memory, Event Service: 0.8.1 → 0.8.2
+
+### Documentation
+- **soorma-common README**: Updated `AgentCapability` example to v0.8.1+ `EventDefinition` API (breaking change from strings); added Schema Registry, `DiscoveredAgent`, and A2A models sections
+- **SDK README**: Added "What's New in v0.8.1" section covering Agent Discovery, Schema Registry, A2A Gateway, `soorma-nats`, and integration test suite
+
+
 
 ### Added
 - **Stage 5 - Discovery & A2A Integration** (March 1–2, 2026)

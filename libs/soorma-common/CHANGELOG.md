@@ -6,7 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
-## [0.8.1] - 2026-02-28
+## [0.8.2] - 2026-03-14
+
+### Changed
+- Version alignment: bumped to 0.8.2 (all components synchronized)
+
+### Documentation
+- README: Fixed `AgentCapability` code example — `consumed_event` and `produced_events` now shown using `EventDefinition` objects (v0.8.1+ breaking change); string-based example removed
+- README: Added **Schema Registry** models section (`PayloadSchema`, `PayloadSchemaRegistration`, `PayloadSchemaResponse`, `PayloadSchemaRegistrationRequest`, `PayloadSchemaListResponse`)
+- README: Added `DiscoveredAgent` to Agent Registry models section
+- README: Added **A2A** models section (`A2AAgentCard`, `A2ATask`, `A2AMessage`, `A2APart`, `A2ATaskResponse`, `A2ATaskStatus`, `A2AAuthType`, `A2AAuthentication`, `A2ASkill`)
+
+
 
 ### Fixed
 - **`PayloadSchemaRegistrationRequest.schema` field renamed to `payload_schema`** (March 2, 2026)

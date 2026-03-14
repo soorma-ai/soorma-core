@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-03-14
+## [0.8.2] - 2026-03-14
+
+### Changed
+- Version alignment: bumped to 0.8.2 (all components synchronized)
+
+### Documentation
+- README: Added "What's New in v0.8.1" section covering Agent Discovery, Schema Registry, A2A Gateway, `soorma-nats`, and integration test suite
+- README: Updated `context.registry` description to reference `discover()`, `register_schema()`, `list_schemas()`
+
+
 
 ### Added
 - **Integration Test Suite** (March 14, 2026)

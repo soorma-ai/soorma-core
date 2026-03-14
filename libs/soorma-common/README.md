@@ -20,7 +20,7 @@ from soorma_common.models import (
     WorkingMemorySet,
 )
 
-# Create an agent definition
+# Create an agent definition (v0.8.1+: consumed_event and produced_events require EventDefinition objects)
 agent = AgentDefinition(
     agent_id="my-agent",
     name="My Agent",
@@ -29,8 +29,23 @@ agent = AgentDefinition(
         AgentCapability(
             task_name="process_data",
             description="Process incoming data",
-            consumed_event="data.received",
-            produced_events=["data.processed", "data.error"]
+            consumed_event=EventDefinition(
+                event_name="data.received",
+                topic="action-requests",
+                description="Incoming data event"
+            ),
+            produced_events=[
+                EventDefinition(
+                    event_name="data.processed",
+                    topic="action-results",
+                    description="Successfully processed data"
+                ),
+                EventDefinition(
+                    event_name="data.error",
+                    topic="action-results",
+                    description="Data processing error"
+                ),
+            ]
         )
     ]
 )
@@ -66,14 +81,37 @@ working = WorkingMemorySet(
 - `AgentRegistrationResponse` - Response after registering an agent
 - `AgentQueryRequest` - Request to query agents
 - `AgentQueryResponse` - Response containing agent definitions
+- `DiscoveredAgent` - Agent discovery result; includes full `AgentCapability` list with `get_consumed_schemas()` / `get_produced_schemas()` helpers
+
+### Schema Registry (v0.8.1+)
+
+- `PayloadSchema` - Schema definition with semantic versioning (`schema_name`, `version`, `json_schema`)
+- `PayloadSchemaRegistration` - Request to register a new schema (body; auth headers provide tenant/user)
+- `PayloadSchemaResponse` - Registration response with `schema_name`, `version`, `success`, `message`
+- `PayloadSchemaRegistrationRequest` - Envelope wrapping `PayloadSchema` in `schema` key
+- `PayloadSchemaListResponse` - Response containing a list of `PayloadSchema` entries
 
 ### Event Registry
 
-- `EventDefinition` - Defines a single event in the system
+- `EventDefinition` - Defines a single event in the system (v0.8.1+: add `payload_schema_name` / `response_schema_name` for Schema Registry references)
 - `EventRegistrationRequest` - Request to register a new event
 - `EventRegistrationResponse` - Response after registering an event
 - `EventQueryRequest` - Request to query events
 - `EventQueryResponse` - Response containing event definitions
+
+### A2A (Agent-to-Agent Protocol, v0.8.1+)
+
+> Import from `soorma_common.a2a`
+
+- `A2AAgentCard` - Agent capability advertisement card (name, description, URL, skills)
+- `A2ASkill` - Individual skill entry advertised in an agent card
+- `A2AAuthentication` - Authentication descriptor for an A2A agent card
+- `A2ATask` - A2A task representation (id, messages, current status)
+- `A2ATaskStatus` - Enum: `submitted`, `working`, `completed`, `failed`, `canceled`
+- `A2AMessage` - Message in an A2A task conversation (role + parts)
+- `A2APart` - Content part of an A2A message (`text` or `data`)
+- `A2ATaskResponse` - Response payload returned from an A2A task handler
+- `A2AAuthType` - Enum: `none`, `bearer_token`, `api_key`
 
 ### Memory Service (CoALA Framework)
 
