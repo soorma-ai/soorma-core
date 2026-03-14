@@ -151,17 +151,35 @@ def print_agent_card(card: Dict[str, Any]) -> None:
 
 
 def print_task_response(response: Dict[str, Any], query: str) -> None:
-    """Pretty-print an A2A Task Response.
+    """Pretty-print an A2A Task Response including the result message.
 
     Args:
         response: Parsed A2A Task Response dict.
         query: The original query (for context display).
     """
     status = response.get("status", "unknown")
-    icon = "✅" if status == "completed" else "❌"
+    icon = "\u2705" if status == "completed" else "\u274c"
     print(f"  {icon} Task {response.get('id')}")
     print(f"     Query:   {query!r}")
     print(f"     Status:  {status}")
+
+    # Display result data from the agent's response message
+    message = response.get("message")
+    if message:
+        parts = message.get("parts", [])
+        for part in parts:
+            if part.get("type") == "data" and part.get("data"):
+                data = part["data"]
+                # Show each field of the result on its own line
+                for key, value in data.items():
+                    # Wrap long strings for readability
+                    display = str(value)
+                    if len(display) > 120:
+                        display = display[:117] + "..."
+                    print(f"     {key}: {display}")
+            elif part.get("type") == "text" and part.get("text"):
+                print(f"     Result:  {part['text']}")
+
     if response.get("error"):
         print(f"     Error:   {response['error']}")
     print()
