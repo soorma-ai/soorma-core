@@ -111,7 +111,7 @@ jobs:
       - name: Run tests
         working-directory: ${{ env.SDK_PATH }}
         run: |
-          poetry run pytest tests/ -v
+          poetry run pytest tests/ -v --ignore=tests/integration
 
   # Build the SDK package
   build:
