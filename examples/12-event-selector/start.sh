@@ -71,7 +71,10 @@ echo "  Escalation Worker PID: $ESCALATION_PID"
 echo "  Router PID:            $ROUTER_PID"
 echo ""
 echo "Next Step: Submit a support ticket from another terminal"
-echo "  See README.md for the ticket submission snippet"
+echo "  cd $EXAMPLE_DIR"
+echo "  python client.py technical   # routes to technical-worker"
+echo "  python client.py billing     # routes to billing-worker"
+echo "  python client.py escalation  # routes to escalation-worker"
 echo ""
 
 wait

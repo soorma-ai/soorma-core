@@ -113,74 +113,20 @@ pip install -r requirements.txt
 
 ## Send a Test Ticket
 
-In a separate terminal, publish a `ticket.submitted` event to see routing in action.
+With `./start.sh` running, open a second terminal and use the test client:
 
-**Technical ticket (bug report):**
+```bash
+# Technical ticket (API bug report) — routes to technical-worker
+python client.py technical
 
-```python
-import asyncio, os
-from dotenv import load_dotenv
-from soorma import EventClient
+# Billing ticket (charge dispute) — routes to billing-worker
+python client.py billing
 
-load_dotenv()
-
-async def main():
-    client = EventClient(
-        event_bus_url=os.environ["EVENT_BUS_URL"],
-        tenant_id=os.environ["TENANT_ID"],
-        user_id=os.environ["USER_ID"],
-    )
-    await client.connect()
-    await client.publish(
-        topic="action-requests",
-        event_type="ticket.submitted",
-        data={
-            "ticket_id": "TKT-001",
-            "customer": "Acme Corp",
-            "subject": "API returns 500 on /orders endpoint since yesterday's deploy",
-            "description": "Our integration started failing after your platform update. "
-                           "POST /orders returns HTTP 500 with no response body.",
-        },
-    )
-    await client.disconnect()
-    print("Ticket submitted!")
-
-asyncio.run(main())
+# Escalation ticket (enterprise churn risk) — routes to escalation-worker
+python client.py escalation
 ```
 
-**Billing ticket (refund request):**
-
-```python
-await client.publish(
-    topic="action-requests",
-    event_type="ticket.submitted",
-    data={
-        "ticket_id": "TKT-002",
-        "customer": "Beta Ltd",
-        "subject": "Charged twice for February invoice",
-        "description": "We were billed $2,400 twice for the same billing period. "
-                       "Invoice INV-2026-002 appears to be a duplicate.",
-        "metadata": {"invoice_id": "INV-2026-002", "amount": 2400.0},
-    },
-)
-```
-
-**Escalation ticket (enterprise churn risk):**
-
-```python
-await client.publish(
-    topic="action-requests",
-    event_type="ticket.submitted",
-    data={
-        "ticket_id": "TKT-003",
-        "customer": "Gamma Enterprise",
-        "subject": "Evaluating contract renewal — service quality concerns",
-        "description": "Our executive team is reviewing the contract renewal. "
-                       "We have experienced 3 outages in Q1 and need an SLA review.",
-        "metadata": {"contract_value": 250_000.0},
-    },
-)
-```
+Or send a raw event manually:
 
 ## Expected Output
 
