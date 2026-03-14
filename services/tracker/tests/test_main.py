@@ -14,7 +14,7 @@ def test_imports_work():
     from tracker_service.core.config import settings
     from tracker_service.core.db import get_db, init_db, close_db
     
-    assert __version__ == "0.8.1"
+    assert __version__ == "0.8.2"
     assert app is not None
     assert settings is not None
     assert get_db is not None

@@ -7,9 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-03-02
+## [0.8.2] - 2026-03-14
+
+### Changed
+- Version alignment: bumped to 0.8.2 (all components synchronized)
+
+### Documentation
+- README: Added "What's New in v0.8.1" section covering Agent Discovery, Schema Registry, A2A Gateway, `soorma-nats`, and integration test suite
+- README: Updated `context.registry` description to reference `discover()`, `register_schema()`, `list_schemas()`
+
+
 
 ### Added
+- **Integration Test Suite** (March 14, 2026)
+  - `tests/integration/` — new in-process integration test package (11 tests, 0 external services required)
+  - `tests/integration/conftest.py`: Shared fixtures using `httpx.ASGITransport` + SQLite; `make_registry_client()` factory for per-tenant in-process registry clients
+  - `tests/integration/test_e2e_discovery.py` (T13): 5 tests covering schema registration, agent discover lifecycle, schema versioning, deregistration, and empty discover
+  - `tests/integration/test_multi_tenant_isolation.py` (T14): 2 tests verifying cross-tenant data isolation via X-Tenant-ID header enforcement
+  - `tests/integration/test_a2a_gateway_roundtrip.py` (T15): 4 tests covering A2A agent card aggregation, 503 edge cases, and full task round-trip with mock EventClient
+  - `pyproject.toml`: `[tool.pytest.ini_options]` with `integration` marker — integration tests are excluded from the regular test run via `-m "not integration"`
 - **Phase 3 - SDK RegistryClient Extensions (RF-SDK-018)** (March 1, 2026)
   - `RegistryClient.register_schema()`: Register payload schemas with the Registry Service
   - `RegistryClient.get_schema()`: Retrieve a schema by name (latest version)

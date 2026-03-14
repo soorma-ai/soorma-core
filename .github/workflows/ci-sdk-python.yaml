@@ -101,13 +101,46 @@ jobs:
       - name: Run tests
         working-directory: ${{ env.SDK_PATH }}
         run: |
-          poetry run pytest tests/ -v --tb=short
+          poetry run pytest tests/ -v --tb=short -m "not integration" --ignore=tests/integration
 
       - name: Test CLI installation
         working-directory: ${{ env.SDK_PATH }}
         run: |
           poetry run soorma version
           poetry run soorma --help
+
+  test-integration:
+    runs-on: ubuntu-latest
+    needs: [test-sdk]
+    if: github.event_name == 'push'   # Only runs when a PR is merged into main, not on every PR commit
+    strategy:
+      matrix:
+        python-version: ['3.11']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          # Install soorma-common local editable
+          poetry add --editable ../../libs/soorma-common
+          poetry install
+          # Install registry-service for in-process ASGI transport tests
+          poetry run pip install -e ../../services/registry
+
+      - name: Run integration tests
+        working-directory: ${{ env.SDK_PATH }}
+        run: |
+          poetry run pytest tests/integration/ -v --tb=short -m integration
 
   build:
     runs-on: ubuntu-latest
