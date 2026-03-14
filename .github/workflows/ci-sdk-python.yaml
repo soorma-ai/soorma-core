@@ -101,7 +101,7 @@ jobs:
       - name: Run tests
         working-directory: ${{ env.SDK_PATH }}
         run: |
-          poetry run pytest tests/ -v --tb=short -m "not integration"
+          poetry run pytest tests/ -v --tb=short -m "not integration" --ignore=tests/integration
 
       - name: Test CLI installation
         working-directory: ${{ env.SDK_PATH }}
