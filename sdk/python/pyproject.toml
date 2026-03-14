@@ -36,6 +36,11 @@ pytest-asyncio = "^0.23.0"
 [tool.poetry.scripts]
 soorma = "soorma.cli.main:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: in-process integration tests (run on push to main only, not on every PR commit)",
+]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
