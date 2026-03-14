@@ -76,9 +76,40 @@ chmod +x start.sh
 ./start.sh
 ```
 
+### 5. Run the client driver (in a second terminal)
+
+```bash
+# Full demo: show Agent Card, then send 3 tasks
+python client.py
+
+# Just view the Agent Card
+python client.py card
+
+# Send a single task
+python client.py send "Research quantum computing"
+
+# Free-text shorthand — same as send
+python client.py What is blockchain?
+```
+
 ---
 
-## Manual Test
+## Client Driver (`client.py`)
+
+The client mirrors how a real external A2A caller would interact with the
+gateway — using plain HTTP, with no Soorma SDK imports:
+
+1. **Discover** — `GET /.well-known/agent.json` → parse the Agent Card,
+   display the name, description, and available skills.
+2. **Use** — read `skills[0].inputSchema` to understand accepted input,
+   then `POST /a2a/tasks/send` with a conforming message.
+
+This separation is the point: external callers only need to understand the A2A
+spec, not anything about NATS, Soorma events, or internal agent topology.
+
+---
+
+## Manual Test (curl)
 
 ### Discover agent capabilities (A2A Agent Card)
 
@@ -189,7 +220,8 @@ examples/13-a2a-gateway/
 ├── README.md               ← This file
 ├── .env.example            ← Environment variable template
 ├── requirements.txt        ← Python dependencies
-├── start.sh                ← Starts all processes
+├── start.sh                ← Starts all processes + shows client commands
+├── client.py               ← A2A client driver: discover card, send tasks
 ├── gateway_service.py      ← FastAPI A2A gateway (A2AGatewayHelper + EventClient)
 └── internal_agent.py       ← Soorma Worker (no A2A knowledge)
 ```
