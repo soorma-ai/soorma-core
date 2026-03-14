@@ -68,10 +68,11 @@ class EventToolkit:
     
     def _format_event_descriptor(self, event: EventDefinition) -> Dict[str, Any]:
         """Format event definition for AI consumption."""
-        required_fields = get_required_fields(event.payload_schema)
+        schema = event.payload_schema or {}
+        required_fields = get_required_fields(schema)
         payload_fields = {}
-        
-        for name, prop in event.payload_schema.get("properties", {}).items():
+
+        for name, prop in schema.get("properties", {}).items():
             field_info = prop.copy()
             field_info["required"] = name in required_fields
             if "enum" in field_info:
@@ -84,13 +85,13 @@ class EventToolkit:
             "topic": event.topic,
             "required_fields": required_fields,
             "payload_fields": payload_fields,
-            "example_payload": self._generate_example(event.payload_schema),
-            "has_response": event.response_schema is not None
+            "example_payload": self._generate_example(schema),
+            "has_response": event.response_schema is not None,
         }
-        
+
         if event.response_schema:
             descriptor["response_fields"] = event.response_schema.get("properties", {})
-            
+
         return descriptor
 
     async def discover_events(
