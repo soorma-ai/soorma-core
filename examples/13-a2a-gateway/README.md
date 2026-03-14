@@ -1,0 +1,246 @@
+# Example 13 — A2A Gateway Interoperability
+
+This example demonstrates the **A2A (Agent-to-Agent) protocol** gateway
+pattern: an external HTTP client sends a request using the Google A2A
+specification, the gateway converts it into a Soorma internal event, the
+internal agent processes it, and the gateway returns an A2A-compatible
+response.
+
+```
+External A2A client
+       │
+       │  POST /a2a/tasks/send (A2A Task JSON)
+       ▼
+┌──────────────────────┐
+│   gateway_service.py  │  FastAPI — A2AGatewayHelper converts A2A ↔ Soorma DTO
+└────────┬──────┬───────┘
+         │ pub  │ sub (Future resolved on correlation_id match)
+         ▼      │
+   action-requests      action-results
+   (NATS topic)  ──────────────────────
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │  internal_agent.py   │  Soorma Worker — knows nothing about A2A
+              └─────────────────────┘
+```
+
+---
+
+## What This Demonstrates
+
+| Pattern | API Used |
+|---------|----------|
+| A2A Agent Card generation | `A2AGatewayHelper.agent_to_card()` |
+| A2A Task → Soorma event | `A2AGatewayHelper.task_to_event()` |
+| Soorma event → A2A response | `A2AGatewayHelper.event_to_response()` |
+| Async request-response via NATS | `EventClient` + `asyncio.Future` |
+| Internal worker (standard pattern) | `Worker`, `@worker.on_task`, `task.complete()` |
+
+**Key insight:** The internal agent (`internal_agent.py`) knows nothing
+about the A2A protocol — it handles ordinary Soorma `research.requested`
+events.  The gateway handles all protocol translation via
+`A2AGatewayHelper`, keeping the agent reusable across multiple integration
+patterns.
+
+---
+
+## Quick Start
+
+### 1. Start the Soorma dev stack
+
+```bash
+# From soorma-core root
+soorma dev
+# Ensure Registry (port 8081) and Event Service (port 8082) are healthy
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env — set SOORMA_DEVELOPER_TENANT_ID and SOORMA_USER_ID
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+# soorma + soorma-common must already be installed (see repo README)
+```
+
+### 4. Run the example
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+---
+
+## Manual Test
+
+### Discover agent capabilities (A2A Agent Card)
+
+```bash
+curl -s http://localhost:9000/.well-known/agent.json | python -m json.tool
+```
+
+**Expected response:**
+
+```json
+{
+  "name": "research-agent",
+  "description": "Performs structured research ...",
+  "url": "http://localhost:9000",
+  "version": "1.0.0",
+  "skills": [
+    {
+      "id": "web_research",
+      "name": "web_research",
+      "description": "Research a topic and return a concise summary. ...",
+      "tags": [],
+      "inputSchema": {"$ref": "a2a_research_request_v1"}
+    }
+  ],
+  "authentication": {"schemes": ["none"]}
+}
+```
+
+### Send an A2A Task
+
+```bash
+curl -s -X POST http://localhost:9000/a2a/tasks/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "task-001",
+    "message": {
+      "role": "user",
+      "parts": [{"type": "text", "text": "Research quantum computing"}]
+    }
+  }' | python -m json.tool
+```
+
+**Expected response:**
+
+```json
+{
+  "id": "task-001",
+  "sessionId": null,
+  "status": "completed",
+  "message": null,
+  "error": null
+}
+```
+
+### Try different topics
+
+```bash
+# Machine learning topic
+curl -s -X POST http://localhost:9000/a2a/tasks/send \
+  -H "Content-Type: application/json" \
+  -d '{"id":"task-002","message":{"role":"user","parts":[{"type":"text","text":"Explain machine learning"}]}}' \
+  | python -m json.tool
+
+# Blockchain topic
+curl -s -X POST http://localhost:9000/a2a/tasks/send \
+  -H "Content-Type: application/json" \
+  -d '{"id":"task-003","message":{"role":"user","parts":[{"type":"text","text":"What is blockchain?"}]}}' \
+  | python -m json.tool
+```
+
+---
+
+## Expected Console Output
+
+**Internal agent** (`internal_agent.py`):
+
+```
+[research-agent] ✓ research-agent started
+[research-agent]   Listening for: research.requested
+[research-agent]   Publishes to:  research.completed (via task.complete)
+[research-agent]   Gateway can now start routing A2A tasks.
+...
+[research-agent] ▶ Research requested: 'Research quantum computing'
+[research-agent]   task_id=<uuid>
+[research-agent]   correlation_id=task-001
+[research-agent]   response_event=a2a.response.task-001
+[research-agent] ✓ Research complete — publishing result
+```
+
+**Gateway service** (`gateway_service.py`):
+
+```
+INFO:     Application startup complete.
+[gateway] EventClient connected — subscribed to action-results
+...
+[gateway] Received A2A task id=task-001
+[gateway] Published research.requested (correlation=task-001, response_event=a2a.response.task-001)
+[gateway] Received response for task task-001 (event_type=a2a.response.task-001)
+[gateway] ✓ Returning A2A response for task task-001 (status=completed)
+```
+
+---
+
+## File Structure
+
+```
+examples/13-a2a-gateway/
+├── README.md               ← This file
+├── .env.example            ← Environment variable template
+├── requirements.txt        ← Python dependencies
+├── start.sh                ← Starts all processes
+├── gateway_service.py      ← FastAPI A2A gateway (A2AGatewayHelper + EventClient)
+└── internal_agent.py       ← Soorma Worker (no A2A knowledge)
+```
+
+---
+
+## Architecture Notes
+
+### Why does the internal agent not know about A2A?
+
+The A2A protocol is an **integration concern**, not a business logic concern.
+The internal agent handles standard Soorma `research.requested` events — the
+same events it would receive from a Soorma Planner, an `EventSelector` router,
+or any other orchestrator.  The gateway handles all protocol translation.
+
+This separation means:
+- Internal agents are **reusable** across A2A clients, Soorma planners, etc.
+- Protocol upgrades only require gateway changes
+- Agent logic is testable without A2A infrastructure
+
+### Response routing with `asyncio.Future`
+
+The gateway uses a `Dict[str, asyncio.Future]` keyed by `task.id` (= `correlation_id`).
+
+1. Before publishing, the gateway registers a `Future` for the task.
+2. The NATS catch-all handler resolves the appropriate `Future` when a
+   matching correlation_id arrives on `action-results`.
+3. `asyncio.wait_for()` provides the 30-second timeout.
+
+This pattern is safe for concurrent requests because each `task.id` is unique
+and futures are cleaned up in the `finally` block regardless of success or
+timeout.
+
+### `response_event` naming convention
+
+The gateway sets `response_event=f"a2a.response.{task.id}"`.  This embeds
+the task ID in the event type, making the response event unique per request.
+The internal agent's `task.complete()` publishes to exactly this event type
+on the `action-results` topic, so the gateway's catch-all handler can match
+it by `correlation_id`.
+
+---
+
+## Related Examples
+
+- **Example 11** — LLM-based discovery: planner finds worker dynamically via `ctx.registry.discover()`
+- **Example 12** — EventSelector routing: LLM picks the right event+worker
+- **Example 10** — Choreography: multi-step planner/worker pipeline
+
+## SDK Reference
+
+- `soorma.gateway.A2AGatewayHelper` — protocol conversion helpers
+- `soorma.events.EventClient` — lightweight NATS pub/sub (no Worker wrapper)
+- `soorma_common.a2a` — A2A protocol DTOs (`A2ATask`, `A2AAgentCard`, `A2ATaskResponse`)
