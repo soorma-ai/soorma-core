@@ -204,14 +204,30 @@ This directory contains progressively more complex examples demonstrating Soorma
 </tr>
 
 <tr>
-<td><!--a href="./12-multi-turn-conversation/"-->12-multi-turn-conversation<!--/a--><br>(coming soon)</td>
+<td><a href="./12-event-selector/">12-event-selector</a></td>
 <td>
-• Stateful conversations<br>
-• Follow-up handling<br>
-• Context preservation
+• LLM-based intelligent event routing<br>
+• <code>EventSelector</code> — discovers workers from Registry, no hard-coded routing<br>
+• <code>selector.select_event(state)</code> + <code>selector.publish_decision()</code><br>
+• <code>EventSelectionError</code> fallback handling<br>
+• Inline <code>payload_schema</code> auto-registration at startup<br>
+<em>Requires: litellm, openai</em>
 </td>
 <td>20 min</td>
-<td>06-memory-episodic<br>10-choreography-basic</td>
+<td>11-discovery-llm</td>
+</tr>
+
+<tr>
+<td><a href="./13-a2a-gateway/">13-a2a-gateway</a></td>
+<td>
+• A2A (Agent-to-Agent) protocol gateway<br>
+• <code>A2AGatewayHelper</code> — converts A2A Tasks ↔ Soorma EventEnvelopes<br>
+• Agent Card aggregation from Registry (<code>query_agents()</code>)<br>
+• <code>asyncio.Future</code> + <code>correlation_id</code> for async request/response<br>
+• External HTTP client with no Soorma SDK dependency<br>
+</td>
+<td>20 min</td>
+<td>11-discovery-llm</td>
 </tr>
 </table>
 
@@ -236,7 +252,10 @@ This directory contains progressively more complex examples demonstrating Soorma
 | Single-hop planner without a state machine | Lightweight Dispatch (`goal.dispatch()`) | [11-discovery-llm](./11-discovery-llm/) |
 | Discover workers + generate payloads at runtime | LLM-Based Dynamic Discovery | [11-discovery-llm](./11-discovery-llm/) |
 | Let the client define the response schema | Client-Owned Schema Contract | [11-discovery-llm](./11-discovery-llm/) |
-| Handle multi-turn conversations | Stateful Conversation | 12-multi-turn-conversation (coming soon) |
+| Route events intelligently without hard-coded if/elif | EventSelector (LLM routing) | [12-event-selector](./12-event-selector/) |
+| Add new workers without changing the router | Self-Registering Workers | [12-event-selector](./12-event-selector/) |
+| Expose Soorma agents to external HTTP clients | A2A Gateway | [13-a2a-gateway](./13-a2a-gateway/) |
+| Discover agent capabilities via standard protocol | A2A Agent Card | [13-a2a-gateway](./13-a2a-gateway/) |
 
 ---
 
@@ -322,19 +341,22 @@ python client.py
 2. [02-events-simple](./02-events-simple/) - Learn event pub/sub
 3. [03-events-structured](./03-events-structured/) - LLM event selection
 
-### Path 2: LLM-Powered Agents (90 minutes)
+### Path 2: LLM-Powered Agents (2 hours)
 1. [01-hello-world](./01-hello-world/) - Basics
 2. [03-events-structured](./03-events-structured/) - LLM event selection
 3. [04-memory-working](./04-memory-working/) - State management
 4. [06-memory-episodic](./06-memory-episodic/) - Multi-agent LLM chatbot
 5. [10-choreography-basic](./10-choreography-basic/) - Autonomous choreography with ChoreographyPlanner
 6. [11-discovery-llm](./11-discovery-llm/) - Lightweight dispatch + client-owned schema contract
+7. [12-event-selector](./12-event-selector/) - LLM-based intelligent event routing
+8. [13-a2a-gateway](./13-a2a-gateway/) - A2A protocol gateway for external integration
 
 ### Path 2b: Planner Patterns (45 minutes)
 1. [08-worker-basic](./08-worker-basic/) - Worker/TaskContext foundation
 2. [09-planner-basic](./09-planner-basic/) - PlanContext state machine (multi-step, durable)
 3. [10-choreography-basic](./10-choreography-basic/) - ChoreographyPlanner (LLM-driven state machine)
 4. [11-discovery-llm](./11-discovery-llm/) - Lightweight dispatch (single-hop, no state machine)
+5. [12-event-selector](./12-event-selector/) - EventSelector (LLM routing without a planner)
 
 ### Path 3: Memory Deep Dive (90 minutes)
 1. [01-hello-world](./01-hello-world/) - Basics
@@ -344,8 +366,8 @@ python client.py
 5. [05-memory-semantic](./05-memory-semantic/) - RAG/Knowledge (requires LLM routing)
 6. [06-memory-episodic](./06-memory-episodic/) - Multi-agent chatbot combining all three memory types
 
-### Path 4: Complete Journey (Coming Soon)
-Once all examples are available, work through examples 01 → 11 in sequence for comprehensive understanding.
+### Path 4: Complete Journey
+Work through examples 01 → 13 in sequence for comprehensive understanding of all Soorma patterns.
 
 ---
 

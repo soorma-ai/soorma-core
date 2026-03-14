@@ -161,21 +161,31 @@ class A2AGatewayHelper:
         """Convert a Soorma EventEnvelope to an A2A TaskResponse.
 
         Sets ``status`` to ``COMPLETED`` when the event carries a non-empty
-        ``data`` payload, and ``FAILED`` otherwise.
+        ``data`` payload, and ``FAILED`` otherwise.  The result data is
+        serialised into the ``message`` field as a single ``data`` part so
+        the A2A caller can inspect the actual output.
 
         Args:
             event: Soorma event envelope (typically a result event).
             task_id: ID of the originating A2A task.
 
         Returns:
-            A2ATaskResponse with the appropriate status.
+            A2ATaskResponse with the appropriate status and message.
         """
-        # An event with a non-empty data payload is treated as COMPLETED;
-        # an event without data (or with empty data) is treated as FAILED.
         has_data = bool(event.data)
         status = A2ATaskStatus.COMPLETED if has_data else A2ATaskStatus.FAILED
+
+        # Carry the result data back to the A2A caller via the message field.
+        # Use a single "data" part so structured results are preserved as-is.
+        message = None
+        if has_data:
+            message = A2AMessage(
+                role="agent",
+                parts=[A2APart(type="data", data=event.data)],
+            )
 
         return A2ATaskResponse(
             id=task_id,
             status=status,
+            message=message,
         )

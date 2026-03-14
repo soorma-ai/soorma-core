@@ -1,8 +1,8 @@
 # Discovery: Technical Architecture
 
-**Status:** 🟢 Implementation In Progress (Phases 1 & 2 ✅, Phase 3 📋 Planning, Phase 4 📋 Planning)  
-**Last Updated:** March 1, 2026  
-**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 📋 | RF-SDK-017 📋 | TECH-DEBT-001 📋
+**Status:** 🟢 Implementation In Progress (Phases 1–3 ✅, Phase 4 🔄, Phase 5 🟡)  
+**Last Updated:** March 14, 2026  
+**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 ✅ | RF-SDK-017 ✅ | TECH-DEBT-001 🔄
 
 ### Phase Progress
 
@@ -10,9 +10,9 @@
 |-------|-------------|--------|
 | Phase 1 | Foundation — DTOs, DB Schema, RLS, Alembic migrations | ✅ Complete |
 | Phase 2 | Service — Schema endpoints, Discovery endpoint, multi-tenancy middleware | ✅ Complete |
-| Phase 3 | SDK — `discover()`, `EventSelector`, `A2AGatewayHelper` | 📋 [Plan](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
-| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | � [In Progress](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
-| Phase 5 | Examples 11–13, full documentation | ⬜ Not started |
+| Phase 3 | SDK — `discover()`, `EventSelector`, `A2AGatewayHelper` | ✅ Complete — [Plan](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
+| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | 🔄 In Progress — [Plan](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
+| Phase 5 | Examples 11–13, integration tests, documentation | 🟡 In Progress (T13 next) — [Plan](plans/ACTION_PLAN_Phase5_Validation_Documentation.md) |
 
 ---
 
@@ -104,10 +104,10 @@ libs/soorma-nats/            # COMING Phase 4: shared NATS client for infrastruc
     └── exceptions.py        # NATSConnectionError, NATSSubscriptionError
 
 sdk/python/soorma/
-├── registry/client.py       # RegistryClient (register_schema, get_schema, discover_agents)
-├── ai/event_toolkit.py      # EventToolkit (discover_events, format_for_llm) — reused by Phase 3
-├── ai/selection.py          # COMING Phase 3: EventSelector
-└── gateway.py               # COMING Phase 3: A2AGatewayHelper
+├── registry/client.py       # RegistryClient (register_schema, get_schema, discover_agents, discover)
+├── ai/event_toolkit.py      # EventToolkit (discover_events, format_for_llm) — reused by EventSelector
+├── ai/selection.py          # Phase 3 ✅: EventSelector
+└── gateway.py               # Phase 3 ✅: A2AGatewayHelper
 ```
 
 ---
@@ -244,7 +244,7 @@ PostgreSQL + RLS (client tenant + user isolation)
 | `get_schema(name, version)` | `GET /v1/schemas/{name}[/versions/{ver}]` | ✅ Phase 2 |
 | `list_schemas(owner_agent_id)` | `GET /v1/schemas` | ✅ Phase 2 |
 | `discover_agents(consumed_event)` | `GET /v1/agents/discover` | ✅ Phase 2 (⚠️ returns `List[AgentDefinition]`) |
-| `discover(requirements, include_schemas)` | `GET /v1/agents/discover` | 📋 Phase 3 (returns `List[DiscoveredAgent]`) |
+| `discover(requirements, include_schemas)` | `GET /v1/agents/discover` | ✅ Phase 3 (returns `List[DiscoveredAgent]`) |
 
 
 **Purpose:** Decouple schemas from event names for dynamic event types.
@@ -553,36 +553,47 @@ await context.registry.publish_agent_card(
 
 ## EventSelector Utility (RF-SDK-017)
 
-**Purpose:** LLM-driven event selection from Registry.
+**Status:** ✅ Phase 3 Complete — `sdk/python/soorma/ai/selection.py`
 
-**Planned Implementation:**
+**Purpose:** LLM-driven event selection from Registry. Queries the registry for available events on a given topic, presents them to an LLM, and validates the selected event exists before publishing (prevents hallucination of non-existent event types).
+
+**Architecture:** Fully within the two-layer pattern — uses `context.toolkit` (`EventToolkit`) for event discovery, never imports `RegistryClient` directly.
+
+**Implementation:**
 
 ```python
-from soorma.discovery import EventSelector
+from soorma.ai.selection import EventSelector, EventSelectionError
+from soorma_common.events import EventTopic
 
 selector = EventSelector(
-    registry_client=context.registry,
-    llm_client=context.llm
+    context=context,                    # PlatformContext
+    topic=EventTopic.ACTION_REQUESTS,   # Topic to discover events from
+    model="gpt-4o-mini",                # LiteLLM model — BYO
 )
 
-# LLM selects best event for task
-selection = await selector.select_event(
-    goal_description="Perform web research on AI trends",
-    capabilities=["web_research", "academic_search"]
-)
+try:
+    decision = await selector.select_event(
+        state={"user_input": "Perform web research on AI trends"}
+    )
+    # EventDecision(event_type="web.research.requested", payload={...}, reasoning="...")
 
-# Returns EventSelection with:
-# - event_type: Selected event type
-# - suggested_payload: LLM-generated payload
-# - agent_id: Discovered agent ID
+    await selector.publish_decision(
+        decision=decision,
+        correlation_id=task.id,
+        response_event="research.done",
+    )
+except EventSelectionError as e:
+    # LLM returned malformed JSON or hallucinated an unknown event
+    logger.warning(f"EventSelector failed: {e}")
 ```
 
 **Workflow:**
-1. Query Registry for all agents with matching capabilities
-2. Build LLM prompt with agent descriptions and schemas
-3. LLM selects best match and generates payload
-4. Validate selection against Registry
-5. Return EventSelection object
+1. Discover all events on the specified topic via `context.toolkit.discover_events()`
+2. Format event descriptors for LLM (name, description, schema)
+3. Invoke LiteLLM with default or custom prompt template
+4. Parse JSON response into `EventDecision`
+5. Validate selected event type exists in discovered list (raise `EventSelectionError` if not)
+6. Return validated `EventDecision` — caller invokes `publish_decision()`
 
 ---
 
@@ -679,23 +690,25 @@ selection = await selector.select_event(
 - ✅ **Phase 2:** `GET /v1/agents/discover` capability-based discovery (RF-ARCH-007)
 - ✅ **Phase 2:** Multi-tenancy middleware (X-Tenant-ID → PostgreSQL session vars)
 - ✅ **Phase 2:** `RegistryClient.register_schema()`, `get_schema()`, `list_schemas()`, `discover_agents()`
+- ✅ **Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
+- ✅ **Phase 3:** `EventDecision` DTO in `soorma_common.decisions`
+- ✅ **Phase 3:** `EventSelector` utility (RF-SDK-017) — `sdk/python/soorma/ai/selection.py`
+- ✅ **Phase 3:** `A2AGatewayHelper` — `sdk/python/soorma/gateway.py`
+- ✅ **Phase 3:** SDK unit tests (selection, gateway, registry discover)
+- ✅ **Phase 5 (T0–T4):** Auto-registration schema inference in `_register_with_registry()`
+- ✅ **Phase 5 (T9–T12):** Examples 11 (LLM discovery), 12 (EventSelector), 13 (A2A Gateway)
 
 ### In Progress
 
-- 📋 **Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
-- 📋 **Phase 3:** `EventDecision` DTO in `soorma_common.decisions`
-- 📋 **Phase 3:** `EventSelector` utility (RF-SDK-017) — `sdk/python/soorma/ai/selection.py`
-- 📋 **Phase 3:** `A2AGatewayHelper` — `sdk/python/soorma/gateway.py`
-- 📋 **Phase 3:** 40+ SDK unit tests
-- 📋 **Phase 4:** Tracker Service NATS direct integration (TECH-DEBT-001) — [Plan](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md)
-- 📋 **Phase 4:** `libs/soorma-nats/` shared NATS client library (v0.1.0)
+- 🔄 **Phase 4:** Tracker Service NATS direct integration (TECH-DEBT-001) — [Plan](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md)
+- 🔄 **Phase 4:** `libs/soorma-nats/` shared NATS client library (v0.1.0)
+- 🟡 **Phase 5 (T13):** `sdk/python/tests/integration/test_e2e_discovery.py`
+- 🟡 **Phase 5 (T14):** `sdk/python/tests/integration/test_multi_tenant_isolation.py`
+- 🟡 **Phase 5 (T15):** `sdk/python/tests/integration/test_a2a_gateway_roundtrip.py`
 
 ### Not Started
 
-- ⬜ Phase 5: Example 11 (LLM-based discovery)
-- ⬜ Phase 5: Example 12 (EventSelector routing)
-- ⬜ Phase 5: Example 13 (A2A Gateway)
-- ⬜ Phase 5: End-to-end integration tests
+- ⬜ Phase 5 (T17): CHANGELOG entries (root, SDK, soorma-common, Registry)
 
 ---
 

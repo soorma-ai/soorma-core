@@ -1,6 +1,6 @@
 # Action Plan: Phase 5 — Validation & Documentation (SOOR-DISC-P5)
 
-**Status:** � In Progress (T5 next — example 12)  
+**Status:** 🟡 In Progress (T13 next — integration tests)  
 **Parent Plan:** [MASTER_PLAN_Enhanced_Discovery.md](MASTER_PLAN_Enhanced_Discovery.md)  
 **Phase:** 5 of 5  
 **Refactoring Tasks:** RF-SDK-007 (final verification), RF-SDK-017 (examples), End-to-End Validation  
@@ -173,14 +173,14 @@ Validate the complete Stage 5 implementation through working examples, end-to-en
 | **T2** | Implement `worker.py` — declares inline `json_schema` on `AgentCapability.consumed_event`; SDK auto-registers schema + agent via `_register_with_registry()`. No explicit `ctx.registry.register_schema()` call. | `examples/11-discovery-llm/worker.py` | 1h | STUB → GREEN | ✅ |
 | **T3** | Implement `planner.py` — `ctx.registry.discover()`, `ctx.registry.get_schema()`, `ctx.ai.generate_payload()` (NO manual prompt), `goal.dispatch()` with explicit `response_event`; fixed `plan_id=correlation_id` for goal metadata scope | `examples/11-discovery-llm/planner.py` | 2h | STUB → GREEN | ✅ |
 | **T4** | Complete `README.md` with expected output; verify `./start.sh` runs end-to-end | `examples/11-discovery-llm/README.md`, `start.sh` | 45m | N/A | ✅ |
-| **T5** | Scaffold `examples/12-event-selector/` — stub `*.py`, `start.sh`, `.env.example`, `README.md` stub. No `prompts/` dir. | `examples/12-event-selector/` | 30m | N/A | 📋 |
-| **T6** | Implement three workers using `ctx.registry.register_agent()` at startup; each handles its event type | `examples/12-event-selector/technical_worker.py`, `billing_worker.py`, `escalation_worker.py` | 1.5h | STUB → GREEN | 📋 |
-| **T7** | Implement `router.py` — `EventSelector(context=ctx, topic=..., model=...)`, `selector.select_event(state={...})`, `selector.publish_decision(...)`. Zero Jinja2, zero raw LiteLLM. | `examples/12-event-selector/router.py` | 1h | STUB → GREEN | 📋 |
-| **T8** | Complete `README.md` with expected output; verify `./start.sh` routes tickets correctly | `examples/12-event-selector/README.md`, `start.sh` | 45m | N/A | 📋 |
-| **T9** | Scaffold `examples/13-a2a-gateway/` — stub `*.py`, `start.sh`, `.env.example`, `README.md` stub | `examples/13-a2a-gateway/` | 30m | N/A | 📋 |
-| **T10** | Implement `gateway_service.py` — FastAPI, `A2AGatewayHelper.agent_to_card()`, `A2AGatewayHelper.task_to_event()`, `ctx.bus.request()`, `A2AGatewayHelper.event_to_response()` | `examples/13-a2a-gateway/gateway_service.py` | 2h | STUB → GREEN | 📋 |
-| **T11** | Implement `internal_agent.py` — standard `ctx.registry.register_agent()` at startup, handles event, publishes response | `examples/13-a2a-gateway/internal_agent.py` | 1h | STUB → GREEN | 📋 |
-| **T12** | Complete `README.md` with expected output; verify `./start.sh` completes A2A round-trip | `examples/13-a2a-gateway/README.md`, `start.sh` | 45m | N/A | 📋 |
+| **T5** | Scaffold `examples/12-event-selector/` — stub `*.py`, `start.sh`, `.env.example`, `README.md` stub. No `prompts/` dir. | `examples/12-event-selector/` | 30m | N/A | ✅ |
+| **T6** | Implement three workers using `ctx.registry.register_agent()` at startup; each handles its event type | `examples/12-event-selector/technical_worker.py`, `billing_worker.py`, `escalation_worker.py` | 1.5h | STUB → GREEN | ✅ |
+| **T7** | Implement `router.py` — `EventSelector(context=ctx, topic=..., model=...)`, `selector.select_event(state={...})`, `selector.publish_decision(...)`. Zero Jinja2, zero raw LiteLLM. | `examples/12-event-selector/router.py` | 1h | STUB → GREEN | ✅ |
+| **T8** | Complete `README.md` with expected output; verify `./start.sh` routes tickets correctly | `examples/12-event-selector/README.md`, `start.sh` | 45m | N/A | ✅ |
+| **T9** | Scaffold `examples/13-a2a-gateway/` — stub `*.py`, `start.sh`, `.env.example`, `README.md` stub | `examples/13-a2a-gateway/` | 30m | N/A | ✅ |
+| **T10** | Implement `gateway_service.py` — FastAPI, `A2AGatewayHelper.agent_to_card()`, `A2AGatewayHelper.task_to_event()`, `ctx.bus.request()`, `A2AGatewayHelper.event_to_response()` | `examples/13-a2a-gateway/gateway_service.py` | 2h | STUB → GREEN | ✅ |
+| **T11** | Implement `internal_agent.py` — standard `ctx.registry.register_agent()` at startup, handles event, publishes response | `examples/13-a2a-gateway/internal_agent.py` | 1h | STUB → GREEN | ✅ |
+| **T12** | Complete `README.md` with expected output; verify `./start.sh` completes A2A round-trip | `examples/13-a2a-gateway/README.md`, `start.sh` | 45m | N/A | ✅ |
 | **T13** | Write integration tests: end-to-end discovery flow (register → discover → invoke → response) | `sdk/python/tests/integration/test_e2e_discovery.py` | 2h | RED → GREEN | 📋 |
 | **T14** | Write integration tests: multi-tenant isolation (cross-tenant queries return empty) | `sdk/python/tests/integration/test_multi_tenant_isolation.py` | 1h | RED → GREEN | 📋 |
 | **T15** | Write integration tests: A2A gateway round-trip (HTTP → event → HTTP) | `sdk/python/tests/integration/test_a2a_gateway_roundtrip.py` | 1h | RED → GREEN | 📋 |

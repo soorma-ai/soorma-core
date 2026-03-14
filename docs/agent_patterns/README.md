@@ -1,8 +1,8 @@
 # Agent Patterns
 
-**Status:** ✅ Stage 4 Complete (Planner & ChoreographyPlanner)  
-**Last Updated:** February 23, 2026  
-**Related Stages:** Stage 3 (RF-SDK-004, RF-SDK-005, RF-SDK-022), Stage 4 (RF-SDK-006, RF-SDK-015, RF-SDK-016)
+**Status:** ✅ Stage 4 Complete (Planner & ChoreographyPlanner) + Phase 5 Additions (EventSelector, A2A Gateway)  
+**Last Updated:** March 14, 2026  
+**Related Stages:** Stage 3 (RF-SDK-004, RF-SDK-005, RF-SDK-022), Stage 4 (RF-SDK-006, RF-SDK-015, RF-SDK-016), Phase 5 (EventSelector, A2A Gateway)
 
 ---
 
@@ -27,6 +27,8 @@ Agents are built on the **DisCo (Distributed Cognition)** pattern, where intelli
 | **Planner (Lightweight Dispatch)** | Single-hop, no branching, fits in two handlers | Event-driven | None (working memory only) | Developer-defined | Free |
 | **Planner (State Machine)** | Multi-step workflow, explicit states, durable | Event-driven | State machine | Developer-defined | Free |
 | **ChoreographyPlanner** | Adaptive workflow, LLM reasoning | Event-driven | LLM-managed | Autonomous | LLM API |
+| **EventSelector (utility)** | Route to one of N workers via LLM | Event-driven | None | LLM-selected | LLM API |
+| **A2A Gateway** | Expose Soorma agents to external A2A callers | Synchronous (HTTP in) + Async | None | Protocol translation | Free |
 
 ### Decision Flowchart
 
@@ -63,6 +65,8 @@ graph TD
 | "I need a single-hop planner: discover worker, dispatch, respond" | **Lightweight Dispatch Planner** | Research planner with runtime worker discovery |
 | "I need a multi-stage approval workflow" | **Planner + State Machine** | Document approval with states: draft → review → approved |
 | "I need autonomous research with adaptive queries" | **ChoreographyPlanner** | Research assistant that explores topics dynamically |
+| "I need to route incoming requests to one of several specialists using LLM" | **EventSelector** | Support ticket router that uses LLM to pick billing vs. technical vs. escalation worker |
+| "I need to expose my Soorma agents to external systems via A2A protocol" | **A2A Gateway** | FastAPI gateway that serves `/.well-known/agent.json` and forwards A2A tasks to internal workers |
 
 **Quick Tips:**
 - Start simple: Use **Tool** for pure functions, **Worker** for delegation
@@ -472,7 +476,7 @@ The result handler retrieves this via `context.memory.get_goal_metadata()`.
 
 **Status:** ✅ Available in Stage 4 Phase 2+
 
-**Example:** [09-app-research-advisor](../../examples/09-app-research-advisor/) (Stage 4)
+**Example:** [research-advisor](../../examples/research-advisor/) (Full multi-agent system)
 
 ```python
 from soorma.ai.choreography import ChoreographyPlanner
@@ -608,6 +612,121 @@ async def compensate(result, context):
 
 ---
 
+### 8. EventSelector Pattern (LLM-Based Routing)
+
+**Use when:** You have 2+ specialist workers and want an LLM to decide which one to route to based on incoming request content.
+
+**Complexity:** ⭐⭐ Intermediate
+
+**Status:** ✅ Phase 3 Complete
+
+**Example:** [12-event-selector](../../examples/12-event-selector/)
+
+```python
+from soorma.ai.selection import EventSelector, EventSelectionError
+from soorma_common.events import EventTopic
+
+@planner.on_goal("ticket.submitted")
+async def route_ticket(goal: GoalContext, context: PlatformContext):
+    selector = EventSelector(
+        context=context,
+        topic=EventTopic.ACTION_REQUESTS,
+        model="gpt-4o-mini",
+    )
+    try:
+        decision = await selector.select_event(
+            state={
+                "ticket": goal.data["description"],
+                "priority": goal.data["priority"],
+            }
+        )
+        # decision.event_type is validated against registry (no hallucinations)
+        await selector.publish_decision(
+            decision=decision,
+            correlation_id=goal.correlation_id,
+            response_event="ticket.routed",
+        )
+    except EventSelectionError:
+        # Graceful fallback — route to escalation
+        await goal.dispatch(
+            event_type="escalation.requested",
+            data=goal.data,
+            response_event="ticket.routed",
+        )
+```
+
+**Characteristics:**
+- Uses `context.toolkit.discover_events()` to find available worker events from Registry
+- LLM receives event names, descriptions, and schemas to reason about best match
+- Validates LLM selection against discovered events before publishing (hallucination-proof)
+- Custom prompt templates supported (f-string substitution)
+- `EventSelectionError` raised on LLM failure or unknown event — catch for graceful fallback
+
+**Best for:**
+- Support ticket routing (billing, technical, escalation)
+- Content classification and dispatch
+- Multi-capability routers where routing logic is complex or changes frequently
+
+---
+
+### 9. A2A Gateway Pattern
+
+**Use when:** External systems or agents (non-Soorma) need to interact with your Soorma agents using the [Google A2A protocol](https://google.github.io/agent-to-agent/).
+
+**Complexity:** ⭐⭐ Intermediate
+
+**Status:** ✅ Phase 3 Complete
+
+**Example:** [13-a2a-gateway](../../examples/13-a2a-gateway/)
+
+```python
+from fastapi import FastAPI
+from soorma.gateway import A2AGatewayHelper
+from soorma_common.a2a import A2ATask
+
+app = FastAPI()
+
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    """A2A agent card — lists capabilities and endpoint."""
+    agents = await context.registry.query_agents()  # query all registered agents
+    # Aggregate all capabilities into one gateway-level card
+    all_capabilities = [cap for a in agents for cap in a.capabilities]
+    aggregate_agent = AgentDefinition(name="Soorma A2A Gateway", capabilities=all_capabilities)
+    card = A2AGatewayHelper.agent_to_card(
+        agent=aggregate_agent,
+        gateway_url="https://gateway.example.com/a2a",
+    )
+    return card.model_dump()
+
+@app.post("/a2a/tasks/send")
+async def send_task(task: A2ATask):
+    """Receive A2A task, convert to Soorma event, route to internal worker."""
+    envelope = A2AGatewayHelper.task_to_event(
+        task=task,
+        event_type="research.requested",  # Map A2A task to internal event type
+    )
+    result_event = await route_to_internal_worker(envelope)  # via asyncio.Future routing
+    return A2AGatewayHelper.event_to_response(
+        event=result_event,
+        task_id=task.id,
+    ).model_dump()
+```
+
+**Characteristics:**
+- `A2AGatewayHelper` is pure static — no constructor, no service calls
+- Internal agents are standard `Worker` instances with no A2A knowledge
+- Agent card aggregates capabilities from all registered agents via `context.registry.query_agents()`
+- `response_event` uses stable canonical type (e.g., `"a2a.response"`) — `correlation_id` handles per-request routing
+- Result populated in `A2ATaskResponse.message` with `role="agent", parts=[{"type": "data", ...}]`
+
+**Best for:**
+- Exposing internal Soorma agents to external LLM systems
+- Multi-framework interoperability (OpenAI Swarm, LangGraph, CrewAI, etc.)
+- API gateways that translate external protocol into internal event choreography
+
+---
+
 ## Plans and Sessions: Workflow Organization
 
 ### Conceptual Model
@@ -721,7 +840,8 @@ if any(indicator in result.lower() for indicator in vague_indicators):
 | State machine orchestration | Planner |
 | Goal-driven orchestration | Trinity (Planner + Worker + Tool) |
 | Adaptive, LLM-driven workflow | ChoreographyPlanner |
-| Distributed transaction with rollback | Saga |
+| LLM-based event routing to N workers | EventSelector |
+| External A2A protocol integration | A2A Gateway |
 
 ### Complexity Progression
 
@@ -745,6 +865,10 @@ Start simple and add complexity only when needed:
 | [08-worker-basic](../../examples/08-worker-basic/) | Worker | ✅ |
 | [09-planner-basic](../../examples/09-planner-basic/) | Planner | ✅ |
 | [10-choreography-basic](../../examples/10-choreography-basic/) | ChoreographyPlanner | ✅ |
+| [11-discovery-llm](../../examples/11-discovery-llm/) | Lightweight Dispatch + Dynamic Discovery | ✅ |
+| [12-event-selector](../../examples/12-event-selector/) | EventSelector LLM Routing | ✅ |
+| [13-a2a-gateway](../../examples/13-a2a-gateway/) | A2A Gateway | ✅ |
+| [research-advisor](../../examples/research-advisor/) | ChoreographyPlanner (full system) | ✅ |
 
 ---
 
