@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-03-02
+## [0.8.1] - 2026-03-14
+
+### Added
+- **Stage 5 - Discovery & A2A Integration** (March 1–2, 2026)
+  - **Schema Registry** (soorma-common + Registry Service): `PayloadSchema` model, `POST /v1/schemas`, `GET /v1/schemas`, schema versioning with semantic versioning support
+  - **Agent Discovery** (Registry Service + SDK): `GET /v1/agents/discover`, `RegistryClient.discover_agents()`, `context.registry.discover()` wrapper
+  - **A2A Gateway** (SDK): `A2AGateway` adapter for exposing Soorma agents via the A2A protocol
+  - **`soorma-nats` library** (`libs/soorma-nats/`): New shared NATS client for infrastructure services; 33 unit tests, 100% coverage
+- **Integration Test Suite** (March 14, 2026)
+  - **T13 – E2E Discovery** (`tests/integration/test_e2e_discovery.py`): 5 in-process tests covering schema registration & retrieval, agent register → discover lifecycle, schema versioning coexistence, deregistration cleanup, and empty discover results
+  - **T14 – Multi-Tenant Isolation** (`tests/integration/test_multi_tenant_isolation.py`): 2 tests verifying cross-tenant agent and schema invisibility via X-Tenant-ID header enforcement
+  - **T15 – A2A Gateway Round-trip** (`tests/integration/test_a2a_gateway_roundtrip.py`): 4 tests covering agent card aggregation, 503 on no-agents, full task round-trip via mock EventClient, and 503 when gateway not ready
+  - All 11 integration tests run in-process via `httpx.ASGITransport` + SQLite (no docker, no NATS required)
+  - CI: new `test-integration` job gated on `push` to main only (`if: github.event_name == 'push'`); existing `test-sdk` job excludes integration tests via `-m "not integration"`
 
 ### Added
 - **Stage 5 - Discovery & A2A Integration** (March 1–2, 2026)

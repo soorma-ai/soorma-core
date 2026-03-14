@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-03-02
+## [0.8.1] - 2026-03-14
 
 ### Added
+- **Integration Tests (SDK layer)** (March 14, 2026)
+  - Registry service is now used as an in-process ASGI app in `sdk/python/tests/integration/` via `httpx.ASGITransport`
+  - 11 integration tests exercise the full register → discover → deregister lifecycle, schema versioning, and cross-tenant isolation against the real service code (no docker, no TCP)
 - **Phase 2 - Schema Registry Service Endpoints**
   - `POST /v1/schemas` — Register a new payload schema (returns 409 on duplicate name+version per tenant)
   - `GET /v1/schemas/{name}` — Retrieve latest version of a schema by name (returns 404 if not found)
