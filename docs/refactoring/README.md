@@ -1,7 +1,7 @@
 # Soorma Core Refactoring Index
 
-**Status:** 📋 Stage 1-4 Complete | Release: 0.8.0 (February 23, 2026)  
-**Last Updated:** February 23, 2026 - Stage 4 Complete (Planner & ChoreographyPlanner)
+**Status:** 📋 Stage 1-5 Complete | Release: 0.8.2 (March 14, 2026)  
+**Last Updated:** March 21, 2026 - Stage 5 Complete (Discovery, A2A, EventSelector, soorma-nats)
 
 ---
 
@@ -50,7 +50,7 @@ The SDK refactoring plan has been split into focused documents for implementatio
 | [sdk/04-TOOL-MODEL.md](sdk/04-TOOL-MODEL.md) | Tool synchronous model | 🟡 Phase 2 | ✅ |
 | [sdk/05-WORKER-MODEL.md](sdk/05-WORKER-MODEL.md) | Worker async model | 🟡 Phase 2 | ✅ |
 | [sdk/06-PLANNER-MODEL.md](sdk/06-PLANNER-MODEL.md) | Planner state machine | 🟢 Phase 3 | ✅ |
-| [sdk/07-DISCOVERY.md](sdk/07-DISCOVERY.md) | Discovery & A2A integration | 🟡 Phase 3 | ⬜ |
+| [sdk/07-DISCOVERY.md](sdk/07-DISCOVERY.md) | Discovery & A2A integration | 🟡 Phase 3 | ✅ |
 | [sdk/08-MIGRATION.md](sdk/08-MIGRATION.md) | Migration guide | 🟢 Phase 4 | 🟡 |
 | [sdk/README.md](sdk/README.md) | SDK docs index | Reference | 📋 |
 
@@ -67,7 +67,7 @@ The architecture refactoring plan has been split into focused documents for impl
 | [arch/02-MEMORY-SERVICE.md](arch/02-MEMORY-SERVICE.md) | Task/plan context storage | 🔴 Phase 1 | ✅ |
 | [arch/03-COMMON-LIBRARY.md](arch/03-COMMON-LIBRARY.md) | Shared DTOs (soorma-common) | 🔴 Phase 1 | ✅ |
 | [arch/04-TRACKER-SERVICE.md](arch/04-TRACKER-SERVICE.md) | Event-driven observability | 🟡 Phase 2 | ✅ |
-| [arch/05-REGISTRY-SERVICE.md](arch/05-REGISTRY-SERVICE.md) | Enhanced discovery & A2A | 🟢 Phase 3 | ⬜ |
+| [arch/05-REGISTRY-SERVICE.md](arch/05-REGISTRY-SERVICE.md) | Enhanced discovery & A2A | 🟢 Phase 3 | ✅ |
 | [arch/06-USER-AGENT.md](arch/06-USER-AGENT.md) | HITL pattern | 🟢 Phase 4 | ⬜ |
 | [arch/README.md](arch/README.md) | Architecture docs index | Reference | 📋 |
 
@@ -447,11 +447,11 @@ Dependencies: Stage 1 (event system) and Stage 2 (memory) must be complete.
 
 **Tasks:** RF-SDK-006, RF-SDK-015, RF-SDK-016, RF-SDK-023, RF-ARCH-010, RF-ARCH-011
 
-**Deferred to Stage 5+:** RF-SDK-017 (EventSelector), RF-SDK-018 (EventToolkit helpers) - See [DEFERRED_WORK.md](DEFERRED_WORK.md)
+**Note:** RF-SDK-017 (EventSelector) and RF-SDK-018 (EventToolkit helpers) were completed in Stage 5. See [DEFERRED_WORK.md](DEFERRED_WORK.md) for remaining deferred items.
 
 **Completion Summary (February 23, 2026 - Release 0.8.0):**
 
-All 4 phases of Stage 4 successfully completed with 451+ tests passing:
+All 4 phases of Stage 4 successfully completed (451+ tests passing at time of release):
 
 **Phase 1: PlanContext Foundation (Days 1-4)** ✅
 - PlanContext state machine model with save/restore/execute_next methods
@@ -492,12 +492,12 @@ All 4 phases of Stage 4 successfully completed with 451+ tests passing:
 - All CHANGELOGs updated
 
 **Implementation Summary:**
-- ✅ 451+ tests passing (423 SDK + 28 Tracker)
+- ✅ 451+ tests passing at release (423 SDK + 28 Tracker)
 - ✅ Pattern selection framework for developer guidance
 - ✅ Two-layer architecture maintained (service clients + wrappers)
 - ✅ Two working examples (09-planner-basic, 10-choreography-basic)
 - ✅ Comprehensive documentation with decision criteria and code examples
-- ✅ Version 0.8.0 release ready
+- ✅ Version 0.8.0 released
 
 **Copilot Agent Prompt:**
 ```
@@ -536,7 +536,7 @@ Key deliverables:
 - ✅ Handler-only event registration (RF-SDK-023)
 - ✅ Tracker Service stores and queries progress events (RF-ARCH-010, RF-ARCH-011)
 - ✅ New examples: 09-planner-basic + 10-choreography-basic
-- ✅ All 451+ tests pass
+- ✅ All tests pass
 
 **Phases:**
 - ✅ **Phase 1 (Days 1-4):** PlanContext state machine + decorators
@@ -554,13 +554,13 @@ Items intentionally deferred from Stage 4 for future implementation:
 
 | Item | Reason | Target Stage | Effort |
 |------|--------|--------------|--------|
-| **RF-SDK-017:** EventSelector utility | Lower priority than ChoreographyPlanner | Stage 5 (Discovery) | 0.5-1 day |
+| **RF-SDK-017:** EventSelector utility | Deferred from Stage 4 | ✅ Complete (Stage 5) | N/A |
 | **RF-SDK-018:** EventToolkit.format_for_llm_selection() | Already exists in EventToolkit | ✅ Complete | N/A |
-| **Conditional state transitions** | Simple event-based transitions sufficient for MVP | Stage 5 or 6 | 2-3 days |
+| **Tracker NATS direct integration** | Architectural tech debt (TECH-DEBT-001) | ✅ Complete (Stage 5, soorma-nats v0.8.1) | N/A |
+| **Conditional state transitions** | Simple event-based transitions sufficient for MVP | Stage 6 or post-launch | 2-3 days |
 | **Tracker Service UI** | FDE: Use curl/Postman for now | Post-launch | 1-2 weeks |
-| **Tracker advanced query endpoints** | Core 2 endpoints sufficient for MVP | Stage 5+ | 8-12 hours |
-| **Tracker NATS direct integration** | Architectural tech debt (uses EventClient) | Stage 5 (high priority) | 1-2 days |
-| **11-app-research-advisor** | Full application, needs dedicated planning | Stage 5+ or post-launch | 2-3 days |
+| **Tracker advanced query endpoints** | Core 2 endpoints sufficient for MVP | Post-launch | 8-12 hours |
+| **11-app-research-advisor** | Full application, needs dedicated planning | Post-launch | 2-3 days |
 
 **Process:** See [DEFERRED_WORK.md](DEFERRED_WORK.md) for full documentation and requirements.
 
@@ -568,7 +568,7 @@ Items intentionally deferred from Stage 4 for future implementation:
 
 ## Remaining Work Summary
 
-### Current Status (February 23, 2026 - Release 0.8.0)
+### Current Status (March 21, 2026 - Release 0.8.2)
 
 **Completed Stages:**
 - ✅ Stage 1: Foundation - Event System (January 17, 2026)
@@ -576,52 +576,50 @@ Items intentionally deferred from Stage 4 for future implementation:
 - ✅ Stage 2.1: Memory Enhancements (January 30, 2026 - Release 0.7.5)
 - ✅ Stage 3: Agent Models - Tool & Worker (February 12, 2026)
 - ✅ Stage 4: Agent Models - Planner (February 23, 2026 - Release 0.8.0)
+- ✅ Stage 5: Discovery & A2A (March 14, 2026 - Release 0.8.2)
 
-**Test Coverage:** 451+ tests passing (423 SDK + 28 Tracker)  
-**Current Version:** 0.8.0  
-**Examples:** 10 working examples (01-hello-world → 10-choreography-basic)
+**Test Coverage:** 957+ tests total (515 SDK, 156 Memory, 81 Registry, 41 Tracker, 21 Event, 103 Common, 40 NATS)  
+**Current Version:** 0.8.2  
+**Examples:** 13 numbered examples + research-advisor (01-hello-world → 13-a2a-gateway)
 
-### Stage 5: Discovery & A2A (Not Started)
+### Stage 5: Discovery & A2A ✅ COMPLETE
 
-**Priority:** 🔴 Next Stage  
-**Estimated Duration:** 2-3 weeks  
-**Target Release:** 0.9.0
+**Status:** ✅ **COMPLETE** (March 14, 2026 - Release 0.8.2)  
+**Master Plan:** [docs/discovery/plans/MASTER_PLAN_Enhanced_Discovery.md](../discovery/plans/MASTER_PLAN_Enhanced_Discovery.md)
 
-**Core Tasks:**
+**Completion Summary:**
 
-1. **Registry Service Enhancements:**
-   - RF-ARCH-005: Schema registration by name (not event name)
-   - RF-ARCH-006: Structured capability with EventDefinition
-   - RF-ARCH-007: Discovery API for LLM reasoning
-   - **Effort:** 5-7 days
+All 5 phases completed — shipped as v0.8.1 → aligned to v0.8.2 (not v0.9.0 as originally projected):
 
-2. **SDK Discovery:**
-   - RF-SDK-007: Event registration tied to agent startup
-   - RF-SDK-008: Agent discovery by capability (A2A pattern)
-   - **Effort:** 3-4 days
+**Phase 1 & 2: Foundation & Service Implementation** ✅
+- RF-ARCH-005: Schema Registry (`PayloadSchema` model, `POST/GET /v1/schemas`)
+- RF-ARCH-006: Structured capability with EventDefinition
+- RF-ARCH-007: Discovery API for LLM reasoning (`GET /v1/agents/discover`)
 
-3. **EventSelector Utility (Deferred from Stage 4):**
-   - RF-SDK-017: EventSelector class for LLM-based event selection
-   - Prompt templates, EventDecision types
-   - Registry validation before publishing
-   - **Effort:** 0.5-1 day (EventToolkit foundation already exists)
+**Phase 3: SDK + EventSelector + A2A Gateway** ✅
+- RF-SDK-007: Event registration tied to agent startup
+- RF-SDK-008: Agent discovery by capability (`context.registry.discover()`)
+- RF-SDK-017: EventSelector class for LLM-based event selection (`soorma.ai.selection`)
+- A2AGateway adapter for A2A protocol interoperability
 
-4. **Tracker Service NATS Integration (Tech Debt):**
-   - Replace EventClient subscription with direct NATS JetStream
-   - Extract shared NATS client library (libs/soorma-nats/)
-   - Fix architectural violation (infrastructure services should use NATS directly)
-   - **Effort:** 1-2 days
-   - **Priority:** High - architectural correctness
+**Phase 4: Tracker NATS Integration (TECH-DEBT-001)** ✅
+- Tracker now uses `soorma-nats` directly — SDK dependency removed
+- `libs/soorma-nats/` — new shared NATS JetStream library (40 tests, 100% coverage)
+- Architectural violation fixed: infrastructure services use NATS directly
 
-**Deliverables:**
+**Phase 5: Validation & Integration Tests** ✅
+- 11 in-process integration tests (T13–T15)
+- All CI pipelines green; components aligned at v0.8.2
+
+**Deliverables shipped:**
 - Enhanced Registry Service with natural language discovery
-- A2A Agent Card publication
+- A2A Agent Card publication and A2A Gateway adapter
 - EventSelector for intelligent routing
+- `libs/soorma-nats/` shared NATS library
 - Tracker Service architectural fix
-- Updated documentation
-- New example: 11-tool-discovery
+- New examples: 11-discovery-llm, 12-event-selector, 13-a2a-gateway
 
-**Test Goals:** 500+ tests passing
+**Test Coverage:** 957+ tests total (515 SDK, 156 Memory, 81 Registry, 41 Tracker, 21 Event, 103 Common, 40 NATS)
 
 ---
 
@@ -680,16 +678,19 @@ Items intentionally deferred from Stage 4 for future implementation:
 
 **What Remains:**
 
-1. **Phase 3: Memory Examples**
-   - 04-memory-semantic (RAG pattern)
-   - 05-memory-working (WorkflowState helper)
-   - 06-memory-episodic (Conversation history)
+1. **Phase 3: Memory Examples** ✅ COMPLETE
+   - ✅ 04-memory-working (WorkflowState helper)
+   - ✅ 05-memory-semantic (RAG pattern)
+   - ✅ 06-memory-episodic (Conversation history)
 
-2. **Phase 4: Advanced Examples**
-   - 07-tool-discovery (Dynamic capability discovery)
-   - 08-planner-worker-basic (Trinity pattern) - partially exists
-   - 09-app-research-advisor (ChoreographyPlanner refactor) - deferred from Stage 4
-   - 10-multi-turn-conversation (Stateful conversations)
+2. **Phase 4: Advanced Examples** (Partially complete)
+   - ⬜ 07-tool-discovery (Dynamic capability discovery) — not yet created
+   - ✅ 08-worker-basic — exists (Trinity pattern, partial)
+   - ✅ research-advisor — exists (unnumbered legacy; numbered refactor deferred)
+   - ⬜ 10-multi-turn-conversation (Stateful conversations) — not yet created
+   - ✅ 11-discovery-llm — added in Stage 5
+   - ✅ 12-event-selector — added in Stage 5
+   - ✅ 13-a2a-gateway — added in Stage 5
 
 3. **Phase 5: Documentation & AI Tooling**
    - `.cursorrules` for AI assistant guidance
@@ -725,9 +726,9 @@ Items intentionally deferred from Stage 4 for future implementation:
    - **Effort:** 2-3 days
 
 4. **Full Application Examples:**
-   - 11-app-research-advisor (production-grade) - 2-3 days
-   - 12-app-customer-support - TBD
-   - 13-app-data-pipeline - TBD
+   - research-advisor numbered refactor (production-grade) - 2-3 days
+   - Customer support application - TBD
+   - Data pipeline application - TBD
 
 **Priority:** Low - evaluate based on user feedback after v1.0.0 release
 
@@ -736,20 +737,19 @@ Items intentionally deferred from Stage 4 for future implementation:
 ### Summary: Path to v1.0.0
 
 **Completed:**
-- ✅ Stages 1-4 (Foundation + Agent Models)
-- ✅ 451+ tests passing
-- ✅ 10 examples working
-- ✅ v0.8.0 released
+- ✅ Stages 1-5 (Foundation + Agent Models + Discovery & A2A)
+- ✅ 957+ tests passing (515 SDK, 156 Memory, 81 Registry, 41 Tracker, 21 Event, 103 Common, 40 NATS)
+- ✅ 13 numbered examples + research-advisor (01-hello-world → 13-a2a-gateway)
+- ✅ v0.8.2 released (March 14, 2026)
 
 **Remaining for v1.0.0:**
-1. **Stage 5 (Discovery & A2A):** 2-3 weeks → v0.9.0
-2. **Stage 6 (Migration & Polish):** 1-2 weeks → v1.0.0
-3. **Examples Development:** 2-3 weeks (concurrent with Stage 6)
+1. **Stage 6 (Migration & Polish):** 1-2 weeks → v1.0.0
+2. **Examples Development:** Remaining examples (07-tool-discovery, 10-multi-turn-conversation, numbered research-advisor)
 
-**Total Estimated Time to v1.0.0:** 5-8 weeks
+**Total Estimated Time to v1.0.0:** 2-4 weeks
 
 **Key Milestones:**
-- v0.9.0: Discovery & A2A complete + Tracker architectural fix
+- v0.9.0: ✅ Achieved (Discovery & A2A) — shipped as v0.8.2
 - v1.0.0: Production-ready with migration guide + complete examples
 
 ---
@@ -869,13 +869,13 @@ Quick lookup table for all refactoring tasks:
 | RF-SDK-023 | Planner handler-only event registration | Stage 4 | [06-PLANNER-MODEL](sdk/06-PLANNER-MODEL.md) | ✅ |
 | RF-ARCH-010 | Tracker as event listener | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ✅ |
 | RF-ARCH-011 | Task progress model | Stage 4 | [04-TRACKER-SERVICE](arch/04-TRACKER-SERVICE.md) | ✅ |
-| RF-ARCH-005 | Schema registration by name (not event name) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
-| RF-ARCH-006 | Structured capability with EventDefinition | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
-| RF-ARCH-007 | Discovery API for LLM reasoning | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ⬜ |
-| RF-SDK-007 | Event registration tied to agent | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
-| RF-SDK-008 | Agent discovery by capability (A2A) | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
-| RF-SDK-017 | EventSelector utility for LLM event selection | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
-| RF-SDK-018 | EventToolkit.format_for_llm_selection() | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ⬜ |
+| RF-ARCH-005 | Schema registration by name (not event name) | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ✅ |
+| RF-ARCH-006 | Structured capability with EventDefinition | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ✅ |
+| RF-ARCH-007 | Discovery API for LLM reasoning | Stage 5 | [05-REGISTRY-SERVICE](arch/05-REGISTRY-SERVICE.md) | ✅ |
+| RF-SDK-007 | Event registration tied to agent | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ✅ |
+| RF-SDK-008 | Agent discovery by capability (A2A) | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ✅ |
+| RF-SDK-017 | EventSelector utility for LLM event selection | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ✅ |
+| RF-SDK-018 | EventToolkit.format_for_llm_selection() | Stage 5 | [07-DISCOVERY](sdk/07-DISCOVERY.md) | ✅ |
 | RF-ARCH-002 | HITL pattern (User-Agent in soorma-cloud) | Stage 6 | [06-USER-AGENT](arch/06-USER-AGENT.md) | ⬜ |
 | RF-ARCH-001 | Clarify business-facts purpose | Reference | [00-OVERVIEW](arch/00-OVERVIEW.md) | ⬜ |
 
@@ -949,26 +949,29 @@ arch/06-USER-AGENT         ←→    (Standalone)
 
 ## Post-Refactoring: Examples Development
 
-**After completing all stages (1-6), proceed to examples development:**
+**After completing all stages (1-6), proceed to remaining examples development:**
 
 📍 **Next:** [EXAMPLES_REFACTOR_PLAN.md](../EXAMPLES_REFACTOR_PLAN.md) Phase 3-5
 
 **Dependencies:**
 - ✅ Stage 1-5 SDK primitives complete
 - ✅ WorkflowState, ChoreographyPlanner, EventSelector available
-- ✅ Stage 6 migration guide complete
+- ⬜ Stage 6 migration guide complete (pending)
 
 **What's Next:**
-1. **Phase 3: Memory Examples** (Week 2)
-   - `04-memory-semantic/` - RAG pattern
-   - `05-memory-working/` - Plan-scoped state (uses WorkflowState)
-   - `06-memory-episodic/` - Conversation history
+1. **Phase 3: Memory Examples** ✅ COMPLETE
+   - ✅ `04-memory-working/` - Plan-scoped state (uses WorkflowState)
+   - ✅ `05-memory-semantic/` - RAG pattern
+   - ✅ `06-memory-episodic/` - Conversation history
 
-2. **Phase 4: Advanced Examples** (Week 2-3)
-   - `07-tool-discovery/` - Dynamic capability discovery
-   - `08-planner-worker-basic/` - Trinity pattern
-   - `09-app-research-advisor/` - Uses ChoreographyPlanner
-   - `10-multi-turn-conversation/` - Stateful conversations
+2. **Phase 4: Advanced Examples** (Partially complete)
+   - ⬜ `07-tool-discovery/` - Dynamic capability discovery (not yet created)
+   - ✅ `08-worker-basic/` - Worker pattern (exists; planner-worker example deferred)
+   - ✅ `research-advisor` - Uses ChoreographyPlanner (unnumbered; numbered refactor deferred)
+   - ⬜ `10-multi-turn-conversation/` - Stateful conversations (not yet created)
+   - ✅ `11-discovery-llm/` - Discovery + LLM (added Stage 5)
+   - ✅ `12-event-selector/` - EventSelector intelligent routing (added Stage 5)
+   - ✅ `13-a2a-gateway/` - A2A interoperability (added Stage 5)
 
 3. **Phase 5: Documentation & AI Tooling** (Week 3)
    - Create `.cursorrules` for AI assistant guidance
