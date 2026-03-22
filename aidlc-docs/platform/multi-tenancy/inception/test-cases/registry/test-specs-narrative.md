@@ -6,23 +6,26 @@
 
 ---
 
-### TC-R-001 — Alembic migration converts tenant_id UUID to VARCHAR(64) on all three tables
+### TC-R-001 — Alembic migration 004 renames tenant_id to platform_tenant_id and converts UUID to VARCHAR(64) on all three tables
 
-**Context**: The core schema migration for the Registry Service — must run cleanly using a `::text` cast, avoiding data loss or errors on existing rows. Covers FR-2.1, FR-2.2.
+**Context**: The core schema migration for the Registry Service (Alembic revision 004). Must run cleanly using a `::text` cast. The column is both *renamed* (`tenant_id → platform_tenant_id`) and *retyped* (`UUID → VARCHAR(64)`). Composite unique constraints referencing the old column name are dropped before the rename and recreated with the new name. Existing rows must survive intact. Covers FR-2.1, FR-2.2. See also TC-R-011 for the RLS policies that are also applied by this migration.
 
-**Scenario description**: The Alembic migration script for the Registry UUID→VARCHAR change is applied to a database that has an existing `AgentTable`, `EventTable`, and `SchemaTable` with UUID-typed `tenant_id` columns.
+**Scenario description**: Migration 004 is applied to a PostgreSQL database with an existing pre-migration schema (`UUID tenant_id` columns on `agents`, `events`, `payload_schemas`).
 
 **Steps**:
-1. Stand up a PostgreSQL test database with the pre-migration schema (UUID `tenant_id` columns)
-2. Run `alembic upgrade head` (or the specific migration revision)
-3. Inspect the column type on `AgentTable`, `EventTable`, `SchemaTable`
+1. Stand up a PostgreSQL test database with the pre-migration schema (UUID `tenant_id` columns on the three Registry tables)
+2. Run `alembic upgrade head` to apply migration 004
+3. Inspect the column name and type on `agents`, `events`, `payload_schemas`: confirm column is named `platform_tenant_id` with type `VARCHAR(64)`
+4. Verify composite unique constraints have been recreated: `(agent_id, platform_tenant_id)` on `agents`; `(event_name, platform_tenant_id)` on `events`; `(schema_name, version, platform_tenant_id)` on `payload_schemas`
+5. Confirm existing rows are intact with tenant ID values as their string representation
 
-**Expected outcome**: All three tables have `tenant_id` as `VARCHAR(64)` (character varying, max 64). Existing rows remain intact with tenant ID values expressed as their string representation.
+**Expected outcome**: All three tables have column `platform_tenant_id` typed as `VARCHAR(64)`. No `tenant_id` column exists. Composite unique constraints reference `platform_tenant_id`. Existing rows present and correct.
 
 **Scope tag**: happy-path
 **Priority**: High
 **Source**: registry / FR-2.1, FR-2.2
 **Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/registry/
+**Technical references**: `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-rules.md` (BR-R10, BR-R11, BR-R12)
 
 ---
 
@@ -106,23 +109,24 @@
 
 ---
 
-### TC-R-006 — Registry ORM models use String(64) for tenant_id after migration
+### TC-R-006 — Registry ORM models rename tenant_id to platform_tenant_id with String(64) type
 
-**Context**: Validates that the ORM layer matches the database schema change — `Uuid(as_uuid=True)` replaced with `String(64)`. Covers FR-2.3, FR-2.4, FR-2.5.
+**Context**: Validates that the ORM layer matches both the rename and the type change from migration 004. The mapped attribute name changes from `tenant_id` to `platform_tenant_id`, the Python annotation changes from `Mapped[UUID]` to `Mapped[str]`, and the column type changes from `Uuid(as_uuid=True)` to `String(64)`. Covers FR-2.3, FR-2.4, FR-2.5.
 
-**Scenario description**: The ORM model definitions for `AgentTable`, `EventTable`, and `SchemaTable` are inspected.
+**Scenario description**: The ORM model definitions for `AgentTable`, `EventTable`, and `PayloadSchemaTable` are inspected for both the correct attribute name and the correct column type.
 
 **Steps**:
-1. Inspect the SQLAlchemy model for `AgentTable` — find the `tenant_id` column type
-2. Inspect `EventTable` — same check
-3. Inspect `SchemaTable` — same check
+1. Inspect `AgentTable`: confirm attribute `platform_tenant_id: Mapped[str]` with `String(64)` column type; confirm no `tenant_id` attribute; confirm no `Uuid` import used for this column
+2. Inspect `EventTable`: same checks
+3. Inspect `PayloadSchemaTable`: same checks
 
-**Expected outcome**: All three models define `tenant_id` as `Column(String(64), ...)` with no `Uuid` type or UUID-related metadata.
+**Expected outcome**: All three ORM models define `platform_tenant_id: Mapped[str]` backed by `String(64)`. No `tenant_id` attribute exists on any model. No `Uuid(as_uuid=True)` type usage for the tenant column.
 
 **Scope tag**: happy-path
 **Priority**: High
 **Source**: registry / FR-2.3, FR-2.4, FR-2.5
 **Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/registry/
+**Technical references**: `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-rules.md` (BR-R15)
 
 ---
 
@@ -163,20 +167,69 @@
 
 ---
 
-### TC-R-009 — Registry does not return data from a different platform tenant's namespace
+### TC-R-009 — Registry enforces cross-tenant isolation at the database layer (SOC2 evidence)
 
-**Context**: Negative/security case: a request from one platform tenant must not return agents registered by a different platform tenant. Covers NFR-1.3.
+**Context**: Negative/security case: a request from one platform tenant must not return agents registered by a different platform tenant. Covers NFR-1.3. **This is the primary SOC2 auditability test for Registry tenant isolation** (BR-R07b). Isolation is enforced at *two* layers: (1) application-layer `WHERE platform_tenant_id = :val`, and (2) PostgreSQL RLS policy activated via `get_tenanted_db` → `set_config('app.platform_tenant_id', ...)`. This test validates both layers in combination. Must be run against a real PostgreSQL instance (SQLite does not enforce RLS).
 
-**Scenario description**: Two agents are registered under different `platform_tenant_id` values. A query using the first tenant's ID should not return the second tenant's agent.
+**Scenario description**: Two agents are registered under different `platform_tenant_id` values via separate requests. A query using the first tenant's ID must not return the second tenant's data — enforced at DB level by the RLS policy.
 
 **Steps**:
-1. Register agent A under `X-Tenant-ID: spt_tenant_1`
-2. Register agent B under `X-Tenant-ID: spt_tenant_2`
-3. Send `GET /agents` with `X-Tenant-ID: spt_tenant_1`
+1. Start the Registry Service connected to a PostgreSQL instance with migration 004 applied (RLS policies active)
+2. Register agent A under `X-Tenant-ID: spt_tenant_1`
+3. Register agent B under `X-Tenant-ID: spt_tenant_2`
+4. Send `GET /agents` with `X-Tenant-ID: spt_tenant_1`
+5. Confirm agent A is returned and agent B is absent
+6. (Optional deeper verification) Execute a raw query in the same DB session with `app.platform_tenant_id` set to `spt_tenant_1` using `set_config` — confirm zero rows from `spt_tenant_2` are visible
 
-**Expected outcome**: Response includes only agent A. Agent B is not returned. No cross-tenant data leakage.
+**Expected outcome**: Response includes only agent A. Agent B is not returned. No cross-tenant data leakage at either the API or DB level. The PostgreSQL RLS policy (`FORCE ROW LEVEL SECURITY`) is the DB-layer enforcement mechanism: even if an application bug omitted the `WHERE` clause, the DB would return zero rows for the wrong tenant.
 
 **Scope tag**: happy-path-negative
 **Priority**: High
 **Source**: registry / NFR-1.3
 **Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/registry/
+**Technical references**: `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-rules.md` (BR-R07b), `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-logic-model.md` (Design Decision: Adding RLS to Registry)
+
+---
+
+### TC-R-010 — All Registry v1 route handlers use get_tenanted_db, not bare get_db
+
+**Context**: BR-R06 mandates that every route handler accessing `agents`, `events`, or `payload_schemas` must declare `db: AsyncSession = Depends(get_tenanted_db)`. This is the wiring that causes `set_config('app.platform_tenant_id', ...)` to fire before every query, activating the RLS policies deployed by migration 004. Without this, RLS policies exist in the DB schema but are never activated at query time — cross-tenant data would be visible. This is a structural code-inspection test.
+
+**Scenario description**: Every endpoint in `api/v1/agents.py`, `api/v1/events.py`, and `api/v1/schemas.py` is inspected to verify the database session dependency.
+
+**Steps**:
+1. Inspect all `@router` endpoint functions in `registry_service/api/v1/agents.py`
+2. Inspect all `@router` endpoint functions in `registry_service/api/v1/events.py`
+3. Inspect all `@router` endpoint functions in `registry_service/api/v1/schemas.py`
+4. For each endpoint, confirm the DB session parameter is typed as `db: AsyncSession = Depends(get_tenanted_db)`
+5. Confirm `get_tenanted_db` is imported from `soorma_service_common`
+
+**Expected outcome**: All DB-accessing route handlers in all three v1 route files use `Depends(get_tenanted_db)`. No bare `Depends(get_db)` is present in any v1 route handler. The import of `get_tenanted_db` references `soorma_service_common.dependencies`.
+
+**Scope tag**: happy-path
+**Priority**: High
+**Source**: registry / BR-R06
+**Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/registry/code/
+**Technical references**: `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-rules.md` (BR-R06)
+
+---
+
+### TC-R-011 — Migration 004 deploys ENABLE and FORCE ROW LEVEL SECURITY with isolation policies on all three Registry tables
+
+**Context**: The functional design adds RLS to Registry as a SOC2 auditability control (deviation from inception spec — see `business-logic-model.md`). BR-R07 requires RLS policies to be created by migration 004; BR-R07a requires `FORCE ROW LEVEL SECURITY` so that even the DB table owner (used by Alembic) is subject to the policy during application queries. This test verifies the structural presence of RLS configuration in the database schema after migration runs — it is the complement to TC-R-001 (column rename/retype) and TC-R-009 (runtime isolation).
+
+**Scenario description**: After migration 004 is applied, the PostgreSQL system catalog is queried to confirm that RLS is enabled, forced, and that the correct isolation policy expressions are present on all three tables.
+
+**Steps**:
+1. Apply migration 004 to a clean PostgreSQL test database
+2. Query `pg_class` where `relname IN ('agents', 'events', 'payload_schemas')` — confirm `relrowsecurity = true` and `relforcerowsecurity = true` for all three
+3. Query `pg_policies` where `tablename IN ('agents', 'events', 'payload_schemas')` — confirm at least one isolation policy exists per table
+4. Confirm isolation policy expressions reference `current_setting('app.platform_tenant_id', true)` — no UUID cast present (which would indicate old 003 policies were not replaced)
+
+**Expected outcome**: All three tables have `relrowsecurity = true` and `relforcerowsecurity = true`. Each table has an isolation policy referencing `current_setting('app.platform_tenant_id', true)`. No policy contains a `::UUID` cast. The migration is idempotent — running `alembic upgrade head` again does not raise an error.
+
+**Scope tag**: happy-path
+**Priority**: High
+**Source**: registry / BR-R07, BR-R07a
+**Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/registry/code/
+**Technical references**: `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-rules.md` (BR-R07, BR-R07a), `aidlc-docs/platform/multi-tenancy/construction/registry/functional-design/business-logic-model.md` (Design Decision: Adding RLS to Registry)

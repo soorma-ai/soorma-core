@@ -12,12 +12,14 @@ Feature: Registry Service two-tier tenancy migration and middleware adoption
   # Construction: aidlc-docs/platform/multi-tenancy/construction/registry/
 
   @happy-path @TC-R-001
-  Scenario: Alembic migration converts tenant_id UUID to VARCHAR(64) on all three tables
+  Scenario: Alembic migration 004 renames tenant_id to platform_tenant_id and converts UUID to VARCHAR(64)
     Given a PostgreSQL test database with the pre-migration schema
-    When the Alembic migration is applied
-    Then AgentTable.tenant_id column type is VARCHAR(64)
-    And EventTable.tenant_id column type is VARCHAR(64)
-    And SchemaTable.tenant_id column type is VARCHAR(64)
+    When Alembic migration 004 is applied
+    Then the column named platform_tenant_id exists on agents with type VARCHAR(64)
+    And the column named platform_tenant_id exists on events with type VARCHAR(64)
+    And the column named platform_tenant_id exists on payload_schemas with type VARCHAR(64)
+    And no tenant_id column exists on any of the three tables
+    And composite unique constraints reference platform_tenant_id on each table
     And existing rows remain intact
 
   # Source: registry / FR-2.7, FR-2.8
@@ -65,10 +67,12 @@ Feature: Registry Service two-tier tenancy migration and middleware adoption
   # Construction: aidlc-docs/platform/multi-tenancy/construction/registry/
 
   @happy-path @TC-R-006
-  Scenario: Registry ORM models use String(64) for tenant_id
+  Scenario: Registry ORM models rename tenant_id to platform_tenant_id with String(64) type
     Given the Registry Service codebase is built
-    When the SQLAlchemy model for AgentTable, EventTable, and SchemaTable is inspected
-    Then each model defines tenant_id as Column(String(64)) with no Uuid type
+    When the SQLAlchemy model for AgentTable, EventTable, and PayloadSchemaTable is inspected
+    Then each model defines platform_tenant_id as Mapped[str] with String(64) column type
+    And no tenant_id attribute exists on any model
+    And no Uuid type is used for the tenant column
 
   # Source: registry / FR-2.6
   # Construction: aidlc-docs/platform/multi-tenancy/construction/registry/
@@ -92,11 +96,39 @@ Feature: Registry Service two-tier tenancy migration and middleware adoption
 
   # Source: registry / NFR-1.3
   # Construction: aidlc-docs/platform/multi-tenancy/construction/registry/
+  # SOC2 evidence: BR-R07b
 
   @happy-path-negative @TC-R-009
-  Scenario: Registry does not leak data across platform tenant namespaces
-    Given agent A is registered under X-Tenant-ID "spt_tenant_1"
+  Scenario: Registry enforces cross-tenant isolation at the database layer
+    Given the Registry Service is connected to PostgreSQL with migration 004 applied
+    And agent A is registered under X-Tenant-ID "spt_tenant_1"
     And agent B is registered under X-Tenant-ID "spt_tenant_2"
     When I send GET /agents with X-Tenant-ID "spt_tenant_1"
-    Then only agent A appears in the response
-    And agent B is NOT returned
+    Then only agent A is returned
+    And agent B is not present in the response
+    And the PostgreSQL RLS policy (FORCE ROW LEVEL SECURITY) enforces isolation at the DB layer
+
+  # Source: registry / BR-R06
+  # Construction: aidlc-docs/platform/multi-tenancy/construction/registry/
+
+  @happy-path @TC-R-010
+  Scenario: All Registry v1 route handlers use get_tenanted_db not bare get_db
+    Given the Registry Service codebase is built
+    When all endpoint functions in api/v1/agents.py, api/v1/events.py, and api/v1/schemas.py are inspected
+    Then every DB-accessing handler declares db: AsyncSession = Depends(get_tenanted_db)
+    And no bare Depends(get_db) exists in any v1 route handler
+    And get_tenanted_db is imported from soorma_service_common
+
+  # Source: registry / BR-R07, BR-R07a
+  # Construction: aidlc-docs/platform/multi-tenancy/construction/registry/
+
+  @happy-path @TC-R-011
+  Scenario: Migration 004 deploys ENABLE and FORCE ROW LEVEL SECURITY with isolation policies
+    Given Alembic migration 004 has been applied to a PostgreSQL test database
+    When pg_class is queried for agents, events, and payload_schemas
+    Then relrowsecurity is true for all three tables
+    And relforcerowsecurity is true for all three tables
+    When pg_policies is queried for agents, events, and payload_schemas
+    Then at least one isolation policy exists per table
+    And each policy references current_setting('app.platform_tenant_id', true)
+    And no policy contains a ::UUID cast

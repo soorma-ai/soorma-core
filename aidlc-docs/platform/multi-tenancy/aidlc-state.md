@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U2 (soorma-service-common) - Code Generation COMPLETE
+- **Current Stage**: CONSTRUCTION - U3 (services/registry) - QA Enrichment COMPLETE - Construction Design PR Gate PENDING
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -56,7 +56,15 @@
 - [x] Construction Design PR Gate (dev branch — APPROVED 2026-03-22T08:26:16Z)
 - [x] Code Generation — COMPLETE | 40/40 tests pass
 
-#### U3 — services/registry (Wave 2) — blocked on U1
+#### U3 — services/registry (Wave 2) — blocked on U1 — **IN PROGRESS**
+- [x] Unit Initialization (2026-03-22T19:03:57Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
+- [x] Functional Design (artifacts at construction/registry/functional-design/)
+- [x] NFR Requirements (SKIPPED per unit spec)
+- [x] NFR Design (SKIPPED per unit spec)
+- [x] Infrastructure Design (SKIPPED per unit spec)
+- [x] Construction Design PR Gate — PENDING (awaiting team review)
+- [x] QA Test Case Enrichment — COMPLETE (TC-R-001/006/009 enriched; TC-R-010/011 added)
+- [ ] Code Generation
 #### U4 — services/memory (Wave 3) — blocked on U1 + U2
 #### U5 — services/tracker (Wave 3) — blocked on U1 + U2
 #### U6 — sdk/python (Wave 4) — blocked on U4 + U5
@@ -89,3 +97,10 @@
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/soorma-service-common-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-22T08:18:30Z
 - **Approved**: 2026-03-22T08:26:16Z
+
+### Construction Design PR Gate — registry
+- **Status**: PENDING
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/registry-design-pr-checkpoint-instructions.md
+- **Created**: 2026-03-22T20:16:46Z
+- **Approved**: —
