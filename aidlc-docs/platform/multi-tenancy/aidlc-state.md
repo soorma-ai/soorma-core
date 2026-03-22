@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: INCEPTION - Complete (ready for Construction)
+- **Current Stage**: CONSTRUCTION - U1 (soorma-common) - Functional Design complete; awaiting approval to proceed to Code Generation
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -39,7 +39,22 @@
 - [x] Units Generation
 
 ### CONSTRUCTION PHASE
-- [ ] (TBD after Inception)
+- [x] Construction Phase Initialization (extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
+
+#### U1 — soorma-common (Wave 1)
+- [x] Unit Initialization
+- [x] Functional Design (artifacts at construction/soorma-common/functional-design/)
+- [x] Code Generation Plan (construction/plans/soorma-common-code-generation-plan.md) — awaiting approval
+- [ ] Code Generation (execution)
+
+#### U2 — soorma-service-common (Wave 2) — blocked on U1
+#### U3 — services/registry (Wave 2) — blocked on U1
+#### U4 — services/memory (Wave 3) — blocked on U1 + U2
+#### U5 — services/tracker (Wave 3) — blocked on U1 + U2
+#### U6 — sdk/python (Wave 4) — blocked on U4 + U5
+#### U7 — services/event-service (Wave 3) — blocked on U1 + U2
+
+- [ ] Build and Test (after all units complete)
 
 ### OPERATIONS PHASE
 - [ ] Operations (Placeholder)
@@ -48,9 +63,10 @@
 
 | Field | Value |
 |-------|-------|
-| Status | PENDING |
+| Status | APPROVED |
 | Checkpoint Type | Inception Gate |
 | Branch | dev |
 | Instructions | aidlc-docs/platform/multi-tenancy/inception/plans/pr-checkpoint-instructions.md |
 | Timestamp | 2026-03-22T06:25:21Z |
-| Approved | — |
+| Approved | 2026-03-22T07:18:48Z |
+| Approved By | User ("functional design looks good") |
