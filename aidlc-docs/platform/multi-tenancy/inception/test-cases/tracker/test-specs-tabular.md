@@ -1,0 +1,15 @@
+# Test Specifications — Tabular
+## Unit: tracker
+## Initiative: Multi-Tenancy Model Implementation
+## Scope: happy-path-negative
+
+| Test Case ID | Title | Preconditions | Steps | Expected Result | Priority | Source | Construction Path |
+|---|---|---|---|---|---|---|---|
+| TC-T-001 | Alembic migration renames columns and adds platform_tenant_id | Tracker PostgreSQL test DB; pre-migration schema | 1. Apply migration; 2. Inspect plan_progress and action_progress columns | Both tables have service_tenant_id, service_user_id, platform_tenant_id as VARCHAR(64) NOT NULL; old names absent | High | tracker / FR-5.1-5.5 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-002 | TenantContext replaces per-route Header parsing | Tracker codebase built | 1. Inspect all route handler signatures | No direct Header() for tenant credentials; get_tenant_context from soorma_service_common used | High | tracker / FR-5.6 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-003 | Tracker API queries filter by all three identity dims | Tracker running; rows under two different platform_tenant_ids with same service_tenant_id | 1. Query with spt_1 context; 2. Check results | Only spt_1 row returned; spt_2 row absent | High | tracker / FR-5.7, NFR-1.3 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-004 | NATS handler extracts platform_tenant_id from event envelope | NATS event handler deployable; event with platform_tenant_id set | 1. Deliver event with platform_tenant_id="spt_from_event_service"; 2. Check created row | plan_progress.platform_tenant_id="spt_from_event_service"; service identity from event fields | High | tracker / FR-6.7, FR-5.6 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-005 | set_config_for_session called before DB query in NATS path | Spy on set_config_for_session | 1. Trigger NATS event handler; 2. Check spy call | set_config_for_session called with correct identity before any DB write | High | tracker / FR-5.6, FR-3a.3 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-006 | TrackerDataDeletion removes all rows for platform tenant | Rows in plan_progress and action_progress under spt_delete_tracker | 1. Call delete_by_platform_tenant; 2. Query both tables | Zero rows for spt_delete_tracker in both tables; other tenants unaffected | High | tracker / FR-5.8 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-007 | Tracker API rejects service_tenant_id >64 chars | Tracker running | 1. Send request with 65-char X-Service-Tenant-ID | HTTP 422 or DB constraint error; no data stored | High | tracker / NFR-3.1 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
+| TC-T-008 | NATS event with null platform_tenant_id does not create NULL row | Tracker NATS handler deployable | 1. Deliver event with platform_tenant_id=None; 2. Check DB for NULL platform_tenant_id rows | No row with NULL platform_tenant_id; either default used or event rejected with warning | High | tracker / FR-6.7 | aidlc-docs/platform/multi-tenancy/construction/tracker/ |
