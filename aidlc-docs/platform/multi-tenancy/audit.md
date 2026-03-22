@@ -132,3 +132,19 @@
 **Context**: CONSTRUCTION PHASE -- Unit soorma-common -- Code Generation PART 1 complete; awaiting user approval
 
 ---
+
+## Code Generation Plan Approved -- soorma-common (U1)
+**Timestamp**: 2026-03-22T07:25:27Z
+**User Input**: "plan looks good."
+**AI Response**: Plan approved. Executing Code Generation Part 2 — all 8 steps.
+**Context**: CONSTRUCTION PHASE -- Unit soorma-common -- Code Generation PART 2 started
+
+---
+
+## Construction Design PR Gate — soorma-common (U1)
+**Timestamp**: 2026-03-22T07:28:46Z
+**User Input**: "use dev branch"
+**AI Response**: Branch confirmed: dev. Section 5.1 validation passed — 3 functional design artifacts present (business-logic-model.md, business-rules.md, domain-entities.md). NFR Requirements/Design/Infrastructure Design — all N/A for U1. Generated construction/plans/soorma-common-design-pr-checkpoint-instructions.md. Updated aidlc-state.md: Construction Design PR Gate — soorma-common set to PENDING (branch: dev, created 2026-03-22T07:28:46Z). Presenting blocking message — Code Generation is blocked until developer confirms PR approval.
+**Context**: CONSTRUCTION PHASE -- Unit soorma-common -- Construction Design PR Gate PENDING; Code Generation BLOCKED
+
+---

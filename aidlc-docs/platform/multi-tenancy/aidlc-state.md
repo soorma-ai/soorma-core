@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U1 (soorma-common) - Functional Design complete; awaiting approval to proceed to Code Generation
+- **Current Stage**: CONSTRUCTION - U1 (soorma-common) - Construction Design PR Gate PENDING (branch: dev); awaiting team approval before Code Generation
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -61,12 +61,16 @@
 
 ## PR Checkpoint State
 
-| Field | Value |
-|-------|-------|
-| Status | APPROVED |
-| Checkpoint Type | Inception Gate |
-| Branch | dev |
-| Instructions | aidlc-docs/platform/multi-tenancy/inception/plans/pr-checkpoint-instructions.md |
-| Timestamp | 2026-03-22T06:25:21Z |
-| Approved | 2026-03-22T07:18:48Z |
-| Approved By | User ("functional design looks good") |
+### Inception PR Gate
+- **Status**: APPROVED
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/multi-tenancy/inception/plans/pr-checkpoint-instructions.md
+- **Created**: 2026-03-22T06:25:21Z
+- **Approved**: 2026-03-22T07:18:48Z
+
+### Construction Design PR Gate — soorma-common
+- **Status**: PENDING
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/soorma-common-design-pr-checkpoint-instructions.md
+- **Created**: 2026-03-22T07:28:46Z
+- **Approved**: —
