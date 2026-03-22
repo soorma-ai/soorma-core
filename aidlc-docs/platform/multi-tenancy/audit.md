@@ -252,3 +252,35 @@
 **Context**: Construction Phase — U2 Code Generation complete — 40/40 tests pass
 
 ---
+
+## Unit Initialization - U3 (services/registry)
+**Timestamp**: 2026-03-22T19:03:57Z
+**User Input**: "Using AI-DLC, resume the multi-tenancy initiative in the platform area. Start Construction for unit registry. Inception is complete. Please load all Inception artifacts and begin the Construction phase for this unit."
+**AI Response**: Loaded all inception artifacts (unit-of-work.md, components.md, component-methods.md). Extension rules reloaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline. Unit Initialization complete for U3 (services/registry). Created functional design plan at construction/plans/registry-functional-design-plan.md with 5 clarifying questions. Awaiting user answers.
+**Context**: Construction Phase - U3 Unit Initialization + Functional Design Plan Created
+
+---
+
+## Functional Design COMPLETE - U3 (services/registry)
+**Timestamp**: 2026-03-22T19:22:35Z
+**User Input**: "ok, all answered" (Q4=A, Q5=A via file edits)
+**AI Response**: All 5 design questions answered. Generated functional design artifacts: business-logic-model.md, business-rules.md, domain-entities.md at construction/registry/functional-design/. Plan file and aidlc-state.md updated.
+**Context**: Construction Phase - U3 Functional Design complete
+
+---
+
+## Functional Design Revision - U3 (services/registry) — RLS Added
+**Timestamp**: 2026-03-22T19:56:27Z
+**User Input**: "yes, lets update the artifacts to capture this, and add the rationale / explanation on why we are doing this"
+**AI Response**: Updated all three functional design artifacts to add RLS to Registry. Deviation from inception spec (C3 stated no RLS) documented with SOC2 rationale. Changes: business-logic-model.md — design decision section, RLS migration steps, Section 4 RLS activation flow; business-rules.md — BR-R06/R07 replaced, BR-R07a/R07b added; domain-entities.md — route handler db dependency section, RLS DDL in Alembic migration entity.
+**Context**: Construction Phase - U3 Functional Design revised (RLS added for SOC2 auditability)
+
+---
+
+## Construction Design PR Gate — registry (PENDING)
+**Timestamp**: 2026-03-22T20:16:46Z
+**User Input**: "yes, use dev"
+**AI Response**: Branch confirmed: dev. Section 5.1 validation passed — 3 functional design artifacts present (business-logic-model.md, business-rules.md, domain-entities.md). NFR Requirements/Design/Infrastructure Design all N/A for U3. Generated construction/plans/registry-design-pr-checkpoint-instructions.md. Updated aidlc-state.md: Construction Design PR Gate — registry set to PENDING (branch: dev, created 2026-03-22T20:16:46Z). Presenting blocking message — Code Generation is blocked until developer confirms PR approval.
+**Context**: Construction Phase — U3 (services/registry) — Construction Design PR Gate PENDING; Code Generation BLOCKED
+
+---
