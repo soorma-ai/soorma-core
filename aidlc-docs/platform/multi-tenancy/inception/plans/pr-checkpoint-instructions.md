@@ -1,0 +1,127 @@
+# PR Checkpoint Instructions — Inception Phase
+## Initiative: platform / multi-tenancy
+## Checkpoint Type: Inception Gate
+## Branch: dev
+## Date: 2026-03-22T06:25:21Z
+
+---
+
+## Context
+
+The INCEPTION PHASE for the **Multi-Tenancy Model Implementation** initiative is complete. All inception artifacts — including requirements, application design, units of work, JIRA tickets, and QA test cases — have been generated and are ready for team review.
+
+A **Pull Request must be raised and approved before any Construction Phase work begins.**
+
+---
+
+## Git Steps
+
+```bash
+# 1. Ensure you are on the feature branch
+git checkout dev
+
+# 2. Stage all inception artifacts
+git add aidlc-docs/platform/multi-tenancy/
+
+# 3. Commit with a Conventional Commits message
+git commit -m "feat(inception): platform/multi-tenancy — inception phase complete"
+
+# 4. Push to remote
+git push origin dev
+
+# 5. Open a Pull Request on GitHub
+#    Title:       feat(inception): platform/multi-tenancy — inception phase complete
+#    Base branch: main (or as agreed with your team)
+#    Head branch: dev
+```
+
+---
+
+## PR Title
+
+```
+feat(inception): platform/multi-tenancy — inception phase complete
+```
+
+---
+
+## PR Description
+
+### Initiative Summary
+
+**Initiative**: Two-Tier Tenancy Model for Soorma Core  
+**Functional Area**: `platform`  
+**Feature**: `multi-tenancy`  
+**INITIATIVE_ROOT**: `aidlc-docs/platform/multi-tenancy/`
+
+This PR marks the completion of the INCEPTION PHASE for the multi-tenancy model implementation. The initiative introduces a two-tier tenancy architecture to Soorma Core:
+- **Tier 1 – Platform tenant** (`platform_tenant_id`): The Soorma platform customer operating the deployment. Injected by the Event Service from the `X-Tenant-ID` header; never set by SDK or agents.
+- **Tier 2 – Service tenant** (`service_tenant_id`, `service_user_id`): The platform tenant's own customers. Supplied per-call by the SDK; enforced by RLS in all services.
+
+**Units of work (7 units, topological order)**:
+1. U1 — soorma-common (EventEnvelope `platform_tenant_id` field)
+2. U2 — soorma-service-common (TenantContext, get_tenant_context, get_tenanted_db)
+3. U3 — registry-service (TenantContext dependency injection)
+4. U4 — memory-service (TenantContext + two-tenant RLS)
+5. U5 — tracker-service (TenantContext dependency injection)
+6. U7 — event-service (TenancyMiddleware + publish_event injection)
+7. U6 — sdk-python (platform_tenant_id at init, per-call service headers, PlatformContext wrappers, docs)
+
+---
+
+### Key Requirements
+
+| FR | Description |
+|---|---|
+| FR-1.1–1.3 | Two-tier tenancy model: platform_tenant_id, service_tenant_id, service_user_id |
+| FR-2.1–2.4 | TenantContext in soorma-service-common |
+| FR-3a.1–3a.2 | get_tenant_context FastAPI dependency; default fallback |
+| FR-3b.1–3b.2 | get_tenanted_db RLS enforcement |
+| FR-4.1–4.4 | Registry service adapter |
+| FR-5.1–5.7 | Memory service two-sided RLS |
+| FR-6.1–6.7 | Event Service TenancyMiddleware + publish_event injection |
+| FR-7.1–7.6 | SDK two-tier headers at init and per-call |
+| FR-8.1–8.3 | ARCHITECTURE_PATTERNS.md updated |
+| NFR-1.1 | platform_tenant_id only from authenticated channel |
+| NFR-3.1 | Field length constraints (64 chars) |
+
+See full requirements: `aidlc-docs/platform/multi-tenancy/inception/requirements/requirements.md`
+
+---
+
+### Scrum Master Review Checklist
+
+Please review the following inception planning artifacts:
+
+- [ ] **Units of Work**: `aidlc-docs/platform/multi-tenancy/inception/plans/unit-of-work.md`  
+  Verify: All 7 units are correctly scoped; dependencies are complete; nothing missing.
+
+- [ ] **Unit Dependencies**: `aidlc-docs/platform/multi-tenancy/inception/plans/unit-of-work-dependency.md`  
+  Verify: Topological order is correct (U1→U2→U3/U4/U5→U7→U6); no cycle.
+
+- [ ] **JIRA Tickets**: `aidlc-docs/platform/multi-tenancy/inception/jira-tickets/jira-tickets.md`  
+  Verify: 1 Epic + 7 Stories; acceptance criteria are clear and testable; How to Start prompts are resolved.
+
+---
+
+### Engineering Team Review Checklist
+
+Please review the following technical artifacts:
+
+- [ ] **Requirements**: `aidlc-docs/platform/multi-tenancy/inception/requirements/requirements.md`  
+  Verify: All FRs and NFRs are accurate, complete, and aligned with the two-tier model.
+
+- [ ] **Application Design — Core Model**: `aidlc-docs/platform/multi-tenancy/inception/application-design/`  
+  Review all design files in this directory. Verify data models, service interactions, and RLS patterns are correct.
+
+- [ ] **QA Test Cases**: `aidlc-docs/platform/multi-tenancy/inception/test-cases/`  
+  Review all 7 unit test case directories (28 files, 64 test cases). Verify coverage of happy path and negative scenarios.
+
+---
+
+> **Note**: If reviewers identify issues, comment on this PR and notify the developer. The developer will request changes via the AI-DLC workflow before Construction begins. Only after this PR is **approved** will Construction Phase work commence.
+
+---
+
+*Generated by AI-DLC — Inception PR Checkpoint*  
+*Initiative root: `aidlc-docs/platform/multi-tenancy/`*
