@@ -284,3 +284,11 @@
 **Context**: Construction Phase — U3 (services/registry) — Construction Design PR Gate PENDING; Code Generation BLOCKED
 
 ---
+
+## QA Test Case Enrichment — registry (U3)
+**Timestamp**: 2026-03-22T20:26:15Z
+**User Input**: "do we not need any qa test revision for this unit of work?"
+**AI Response**: Identified missing construction-phase enrichment step (Section 2.6 — enrichment must fire BEFORE the PR checkpoint gate). Enriched 4 inception spec files in-place and created enrichment-delta.md. Modified: TC-R-001 (title + column rename + unique constraint rebuild); TC-R-006 (attribute rename to platform_tenant_id: Mapped[str]); TC-R-009 (RLS enforcement context + SOC2 evidence framing per BR-R07b). Added: TC-R-010 (all v1 route handlers must use Depends(get_tenanted_db)); TC-R-011 (migration 004 deploys ENABLE/FORCE RLS + isolation policies — structural verification). Updated PR checkpoint instructions to include enriched test spec references. Updated aidlc-state.md.
+**Context**: Construction Phase — U3 (services/registry) — QA Enrichment COMPLETE; PR Gate instructions updated
+
+---

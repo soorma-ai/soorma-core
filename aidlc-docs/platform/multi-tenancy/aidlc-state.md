@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U3 (services/registry) - Construction Design PR Gate PENDING
+- **Current Stage**: CONSTRUCTION - U3 (services/registry) - QA Enrichment COMPLETE - Construction Design PR Gate PENDING
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -63,6 +63,7 @@
 - [x] NFR Design (SKIPPED per unit spec)
 - [x] Infrastructure Design (SKIPPED per unit spec)
 - [x] Construction Design PR Gate — PENDING (awaiting team review)
+- [x] QA Test Case Enrichment — COMPLETE (TC-R-001/006/009 enriched; TC-R-010/011 added)
 - [ ] Code Generation
 #### U4 — services/memory (Wave 3) — blocked on U1 + U2
 #### U5 — services/tracker (Wave 3) — blocked on U1 + U2

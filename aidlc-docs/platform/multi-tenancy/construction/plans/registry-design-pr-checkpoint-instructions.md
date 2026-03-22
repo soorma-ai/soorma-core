@@ -78,6 +78,12 @@ platform-wide `VARCHAR(64)` string model established by this initiative. Key cha
 - NFR Requirements: N/A — not applicable for this unit
 - NFR Design: N/A — not applicable for this unit
 - Infrastructure Design: N/A — not applicable for this unit
+- QA Test Specifications (enriched — construction-phase update):
+  - `aidlc-docs/platform/multi-tenancy/inception/test-cases/registry/test-specs-narrative.md` (TC-R-001 through TC-R-011)
+  - `aidlc-docs/platform/multi-tenancy/inception/test-cases/registry/test-specs-gherkin.md`
+  - `aidlc-docs/platform/multi-tenancy/inception/test-cases/registry/test-specs-tabular.md`
+  - `aidlc-docs/platform/multi-tenancy/inception/test-cases/registry/test-case-index.md`
+  - `aidlc-docs/platform/multi-tenancy/inception/test-cases/registry/enrichment-delta.md` (change log: TC-R-001/R-006/R-009 enriched; TC-R-010/R-011 added for RLS wiring and SOC2 policy verification)
 ```
 
 ---
