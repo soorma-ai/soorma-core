@@ -148,3 +148,27 @@
 **Context**: CONSTRUCTION PHASE -- Unit soorma-common -- Construction Design PR Gate PENDING; Code Generation BLOCKED
 
 ---
+
+## Construction Design PR Gate Approved -- soorma-common (U1)
+**Timestamp**: 2026-03-22T07:33:32Z
+**User Input**: "PR approved"
+**AI Response**: Construction Design PR Gate for soorma-common marked APPROVED. aidlc-state.md updated: gate status APPROVED, approved timestamp 2026-03-22T07:33:32Z. Code Generation is now unblocked. Proceeding to Code Generation Part 2 execution.
+**Context**: CONSTRUCTION PHASE -- Unit soorma-common -- Code Generation UNBLOCKED; executing plan
+
+---
+
+## Code Generation - U1 soorma-common - COMPLETE
+**Timestamp**: 2026-03-22T07:46:25Z
+**User Input**: "need to source ~/ws/github/soorma-ai/soorma-core/.venv/bin/activate before running any python commands"
+**AI Response**: Resumed RED phase with venv activated. Confirmed RED (3 AssertionError failures, 2 structural passes). Implemented GREEN for tenancy.py (os.environ.get or sentinel). Added 4 RED tests for EventEnvelope.platform_tenant_id (AttributeError confirmed). Implemented GREEN for events.py (platform_tenant_id field + updated tenant_id/user_id docstrings). Added __init__.py export. REFACTOR verified (only os import, no UUID validation). Full suite: 112/112 pass. code-summary.md created. aidlc-state.md updated: U1 Code Generation COMPLETE.
+**Context**: Code Generation Steps 2-8 completed. U1 soorma-common fully done.
+
+---
+
+## Code Generation - U1 soorma-common - COMPLETE
+**Timestamp**: 2026-03-22T07:47:02Z
+**User Input**: "need to source .venv/bin/activate before running any python commands"
+**AI Response**: Resumed RED phase with venv activated. Confirmed RED (3 AssertionError failures). Implemented GREEN tenancy.py. Added 4 RED tests for EventEnvelope.platform_tenant_id (AttributeError confirmed). Implemented GREEN events.py (platform_tenant_id field + updated docstrings). Added __init__.py export. REFACTOR: 112/112 pass. code-summary.md created. U1 COMPLETE.
+**Context**: Code Generation Steps 2-8 all complete for U1 soorma-common.
+
+---

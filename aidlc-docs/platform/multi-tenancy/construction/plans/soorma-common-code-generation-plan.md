@@ -37,71 +37,71 @@ This unit uses the **soorma-core TDD mandate**: all steps must follow STUB → R
 ## Steps
 
 ### Step 1: STUB — Create `soorma_common/tenancy.py` (stub)
-- [ ] Create `libs/soorma-common/src/soorma_common/tenancy.py`
-- [ ] Define `DEFAULT_PLATFORM_TENANT_ID: str = ""` (stub — wrong value, tests will fail)
-- [ ] Include the required code comment warning (NFR-3.3)
-- [ ] Verify module imports without error
+- [x] Create `libs/soorma-common/src/soorma_common/tenancy.py`
+- [x] Define `DEFAULT_PLATFORM_TENANT_ID: str = ""` (stub — wrong value, tests will fail)
+- [x] Include the required code comment warning (NFR-3.3)
+- [x] Verify module imports without error
 
 **Target file**: `libs/soorma-common/src/soorma_common/tenancy.py`
 
 ---
 
 ### Step 2: RED — Write `test_tenancy.py` (tests must FAIL against stub)
-- [ ] Create `libs/soorma-common/tests/test_tenancy.py`
-- [ ] Write `TestDefaultPlatformTenantId`:
+- [x] Create `libs/soorma-common/tests/test_tenancy.py`
+- [x] Write `TestDefaultPlatformTenantId`:
   - `test_default_value` — asserts value equals `"spt_00000000-0000-0000-0000-000000000000"` (FAILS against stub `""`)
   - `test_env_var_override` — monkeypatches `SOORMA_PLATFORM_TENANT_ID`, reimports module, asserts override value is used
   - `test_env_var_empty_uses_default` — env var set to `""` → falls back to literal default
-- [ ] Run tests: verify they **FAIL** with assertion errors (not ImportError/AttributeError)
+- [x] Run tests: verify they **FAIL** with assertion errors (not ImportError/AttributeError)
 
 **Target file**: `libs/soorma-common/tests/test_tenancy.py`
 
 ---
 
 ### Step 3: GREEN — Implement `tenancy.py` (real logic, tests must PASS)
-- [ ] Replace stub value with real env var resolution logic in `tenancy.py`
-- [ ] Run `test_tenancy.py`: verify all tests **PASS**
+- [x] Replace stub value with real env var resolution logic in `tenancy.py`
+- [x] Run `test_tenancy.py`: verify all tests **PASS**
 
 ---
 
 ### Step 4: STUB — `EventEnvelope` field not yet added (RED state for new tests)
-- [ ] Write new test methods in `libs/soorma-common/tests/test_events.py`:
+- [x] Write new test methods in `libs/soorma-common/tests/test_events.py`:
   - `test_platform_tenant_id_defaults_to_none` — creates `EventEnvelope` without `platform_tenant_id`, asserts field is `None`
   - `test_platform_tenant_id_accepts_opaque_string` — sets `platform_tenant_id="spt_test-123"`, asserts value stored correctly
   - `test_platform_tenant_id_backward_compatible` — existing minimal envelope construction still works (no required field added)
   - `test_tenant_id_field_semantics` — verify `tenant_id` is optional string (existing field, docstring context test)
-- [ ] Run the new tests: they must **FAIL** with `AttributeError: 'EventEnvelope' has no attribute 'platform_tenant_id'`
+- [x] Run the new tests: they must **FAIL** with `AttributeError: 'EventEnvelope' has no attribute 'platform_tenant_id'`
 
 ---
 
 ### Step 5: GREEN — Add `platform_tenant_id` field to `EventEnvelope`
-- [ ] Modify `libs/soorma-common/src/soorma_common/events.py`:
+- [x] Modify `libs/soorma-common/src/soorma_common/events.py`:
   - Add `platform_tenant_id: Optional[str]` field adjacent to `tenant_id` / `user_id`
   - Update `platform_tenant_id` field docstring: "Platform tenant ID — injected by Event Service from authenticated X-Tenant-ID header at publish time. SDK agents MUST NOT set this field; any value will be overwritten by the Event Service."
   - Update `tenant_id` field docstring: "Service tenant ID — SDK-supplied. Identifies the tenant within the service layer (e.g., memory, tracker). Distinct from `platform_tenant_id`. Passed through the event bus unchanged."
   - Update `user_id` field docstring: "Service user ID — SDK-supplied. Identifies the user within the service tenant context. Passed through the event bus unchanged."
-- [ ] Run all `test_events.py` tests: new tests **PASS**, existing tests still **PASS**
+- [x] Run all `test_events.py` tests: new tests **PASS**, existing tests still **PASS**
 
 ---
 
 ### Step 6: GREEN — Export `DEFAULT_PLATFORM_TENANT_ID` from `__init__.py`
-- [ ] Modify `libs/soorma-common/src/soorma_common/__init__.py`:
+- [x] Modify `libs/soorma-common/src/soorma_common/__init__.py`:
   - Add `from .tenancy import DEFAULT_PLATFORM_TENANT_ID` (import from new module)
   - Add `DEFAULT_PLATFORM_TENANT_ID` to the public exports block
-- [ ] Verify import: `from soorma_common import DEFAULT_PLATFORM_TENANT_ID` resolves correctly
+- [x] Verify import: `from soorma_common import DEFAULT_PLATFORM_TENANT_ID` resolves correctly
 
 ---
 
 ### Step 7: REFACTOR — Review and clean up
-- [ ] Review `tenancy.py` for clarity: ensure code comment warning is prominent
-- [ ] Verify no UUID format validation was accidentally introduced
-- [ ] Verify `tenancy.py` imports only `os` (no FastAPI/Starlette/SQLAlchemy)
-- [ ] Run full test suite: `pytest libs/soorma-common/tests/` — all tests pass
+- [x] Review `tenancy.py` for clarity: ensure code comment warning is prominent
+- [x] Verify no UUID format validation was accidentally introduced
+- [x] Verify `tenancy.py` imports only `os` (no FastAPI/Starlette/SQLAlchemy)
+- [x] Run full test suite: `pytest libs/soorma-common/tests/` — all tests pass (112/112)
 
 ---
 
 ### Step 8: Code Summary
-- [ ] Create `aidlc-docs/platform/multi-tenancy/construction/soorma-common/code/code-summary.md`
+- [x] Create `aidlc-docs/platform/multi-tenancy/construction/soorma-common/code/code-summary.md`
   - List all modified and created files with purpose
   - Note test execution results (expected: all pass)
 

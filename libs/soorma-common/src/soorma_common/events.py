@@ -99,11 +99,15 @@ class EventEnvelope(BaseDTO):
     # Additional Soorma-specific metadata
     tenant_id: Optional[str] = Field(
         default=None,
-        description="Tenant ID for multi-tenancy"
+        description="Service tenant ID — SDK-supplied. Identifies the tenant within the service layer (e.g., memory, tracker). Distinct from `platform_tenant_id`. Passed through the event bus unchanged."
     )
     user_id: Optional[str] = Field(
         default=None,
-        description="User ID for user-specific events"
+        description="Service user ID — SDK-supplied. Identifies the user within the service tenant context. Passed through the event bus unchanged."
+    )
+    platform_tenant_id: Optional[str] = Field(
+        default=None,
+        description="Platform tenant ID — injected by Event Service from authenticated X-Tenant-ID header at publish time. SDK agents MUST NOT set this field; any value will be overwritten by the Event Service."
     )
     session_id: Optional[str] = Field(
         default=None,

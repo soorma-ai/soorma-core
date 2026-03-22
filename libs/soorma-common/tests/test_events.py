@@ -176,6 +176,54 @@ class TestEventEnvelope:
         assert ce_dict["responsetopic"] == "action-results"
         assert ce_dict["payloadschemaname"] == "test_schema_v1"
 
+    def test_platform_tenant_id_defaults_to_none(self):
+        """platform_tenant_id is None when not explicitly provided (FR-6.1)."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.BUSINESS_FACTS,
+        )
+        assert envelope.platform_tenant_id is None
+
+    def test_platform_tenant_id_accepts_opaque_string(self):
+        """platform_tenant_id stores any opaque string value (NFR-3.2, FR-6.2)."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.BUSINESS_FACTS,
+            platform_tenant_id="spt_test-123",
+        )
+        assert envelope.platform_tenant_id == "spt_test-123"
+
+    def test_platform_tenant_id_backward_compatible(self):
+        """Existing envelope construction without platform_tenant_id still works (FR-6.3)."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.ACTION_REQUESTS,
+            data={"key": "value"},
+            tenant_id="tenant-1",
+            user_id="user-1",
+        )
+        # No AttributeError — field exists and defaults to None
+        assert envelope.platform_tenant_id is None
+        # Existing fields unaffected
+        assert envelope.tenant_id == "tenant-1"
+        assert envelope.user_id == "user-1"
+
+    def test_tenant_id_field_semantics(self):
+        """tenant_id and platform_tenant_id are distinct fields with independent values (FR-6.4)."""
+        envelope = EventEnvelope(
+            source="test-agent",
+            type="test.event",
+            topic=EventTopic.BUSINESS_FACTS,
+            tenant_id="service-tenant-abc",
+            platform_tenant_id="spt_00000000-0000-0000-0000-000000000000",
+        )
+        assert envelope.tenant_id == "service-tenant-abc"
+        assert envelope.platform_tenant_id == "spt_00000000-0000-0000-0000-000000000000"
+        assert envelope.tenant_id != envelope.platform_tenant_id
+
 
 class TestActionRequestEvent:
     """Tests for ActionRequestEvent model."""
