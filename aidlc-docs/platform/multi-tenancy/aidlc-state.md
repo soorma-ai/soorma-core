@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U1 (soorma-common) - Construction Design PR Gate PENDING (branch: dev); awaiting team approval before Code Generation
+- **Current Stage**: CONSTRUCTION - U1 (soorma-common) - Code Generation COMPLETE
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -44,8 +44,9 @@
 #### U1 — soorma-common (Wave 1)
 - [x] Unit Initialization
 - [x] Functional Design (artifacts at construction/soorma-common/functional-design/)
-- [x] Code Generation Plan (construction/plans/soorma-common-code-generation-plan.md) — awaiting approval
-- [ ] Code Generation (execution)
+- [x] Code Generation Plan (construction/plans/soorma-common-code-generation-plan.md) — APPROVED
+- [x] Construction Design PR Gate (dev branch — APPROVED 2026-03-22T07:33:32Z)
+- [x] Code Generation (execution) — COMPLETE 2026-03-22 | 112/112 tests pass
 
 #### U2 — soorma-service-common (Wave 2) — blocked on U1
 #### U3 — services/registry (Wave 2) — blocked on U1
@@ -69,8 +70,8 @@
 - **Approved**: 2026-03-22T07:18:48Z
 
 ### Construction Design PR Gate — soorma-common
-- **Status**: PENDING
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/soorma-common-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-22T07:28:46Z
-- **Approved**: —
+- **Approved**: 2026-03-22T07:33:32Z
