@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U2 (soorma-service-common) - Code Generation
+- **Current Stage**: CONSTRUCTION - U2 (soorma-service-common) - Code Generation COMPLETE
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -54,7 +54,7 @@
 - [x] NFR Requirements (artifacts at construction/soorma-service-common/nfr-requirements/)
 - [x] NFR Design (artifacts at construction/soorma-service-common/nfr-design/)
 - [x] Construction Design PR Gate (dev branch — APPROVED 2026-03-22T08:26:16Z)
-- [ ] Code Generation
+- [x] Code Generation — COMPLETE | 40/40 tests pass
 
 #### U3 — services/registry (Wave 2) — blocked on U1
 #### U4 — services/memory (Wave 3) — blocked on U1 + U2
