@@ -11,7 +11,7 @@
 ### Transformation Scope
 - **Transformation Type**: Architectural — two-tier identity model replacing single-tier UUID tenancy
 - **Primary Changes**: New shared library; DB schema restructure (memory, tracker, registry); RLS policy rebuild; SDK client refactor; shared middleware
-- **Related Components**: libs/soorma-common, libs/soorma-service-common (new), services/registry, services/memory, services/tracker, sdk/python, docs/ARCHITECTURE_PATTERNS.md
+- **Related Components**: libs/soorma-common, libs/soorma-service-common (new), services/registry, services/memory, services/tracker, services/event-service, sdk/python, docs/ARCHITECTURE_PATTERNS.md
 
 ### Change Impact Assessment
 - **User-facing changes**: No — all changes are infrastructure/platform-layer
@@ -204,14 +204,15 @@ flowchart TD
 
 | Unit | Component | Change Type | Depends On |
 |---|---|---|---|
-| U1 | `libs/soorma-common` | Minor — add constant | — |
+| U1 | `libs/soorma-common` | Minor — add constant + `platform_tenant_id` field on `EventEnvelope` | — |
 | U2 | `libs/soorma-service-common` | Major — new library | U1 |
 | U3 | `services/registry` | Moderate — UUID→VARCHAR migration + API | U1 |
 | U4 | `services/memory` | Major — DB restructure + RLS rebuild + GDPR | U1, U2 |
-| U5 | `services/tracker` | Moderate — column renames + new column + middleware | U1, U2 |
+| U5 | `services/tracker` | Moderate — column renames + new column + middleware; NATS path trusts `event.platform_tenant_id` | U1, U2 |
 | U6 | `sdk/python` | Moderate — client refactor + PlatformContext update | U4, U5 |
+| U7 | `services/event-service` | Minor — register `TenancyMiddleware` + inject `platform_tenant_id` at publish | U1, U2 |
 
-*(U3 and U2 can execute in parallel; U4 and U5 can execute in parallel.)*
+*(U2 and U3 can execute in parallel; U4, U5, and U7 can execute in parallel after U1 + U2.)*
 
 ---
 
@@ -225,6 +226,7 @@ flowchart TD
   - Registry service: UUID validation removed; string tenant IDs accepted
   - SDK clients: platform_tenant_id at init-time; service_tenant_id/service_user_id per-call
   - GDPR deletion service covering all memory + tracker tables
+  - Event Service: `TenancyMiddleware` registered; `platform_tenant_id` injected into `EventEnvelope` at publish from authenticated `X-Tenant-ID` header
 - **Quality Gates**:
   - Existing test suite passes with updated tenant/user ID format
   - RLS isolation verified: query with wrong platform_tenant_id returns zero rows

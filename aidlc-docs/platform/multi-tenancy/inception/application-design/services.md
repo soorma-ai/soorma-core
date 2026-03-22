@@ -52,7 +52,7 @@ Route handler depends on get_tenanted_db
 ```
 
 **Used by**: Memory Service CRUD endpoints, Tracker Service query endpoints
-**Not used by**: Registry Service (no RLS tables), Tracker NATS event handlers (no HTTP context)
+**Not used by**: Registry Service (no RLS tables), Tracker NATS event handlers (use `set_config_for_session` helper instead — same logic, no HTTP request object available), Event Service (no DB)
 
 ---
 
@@ -131,7 +131,7 @@ POST /v1/memory/semantic
 
 **Type**: Existing FastAPI service + NATS event subscriber (modified)
 
-**Responsibility**: Record and query plan/action execution state. Two inbound paths: HTTP API (uses middleware + `get_tenanted_db`) and NATS event subscriptions (uses `EventEnvelope` fields for service tenant/user; `platform_tenant_id` defaults to `DEFAULT_PLATFORM_TENANT_ID`).
+**Responsibility**: Record and query plan/action execution state. Two inbound paths: HTTP API (uses middleware + `get_tenanted_db`) and NATS event subscriptions (uses `EventEnvelope` fields for all three identity dimensions — `platform_tenant_id` comes from `event.platform_tenant_id` injected by the Event Service).
 
 **Dual-path orchestration**:
 
@@ -147,10 +147,45 @@ GET /v1/tracker/plans/{plan_id}
 ```
 NATS: soorma.events.action-requests
     → EventEnvelope.model_validate(message)
-    → platform_tenant_id = DEFAULT_PLATFORM_TENANT_ID  (NATS has no auth channel today)
+    → platform_tenant_id = event.platform_tenant_id
+      (trusted: injected by Event Service from X-Tenant-ID header before publishing;
+       Event Service is the trust boundary for platform_tenant_id in the event bus)
     → service_tenant_id  = event.tenant_id
     → service_user_id    = event.user_id
+    → call set_config_for_session(db, platform_tenant_id, service_tenant_id, service_user_id)
+      (helper that mirrors get_tenanted_db; runs inside the DB session opened
+       by _create_db_handler — no HTTP context here, so middleware doesn\'t run)
     → ActionProgressCRUD.upsert(db, platform_tenant_id, service_tenant_id, service_user_id, ...)
-    → NOTE: set_config must also be called on the NATS-path DB session (no middleware here)
-            → handled by a helper that mimics get_tenanted_db behavior inline
 ```
+
+**Key design note**: `platform_tenant_id` in the `EventEnvelope` is set server-side by the Event Service from the authenticated `X-Tenant-ID` header. SDK agents never set it. This makes `event.platform_tenant_id` a trusted field on the NATS bus.
+
+**Boundaries**:
+- NATS event-driven path: `platform_tenant_id` comes from `event.platform_tenant_id` (injected by Event Service — trusted). `set_config_for_session` helper runs inline on the DB session.
+- API-driven path: `platform_tenant_id` comes from `request.state` (middleware-set)
+
+---
+
+## S7 — Event Service (platform_tenant_id injection)
+
+**Type**: Existing FastAPI service (modified)
+
+**Responsibility**: Acts as the authentication boundary for `platform_tenant_id` in the event bus. Every event published by an SDK agent passes through this service; the service injects the caller's authenticated platform tenant ID into the envelope before forwarding to NATS.
+
+**Injection sequence at publish**:
+```
+POST /publish  (SDK agent sends EventEnvelope with tenant_id + user_id; no platform_tenant_id)
+    → TenancyMiddleware: X-Tenant-ID header → request.state.platform_tenant_id
+    → publish_event(http_request: Request, publish_request: PublishRequest):
+        event = publish_request.event
+        event.platform_tenant_id = get_platform_tenant_id(http_request)  # overwrite SDK value
+        message = event.model_dump(mode='json', exclude_none=True)
+        await event_manager.publish(topic_str, message)
+        # NATS message now contains platform_tenant_id in the envelope payload
+```
+
+**Security note**: `event.platform_tenant_id` is always overwritten — never trusted from the SDK payload. The SDK cannot forge a different platform tenant's identity; the auth header is the only accepted source.
+
+**Registered in**: `services/event-service/src/main.py` via `app.add_middleware(TenancyMiddleware)`
+
+**Dependencies**: `soorma-service-common` (TenancyMiddleware, get_platform_tenant_id)

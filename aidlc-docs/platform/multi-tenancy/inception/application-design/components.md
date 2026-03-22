@@ -17,7 +17,8 @@ This initiative touches 7 components across 4 packages. One new library is creat
 **Responsibilities**:
 - Provide the authoritative `DEFAULT_PLATFORM_TENANT_ID` constant
 - Allow runtime override via `SOORMA_PLATFORM_TENANT_ID` env var
-- Update `EventEnvelope` field docstrings to reflect new semantic meaning (service tenant / service user — never platform tenant)
+- Add `platform_tenant_id: Optional[str]` field to `EventEnvelope` — set server-side by Event Service only; SDK agents MUST NOT populate it
+- Update `EventEnvelope` field docstrings: `platform_tenant_id` = Event Service injected; `tenant_id` = service tenant; `user_id` = service user
 - Carry no format validation on tenant/user IDs — pure opaque strings
 
 **Boundaries**:
@@ -35,6 +36,7 @@ This initiative touches 7 components across 4 packages. One new library is creat
 - `TenancyMiddleware` — extracts all three identity dimensions from HTTP headers; sets `request.state`; calls PostgreSQL `set_config` NOT called here (see Q1 decision: responsibility split)
 - `get_tenanted_db` FastAPI dependency — wraps `get_db`; calls `set_config` for all three session variables before yielding the DB session (transaction-scoped)
 - FastAPI dependency functions: `get_platform_tenant_id`, `get_service_tenant_id`, `get_service_user_id` — read from `request.state`
+- `TenantContext` dataclass + `get_tenant_context` dependency — convenience bundle combining all three identity dimensions with a tenanted DB session; single `Depends()` used in every Memory/Tracker route handler instead of four separate injections
 - `PlatformTenantDataDeletion` abstract base class — defines the deletion interface; concrete implementations live in each service
 
 **Boundaries**:
@@ -68,6 +70,7 @@ This initiative touches 7 components across 4 packages. One new library is creat
 
 **Responsibilities**:
 - Accept all three identity dimensions via `TenancyMiddleware` from `soorma-service-common`
+- Use `TenantContext` + `get_tenant_context` from `soorma-service-common` as the single `Depends()` bundle in every route handler
 - Use `get_tenanted_db` dependency to call `set_config` transaction-scoped before every DB operation (activates RLS)
 - Restructure all table schemas: drop `tenants`/`users` reference tables; replace UUID FKs with `(platform_tenant_id, service_tenant_id, service_user_id)` plain columns
 - Rebuild all RLS policies using string comparison on `current_setting(...)` (no `::UUID` cast)
@@ -86,9 +89,10 @@ This initiative touches 7 components across 4 packages. One new library is creat
 
 **Responsibilities**:
 - Accept all three identity dimensions via `TenancyMiddleware` from `soorma-service-common`
+- Use `TenantContext` + `get_tenant_context` from `soorma-service-common` as the single `Depends()` bundle in API route handlers
 - Use `get_tenanted_db` dependency for `set_config` activation (consistent with Memory Service)
 - Rename columns: `tenant_id → service_tenant_id`, `user_id → service_user_id`; add `platform_tenant_id VARCHAR(64) NOT NULL`
-- Event subscribers extract `platform_tenant_id` from `request.state` (set by middleware for API-path calls); for NATS-path event handlers, extract from NATS connection context / `EventEnvelope` (service tenant/user from envelope; platform tenant hardcoded to `DEFAULT_PLATFORM_TENANT_ID` pending NATS auth context)
+- Event subscribers extract `platform_tenant_id` from `event.platform_tenant_id` (trusted: injected by Event Service from `X-Tenant-ID` auth header before publishing to NATS). Service tenant/user from `event.tenant_id` / `event.user_id`. `set_config` called on the NATS-path DB session via `set_config_for_session` helper.
 - Implement `TrackerDataDeletion` (concrete `PlatformTenantDataDeletion`) covering `plan_progress` and `action_progress` tables
 - All query endpoints filter by `(platform_tenant_id, service_tenant_id, service_user_id)`
 
@@ -123,7 +127,18 @@ This initiative touches 7 components across 4 packages. One new library is creat
 - `TrackerClient` wrapper (context.tracker): same pattern — envelope-extracted service tenant/user; no platform_tenant_id parameter exposure
 - Agent handlers continue passing nothing — context extracts from current event envelope automatically
 
+---
+
+## C8 — `services/event-service` (modified)
+
+**Purpose**: Event routing hub. Receives events from SDK agents via HTTP POST and fans out to NATS. Also streams events to subscribers via SSE. Acts as the authentication boundary for `platform_tenant_id` in the event bus.
+
+**Responsibilities**:
+- Register `TenancyMiddleware` from `soorma-service-common` to extract `X-Tenant-ID` → `request.state.platform_tenant_id`
+- At publish time: inject `event.platform_tenant_id` from `request.state` — discard/overwrite any value the SDK may have sent. This is the trust boundary: downstream consumers (Tracker, future services) treat `event.platform_tenant_id` as authoritative.
+- `tenant_id` and `user_id` in the envelope are SDK-supplied (service tenant / service user) and are passed through unchanged
+- No database; no RLS; no `get_tenanted_db` needed
+
 **Boundaries**:
-- Agent handler code MUST NOT know about `platform_tenant_id`
-- Wrappers inject service tenant/user from envelope; platform_tenant_id is set at client init-time
-- No service client imports in agent tests (architecture mandate)
+- Only `TenancyMiddleware` from `soorma-service-common` is used (no `get_tenanted_db` — no DB in Event Service)
+- SDK agents MUST NOT set `platform_tenant_id` on outbound envelopes; Event Service overwrites it regardless

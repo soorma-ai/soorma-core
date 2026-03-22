@@ -9,12 +9,14 @@
 | Consumer | Depends On | What it uses |
 |---|---|---|
 | `services/registry` | `soorma-service-common` | `TenancyMiddleware`, `get_platform_tenant_id` |
-| `services/memory` | `soorma-service-common` | `TenancyMiddleware`, `get_tenanted_db`, `get_platform_tenant_id`, `get_service_tenant_id`, `get_service_user_id`, `PlatformTenantDataDeletion` (ABC) |
-| `services/tracker` | `soorma-service-common` | `TenancyMiddleware`, `get_tenanted_db`, `get_platform_tenant_id`, `get_service_tenant_id`, `get_service_user_id`, `PlatformTenantDataDeletion` (ABC) |
+| `services/memory` | `soorma-service-common` | `TenancyMiddleware`, `get_tenanted_db`, `get_platform_tenant_id`, `get_service_tenant_id`, `get_service_user_id`, `TenantContext`, `get_tenant_context`, `PlatformTenantDataDeletion` (ABC) |
+| `services/tracker` | `soorma-service-common` | `TenancyMiddleware`, `get_tenanted_db`, `get_platform_tenant_id`, `get_service_tenant_id`, `get_service_user_id`, `TenantContext`, `get_tenant_context`, `PlatformTenantDataDeletion` (ABC) |
+| `services/event-service` | `soorma-service-common` | `TenancyMiddleware`, `get_platform_tenant_id` |
 | `soorma-service-common` | `soorma-common` | `DEFAULT_PLATFORM_TENANT_ID` constant |
 | `sdk/python` | `soorma-common` | `DEFAULT_PLATFORM_TENANT_ID` constant, shared DTOs, `EventEnvelope` |
 | `services/memory` | `soorma-common` | Shared DTOs (SemanticMemoryCreate, etc.) |
 | `services/tracker` | `soorma-common` | Shared TrackerDTOs, `EventEnvelope` |
+| `services/event-service` | `soorma-common` | `EventEnvelope` (platform_tenant_id field) |
 | `services/registry` | `soorma-common` | AgentDefinition, EventSchema DTOs |
 
 **Key constraints**:
@@ -33,9 +35,10 @@ soorma-common  (no service or SDK dependencies)
     |       |
     |       +---[TenancyMiddleware, get_tenanted_db, PlatformTenantDataDeletion]
     |       |
-    |       +---> services/registry   (TenancyMiddleware + get_platform_tenant_id only)
-    |       +---> services/memory     (TenancyMiddleware + get_tenanted_db + deletion ABC)
-    |       +---> services/tracker    (TenancyMiddleware + get_tenanted_db + deletion ABC)
+    |       +---> services/registry      (TenancyMiddleware + get_platform_tenant_id only)
+    |       +---> services/memory        (TenancyMiddleware + get_tenanted_db + deletion ABC)
+    |       +---> services/tracker       (TenancyMiddleware + get_tenanted_db + deletion ABC)
+    |       +---> services/event-service (TenancyMiddleware + get_platform_tenant_id; no DB)
     |
     +--- sdk/python  (depends on: soorma-common, httpx — NO FastAPI)
             |
@@ -51,11 +54,12 @@ Because this is a breaking change, components must be updated in this order:
 
 ```
 [1] soorma-common
-      └── Add DEFAULT_PLATFORM_TENANT_ID → unblocks everything else
+      └── Add DEFAULT_PLATFORM_TENANT_ID + platform_tenant_id field to EventEnvelope
+          → unblocks everything else
 
 [2a] soorma-service-common  (parallel with [2b])
       └── Implement TenancyMiddleware, get_tenanted_db, PlatformTenantDataDeletion ABC
-          → unblocks: memory service, tracker service, registry service middleware adoption
+          → unblocks: memory service, tracker service, registry service, event-service middleware adoption
 
 [2b] services/registry  (parallel with [2a])
       └── UUID→VARCHAR migration + adopt soorma-service-common
@@ -69,6 +73,11 @@ Because this is a breaking change, components must be updated in this order:
 
 [4]  sdk/python  (after [3a] + [3b] API surfaces are stable)
       └── Client init-time platform_tenant_id + per-call service tenant/user rename
+
+[5] services/event-service  (after [1] + [2a])
+      └── Register TenancyMiddleware + inject platform_tenant_id at publish
+          → depends on [1] (EventEnvelope.platform_tenant_id field) + [2a] (TenancyMiddleware)
+          → parallel with [3a] and [3b]
 ```
 
 ---
@@ -88,7 +97,9 @@ Client request (X-Tenant-ID, X-Service-Tenant-ID, X-User-ID headers)
 ```
 NATS message (EventEnvelope)
     → _dispatch() → handle_action_request/result/plan_event(event, db)
-    → platform_tenant_id = DEFAULT_PLATFORM_TENANT_ID
+    → platform_tenant_id = event.platform_tenant_id
+      (trusted: injected by Event Service from X-Tenant-ID header at publish time;
+       Event Service is the sole authority for this field in the event bus)
     → service_tenant_id  = event.tenant_id
     → service_user_id    = event.user_id
     → call set_config helper (inline, mirrors get_tenanted_db)

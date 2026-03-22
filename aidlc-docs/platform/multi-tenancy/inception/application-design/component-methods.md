@@ -79,6 +79,46 @@ async def get_tenanted_db(
     Yields: AsyncSession with session variables active.
     """
     ...
+
+async def set_config_for_session(
+    db: AsyncSession,
+    platform_tenant_id: str,
+    service_tenant_id: Optional[str],
+    service_user_id: Optional[str],
+) -> None:
+    """
+    Same set_config logic as get_tenanted_db but called directly on a DB session
+    (no HTTP request object available). Used by NATS event handlers where middleware
+    never runs. Must be called before any RLS-protected query in the same session.
+    """
+    ...
+```
+
+### `soorma_service_common/tenant_context.py` (new)
+
+```python
+@dataclass
+class TenantContext:
+    """
+    Convenience bundle combining all three identity dimensions with a tenanted DB session.
+    Shared across all services (Memory, Tracker) so each route needs only one Depends().
+    Lives in soorma-service-common so it is not duplicated per-service.
+    """
+    platform_tenant_id: str
+    service_tenant_id: Optional[str]
+    service_user_id: Optional[str]
+    db: AsyncSession
+
+async def get_tenant_context(
+    request: Request,
+    db: AsyncSession = Depends(get_tenanted_db),
+) -> TenantContext:
+    """
+    FastAPI dependency: combines request.state identity values (set by TenancyMiddleware)
+    with a DB session that already has set_config active (from get_tenanted_db).
+    Single Depends() used in every Memory and Tracker route handler instead of four.
+    """
+    ...
 ```
 
 ### `soorma_service_common/deletion.py`
@@ -194,23 +234,10 @@ class MemoryDataDeletion(PlatformTenantDataDeletion):
 ### `memory_service/core/dependencies.py` (updated)
 
 ```python
-class TenantContext:
-    """Encapsulates full three-dimension identity with DB session."""
-    platform_tenant_id: str
-    service_tenant_id: Optional[str]
-    service_user_id: Optional[str]
-    db: AsyncSession
-
-async def get_tenant_context(
-    request: Request,
-    db: AsyncSession = Depends(get_tenanted_db),  # get_tenanted_db from soorma-service-common
-) -> TenantContext:
-    """
-    Dependency combining identity extraction with DB session that has set_config active.
-    Replaces current UUID-parsing TenantContext.
-    Raises HTTP 422 if service_user_id is required but absent (per endpoint).
-    """
-    ...
+# TenantContext and get_tenant_context are imported from soorma-service-common:
+from soorma_service_common.tenant_context import TenantContext, get_tenant_context
+# memory_service/core/dependencies.py no longer defines these — it re-exports them
+# so existing import paths inside the Memory Service continue to work unchanged.
 ```
 
 *(Existing CRUD method signatures retain their shape; `tenant_id: UUID` and `user_id: UUID` parameters change to `platform_tenant_id: str`, `service_tenant_id: str`, `service_user_id: str` — detail in Functional Design per unit)*
@@ -262,7 +289,7 @@ class TrackerDataDeletion(PlatformTenantDataDeletion):
 async def handle_action_request(event: EventEnvelope, db: AsyncSession) -> None:
     """
     Upsert ActionProgress row for an incoming action-request event.
-    platform_tenant_id: from DEFAULT_PLATFORM_TENANT_ID (NATS path — no auth context yet)
+    platform_tenant_id: from event.platform_tenant_id (injected by Event Service — trusted)
     service_tenant_id: from event.tenant_id
     service_user_id: from event.user_id
     """
@@ -374,4 +401,40 @@ class MemoryClient:  # (the PlatformContext wrapper in context.py)
     # All other wrapper methods follow the same (service_tenant_id, service_user_id) pattern.
     # store_task_context, get_task_context, update_task_context, delete_task_context,
     # store_knowledge, search_knowledge, log_interaction, get_recent_history, etc.
+```
+
+---
+
+## C8 — `services/event-service`
+
+### `event_service/api/routes/events.py` (updated)
+
+```python
+async def publish_event(
+    publish_request: PublishRequest,
+    http_request: Request,           # NEW — read request.state.platform_tenant_id set by TenancyMiddleware
+) -> PublishResponse:
+    """
+    Accept EventEnvelope from SDK; inject/overwrite platform_tenant_id from the
+    authenticated X-Tenant-ID header (via request.state) before publishing to NATS.
+
+    SDK-supplied event.platform_tenant_id is always discarded and overwritten.
+    Event Service is the trust boundary for platform_tenant_id in the event bus.
+
+    Args:
+        publish_request: PublishRequest containing the EventEnvelope from the SDK
+        http_request: Starlette Request — provides request.state.platform_tenant_id
+            populated by TenancyMiddleware from X-Tenant-ID header
+    Returns:
+        PublishResponse with the NATS subject the message was published to
+    """
+    ...
+```
+
+### `event_service/main.py` (updated)
+
+```python
+# Register TenancyMiddleware so platform_tenant_id is available on request.state
+# for all routes including /publish:
+app.add_middleware(TenancyMiddleware)  # from soorma_service_common.middleware
 ```

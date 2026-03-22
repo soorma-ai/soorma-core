@@ -60,3 +60,11 @@
 **Context**: Application Design artifacts complete. Presenting to user for approval.
 
 ---
+
+## Application Design — FR-6 Revision + C8 Addition (Event Service)
+**Timestamp**: 2026-03-22T01:05:41Z
+**User Input**: "why do you think that a soorma-core deployment is a single platform tenant's deployment? ... event service to inject the correct platform tenant ID ... option B ... event service injects/sanitizes platform tenant id in the event envelope"
+**AI Response**: Acknowledged the incorrect deployment-scoping assumption. Investigated Event Service code: confirmed publish_event route has no Request parameter and cannot currently read X-Tenant-ID header. Revised design with user — chose Option B: add platform_tenant_id field to EventEnvelope in soorma-common; Event Service injects/overwrites it from authenticated X-Tenant-ID header at publish time; SDK must never set it; Tracker NATS path trusts event.platform_tenant_id as authoritative. Updated 7 artifacts: (1) requirements.md — FR-6 fully revised to FR-6.1–6.7; (2) components.md — C1 updated (EventEnvelope field), C5 NATS path note fixed, C8 added (services/event-service); (3) services.md — S6 Responsibility + NATS path fixed, S7 added; (4) component-methods.md — Tracker handler docstrings updated, C8 Event Service method added; (5) component-dependency.md — event-service rows added to matrix + graph + Pattern 2 + U7 in update sequence; (6) application-design.md — component count updated to 8, C8 row added, FR-6 decision row added; (7) execution-plan.md — U7 added (services/event-service, depends on U1 + U2), parallelization note updated, U1 description updated.
+**Context**: Application Design — revision round 2 complete. Presenting updated design to user for final approval.
+
+---

@@ -156,11 +156,14 @@ Because service tenant and user IDs are only unique within a platform tenant's n
 - **FR-5.7**: Update Tracker API query endpoints to filter by `(platform_tenant_id, service_tenant_id, service_user_id)`
 - **FR-5.8**: Extend the GDPR deletion concept from FR-4 to also cover `plan_progress` and `action_progress` tables (same deletion scopes)
 
-### FR-6: EventEnvelope — No Change
-- **FR-6.1**: `EventEnvelope.tenant_id` field remains as-is — semantically it represents the *service tenant ID*
-- **FR-6.2**: `EventEnvelope.user_id` field remains as-is — semantically it represents the *service user ID*
-- **FR-6.3**: `platform_tenant_id` MUST NOT be added to `EventEnvelope` — it flows only via HTTP authentication headers and is injected server-side
-- **FR-6.4**: Update `EventEnvelope` field docstrings to clearly document the new semantic meaning (service tenant / service user, not platform tenant)
+### FR-6: EventEnvelope — Add `platform_tenant_id`, injected by Event Service
+- **FR-6.1**: `EventEnvelope.tenant_id` field remains with the same field name — semantically it now represents the *service tenant ID*
+- **FR-6.2**: `EventEnvelope.user_id` field remains with the same field name — semantically it now represents the *service user ID*
+- **FR-6.3**: Add `platform_tenant_id: Optional[str]` to `EventEnvelope`. This field MUST be set/overwritten by the Event Service at publish time from the authenticated `X-Tenant-ID` header — it is NOT set by SDK agent code. Agent handlers and SDK clients MUST NOT set `platform_tenant_id` on outbound envelopes; any value sent by the SDK is discarded/overwritten by the Event Service.
+- **FR-6.4**: Update `EventEnvelope` field docstrings to clearly document the new semantic meaning: `platform_tenant_id` = injected by Event Service from auth header; `tenant_id` = service tenant (set by SDK); `user_id` = service user (set by SDK)
+- **FR-6.5**: Event Service (`services/event-service`) MUST register `TenancyMiddleware` from `soorma-service-common` so `X-Tenant-ID` is extracted to `request.state.platform_tenant_id` on every request
+- **FR-6.6**: Event Service `publish_event` route MUST accept the HTTP `Request` object, read `platform_tenant_id` from `request.state` (set by `TenancyMiddleware`), and inject/overwrite `event.platform_tenant_id` before publishing to NATS. This makes the Event Service the trust boundary for `platform_tenant_id` in the event bus — consumers (Tracker, other services) can trust `event.platform_tenant_id` as authoritative
+- **FR-6.7**: Tracker Service event handlers MUST extract `platform_tenant_id` from `event.platform_tenant_id` (trusted, injected by Event Service). The fallback to `DEFAULT_PLATFORM_TENANT_ID` in the Tracker NATS path is no longer needed once FR-6.6 is implemented
 
 ### FR-7: SDK Clients Update
 - **FR-7.1**: Update `sdk/python/soorma/memory/client.py` to set `platform_tenant_id` at **client initialization time** (from `DEFAULT_PLATFORM_TENANT_ID` constant or `SOORMA_PLATFORM_TENANT_ID` env var — future: from API key auth). `platform_tenant_id` MUST NOT be a per-call parameter; it is authentication context, not request context.
