@@ -89,9 +89,10 @@ Because service tenant and user IDs are only unique within a platform tenant's n
 - **FR-2.3**: Update `AgentTable.tenant_id` SQLAlchemy mapped column type from `Uuid(as_uuid=True)` to `String(64)`
 - **FR-2.4**: Update `EventTable.tenant_id` SQLAlchemy mapped column type from `Uuid(as_uuid=True)` to `String(64)`
 - **FR-2.5**: Update `SchemaTable.tenant_id` (if present) similarly
-- **FR-2.6**: Update `registry_service/api/dependencies.py`: remove UUID format validation; accept any non-empty string up to 64 chars for `X-Tenant-ID` header; return `str` (not `UUID`) from `get_developer_tenant_id()`
+- **FR-2.6**: Remove `get_developer_tenant_id()` from `registry_service/api/dependencies.py`; replace with `get_platform_tenant_id()` from `soorma-service-common`. Register `TenancyMiddleware` from `soorma-service-common` in the Registry Service (same pattern as Memory + Tracker — no `set_config` needed in Registry as it has no RLS-protected tables, but consistent middleware adoption is required)
 - **FR-2.7**: Update all Registry CRUD, service layer, and API functions that typed `tenant_id` as `UUID` to use `str`
 - **FR-2.8**: Update Registry tests to use the new platform tenant ID format (e.g., `spt_00000000-0000-0000-0000-000000000000`)
+- **FR-2.9**: Remove the `IS_LOCAL_TESTING` SQLite path from `registry_service/core/database.py` and `registry_service/core/config.py`; standardize Registry to PostgreSQL-only (matching Memory + Tracker). Unit tests use mocks, not a real DB; Docker Compose dev already uses PostgreSQL.
 
 ### FR-3a: Shared Service Tenancy Middleware (`libs/soorma-service-common`) — NEW LIBRARY
 - **FR-3a.1**: Create a new shared library `libs/soorma-service-common` consumed by backend services only (NOT by the SDK — to avoid pulling FastAPI/Starlette into SDK's dependency graph)
