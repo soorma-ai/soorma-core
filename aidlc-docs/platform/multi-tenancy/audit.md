@@ -308,3 +308,59 @@
 **Context**: Construction Phase — U3 (services/registry) — Code Generation COMPLETE
 
 ---
+
+## Unit Initialization — U4 services/memory
+**Timestamp**: 2026-03-23T01:54:15Z
+**User Input**: "Using AI-DLC, resume the memory unit for multi-tenancy initiative in the platform area. aidlc-state.md is at: aidlc-docs/platform/multi-tenancy/aidlc-state.md. Project repo: soorma-core. Intent: Start Construction for unit 'memory'. Inception is complete. Please load all Inception artifacts and begin the Construction phase for this unit."
+**AI Response**: Resuming Construction Phase for U4 (services/memory). Unit Initialization executing: loading extension rules for [pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline]. All Inception artifacts loaded. Proceeding to Functional Design.
+**Context**: Unit Initialization — U4 services/memory. Extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline.
+
+---
+
+## Functional Design Complete -- U4 services/memory
+**Timestamp**: 2026-03-23T02:03:00Z
+**User Input**: [continuation of session -- no new user input]
+**AI Response**: Functional Design artifacts generated for U4 (services/memory): domain-entities.md, business-logic-model.md, business-rules.md. No questions required -- all design decisions resolved during Inception phase.
+**Context**: Construction Phase - U4 services/memory - Functional Design COMPLETE.
+
+---
+
+## NFR Requirements Complete -- U4 services/memory
+**Timestamp**: 2026-03-23T02:03:00Z
+**User Input**: [continuation of session -- no new user input]
+**AI Response**: NFR Requirements artifacts generated: nfr-requirements.md, tech-stack-decisions.md. Primary NFR: RLS enforcement (NFR-M-01 through NFR-M-06). Key dependency: soorma-service-common added to pyproject.toml.
+**Context**: Construction Phase - U4 services/memory - NFR Requirements COMPLETE.
+
+---
+
+## NFR Design Complete -- U4 services/memory
+**Timestamp**: 2026-03-23T02:03:00Z
+**User Input**: [continuation of session -- no new user input]
+**AI Response**: NFR Design artifacts generated: nfr-design-patterns.md (4 patterns: RLS policy expression, set_config activation lifecycle, composite key enforcement, admin deletion RLS bypass), logical-components.md (~47 files affected).
+**Context**: Construction Phase - U4 services/memory - NFR Design COMPLETE.
+
+---
+
+## Construction Design PR Gate Created -- U4 services/memory
+**Timestamp**: 2026-03-23T02:03:00Z
+**User Input**: [continuation of session -- no new user input]
+**AI Response**: PR checkpoint instructions generated at construction/plans/memory-design-pr-checkpoint-instructions.md. Branch: dev. Status: PENDING_DESIGN_PR_APPROVAL. Code Generation BLOCKED until PR approved.
+**Context**: Construction Phase - U4 services/memory - Construction Design PR Gate PENDING.
+
+---
+
+## QA Test Case Enrichment -- memory (U4)
+**Timestamp**: 2026-03-23T02:20:14Z
+**User Input**: "[session resumed -- continuing from previous session where design stages were complete]"
+**AI Response**: "QA Test Case Enrichment complete for memory unit. Enriched all 11 inception test cases (TC-M-001..TC-M-011) with construction technical details: migration filename, module paths, method signatures, RLS policy names, WHERE patterns, and DTO field requirements. Added 2 new test cases: TC-M-012 (MemoryDataDeletion boundary -- plans/sessions not deleted) and TC-M-013 (Admin deletion endpoint RLS activation pattern). Created enrichment-delta.md. Updated aidlc-state.md. Enrichment sources: functional-design/ (all 3 docs) and nfr-design/nfr-design-patterns.md."
+**Context**: Construction Phase -- U4 services/memory -- QA Test Case Enrichment step (Section 2, qa-test-cases extension)
+
+---
+
+## QA Test Case Enrichment -- memory (U4)
+**Timestamp**: 2026-03-23T02:20:14Z
+**User Input**: "[session resumed -- continuing from previous session where design stages were complete]"
+**AI Response**: "QA Test Case Enrichment complete for memory unit. Enriched all 11 inception test cases (TC-M-001 through TC-M-011) with construction technical details: migration filename (008_multi_tenancy_three_column_identity.py), module paths, method signatures, RLS policy names, WHERE patterns, and DTO field requirements. Added 2 new test cases: TC-M-012 (MemoryDataDeletion boundary -- plans/sessions not deleted, from BR-U4-06) and TC-M-013 (Admin deletion endpoint RLS activation pattern via set_config_for_session, from BR-U4-08 and Pattern 4). Created enrichment-delta.md. Updated aidlc-state.md current stage. Enrichment sources: functional-design/ (domain-entities.md, business-rules.md, business-logic-model.md) and nfr-design/nfr-design-patterns.md."
+**Context**: Construction Phase -- U4 services/memory -- QA Test Case Enrichment step (qa-test-cases extension Section 2). Ordering note: enrichment was performed after NFR Design and before formal PR Gate presentation to user (correct per Section 2.6 -- enriched specs included in design PR review).
+
+---

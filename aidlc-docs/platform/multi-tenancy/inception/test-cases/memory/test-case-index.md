@@ -17,3 +17,5 @@
 | TC-M-009 | Query without RLS session variables returns 0 rows | memory / FR-3b.2, FR-3b.4 | happy-path-negative | High |
 | TC-M-010 | Memory API rejects missing service tenant for user-scoped ops | memory / FR-3.8 | happy-path-negative | High |
 | TC-M-011 | delete_by_service_user only deletes the specific user | memory / FR-4.1, NFR-1.3 | happy-path-negative | High |
+| TC-M-012 | MemoryDataDeletion does not delete plans or sessions rows | memory / BR-U4-06 | happy-path | High |
+| TC-M-013 | Admin deletion endpoint activates RLS session before bulk delete | memory / BR-U4-08, Pattern 4 | happy-path | High |
