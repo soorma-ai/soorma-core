@@ -3,11 +3,12 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from soorma_service_common import TenancyMiddleware
 
 from tracker_service import __version__
 from tracker_service.core.config import settings
 from tracker_service.core.db import init_db, close_db
-from tracker_service.api.v1 import query
+from tracker_service.api.v1 import router as v1_router
 from tracker_service.subscribers.event_handlers import (
     start_event_subscribers,
     stop_event_subscribers,
@@ -55,8 +56,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add tenancy middleware
+app.add_middleware(TenancyMiddleware)
+
 # Include API routers
-app.include_router(query.router)
+app.include_router(v1_router)
 
 
 @app.get("/health")

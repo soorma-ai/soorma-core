@@ -4,6 +4,7 @@ import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
+from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 
 class Settings(BaseSettings):
@@ -24,13 +25,16 @@ class Settings(BaseSettings):
     nats_url: str = os.environ.get("NATS_URL", "nats://localhost:4222")
 
     # Tenancy
-    default_tenant_id: str = os.environ.get(
-        "DEFAULT_TENANT_ID", "00000000-0000-0000-0000-000000000000"
+    default_platform_tenant_id: str = os.environ.get(
+        "DEFAULT_PLATFORM_TENANT_ID", DEFAULT_PLATFORM_TENANT_ID
+    )
+    default_service_tenant_id: str = os.environ.get(
+        "DEFAULT_SERVICE_TENANT_ID", "st_default-tenant"
+    )
+    default_service_user_id: str = os.environ.get(
+        "DEFAULT_SERVICE_USER_ID", "su_default-user"
     )
     default_tenant_name: str = os.environ.get("DEFAULT_TENANT_NAME", "Default Tenant")
-    default_user_id: str = os.environ.get(
-        "DEFAULT_USER_ID", "00000000-0000-0000-0000-000000000001"
-    )
     default_username: str = os.environ.get("DEFAULT_USERNAME", "default-user")
 
     model_config = ConfigDict(

@@ -7,41 +7,63 @@ This module provides read-only query endpoints for:
 - Agent metrics
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Header, Depends
+from typing import List
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 
 from soorma_common import (
     PlanProgress as PlanProgressDTO,
     TaskExecution,
-    EventTimeline,
-    AgentMetrics,
-    PlanExecution,
-    DelegationGroup,
 )
-from tracker_service.core.db import get_db
+from tracker_service.core.dependencies import TenantContext, get_tenant_context
 from tracker_service.models import db as db_models
 
 
-router = APIRouter(prefix="/v1/tracker", tags=["tracker"])
+router = APIRouter(prefix="/tracker", tags=["tracker"])
+
+
+def _validate_identity_dimensions(context: TenantContext) -> None:
+    """Enforce minimal local validation for identity dimensions."""
+    if not context.service_tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="X-Service-Tenant-ID header is required",
+        )
+    if not context.service_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="X-User-ID header is required",
+        )
+
+    if len(context.platform_tenant_id) > 64:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="X-Tenant-ID exceeds 64 characters",
+        )
+    if len(context.service_tenant_id) > 64:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="X-Service-Tenant-ID exceeds 64 characters",
+        )
+    if len(context.service_user_id) > 64:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="X-User-ID exceeds 64 characters",
+        )
 
 
 @router.get("/plans/{plan_id}", response_model=PlanProgressDTO)
 async def get_plan_progress(
     plan_id: str,
-    x_tenant_id: str = Header(..., alias="X-Tenant-ID"),
-    x_user_id: str = Header(..., alias="X-User-ID"),
-    db: AsyncSession = Depends(get_db),
+    context: TenantContext = Depends(get_tenant_context),
 ) -> PlanProgressDTO:
     """
     Get plan execution progress.
     
     Args:
         plan_id: Plan identifier
-        x_tenant_id: Tenant ID from header (multi-tenancy)
-        x_user_id: User ID from header (multi-tenancy)
-        db: Database session
+        context: Tenant identity bundle with RLS-activated database session
     
     Returns:
         PlanProgress with execution status and metrics
@@ -49,12 +71,16 @@ async def get_plan_progress(
     Raises:
         HTTPException: 404 if plan not found
     """
+    _validate_identity_dimensions(context)
+
     # Query plan_progress with tenant filtering
     stmt = select(db_models.PlanProgress).where(
         db_models.PlanProgress.plan_id == plan_id,
-        db_models.PlanProgress.tenant_id == x_tenant_id,
+        db_models.PlanProgress.platform_tenant_id == context.platform_tenant_id,
+        db_models.PlanProgress.service_tenant_id == context.service_tenant_id,
+        db_models.PlanProgress.service_user_id == context.service_user_id,
     )
-    result = await db.execute(stmt)
+    result = await context.db.execute(stmt)
     plan_progress = result.scalar_one_or_none()
     
     if plan_progress is None:
@@ -76,29 +102,29 @@ async def get_plan_progress(
 @router.get("/plans/{plan_id}/actions", response_model=List[TaskExecution])
 async def get_plan_actions(
     plan_id: str,
-    x_tenant_id: str = Header(..., alias="X-Tenant-ID"),
-    x_user_id: str = Header(..., alias="X-User-ID"),
-    db: AsyncSession = Depends(get_db),
+    context: TenantContext = Depends(get_tenant_context),
 ) -> List[TaskExecution]:
     """
     Get all action executions for a plan.
     
     Args:
         plan_id: Plan identifier
-        x_tenant_id: Tenant ID from header
-        x_user_id: User ID from header
-        db: Database session
+        context: Tenant identity bundle with RLS-activated database session
     
     Returns:
         List of TaskExecution records (may be empty)
     """
+    _validate_identity_dimensions(context)
+
     # Query action_progress with tenant + plan filtering
     stmt = select(db_models.ActionProgress).where(
         db_models.ActionProgress.plan_id == plan_id,
-        db_models.ActionProgress.tenant_id == x_tenant_id,
+        db_models.ActionProgress.platform_tenant_id == context.platform_tenant_id,
+        db_models.ActionProgress.service_tenant_id == context.service_tenant_id,
+        db_models.ActionProgress.service_user_id == context.service_user_id,
     ).order_by(db_models.ActionProgress.started_at)
     
-    result = await db.execute(stmt)
+    result = await context.db.execute(stmt)
     actions = result.scalars().all()
     
     # Convert DB models to DTOs

@@ -33,7 +33,7 @@ def test_health_check_endpoint():
     data = response.json()
     assert data["status"] == "healthy"
     assert data["service"] == "tracker-service"
-    assert data["version"] == "0.8.1"
+    assert data["version"] == "0.8.2"
 
 
 @pytest.mark.asyncio
@@ -93,5 +93,5 @@ def test_settings_configuration():
     assert settings.service_name == "tracker-service"
     assert "tracker" in settings.database_url
     assert "nats://" in settings.nats_url
-    assert settings.default_tenant_id is not None
-    assert settings.default_user_id is not None
+    assert settings.default_platform_tenant_id is not None
+    assert settings.default_service_user_id is not None

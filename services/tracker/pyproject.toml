@@ -16,6 +16,7 @@ dependencies = [
     "pyjwt>=2.8.0",       # JWT token parsing
     "soorma-common",      # Shared DTOs
     "soorma-nats",        # Shared NATS client for infrastructure services
+    "soorma-service-common",
 ]
 
 [project.optional-dependencies]
