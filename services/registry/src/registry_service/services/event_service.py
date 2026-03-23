@@ -2,7 +2,6 @@
 Service layer for event registry operations.
 """
 from typing import Optional
-from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from soorma_common import (
@@ -20,7 +19,7 @@ class EventRegistryService:
     async def register_event(
         db: AsyncSession,
         event: EventDefinition,
-        developer_tenant_id: UUID
+        platform_tenant_id: str
     ) -> EventRegistrationResponse:
         """
         Register or update an event in the registry (upsert operation).
@@ -31,7 +30,7 @@ class EventRegistryService:
         Args:
             db: Database session
             event: Event definition to register/update
-            developer_tenant_id: Developer's own tenant UUID from X-Tenant-ID header
+            platform_tenant_id: Platform tenant identifier from X-Tenant-ID header
 
         Returns:
             EventRegistrationResponse with registration status
@@ -39,7 +38,7 @@ class EventRegistryService:
         try:
             # Upsert the event
             event_table, was_created = await event_crud.upsert_event(
-                db, event, developer_tenant_id
+                db, event, platform_tenant_id
             )
             await db.commit()
             
@@ -66,7 +65,7 @@ class EventRegistryService:
     @staticmethod
     async def query_events(
         db: AsyncSession,
-        developer_tenant_id: UUID,
+        developer_tenant_id: str,
         event_name: Optional[str] = None,
         topic: Optional[str] = None
     ) -> EventQueryResponse:
@@ -75,7 +74,7 @@ class EventRegistryService:
 
         Args:
             db: Database session
-            developer_tenant_id: Developer's own tenant UUID (automatic filter)
+            developer_tenant_id: Platform tenant identifier (automatic filter)
             event_name: Specific event name to query
             topic: Filter by topic
             

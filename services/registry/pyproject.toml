@@ -9,13 +9,13 @@ dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "sqlalchemy[asyncio]>=2.0.0",
-    "aiosqlite>=0.19.0",  # SQLite async driver for local development
     "asyncpg>=0.29.0",    # PostgreSQL async driver for production
     "psycopg2-binary>=2.9.0",  # PostgreSQL sync driver for Alembic migrations
     "alembic>=1.12.0",    # Database migrations
     "pydantic-settings>=2.0.0",
     "cachetools>=5.0.0",
     "soorma-common",  # Local dependency
+    "soorma-service-common",  # Shared middleware and dependency functions
 ]
 
 [project.optional-dependencies]
@@ -23,6 +23,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "httpx>=0.25.0",
+    "aiosqlite>=0.19.0",  # SQLite async driver for local testing
 ]
 
 [build-system]

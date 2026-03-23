@@ -2,7 +2,6 @@
 Service layer for agent registry operations.
 """
 from typing import Optional
-from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,19 +38,19 @@ class AgentRegistryService:
     async def register_agent(
         db: AsyncSession,
         agent: AgentDefinition,
-        developer_tenant_id: UUID
+        platform_tenant_id: str
     ) -> AgentRegistrationResponse:
         """
         Register or update an agent in the registry (upsert operation).
 
         The registry is developer-tenant-scoped. There is no user_id concept here:
-        agents are owned by the developer (identified by developer_tenant_id), not
+        agents are owned by the developer (identified by platform_tenant_id), not
         by an end-user session.
 
         Args:
             db: Database session
             agent: Agent definition to register/update
-            developer_tenant_id: Developer's own tenant UUID from X-Tenant-ID header
+            platform_tenant_id: Platform tenant identifier from X-Tenant-ID header
 
         Returns:
             AgentRegistrationResponse with registration status
@@ -74,7 +73,7 @@ class AgentRegistryService:
             
             # Upsert the agent
             agent_table, was_created = await agent_crud.upsert_agent(
-                db, agent, developer_tenant_id
+                db, agent, platform_tenant_id
             )
             await db.commit()
             
@@ -102,7 +101,7 @@ class AgentRegistryService:
     async def refresh_agent_heartbeat(
         db: AsyncSession,
         agent_id: str,
-        developer_tenant_id: UUID
+        platform_tenant_id: str
     ) -> AgentRegistrationResponse:
         """
         Refresh an agent's heartbeat to extend its TTL.
@@ -110,13 +109,13 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent_id: ID of the agent to refresh
-            developer_tenant_id: Developer's own tenant UUID
+            platform_tenant_id: Platform tenant identifier
             
         Returns:
             AgentRegistrationResponse with refresh status
         """
         try:
-            success = await agent_crud.update_heartbeat(db, agent_id, developer_tenant_id)
+            success = await agent_crud.update_heartbeat(db, agent_id, platform_tenant_id)
             
             if not success:
                 return AgentRegistrationResponse(
@@ -144,7 +143,7 @@ class AgentRegistryService:
     async def delete_agent(
         db: AsyncSession,
         agent_id: str,
-        developer_tenant_id: UUID
+        platform_tenant_id: str
     ) -> bool:
         """
         Delete an agent.
@@ -152,13 +151,13 @@ class AgentRegistryService:
         Args:
             db: Database session
             agent_id: ID of the agent
-            developer_tenant_id: Developer's own tenant UUID
+            platform_tenant_id: Platform tenant identifier
             
         Returns:
             True if deleted, False if not found
         """
         try:
-            success = await agent_crud.delete_agent(db, agent_id, developer_tenant_id)
+            success = await agent_crud.delete_agent(db, agent_id, platform_tenant_id)
             await db.commit()
             return success
         except Exception:
@@ -183,7 +182,7 @@ class AgentRegistryService:
     @staticmethod
     async def query_agents(
         db: AsyncSession,
-        tenant_id: UUID,
+        tenant_id: str,
         agent_id: Optional[str] = None,
         name: Optional[str] = None,
         consumed_event: Optional[str] = None,
@@ -195,7 +194,7 @@ class AgentRegistryService:
         
         Args:
             db: Database session
-            tenant_id: Developer's own tenant UUID (automatic filter)
+            tenant_id: Platform tenant identifier (automatic filter)
             agent_id: Specific agent ID to query
             name: Filter by agent name
             consumed_event: Filter by consumed event
@@ -275,7 +274,7 @@ class AgentRegistryService:
     @staticmethod
     async def discover_agents(
         db: AsyncSession,
-        tenant_id: UUID,
+        tenant_id: str,
         consumed_event: Optional[str] = None,
     ) -> AgentQueryResponse:
         """
@@ -286,7 +285,7 @@ class AgentRegistryService:
 
         Args:
             db: Database session
-            tenant_id: Developer tenant UUID
+            tenant_id: Platform tenant identifier
             consumed_event: Optional event name filter — returns agents that consume this event
 
         Returns:

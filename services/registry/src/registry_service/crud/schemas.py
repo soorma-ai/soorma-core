@@ -2,7 +2,7 @@
 CRUD operations for payload schema registry.
 """
 from typing import List, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 from datetime import datetime, timezone
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,7 @@ class SchemaCRUD:
         self,
         db: AsyncSession,
         schema: PayloadSchema,
-        tenant_id: UUID,
+        platform_tenant_id: str,
     ) -> PayloadSchemaTable:
         """
         Insert a new payload schema row.
@@ -26,7 +26,7 @@ class SchemaCRUD:
         Args:
             db: Database session
             schema: PayloadSchema DTO to persist
-            tenant_id: Developer tenant UUID
+            platform_tenant_id: Platform tenant identifier (str)
 
         Returns:
             Newly created PayloadSchemaTable instance
@@ -42,7 +42,7 @@ class SchemaCRUD:
             json_schema=schema.json_schema,
             description=schema.description,
             owner_agent_id=schema.owner_agent_id,
-            tenant_id=tenant_id,
+            platform_tenant_id=platform_tenant_id,
         )
         db.add(row)
         await db.flush()
@@ -53,16 +53,16 @@ class SchemaCRUD:
         db: AsyncSession,
         schema_name: str,
         version: str,
-        tenant_id: UUID,
+        platform_tenant_id: str,
     ) -> Optional[PayloadSchemaTable]:
         """
-        Look up a schema by (schema_name, version, tenant_id).
+        Look up a schema by (schema_name, version, platform_tenant_id).
 
         Args:
             db: Database session
             schema_name: Schema name
             version: Semantic version string
-            tenant_id: Developer tenant UUID
+            platform_tenant_id: Platform tenant identifier (str)
 
         Returns:
             PayloadSchemaTable if found, None otherwise
@@ -71,7 +71,7 @@ class SchemaCRUD:
             select(PayloadSchemaTable).where(
                 PayloadSchemaTable.schema_name == schema_name,
                 PayloadSchemaTable.version == version,
-                PayloadSchemaTable.tenant_id == tenant_id,
+                PayloadSchemaTable.platform_tenant_id == platform_tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -80,7 +80,7 @@ class SchemaCRUD:
         self,
         db: AsyncSession,
         schema_name: str,
-        tenant_id: UUID,
+        platform_tenant_id: str,
     ) -> Optional[PayloadSchemaTable]:
         """
         Look up the most recently created schema with the given name.
@@ -88,7 +88,7 @@ class SchemaCRUD:
         Args:
             db: Database session
             schema_name: Schema name
-            tenant_id: Developer tenant UUID
+            platform_tenant_id: Platform tenant identifier (str)
 
         Returns:
             PayloadSchemaTable if found, None otherwise
@@ -97,7 +97,7 @@ class SchemaCRUD:
             select(PayloadSchemaTable)
             .where(
                 PayloadSchemaTable.schema_name == schema_name,
-                PayloadSchemaTable.tenant_id == tenant_id,
+                PayloadSchemaTable.platform_tenant_id == platform_tenant_id,
             )
             .order_by(desc(PayloadSchemaTable.created_at))
             .limit(1)
@@ -108,7 +108,7 @@ class SchemaCRUD:
         self,
         db: AsyncSession,
         owner_agent_id: str,
-        tenant_id: UUID,
+        platform_tenant_id: str,
     ) -> List[PayloadSchemaTable]:
         """
         Return all schemas belonging to a specific agent.
@@ -116,7 +116,7 @@ class SchemaCRUD:
         Args:
             db: Database session
             owner_agent_id: Agent ID that owns the schemas
-            tenant_id: Developer tenant UUID
+            platform_tenant_id: Platform tenant identifier (str)
 
         Returns:
             List of PayloadSchemaTable rows
@@ -124,7 +124,7 @@ class SchemaCRUD:
         result = await db.execute(
             select(PayloadSchemaTable).where(
                 PayloadSchemaTable.owner_agent_id == owner_agent_id,
-                PayloadSchemaTable.tenant_id == tenant_id,
+                PayloadSchemaTable.platform_tenant_id == platform_tenant_id,
             ).order_by(PayloadSchemaTable.schema_name)
         )
         return list(result.scalars().all())
@@ -132,21 +132,21 @@ class SchemaCRUD:
     async def list_all_schemas(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
     ) -> List[PayloadSchemaTable]:
         """
         Return all schemas for a tenant.
 
         Args:
             db: Database session
-            tenant_id: Developer tenant UUID
+            platform_tenant_id: Platform tenant identifier (str)
 
         Returns:
             List of all PayloadSchemaTable rows for the tenant
         """
         result = await db.execute(
             select(PayloadSchemaTable)
-            .where(PayloadSchemaTable.tenant_id == tenant_id)
+            .where(PayloadSchemaTable.platform_tenant_id == platform_tenant_id)
             .order_by(PayloadSchemaTable.schema_name)
         )
         return list(result.scalars().all())

@@ -2,14 +2,13 @@
 Core configuration and infrastructure for registry service.
 """
 
-from .config import settings, check_required_settings, Settings
+from .config import settings, Settings
 from .database import (
     get_db,
     init_db,
     drop_db,
     engine,
     AsyncSessionLocal,
-    create_db_url,
 )
 from .cache import (
     cache_agent,

@@ -72,14 +72,13 @@ class PayloadSchemaTable(Base):
     )
     
     # Developer tenancy (registry is scoped to the developer, not end-user sessions)
-    # Uses Uuid(as_uuid=True, native_uuid=True) — same pattern as AgentTable (§4 multi-tenancy)
-    tenant_id: Mapped[UUID] = mapped_column(
-        Uuid(as_uuid=True, native_uuid=True),
+    platform_tenant_id: Mapped[str] = mapped_column(
+        String(64),
         nullable=False,
         index=True,
-        comment="Developer tenant identifier — registry is developer-scoped, not user-session-scoped"
+        comment="Platform tenant identifier — registry is developer-scoped, not user-session-scoped"
     )
-    
+
     def __repr__(self) -> str:
         """String representation."""
-        return f"<PayloadSchemaTable(id={self.id}, schema_name={self.schema_name}, version={self.version}, tenant_id={self.tenant_id})>"
+        return f"<PayloadSchemaTable(id={self.id}, schema_name={self.schema_name}, version={self.version}, platform_tenant_id={self.platform_tenant_id})>"

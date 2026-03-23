@@ -5,6 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from soorma_service_common import TenancyMiddleware
 
 from .core.config import settings
 from .core.background_tasks import background_task_manager
@@ -12,7 +13,7 @@ from .api import router
 
 # Configure logging with timestamps
 logging.basicConfig(
-    level=logging.DEBUG if settings.IS_LOCAL_TESTING else logging.INFO,
+    level=logging.DEBUG if not settings.IS_PROD else logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -49,6 +50,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Extract platform_tenant_id from X-Tenant-ID header per request
+app.add_middleware(TenancyMiddleware)
 
 # Include API router
 app.include_router(router)

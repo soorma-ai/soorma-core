@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U3 (services/registry) - QA Enrichment COMPLETE - Construction Design PR Gate PENDING
+- **Current Stage**: CONSTRUCTION - U3 (services/registry) - Code Generation COMPLETE
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -62,9 +62,9 @@
 - [x] NFR Requirements (SKIPPED per unit spec)
 - [x] NFR Design (SKIPPED per unit spec)
 - [x] Infrastructure Design (SKIPPED per unit spec)
-- [x] Construction Design PR Gate — PENDING (awaiting team review)
+- [x] Construction Design PR Gate — APPROVED 2026-03-22T20:32:21Z
 - [x] QA Test Case Enrichment — COMPLETE (TC-R-001/006/009 enriched; TC-R-010/011 added)
-- [ ] Code Generation
+- [x] Code Generation — COMPLETE 2026-03-23T01:06:01Z | 80/80 tests pass
 #### U4 — services/memory (Wave 3) — blocked on U1 + U2
 #### U5 — services/tracker (Wave 3) — blocked on U1 + U2
 #### U6 — sdk/python (Wave 4) — blocked on U4 + U5
@@ -99,8 +99,8 @@
 - **Approved**: 2026-03-22T08:26:16Z
 
 ### Construction Design PR Gate — registry
-- **Status**: PENDING
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/registry-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-22T20:16:46Z
-- **Approved**: —
+- **Approved**: 2026-03-22T20:32:21Z

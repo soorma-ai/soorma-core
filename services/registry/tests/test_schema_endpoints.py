@@ -8,12 +8,11 @@ Expected failures: 500 Internal Server Error (server-side NotImplementedError)
 NOT ImportError or AttributeError — those would mean stubs were not created.
 """
 import pytest
-from uuid import UUID
 
 # Re-use conftest.py fixtures: client (TEST_TENANT_ID) and setup_test_db
-TEST_TENANT_ID = UUID("00000000-0000-0000-0000-000000000000")
-TENANT_A = UUID("11111111-1111-1111-1111-111111111111")
-TENANT_B = UUID("22222222-2222-2222-2222-222222222222")
+TEST_TENANT_ID = "spt_00000000-0000-0000-0000-000000000000"
+TENANT_A = "spt_11111111-1111-1111-1111-111111111111"
+TENANT_B = "spt_22222222-2222-2222-2222-222222222222"
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,12 +73,12 @@ class TestRegisterSchema:
         assert response.status_code == 200
 
     def test_register_schema_requires_tenant_header(self):
-        """POST /v1/schemas without X-Tenant-ID returns 422."""
+        """POST /v1/schemas without X-Tenant-ID defaults to DEFAULT_PLATFORM_TENANT_ID (200)."""
         from fastapi.testclient import TestClient
         from registry_service.main import app
         no_auth_client = TestClient(app)
         response = no_auth_client.post("/v1/schemas", json=_schema_payload())
-        assert response.status_code == 422
+        assert response.status_code == 200
 
     def test_register_schema_with_owner_agent_id(self, client):
         """Schema can be registered with an owner_agent_id."""
@@ -129,12 +128,13 @@ class TestGetSchema:
         assert response.json()["version"] == "2.0.0"
 
     def test_get_schema_requires_tenant_header(self):
-        """GET /v1/schemas/{name} without X-Tenant-ID returns 422."""
+        """GET /v1/schemas/{name} without X-Tenant-ID defaults to DEFAULT_PLATFORM_TENANT_ID.
+        Schema not registered under that tenant, so returns 404."""
         from fastapi.testclient import TestClient
         from registry_service.main import app
         no_auth_client = TestClient(app)
         response = no_auth_client.get("/v1/schemas/any_schema")
-        assert response.status_code == 422
+        assert response.status_code == 404
 
 
 # ─── GET /v1/schemas/{schema_name}/versions/{version} ─────────────────────────
@@ -198,12 +198,12 @@ class TestListSchemas:
         assert data["schemas"] == []
 
     def test_list_schemas_requires_tenant_header(self):
-        """GET /v1/schemas without X-Tenant-ID returns 422."""
+        """GET /v1/schemas without X-Tenant-ID defaults to DEFAULT_PLATFORM_TENANT_ID (200)."""
         from fastapi.testclient import TestClient
         from registry_service.main import app
         no_auth_client = TestClient(app)
         response = no_auth_client.get("/v1/schemas")
-        assert response.status_code == 422
+        assert response.status_code == 200
 
 
 # ─── Cross-tenant isolation ────────────────────────────────────────────────────
@@ -216,8 +216,8 @@ class TestSchemaCrossTenantIsolation:
         from fastapi.testclient import TestClient
         from registry_service.main import app
 
-        client_a = TestClient(app, headers={"X-Tenant-ID": str(TENANT_A)})
-        client_b = TestClient(app, headers={"X-Tenant-ID": str(TENANT_B)})
+        client_a = TestClient(app, headers={"X-Tenant-ID": TENANT_A})
+        client_b = TestClient(app, headers={"X-Tenant-ID": TENANT_B})
 
         # Register schema as Tenant A
         r = client_a.post("/v1/schemas", json=_schema_payload(schema_name="secret_v1"))
@@ -232,8 +232,8 @@ class TestSchemaCrossTenantIsolation:
         from fastapi.testclient import TestClient
         from registry_service.main import app
 
-        client_a = TestClient(app, headers={"X-Tenant-ID": str(TENANT_A)})
-        client_b = TestClient(app, headers={"X-Tenant-ID": str(TENANT_B)})
+        client_a = TestClient(app, headers={"X-Tenant-ID": TENANT_A})
+        client_b = TestClient(app, headers={"X-Tenant-ID": TENANT_B})
 
         r_a = client_a.post("/v1/schemas", json=_schema_payload(schema_name="common_name_v1"))
         r_b = client_b.post("/v1/schemas", json=_schema_payload(schema_name="common_name_v1"))
@@ -245,8 +245,8 @@ class TestSchemaCrossTenantIsolation:
         from fastapi.testclient import TestClient
         from registry_service.main import app
 
-        client_a = TestClient(app, headers={"X-Tenant-ID": str(TENANT_A)})
-        client_b = TestClient(app, headers={"X-Tenant-ID": str(TENANT_B)})
+        client_a = TestClient(app, headers={"X-Tenant-ID": TENANT_A})
+        client_b = TestClient(app, headers={"X-Tenant-ID": TENANT_B})
 
         client_a.post("/v1/schemas", json=_schema_payload(schema_name="tenant_a_exclusive_v1"))
         response = client_b.get("/v1/schemas")
