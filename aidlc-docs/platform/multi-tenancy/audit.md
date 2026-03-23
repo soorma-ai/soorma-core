@@ -404,3 +404,145 @@
 **Context**: U4 services/memory Code Generation — all 42 steps complete. Identity model migration: (tenant_id UUID FK, user_id UUID FK) -> (platform_tenant_id VARCHAR(64), service_tenant_id VARCHAR(64), service_user_id VARCHAR(64)) across 8 CRUD files, 8 service files, 8 API route files, 1 alembic migration, 10 updated test files, 3 new files created (admin.py, data_deletion.py, test_multi_tenancy.py), 1 file deleted (middleware.py).
 
 ---
+
+## Session Resumption -- Construction Phase -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:20:19Z
+**User Input**: "Using AI-DLC, start construction on \"tracker\" unit for multi-tenancy initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/multi-tenancy/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"tracker\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit."
+**AI Response**: "Resumed workflow in Construction phase. Loaded common AI-DLC rules, construction rules, and enabled extension rules. Loaded architecture baseline from docs/ARCHITECTURE_PATTERNS.md Sections 1-7 and loaded inception artifacts including requirements, unit design, dependency mapping, and tracker test cases."
+**Context**: Construction Phase -- U5 services/tracker -- Session resume and context loading.
+
+---
+
+## Construction Phase Initialization -- Rule Reload
+**Timestamp**: 2026-03-23T06:20:19Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline] in current session context."
+**Context**: Construction Phase -- extension rule enforcement reloaded per session continuity.
+
+---
+
+## Unit Initialization -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:20:19Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Unit Initialization complete for U5 services/tracker. Loaded extension rules for [pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline] and validated prerequisites U1 + U2 complete."
+**Context**: Construction Phase -- U5 services/tracker -- Unit Initialization COMPLETE.
+
+---
+
+## Functional Design Plan Created -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:20:19Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Created construction/plans/tracker-functional-design-plan.md with architecture-pattern alignment, tracker unit context, plan checkboxes, and 5 functional-design clarifying questions using [Answer]: tags."
+**Context**: Construction Phase -- U5 services/tracker -- Functional Design Part 1 (Planning) started; awaiting user answers.
+
+---
+
+## Functional Design Q3 Answer Updated -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:34:44Z
+**User Input**: "yes, add answer with details and rationale"
+**AI Response**: "Updated Question 3 in construction/plans/tracker-functional-design-plan.md with an explicit hybrid uniqueness strategy and rationale: plan_progress unique on (platform_tenant_id, service_tenant_id, plan_id), action_progress unique on (platform_tenant_id, service_tenant_id, action_id), service_user_id indexed for query filtering but not included in uniqueness by default."
+**Context**: Construction Phase -- U5 services/tracker -- Functional Design clarifications in progress.
+
+---
+
+## Functional Design Q5 Scope Clarification -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:40:26Z
+**User Input**: "we did not add shared helper during soorma-service-common unit of work. if we add now, then do we need to go back and update any other service already implemented (memory, tracker) to use this?"
+**AI Response**: "Clarified that adding a new shared validation helper now introduces a cross-unit scope change. Recommended either: (1) keep minimal local enforcement in tracker for current unit (presence + max length + DB guardrails) with no retrofit required, or (2) if shared helper is added now, treat it as a scoped refactor touching soorma-service-common and adopting it in both memory and tracker for consistency."
+**Context**: Construction Phase -- U5 services/tracker -- Functional Design Q5 decision support.
+
+---
+
+## Functional Design Answers Confirmed -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:42:14Z
+**User Input**: "all quesrtions answerred"
+**AI Response**: "Validated all five functional-design questions answered in construction/plans/tracker-functional-design-plan.md and proceeded to artifact generation."
+**Context**: Construction Phase -- U5 services/tracker -- Functional Design planning complete.
+
+---
+
+## Functional Design Complete -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:42:14Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Generated tracker functional-design artifacts: construction/tracker/functional-design/domain-entities.md, business-logic-model.md, business-rules.md. Updated tracker-functional-design-plan.md checkboxes (Steps 1-7 all complete). Updated aidlc-state.md to Functional Design COMPLETE (awaiting explicit approval)."
+**Context**: Construction Phase -- U5 services/tracker -- Functional Design artifacts ready for review.
+
+---
+
+## Functional Design Approved -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:54:35Z
+**User Input**: "design approved"
+**AI Response**: "Recorded explicit approval for U5 Functional Design and transitioned to Code Generation Part 1 (Planning)."
+**Context**: Construction Phase -- U5 services/tracker -- Functional Design APPROVED.
+
+---
+
+## Code Generation Plan Created -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:54:35Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Created construction/plans/tracker-code-generation-plan.md with detailed file-level execution steps (migration, ORM, API, NATS handlers, deletion service, tests, docs), traceability to FR/NFR and TC-T-001..008, and checkbox tracking."
+**Context**: Construction Phase -- U5 services/tracker -- Code Generation Part 1 (Planning) COMPLETE.
+
+---
+
+## Code Generation Plan Approval Prompt -- U5 services/tracker
+**Timestamp**: 2026-03-23T06:54:35Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Requested explicit user approval for tracker-code-generation-plan.md before starting Part 2 execution."
+**Context**: Construction Phase -- U5 services/tracker -- Waiting for Code Generation plan approval.
+
+---
+
+## Code Generation Pre-Checks Question -- U5 services/tracker
+**Timestamp**: 2026-03-23T07:00:58Z
+**User Input**: "code gen plan looks good, but what about other steps before generating code?"
+**AI Response**: "Clarified remaining mandatory pre-code steps for U5: QA Test Case Enrichment (qa-test-cases extension) and Construction Design PR Gate creation + approval (pr-checkpoint extension), both required before Code Generation Part 2 execution."
+**Context**: Construction Phase -- U5 services/tracker -- Pre-code gating clarification.
+
+---
+
+## Proceed Per Plan -- U5 services/tracker
+**Timestamp**: 2026-03-23T07:02:31Z
+**User Input**: "please follow the plan"
+**AI Response**: "Proceeded with next mandatory pre-code stage: QA Test Case Enrichment for tracker before Construction Design PR Gate."
+**Context**: Construction Phase -- U5 services/tracker -- Executing required pre-code sequence.
+
+---
+
+## QA Test Case Enrichment -- tracker (U5)
+**Timestamp**: 2026-03-23T07:02:31Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "QA enrichment complete for tracker test artifacts. Updated `test-specs-narrative.md`, `test-specs-gherkin.md`, and `test-specs-tabular.md` with construction-phase technical details from tracker functional design. Finalized TC-T-008 as strict fail-closed (reject event when `platform_tenant_id` is missing). Created `inception/test-cases/tracker/enrichment-delta.md` and updated aidlc-state.md."
+**Context**: Construction Phase -- U5 services/tracker -- qa-test-cases extension Section 2 complete.
+
+---
+
+## Construction Design PR Branch Confirmation Prompt -- U5 services/tracker
+**Timestamp**: 2026-03-23T07:04:42Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Created construction/plans/tracker-design-pr-branch-confirmation.md to collect explicit branch confirmation before generating Construction Design PR checkpoint instructions."
+**Context**: Construction Phase -- U5 services/tracker -- pr-checkpoint branch confirmation pending.
+
+---
+
+## Construction Design PR Branch Confirmed -- U5 services/tracker
+**Timestamp**: 2026-03-23T07:07:49Z
+**User Input**: "done"
+**AI Response**: "Read tracker-design-pr-branch-confirmation.md and confirmed [Answer]: A (use current branch `dev`). Proceeded to generate Construction Design PR checkpoint instructions."
+**Context**: Construction Phase -- U5 services/tracker -- pr-checkpoint branch confirmation complete.
+
+---
+
+## Construction Design PR Gate Created -- U5 services/tracker
+**Timestamp**: 2026-03-23T07:07:49Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Generated construction/plans/tracker-design-pr-checkpoint-instructions.md, updated aidlc-state.md PR Checkpoint State with tracker gate status PENDING on branch `dev`, and blocked Code Generation until PR approval is confirmed."
+**Context**: Construction Phase -- U5 services/tracker -- Construction Design PR Gate PENDING.
+
+---

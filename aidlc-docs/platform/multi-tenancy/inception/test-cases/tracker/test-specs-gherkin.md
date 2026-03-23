@@ -18,6 +18,7 @@ Feature: Tracker Service two-tier tenancy column migration, middleware adoption,
     Then plan_progress has service_tenant_id, service_user_id, and platform_tenant_id columns as VARCHAR(64) NOT NULL
     And action_progress has the same three columns
     And the old tenant_id and user_id columns are absent
+    And scoped uniqueness exists for plan and action business keys
 
   # Source: tracker / FR-5.6
   # Construction: aidlc-docs/platform/multi-tenancy/construction/tracker/
@@ -28,6 +29,7 @@ Feature: Tracker Service two-tier tenancy column migration, middleware adoption,
     When all API route handler signatures are inspected
     Then no direct Header(...) parameters named x_tenant_id or x_service_tenant_id exist
     And get_tenant_context or get_platform_tenant_id from soorma_service_common is used for identity extraction
+    And query filters use platform_tenant_id, service_tenant_id, and service_user_id
 
   # Source: tracker / FR-5.7, NFR-1.3
   # Construction: aidlc-docs/platform/multi-tenancy/construction/tracker/
@@ -57,6 +59,7 @@ Feature: Tracker Service two-tier tenancy column migration, middleware adoption,
     Given a spy on set_config_for_session from soorma_service_common
     When a Tracker NATS event handler is triggered
     Then set_config_for_session is called with the event identity values before any DB write
+    And the call includes platform_tenant_id, service_tenant_id, and service_user_id
 
   # Source: tracker / FR-5.8
   # Construction: aidlc-docs/platform/multi-tenancy/construction/tracker/
@@ -85,5 +88,5 @@ Feature: Tracker Service two-tier tenancy column migration, middleware adoption,
   Scenario: NATS event with null platform_tenant_id does not create row with NULL identity
     Given a NATS event with EventEnvelope.platform_tenant_id=None
     When the Tracker NATS event handler processes the event
-    Then either DEFAULT_PLATFORM_TENANT_ID is used as fallback OR the event is rejected with a warning
+    Then the event is rejected with a warning
     And no DB row with platform_tenant_id=NULL is created

@@ -10,14 +10,19 @@
 
 **Context**: The Tracker Service column rename migration must be lossless — existing data (if any) is preserved, and the new column names align with the two-tier model. Covers FR-5.1, FR-5.2, FR-5.3, FR-5.5.
 
+**Construction enrichment**:
+- Migration must apply scoped uniqueness/index updates: `uq_plan_scope_plan` and `uq_action_scope_action`.
+- Validation includes both column presence and scoped constraint correctness.
+
 **Scenario description**: The Alembic migration is applied to a Tracker test database. The resulting schema is inspected.
 
 **Steps**:
 1. Apply the Tracker Alembic migration to a test database
 2. Inspect `plan_progress` table columns
 3. Inspect `action_progress` table columns
+4. Inspect scoped unique constraints and indexes
 
-**Expected outcome**: Both tables have `service_tenant_id VARCHAR(64) NOT NULL`, `service_user_id VARCHAR(64) NOT NULL`, and `platform_tenant_id VARCHAR(64) NOT NULL`. The old `tenant_id` and `user_id` columns are gone.
+**Expected outcome**: Both tables have `service_tenant_id VARCHAR(64) NOT NULL`, `service_user_id VARCHAR(64) NOT NULL`, and `platform_tenant_id VARCHAR(64) NOT NULL`. The old `tenant_id` and `user_id` columns are gone. Scoped uniqueness/indexes are present per construction design.
 
 **Scope tag**: happy-path
 **Priority**: High
@@ -29,6 +34,9 @@
 ### TC-T-002 — TenantContext replaces per-route header parsing in Tracker API handlers
 
 **Context**: The Tracker Service previously parsed `x_tenant_id: str = Header(...)` in each route directly. This must be replaced by a single `Depends(get_tenant_context)` from `soorma-service-common`. Covers FR-5.6.
+
+**Construction enrichment**:
+- Route logic must include composite identity predicates (`platform_tenant_id`, `service_tenant_id`, `service_user_id`) in query filters.
 
 **Scenario description**: The Tracker route handler source is inspected for direct `Header(...)` usage and for adoption of `get_tenant_context`.
 
@@ -50,6 +58,9 @@
 
 **Context**: Query endpoints must filter by `(platform_tenant_id, service_tenant_id, service_user_id)` — not just by `service_tenant_id`. This is the composite key enforcement. Covers FR-5.7.
 
+**Construction enrichment**:
+- Partial-key filters are non-compliant (for example, service tenant only).
+
 **Scenario description**: Two plan progress records exist under different `platform_tenant_id` values but the same `service_tenant_id`. Querying with the first platform tenant's context returns only its records.
 
 **Steps**:
@@ -70,6 +81,9 @@
 
 **Context**: The Tracker's NATS-path must trust `event.platform_tenant_id` (set by the Event Service) rather than reading it from headers (no HTTP context in NATS path). Covers FR-6.7, FR-5.6.
 
+**Construction enrichment**:
+- Envelope mapping is explicit: `event.tenant_id -> service_tenant_id`, `event.user_id -> service_user_id`.
+
 **Scenario description**: A NATS event arrives with `platform_tenant_id="spt_from_event_service"` in the `EventEnvelope`. The Tracker handler stores the plan progress row using this value for `platform_tenant_id`.
 
 **Steps**:
@@ -89,6 +103,9 @@
 
 **Context**: The NATS path has no HTTP request, so it must call `set_config_for_session` manually before any DB interaction to ensure correct session state. Covers FR-3a.3 (NATS path for Tracker).
 
+**Construction enrichment**:
+- Required call shape: `set_config_for_session(db, platform_tenant_id, service_tenant_id, service_user_id)`.
+
 **Scenario description**: A NATS event handler is triggered. The test instrument confirms `set_config_for_session` is called with the identity from the event envelope before any DB write.
 
 **Steps**:
@@ -96,7 +113,7 @@
 2. Trigger the Tracker NATS event handler with a test event
 3. Check that `set_config_for_session` was called with the event's identity values
 
-**Expected outcome**: `set_config_for_session(db, platform_tenant_id=..., service_tenant_id=..., service_user_id=...)` was called before the database INSERT for plan progress.
+**Expected outcome**: `set_config_for_session(db, platform_tenant_id=..., service_tenant_id=..., service_user_id=...)` was called before the database INSERT/UPDATE path.
 
 **Scope tag**: happy-path
 **Priority**: High
@@ -108,6 +125,9 @@
 ### TC-T-006 — TrackerDataDeletion.delete_by_platform_tenant removes all rows from both tables
 
 **Context**: The GDPR deletion interface must cover both `plan_progress` and `action_progress`. Covers FR-5.8.
+
+**Construction enrichment**:
+- Concrete class is `TrackerDataDeletion` with internal admin endpoint support for operational invocation.
 
 **Scenario description**: Rows are inserted into both tables under a specific `platform_tenant_id`. The deletion method is called and all rows for that tenant are removed.
 
@@ -129,6 +149,9 @@
 
 **Context**: Negative case: the 64-character length constraint (NFR-3.1) must be enforced for tracker columns too.
 
+**Construction enrichment**:
+- Validation policy is minimal devex model: required/non-empty + max length 64 only; IDs remain opaque.
+
 **Scenario description**: A Tracker API request is sent with `X-Service-Tenant-ID` containing 65 characters.
 
 **Steps**:
@@ -145,7 +168,7 @@
 
 ### TC-T-008 — NATS event without platform_tenant_id does not create a row with empty/null identity
 
-**Context**: Negative case: if a NATS event arrives with `platform_tenant_id=None` (e.g., published by old SDK before Event Service injection is deployed), the Tracker must not create a tracker row with an invalid/empty platform tenant ID. Covers FR-6.7 (trust model).
+**Context**: Negative case: if a NATS event arrives with `platform_tenant_id=None`, the Tracker must fail closed and must not create tracker rows. Covers FR-6.7 (trust model).
 
 **Scenario description**: A NATS event arrives with `EventEnvelope.platform_tenant_id=None`. The Tracker handler must either use the default or reject the event — it must not write `None` to the database.
 
@@ -153,7 +176,7 @@
 1. Construct event with `platform_tenant_id=None`
 2. Trigger the Tracker NATS handler with this event
 
-**Expected outcome**: Either `DEFAULT_PLATFORM_TENANT_ID` is used (fallback) or the event is rejected with a logged warning. No DB row with `platform_tenant_id=NULL` is created.
+**Expected outcome**: Event is rejected with a structured warning. No fallback default is applied in NATS path. No DB row with `platform_tenant_id=NULL` is created.
 
 **Scope tag**: happy-path-negative
 **Priority**: High
