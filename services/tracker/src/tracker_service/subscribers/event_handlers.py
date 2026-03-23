@@ -10,15 +10,17 @@ Event Topics:
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Optional
 from datetime import datetime, timezone
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma_nats import NATSClient  # Direct NATS subscription — no SDK dependency
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, insert
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from soorma_service_common import set_config_for_session
 
 from tracker_service.models.db import ActionProgress, PlanProgress, ActionStatus, PlanStatus
+from tracker_service.core.config import settings
 
 
 logger = logging.getLogger(__name__)
@@ -144,7 +146,6 @@ async def handle_action_request(
         event: Event envelope containing task data
         db_session: Database session for updates
     """
-    tenant_id, user_id = _extract_tenant_user(event)
     data = event.data or {}
     
     # Extract action metadata from envelope and data
@@ -166,19 +167,28 @@ async def handle_action_request(
         )
         return
 
+    platform_tenant_id, service_tenant_id, service_user_id = _extract_identity_dimensions(event)
+    await set_config_for_session(
+        db_session,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
+    )
+
     # Auto-upsert plan_progress so action_progress FK is satisfied even when
     # no explicit plan.started system event was published (choreography pattern).
     if plan_id:
         plan_stmt = pg_insert(PlanProgress).values(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             status=PlanStatus.IN_PROGRESS,
             total_actions=0,
             started_at=event.time or datetime.now(timezone.utc),
         )
         plan_stmt = plan_stmt.on_conflict_do_update(
-            index_elements=["plan_id"],  # unique constraint uq_plan_id
+            index_elements=["platform_tenant_id", "service_tenant_id", "plan_id"],
             set_={"updated_at": datetime.now(timezone.utc)},
         )
         await db_session.execute(plan_stmt)
@@ -187,8 +197,9 @@ async def handle_action_request(
     stmt = pg_insert(ActionProgress).values(
         action_id=action_id,
         plan_id=plan_id,
-        tenant_id=tenant_id,
-        user_id=user_id,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
         action_name=action_name,
         action_type=action_type,
         status=ActionStatus.PENDING,
@@ -198,7 +209,7 @@ async def handle_action_request(
     
     # On conflict, update to latest state (idempotency)
     stmt = stmt.on_conflict_do_update(
-        index_elements=["tenant_id", "action_id"],
+        index_elements=["platform_tenant_id", "service_tenant_id", "action_id"],
         set_={
             "status": ActionStatus.PENDING,
             "started_at": event.time or datetime.now(timezone.utc),
@@ -210,7 +221,12 @@ async def handle_action_request(
     
     # If plan_id exists, increment total_actions count
     if plan_id:
-        await _increment_plan_action_count(db_session, plan_id, tenant_id, user_id)
+        await _increment_plan_action_count(
+            db_session,
+            plan_id,
+            platform_tenant_id,
+            service_tenant_id,
+        )
 
 
 async def handle_action_result(
@@ -231,7 +247,13 @@ async def handle_action_result(
         event: Event envelope containing task result data
         db_session: Database session for updates
     """
-    tenant_id, user_id = _extract_tenant_user(event)
+    platform_tenant_id, service_tenant_id, service_user_id = _extract_identity_dimensions(event)
+    await set_config_for_session(
+        db_session,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
+    )
     data = event.data or {}
     
     # Extract action metadata from envelope and data
@@ -249,7 +271,8 @@ async def handle_action_result(
     # Update action_progress record
     stmt = (
         update(ActionProgress)
-        .where(ActionProgress.tenant_id == tenant_id)
+        .where(ActionProgress.platform_tenant_id == platform_tenant_id)
+        .where(ActionProgress.service_tenant_id == service_tenant_id)
         .where(ActionProgress.action_id == action_id)
         .values(
             status=status,
@@ -268,9 +291,19 @@ async def handle_action_result(
     # no action_progress row, so rowcount == 0 and the counter must stay clean.
     if plan_id and rows_updated > 0:
         if is_failed:
-            await _increment_plan_failed_count(db_session, plan_id, tenant_id, user_id)
+            await _increment_plan_failed_count(
+                db_session,
+                plan_id,
+                platform_tenant_id,
+                service_tenant_id,
+            )
         else:
-            await _increment_plan_completed_count(db_session, plan_id, tenant_id, user_id)
+            await _increment_plan_completed_count(
+                db_session,
+                plan_id,
+                platform_tenant_id,
+                service_tenant_id,
+            )
 
 
 async def handle_plan_event(
@@ -294,7 +327,13 @@ async def handle_plan_event(
         event: Event envelope containing plan lifecycle data
         db_session: Database session for updates
     """
-    tenant_id, user_id = _extract_tenant_user(event)
+    platform_tenant_id, service_tenant_id, service_user_id = _extract_identity_dimensions(event)
+    await set_config_for_session(
+        db_session,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
+    )
     data = event.data or {}
     event_type = event.type
     
@@ -313,8 +352,9 @@ async def handle_plan_event(
         
         stmt = pg_insert(PlanProgress).values(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             plan_name=plan_name,
             plan_description=plan_description,
             status=PlanStatus.IN_PROGRESS,
@@ -324,7 +364,7 @@ async def handle_plan_event(
         
         # On conflict, update to latest state
         stmt = stmt.on_conflict_do_update(
-            index_elements=["plan_id"],  # unique constraint uq_plan_id
+            index_elements=["platform_tenant_id", "service_tenant_id", "plan_id"],
             set_={
                 "status": PlanStatus.IN_PROGRESS,
                 "started_at": event.time or datetime.now(timezone.utc),
@@ -346,7 +386,8 @@ async def handle_plan_event(
         
         stmt = (
             update(PlanProgress)
-            .where(PlanProgress.tenant_id == tenant_id)
+            .where(PlanProgress.platform_tenant_id == platform_tenant_id)
+            .where(PlanProgress.service_tenant_id == service_tenant_id)
             .where(PlanProgress.plan_id == plan_id)
             .values(
                 status=PlanStatus.COMPLETED,
@@ -363,7 +404,8 @@ async def handle_plan_event(
         
         stmt = (
             update(PlanProgress)
-            .where(PlanProgress.tenant_id == tenant_id)
+            .where(PlanProgress.platform_tenant_id == platform_tenant_id)
+            .where(PlanProgress.service_tenant_id == service_tenant_id)
             .where(PlanProgress.plan_id == plan_id)
             .values(
                 status=PlanStatus.FAILED,
@@ -376,9 +418,9 @@ async def handle_plan_event(
         await db_session.execute(stmt)
 
 
-def _extract_tenant_user(event: EventEnvelope) -> tuple[str, str]:
+def _extract_identity_dimensions(event: EventEnvelope) -> tuple[str, str, str]:
     """
-    Extract tenant_id and user_id from event envelope.
+    Extract and validate platform/service identity dimensions from event envelope.
     
     Multi-tenancy helper to get authentication context from events.
     
@@ -386,25 +428,36 @@ def _extract_tenant_user(event: EventEnvelope) -> tuple[str, str]:
         event: Event envelope with tenant/user metadata
     
     Returns:
-        Tuple of (tenant_id, user_id)
+        Tuple of (platform_tenant_id, service_tenant_id, service_user_id)
+
+    Raises:
+        ValueError: If required dimensions are missing.
     """
-    # Use defaults if not provided (for development/testing)
-    tenant_id = event.tenant_id or "00000000-0000-0000-0000-000000000000"
-    user_id = event.user_id or "00000000-0000-0000-0000-000000000001"
-    
-    return tenant_id, user_id
+    if not event.platform_tenant_id:
+        raise ValueError("event.platform_tenant_id is required")
+
+    service_tenant_id = event.tenant_id or settings.default_service_tenant_id
+    service_user_id = event.user_id or settings.default_service_user_id
+
+    if not service_tenant_id:
+        raise ValueError("event.tenant_id is required")
+    if not service_user_id:
+        raise ValueError("event.user_id is required")
+
+    return event.platform_tenant_id, service_tenant_id, service_user_id
 
 
 async def _increment_plan_action_count(
     db_session: AsyncSession,
     plan_id: str, 
-    tenant_id: str,
-    user_id: str,
+    platform_tenant_id: str,
+    service_tenant_id: str,
 ) -> None:
     """Increment total_actions count for a plan."""
     stmt = (
         update(PlanProgress)
-        .where(PlanProgress.tenant_id == tenant_id)
+        .where(PlanProgress.platform_tenant_id == platform_tenant_id)
+        .where(PlanProgress.service_tenant_id == service_tenant_id)
         .where(PlanProgress.plan_id == plan_id)
         .values(
             total_actions=PlanProgress.total_actions + 1,
@@ -418,13 +471,14 @@ async def _increment_plan_action_count(
 async def _increment_plan_completed_count(
     db_session: AsyncSession,
     plan_id: str,
-    tenant_id: str,
-    user_id: str,
+    platform_tenant_id: str,
+    service_tenant_id: str,
 ) -> None:
     """Increment completed_actions count for a plan."""
     stmt = (
         update(PlanProgress)
-        .where(PlanProgress.tenant_id == tenant_id)
+        .where(PlanProgress.platform_tenant_id == platform_tenant_id)
+        .where(PlanProgress.service_tenant_id == service_tenant_id)
         .where(PlanProgress.plan_id == plan_id)
         .values(
             completed_actions=PlanProgress.completed_actions + 1,
@@ -438,13 +492,14 @@ async def _increment_plan_completed_count(
 async def _increment_plan_failed_count(
     db_session: AsyncSession,
     plan_id: str,
-    tenant_id: str,
-    user_id: str,
+    platform_tenant_id: str,
+    service_tenant_id: str,
 ) -> None:
     """Increment failed_actions count for a plan."""
     stmt = (
         update(PlanProgress)
-        .where(PlanProgress.tenant_id == tenant_id)
+        .where(PlanProgress.platform_tenant_id == platform_tenant_id)
+        .where(PlanProgress.service_tenant_id == service_tenant_id)
         .where(PlanProgress.plan_id == plan_id)
         .values(
             failed_actions=PlanProgress.failed_actions + 1,

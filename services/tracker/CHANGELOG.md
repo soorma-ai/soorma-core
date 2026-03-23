@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Three-Dimensional Tenancy (multi-tenancy initiative)
+- **Identity model**: replaced `tenant_id`/`user_id` columns with `platform_tenant_id`, `service_tenant_id`, `service_user_id` (all VARCHAR(64) NOT NULL) in `plan_progress` and `action_progress`
+- **Scoped uniqueness**: `plan_progress` unique on `(platform_tenant_id, service_tenant_id, plan_id)`; `action_progress` unique on `(platform_tenant_id, service_tenant_id, action_id)`
+- **Composite FK**: `action_progress` references `plan_progress` via `(platform_tenant_id, service_tenant_id, plan_id)`
+- **HTTP path**: registered `TenancyMiddleware` from `soorma-service-common`; query endpoints use `TenantContext` dependency injection
+- **NATS path**: `_extract_identity_dimensions()` maps `event.platform_tenant_id/tenant_id/user_id` to three-dim fields; fail-closed if `platform_tenant_id` missing; `set_config_for_session()` activates RLS per event
+- **Validation**: identity dimensions enforced to ≤64 chars at API layer; all three required
+- **Dependencies**: added `soorma-service-common`
+
+### Added — Three-Dimensional Tenancy (multi-tenancy initiative)
+- GDPR deletion service `TrackerDataDeletion` covering `ActionProgress` + `PlanProgress`
+- Internal admin endpoints: `DELETE /v1/admin/platform/{ptid}`, `/tenant/{ptid}/{stid}`, `/user/{ptid}/{stid}/{suid}`
+- Alembic migration `20260323_0712_f7a1c2b9d1e0` for identity column rename/addition
+
 ## [0.8.2] - 2026-03-14
 
 ### Changed

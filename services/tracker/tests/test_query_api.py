@@ -12,10 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tracker_service.main import app
 from tracker_service.models.db import PlanProgress, ActionProgress, ActionStatus, PlanStatus
-from soorma_common import (
-    PlanProgress as PlanProgressDTO,
-    TaskExecution,
-)
+
+
+PLATFORM_TENANT = "spt_test-tenant"
+SERVICE_TENANT = "st_tenant-1"
+SERVICE_USER = "su_user-1"
 
 
 class TestGetPlanProgress:
@@ -28,14 +29,15 @@ class TestGetPlanProgress:
         """Test that get_plan_progress returns PlanProgress DTO for existing plan."""
         # Arrange: Insert plan_progress record
         plan_id = "plan-123"
-        tenant_id = "tenant-1"
-        user_id = "user-1"
+        service_tenant_id = SERVICE_TENANT
+        service_user_id = SERVICE_USER
         
         # Insert via SQLAlchemy to simulate existing data
         plan_progress = PlanProgress(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             status=PlanStatus.IN_PROGRESS,
             total_actions=5,
             completed_actions=2,
@@ -50,8 +52,9 @@ class TestGetPlanProgress:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}",
                 headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-Service-Tenant-ID": service_tenant_id,
+                    "X-User-ID": service_user_id,
                 }
             )
 
@@ -77,8 +80,9 @@ class TestGetPlanProgress:
             response = await client.get(
                 "/v1/tracker/plans/nonexistent-plan",
                 headers={
-                    "X-Tenant-ID": "tenant-1",
-                    "X-User-ID": "user-1",
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-Service-Tenant-ID": SERVICE_TENANT,
+                    "X-User-ID": SERVICE_USER,
                 }
             )
 
@@ -95,8 +99,9 @@ class TestGetPlanProgress:
         
         plan_progress = PlanProgress(
             plan_id=plan_id,
-            tenant_id="tenant-1",
-            user_id="user-1",
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=SERVICE_TENANT,
+            service_user_id=SERVICE_USER,
             status=PlanStatus.IN_PROGRESS,
             total_actions=3,
             completed_actions=0,
@@ -106,13 +111,14 @@ class TestGetPlanProgress:
         db_session.add(plan_progress)
         await db_session.commit()
 
-        # Act: Call API with tenant-2 header (different tenant)
+        # Act: Call API with a different service tenant header
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}",
                 headers={
-                    "X-Tenant-ID": "tenant-2",
-                    "X-User-ID": "user-2",
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-Service-Tenant-ID": "st_other-tenant",
+                    "X-User-ID": SERVICE_USER,
                 }
             )
 
@@ -120,15 +126,19 @@ class TestGetPlanProgress:
         assert response.status_code == 404, f"Expected 404 due to tenant mismatch, got {response.status_code}"
 
     @pytest.mark.asyncio
-    async def test_get_plan_progress_requires_headers(
+    async def test_get_plan_progress_requires_service_tenant_header(
         self, db_session: AsyncSession, override_get_db
     ):
-        """Test that get_plan_progress requires X-Tenant-ID and X-User-ID headers."""
-        # Act: Call API without headers
+        """Test that get_plan_progress requires X-Service-Tenant-ID."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/v1/tracker/plans/plan-123")
+            response = await client.get(
+                "/v1/tracker/plans/plan-123",
+                headers={
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-User-ID": SERVICE_USER,
+                },
+            )
 
-        # Assert: Returns 422 (validation error - missing required headers)
         assert response.status_code == 422, f"Expected 422, got {response.status_code}: {response.text}"
 
 
@@ -142,14 +152,15 @@ class TestGetPlanActions:
         """Test that get_plan_actions returns List[TaskExecution]."""
         # Arrange: Insert action_progress records
         plan_id = "plan-789"
-        tenant_id = "tenant-1"
-        user_id = "user-1"
+        service_tenant_id = SERVICE_TENANT
+        service_user_id = SERVICE_USER
         
         # Insert plan first
         plan_progress = PlanProgress(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             status=PlanStatus.IN_PROGRESS,
             total_actions=2,
             completed_actions=1,
@@ -162,8 +173,9 @@ class TestGetPlanActions:
         action1 = ActionProgress(
             action_id="action-1",
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             action_name="Research Task",
             action_type="research.requested",
             assigned_to="worker-1",
@@ -174,8 +186,9 @@ class TestGetPlanActions:
         action2 = ActionProgress(
             action_id="action-2",
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             action_name="Search Task",
             action_type="search.requested",
             assigned_to="worker-2",
@@ -191,8 +204,9 @@ class TestGetPlanActions:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}/actions",
                 headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-Service-Tenant-ID": service_tenant_id,
+                    "X-User-ID": service_user_id,
                 }
             )
 
@@ -216,13 +230,14 @@ class TestGetPlanActions:
         """Test that get_plan_actions returns empty list when no actions exist."""
         # Arrange: Insert plan without actions
         plan_id = "plan-empty"
-        tenant_id = "tenant-1"
-        user_id = "user-1"
+        service_tenant_id = SERVICE_TENANT
+        service_user_id = SERVICE_USER
         
         plan_progress = PlanProgress(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             status=PlanStatus.PENDING,
             total_actions=0,
             completed_actions=0,
@@ -237,8 +252,9 @@ class TestGetPlanActions:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}/actions",
                 headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-Service-Tenant-ID": service_tenant_id,
+                    "X-User-ID": service_user_id,
                 }
             )
 
@@ -258,8 +274,9 @@ class TestGetPlanActions:
         
         plan_progress = PlanProgress(
             plan_id=plan_id,
-            tenant_id="tenant-1",
-            user_id="user-1",
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=SERVICE_TENANT,
+            service_user_id=SERVICE_USER,
             status=PlanStatus.IN_PROGRESS,
             total_actions=1,
             completed_actions=0,
@@ -271,8 +288,9 @@ class TestGetPlanActions:
         action = ActionProgress(
             action_id="action-secret",
             plan_id=plan_id,
-            tenant_id="tenant-1",
-            user_id="user-1",
+            platform_tenant_id=PLATFORM_TENANT,
+            service_tenant_id=SERVICE_TENANT,
+            service_user_id=SERVICE_USER,
             action_name="Secret Task",
             action_type="research.requested",
             assigned_to="worker-1",
@@ -287,8 +305,9 @@ class TestGetPlanActions:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}/actions",
                 headers={
-                    "X-Tenant-ID": "tenant-2",
-                    "X-User-ID": "user-2",
+                    "X-Tenant-ID": PLATFORM_TENANT,
+                    "X-Service-Tenant-ID": "st_other-tenant",
+                    "X-User-ID": SERVICE_USER,
                 }
             )
 

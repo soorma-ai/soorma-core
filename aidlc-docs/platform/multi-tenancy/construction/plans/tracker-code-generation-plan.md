@@ -35,9 +35,9 @@ Key U5 decisions to implement:
 - [x] Step 4 — Create this code-generation plan document
 - [x] Step 5 — Summarize plan for user review
 - [x] Step 6 — Log approval prompt in audit.md
-- [ ] Step 7 — Wait for explicit user approval to execute code generation
-- [ ] Step 8 — Record user approval in audit.md
-- [ ] Step 9 — Update aidlc-state.md for generation execution start
+- [x] Step 7 — Wait for explicit user approval to execute code generation
+- [x] Step 8 — Record user approval in audit.md
+- [x] Step 9 — Update aidlc-state.md for generation execution start
 
 ---
 
@@ -45,16 +45,16 @@ Key U5 decisions to implement:
 
 ### Group 1: Migrations and Models
 
-- [ ] Step 10 — Create new Alembic migration in `services/tracker/alembic/versions/` for:
+- [x] Step 10 — Create new Alembic migration in `services/tracker/alembic/versions/` for:
   - `tenant_id -> service_tenant_id`
   - `user_id -> service_user_id`
   - add `platform_tenant_id VARCHAR(64) NOT NULL`
   - enforce `VARCHAR(64)` length on all three identity columns
-- [ ] Step 11 — Update uniqueness/indexes in migration:
+- [x] Step 11 — Update uniqueness/indexes in migration:
   - drop `uq_plan_id`, create scoped plan uniqueness
   - drop `uq_action_tenant_action`, create scoped action uniqueness
   - replace tenant-scoped indexes with scope-aware indexes
-- [ ] Step 12 — Update ORM in `services/tracker/src/tracker_service/models/db.py`:
+- [x] Step 12 — Update ORM in `services/tracker/src/tracker_service/models/db.py`:
   - renamed fields
   - new platform tenant field
   - updated constraints/indexes
@@ -62,56 +62,56 @@ Key U5 decisions to implement:
 
 ### Group 2: App Wiring and Dependencies
 
-- [ ] Step 13 — Update `services/tracker/src/tracker_service/main.py`:
+- [x] Step 13 — Update `services/tracker/src/tracker_service/main.py`:
   - register `TenancyMiddleware` from `soorma_service_common`
-- [ ] Step 14 — Update `services/tracker/src/tracker_service/core/config.py` defaults:
+- [x] Step 14 — Update `services/tracker/src/tracker_service/core/config.py` defaults:
   - default platform tenant constant alignment
   - remove stale legacy defaults if no longer used
 
 ### Group 3: API Query Layer
 
-- [ ] Step 15 — Refactor `services/tracker/src/tracker_service/api/v1/query.py`:
+- [x] Step 15 — Refactor `services/tracker/src/tracker_service/api/v1/query.py`:
   - replace direct header parsing with shared tenant context dependency
   - enforce max length 64 validation on identity dims at API layer
   - apply composite filtering in all selects
 
 ### Group 4: Event Subscriber Path
 
-- [ ] Step 16 — Refactor `services/tracker/src/tracker_service/subscribers/event_handlers.py`:
+- [x] Step 16 — Refactor `services/tracker/src/tracker_service/subscribers/event_handlers.py`:
   - use `event.platform_tenant_id` as authoritative platform dimension
   - fail closed if missing platform tenant
   - map envelope tenant/user to service tenant/user fields
-- [ ] Step 17 — Ensure NATS DB path calls `set_config_for_session` before queries/updates
-- [ ] Step 18 — Update upsert conflict targets to new scoped uniqueness keys
+- [x] Step 17 — Ensure NATS DB path calls `set_config_for_session` before queries/updates
+- [x] Step 18 — Update upsert conflict targets to new scoped uniqueness keys
 
 ### Group 5: GDPR Deletion
 
-- [ ] Step 19 — Create `services/tracker/src/tracker_service/services/data_deletion.py`:
+- [x] Step 19 — Create `services/tracker/src/tracker_service/services/data_deletion.py`:
   - implement `TrackerDataDeletion(PlatformTenantDataDeletion)`
   - support delete by platform tenant/service tenant/service user
-- [ ] Step 20 — Create internal admin route `services/tracker/src/tracker_service/api/v1/admin.py`:
+- [x] Step 20 — Create internal admin route `services/tracker/src/tracker_service/api/v1/admin.py`:
   - internal delete endpoints mirroring memory service operational pattern
-- [ ] Step 21 — Register admin routes in `services/tracker/src/tracker_service/api/v1/__init__.py`
+- [x] Step 21 — Register admin routes in `services/tracker/src/tracker_service/api/v1/__init__.py`
 
 ### Group 6: Tests
 
-- [ ] Step 22 — Update `services/tracker/tests/conftest.py` fixtures for new identity fields
-- [ ] Step 23 — Update `services/tracker/tests/test_query_api.py` for tenant-context dependency and composite filters
-- [ ] Step 24 — Update `services/tracker/tests/test_subscribers.py` for fail-closed missing `platform_tenant_id`
-- [ ] Step 25 — Update `services/tracker/tests/test_nats_subscribers.py` for `set_config_for_session` ordering and scoped upserts
-- [ ] Step 26 — Add/extend tests for migration constraints and max-length validation (TC-T-001, TC-T-007)
-- [ ] Step 27 — Add/extend tests for deletion behavior (TC-T-006)
+- [x] Step 22 — Update `services/tracker/tests/conftest.py` fixtures for new identity fields
+- [x] Step 23 — Update `services/tracker/tests/test_query_api.py` for tenant-context dependency and composite filters
+- [x] Step 24 — Update `services/tracker/tests/test_subscribers.py` for fail-closed missing `platform_tenant_id`
+- [x] Step 25 — Update `services/tracker/tests/test_nats_subscribers.py` for `set_config_for_session` ordering and scoped upserts
+- [x] Step 26 — Add/extend tests for migration constraints and max-length validation (TC-T-001, TC-T-007)
+- [x] Step 27 — Add/extend tests for deletion behavior (TC-T-006)
 
 ### Group 7: Documentation and Changelog
 
-- [ ] Step 28 — Update tracker unit code summary at `aidlc-docs/platform/multi-tenancy/construction/tracker/code/code-summary.md`
-- [ ] Step 29 — Update tracker changelog entry in `services/tracker/CHANGELOG.md`
+- [x] Step 28 — Update tracker unit code summary at `aidlc-docs/platform/multi-tenancy/construction/tracker/code/code-summary.md`
+- [x] Step 29 — Update tracker changelog entry in `services/tracker/CHANGELOG.md`
 
 ### Group 8: Progress and Quality Gates
 
-- [ ] Step 30 — Mark completed plan checkboxes during execution (in this file)
-- [ ] Step 31 — Update `aidlc-state.md` for U5 Code Generation progress
-- [ ] Step 32 — Ensure artifacts are ready for QA enrichment and design PR checkpoint sequencing
+- [x] Step 30 — Mark completed plan checkboxes during execution (in this file)
+- [x] Step 31 — Update `aidlc-state.md` for U5 Code Generation progress
+- [x] Step 32 — Ensure artifacts are ready for QA enrichment and design PR checkpoint sequencing
 
 ---
 

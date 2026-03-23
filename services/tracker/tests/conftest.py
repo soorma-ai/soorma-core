@@ -1,10 +1,12 @@
 """Pytest configuration and fixtures for tracker service tests."""
 
 import pytest
+from fastapi import Request
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from tracker_service.models.db import Base
 from tracker_service.core.db import get_db
+from tracker_service.core.dependencies import get_tenant_context, TenantContext
 from tracker_service.main import app
 
 
@@ -42,10 +44,20 @@ async def db_session(db_engine):
 
 @pytest.fixture(scope="function")
 def override_get_db(db_session):
-    """Override the get_db dependency in FastAPI app."""
+    """Override tracker DB and tenant context dependencies in FastAPI app."""
+
     async def _get_test_db():
         yield db_session
+
+    async def _get_test_tenant_context(request: Request):
+        yield TenantContext(
+            platform_tenant_id=request.headers.get("X-Tenant-ID") or "spt_test-default",
+            service_tenant_id=request.headers.get("X-Service-Tenant-ID"),
+            service_user_id=request.headers.get("X-User-ID"),
+            db=db_session,
+        )
     
     app.dependency_overrides[get_db] = _get_test_db
+    app.dependency_overrides[get_tenant_context] = _get_test_tenant_context
     yield
     app.dependency_overrides.clear()

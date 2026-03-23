@@ -8,7 +8,7 @@ from sqlalchemy import (
     DateTime,
     Text,
     Index,
-    ForeignKey,
+    ForeignKeyConstraint,
     Enum as SQLEnum,
     UniqueConstraint,
 )
@@ -56,9 +56,10 @@ class PlanProgress(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
     # Business identifiers
-    plan_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
-    tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    plan_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    platform_tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    service_tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    service_user_id: Mapped[str] = mapped_column(String(64), nullable=False)
     
     # Plan metadata
     plan_name: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -109,8 +110,18 @@ class PlanProgress(Base):
     
     # Indexes for multi-tenant queries
     __table_args__ = (
-        UniqueConstraint("plan_id", name="uq_plan_id"),
-        Index("idx_plan_tenant_plan", "tenant_id", "plan_id"),
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "plan_id",
+            name="uq_plan_scope_plan",
+        ),
+        Index(
+            "idx_plan_scope_plan",
+            "platform_tenant_id",
+            "service_tenant_id",
+            "plan_id",
+        ),
         Index("idx_plan_status", "status"),
         Index("idx_plan_created", "created_at"),
     )
@@ -128,17 +139,13 @@ class ActionProgress(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
     # Foreign key to plan
-    plan_id: Mapped[str] = mapped_column(
-        String(255),
-        ForeignKey("plan_progress.plan_id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
+    plan_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     
     # Business identifiers
     action_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    platform_tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    service_tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    service_user_id: Mapped[str] = mapped_column(String(64), nullable=False)
     
     # Action metadata
     action_name: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -186,8 +193,28 @@ class ActionProgress(Base):
     
     # Indexes for multi-tenant queries
     __table_args__ = (
-        UniqueConstraint("tenant_id", "action_id", name="uq_action_tenant_action"),
-        Index("idx_action_tenant_action", "tenant_id", "action_id"),
+        ForeignKeyConstraint(
+            ["platform_tenant_id", "service_tenant_id", "plan_id"],
+            [
+                "plan_progress.platform_tenant_id",
+                "plan_progress.service_tenant_id",
+                "plan_progress.plan_id",
+            ],
+            ondelete="CASCADE",
+            name="fk_action_plan_scope",
+        ),
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "action_id",
+            name="uq_action_scope_action",
+        ),
+        Index(
+            "idx_action_scope_action",
+            "platform_tenant_id",
+            "service_tenant_id",
+            "action_id",
+        ),
         Index("idx_action_plan", "plan_id"),
         Index("idx_action_status", "status"),
         Index("idx_action_created", "created_at"),
