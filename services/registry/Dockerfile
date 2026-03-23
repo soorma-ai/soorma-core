@@ -29,7 +29,7 @@ WORKDIR /app/registry
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
 # Download all dependencies as wheels (excluding the packages we just built)
-RUN pip wheel --wheel-dir /app/wheels . \
+RUN pip wheel --wheel-dir /app/wheels --find-links /app/wheels . \
     && rm -f /app/wheels/soorma_common-*.whl /app/wheels/soorma_service_common-*.whl /app/wheels/registry_service-*.whl
 
 # Re-add our built packages (ensures we use local versions, not PyPI)
