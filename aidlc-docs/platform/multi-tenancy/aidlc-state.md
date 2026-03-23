@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U4 (services/memory) - Code Generation COMPLETE
+- **Current Stage**: CONSTRUCTION - U5 (services/tracker) - Construction Design PR Gate PENDING
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -74,7 +74,15 @@
 - [x] QA Test Case Enrichment — COMPLETE 2026-03-23T02:20:14Z (TC-M-001..011 enriched; TC-M-012, TC-M-013 added; enrichment-delta.md created)
 - [x] Construction Design PR Gate — APPROVED 2026-03-23T03:05:40Z
 - [x] Code Generation — COMPLETE | 43 files changed (39 modified, 3 created, 1 deleted) | test_multi_tenancy.py covers TC-M-003/005/006/009/010/011/012/013
-#### U5 — services/tracker (Wave 3) — blocked on U1 + U2
+#### U5 — services/tracker (Wave 3) — blocked on U1 + U2 — **IN PROGRESS**
+- [x] Unit Initialization (2026-03-23T06:20:19Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
+- [x] Functional Design (APPROVED 2026-03-23T06:54:35Z — artifacts at construction/tracker/functional-design/)
+- [ ] NFR Requirements (SKIPPED per unit spec)
+- [ ] NFR Design (SKIPPED per unit spec)
+- [ ] Infrastructure Design (SKIPPED per unit spec)
+- [x] QA Test Case Enrichment — COMPLETE 2026-03-23T07:02:31Z (TC-T-001..008 enriched; enrichment-delta.md created)
+- [ ] Construction Design PR Gate (PENDING 2026-03-23T07:07:49Z — instructions at construction/plans/tracker-design-pr-checkpoint-instructions.md)
+- [ ] Code Generation (plan created at construction/plans/tracker-code-generation-plan.md — awaiting approval)
 #### U6 — sdk/python (Wave 4) — blocked on U4 + U5
 #### U7 — services/event-service (Wave 3) — blocked on U1 + U2
 
@@ -119,3 +127,10 @@
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/registry-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-22T20:16:46Z
 - **Approved**: 2026-03-22T20:32:21Z
+
+### Construction Design PR Gate — tracker
+- **Status**: PENDING
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/tracker-design-pr-checkpoint-instructions.md
+- **Created**: 2026-03-23T07:07:49Z
+- **Approved**: —
