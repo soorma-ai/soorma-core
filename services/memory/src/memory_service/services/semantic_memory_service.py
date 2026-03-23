@@ -4,7 +4,6 @@ RF-ARCH-012: Upsert via external_id or content_hash
 RF-ARCH-014: User-scoped privacy (default private, optional public)
 """
 
-from uuid import UUID
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,8 +22,8 @@ class SemanticMemoryService:
         """Convert database model to response DTO."""
         return SemanticMemoryResponse(
             id=str(memory.id),
-            tenant_id=str(memory.tenant_id),
-            user_id=memory.user_id,
+            tenant_id=memory.platform_tenant_id,
+            user_id=memory.service_user_id or "",
             content=memory.content,
             external_id=memory.external_id,
             is_public=memory.is_public,
@@ -37,8 +36,9 @@ class SemanticMemoryService:
     async def store_knowledge(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: str,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: SemanticMemoryCreate,
     ) -> SemanticMemoryResponse:
         """
@@ -48,23 +48,15 @@ class SemanticMemoryService:
         RF-ARCH-014: Defaults to private (user-scoped)
         
         Transaction boundary: Commits after successful storage.
-        
-        Args:
-            db: Database session
-            tenant_id: Tenant identifier
-            user_id: User who owns this knowledge
-            data: SemanticMemoryCreate DTO
-        
-        Returns:
-            SemanticMemoryResponse
         """
         # Import here to avoid circular imports
         from memory_service.crud.semantic import upsert_semantic_memory
         
         memory = await upsert_semantic_memory(
             db=db,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             content=data.content,
             external_id=getattr(data, 'external_id', None),
             is_public=getattr(data, 'is_public', False),
@@ -79,8 +71,9 @@ class SemanticMemoryService:
     async def query_knowledge(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: str,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         query: str,
         limit: int = 5,
         include_public: bool = True,
@@ -89,25 +82,15 @@ class SemanticMemoryService:
         Query semantic memory by similarity with privacy support.
         
         RF-ARCH-014: Returns user's private knowledge + optional public knowledge.
-        
-        Args:
-            db: Database session
-            tenant_id: Tenant identifier
-            user_id: User performing the query
-            query: Query text
-            limit: Maximum number of results
-            include_public: If True, includes public knowledge from all users
-        
-        Returns:
-            List of SemanticMemoryResponse sorted by similarity score
         """
         # Import here to avoid circular imports
         from memory_service.crud.semantic import search_semantic_memory
         
         return await search_semantic_memory(
             db=db,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             query=query,
             limit=limit,
             include_public=include_public,
@@ -116,8 +99,9 @@ class SemanticMemoryService:
     async def ingest(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: str,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: SemanticMemoryCreate,
     ) -> SemanticMemoryResponse:
         """
@@ -125,13 +109,14 @@ class SemanticMemoryService:
         
         Delegates to store_knowledge() which provides upsert behavior.
         """
-        return await self.store_knowledge(db, tenant_id, user_id, data)
+        return await self.store_knowledge(db, platform_tenant_id, service_tenant_id, service_user_id, data)
     
     async def search(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: str,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         query: str,
         limit: int = 5,
     ) -> List[SemanticMemoryResponse]:
@@ -141,8 +126,9 @@ class SemanticMemoryService:
         """
         return await self.query_knowledge(
             db=db,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_tenant_id=service_tenant_id,
+            service_user_id=service_user_id,
             query=query,
             limit=limit,
             include_public=True,  # Default: include public knowledge

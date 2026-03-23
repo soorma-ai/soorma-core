@@ -4,7 +4,6 @@ This layer provides business logic and transaction management,
 sitting between the API layer and CRUD layer.
 """
 
-from uuid import UUID
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,9 +19,6 @@ from memory_service.crud.plan_context import (
     delete_plan_context as crud_delete,
     get_plan_by_correlation as crud_get_by_correlation,
 )
-from memory_service.crud.plans import (
-    get_plan as crud_get_plan,
-)
 from memory_service.models.memory import PlanContext
 
 
@@ -33,8 +29,8 @@ class PlanContextService:
     def _to_response(plan_context: PlanContext) -> PlanContextResponse:
         """Convert database model to response DTO."""
         return PlanContextResponse(
-            tenant_id=str(plan_context.tenant_id),
-            plan_id=str(plan_context.plan_id),
+            tenant_id=plan_context.platform_tenant_id,
+            plan_id=plan_context.plan_id,
             session_id=plan_context.session_id,
             goal_event=plan_context.goal_event,
             goal_data=plan_context.goal_data,
@@ -49,7 +45,7 @@ class PlanContextService:
     async def upsert(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         data: PlanContextCreate,
     ) -> PlanContextResponse:
         """
@@ -57,15 +53,10 @@ class PlanContextService:
         
         Transaction boundary: Commits after successful upsert.
         """
-        # Look up the plan by string plan_id to get its UUID id
-        plan = await crud_get_plan(db, tenant_id, data.plan_id)
-        if not plan:
-            raise ValueError(f"Plan not found: {data.plan_id}")
-        
         plan_context = await crud_upsert(
             db,
-            tenant_id,
-            plan.id,  # Use the UUID id from the plans table
+            platform_tenant_id,
+            data.plan_id,
             data.session_id,
             data.goal_event,
             data.goal_data,
@@ -81,16 +72,11 @@ class PlanContextService:
     async def get(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         plan_id: str,
     ) -> Optional[PlanContextResponse]:
         """Get plan context by plan ID."""
-        # Look up the plan by string plan_id to get its UUID id
-        plan = await crud_get_plan(db, tenant_id, plan_id)
-        if not plan:
-            return None
-        
-        plan_context = await crud_get(db, tenant_id, plan.id)
+        plan_context = await crud_get(db, platform_tenant_id, plan_id)
         if not plan_context:
             return None
         
@@ -99,7 +85,7 @@ class PlanContextService:
     async def update(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         plan_id: str,
         data: PlanContextUpdate,
     ) -> Optional[PlanContextResponse]:
@@ -108,15 +94,10 @@ class PlanContextService:
         
         Transaction boundary: Commits after successful update.
         """
-        # Look up the plan by string plan_id to get its UUID id
-        plan = await crud_get_plan(db, tenant_id, plan_id)
-        if not plan:
-            return None
-        
         plan_context = await crud_update(
             db,
-            tenant_id,
-            plan.id,
+            platform_tenant_id,
+            plan_id,
             data.state,
             data.current_state,
             data.correlation_ids,
@@ -131,7 +112,7 @@ class PlanContextService:
     async def delete(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         plan_id: str,
     ) -> bool:
         """
@@ -140,12 +121,7 @@ class PlanContextService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        # Look up the plan by string plan_id to get its UUID id
-        plan = await crud_get_plan(db, tenant_id, plan_id)
-        if not plan:
-            return False
-        
-        deleted = await crud_delete(db, tenant_id, plan.id)
+        deleted = await crud_delete(db, platform_tenant_id, plan_id)
         if deleted:
             await db.commit()
         
@@ -154,11 +130,11 @@ class PlanContextService:
     async def get_by_correlation(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         correlation_id: str,
     ) -> Optional[PlanContextResponse]:
         """Find plan by correlation ID."""
-        plan_context = await crud_get_by_correlation(db, tenant_id, correlation_id)
+        plan_context = await crud_get_by_correlation(db, platform_tenant_id, correlation_id)
         if not plan_context:
             return None
         

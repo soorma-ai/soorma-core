@@ -1,6 +1,5 @@
 """Service layer for Episodic Memory operations."""
 
-from uuid import UUID
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,8 +20,8 @@ class EpisodicMemoryService:
         """Convert database model to response DTO."""
         return EpisodicMemoryResponse(
             id=str(memory.id),
-            tenant_id=str(memory.tenant_id),
-            user_id=str(memory.user_id),
+            tenant_id=memory.platform_tenant_id,
+            user_id=memory.service_user_id or "",
             agent_id=memory.agent_id,
             role=memory.role,
             content=memory.content,
@@ -34,8 +33,9 @@ class EpisodicMemoryService:
     async def log(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: EpisodicMemoryCreate,
     ) -> EpisodicMemoryResponse:
         """
@@ -43,7 +43,7 @@ class EpisodicMemoryService:
         
         Transaction boundary: Commits after successful logging.
         """
-        memory = await crud_log(db, tenant_id, user_id, data)
+        memory = await crud_log(db, platform_tenant_id, service_tenant_id, service_user_id, data)
         await db.commit()
         
         return self._to_response(memory)
@@ -51,27 +51,29 @@ class EpisodicMemoryService:
     async def get_recent(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         agent_id: str,
         limit: int = 10,
     ) -> List[EpisodicMemoryResponse]:
         """Get recent episodic memories for a user and agent."""
         # CRUD layer already returns EpisodicMemoryResponse objects
-        return await crud_get_recent(db, tenant_id, user_id, agent_id, limit)
+        return await crud_get_recent(db, platform_tenant_id, service_tenant_id, service_user_id, agent_id, limit)
     
     async def search(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         query: str,
         agent_id: str = None,
         limit: int = 5,
     ) -> List[EpisodicMemoryResponse]:
         """Search episodic memories by similarity."""
         # CRUD layer already returns EpisodicMemoryResponse objects with scores
-        return await crud_search(db, tenant_id, user_id, query, agent_id, limit)
+        return await crud_search(db, platform_tenant_id, service_tenant_id, service_user_id, query, agent_id, limit)
 
 
 # Singleton instance for dependency injection

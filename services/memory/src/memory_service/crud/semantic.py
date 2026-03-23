@@ -2,7 +2,6 @@
 
 import hashlib
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
@@ -20,8 +19,9 @@ def generate_content_hash(content: str) -> str:
 
 async def upsert_semantic_memory(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: str,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     content: str,
     external_id: Optional[str] = None,
     is_public: bool = False,
@@ -37,8 +37,9 @@ async def upsert_semantic_memory(
     
     Args:
         db: Database session
-        tenant_id: Tenant identifier
-        user_id: User who owns this knowledge (required)
+        platform_tenant_id: Platform tenant identifier
+        service_tenant_id: Service tenant identifier
+        service_user_id: User who owns this knowledge (required)
         content: Text content
         external_id: Optional user-provided ID for versioning
         is_public: If True, visible to all users in tenant. Default False (private).
@@ -50,13 +51,14 @@ async def upsert_semantic_memory(
         SemanticMemory: Created or updated memory entry
     
     Behavior:
-        - With external_id: Upserts on (tenant_id, user_id, external_id) if private,
-                           or (tenant_id, external_id) if public
-        - Without external_id: Upserts on (tenant_id, user_id, content_hash) if private,
-                              or (tenant_id, content_hash) if public
+        - With external_id: Upserts on (platform_tenant_id, service_user_id, external_id) if private,
+                           or (platform_tenant_id, external_id) if public
+        - Without external_id: Upserts on (platform_tenant_id, service_user_id, content_hash) if private,
+                              or (platform_tenant_id, content_hash) if public
         - Updates existing entry if constraint matches
         - Creates new entry if no match found
     """
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Generate content hash
     content_hash = generate_content_hash(content)
     
@@ -82,8 +84,9 @@ async def upsert_semantic_memory(
     # Prepare the insert statement with ON CONFLICT DO UPDATE
     # PostgreSQL's INSERT ... ON CONFLICT ... DO UPDATE (upsert)
     stmt = insert(SemanticMemory).values(
-        tenant_id=tenant_id,
-        user_id=user_id,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
         content=content,
         embedding=embedding,
         external_id=external_id,
@@ -97,21 +100,21 @@ async def upsert_semantic_memory(
         # Upsert by external_id
         if is_public:
             # Public knowledge: unique per tenant
-            conflict_target = ['tenant_id', 'external_id']
+            conflict_target = ['platform_tenant_id', 'external_id']
             conflict_where = text('external_id IS NOT NULL AND is_public = TRUE')
         else:
             # Private knowledge: unique per user
-            conflict_target = ['tenant_id', 'user_id', 'external_id']
+            conflict_target = ['platform_tenant_id', 'service_user_id', 'external_id']
             conflict_where = text('external_id IS NOT NULL AND is_public = FALSE')
     else:
         # Upsert by content_hash
         if is_public:
             # Public knowledge: unique per tenant
-            conflict_target = ['tenant_id', 'content_hash']
+            conflict_target = ['platform_tenant_id', 'content_hash']
             conflict_where = text('is_public = TRUE')
         else:
             # Private knowledge: unique per user
-            conflict_target = ['tenant_id', 'user_id', 'content_hash']
+            conflict_target = ['platform_tenant_id', 'service_user_id', 'content_hash']
             conflict_where = text('is_public = FALSE')
     
     # Add the ON CONFLICT clause
@@ -141,22 +144,24 @@ async def upsert_semantic_memory(
 
 async def create_semantic_memory(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: str,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     data: SemanticMemoryCreate,
 ) -> SemanticMemory:
     """
     Create a new semantic memory entry (delegates to upsert).
     
-    RF-ARCH-014: Requires user_id for privacy support.
+    RF-ARCH-014: Requires service_user_id for privacy support.
     RF-ARCH-012: Uses upsert to prevent duplicates.
     
     This function is kept for backward compatibility but now delegates to upsert_semantic_memory.
     """
     return await upsert_semantic_memory(
         db=db,
-        tenant_id=tenant_id,
-        user_id=user_id,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
         content=data.content,
         external_id=getattr(data, 'external_id', None),
         is_public=getattr(data, 'is_public', False),
@@ -166,8 +171,9 @@ async def create_semantic_memory(
 
 async def search_semantic_memory(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: str,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     query: str,
     limit: int = 5,
     include_public: bool = True,
@@ -179,8 +185,9 @@ async def search_semantic_memory(
     
     Args:
         db: Database session
-        tenant_id: Tenant identifier
-        user_id: User performing the query
+        platform_tenant_id: Platform tenant identifier
+        service_tenant_id: Service tenant identifier
+        service_user_id: User performing the query
         query: Query text
         limit: Maximum number of results
         include_public: If True, includes public knowledge from all users
@@ -188,6 +195,7 @@ async def search_semantic_memory(
     Returns:
         List of SemanticMemoryResponse sorted by relevance score
     """
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Generate query embedding
     query_embedding = await embedding_service.generate_embedding(query)
 
@@ -195,17 +203,17 @@ async def search_semantic_memory(
     if include_public:
         # Return user's private knowledge OR public knowledge in tenant
         where_clause = (
-            (SemanticMemory.tenant_id == tenant_id) &
+            (SemanticMemory.platform_tenant_id == platform_tenant_id) &
             (
-                (SemanticMemory.user_id == user_id) |
+                (SemanticMemory.service_user_id == service_user_id) |
                 (SemanticMemory.is_public == True)
             )
         )
     else:
         # Return only user's private knowledge
         where_clause = (
-            (SemanticMemory.tenant_id == tenant_id) &
-            (SemanticMemory.user_id == user_id)
+            (SemanticMemory.platform_tenant_id == platform_tenant_id) &
+            (SemanticMemory.service_user_id == service_user_id)
         )
 
     # Vector similarity search using cosine distance
@@ -225,8 +233,8 @@ async def search_semantic_memory(
     return [
         SemanticMemoryResponse(
             id=str(row.SemanticMemory.id),
-            tenant_id=str(row.SemanticMemory.tenant_id),
-            user_id=row.SemanticMemory.user_id,
+            tenant_id=row.SemanticMemory.platform_tenant_id,
+            user_id=row.SemanticMemory.service_user_id or "",
             content=row.SemanticMemory.content,
             metadata=row.SemanticMemory.memory_metadata,
             external_id=row.SemanticMemory.external_id,

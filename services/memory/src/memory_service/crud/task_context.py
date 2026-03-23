@@ -1,18 +1,18 @@
 """CRUD operations for task context."""
 
 from typing import Optional, List, Dict, Any
-from uuid import UUID
-from sqlalchemy import select, delete, func, cast
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import insert, JSONB
+from sqlalchemy.dialects.postgresql import insert
 
 from memory_service.models.memory import TaskContext
 
 
 async def upsert_task_context(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: UUID,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     task_id: str,
     plan_id: Optional[str],
     event_type: str,
@@ -23,10 +23,12 @@ async def upsert_task_context(
     state: Dict[str, Any],
 ) -> TaskContext:
     """Upsert task context (insert or update if exists)."""
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Use PostgreSQL's INSERT ... ON CONFLICT DO UPDATE
     stmt = insert(TaskContext).values(
-        tenant_id=tenant_id,
-        user_id=user_id,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
         task_id=task_id,
         plan_id=plan_id,
         event_type=event_type,
@@ -36,7 +38,7 @@ async def upsert_task_context(
         sub_tasks=sub_tasks,
         state=state,
     ).on_conflict_do_update(
-        index_elements=['tenant_id', 'task_id'],
+        index_elements=['platform_tenant_id', 'task_id'],
         set_=dict(
             plan_id=plan_id,
             data=data,
@@ -54,13 +56,13 @@ async def upsert_task_context(
 
 async def get_task_context(
     db: AsyncSession,
-    tenant_id: UUID,
+    platform_tenant_id: str,
     task_id: str,
 ) -> Optional[TaskContext]:
     """Get task context by task ID."""
     result = await db.execute(
         select(TaskContext).where(
-            TaskContext.tenant_id == tenant_id,
+            TaskContext.platform_tenant_id == platform_tenant_id,
             TaskContext.task_id == task_id,
         )
     )
@@ -69,13 +71,13 @@ async def get_task_context(
 
 async def update_task_context(
     db: AsyncSession,
-    tenant_id: UUID,
+    platform_tenant_id: str,
     task_id: str,
     sub_tasks: Optional[List[str]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> Optional[TaskContext]:
     """Update task context."""
-    task_context = await get_task_context(db, tenant_id, task_id)
+    task_context = await get_task_context(db, platform_tenant_id, task_id)
     if not task_context:
         return None
     
@@ -91,13 +93,13 @@ async def update_task_context(
 
 async def delete_task_context(
     db: AsyncSession,
-    tenant_id: UUID,
+    platform_tenant_id: str,
     task_id: str,
 ) -> bool:
     """Delete task context."""
     result = await db.execute(
         delete(TaskContext).where(
-            TaskContext.tenant_id == tenant_id,
+            TaskContext.platform_tenant_id == platform_tenant_id,
             TaskContext.task_id == task_id,
         )
     )
@@ -107,35 +109,20 @@ async def delete_task_context(
 
 async def get_task_by_subtask(
     db: AsyncSession,
-    tenant_id: UUID,
+    platform_tenant_id: str,
     sub_task_id: str,
 ) -> Optional[TaskContext]:
     """Find parent task by sub-task ID."""
-    # Check database dialect for appropriate JSON query
-    dialect_name = db.bind.dialect.name if db.bind else "postgresql"
-    
-    if dialect_name == "postgresql":
-        # Use PostgreSQL JSONB contains operator (@>)
-        # Cast the Python list to JSONB so asyncpg can handle it properly
-        result = await db.execute(
-            select(TaskContext).where(
-                TaskContext.tenant_id == tenant_id,
-                TaskContext.sub_tasks.op('@>')(cast([sub_task_id], JSONB)),
-            )
+    # Fetch all tasks for the tenant and filter in Python.
+    # Avoids JSONB-specific operators that are PostgreSQL-only and incompatible
+    # with the SQLite test database.  The number of active tasks per tenant is
+    # small, so fetching and filtering in Python is acceptable.
+    result = await db.execute(
+        select(TaskContext).where(
+            TaskContext.platform_tenant_id == platform_tenant_id,
         )
-    else:
-        # For SQLite and other databases, use simple string matching
-        # Note: This is less efficient but works for testing
-        # In production, PostgreSQL with JSONB should be used
-        result = await db.execute(
-            select(TaskContext).where(
-                TaskContext.tenant_id == tenant_id,
-            )
-        )
-        # Filter in Python for non-PostgreSQL databases
-        for task_context in result.scalars():
-            if sub_task_id in task_context.sub_tasks:
-                return task_context
-        return None
-    
-    return result.scalar_one_or_none()
+    )
+    for task in result.scalars().all():
+        if sub_task_id in (task.sub_tasks or []):
+            return task
+    return None

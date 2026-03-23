@@ -1,6 +1,5 @@
 """Plan context API endpoints."""
 
-from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from memory_service.core.dependencies import TenantContext, get_tenant_context
@@ -20,14 +19,7 @@ async def store_plan_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Store plan context (insert or update if exists)."""
-    try:
-        return await plan_context_service.upsert(context.db, context.tenant_id, data)
-    except ValueError as e:
-        # Plan not found - return 404
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
+    return await plan_context_service.upsert(context.db, context.platform_tenant_id, data)
 
 
 @router.get("/{plan_id}", response_model=PlanContextResponse)
@@ -36,7 +28,7 @@ async def get_plan_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Get plan context by plan ID."""
-    result = await plan_context_service.get(context.db, context.tenant_id, plan_id)
+    result = await plan_context_service.get(context.db, context.platform_tenant_id, plan_id)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -52,7 +44,7 @@ async def update_plan_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Update plan context."""
-    result = await plan_context_service.update(context.db, context.tenant_id, plan_id, data)
+    result = await plan_context_service.update(context.db, context.platform_tenant_id, plan_id, data)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -67,7 +59,7 @@ async def delete_plan_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Delete plan context."""
-    deleted = await plan_context_service.delete(context.db, context.tenant_id, plan_id)
+    deleted = await plan_context_service.delete(context.db, context.platform_tenant_id, plan_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -81,7 +73,7 @@ async def get_plan_by_correlation_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Find plan by correlation ID."""
-    result = await plan_context_service.get_by_correlation(context.db, context.tenant_id, correlation_id)
+    result = await plan_context_service.get_by_correlation(context.db, context.platform_tenant_id, correlation_id)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

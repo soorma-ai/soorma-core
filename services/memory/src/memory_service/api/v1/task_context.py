@@ -19,7 +19,7 @@ async def store_task_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Store task context (insert or update if exists)."""
-    return await task_context_service.upsert(context.db, context.tenant_id, context.user_id, data)
+    return await task_context_service.upsert(context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, data)
 
 
 @router.get("/{task_id}", response_model=TaskContextResponse)
@@ -28,7 +28,7 @@ async def get_task_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Get task context by task ID."""
-    result = await task_context_service.get(context.db, context.tenant_id, task_id)
+    result = await task_context_service.get(context.db, context.platform_tenant_id, task_id)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -44,7 +44,7 @@ async def update_task_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Update task context."""
-    result = await task_context_service.update(context.db, context.tenant_id, task_id, data)
+    result = await task_context_service.update(context.db, context.platform_tenant_id, task_id, data)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -59,7 +59,7 @@ async def delete_task_context_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Delete task context."""
-    deleted = await task_context_service.delete(context.db, context.tenant_id, task_id)
+    deleted = await task_context_service.delete(context.db, context.platform_tenant_id, task_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -73,7 +73,7 @@ async def get_task_by_subtask_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Find parent task by sub-task ID."""
-    result = await task_context_service.get_by_subtask(context.db, context.tenant_id, sub_task_id)
+    result = await task_context_service.get_by_subtask(context.db, context.platform_tenant_id, sub_task_id)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

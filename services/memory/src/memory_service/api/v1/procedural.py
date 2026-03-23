@@ -21,5 +21,5 @@ async def get_procedural_context(
     Returns system prompts and few-shot examples matching the task context.
     """
     return await procedural_memory_service.get_relevant_skills(
-        context.db, context.tenant_id, context.user_id, q, limit
+        context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, agent_id, q, limit
     )

@@ -20,7 +20,7 @@ async def create_plan_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Create a new plan."""
-    return await plan_service.create(context.db, context.tenant_id, context.user_id, data)
+    return await plan_service.create(context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, data)
 
 
 @router.get("", response_model=list[PlanSummary])
@@ -33,8 +33,8 @@ async def list_plans_endpoint(
     """List plans for the authenticated user."""
     return await plan_service.list(
         context.db, 
-        context.tenant_id, 
-        context.user_id, 
+        context.platform_tenant_id, 
+        context.service_user_id, 
         status_filter, 
         session_id, 
         limit
@@ -47,7 +47,7 @@ async def get_plan_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Get a specific plan by ID."""
-    result = await plan_service.get(context.db, context.tenant_id, plan_id)
+    result = await plan_service.get(context.db, context.platform_tenant_id, plan_id)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -63,7 +63,7 @@ async def update_plan_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Update plan status."""
-    result = await plan_service.update(context.db, context.tenant_id, plan_id, data)
+    result = await plan_service.update(context.db, context.platform_tenant_id, plan_id, data)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -78,7 +78,7 @@ async def delete_plan_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Delete plan."""
-    deleted = await plan_service.delete(context.db, context.tenant_id, plan_id)
+    deleted = await plan_service.delete(context.db, context.platform_tenant_id, plan_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

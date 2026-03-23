@@ -10,6 +10,7 @@ from memory_service.api.v1 import (
     plan_context,
     plans,
     sessions,
+    admin,
 )
 
 # Create main v1 router
@@ -24,3 +25,4 @@ router.include_router(task_context.router)
 router.include_router(plan_context.router)
 router.include_router(plans.router)
 router.include_router(sessions.router)
+router.include_router(admin.router)

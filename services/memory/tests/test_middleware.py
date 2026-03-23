@@ -1,83 +1,49 @@
-"""Tests for middleware and tenancy logic."""
+"""Tests for tenancy middleware integration (BR-U4-09).
+
+Local middleware.py is deleted. TenancyMiddleware is imported from soorma_service_common.
+These tests verify the import and integration contract.
+"""
 
 import pytest
-from unittest.mock import Mock, AsyncMock
-from fastapi import Request
-from memory_service.core.middleware import (
-    TenancyMiddleware,
-    get_tenant_id,
-    get_user_id,
-)
+from unittest.mock import Mock, MagicMock
+from memory_service.core.dependencies import get_tenant_context, get_tenanted_db
 
 
-class TestTenancyMiddleware:
-    """Test suite for TenancyMiddleware."""
+class TestTenancyMiddlewareIntegration:
+    """Verify soorma_service_common TenancyMiddleware is used (not local middleware)."""
 
-    @pytest.mark.asyncio
-    async def test_middleware_sets_default_tenant(self):
-        """Test middleware sets default tenant ID in single-tenant mode."""
-        middleware = TenancyMiddleware(app=Mock())
-        
-        request = Mock(spec=Request)
-        request.url.path = "/v1/memory/episodic"
-        request.state = Mock()
-        
-        call_next = AsyncMock(return_value=Mock())
-        
-        await middleware.dispatch(request, call_next)
-        
-        # Verify tenant_id was set
-        assert hasattr(request.state, 'tenant_id')
-        assert request.state.tenant_id == "00000000-0000-0000-0000-000000000000"
-        call_next.assert_called_once_with(request)
+    def test_tenancy_middleware_importable_from_soorma_service_common(self):
+        """TenancyMiddleware must come from soorma_service_common, not local code."""
+        from soorma_service_common import TenancyMiddleware
+        assert TenancyMiddleware is not None
 
-    @pytest.mark.asyncio
-    async def test_middleware_skips_health_endpoint(self):
-        """Test middleware skips processing for health check."""
-        middleware = TenancyMiddleware(app=Mock())
-        
-        request = Mock(spec=Request)
-        request.url.path = "/health"
-        request.state = Mock()
-        
-        call_next = AsyncMock(return_value=Mock())
-        
-        await middleware.dispatch(request, call_next)
-        
-        # tenant_id should not be set for health check
-        call_next.assert_called_once_with(request)
+    def test_local_middleware_module_does_not_exist(self):
+        """No local middleware module should exist (BR-U4-09)."""
+        import importlib
+        try:
+            importlib.import_module("memory_service.core.middleware")
+            raise AssertionError("Local middleware module should not exist")
+        except ImportError:
+            pass  # Expected
 
-    @pytest.mark.asyncio
-    async def test_middleware_skips_docs_endpoints(self):
-        """Test middleware skips processing for documentation endpoints."""
-        middleware = TenancyMiddleware(app=Mock())
-        
-        for path in ["/docs", "/openapi.json", "/redoc"]:
-            request = Mock(spec=Request)
-            request.url.path = path
-            request.state = Mock()
-            
-            call_next = AsyncMock(return_value=Mock())
-            
-            await middleware.dispatch(request, call_next)
-            call_next.assert_called_once_with(request)
+    def test_get_tenant_context_importable_from_dependencies(self):
+        """get_tenant_context re-exported from soorma_service_common via dependencies."""
+        assert get_tenant_context is not None
 
-    def test_get_tenant_id_from_state(self):
-        """Test retrieving tenant ID from request state."""
-        request = Mock(spec=Request)
-        request.state.tenant_id = "test-tenant-id"
-        
-        tenant_id = get_tenant_id(request)
-        assert tenant_id == "test-tenant-id"
+    def test_get_tenanted_db_importable_from_dependencies(self):
+        """get_tenanted_db created from soorma_service_common factory via dependencies."""
+        assert get_tenanted_db is not None
 
-    def test_get_tenant_id_default_fallback(self):
-        """Test tenant ID falls back to default when not in state."""
-        request = Mock(spec=Request)
-        request.state = Mock(spec=[])  # Empty state
-        
-        tenant_id = get_tenant_id(request)
-        assert tenant_id == "00000000-0000-0000-0000-000000000000"
+    def test_main_app_uses_tenancy_middleware(self):
+        """memory_service main app registers TenancyMiddleware from soorma_service_common."""
+        from memory_service.main import app
+        from soorma_service_common import TenancyMiddleware
 
+        middleware_types = [m.cls for m in app.user_middleware if hasattr(m, 'cls')]
+        assert TenancyMiddleware in middleware_types
+
+
+    @pytest.mark.skip("References removed get_user_id helper — stale test")
     def test_get_user_id_returns_none(self):
         """Test user ID returns None in v0.5.0 (comes from query params)."""
         request = Mock(spec=Request)
@@ -86,6 +52,7 @@ class TestTenancyMiddleware:
         user_id = get_user_id(request)
         assert user_id is None
 
+    @pytest.mark.skip("References removed get_user_id helper — stale test")
     def test_get_user_id_with_state_value(self):
         """Test user ID returns value if set in state (backward compatibility)."""
         request = Mock(spec=Request)

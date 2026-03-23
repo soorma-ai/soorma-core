@@ -2,7 +2,6 @@
 
 import pytest
 import asyncio
-import os
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
@@ -20,44 +19,49 @@ def event_loop():
 
 @pytest.fixture(scope="session")
 async def test_engine():
-    """Create a test database engine."""
-    # Use in-memory SQLite for testing
-    # Note: pgvector is not available in SQLite, so vector tests won't work
-    # For full testing, use a test PostgreSQL database
+    """Create a test database engine using in-memory SQLite.
+
+    Note: pgvector operations (cosine_distance etc.) are not available in SQLite —
+    semantic search tests mock the embedding service instead.
+    """
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
         echo=False,
     )
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     await engine.dispose()
 
 
 @pytest.fixture
 async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a test database session."""
+    """Create a test database session backed by in-memory SQLite."""
     async_session = async_sessionmaker(
         test_engine,
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    
+
     async with async_session() as session:
         yield session
         await session.rollback()
 
 
+# Standard test identity constants (opaque strings, not UUIDs)
+TEST_PLATFORM_TENANT_ID = "spt_00000000-0000-0000-0000-000000000000"
+TEST_SERVICE_TENANT_ID = "st_test-tenant"
+TEST_SERVICE_USER_ID = "su_test-user"
+
+
 @pytest.fixture(autouse=True)
 def mock_env_vars(monkeypatch):
     """Mock environment variables for testing."""
-    # Set test environment variables
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("OPENAI_API_KEY", "test-api-key")
     monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
-    
-    # Prevent actual OpenAI API calls
     monkeypatch.setenv("TESTING", "true")
+

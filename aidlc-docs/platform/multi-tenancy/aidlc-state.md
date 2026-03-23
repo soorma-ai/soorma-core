@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U4 (services/memory) - Code Generation IN PROGRESS
+- **Current Stage**: CONSTRUCTION - U4 (services/memory) - Code Generation COMPLETE
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -73,7 +73,7 @@
 - [ ] Infrastructure Design (SKIPPED per unit spec)
 - [x] QA Test Case Enrichment — COMPLETE 2026-03-23T02:20:14Z (TC-M-001..011 enriched; TC-M-012, TC-M-013 added; enrichment-delta.md created)
 - [x] Construction Design PR Gate — APPROVED 2026-03-23T03:05:40Z
-- [ ] Code Generation
+- [x] Code Generation — COMPLETE | 43 files changed (39 modified, 3 created, 1 deleted) | test_multi_tenancy.py covers TC-M-003/005/006/009/010/011/012/013
 #### U5 — services/tracker (Wave 3) — blocked on U1 + U2
 #### U6 — sdk/python (Wave 4) — blocked on U4 + U5
 #### U7 — services/event-service (Wave 3) — blocked on U1 + U2

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from memory_service import __version__
 from memory_service.core.config import settings
-from memory_service.core.middleware import TenancyMiddleware
+from soorma_service_common import TenancyMiddleware
 from memory_service.api.v1 import router as v1_router
 
 
@@ -15,7 +15,6 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown."""
     # Startup
     print(f"Starting Memory Service v{__version__}")
-    print(f"Local testing mode: {settings.is_local_testing}")
     print(f"Database URL: {settings.database_url}")
 
     yield
@@ -57,7 +56,6 @@ async def health_check():
         "status": "healthy",
         "service": settings.service_name,
         "version": __version__,
-        "local_testing": settings.is_local_testing,
     }
 
 

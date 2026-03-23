@@ -4,7 +4,6 @@ This layer provides business logic and transaction management,
 sitting between the API layer and CRUD layer.
 """
 
-from uuid import UUID
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,8 +29,8 @@ class TaskContextService:
     def _to_response(task_context: TaskContext) -> TaskContextResponse:
         """Convert database model to response DTO."""
         return TaskContextResponse(
-            tenant_id=str(task_context.tenant_id),
-            user_id=str(task_context.user_id),
+            tenant_id=task_context.platform_tenant_id,
+            user_id=task_context.service_user_id or "",
             task_id=task_context.task_id,
             plan_id=task_context.plan_id,
             event_type=task_context.event_type,
@@ -47,8 +46,9 @@ class TaskContextService:
     async def upsert(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: TaskContextCreate,
     ) -> TaskContextResponse:
         """
@@ -58,8 +58,9 @@ class TaskContextService:
         """
         task_context = await crud_upsert(
             db,
-            tenant_id,
-            user_id,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
             data.task_id,
             data.plan_id,
             data.event_type,
@@ -76,11 +77,11 @@ class TaskContextService:
     async def get(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         task_id: str,
     ) -> Optional[TaskContextResponse]:
         """Get task context by task ID."""
-        task_context = await crud_get(db, tenant_id, task_id)
+        task_context = await crud_get(db, platform_tenant_id, task_id)
         if not task_context:
             return None
         
@@ -89,7 +90,7 @@ class TaskContextService:
     async def update(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         task_id: str,
         data: TaskContextUpdate,
     ) -> Optional[TaskContextResponse]:
@@ -100,7 +101,7 @@ class TaskContextService:
         """
         task_context = await crud_update(
             db,
-            tenant_id,
+            platform_tenant_id,
             task_id,
             data.sub_tasks,
             data.state,
@@ -115,7 +116,7 @@ class TaskContextService:
     async def delete(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         task_id: str,
     ) -> bool:
         """
@@ -124,7 +125,7 @@ class TaskContextService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, tenant_id, task_id)
+        deleted = await crud_delete(db, platform_tenant_id, task_id)
         if deleted:
             await db.commit()
         
@@ -133,11 +134,11 @@ class TaskContextService:
     async def get_by_subtask(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         sub_task_id: str,
     ) -> Optional[TaskContextResponse]:
         """Find parent task by sub-task ID."""
-        task_context = await crud_get_by_subtask(db, tenant_id, sub_task_id)
+        task_context = await crud_get_by_subtask(db, platform_tenant_id, sub_task_id)
         if not task_context:
             return None
         

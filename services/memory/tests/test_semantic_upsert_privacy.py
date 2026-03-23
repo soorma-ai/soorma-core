@@ -33,8 +33,9 @@ class TestUpsertByExternalId:
         from memory_service.crud.semantic import upsert_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
-        user_id = "user-123"
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "user-123"
         content = "Docker is a containerization platform v1"
         external_id = "doc-docker"
         
@@ -44,8 +45,8 @@ class TestUpsertByExternalId:
         # Create a mock memory object to return from execute
         memory_obj = SemanticMemory(
             id=uuid4(),
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_user_id=service_user_id,
             content=content,
             embedding=mock_embedding,
             external_id=external_id,
@@ -65,8 +66,9 @@ class TestUpsertByExternalId:
                    new_callable=AsyncMock, return_value=mock_embedding):
             result = await upsert_semantic_memory(
                 db=mock_db,
-                tenant_id=tenant_id,
-                user_id=user_id,
+                platform_tenant_id=platform_tenant_id,
+                service_tenant_id=service_tenant_id,
+                service_user_id=service_user_id,
                 content=content,
                 external_id=external_id,
                 is_public=False
@@ -80,7 +82,7 @@ class TestUpsertByExternalId:
             # Verify result
             assert result.content == content
             assert result.external_id == external_id
-            assert result.user_id == user_id
+            assert result.service_user_id == service_user_id
             assert result.is_public == False
             assert result.content_hash == generate_content_hash(content)
 
@@ -101,4 +103,3 @@ class TestRLSEnforcement:
         """Should return user's private knowledge + tenant's public knowledge."""
         # This will be tested in query_semantic_memory tests
         pass
-

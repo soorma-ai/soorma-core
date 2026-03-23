@@ -1,8 +1,7 @@
 """CRUD operations for plan context."""
 
 from typing import Optional, List, Dict, Any
-from uuid import UUID
-from sqlalchemy import select, delete, func, cast
+from sqlalchemy import select, delete, cast
 from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,8 +10,8 @@ from memory_service.models.memory import PlanContext
 
 async def upsert_plan_context(
     db: AsyncSession,
-    tenant_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    plan_id: str,
     session_id: Optional[str],
     goal_event: str,
     goal_data: Dict[str, Any],
@@ -22,9 +21,10 @@ async def upsert_plan_context(
     correlation_ids: List[str],
 ) -> PlanContext:
     """Upsert plan context (insert or update if exists)."""
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Use PostgreSQL's INSERT ... ON CONFLICT DO UPDATE
     stmt = insert(PlanContext).values(
-        tenant_id=tenant_id,
+        platform_tenant_id=platform_tenant_id,
         plan_id=plan_id,
         session_id=session_id,
         goal_event=goal_event,
@@ -51,13 +51,13 @@ async def upsert_plan_context(
 
 async def get_plan_context(
     db: AsyncSession,
-    tenant_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    plan_id: str,
 ) -> Optional[PlanContext]:
     """Get plan context by plan ID."""
     result = await db.execute(
         select(PlanContext).where(
-            PlanContext.tenant_id == tenant_id,
+            PlanContext.platform_tenant_id == platform_tenant_id,
             PlanContext.plan_id == plan_id,
         )
     )
@@ -66,14 +66,14 @@ async def get_plan_context(
 
 async def update_plan_context(
     db: AsyncSession,
-    tenant_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    plan_id: str,
     state: Optional[Dict[str, Any]] = None,
     current_state: Optional[str] = None,
     correlation_ids: Optional[List[str]] = None,
 ) -> Optional[PlanContext]:
     """Update plan context."""
-    plan_context = await get_plan_context(db, tenant_id, plan_id)
+    plan_context = await get_plan_context(db, platform_tenant_id, plan_id)
     if not plan_context:
         return None
     
@@ -91,13 +91,13 @@ async def update_plan_context(
 
 async def delete_plan_context(
     db: AsyncSession,
-    tenant_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    plan_id: str,
 ) -> bool:
     """Delete plan context."""
     result = await db.execute(
         delete(PlanContext).where(
-            PlanContext.tenant_id == tenant_id,
+            PlanContext.platform_tenant_id == platform_tenant_id,
             PlanContext.plan_id == plan_id,
         )
     )
@@ -107,7 +107,7 @@ async def delete_plan_context(
 
 async def get_plan_by_correlation(
     db: AsyncSession,
-    tenant_id: UUID,
+    platform_tenant_id: str,
     correlation_id: str,
 ) -> Optional[PlanContext]:
     """Find plan by task/step correlation ID."""
@@ -115,7 +115,7 @@ async def get_plan_by_correlation(
     # Check if correlation_ids array contains the correlation_id
     result = await db.execute(
         select(PlanContext).where(
-            PlanContext.tenant_id == tenant_id,
+            PlanContext.platform_tenant_id == platform_tenant_id,
             PlanContext.correlation_ids.op('@>')(cast([correlation_id], JSONB)),
         )
     )
