@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = "008"
-down_revision = "007"
+down_revision = "007_user_plan_fkeys"
 branch_labels = None
 depends_on = None
 
@@ -35,15 +35,19 @@ _ALL_8_TABLES = [
     "sessions",
 ]
 
-# Tables where user_id was a UUID FK to users.id (7 tables — NOT semantic_memory)
+# Tables where user_id was a UUID FK to users.id (6 tables — NOT semantic_memory, NOT plan_context)
 _UUID_USER_FK_TABLES = [
     "episodic_memory",
     "procedural_memory",
     "working_memory",
     "task_context",
-    "plan_context",
     "plans",
     "sessions",
+]
+
+# Tables that had tenant_id FK but NO user_id column
+_TENANT_ONLY_FK_TABLES = [
+    "plan_context",
 ]
 
 
@@ -53,12 +57,32 @@ def upgrade() -> None:
     # ─────────────────────────────────────────────────────────────────────────
     # Step 1: Drop all existing RLS policies on all 8 tables
     # (Old policies use ::UUID cast which is invalid after migration)
+    # Policy names are the actual names created by prior migrations.
     # ─────────────────────────────────────────────────────────────────────────
+    _existing_policies = {
+        # policy name → table name
+        "semantic_memory_read_policy":       "semantic_memory",
+        "semantic_memory_write_policy":      "semantic_memory",
+        "semantic_memory_update_policy":     "semantic_memory",
+        "user_agent_isolation":              "episodic_memory",
+        "procedural_isolation":              "procedural_memory",
+        "working_memory_user_isolation":     "working_memory",
+        "task_context_isolation":            "task_context",
+        "plan_context_isolation":            "plan_context",
+        "sessions_isolation":                "sessions",
+        "plans_isolation":                   "plans",
+    }
+    for policy, table in _existing_policies.items():
+        conn.execute(sa.text(f"DROP POLICY IF EXISTS {policy} ON {table}"))
+
+    # Belt-and-suspenders: also drop any generic-named policies that may exist
     for table in _ALL_8_TABLES:
         conn.execute(sa.text(f"DROP POLICY IF EXISTS {table}_tenant_isolation ON {table}"))
         conn.execute(sa.text(f"DROP POLICY IF EXISTS {table}_rls_policy ON {table}"))
         conn.execute(sa.text(f"DROP POLICY IF EXISTS {table}_platform_rls ON {table}"))
-        # Disable RLS before schema changes
+
+    # Disable RLS before schema changes
+    for table in _ALL_8_TABLES:
         conn.execute(sa.text(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY"))
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -68,9 +92,12 @@ def upgrade() -> None:
         conn.execute(sa.text(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_tenant_id_fkey"))
     for table in _UUID_USER_FK_TABLES:
         conn.execute(sa.text(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_user_id_fkey"))
+    # plan_context has no user_id FK — only the tenant_id FK was dropped above
 
     # Drop plan_context.plan_id FK to plans.id (Step 9 prerequisite)
-    conn.execute(sa.text("ALTER TABLE plan_context DROP CONSTRAINT IF EXISTS plan_context_plan_id_fkey"))
+    # Constraint was named 'fk_plan_context_plan_id' by migration 007.
+    conn.execute(sa.text("ALTER TABLE plan_context DROP CONSTRAINT IF EXISTS fk_plan_context_plan_id"))
+    conn.execute(sa.text("ALTER TABLE plan_context DROP CONSTRAINT IF EXISTS plan_context_plan_id_fkey"))  # belt-and-suspenders
 
     # ─────────────────────────────────────────────────────────────────────────
     # Step 3: Add platform_tenant_id VARCHAR(64) NOT NULL with default
@@ -98,15 +125,20 @@ def upgrade() -> None:
         ))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 6: Migrate existing UUID FK data — 7 tables (UUID cast to text)
-    # tenant_id::text → service_tenant_id
-    # user_id::text   → service_user_id
+    # Step 6: Migrate existing UUID FK data
+    # 6a. Tables with both tenant_id + user_id FK columns (6 tables)
     # ─────────────────────────────────────────────────────────────────────────
     for table in _UUID_USER_FK_TABLES:
         conn.execute(sa.text(
             f"UPDATE {table} SET "
             f"service_tenant_id = tenant_id::text, "
             f"service_user_id = user_id::text"
+        ))
+
+    # 6b. Tables with only tenant_id FK (plan_context — no user_id column)
+    for table in _TENANT_ONLY_FK_TABLES:
+        conn.execute(sa.text(
+            f"UPDATE {table} SET service_tenant_id = tenant_id::text"
         ))
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -123,10 +155,11 @@ def upgrade() -> None:
 
     # ─────────────────────────────────────────────────────────────────────────
     # Step 8: Drop old tenant_id and user_id columns from all 8 tables
+    # CASCADE handles any remaining dependent objects (e.g. stale policies)
     # ─────────────────────────────────────────────────────────────────────────
     for table in _ALL_8_TABLES:
-        conn.execute(sa.text(f"ALTER TABLE {table} DROP COLUMN IF EXISTS tenant_id"))
-        conn.execute(sa.text(f"ALTER TABLE {table} DROP COLUMN IF EXISTS user_id"))
+        conn.execute(sa.text(f"ALTER TABLE {table} DROP COLUMN IF EXISTS tenant_id CASCADE"))
+        conn.execute(sa.text(f"ALTER TABLE {table} DROP COLUMN IF EXISTS user_id CASCADE"))
 
     # ─────────────────────────────────────────────────────────────────────────
     # Step 9: Convert plan_context.plan_id from UUID to String(100)
@@ -134,6 +167,18 @@ def upgrade() -> None:
     # ─────────────────────────────────────────────────────────────────────────
     conn.execute(sa.text(
         "ALTER TABLE plan_context ALTER COLUMN plan_id TYPE VARCHAR(100) USING plan_id::text"
+    ))
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Step 9b: Convert working_memory.plan_id from UUID to String(100)
+    # The plan_key_unique constraint on (plan_id, key) must be dropped first.
+    # ─────────────────────────────────────────────────────────────────────────
+    conn.execute(sa.text("ALTER TABLE working_memory DROP CONSTRAINT IF EXISTS plan_key_unique"))
+    conn.execute(sa.text(
+        "ALTER TABLE working_memory ALTER COLUMN plan_id TYPE VARCHAR(100) USING plan_id::text"
+    ))
+    conn.execute(sa.text(
+        "ALTER TABLE working_memory ADD CONSTRAINT plan_key_unique UNIQUE (plan_id, key)"
     ))
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -178,6 +223,34 @@ def upgrade() -> None:
         conn.execute(sa.text(
             f"ALTER TABLE {table} ALTER COLUMN platform_tenant_id DROP DEFAULT"
         ))
+
+    # Recreate semantic_memory upsert indexes using three-column identity names
+    # These indexes back ON CONFLICT targets in semantic CRUD operations.
+    conn.execute(sa.text("DROP INDEX IF EXISTS semantic_memory_user_external_id_private_idx"))
+    conn.execute(sa.text("DROP INDEX IF EXISTS semantic_memory_tenant_external_id_public_idx"))
+    conn.execute(sa.text("DROP INDEX IF EXISTS semantic_memory_user_content_hash_private_idx"))
+    conn.execute(sa.text("DROP INDEX IF EXISTS semantic_memory_tenant_content_hash_public_idx"))
+
+    conn.execute(sa.text(
+        "CREATE UNIQUE INDEX semantic_memory_user_external_id_private_idx "
+        "ON semantic_memory (platform_tenant_id, service_user_id, external_id) "
+        "WHERE external_id IS NOT NULL AND is_public = FALSE"
+    ))
+    conn.execute(sa.text(
+        "CREATE UNIQUE INDEX semantic_memory_tenant_external_id_public_idx "
+        "ON semantic_memory (platform_tenant_id, external_id) "
+        "WHERE external_id IS NOT NULL AND is_public = TRUE"
+    ))
+    conn.execute(sa.text(
+        "CREATE UNIQUE INDEX semantic_memory_user_content_hash_private_idx "
+        "ON semantic_memory (platform_tenant_id, service_user_id, content_hash) "
+        "WHERE is_public = FALSE"
+    ))
+    conn.execute(sa.text(
+        "CREATE UNIQUE INDEX semantic_memory_tenant_content_hash_public_idx "
+        "ON semantic_memory (platform_tenant_id, content_hash) "
+        "WHERE is_public = TRUE"
+    ))
 
     # ─────────────────────────────────────────────────────────────────────────
     # Step 13: Rebuild RLS policies using string comparison (no ::UUID cast)

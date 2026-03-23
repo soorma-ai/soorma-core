@@ -15,7 +15,9 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown."""
     # Startup
     print(f"Starting Memory Service v{__version__}")
-    print(f"Database URL: {settings.database_url}")
+    import re
+    redacted = re.sub(r"://[^@]+@", "://***@", settings.database_url)
+    print(f"Database URL: {redacted}")
 
     yield
 
