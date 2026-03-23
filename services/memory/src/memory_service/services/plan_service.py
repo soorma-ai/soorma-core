@@ -4,7 +4,6 @@ This layer provides business logic and transaction management,
 sitting between the API layer and CRUD layer.
 """
 
-from uuid import UUID
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,8 +29,8 @@ class PlanService:
     def _to_summary(plan: Plan) -> PlanSummary:
         """Convert database model to summary DTO."""
         return PlanSummary(
-            tenant_id=str(plan.tenant_id),
-            user_id=str(plan.user_id),
+            tenant_id=plan.platform_tenant_id,
+            user_id=plan.service_user_id or "",
             plan_id=plan.plan_id,
             session_id=plan.session_id,
             goal_event=plan.goal_event,
@@ -45,8 +44,9 @@ class PlanService:
     async def create(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: PlanCreate,
     ) -> PlanSummary:
         """
@@ -56,8 +56,9 @@ class PlanService:
         """
         plan = await crud_create(
             db,
-            tenant_id,
-            user_id,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
             data.plan_id,
             data.session_id,
             data.goal_event,
@@ -71,11 +72,11 @@ class PlanService:
     async def get(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         plan_id: str,
     ) -> Optional[PlanSummary]:
         """Get plan by ID."""
-        plan = await crud_get(db, tenant_id, plan_id)
+        plan = await crud_get(db, platform_tenant_id, plan_id)
         if not plan:
             return None
         
@@ -84,20 +85,20 @@ class PlanService:
     async def list(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_user_id: str,
         status: Optional[str] = None,
         session_id: Optional[str] = None,
         limit: int = 20,
     ) -> List[PlanSummary]:
         """List plans for a user with optional filters."""
-        plans = await crud_list(db, tenant_id, user_id, status, session_id, limit)
+        plans = await crud_list(db, platform_tenant_id, service_user_id, status, session_id, limit)
         return [self._to_summary(p) for p in plans]
     
     async def update(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         plan_id: str,
         data: PlanUpdate,
     ) -> Optional[PlanSummary]:
@@ -106,7 +107,7 @@ class PlanService:
         
         Transaction boundary: Commits after successful update.
         """
-        plan = await crud_update(db, tenant_id, plan_id, data.status)
+        plan = await crud_update(db, platform_tenant_id, plan_id, data.status)
         if not plan:
             return None
         
@@ -117,7 +118,7 @@ class PlanService:
     async def delete(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         plan_id: str,
     ) -> bool:
         """
@@ -126,7 +127,7 @@ class PlanService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, tenant_id, plan_id)
+        deleted = await crud_delete(db, platform_tenant_id, plan_id)
         if deleted:
             await db.commit()
         

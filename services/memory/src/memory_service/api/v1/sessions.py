@@ -18,7 +18,7 @@ async def create_session_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Create a new session."""
-    return await session_service.create(context.db, context.tenant_id, context.user_id, data)
+    return await session_service.create(context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, data)
 
 
 @router.get("", response_model=list[SessionSummary])
@@ -27,7 +27,7 @@ async def list_sessions_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """List sessions for the authenticated user."""
-    return await session_service.list(context.db, context.tenant_id, context.user_id, limit)
+    return await session_service.list(context.db, context.platform_tenant_id, context.service_user_id, limit)
 
 
 @router.get("/{session_id}", response_model=SessionSummary)
@@ -36,7 +36,7 @@ async def get_session_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Get session details."""
-    result = await session_service.get(context.db, context.tenant_id, session_id)
+    result = await session_service.get(context.db, context.platform_tenant_id, session_id)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -51,7 +51,7 @@ async def delete_session_endpoint(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Delete session."""
-    deleted = await session_service.delete(context.db, context.tenant_id, session_id)
+    deleted = await session_service.delete(context.db, context.platform_tenant_id, session_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

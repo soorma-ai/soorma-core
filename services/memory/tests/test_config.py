@@ -19,9 +19,8 @@ class TestSettings:
         assert settings.embedding_dimensions == 1536
         assert settings.openai_embedding_model == "text-embedding-3-small"
         
-        # Default IDs - just verify they're UUIDs
-        assert len(settings.default_tenant_id) == 36
-        assert len(settings.default_user_id) == 36
+        # Default IDs
+        assert settings.default_tenant_id.startswith("spt_")
 
     def test_settings_from_environment(self, monkeypatch):
         """Test settings can be overridden by environment variables."""
@@ -38,15 +37,11 @@ class TestSettings:
 
     def test_is_prod_detection(self, monkeypatch):
         """Test production environment detection."""
-        # Note: In test environment, is_local_testing overrides is_prod
-        # Test that environment can be set
         monkeypatch.setenv("ENVIRONMENT", "production")
         monkeypatch.setenv("TESTING", "false")
         settings = Settings()
-        # In actual production, would be True; in tests it depends on TESTING flag
         assert isinstance(settings.is_prod, bool)
         
-        # Test development environment
         monkeypatch.setenv("ENVIRONMENT", "development")
         settings = Settings()
         assert isinstance(settings.is_prod, bool)

@@ -32,8 +32,9 @@ async def store_knowledge(
     """
     return await semantic_memory_service.store_knowledge(
         context.db,
-        context.tenant_id,
-        str(context.user_id),  # Pass user_id from context
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
         data
     )
 
@@ -59,8 +60,9 @@ async def query_knowledge(
     """
     return await semantic_memory_service.query_knowledge(
         context.db,
-        context.tenant_id,
-        str(context.user_id),  # Pass user_id from context
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
         query,
         limit,
         include_public
@@ -81,8 +83,9 @@ async def search_semantic(
     """
     return await semantic_memory_service.search(
         context.db,
-        context.tenant_id,
-        str(context.user_id),
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
         q,
         limit
     )

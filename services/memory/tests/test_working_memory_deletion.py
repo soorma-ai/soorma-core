@@ -12,6 +12,10 @@ from memory_service.crud.working import (
 )
 from soorma_common.models import WorkingMemorySet
 
+TEST_PLATFORM_TENANT_ID = "spt_test-00000"
+TEST_SERVICE_TENANT_ID = "st_test-tenant"
+TEST_SERVICE_USER_ID = "su_test-user"
+
 
 class TestWorkingMemoryDeletion:
     """Test working memory deletion operations."""
@@ -20,12 +24,13 @@ class TestWorkingMemoryDeletion:
     def test_ids(self):
         """Generate test IDs."""
         return {
-            "tenant_id": uuid4(),
-            "user_id": uuid4(),
-            "plan_id": uuid4(),
-            "other_tenant_id": uuid4(),
-            "other_user_id": uuid4(),
-            "other_plan_id": uuid4(),
+            "platform_tenant_id": TEST_PLATFORM_TENANT_ID,
+            "service_tenant_id": TEST_SERVICE_TENANT_ID,
+            "service_user_id": TEST_SERVICE_USER_ID,
+            "plan_id": "plan-test-001",
+            "other_platform_tenant_id": "spt_other-tenant",
+            "other_service_user_id": "su_other-user",
+            "other_plan_id": "plan-other-001",
         }
 
     async def test_delete_working_memory_key_success(
@@ -36,8 +41,9 @@ class TestWorkingMemoryDeletion:
         key = "research_data"
         await set_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value={"topic": "AI research"}),
@@ -46,8 +52,9 @@ class TestWorkingMemoryDeletion:
         # Verify it exists
         existing = await get_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -56,8 +63,9 @@ class TestWorkingMemoryDeletion:
         # Delete the key
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -68,8 +76,9 @@ class TestWorkingMemoryDeletion:
         # Verify key is gone
         retrieved = await get_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -84,8 +93,9 @@ class TestWorkingMemoryDeletion:
         # Try to delete non-existent key
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -103,23 +113,24 @@ class TestWorkingMemoryDeletion:
         key3 = "persistent_data"
         
         await set_working_memory(
-            db_session, test_ids["tenant_id"], test_ids["user_id"], test_ids["plan_id"],
+            db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], test_ids["plan_id"],
             key1, WorkingMemorySet(value={"data": 1})
         )
         await set_working_memory(
-            db_session, test_ids["tenant_id"], test_ids["user_id"], test_ids["plan_id"],
+            db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], test_ids["plan_id"],
             key2, WorkingMemorySet(value={"data": 2})
         )
         await set_working_memory(
-            db_session, test_ids["tenant_id"], test_ids["user_id"], test_ids["plan_id"],
+            db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], test_ids["plan_id"],
             key3, WorkingMemorySet(value={"data": 3})
         )
         
         # Delete one key
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key2,
         )
@@ -127,13 +138,13 @@ class TestWorkingMemoryDeletion:
         
         # Verify other keys still exist
         assert await get_working_memory(
-            db_session, test_ids["tenant_id"], test_ids["user_id"], test_ids["plan_id"], key1
+            db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], test_ids["plan_id"], key1
         ) is not None
         assert await get_working_memory(
-            db_session, test_ids["tenant_id"], test_ids["user_id"], test_ids["plan_id"], key2
+            db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], test_ids["plan_id"], key2
         ) is None
         assert await get_working_memory(
-            db_session, test_ids["tenant_id"], test_ids["user_id"], test_ids["plan_id"], key3
+            db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], test_ids["plan_id"], key3
         ) is not None
 
     async def test_delete_all_working_memory_for_plan_success(
@@ -145,8 +156,9 @@ class TestWorkingMemoryDeletion:
         for key in keys:
             await set_working_memory(
                 db_session,
-                test_ids["tenant_id"],
-                test_ids["user_id"],
+                test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 test_ids["plan_id"],
                 key,
                 WorkingMemorySet(value={"data": key}),
@@ -155,8 +167,9 @@ class TestWorkingMemoryDeletion:
         # Delete all keys for plan
         count = await delete_working_memory_plan(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
         )
         
@@ -167,8 +180,9 @@ class TestWorkingMemoryDeletion:
         for key in keys:
             retrieved = await get_working_memory(
                 db_session,
-                test_ids["tenant_id"],
-                test_ids["user_id"],
+                test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 test_ids["plan_id"],
                 key,
             )
@@ -183,8 +197,9 @@ class TestWorkingMemoryDeletion:
         # Delete all keys for empty plan
         count = await delete_working_memory_plan(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
         )
         
@@ -200,8 +215,9 @@ class TestWorkingMemoryDeletion:
         # Create key in tenant 1
         await set_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value={"secret": "data"}),
@@ -210,8 +226,9 @@ class TestWorkingMemoryDeletion:
         # Try to delete from different tenant
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["other_tenant_id"],  # Different tenant
-            test_ids["user_id"],
+            test_ids["other_platform_tenant_id"],  # Different tenant
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -222,8 +239,9 @@ class TestWorkingMemoryDeletion:
         # Verify original key still exists
         retrieved = await get_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -238,8 +256,9 @@ class TestWorkingMemoryDeletion:
         # Create key for user A
         await set_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value={"owner": "user_a"}),
@@ -248,8 +267,9 @@ class TestWorkingMemoryDeletion:
         # Attempt delete as user B in same tenant
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["other_user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["other_service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -259,8 +279,9 @@ class TestWorkingMemoryDeletion:
         # Verify original key still exists for user A
         retrieved = await get_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -275,8 +296,9 @@ class TestWorkingMemoryDeletion:
         # Create key in plan 1
         await set_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value={"plan": 1}),
@@ -285,8 +307,9 @@ class TestWorkingMemoryDeletion:
         # Create same key in plan 2
         await set_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["other_plan_id"],
             key,
             WorkingMemorySet(value={"plan": 2}),
@@ -295,8 +318,9 @@ class TestWorkingMemoryDeletion:
         # Delete from plan 1
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -305,8 +329,9 @@ class TestWorkingMemoryDeletion:
         # Verify plan 2 key still exists
         retrieved = await get_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["other_plan_id"],
             key,
         )
@@ -322,8 +347,9 @@ class TestWorkingMemoryDeletion:
         # Try to delete from non-existent plan
         deleted = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             invalid_plan_id,
             key,
         )
@@ -339,8 +365,9 @@ class TestWorkingMemoryDeletion:
         for i in range(5):
             await set_working_memory(
                 db_session,
-                test_ids["tenant_id"],
-                test_ids["user_id"],
+                test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 test_ids["plan_id"],
                 f"key_{i}",
                 WorkingMemorySet(value=i),
@@ -349,8 +376,9 @@ class TestWorkingMemoryDeletion:
         # Delete all
         count = await delete_working_memory_plan(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
         )
         
@@ -366,8 +394,9 @@ class TestWorkingMemoryDeletion:
         # Create key
         await set_working_memory(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
             WorkingMemorySet(value="data"),
@@ -376,8 +405,9 @@ class TestWorkingMemoryDeletion:
         # Delete first time
         deleted1 = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -386,8 +416,9 @@ class TestWorkingMemoryDeletion:
         # Delete second time (should be False)
         deleted2 = await delete_working_memory_key(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
             key,
         )
@@ -401,8 +432,9 @@ class TestWorkingMemoryDeletion:
         for i in range(3):
             await set_working_memory(
                 db_session,
-                test_ids["tenant_id"],
-                test_ids["user_id"],
+                test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 test_ids["plan_id"],
                 f"plan1_key_{i}",
                 WorkingMemorySet(value=i),
@@ -412,8 +444,9 @@ class TestWorkingMemoryDeletion:
         for i in range(2):
             await set_working_memory(
                 db_session,
-                test_ids["tenant_id"],
-                test_ids["user_id"],
+                test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 test_ids["other_plan_id"],
                 f"plan2_key_{i}",
                 WorkingMemorySet(value=i),
@@ -422,8 +455,9 @@ class TestWorkingMemoryDeletion:
         # Delete all from plan 1
         count1 = await delete_working_memory_plan(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["plan_id"],
         )
         assert count1 == 3
@@ -432,8 +466,9 @@ class TestWorkingMemoryDeletion:
         for i in range(2):
             retrieved = await get_working_memory(
                 db_session,
-                test_ids["tenant_id"],
-                test_ids["user_id"],
+                test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 test_ids["other_plan_id"],
                 f"plan2_key_{i}",
             )

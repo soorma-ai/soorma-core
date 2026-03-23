@@ -23,14 +23,16 @@ class TestSearchSemanticMemory:
         from memory_service.crud.semantic import search_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "test_user_123"
         query = "Python programming"
         
         # Mock database query results
         mock_memory = Mock(spec=SemanticMemory)
         mock_memory.id = uuid4()
-        mock_memory.tenant_id = tenant_id
-        mock_memory.user_id = "test_user_123"
+        mock_memory.platform_tenant_id = platform_tenant_id
+        mock_memory.service_user_id = service_user_id
         mock_memory.content = "Python is a programming language"
         mock_memory.memory_metadata = {"category": "programming"}
         mock_memory.external_id = None
@@ -51,7 +53,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.1] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, "test_user_123", query, limit=5)
+            results = await search_semantic_memory(mock_db, platform_tenant_id, service_tenant_id, service_user_id, query, limit=5)
             
             # Verify results
             assert len(results) == 1
@@ -67,7 +69,9 @@ class TestSearchSemanticMemory:
         from memory_service.crud.semantic import search_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "test_user_123"
         query = "Docker containers"
         
         mock_result = Mock()
@@ -78,7 +82,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=mock_query_embedding) as mock_gen:
-            await search_semantic_memory(mock_db, tenant_id, "test_user_123", query, limit=5)
+            await search_semantic_memory(mock_db, platform_tenant_id, service_tenant_id, service_user_id, query, limit=5)
             
             # Verify embedding was generated for query
             mock_gen.assert_called_once_with(query)
@@ -89,7 +93,9 @@ class TestSearchSemanticMemory:
         from memory_service.crud.semantic import search_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "test_user_123"
         
         mock_result = Mock()
         mock_result.all = Mock(return_value=[])
@@ -97,7 +103,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.0] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, "nonexistent", 5)
+            results = await search_semantic_memory(mock_db, platform_tenant_id, service_tenant_id, service_user_id, "nonexistent", 5)
             
             assert results == []
 
@@ -107,7 +113,9 @@ class TestSearchSemanticMemory:
         from memory_service.crud.semantic import search_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "test_user_123"
         limit = 3
         
         # Create mock results
@@ -115,8 +123,8 @@ class TestSearchSemanticMemory:
         for i in range(limit):
             mock_memory = Mock(spec=SemanticMemory)
             mock_memory.id = uuid4()
-            mock_memory.tenant_id = tenant_id
-            mock_memory.user_id = "test_user_123"
+            mock_memory.platform_tenant_id = platform_tenant_id
+            mock_memory.service_user_id = service_user_id
             mock_memory.content = f"Content {i}"
             mock_memory.memory_metadata = {}
             mock_memory.external_id = None
@@ -135,7 +143,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.0] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, "test_user_123", "test", limit=limit)
+            results = await search_semantic_memory(mock_db, platform_tenant_id, service_tenant_id, service_user_id, "test", limit=limit)
             
             assert len(results) == limit
 
@@ -145,7 +153,9 @@ class TestSearchSemanticMemory:
         from memory_service.crud.semantic import search_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "test_user_123"
         
         mock_result = Mock()
         mock_result.all = Mock(return_value=[])
@@ -162,7 +172,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.0] * 1536):
-            await search_semantic_memory(mock_db, tenant_id, "test", 5)
+            await search_semantic_memory(mock_db, platform_tenant_id, service_tenant_id, service_user_id, "test", 5)
             
             # Verify execute was called (statement includes tenant filter)
             mock_db.execute.assert_called_once()
@@ -173,12 +183,14 @@ class TestSearchSemanticMemory:
         from memory_service.crud.semantic import search_semantic_memory
         
         mock_db = AsyncMock(spec=AsyncSession)
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "test_user_123"
         
         mock_memory = Mock(spec=SemanticMemory)
         mock_memory.id = uuid4()
-        mock_memory.tenant_id = tenant_id
-        mock_memory.user_id = "test_user_123"
+        mock_memory.platform_tenant_id = platform_tenant_id
+        mock_memory.service_user_id = service_user_id
         mock_memory.content = "Test"
         mock_memory.memory_metadata = {"key": "value"}  # Correct column name
         mock_memory.external_id = None
@@ -196,7 +208,7 @@ class TestSearchSemanticMemory:
         
         with patch('memory_service.crud.semantic.embedding_service.generate_embedding',
                    new_callable=AsyncMock, return_value=[0.0] * 1536):
-            results = await search_semantic_memory(mock_db, tenant_id, "test_user_123", "test", 5)
+            results = await search_semantic_memory(mock_db, platform_tenant_id, service_tenant_id, service_user_id, "test", 5)
             
             # Verify metadata field is correctly mapped
             assert results[0].metadata == {"key": "value"}

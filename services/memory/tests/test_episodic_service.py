@@ -9,6 +9,10 @@ from memory_service.services.episodic_memory_service import EpisodicMemoryServic
 from memory_service.models.memory import EpisodicMemory
 from soorma_common.models import EpisodicMemoryCreate, EpisodicMemoryResponse
 
+TEST_PLATFORM_TENANT_ID = "spt_test-00000"
+TEST_SERVICE_TENANT_ID = "st_test-tenant"
+TEST_SERVICE_USER_ID = "su_test-user"
+
 
 class TestEpisodicMemoryServiceToResponse:
     """Test suite for _to_response method."""
@@ -18,8 +22,8 @@ class TestEpisodicMemoryServiceToResponse:
         # Create mock EpisodicMemory model
         memory = Mock(spec=EpisodicMemory)
         memory.id = uuid4()
-        memory.tenant_id = uuid4()
-        memory.user_id = uuid4()
+        memory.platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        memory.service_user_id = TEST_SERVICE_USER_ID
         memory.agent_id = "chat-agent"
         memory.role = "user"
         memory.content = "How do I reset my password?"
@@ -30,8 +34,8 @@ class TestEpisodicMemoryServiceToResponse:
         response = service._to_response(memory, score=0.92)
         
         assert response.id == str(memory.id)
-        assert response.tenant_id == str(memory.tenant_id)
-        assert response.user_id == str(memory.user_id)
+        assert response.tenant_id == TEST_PLATFORM_TENANT_ID
+        assert response.user_id == TEST_SERVICE_USER_ID
         assert response.agent_id == "chat-agent"
         assert response.role == "user"
         assert response.content == "How do I reset my password?"
@@ -43,8 +47,8 @@ class TestEpisodicMemoryServiceToResponse:
         """Test converting model to response without similarity score."""
         memory = Mock(spec=EpisodicMemory)
         memory.id = uuid4()
-        memory.tenant_id = uuid4()
-        memory.user_id = uuid4()
+        memory.platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        memory.service_user_id = TEST_SERVICE_USER_ID
         memory.agent_id = "test-agent"
         memory.role = "assistant"
         memory.content = "Test response"
@@ -62,8 +66,8 @@ class TestEpisodicMemoryServiceToResponse:
         """Test that empty metadata dict is preserved (not None)."""
         memory = Mock(spec=EpisodicMemory)
         memory.id = uuid4()
-        memory.tenant_id = uuid4()
-        memory.user_id = uuid4()
+        memory.platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        memory.service_user_id = TEST_SERVICE_USER_ID
         memory.agent_id = "agent"
         memory.role = "system"
         memory.content = "System message"
@@ -80,8 +84,8 @@ class TestEpisodicMemoryServiceToResponse:
         """Test handling of null metadata from database."""
         memory = Mock(spec=EpisodicMemory)
         memory.id = uuid4()
-        memory.tenant_id = uuid4()
-        memory.user_id = uuid4()
+        memory.platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        memory.service_user_id = None
         memory.agent_id = "agent"
         memory.role = "tool"
         memory.content = "Tool output"
@@ -101,8 +105,8 @@ class TestEpisodicMemoryServiceToResponse:
         for role in roles:
             memory = Mock(spec=EpisodicMemory)
             memory.id = uuid4()
-            memory.tenant_id = uuid4()
-            memory.user_id = uuid4()
+            memory.platform_tenant_id = TEST_PLATFORM_TENANT_ID
+            memory.service_user_id = TEST_SERVICE_USER_ID
             memory.agent_id = "agent"
             memory.role = role
             memory.content = f"Content for {role}"
@@ -125,14 +129,14 @@ class TestEpisodicMemoryServiceLog:
         
         service = EpisodicMemoryService()
         mock_db = AsyncMock()
-        tenant_id = uuid4()
-        user_id = uuid4()
+        platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        service_user_id = TEST_SERVICE_USER_ID
         
         # Mock CRUD response
         mock_memory = Mock(spec=EpisodicMemory)
         mock_memory.id = uuid4()
-        mock_memory.tenant_id = tenant_id
-        mock_memory.user_id = user_id
+        mock_memory.platform_tenant_id = platform_tenant_id
+        mock_memory.service_user_id = service_user_id
         mock_memory.agent_id = "agent-1"
         mock_memory.role = "user"
         mock_memory.content = "Test message"
@@ -147,7 +151,7 @@ class TestEpisodicMemoryServiceLog:
         )
         
         with patch('memory_service.services.episodic_memory_service.crud_log', return_value=mock_memory):
-            result = await service.log(mock_db, tenant_id, user_id, data)
+            result = await service.log(mock_db, platform_tenant_id, TEST_SERVICE_TENANT_ID, service_user_id, data)
             
             # Verify commit was called
             mock_db.commit.assert_called_once()
@@ -164,13 +168,13 @@ class TestEpisodicMemoryServiceLog:
         
         service = EpisodicMemoryService()
         mock_db = AsyncMock()
-        tenant_id = uuid4()
-        user_id = uuid4()
+        platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        service_user_id = TEST_SERVICE_USER_ID
         
         mock_memory = Mock(spec=EpisodicMemory)
         mock_memory.id = uuid4()
-        mock_memory.tenant_id = tenant_id
-        mock_memory.user_id = user_id
+        mock_memory.platform_tenant_id = platform_tenant_id
+        mock_memory.service_user_id = service_user_id
         mock_memory.agent_id = "chat-bot"
         mock_memory.role = "assistant"
         mock_memory.content = "Response text"
@@ -185,7 +189,7 @@ class TestEpisodicMemoryServiceLog:
         )
         
         with patch('memory_service.services.episodic_memory_service.crud_log', return_value=mock_memory):
-            result = await service.log(mock_db, tenant_id, user_id, data)
+            result = await service.log(mock_db, platform_tenant_id, TEST_SERVICE_TENANT_ID, service_user_id, data)
             
             assert result.metadata == {"session_id": "abc123", "sentiment": "positive"}
 
@@ -200,15 +204,15 @@ class TestEpisodicMemoryServiceGetRecent:
         
         service = EpisodicMemoryService()
         mock_db = AsyncMock()
-        tenant_id = uuid4()
-        user_id = uuid4()
+        platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        service_user_id = TEST_SERVICE_USER_ID
         
         # CRUD layer returns EpisodicMemoryResponse objects directly
         mock_responses = [
             EpisodicMemoryResponse(
                 id=str(uuid4()),
-                tenant_id=str(tenant_id),
-                user_id=str(user_id),
+                tenant_id=platform_tenant_id,
+                user_id=service_user_id,
                 agent_id="agent-1",
                 role="user" if i % 2 == 0 else "assistant",
                 content=f"Message {i}",
@@ -219,7 +223,7 @@ class TestEpisodicMemoryServiceGetRecent:
         ]
         
         with patch('memory_service.services.episodic_memory_service.crud_get_recent', return_value=mock_responses):
-            results = await service.get_recent(mock_db, tenant_id, user_id, "agent-1", limit=10)
+            results = await service.get_recent(mock_db, platform_tenant_id, TEST_SERVICE_TENANT_ID, service_user_id, "agent-1", limit=10)
             
             # Service returns CRUD response directly (no double conversion)
             assert len(results) == 3
@@ -236,7 +240,7 @@ class TestEpisodicMemoryServiceGetRecent:
         mock_db = AsyncMock()
         
         with patch('memory_service.services.episodic_memory_service.crud_get_recent', return_value=[]):
-            results = await service.get_recent(mock_db, uuid4(), uuid4(), "agent-1", limit=10)
+            results = await service.get_recent(mock_db, TEST_PLATFORM_TENANT_ID, TEST_SERVICE_TENANT_ID, TEST_SERVICE_USER_ID, "agent-1", limit=10)
             
             assert results == []
 
@@ -251,15 +255,15 @@ class TestEpisodicMemoryServiceSearch:
         
         service = EpisodicMemoryService()
         mock_db = AsyncMock()
-        tenant_id = uuid4()
-        user_id = uuid4()
+        platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        service_user_id = TEST_SERVICE_USER_ID
         
         # CRUD returns EpisodicMemoryResponse with scores
         mock_responses = [
             EpisodicMemoryResponse(
                 id=str(uuid4()),
-                tenant_id=str(tenant_id),
-                user_id=str(user_id),
+                tenant_id=platform_tenant_id,
+                user_id=service_user_id,
                 agent_id="agent-1",
                 role="user",
                 content=f"Query-relevant message {i}",
@@ -271,7 +275,7 @@ class TestEpisodicMemoryServiceSearch:
         ]
         
         with patch('memory_service.services.episodic_memory_service.crud_search', return_value=mock_responses):
-            results = await service.search(mock_db, tenant_id, user_id, "password reset", agent_id="agent-1")
+            results = await service.search(mock_db, platform_tenant_id, TEST_SERVICE_TENANT_ID, service_user_id, "password reset", agent_id="agent-1")
             
             # Service returns CRUD responses directly
             assert len(results) == 3
@@ -288,15 +292,15 @@ class TestEpisodicMemoryServiceSearch:
         
         service = EpisodicMemoryService()
         mock_db = AsyncMock()
-        tenant_id = uuid4()
-        user_id = uuid4()
+        platform_tenant_id = TEST_PLATFORM_TENANT_ID
+        service_user_id = TEST_SERVICE_USER_ID
         
         # Mock returns 3 results (limit applied in CRUD)
         mock_responses = [
             EpisodicMemoryResponse(
                 id=str(uuid4()),
-                tenant_id=str(tenant_id),
-                user_id=str(user_id),
+                tenant_id=platform_tenant_id,
+                user_id=service_user_id,
                 agent_id="agent",
                 role="user",
                 content="test",
@@ -308,6 +312,6 @@ class TestEpisodicMemoryServiceSearch:
         ]
         
         with patch('memory_service.services.episodic_memory_service.crud_search', return_value=mock_responses):
-            results = await service.search(mock_db, tenant_id, user_id, "query", limit=3)
+            results = await service.search(mock_db, platform_tenant_id, TEST_SERVICE_TENANT_ID, service_user_id, "query", limit=3)
             
             assert len(results) == 3

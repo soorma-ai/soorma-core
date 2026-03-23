@@ -10,6 +10,9 @@ RUN pip install --no-cache-dir --upgrade pip hatch
 # Build context should be soorma-core root
 COPY libs/soorma-common /app/soorma-common/
 
+# Copy soorma-service-common package
+COPY libs/soorma-service-common /app/soorma-service-common/
+
 # Copy memory service
 COPY services/memory /app/memory/
 
@@ -17,16 +20,22 @@ COPY services/memory /app/memory/
 WORKDIR /app/soorma-common
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
+# Build soorma-service-common
+WORKDIR /app/soorma-service-common
+RUN pip wheel --no-deps --wheel-dir /app/wheels .
+
 # Build memory service
 WORKDIR /app/memory
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 
 # Download all dependencies as wheels (excluding the packages we just built)
-RUN pip wheel --wheel-dir /app/wheels . \
-    && rm -f /app/wheels/soorma_common-*.whl /app/wheels/memory_service-*.whl
+RUN pip wheel --wheel-dir /app/wheels --find-links /app/wheels . \
+    && rm -f /app/wheels/soorma_common-*.whl /app/wheels/soorma_service_common-*.whl /app/wheels/memory_service-*.whl
 
 # Re-add our built packages (ensures we use local versions, not PyPI)
 WORKDIR /app/soorma-common
+RUN pip wheel --no-deps --wheel-dir /app/wheels .
+WORKDIR /app/soorma-service-common
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
 WORKDIR /app/memory
 RUN pip wheel --no-deps --wheel-dir /app/wheels .
@@ -44,7 +53,7 @@ COPY --from=builder /app/wheels /app/wheels
 
 # Install all wheels (packages + dependencies)
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --no-index --find-links=/app/wheels /app/wheels/soorma_common-*.whl /app/wheels/memory_service-*.whl \
+    && pip install --no-cache-dir --no-index --find-links=/app/wheels /app/wheels/soorma_common-*.whl /app/wheels/soorma_service_common-*.whl /app/wheels/memory_service-*.whl \
     && rm -rf /app/wheels
 
 # Copy alembic config and migrations for database setup

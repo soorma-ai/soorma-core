@@ -1,6 +1,5 @@
 """Service layer for Working Memory operations."""
 
-from uuid import UUID
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,8 +26,8 @@ class WorkingMemoryService:
         """Convert database model to response DTO."""
         return WorkingMemoryResponse(
             id=str(memory.id),
-            tenant_id=str(memory.tenant_id),
-            plan_id=str(memory.plan_id),
+            tenant_id=memory.platform_tenant_id,
+            plan_id=memory.plan_id,
             key=memory.key,
             value=memory.value,
             updated_at=memory.updated_at.isoformat(),
@@ -37,9 +36,10 @@ class WorkingMemoryService:
     async def set(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
-        plan_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
+        plan_id: str,
         key: str,
         data: WorkingMemorySet,
     ) -> WorkingMemoryResponse:
@@ -48,19 +48,20 @@ class WorkingMemoryService:
         
         Transaction boundary: No commit needed - upsert is atomic.
         """
-        memory = await crud_set(db, tenant_id, user_id, plan_id, key, data)
+        memory = await crud_set(db, platform_tenant_id, service_tenant_id, service_user_id, plan_id, key, data)
         return self._to_response(memory)
     
     async def get(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
-        plan_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
+        plan_id: str,
         key: str,
     ) -> Optional[WorkingMemoryResponse]:
         """Get working memory value."""
-        memory = await crud_get(db, tenant_id, user_id, plan_id, key)
+        memory = await crud_get(db, platform_tenant_id, service_tenant_id, service_user_id, plan_id, key)
         if not memory:
             return None
         
@@ -69,13 +70,14 @@ class WorkingMemoryService:
     async def delete_key(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
-        plan_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
+        plan_id: str,
         key: str,
     ) -> WorkingMemoryDeleteKeyResponse:
         """Delete a single working memory key."""
-        deleted = await crud_delete_key(db, tenant_id, user_id, plan_id, key)
+        deleted = await crud_delete_key(db, platform_tenant_id, service_tenant_id, service_user_id, plan_id, key)
         return WorkingMemoryDeleteKeyResponse(
             success=True,
             deleted=deleted,
@@ -85,12 +87,13 @@ class WorkingMemoryService:
     async def delete_plan(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
-        plan_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
+        plan_id: str,
     ) -> WorkingMemoryDeletePlanResponse:
         """Delete all working memory for a plan."""
-        count = await crud_delete_plan(db, tenant_id, user_id, plan_id)
+        count = await crud_delete_plan(db, platform_tenant_id, service_tenant_id, service_user_id, plan_id)
         return WorkingMemoryDeletePlanResponse(
             success=True,
             count_deleted=count,

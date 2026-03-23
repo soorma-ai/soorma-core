@@ -18,7 +18,7 @@ async def log_episodic_memory(
 
     The service automatically generates embeddings for the content.
     """
-    return await episodic_memory_service.log(context.db, context.tenant_id, context.user_id, data)
+    return await episodic_memory_service.log(context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, data)
 
 
 @router.get("/recent", response_model=list[EpisodicMemoryResponse])
@@ -29,7 +29,7 @@ async def get_recent_history(
 ):
     """Get recent interaction history (context window)."""
     return await episodic_memory_service.get_recent(
-        context.db, context.tenant_id, context.user_id, agent_id, limit
+        context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, agent_id, limit
     )
 
 
@@ -42,5 +42,5 @@ async def search_episodic(
 ):
     """Search episodic memories using vector similarity."""
     return await episodic_memory_service.search(
-        context.db, context.tenant_id, context.user_id, q, agent_id, limit
+        context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, q, agent_id, limit
     )

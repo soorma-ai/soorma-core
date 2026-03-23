@@ -22,13 +22,14 @@ class TestSemanticMemoryModel:
 
     def test_semantic_memory_has_upsert_columns(self):
         """Model should have external_id and content_hash columns."""
-        tenant_id = uuid4()
-        user_id = "user-123"
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "user-123"
         content = "Test knowledge"
         
         memory = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_user_id=service_user_id,
             content=content,
             external_id="doc-123",
             content_hash=generate_content_hash(content),
@@ -43,12 +44,13 @@ class TestSemanticMemoryModel:
 
     def test_semantic_memory_has_privacy_columns(self):
         """Model should have user_id and is_public columns."""
-        tenant_id = uuid4()
-        user_id = "user-alice"
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "user-alice"
         
         memory = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_user_id=service_user_id,
             content="Research notes",
             embedding=[0.1] * 1536,
             external_id=None,
@@ -58,16 +60,17 @@ class TestSemanticMemoryModel:
         )
         
         # Verify privacy columns
-        assert memory.user_id == user_id
+        assert memory.service_user_id == service_user_id
         assert memory.is_public == False
         
     def test_semantic_memory_privacy_public_flag(self):
         """Model should support is_public=True for shared knowledge."""
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
         
         memory = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id="user-admin",
+            platform_tenant_id=platform_tenant_id,
+            service_user_id="user-admin",
             content="Team guidelines",
             external_id="guidelines",
             content_hash="def456",
@@ -112,8 +115,8 @@ class TestPrivacyDefaults:
     def test_knowledge_private_by_default(self):
         """Knowledge should be private (is_public=False) by default."""
         memory = SemanticMemory(
-            tenant_id=uuid4(),
-            user_id="user-123",
+            platform_tenant_id="spt_test-00000000",
+            service_user_id="user-123",
             content="My personal notes",
             external_id="personal-1",
             content_hash="xyz789",
@@ -126,8 +129,8 @@ class TestPrivacyDefaults:
     def test_knowledge_can_be_explicit_public(self):
         """Knowledge can be explicitly marked as public."""
         memory = SemanticMemory(
-            tenant_id=uuid4(),
-            user_id="user-123",
+            platform_tenant_id="spt_test-00000000",
+            service_user_id="user-123",
             content="Team knowledge",
             external_id="team-1",
             content_hash="abc123",
@@ -149,13 +152,14 @@ class TestUserScopedPrivacy:
         ON semantic_memory (tenant_id, user_id, external_id)
         WHERE external_id IS NOT NULL AND is_public = FALSE
         """
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
         external_id = "research-findings"
         
         # Alice's private research
         alice_memory = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id="alice",
+            platform_tenant_id=platform_tenant_id,
+            service_user_id="alice",
             content="Alice's research findings",
             external_id=external_id,
             content_hash=generate_content_hash("Alice's research findings"),
@@ -165,8 +169,8 @@ class TestUserScopedPrivacy:
         
         # Bob's private research - same external_id, different user
         bob_memory = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id="bob",
+            platform_tenant_id=platform_tenant_id,
+            service_user_id="bob",
             content="Bob's research findings",
             external_id=external_id,
             content_hash=generate_content_hash("Bob's research findings"),
@@ -175,7 +179,7 @@ class TestUserScopedPrivacy:
         )
         
         # Both should be valid (database constraint enforces per-user uniqueness)
-        assert alice_memory.user_id != bob_memory.user_id
+        assert alice_memory.service_user_id != bob_memory.service_user_id  # "alice" != "bob"
         assert alice_memory.external_id == bob_memory.external_id
         assert alice_memory.is_public == False
         assert bob_memory.is_public == False
@@ -188,13 +192,14 @@ class TestUserScopedPrivacy:
         ON semantic_memory (tenant_id, external_id)
         WHERE external_id IS NOT NULL AND is_public = TRUE
         """
-        tenant_id = uuid4()
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
         external_id = "team-guidelines"
         
         # Public knowledge can be created by any user
         memory1 = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id="alice",
+            platform_tenant_id=platform_tenant_id,
+            service_user_id="alice",
             content="Team guidelines v1",
             external_id=external_id,
             content_hash=generate_content_hash("Team guidelines v1"),
@@ -219,8 +224,8 @@ class TestUpsertLogic:
         """
         # Create knowledge with both identifiers
         memory = SemanticMemory(
-            tenant_id=uuid4(),
-            user_id="user-123",
+            platform_tenant_id="spt_test-00000000",
+            service_user_id="user-123",
             content="Documentation v1",
             external_id="doc-123",  # Has external_id
             content_hash=generate_content_hash("Documentation v1"),  # Also has hash
@@ -241,8 +246,8 @@ class TestUpsertLogic:
         content = "Fact: Python is a language"
         
         memory = SemanticMemory(
-            tenant_id=uuid4(),
-            user_id="user-123",
+            platform_tenant_id="spt_test-00000000",
+            service_user_id="user-123",
             content=content,
             external_id=None,  # No external_id
             content_hash=generate_content_hash(content),  # Uses content_hash for dedup
@@ -264,14 +269,15 @@ class TestConflictResolution:
         Design decision: When upserting same external_id, is_public can be updated.
         This allows knowledge to transition from private to public (or vice versa).
         """
-        tenant_id = uuid4()
-        user_id = "user-123"
+        platform_tenant_id = "spt_test-00000000"
+        service_tenant_id = "st_test-tenant"
+        service_user_id = "user-123"
         external_id = "doc-123"
         
         # Initial: private knowledge
         memory_v1 = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_user_id=service_user_id,
             content="Research findings",
             external_id=external_id,
             content_hash="hash1",
@@ -281,8 +287,8 @@ class TestConflictResolution:
         
         # Later: same external_id, but made public
         memory_v2 = SemanticMemory(
-            tenant_id=tenant_id,
-            user_id=user_id,
+            platform_tenant_id=platform_tenant_id,
+            service_user_id=service_user_id,
             content="Research findings (updated)",
             external_id=external_id,
             content_hash="hash2",
@@ -295,4 +301,3 @@ class TestConflictResolution:
         assert memory_v1.is_public == False
         assert memory_v2.is_public == True
         # Database upsert will update the record with new content and is_public flag
-

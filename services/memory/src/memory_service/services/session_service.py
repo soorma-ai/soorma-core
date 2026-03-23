@@ -4,7 +4,6 @@ This layer provides business logic and transaction management,
 sitting between the API layer and CRUD layer.
 """
 
-from uuid import UUID
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,8 +28,8 @@ class SessionService:
     def _to_summary(session: Session) -> SessionSummary:
         """Convert database model to summary DTO."""
         return SessionSummary(
-            tenant_id=str(session.tenant_id),
-            user_id=str(session.user_id),
+            tenant_id=session.platform_tenant_id,
+            user_id=session.service_user_id or "",
             session_id=session.session_id,
             name=session.name,
             metadata=session.session_metadata,
@@ -41,8 +40,9 @@ class SessionService:
     async def create(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: SessionCreate,
     ) -> SessionSummary:
         """
@@ -52,8 +52,9 @@ class SessionService:
         """
         session = await crud_create(
             db,
-            tenant_id,
-            user_id,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
             data.session_id,
             data.name,
             data.metadata,
@@ -65,11 +66,11 @@ class SessionService:
     async def get(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         session_id: str,
     ) -> Optional[SessionSummary]:
         """Get session by ID."""
-        session = await crud_get(db, tenant_id, session_id)
+        session = await crud_get(db, platform_tenant_id, session_id)
         if not session:
             return None
         
@@ -78,18 +79,18 @@ class SessionService:
     async def list(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
-        user_id: UUID,
+        platform_tenant_id: str,
+        service_user_id: str,
         limit: int = 20,
     ) -> List[SessionSummary]:
         """List sessions for a user."""
-        sessions = await crud_list(db, tenant_id, user_id, limit)
+        sessions = await crud_list(db, platform_tenant_id, service_user_id, limit)
         return [self._to_summary(s) for s in sessions]
     
     async def update_interaction(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         session_id: str,
     ) -> Optional[SessionSummary]:
         """
@@ -97,7 +98,7 @@ class SessionService:
         
         Transaction boundary: Commits after successful update.
         """
-        session = await crud_update_interaction(db, tenant_id, session_id)
+        session = await crud_update_interaction(db, platform_tenant_id, session_id)
         if not session:
             return None
         
@@ -108,7 +109,7 @@ class SessionService:
     async def delete(
         self,
         db: AsyncSession,
-        tenant_id: UUID,
+        platform_tenant_id: str,
         session_id: str,
     ) -> bool:
         """
@@ -117,7 +118,7 @@ class SessionService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, tenant_id, session_id)
+        deleted = await crud_delete(db, platform_tenant_id, session_id)
         if deleted:
             await db.commit()
         

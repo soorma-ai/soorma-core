@@ -1,8 +1,6 @@
 """Initialize models package."""
 
 from memory_service.models.memory import (
-    Tenant,
-    User,
     SemanticMemory,
     EpisodicMemory,
     ProceduralMemory,
@@ -25,8 +23,6 @@ from soorma_common.models import (  # noqa: F401
 )
 
 __all__ = [
-    "Tenant",
-    "User",
     "SemanticMemory",
     "EpisodicMemory",
     "ProceduralMemory",

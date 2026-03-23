@@ -1,7 +1,6 @@
 """CRUD operations for working memory."""
 
 from typing import Optional, Dict, Any
-from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
@@ -12,17 +11,20 @@ from soorma_common.models import WorkingMemorySet, WorkingMemoryResponse
 
 async def set_working_memory(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
+    plan_id: str,
     key: str,
     data: WorkingMemorySet,
 ) -> WorkingMemory:
     """Set or update working memory value."""
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Use PostgreSQL INSERT ... ON CONFLICT UPDATE (upsert)
     stmt = insert(WorkingMemory).values(
-        tenant_id=tenant_id,
-        user_id=user_id,
+        platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
         plan_id=plan_id,
         key=key,
         value=data.value,
@@ -38,7 +40,7 @@ async def set_working_memory(
     # Fetch the updated record
     result = await db.execute(
         select(WorkingMemory).where(
-            WorkingMemory.tenant_id == tenant_id,
+            WorkingMemory.platform_tenant_id == platform_tenant_id,
             WorkingMemory.plan_id == plan_id,
             WorkingMemory.key == key,
         )
@@ -49,15 +51,17 @@ async def set_working_memory(
 
 async def get_working_memory(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
+    plan_id: str,
     key: str,
 ) -> Optional[WorkingMemory]:
     """Get working memory value."""
+    assert platform_tenant_id, "platform_tenant_id is required"
     stmt = select(WorkingMemory).where(
-        WorkingMemory.tenant_id == tenant_id,
-        WorkingMemory.user_id == user_id,
+        WorkingMemory.platform_tenant_id == platform_tenant_id,
+        WorkingMemory.service_user_id == service_user_id,
         WorkingMemory.plan_id == plan_id,
         WorkingMemory.key == key,
     )
@@ -67,9 +71,10 @@ async def get_working_memory(
 
 async def delete_working_memory_key(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
+    plan_id: str,
     key: str,
 ) -> bool:
     """
@@ -77,17 +82,18 @@ async def delete_working_memory_key(
     
     Args:
         db: Database session
-        tenant_id: Tenant identifier (for RLS enforcement)
+        platform_tenant_id: Platform tenant identifier (for RLS enforcement)
         plan_id: Plan identifier
         key: Key to delete
     
     Returns:
         True if key was deleted, False if key did not exist
     """
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Build query to delete
     stmt = delete(WorkingMemory).where(
-        WorkingMemory.tenant_id == tenant_id,
-        WorkingMemory.user_id == user_id,
+        WorkingMemory.platform_tenant_id == platform_tenant_id,
+        WorkingMemory.service_user_id == service_user_id,
         WorkingMemory.plan_id == plan_id,
         WorkingMemory.key == key,
     )
@@ -101,25 +107,27 @@ async def delete_working_memory_key(
 
 async def delete_working_memory_plan(
     db: AsyncSession,
-    tenant_id: UUID,
-    user_id: UUID,
-    plan_id: UUID,
+    platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
+    plan_id: str,
 ) -> int:
     """
     Delete all working memory for a plan.
     
     Args:
         db: Database session
-        tenant_id: Tenant identifier (for RLS enforcement)
+        platform_tenant_id: Platform tenant identifier (for RLS enforcement)
         plan_id: Plan identifier
     
     Returns:
         Count of rows deleted
     """
+    assert platform_tenant_id, "platform_tenant_id is required"
     # Build query to delete all keys for this plan
     stmt = delete(WorkingMemory).where(
-        WorkingMemory.tenant_id == tenant_id,
-        WorkingMemory.user_id == user_id,
+        WorkingMemory.platform_tenant_id == platform_tenant_id,
+        WorkingMemory.service_user_id == service_user_id,
         WorkingMemory.plan_id == plan_id,
     )
     

@@ -1,9 +1,14 @@
-"""Database models for memory service."""
+"""Database models for memory service — three-column identity model.
+
+All tables use (platform_tenant_id, service_tenant_id, service_user_id) as
+opaque VARCHAR(64) strings. No FK constraints to identity reference tables.
+RLS policies enforce platform_tenant_id isolation at the database level.
+"""
 
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, CheckConstraint, UniqueConstraint, Boolean
+from sqlalchemy import Column, String, Text, DateTime, JSON, CheckConstraint, UniqueConstraint, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 
@@ -15,82 +20,46 @@ def utc_now():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-class Tenant(Base):
-    """Tenant model (replica from Identity Service)."""
-
-    __tablename__ = "tenants"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=utc_now, nullable=False)
-
-
-class User(Base):
-    """User model (replica from Identity Service)."""
-
-    __tablename__ = "users"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    username = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=utc_now, nullable=False)
-
-
 class SemanticMemory(Base):
     """Semantic memory - factual knowledge (private by default, optional public).
-    
+
     RF-ARCH-012: Upsert support via external_id and content_hash
-    RF-ARCH-014: Privacy support via user_id and is_public
+    RF-ARCH-014: Privacy support via service_user_id and is_public
     """
 
     __tablename__ = "semantic_memory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    # RF-ARCH-014: User ownership (private by default)
-    user_id = Column(String(255), nullable=False)
-    
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
+
     # Core content
     content = Column(Text, nullable=False)
     embedding = Column(Vector(1536))
     memory_metadata = Column(JSON, default={}, nullable=False)
-    
+
     # RF-ARCH-012: Upsert support
-    external_id = Column(String(255), nullable=True)  # User-provided ID for versioning
-    content_hash = Column(String(64), nullable=False)  # SHA-256 for deduplication
-    
+    external_id = Column(String(255), nullable=True)
+    content_hash = Column(String(64), nullable=False)
+
     # RF-ARCH-014: Privacy control
-    is_public = Column(Boolean, nullable=False, default=False)  # Default private
-    
+    is_public = Column(Boolean, nullable=False, default=False)
+
     # Timestamps
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
 
 class EpisodicMemory(Base):
-    """Episodic memory - interaction history specific to User + Agent."""
+    """Episodic memory - interaction history specific to service user + agent."""
 
     __tablename__ = "episodic_memory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
     agent_id = Column(Text, nullable=False)
     role = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
@@ -109,48 +78,27 @@ class ProceduralMemory(Base):
     __tablename__ = "procedural_memory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
     agent_id = Column(Text, nullable=False)
-    trigger_condition = Column(Text)
+    trigger_condition = Column(Text, nullable=False)
     embedding = Column(Vector(1536))
-    procedure_type = Column(Text, nullable=False)
+    procedure_type = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=utc_now, nullable=False)
 
-    __table_args__ = (
-        CheckConstraint(
-            "procedure_type IN ('system_prompt', 'few_shot_example')",
-            name="procedure_type_check",
-        ),
-    )
-
 
 class WorkingMemory(Base):
-    """Working memory - plan-scoped shared state."""
+    """Working memory - plan-scoped transient state."""
 
     __tablename__ = "working_memory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    plan_id = Column(UUID(as_uuid=True), nullable=False)
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
+    plan_id = Column(String(100), nullable=False)
     key = Column(Text, nullable=False)
     value = Column(JSON, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
@@ -164,16 +112,9 @@ class TaskContext(Base):
     __tablename__ = "task_context"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
     task_id = Column(String(100), nullable=False)
     plan_id = Column(String(100), nullable=True)
     event_type = Column(String(255), nullable=False)
@@ -185,7 +126,7 @@ class TaskContext(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("tenant_id", "task_id", name="task_context_unique"),)
+    __table_args__ = (UniqueConstraint("platform_tenant_id", "task_id", name="task_context_unique"),)
 
 
 class PlanContext(Base):
@@ -194,16 +135,11 @@ class PlanContext(Base):
     __tablename__ = "plan_context"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    plan_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("plans.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
+    # plan_id is a plain string — no FK constraint (dropped in migration 008)
+    plan_id = Column(String(100), nullable=False)
     session_id = Column(String(100), nullable=True)
     goal_event = Column(String(255), nullable=False)
     goal_data = Column(JSON, default={}, nullable=False)
@@ -223,16 +159,9 @@ class Plan(Base):
     __tablename__ = "plans"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
     plan_id = Column(String(100), nullable=False)
     session_id = Column(String(100), nullable=True)
     goal_event = Column(String(255), nullable=False)
@@ -243,7 +172,7 @@ class Plan(Base):
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("tenant_id", "plan_id", name="plan_unique"),
+        UniqueConstraint("platform_tenant_id", "plan_id", name="plan_unique"),
         CheckConstraint(
             "status IN ('running', 'completed', 'failed', 'paused')",
             name="plan_status_check",
@@ -257,21 +186,13 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    platform_tenant_id = Column(String(64), nullable=False)
+    service_tenant_id = Column(String(64), nullable=True)
+    service_user_id = Column(String(64), nullable=True)
     session_id = Column(String(100), nullable=False)
     name = Column(String(255), nullable=True)
     session_metadata = Column(JSON, default={}, nullable=False)
     created_at = Column(DateTime, default=utc_now, nullable=False)
     last_interaction = Column(DateTime, default=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("tenant_id", "session_id", name="session_unique"),)
-
+    __table_args__ = (UniqueConstraint("platform_tenant_id", "session_id", name="sessions_unique"),)

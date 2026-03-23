@@ -1,7 +1,7 @@
 """Tests for task context functionality."""
 
 import pytest
-from uuid import uuid4, UUID
+from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from memory_service.services.task_context_service import TaskContextService
@@ -14,6 +14,10 @@ from memory_service.crud.task_context import (
 )
 from soorma_common.models import TaskContextCreate, TaskContextUpdate
 
+TEST_PLATFORM_TENANT_ID = "spt_test-00000"
+TEST_SERVICE_TENANT_ID = "st_test-tenant"
+TEST_SERVICE_USER_ID = "su_test-user"
+
 
 class TestTaskContextCRUD:
     """Test task context CRUD operations."""
@@ -22,18 +26,20 @@ class TestTaskContextCRUD:
     def test_ids(self):
         """Generate test IDs."""
         return {
-            "tenant_id": uuid4(),
-            "user_id": uuid4(),
-            "task_id": str(uuid4()),
-            "plan_id": str(uuid4()),
+            "platform_tenant_id": TEST_PLATFORM_TENANT_ID,
+            "service_tenant_id": TEST_SERVICE_TENANT_ID,
+            "service_user_id": TEST_SERVICE_USER_ID,
+            "task_id": "task-test-001",
+            "plan_id": "plan-test-001",
         }
 
     @pytest.fixture
     def task_data(self, test_ids):
         """Generate test task context data."""
         return {
-            "tenant_id": test_ids["tenant_id"],
-            "user_id": test_ids["user_id"],
+            "platform_tenant_id": test_ids["platform_tenant_id"],
+            "service_tenant_id": test_ids["service_tenant_id"],
+            "service_user_id": test_ids["service_user_id"],
             "task_id": test_ids["task_id"],
             "plan_id": test_ids["plan_id"],
             "event_type": "order.process.requested",
@@ -83,7 +89,7 @@ class TestTaskContextCRUD:
         
         # All should have same task_id but potentially different updated_at
         assert result1.task_id == result2.task_id == result3.task_id
-        assert result1.tenant_id == result2.tenant_id == result3.tenant_id
+        assert result1.platform_tenant_id == result2.platform_tenant_id == result3.platform_tenant_id
         assert result1.data == result2.data == result3.data
 
     async def test_get_task_context(self, db_session: AsyncSession, task_data):
@@ -92,7 +98,7 @@ class TestTaskContextCRUD:
         
         result = await get_task_context(
             db_session,
-            task_data["tenant_id"],
+            task_data["platform_tenant_id"],
             task_data["task_id"],
         )
         
@@ -104,7 +110,7 @@ class TestTaskContextCRUD:
         """Test retrieving non-existent task context returns None."""
         result = await get_task_context(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             "non-existent-task",
         )
         
@@ -119,7 +125,7 @@ class TestTaskContextCRUD:
         
         result = await update_task_context(
             db_session,
-            task_data["tenant_id"],
+            task_data["platform_tenant_id"],
             task_data["task_id"],
             sub_tasks=new_sub_tasks,
             state=new_state,
@@ -136,7 +142,7 @@ class TestTaskContextCRUD:
         # Delete
         deleted = await delete_task_context(
             db_session,
-            task_data["tenant_id"],
+            task_data["platform_tenant_id"],
             task_data["task_id"],
         )
         
@@ -145,7 +151,7 @@ class TestTaskContextCRUD:
         # Verify deleted
         result = await get_task_context(
             db_session,
-            task_data["tenant_id"],
+            task_data["platform_tenant_id"],
             task_data["task_id"],
         )
         
@@ -155,7 +161,7 @@ class TestTaskContextCRUD:
         """Test deleting non-existent task context returns False."""
         deleted = await delete_task_context(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             "non-existent-task",
         )
         
@@ -167,7 +173,7 @@ class TestTaskContextCRUD:
         
         result = await get_task_by_subtask(
             db_session,
-            task_data["tenant_id"],
+            task_data["platform_tenant_id"],
             "subtask-1",
         )
         
@@ -179,27 +185,27 @@ class TestTaskContextCRUD:
         """Test finding parent task with non-existent sub-task returns None."""
         result = await get_task_by_subtask(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             "non-existent-subtask",
         )
         
         assert result is None
 
     async def test_multi_tenant_isolation(self, db_session: AsyncSession, task_data):
-        """Test task context is isolated by tenant_id."""
-        tenant1_id = uuid4()
-        tenant2_id = uuid4()
-        task_id = str(uuid4())
+        """Test task context is isolated by platform_tenant_id."""
+        tenant1_id = "spt_tenant-1"
+        tenant2_id = "spt_tenant-2"
+        task_id = "task-isolation-test"
         
         # Create task for tenant 1
         data1 = task_data.copy()
-        data1["tenant_id"] = tenant1_id
+        data1["platform_tenant_id"] = tenant1_id
         data1["task_id"] = task_id
         await upsert_task_context(db_session, **data1)
         
         # Create task with same task_id for tenant 2
         data2 = task_data.copy()
-        data2["tenant_id"] = tenant2_id
+        data2["platform_tenant_id"] = tenant2_id
         data2["task_id"] = task_id
         data2["data"] = {"different": "data"}
         await upsert_task_context(db_session, **data2)
@@ -215,6 +221,7 @@ class TestTaskContextCRUD:
         assert result2.data == data2["data"]
 
 
+
 class TestTaskContextService:
     """Test task context service layer."""
 
@@ -227,10 +234,11 @@ class TestTaskContextService:
     def test_ids(self):
         """Generate test IDs."""
         return {
-            "tenant_id": uuid4(),
-            "user_id": uuid4(),
-            "task_id": str(uuid4()),
-            "plan_id": str(uuid4()),
+            "platform_tenant_id": TEST_PLATFORM_TENANT_ID,
+            "service_tenant_id": TEST_SERVICE_TENANT_ID,
+            "service_user_id": TEST_SERVICE_USER_ID,
+            "task_id": "task-svc-001",
+            "plan_id": "plan-svc-001",
         }
 
     @pytest.fixture
@@ -245,7 +253,7 @@ class TestTaskContextService:
             data={"amount": 1500.0, "currency": "USD"},
             sub_tasks=["validate", "charge", "notify"],
             state={"step": "validation"},
-            user_id=str(test_ids["user_id"]),
+            user_id=test_ids["service_user_id"],
         )
 
     async def test_service_upsert(
@@ -258,15 +266,16 @@ class TestTaskContextService:
         """Test service upsert operation."""
         result = await service.upsert(
             db_session,
-            test_ids["tenant_id"],
-            test_ids["user_id"],
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             task_context_create,
         )
         
         assert result.task_id == task_context_create.task_id
         assert result.event_type == task_context_create.event_type
         assert result.data == task_context_create.data
-        assert result.tenant_id == str(test_ids["tenant_id"])
+        assert result.tenant_id == TEST_PLATFORM_TENANT_ID
 
     async def test_service_get(
         self,
@@ -276,11 +285,11 @@ class TestTaskContextService:
         task_context_create,
     ):
         """Test service get operation."""
-        await service.upsert(db_session, test_ids["tenant_id"], test_ids["user_id"], task_context_create)
+        await service.upsert(db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], task_context_create)
         
         result = await service.get(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             test_ids["task_id"],
         )
         
@@ -295,7 +304,7 @@ class TestTaskContextService:
         task_context_create,
     ):
         """Test service update operation."""
-        await service.upsert(db_session, test_ids["tenant_id"], test_ids["user_id"], task_context_create)
+        await service.upsert(db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], task_context_create)
         
         update_data = TaskContextUpdate(
             sub_tasks=["validate", "charge", "notify", "confirm"],
@@ -304,7 +313,7 @@ class TestTaskContextService:
         
         result = await service.update(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             test_ids["task_id"],
             update_data,
         )
@@ -321,11 +330,11 @@ class TestTaskContextService:
         task_context_create,
     ):
         """Test service delete operation."""
-        await service.upsert(db_session, test_ids["tenant_id"], test_ids["user_id"], task_context_create)
+        await service.upsert(db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], task_context_create)
         
         deleted = await service.delete(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             test_ids["task_id"],
         )
         
@@ -334,7 +343,7 @@ class TestTaskContextService:
         # Verify deleted
         result = await service.get(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             test_ids["task_id"],
         )
         
@@ -348,11 +357,11 @@ class TestTaskContextService:
         task_context_create,
     ):
         """Test service get by subtask operation."""
-        await service.upsert(db_session, test_ids["tenant_id"], test_ids["user_id"], task_context_create)
+        await service.upsert(db_session, test_ids["platform_tenant_id"], test_ids["service_tenant_id"], test_ids["service_user_id"], task_context_create)
         
         result = await service.get_by_subtask(
             db_session,
-            test_ids["tenant_id"],
+            test_ids["platform_tenant_id"],
             "validate",
         )
         
@@ -368,17 +377,19 @@ class TestTaskContextSubTaskTracking:
     def test_ids(self):
         """Generate test IDs."""
         return {
-            "tenant_id": uuid4(),
-            "user_id": uuid4(),
-            "parent_task_id": str(uuid4()),
-            "subtask_ids": [str(uuid4()) for _ in range(3)],
+            "platform_tenant_id": TEST_PLATFORM_TENANT_ID,
+            "service_tenant_id": TEST_SERVICE_TENANT_ID,
+            "service_user_id": TEST_SERVICE_USER_ID,
+            "parent_task_id": "task-parent-001",
+            "subtask_ids": [f"subtask-{i}" for i in range(3)],
         }
 
     async def test_parallel_subtask_tracking(self, db_session: AsyncSession, test_ids):
         """Test tracking parallel sub-tasks."""
         task_data = {
-            "tenant_id": test_ids["tenant_id"],
-            "user_id": test_ids["user_id"],
+            "platform_tenant_id": test_ids["platform_tenant_id"],
+            "service_tenant_id": test_ids["service_tenant_id"],
+            "service_user_id": test_ids["service_user_id"],
             "task_id": test_ids["parent_task_id"],
             "plan_id": None,
             "event_type": "order.process.requested",
@@ -413,7 +424,7 @@ class TestTaskContextSubTaskTracking:
         for subtask_id in test_ids["subtask_ids"]:
             parent = await get_task_by_subtask(
                 db_session,
-                test_ids["tenant_id"],
+                test_ids["platform_tenant_id"],
                 subtask_id,
             )
             assert parent is not None
@@ -425,8 +436,9 @@ class TestTaskContextSubTaskTracking:
         
         # Create with pending sub-tasks
         task_data = {
-            "tenant_id": test_ids["tenant_id"],
-            "user_id": test_ids["user_id"],
+            "platform_tenant_id": test_ids["platform_tenant_id"],
+            "service_tenant_id": test_ids["service_tenant_id"],
+            "service_user_id": test_ids["service_user_id"],
             "task_id": test_ids["parent_task_id"],
             "plan_id": None,
             "event_type": "order.process.requested",
