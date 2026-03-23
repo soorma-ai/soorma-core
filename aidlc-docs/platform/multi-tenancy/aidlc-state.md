@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U4 (services/memory) - QA Enrichment COMPLETE — awaiting Design PR approval
+- **Current Stage**: CONSTRUCTION - U4 (services/memory) - Code Generation IN PROGRESS
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -72,7 +72,7 @@
 - [x] NFR Design (artifacts at construction/memory/nfr-design/)
 - [ ] Infrastructure Design (SKIPPED per unit spec)
 - [x] QA Test Case Enrichment — COMPLETE 2026-03-23T02:20:14Z (TC-M-001..011 enriched; TC-M-012, TC-M-013 added; enrichment-delta.md created)
-- [ ] Construction Design PR Gate — PENDING_DESIGN_PR_APPROVAL
+- [x] Construction Design PR Gate — APPROVED 2026-03-23T03:05:40Z
 - [ ] Code Generation
 #### U5 — services/tracker (Wave 3) — blocked on U1 + U2
 #### U6 — sdk/python (Wave 4) — blocked on U4 + U5
@@ -107,11 +107,11 @@
 - **Approved**: 2026-03-22T08:26:16Z
 
 ### Construction Design PR Gate — memory
-- **Status**: PENDING_DESIGN_PR_APPROVAL
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/memory-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-23T01:54:15Z
-- **Approved**: (awaiting)
+- **Approved**: 2026-03-23T03:05:40Z
 
 ### Construction Design PR Gate — registry
 - **Status**: APPROVED
