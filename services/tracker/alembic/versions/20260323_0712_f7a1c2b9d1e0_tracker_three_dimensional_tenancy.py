@@ -46,10 +46,10 @@ def upgrade() -> None:
     op.alter_column("action_progress", "service_tenant_id", type_=sa.String(length=64), nullable=False)
     op.alter_column("action_progress", "service_user_id", type_=sa.String(length=64), nullable=False)
 
-    # Replace legacy constraints
+    # Replace legacy constraints — drop FK first (it depends on uq_plan_id index)
+    op.drop_constraint("action_progress_plan_id_fkey", "action_progress", type_="foreignkey")
     op.drop_constraint("uq_plan_id", "plan_progress", type_="unique")
     op.drop_constraint("uq_action_tenant_action", "action_progress", type_="unique")
-    op.drop_constraint("action_progress_plan_id_fkey", "action_progress", type_="foreignkey")
 
     op.create_unique_constraint(
         "uq_plan_scope_plan",
