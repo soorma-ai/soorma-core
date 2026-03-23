@@ -2,7 +2,6 @@
 API endpoints for payload schema registry.
 """
 from typing import Optional
-from uuid import UUID
 from fastapi import APIRouter, Query, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,8 +12,7 @@ from soorma_common import (
     PayloadSchemaListResponse,
 )
 from ...services import SchemaRegistryService
-from ...core.database import get_db
-from ..dependencies import get_developer_tenant_id
+from ..dependencies import get_tenanted_db, get_platform_tenant_id
 
 router = APIRouter(prefix="/schemas", tags=["schemas"])
 
@@ -22,8 +20,8 @@ router = APIRouter(prefix="/schemas", tags=["schemas"])
 @router.post("", response_model=PayloadSchemaResponse)
 async def register_schema(
     request: PayloadSchemaRegistrationRequest,
-    db: AsyncSession = Depends(get_db),
-    developer_tenant_id: UUID = Depends(get_developer_tenant_id),
+    db: AsyncSession = Depends(get_tenanted_db),
+    platform_tenant_id: str = Depends(get_platform_tenant_id),
 ) -> PayloadSchemaResponse:
     """
     Register a new payload schema.
@@ -34,14 +32,14 @@ async def register_schema(
     Args:
         request: Wrapped PayloadSchema definition
         db: Database session (injected)
-        developer_tenant_id: Developer tenant UUID from X-Tenant-ID header
+        platform_tenant_id: Platform tenant identifier from X-Tenant-ID header
 
     Returns:
         PayloadSchemaResponse with success flag
     """
     try:
         return await SchemaRegistryService.register_schema(
-            db, request.payload_schema, developer_tenant_id
+            db, request.payload_schema, platform_tenant_id
         )
     except ValueError as exc:
         # Duplicate (name, version, tenant) → 409 Conflict
@@ -55,8 +53,8 @@ async def register_schema(
 async def get_schema_by_version(
     schema_name: str,
     version: str,
-    db: AsyncSession = Depends(get_db),
-    developer_tenant_id: UUID = Depends(get_developer_tenant_id),
+    db: AsyncSession = Depends(get_tenanted_db),
+    platform_tenant_id: str = Depends(get_platform_tenant_id),
 ) -> PayloadSchema:
     """
     Retrieve a specific (schema_name, version) payload schema.
@@ -65,7 +63,7 @@ async def get_schema_by_version(
         schema_name: Schema name
         version: Semantic version string (e.g. '1.0.0')
         db: Database session (injected)
-        developer_tenant_id: Developer tenant UUID from X-Tenant-ID header
+        platform_tenant_id: Platform tenant identifier from X-Tenant-ID header
 
     Returns:
         PayloadSchema DTO
@@ -74,7 +72,7 @@ async def get_schema_by_version(
         HTTPException 404 if not found
     """
     schema = await SchemaRegistryService.get_schema_by_name_version(
-        db, schema_name, version, developer_tenant_id
+        db, schema_name, version, platform_tenant_id
     )
     if schema is None:
         raise HTTPException(
@@ -87,8 +85,8 @@ async def get_schema_by_version(
 @router.get("/{schema_name}", response_model=PayloadSchema)
 async def get_latest_schema(
     schema_name: str,
-    db: AsyncSession = Depends(get_db),
-    developer_tenant_id: UUID = Depends(get_developer_tenant_id),
+    db: AsyncSession = Depends(get_tenanted_db),
+    platform_tenant_id: str = Depends(get_platform_tenant_id),
 ) -> PayloadSchema:
     """
     Retrieve the latest version of a schema by name.
@@ -96,7 +94,7 @@ async def get_latest_schema(
     Args:
         schema_name: Schema name
         db: Database session (injected)
-        developer_tenant_id: Developer tenant UUID from X-Tenant-ID header
+        platform_tenant_id: Platform tenant identifier from X-Tenant-ID header
 
     Returns:
         PayloadSchema DTO (latest version by created_at)
@@ -105,7 +103,7 @@ async def get_latest_schema(
         HTTPException 404 if not found
     """
     schema = await SchemaRegistryService.get_schema_by_name(
-        db, schema_name, developer_tenant_id
+        db, schema_name, platform_tenant_id
     )
     if schema is None:
         raise HTTPException(
@@ -118,8 +116,8 @@ async def get_latest_schema(
 @router.get("", response_model=PayloadSchemaListResponse)
 async def list_schemas(
     owner_agent_id: Optional[str] = Query(None, description="Filter by owner agent ID"),
-    db: AsyncSession = Depends(get_db),
-    developer_tenant_id: UUID = Depends(get_developer_tenant_id),
+    db: AsyncSession = Depends(get_tenanted_db),
+    platform_tenant_id: str = Depends(get_platform_tenant_id),
 ) -> PayloadSchemaListResponse:
     """
     List payload schemas for the tenant, optionally filtered by owner agent.
@@ -127,12 +125,12 @@ async def list_schemas(
     Args:
         owner_agent_id: Optional agent ID filter
         db: Database session (injected)
-        developer_tenant_id: Developer tenant UUID from X-Tenant-ID header
+        platform_tenant_id: Platform tenant identifier from X-Tenant-ID header
 
     Returns:
         PayloadSchemaListResponse with schemas and count
     """
     schemas = await SchemaRegistryService.list_schemas(
-        db, developer_tenant_id, owner_agent_id
+        db, platform_tenant_id, owner_agent_id
     )
     return PayloadSchemaListResponse(schemas=schemas, count=len(schemas))

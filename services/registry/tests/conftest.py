@@ -4,12 +4,11 @@ Test configuration and fixtures.
 import pytest
 import os
 import asyncio
-from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from fastapi.testclient import TestClient
 
-# Sentinel developer tenant UUID used by all tests (matches env fallback)
-TEST_TENANT_ID = UUID("00000000-0000-0000-0000-000000000000")
+# Sentinel platform tenant ID used by all tests (matches DEFAULT_PLATFORM_TENANT_ID)
+TEST_TENANT_ID = "spt_00000000-0000-0000-0000-000000000000"
 
 # Use a test-specific SQLite database file
 TEST_DB_FILE = "test_registry.db"
@@ -18,12 +17,21 @@ TEST_DATABASE_URL = f"sqlite+aiosqlite:///./{TEST_DB_FILE}"
 # Set the environment variable BEFORE importing the app
 # This ensures the app uses the test database from the start
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
-os.environ["SYNC_DATABASE_URL"] = f"sqlite:///./{TEST_DB_FILE}"
-os.environ["IS_LOCAL_TESTING"] = "true"
 
 # Now import after setting environment variables
 from registry_service.main import app
-from registry_service.core.database import get_db, engine, AsyncSessionLocal
+from registry_service.core.database import engine, AsyncSessionLocal
+from registry_service.api.dependencies import get_tenanted_db
+
+
+async def _test_get_tenanted_db():
+    """SQLite-safe override: yields a plain session without calling set_config."""
+    async with AsyncSessionLocal() as session:
+        yield session
+
+
+# Override get_tenanted_db globally — SQLite does not support PostgreSQL set_config.
+app.dependency_overrides[get_tenanted_db] = _test_get_tenanted_db
 from registry_service.core.cache import invalidate_agent_cache, invalidate_event_cache
 from registry_service.models import Base
 
@@ -68,6 +76,6 @@ def client():
     Create a test client with sentinel X-Tenant-ID header.
     All API calls automatically include the developer tenant header.
     """
-    with TestClient(app, headers={"X-Tenant-ID": str(TEST_TENANT_ID)}) as test_client:
+    with TestClient(app, headers={"X-Tenant-ID": TEST_TENANT_ID}) as test_client:
         yield test_client
 

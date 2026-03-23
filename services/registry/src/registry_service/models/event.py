@@ -3,8 +3,7 @@ SQLAlchemy model for event registry.
 """
 from datetime import datetime
 from typing import Dict, Any, Optional
-from uuid import UUID
-from sqlalchemy import Integer, String, DateTime, Text, JSON, UniqueConstraint, Uuid
+from sqlalchemy import Integer, String, DateTime, Text, JSON, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -53,20 +52,19 @@ class EventTable(Base):
         nullable=True
     )
     
-    # Developer tenancy and schema registry columns (added in migration 003)
+    # Developer tenancy and schema registry columns (added in migration 003, renamed in migration 004)
     # Registry is scoped to the developer's own tenant — not end-user sessions.
-    # See ARCHITECTURE_PATTERNS.md Section 1 for the developer-tenant vs user-tenant distinction.
     owner_agent_id: Mapped[Optional[str]] = mapped_column(
         String(255),
         nullable=True,
         index=True,
         comment="Agent ID that owns/registered this event"
     )
-    tenant_id: Mapped[UUID] = mapped_column(
-        Uuid(as_uuid=True, native_uuid=True),  # native_uuid=True: PostgreSQL native UUID; SQLite CHAR(32) TEXT affinity (avoids numeric coercion bug)
+    platform_tenant_id: Mapped[str] = mapped_column(
+        String(64),
         nullable=False,
         index=True,
-        comment="Developer tenant identifier — registry is developer-scoped, not user-session-scoped"
+        comment="Platform tenant identifier — registry is developer-scoped, not user-session-scoped"
     )
     payload_schema_name: Mapped[Optional[str]] = mapped_column(
         String(255),

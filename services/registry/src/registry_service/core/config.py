@@ -3,7 +3,7 @@ Centralized application configuration management.
 Loads settings from environment variables and .env files.
 """
 import os
-from typing import Optional, List
+from typing import List
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -65,23 +65,11 @@ class Settings(BaseSettings):
     # --- Environment ---
     # In production, set IS_PROD=true to disable docs and enable security features
     IS_PROD: bool = False
-    # For local development/testing
-    IS_LOCAL_TESTING: bool = True
-    
+
     # --- Database Settings ---
-    # Defaults for local development (SQLite)
-    # In production, set DATABASE_URL to PostgreSQL connection string
-    DATABASE_URL: str = "sqlite+aiosqlite:///./registry.db"
-    SYNC_DATABASE_URL: str = "sqlite:///./registry.db"  # For Alembic migrations
-    
-    # Cloud SQL settings (production only - all required if using Cloud SQL)
-    DB_INSTANCE_CONNECTION_NAME: Optional[str] = None
-    DB_USER: Optional[str] = None
-    DB_NAME: Optional[str] = None
-    DB_PASS_PATH: Optional[str] = None  # Path to secret file
-    
-    # --- CORS Settings ---
-    # Default allows all origins for local development
+    # In production, set DATABASE_URL to the PostgreSQL connection string.
+    # For local testing, set DATABASE_URL to a SQLite URL (e.g. sqlite+aiosqlite:///./registry.db).
+    DATABASE_URL: str = "postgresql+asyncpg://localhost/registry"
     # In production, set to specific allowed origins
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
     
@@ -90,20 +78,6 @@ class Settings(BaseSettings):
     AGENT_TTL_SECONDS: int = 300
     # Cleanup interval for expired agents (1 minute default)
     AGENT_CLEANUP_INTERVAL_SECONDS: int = 60
-
-
-def check_required_settings(required: List[str]) -> None:
-    """
-    Verify that required settings are configured.
-    Raises ValueError if any required setting is missing.
-    """
-    for setting_name in required:
-        value = getattr(settings, setting_name, None)
-        if value is None:
-            raise ValueError(
-                f"Required setting '{setting_name}' is not configured. "
-                f"Please set the {setting_name} environment variable."
-            )
 
 
 # Global settings instance
