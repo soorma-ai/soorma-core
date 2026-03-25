@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U5 (services/tracker) - Code Generation COMPLETE
+- **Current Stage**: CONSTRUCTION - U7 (services/event-service) - Construction Design PR Gate PENDING
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -84,7 +84,17 @@
 - [x] Construction Design PR Gate — APPROVED 2026-03-23T07:11:42Z (branch: dev)
 - [x] Code Generation — COMPLETE 2026-03-23T15:06:09Z | 21/21 tests pass | 5 files created, 10 files modified
 #### U6 — sdk/python (Wave 4) — blocked on U4 + U5
-#### U7 — services/event-service (Wave 3) — blocked on U1 + U2
+#### U7 — services/event-service (Wave 3) — blocked on U1 + U2 — **IN PROGRESS**
+- [x] Unit Initialization (2026-03-25T02:57:02Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
+- [x] Functional Design Plan (construction/plans/event-service-functional-design-plan.md) — ANSWERED
+- [x] Functional Design (APPROVED 2026-03-25T03:40:54Z — artifacts at construction/event-service/functional-design/)
+- [x] NFR Requirements (APPROVED 2026-03-25T03:59:10Z — artifacts at construction/event-service/nfr-requirements/)
+- [x] NFR Design (APPROVED 2026-03-25T04:07:35Z — artifacts at construction/event-service/nfr-design/)
+- [ ] Infrastructure Design (SKIPPED per unit spec)
+- [x] Code Generation Plan (APPROVED 2026-03-25T04:12:45Z — construction/plans/event-service-code-generation-plan.md)
+- [x] QA Test Case Enrichment — COMPLETE 2026-03-25T04:12:45Z (TC-ES-005/006/008 enriched; TC-ES-009/010 added; enrichment-delta.md created)
+- [ ] Construction Design PR Gate — PENDING 2026-03-25T04:14:21Z (branch: dev)
+- [ ] Code Generation
 
 - [ ] Build and Test (after all units complete)
 
@@ -134,3 +144,10 @@
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/tracker-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-23T07:07:49Z
 - **Approved**: 2026-03-23T07:11:42Z
+
+### Construction Design PR Gate — event-service
+- **Status**: PENDING
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/event-service-design-pr-checkpoint-instructions.md
+- **Created**: 2026-03-25T04:14:21Z
+- **Approved**: —

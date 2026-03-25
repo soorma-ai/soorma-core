@@ -85,18 +85,18 @@
 
 ---
 
-### TC-ES-005 — Event Service tenant_id and user_id fields pass through unmodified
+### TC-ES-005 — Event Service normalizes tenant_id and user_id without semantic remapping
 
-**Context**: The Event Service must NOT modify `tenant_id` (service tenant) or `user_id` (service user) on the envelope — those are set by the SDK and represent the platform tenant's customers. Only `platform_tenant_id` is injected/overwritten. Covers FR-6.1, FR-6.2.
+**Context**: Event Service must sanitize `tenant_id` and `user_id` (trim and empty-to-None), enforce both as mandatory, and avoid semantic remapping. Only `platform_tenant_id` is authoritative overwrite. Covers FR-6.1, FR-6.2, BR-U7-04, BR-U7-05.
 
-**Scenario description**: An `EventEnvelope` is published with specific `tenant_id` and `user_id` values. These values arrive unchanged at the NATS subscriber.
+**Scenario description**: An `EventEnvelope` is published with padded `tenant_id` and `user_id`. Event Service trims values and publishes normalized identities with no semantic reinterpretation.
 
 **Steps**:
-1. Send `POST /publish` with `EventEnvelope(tenant_id="service_tenant_xyz", user_id="service_user_abc", ...)`
+1. Send `POST /publish` with `EventEnvelope(tenant_id="  service_tenant_xyz  ", user_id="  service_user_abc  ", ...)`
 2. Capture the NATS-delivered `EventEnvelope`
 3. Inspect `tenant_id` and `user_id` on the delivered envelope
 
-**Expected outcome**: `tenant_id="service_tenant_xyz"` and `user_id="service_user_abc"` are unchanged. The Event Service only modified `platform_tenant_id`.
+**Expected outcome**: `tenant_id="service_tenant_xyz"` and `user_id="service_user_abc"` are published after normalization; no semantic remapping occurs.
 
 **Scope tag**: happy-path
 **Priority**: High
@@ -105,16 +105,17 @@
 
 ---
 
-### TC-ES-006 — publish_event route signature uses distinct parameter names (no collision)
+### TC-ES-006 — publish_event route uses DI-based platform identity resolution
 
-**Context**: The route signature change introduces `http_request: Request` alongside the existing `request: PublishRequest`. The existing parameter is renamed to `publish_request` to avoid collision. Covers FR-6.6.
+**Context**: Publish route must resolve authoritative platform identity via DI helper and keep endpoint logic decoupled from transport-specific header parsing. Covers FR-6.5, FR-6.6, NFR-ES-03.
 
-**Scenario description**: The Event Service publish route signature is inspected for correct parameter naming.
+**Scenario description**: The Event Service publish route signature and imports are inspected for dependency-based tenant resolution.
 
 **Steps**:
-1. Inspect the `publish_event` route handler function signature in the Event Service source
+1. Inspect `src/api/dependencies.py` for `get_platform_tenant_id` import/export from `soorma_service_common`
+2. Inspect `publish_event` route handler signature in Event Service source
 
-**Expected outcome**: The function has two parameters: `publish_request: PublishRequest` (the request body) and `http_request: Request` (the FastAPI HTTP request for header access). No parameter name collision.
+**Expected outcome**: Route includes `platform_tenant_id: str = Depends(get_platform_tenant_id)` and does not parse `X-Tenant-ID` directly inside endpoint logic.
 
 **Scope tag**: happy-path
 **Priority**: Medium
@@ -141,7 +142,7 @@
 
 ---
 
-### TC-ES-008 — Event Service publish with platform_tenant_id >64 chars injects truncated or validated value
+### TC-ES-008 — Event Service rejects oversized platform_tenant_id (>64)
 
 **Context**: Negative case: if the `X-Tenant-ID` header contains a value exceeding the 64-character limit, the Event Service must not inject an oversized value into the envelope. Covers NFR-3.1.
 
@@ -150,9 +151,47 @@
 **Steps**:
 1. Send `POST /publish` with `X-Tenant-ID: {"a" * 65}` and a valid `EventEnvelope`
 
-**Expected outcome**: Either the request is rejected with HTTP 422 (header length validation), or NATS-delivery is blocked by a downstream validation error. The oversized platform_tenant_id is never stored by subscribing services.
+**Expected outcome**: Request is rejected with HTTP 422 and no event is published.
 
 **Scope tag**: happy-path-negative
 **Priority**: High
 **Source**: event-service / NFR-3.1
 **Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/event-service/
+
+---
+
+### TC-ES-009 — Event Service rejects publish when tenant_id is missing after sanitization
+
+**Context**: `tenant_id` is mandatory for every event after sanitization. Missing/empty values must fail closed before publish. Covers BR-U7-05 and NFR-ES-02.
+
+**Scenario description**: A publish request sets `tenant_id` to whitespace-only value while `user_id` is present.
+
+**Steps**:
+1. Send `POST /publish` with valid `X-Tenant-ID`, `EventEnvelope(tenant_id="   ", user_id="service_user_abc", ...)`
+2. Observe API response and verify no event is delivered to subscriber
+
+**Expected outcome**: HTTP 422. Event is not published.
+
+**Scope tag**: happy-path-negative
+**Priority**: High
+**Source**: event-service / FR-6.1, NFR-ES-02
+**Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/event-service/code/
+
+---
+
+### TC-ES-010 — Event Service rejects publish when user_id is missing after sanitization
+
+**Context**: `user_id` is mandatory for every event, including machine actors. Missing/empty values must fail closed before publish. Covers BR-U7-05 and NFR-ES-02.
+
+**Scenario description**: A publish request sets `user_id` to whitespace-only value while `tenant_id` is present.
+
+**Steps**:
+1. Send `POST /publish` with valid `X-Tenant-ID`, `EventEnvelope(tenant_id="service_tenant_xyz", user_id="   ", ...)`
+2. Observe API response and verify no event is delivered to subscriber
+
+**Expected outcome**: HTTP 422. Event is not published.
+
+**Scope tag**: happy-path-negative
+**Priority**: High
+**Source**: event-service / FR-6.2, NFR-ES-02
+**Construction artifacts**: aidlc-docs/platform/multi-tenancy/construction/event-service/code/

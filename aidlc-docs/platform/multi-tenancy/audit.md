@@ -570,3 +570,241 @@ Please load all Inception artifacts and begin the Construction phase for this un
 **Context**: U5 Code Generation execution complete. 5 files created, 10 files modified. Test result: 21/21 pass.
 
 ---
+
+## Session Resumption — Construction Phase Initialization (U7)
+**Timestamp**: 2026-03-25T02:57:02Z
+**User Input**: "Using AI-DLC, start construction of \"event-service\" unit for the multi-tenancy initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/multi-tenancy/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"event-service\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit."
+**AI Response**: "Session resumed in Construction phase. Loaded mandatory AI-DLC common rules, extension opt-in files, and enabled extension full rules (pr-checkpoint, jira-tickets, qa-test-cases, security-baseline). Loaded and summarized Inception artifacts for requirements, unit dependencies, event-service scope, and event-service QA specs."
+**Context**: Construction Phase — session resumption, beginning U7 (services/event-service)
+
+---
+
+## Unit Initialization — U7 (services/event-service)
+**Timestamp**: 2026-03-25T02:57:02Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Unit Initialization complete for U7. Reloaded extension rules for [pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline] (unit: event-service). Updated aidlc-state.md to set U7 as IN PROGRESS and current stage to Functional Design Planning."
+**Context**: Construction Phase — Unit Initialization for U7 (services/event-service)
+
+---
+
+## Functional Design Plan Created — U7 (services/event-service)
+**Timestamp**: 2026-03-25T02:57:02Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Created construction/plans/event-service-functional-design-plan.md with architecture alignment (Sections 1-7), loaded inception artifacts list, checkbox plan steps, and five clarifying questions using [Answer]: tags. Awaiting user answers before generating functional-design artifacts."
+**Context**: Construction Phase — U7 Functional Design planning complete; awaiting user responses.
+
+---
+
+## Functional Design Questions Prompted — U7 (services/event-service)
+**Timestamp**: 2026-03-25T02:58:12Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Prompted user to answer questions in construction/plans/event-service-functional-design-plan.md using [Answer]: tags before proceeding to functional-design artifact generation."
+**Context**: Construction Phase — U7 Functional Design question collection pending.
+
+---
+
+## Functional Design Clarification Support — U7 Q3
+**Timestamp**: 2026-03-25T03:08:37Z
+**User Input**: "help me understand Q3 ... is this different from other endpoint implementations in other services?"
+**AI Response**: "Compared event-service publish endpoint signature options against existing patterns in event-service, memory, tracker, and registry. Explained that adding both request body and HTTP Request object is not unusual, but naming in option A is clearer and avoids confusion with existing use of request for body payload in event-service."
+**Context**: Construction Phase — U7 Functional Design question clarification.
+
+---
+
+## Functional Design Clarification Support — U7 Q3 Follow-up
+**Timestamp**: 2026-03-25T03:15:03Z
+**User Input**: "why is option C not recommended -- isn't that the dependency injection used by memory and tracker service?"
+**AI Response**: "Clarified that dependency injection is valid and used in memory/tracker/registry, but option C is less preferred for U7 because inception artifacts and test traceability already specify an explicit publish_event signature with both publish_request and http_request parameters."
+**Context**: Construction Phase — U7 Functional Design question clarification.
+
+---
+
+## Functional Design Clarification Support — U7 Q3 Code Sample
+**Timestamp**: 2026-03-25T03:17:48Z
+**User Input**: "what is code sample for option C, maybe I'm misunderstanding that."
+**AI Response**: "Provided concrete FastAPI code example for Option C using dependency injection helper to extract platform_tenant_id without adding Request as explicit route parameter, and contrasted with Option A shape."
+**Context**: Construction Phase — U7 Functional Design question clarification.
+
+---
+
+## Functional Design Decision Recorded — U7 Q3
+**Timestamp**: 2026-03-25T03:24:35Z
+**User Input**: "I'm thinking to go with dependency injection option. this is to future proof, when we switch from X-Tenant-ID header to actual service to service authentication either via API-KEY or JWT, in which case we'd not want endpoint code to know about how this is determined, does that make sense? if yes, then record the answer with reasoning."
+**AI Response**: "Confirmed rationale is sound and recorded Q3 as Option C in construction/plans/event-service-functional-design-plan.md, including future-proofing reasoning for API key/JWT migration and endpoint decoupling from identity-source specifics."
+**Context**: Construction Phase — U7 Functional Design question answer capture.
+
+---
+
+## Functional Design Clarification Support — U7 Q5
+**Timestamp**: 2026-03-25T03:28:16Z
+**User Input**: "for Q5, we want event service to be the trust boundary and responsible for all event metadata sanitization. not sure if there will always be a service user_id (e.g. when event is not because of end user but due to some automation). Given that, what is best option?"
+**AI Response**: "Recommended selecting Option X with explicit policy: Event Service sanitizes event metadata centrally; platform_tenant_id is always injected/overwritten from authenticated context; tenant_id and user_id are sanitized (trim + empty to None), max-length validated when present, and user_id remains optional for automation/system-originated events."
+**Context**: Construction Phase — U7 Functional Design question clarification.
+
+---
+
+## Functional Design Answers Confirmed — U7 services/event-service
+**Timestamp**: 2026-03-25T03:30:35Z
+**User Input**: "all answers done"
+**AI Response**: "Validated all five answers are present in construction/plans/event-service-functional-design-plan.md and no blocking ambiguities remain. Proceeded to generate U7 functional design artifacts."
+**Context**: Construction Phase — U7 Functional Design planning complete.
+
+---
+
+## Functional Design Complete — U7 services/event-service
+**Timestamp**: 2026-03-25T03:30:35Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Generated event-service functional-design artifacts: construction/event-service/functional-design/domain-entities.md, business-logic-model.md, business-rules.md. Updated event-service-functional-design-plan.md checkboxes (Steps 1-7 complete). Updated aidlc-state.md to Functional Design COMPLETE (awaiting explicit approval)."
+**Context**: Construction Phase — U7 services/event-service — Functional Design artifacts ready for review.
+
+---
+
+## Functional Design Approval Prompt — U7 services/event-service
+**Timestamp**: 2026-03-25T03:30:35Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Requested explicit approval for U7 Functional Design before proceeding to NFR Requirements."
+**Context**: Construction Phase — U7 services/event-service — awaiting Functional Design approval.
+
+---
+
+## Functional Design Approved — U7 services/event-service
+**Timestamp**: 2026-03-25T03:40:54Z
+**User Input**: "designs approved"
+**AI Response**: "Recorded explicit approval for U7 Functional Design and transitioned to NFR Requirements stage."
+**Context**: Construction Phase — U7 services/event-service — Functional Design APPROVED.
+
+---
+
+## NFR Requirements Complete — U7 services/event-service
+**Timestamp**: 2026-03-25T03:40:54Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Generated event-service NFR artifacts: construction/event-service/nfr-requirements/nfr-requirements.md and tech-stack-decisions.md. Created construction/plans/event-service-nfr-requirements-plan.md with completed steps. Updated aidlc-state.md to NFR Requirements COMPLETE (awaiting explicit approval)."
+**Context**: Construction Phase — U7 services/event-service — NFR Requirements artifacts ready for review.
+
+---
+
+## NFR Requirements Approval Prompt — U7 services/event-service
+**Timestamp**: 2026-03-25T03:40:54Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Requested explicit approval for U7 NFR Requirements before proceeding to NFR Design."
+**Context**: Construction Phase — U7 services/event-service — awaiting NFR Requirements approval.
+
+---
+
+## NFR Clarification Support — U7 service_user_id Traceability
+**Timestamp**: 2026-03-25T03:48:03Z
+**User Input**: "i'm second guessing service user_id optionality ... even for automation we can require the platform tenant to define some identity for their machine accounts, right? that way there is complete traceability for who subject of the events. what do you recommend?"
+**AI Response**: "Provided design recommendation that requiring service_user_id for all published events is the stronger long-term choice if complete actor traceability is a hard requirement, with the caveat that machine/service principals must be modeled explicitly and U7 functional design/NFR/test artifacts should be updated consistently before approval."
+**Context**: Construction Phase — U7 NFR/design clarification.
+
+---
+
+## U7 Design Change Applied — Require service_user_id for all events
+**Timestamp**: 2026-03-25T03:50:01Z
+**User Input**: "yes, require service user id for all events"
+**AI Response**: "Applied the decision across U7 plan, functional-design, and NFR artifacts. Updated U7 to require `service_user_id` for every event, including machine/service actors, and changed validation semantics from optional actor identity to required actor identity with fail-closed rejection on missing/empty values."
+**Context**: Construction Phase — U7 change request applied while NFR Requirements remain awaiting approval.
+
+---
+
+## U7 Design Clarification — Require service_tenant_id for all events
+**Timestamp**: 2026-03-25T03:55:15Z
+**User Input**: "ok, so we also need service tenant id to be mandatory, just like service user id, right? i don't see that listed as required"
+**AI Response**: "Confirmed that service_tenant_id should also be mandatory to preserve complete subject scoping and attribution, and updated U7 plan, functional-design, and NFR artifacts accordingly."
+**Context**: Construction Phase — U7 clarification applied while NFR Requirements remain awaiting approval.
+
+---
+
+## NFR Requirements Approved — U7 services/event-service
+**Timestamp**: 2026-03-25T03:59:10Z
+**User Input**: "approved"
+**AI Response**: "Recorded approval for U7 NFR Requirements and transitioned to NFR Design stage."
+**Context**: Construction Phase — U7 services/event-service — NFR Requirements APPROVED.
+
+---
+
+## NFR Design Complete — U7 services/event-service
+**Timestamp**: 2026-03-25T03:59:10Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Generated event-service NFR design artifacts: construction/event-service/nfr-design/nfr-design-patterns.md and logical-components.md. Created construction/plans/event-service-nfr-design-plan.md with completed steps. Updated aidlc-state.md to NFR Design COMPLETE (awaiting explicit approval)."
+**Context**: Construction Phase — U7 services/event-service — NFR Design artifacts ready for review.
+
+---
+
+## NFR Design Approval Prompt — U7 services/event-service
+**Timestamp**: 2026-03-25T03:59:10Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Requested explicit approval for U7 NFR Design before proceeding to QA test case enrichment and PR checkpoint/code-generation sequence."
+**Context**: Construction Phase — U7 services/event-service — awaiting NFR Design approval.
+
+---
+
+## NFR Design Approved — U7 services/event-service
+**Timestamp**: 2026-03-25T04:07:35Z
+**User Input**: "NFR design approved"
+**AI Response**: "Recorded explicit approval for U7 NFR Design and transitioned to Code Generation Part 1 (Planning)."
+**Context**: Construction Phase — U7 services/event-service — NFR Design APPROVED.
+
+---
+
+## Code Generation Plan Created — U7 services/event-service
+**Timestamp**: 2026-03-25T04:07:35Z
+**User Input**: "NFR design approved"
+**AI Response**: "Created construction/plans/event-service-code-generation-plan.md with brownfield file-level execution steps for middleware/dependency wiring, publish-path trust-boundary enforcement, test updates, changelog, and code-summary artifacts."
+**Context**: Construction Phase — U7 services/event-service — Code Generation Part 1 (Planning) COMPLETE.
+
+---
+
+## Code Generation Plan Approval Prompt — U7 services/event-service
+**Timestamp**: 2026-03-25T04:07:35Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Requested explicit approval for event-service-code-generation-plan.md before executing Code Generation Part 2."
+**Context**: Construction Phase — U7 services/event-service — waiting for Code Generation plan approval.
+
+---
+
+## Code Generation Plan Approved — U7 services/event-service
+**Timestamp**: 2026-03-25T04:12:45Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Recorded approval and advanced to required pre-code sequence: QA Test Case Enrichment then Construction Design PR Gate before Code Generation execution."
+**Context**: Construction Phase — U7 services/event-service — Code Generation plan APPROVED.
+
+---
+
+## QA Test Case Enrichment — U7 services/event-service
+**Timestamp**: 2026-03-25T04:12:45Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Enriched inception QA artifacts for event-service using construction design artifacts. Updated test-specs-narrative.md, test-specs-gherkin.md, test-specs-tabular.md, and test-case-index.md. Added TC-ES-009 and TC-ES-010 for mandatory tenant_id/user_id fail-closed validation and created enrichment-delta.md."
+**Context**: Construction Phase — U7 services/event-service — qa-test-cases extension Section 2 complete.
+
+---
+
+## Construction Design PR Branch Confirmation Prompt — U7 services/event-service
+**Timestamp**: 2026-03-25T04:12:45Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Git prerequisite validated and current branch detected as dev. Created construction/plans/event-service-design-pr-branch-confirmation.md and requested explicit branch confirmation before generating design PR checkpoint instructions."
+**Context**: Construction Phase — U7 services/event-service — pr-checkpoint branch confirmation pending.
+
+---
+
+## Construction Design PR Branch Confirmed — U7 services/event-service
+**Timestamp**: 2026-03-25T04:14:21Z
+**User Input**: "A"
+**AI Response**: "Confirmed branch selection A and locked Construction Design PR Gate branch to dev for U7 event-service."
+**Context**: Construction Phase — U7 services/event-service — pr-checkpoint branch confirmation complete.
+
+---
+
+## Construction Design PR Gate Created — U7 services/event-service
+**Timestamp**: 2026-03-25T04:14:21Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Generated construction/plans/event-service-design-pr-checkpoint-instructions.md and updated aidlc-state.md PR Checkpoint State with status PENDING on branch dev. Code Generation remains blocked until PR approval is confirmed."
+**Context**: Construction Phase — U7 services/event-service — Construction Design PR Gate PENDING.
+
+---
