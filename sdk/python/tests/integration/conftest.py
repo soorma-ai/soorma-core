@@ -37,10 +37,22 @@ from registry_service.core.cache import (  # noqa: E402
     invalidate_agent_cache,
     invalidate_event_cache,
 )
+from registry_service.api.dependencies import get_tenanted_db  # noqa: E402
 from registry_service.core.database import engine as _async_engine  # noqa: E402
+from registry_service.core.database import AsyncSessionLocal  # noqa: E402
 from registry_service.main import app as _registry_app  # noqa: E402
 from registry_service.models import Base  # noqa: E402
 from soorma.registry.client import RegistryClient  # noqa: E402
+
+
+async def _test_get_tenanted_db():
+    """SQLite-safe override: yields plain session without PostgreSQL set_config."""
+    async with AsyncSessionLocal() as session:
+        yield session
+
+
+# SQLite integration tests cannot execute PostgreSQL set_config() calls.
+_registry_app.dependency_overrides[get_tenanted_db] = _test_get_tenanted_db
 
 # ---------------------------------------------------------------------------
 # 3. Well-known tenant IDs for isolation tests
