@@ -40,20 +40,20 @@ Feature: Missing X-Tenant-ID falls back to DEFAULT_PLATFORM_TENANT_ID
     Then the envelope delivered to NATS has platform_tenant_id=DEFAULT_PLATFORM_TENANT_ID
 
 @TC-ES-005 @happy-path @FR-6.1 @FR-6.2
-Feature: Event Service passes through service tenant fields unmodified
-  Scenario: tenant_id and user_id values are preserved after injection
+Feature: Event Service normalizes service tenant fields without remapping
+  Scenario: tenant_id and user_id are trimmed and preserved semantically after injection
     Given the Event Service is running
-    When POST /publish is called with EventEnvelope(tenant_id="svc_xyz", user_id="usr_abc")
+    When POST /publish is called with EventEnvelope(tenant_id="  svc_xyz  ", user_id="  usr_abc  ")
     Then the envelope delivered to NATS has tenant_id="svc_xyz"
     And the envelope delivered to NATS has user_id="usr_abc"
 
-@TC-ES-006 @happy-path @FR-6.6
-Feature: publish_event route parameter naming is correct
-  Scenario: Route handler has distinct parameter names for HTTP request and publish body
-    Given the publish_event route handler source is inspected
-    Then the handler has parameter "publish_request" of type PublishRequest
-    And the handler has parameter "http_request" of type fastapi.Request
-    And there is no parameter name collision
+@TC-ES-006 @happy-path @FR-6.5 @FR-6.6
+Feature: publish_event route uses dependency-injected identity resolution
+  Scenario: Route handler resolves platform tenant via dependency helper
+    Given src/api/dependencies.py is inspected
+    And the publish_event route handler source is inspected
+    Then the route includes parameter "platform_tenant_id: str = Depends(get_platform_tenant_id)"
+    And endpoint logic does not parse raw X-Tenant-ID header directly
 
 @TC-ES-007 @negative @FR-6.6
 Feature: Malformed publish request is rejected before injection
@@ -65,9 +65,25 @@ Feature: Malformed publish request is rejected before injection
 
 @TC-ES-008 @negative @NFR-3.1
 Feature: Oversized X-Tenant-ID is not injected
-  Scenario: X-Tenant-ID header exceeding 64 characters is rejected or blocked
+  Scenario: X-Tenant-ID header exceeding 64 characters is rejected
     Given the Event Service is running
     When POST /publish is called with "X-Tenant-ID: <65-char string>" and a valid EventEnvelope
-    Then either the response status code is 422
-    Or the oversized platform_tenant_id is never stored by subscribing services
+    Then the response status code is 422
+    And no event is published to NATS
+
+@TC-ES-009 @negative @FR-6.1 @NFR-ES-02
+Feature: tenant_id is required after sanitization
+  Scenario: Whitespace tenant_id is rejected
+    Given the Event Service is running
+    When POST /publish is called with valid X-Tenant-ID and EventEnvelope.tenant_id="   " and EventEnvelope.user_id="usr_abc"
+    Then the response status code is 422
+    And no event is published to NATS
+
+@TC-ES-010 @negative @FR-6.2 @NFR-ES-02
+Feature: user_id is required after sanitization
+  Scenario: Whitespace user_id is rejected
+    Given the Event Service is running
+    When POST /publish is called with valid X-Tenant-ID and EventEnvelope.tenant_id="svc_xyz" and EventEnvelope.user_id="   "
+    Then the response status code is 422
+    And no event is published to NATS
 ```

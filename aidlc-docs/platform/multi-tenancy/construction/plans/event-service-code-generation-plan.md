@@ -42,8 +42,8 @@ Primary artifacts driving this plan:
 - [x] Step 4 — Create this code-generation plan document
 - [x] Step 5 — Summarize plan for user review
 - [x] Step 6 — Log approval prompt in audit.md
-- [ ] Step 7 — Wait for explicit user approval to execute Part 2
-- [ ] Step 8 — Record user approval in audit.md
+- [x] Step 7 — Wait for explicit user approval to execute Part 2
+- [x] Step 8 — Record user approval in audit.md
 - [ ] Step 9 — Update aidlc-state.md for Part 2 execution start
 
 ---
