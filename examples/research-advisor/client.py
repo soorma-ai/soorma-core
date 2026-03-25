@@ -5,6 +5,10 @@ from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
 from events import GOAL_EVENT, FULFILLED_EVENT
 
+
+TENANT_ID = "00000000-0000-0000-0000-000000000000"
+USER_ID = "00000000-0000-0000-0000-000000000001"
+
 async def interactive_cli():
     """Run an interactive CLI for the Generic Agent System."""
     
@@ -65,7 +69,9 @@ async def interactive_cli():
             await client.publish(
                 event_type=GOAL_EVENT.event_name,
                 topic=GOAL_EVENT.topic,
-                data=query
+                data=query,
+                tenant_id=TENANT_ID,
+                user_id=USER_ID,
             )
             
             print("   Waiting for result...")

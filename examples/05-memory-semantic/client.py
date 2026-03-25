@@ -29,6 +29,8 @@ from soorma_common.events import EventEnvelope, EventTopic
 
 # User ID can be set via environment variable (simulates authentication)
 # Note: Memory service currently expects UUID format
+DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000000"
+TENANT_ID = os.getenv("TENANT_ID", DEFAULT_TENANT_ID)
 DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
 USER_ID = os.getenv("USER_ID", DEFAULT_USER_ID)
 
@@ -78,6 +80,7 @@ async def send_request(request: str):
         topic=EventTopic.ACTION_REQUESTS,
         data={"request": request},
         correlation_id=correlation_id,
+        tenant_id=TENANT_ID,
         user_id=USER_ID,  # User ID propagates through event chain
     )
     

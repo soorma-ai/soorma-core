@@ -12,6 +12,10 @@ from soorma import EventClient
 from soorma_common.events import EventTopic
 
 
+TENANT_ID = "00000000-0000-0000-0000-000000000000"
+USER_ID = "00000000-0000-0000-0000-000000000001"
+
+
 SAMPLE_TICKETS = [
     {
         "description": "I forgot my password and the reset link isn't working",
@@ -83,6 +87,8 @@ async def create_ticket(description: str, priority: str = "normal", customer: st
             "description": description,
             "priority": priority,
         },
+        tenant_id=TENANT_ID,
+        user_id=USER_ID,
     )
     print("   ✓ Ticket created!")
     print()

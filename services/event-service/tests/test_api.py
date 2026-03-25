@@ -76,10 +76,16 @@ class TestPublishEndpoint:
                 "type": "test.event",
                 "topic": "action-requests",
                 "data": {"key": "value"},
+                "tenant_id": "service_tenant_test",
+                "user_id": "service_user_test",
             }
         }
         
-        response = await async_client.post("/v1/events/publish", json=event)
+        response = await async_client.post(
+            "/v1/events/publish",
+            json=event,
+            headers={"X-Tenant-ID": "spt_test"},
+        )
         
         # May be 503 if adapter not connected (acceptable in unit test)
         if response.status_code == 200:
@@ -104,7 +110,7 @@ class TestPublishEndpoint:
     
     @pytest.mark.asyncio
     async def test_publish_event_with_optional_fields(self, async_client):
-        """Test publishing with optional fields."""
+        """Test publishing with additional optional metadata fields."""
         event = {
             "event": {
                 "source": "test-agent",
@@ -114,11 +120,16 @@ class TestPublishEndpoint:
                 "correlation_id": "trace-123",
                 "subject": "user:456",
                 "tenant_id": "tenant-1",
+                "user_id": "user-1",
                 "session_id": "session-abc",
             }
         }
         
-        response = await async_client.post("/v1/events/publish", json=event)
+        response = await async_client.post(
+            "/v1/events/publish",
+            json=event,
+            headers={"X-Tenant-ID": "spt_test"},
+        )
         
         # May be 503 if adapter not connected (acceptable in unit test)
         if response.status_code == 200:

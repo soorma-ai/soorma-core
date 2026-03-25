@@ -44,7 +44,7 @@ Primary artifacts driving this plan:
 - [x] Step 6 — Log approval prompt in audit.md
 - [x] Step 7 — Wait for explicit user approval to execute Part 2
 - [x] Step 8 — Record user approval in audit.md
-- [ ] Step 9 — Update aidlc-state.md for Part 2 execution start
+- [x] Step 9 — Update aidlc-state.md for Part 2 execution start
 
 ---
 
@@ -52,37 +52,37 @@ Primary artifacts driving this plan:
 
 ### Group 1: Dependency and App Wiring
 
-- [ ] Step 10 — Update `services/event-service/pyproject.toml` to include `soorma-service-common` dependency required for shared tenancy middleware/dependency helpers
-- [ ] Step 11 — Update `services/event-service/src/main.py` to register `TenancyMiddleware` from `soorma_service_common`
-- [ ] Step 12 — Create `services/event-service/src/api/dependencies.py` exposing `get_platform_tenant_id` for route-level DI
+- [x] Step 10 — Update `services/event-service/pyproject.toml` to include `soorma-service-common` dependency required for shared tenancy middleware/dependency helpers
+- [x] Step 11 — Update `services/event-service/src/main.py` to register `TenancyMiddleware` from `soorma_service_common`
+- [x] Step 12 — Create `services/event-service/src/api/dependencies.py` exposing `get_platform_tenant_id` for route-level DI
 
 ### Group 2: Publish Route Identity Boundary
 
-- [ ] Step 13 — Refactor `services/event-service/src/api/routes/events.py` publish route signature to use distinct payload parameter and DI-resolved `platform_tenant_id`
-- [ ] Step 14 — Implement metadata sanitization utility in publish flow (trim and empty-to-None for `tenant_id` and `user_id`)
-- [ ] Step 15 — Enforce required identity fields after sanitization (`tenant_id` and `user_id` must both be present)
-- [ ] Step 16 — Enforce max length 64 validation on `platform_tenant_id`, `tenant_id`, and `user_id` (fail closed)
-- [ ] Step 17 — Apply anti-spoofing overwrite (`event.platform_tenant_id = resolved_platform_tenant_id`) before publish
-- [ ] Step 18 — Isolate and apply transitional fallback (`DEFAULT_PLATFORM_TENANT_ID`) if DI resolution yields missing/empty platform identity
-- [ ] Step 19 — Add structured validation/rejection logging with no full payload dumps
+- [x] Step 13 — Refactor `services/event-service/src/api/routes/events.py` publish route signature to use distinct payload parameter and DI-resolved `platform_tenant_id`
+- [x] Step 14 — Implement metadata sanitization utility in publish flow (trim and empty-to-None for `tenant_id` and `user_id`)
+- [x] Step 15 — Enforce required identity fields after sanitization (`tenant_id` and `user_id` must both be present)
+- [x] Step 16 — Enforce max length 64 validation on `platform_tenant_id`, `tenant_id`, and `user_id` (fail closed)
+- [x] Step 17 — Apply anti-spoofing overwrite (`event.platform_tenant_id = resolved_platform_tenant_id`) before publish
+- [x] Step 18 — Isolate and apply transitional fallback (`DEFAULT_PLATFORM_TENANT_ID`) if DI resolution yields missing/empty platform identity
+- [x] Step 19 — Add structured validation/rejection logging with no full payload dumps
 
 ### Group 3: Tests (STUB -> RED -> GREEN -> REFACTOR execution discipline)
 
-- [ ] Step 20 — Update `services/event-service/tests/test_api.py` for DI signature behavior and validation failures (422 paths) covering TC-ES-002/003/007/008
-- [ ] Step 21 — Add targeted tests in `services/event-service/tests/test_multi_tenancy.py` for anti-spoofing overwrite, fallback behavior, and required identity enforcement (TC-ES-001..006)
-- [ ] Step 22 — Update `services/event-service/tests/conftest.py` fixtures/helpers for tenancy header setup and deterministic assertions
-- [ ] Step 23 — Run event-service test suite and capture pass/fail output; iterate until green for affected test scope
+- [x] Step 20 — Update `services/event-service/tests/test_api.py` for DI signature behavior and validation failures (422 paths) covering TC-ES-002/003/007/008
+- [x] Step 21 — Add targeted tests in `services/event-service/tests/test_multi_tenancy.py` for anti-spoofing overwrite, fallback behavior, and required identity enforcement (TC-ES-001..006)
+- [x] Step 22 — Update `services/event-service/tests/conftest.py` fixtures/helpers for tenancy header setup and deterministic assertions
+- [x] Step 23 — Run event-service test suite and capture pass/fail output; iterate until green for affected test scope
 
 ### Group 4: Documentation and Traceability
 
-- [ ] Step 24 — Update `services/event-service/CHANGELOG.md` with U7 multi-tenancy trust-boundary changes
-- [ ] Step 25 — Create `aidlc-docs/platform/multi-tenancy/construction/event-service/code/code-summary.md` with modified/created file inventory and test outcomes
+- [x] Step 24 — Update `services/event-service/CHANGELOG.md` with U7 multi-tenancy trust-boundary changes
+- [x] Step 25 — Create `aidlc-docs/platform/multi-tenancy/construction/event-service/code/code-summary.md` with modified/created file inventory and test outcomes
 
 ### Group 5: Progress and Gate Readiness
 
-- [ ] Step 26 — Mark completed execution steps [x] in this plan as work completes
-- [ ] Step 27 — Update `aidlc-state.md` with U7 Code Generation execution progress and completion state
-- [ ] Step 28 — Ensure artifacts are ready for Build and Test phase sequencing after user approval
+- [x] Step 26 — Mark completed execution steps [x] in this plan as work completes
+- [x] Step 27 — Update `aidlc-state.md` with U7 Code Generation execution progress and completion state
+- [x] Step 28 — Ensure artifacts are ready for Build and Test phase sequencing after user approval
 
 ---
 

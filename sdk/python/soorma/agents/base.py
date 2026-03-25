@@ -414,7 +414,11 @@ class Agent(ABC):
                         # Filter by topic when provided (EventClient doesn't enforce it)
                         if not self._topic_matches(event.topic, t):
                             return
-                        await h(event, self._context)
+                        token = self._context.bus.bind_event_metadata(event)
+                        try:
+                            await h(event, self._context)
+                        finally:
+                            self._context.bus.reset_event_metadata(token)
                 else:
                     @event_client.on_event(event_type)
                     async def wrapped_handler(
@@ -429,7 +433,11 @@ class Agent(ABC):
                         # Safety check in case handler is registered for multiple event types
                         if event.type != et:
                             return
-                        await h(event, self._context)
+                        token = self._context.bus.bind_event_metadata(event)
+                        try:
+                            await h(event, self._context)
+                        finally:
+                            self._context.bus.reset_event_metadata(token)
         
         # Create context with clients
         from ..context import RegistryClient, MemoryClient, BusClient, TrackerClient

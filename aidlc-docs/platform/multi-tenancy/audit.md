@@ -808,3 +808,67 @@ Please load all Inception artifacts and begin the Construction phase for this un
 **Context**: Construction Phase — U7 services/event-service — Construction Design PR Gate PENDING.
 
 ---
+
+## Construction Design PR Gate Approved — U7 services/event-service
+**Timestamp**: 2026-03-25T06:12:52Z
+**User Input**: "ok PR approved"
+**AI Response**: "Marked U7 construction design PR gate as APPROVED on branch dev and unblocked Code Generation execution."
+**Context**: Construction Phase — U7 services/event-service — PR Gate APPROVED.
+
+---
+
+## Code Generation Execution Started — U7 services/event-service
+**Timestamp**: 2026-03-25T06:12:52Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Started Code Generation Part 2 for U7 per approved plan and updated workflow state to Code Generation IN PROGRESS."
+**Context**: Construction Phase — U7 services/event-service — Code Generation execution in progress.
+
+---
+
+## Code Generation Complete — U7 services/event-service
+**Timestamp**: 2026-03-25T06:19:57Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Completed U7 code generation implementation for event-service trust boundary updates. Modified middleware wiring, publish-route validation/sanitization logic, and tests; created api/dependencies.py and test_multi_tenancy.py; created construction/event-service/code/code-summary.md. Executed event-service test suite: 27/27 tests pass."
+**Context**: Construction Phase — U7 services/event-service — Code Generation COMPLETE (awaiting user approval).
+
+---
+
+## Code Generation Approval Prompt — U7 services/event-service
+**Timestamp**: 2026-03-25T06:19:57Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: "Requested explicit approval for generated U7 event-service code before proceeding to next unit/build-and-test sequencing."
+**Context**: Construction Phase — U7 services/event-service — awaiting code generation approval.
+
+---
+
+## Code Generation Follow-up Fix — U7 services/event-service
+**Timestamp**: 2026-03-25T06:29:27Z
+**User Input**: "seems like we missed updating Dockerfile for event-service, refer to memory-service for context"
+**AI Response**: "Applied follow-up fix to services/event-service/Dockerfile to copy and install local soorma-service-common package (in addition to soorma-common), matching shared-library installation expectations used by other services. Updated event-service CHANGELOG and U7 code-summary documentation accordingly."
+**Context**: Construction Phase — U7 services/event-service — user-requested code-generation adjustment.
+
+---
+
+## Code Generation Follow-up Fix — U7 services/event-service (Docker strategy standardization)
+**Timestamp**: 2026-03-25T06:37:45Z
+**User Input**: "yes lets make event service consistent with others and use the strategy which seems better / reliable"
+**AI Response**: "Refactored services/event-service/Dockerfile from direct source installs to wheelhouse strategy used by memory/tracker: local package wheel builds, dependency resolution with --find-links, and runtime installation with --no-index from local wheels. Updated CHANGELOG and U7 code-summary notes."
+**Context**: Construction Phase — U7 services/event-service — user-requested code-generation adjustment.
+
+---
+
+## Code Generation Follow-up Fix — U7 services/event-service (example publisher compatibility)
+**Timestamp**: 2026-03-25T06:50:07Z
+**User Input**: "i'm running example 02-simple-event, and the publisher fails with this error:\n```\nError publishing event: Failed to publish event: 422 - {\"detail\":\"tenant_id is required\"}\nTraceback (most recent call last):\n  File \"/Users/amit/ws/github/soorma-ai/soorma-core/sdk/python/soorma/events.py\", line 411, in publish\n    raise ConnectionError(f\"Failed to publish event: {response.status_code} - {error_detail}\")\nConnectionError: Failed to publish event: 422 - {\"detail\":\"tenant_id is required\"}\n```\ncheck this example and other examples to make sure their clients / publishers are sending the service tenant id"
+**AI Response**: "Updated example client/publisher publish calls that were missing required identity metadata. Added tenant_id/user_id in examples/02-events-simple/publisher.py, examples/01-hello-world/client.py, examples/01-hello-tool/client.py, examples/03-events-structured/client.py, examples/research-advisor/client.py; added missing tenant_id in examples/05-memory-semantic/client.py (user_id already present). Verified all direct await client.publish callsites in examples now include tenant_id and user_id."
+**Context**: Construction Phase — U7 services/event-service — user-requested compatibility adjustment for updated publish validation.
+
+---
+
+## Code Generation Follow-up Fix — U7 services/event-service (high-level bus metadata propagation)
+**Timestamp**: 2026-03-25T06:57:15Z
+**User Input**: "so we fixed all that were directly calling client. but there are still other code that instead use context.bus or other higher level method (instead of lower level client), they also need to propagate the metadata, but are not. for example this in same example 02:"
+**AI Response**: "Implemented SDK-level propagation for higher-level bus calls by binding inbound event metadata at handler dispatch and applying implicit defaults in BusClient.publish() when tenant_id/user_id/session_id are omitted. Updated sdk/python/soorma/agents/base.py and sdk/python/soorma/context.py, and added regression tests in sdk/python/tests/test_bus_client.py. Validation: 27 passed for test_bus_client + test_on_event_decorator."
+**Context**: Construction Phase — U7 services/event-service — user-requested compatibility adjustment for context.bus-based publishing.
+
+---
