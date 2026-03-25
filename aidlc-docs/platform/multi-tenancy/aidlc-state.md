@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U7 (services/event-service) - NFR Requirements COMPLETE (Awaiting Approval)
+- **Current Stage**: CONSTRUCTION - U7 (services/event-service) - Code Generation PLAN (Awaiting Approval)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -88,11 +88,12 @@
 - [x] Unit Initialization (2026-03-25T02:57:02Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
 - [x] Functional Design Plan (construction/plans/event-service-functional-design-plan.md) — ANSWERED
 - [x] Functional Design (APPROVED 2026-03-25T03:40:54Z — artifacts at construction/event-service/functional-design/)
-- [x] NFR Requirements (artifacts at construction/event-service/nfr-requirements/) — AWAITING APPROVAL
-- [ ] NFR Design
+- [x] NFR Requirements (APPROVED 2026-03-25T03:59:10Z — artifacts at construction/event-service/nfr-requirements/)
+- [x] NFR Design (APPROVED 2026-03-25T04:07:35Z — artifacts at construction/event-service/nfr-design/)
 - [ ] Infrastructure Design (SKIPPED per unit spec)
 - [ ] QA Test Case Enrichment
 - [ ] Construction Design PR Gate
+- [ ] Code Generation Plan (construction/plans/event-service-code-generation-plan.md) — AWAITING APPROVAL
 - [ ] Code Generation
 
 - [ ] Build and Test (after all units complete)
