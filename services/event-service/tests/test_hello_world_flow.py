@@ -37,6 +37,8 @@ async def test_hello_world_flow(async_client):
             "type": "greeting.goal",
             "topic": "business-facts",
             "data": {"name": "TestUser"},
+            "tenant_id": "service_tenant_hello",
+            "user_id": "service_user_client",
         }
     }
     
@@ -77,7 +79,9 @@ async def test_hello_world_flow(async_client):
                 "task_name": "greet",
                 "assigned_to": "hello-worker",
                 "data": {"name": "TestUser"}
-            }
+            },
+            "tenant_id": "service_tenant_hello",
+            "user_id": "service_user_planner",
         }
     }
     response = await async_client.post("/v1/events/publish", json=task_event)
@@ -97,7 +101,9 @@ async def test_hello_world_flow(async_client):
             "data": {
                 "result": {"greeting": "Hello, TestUser!"},
                 "status": "completed"
-            }
+            },
+            "tenant_id": "service_tenant_hello",
+            "user_id": "service_user_worker",
         }
     }
     response = await async_client.post("/v1/events/publish", json=result_event)

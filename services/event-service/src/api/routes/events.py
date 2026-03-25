@@ -1,15 +1,39 @@
 import logging
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sse_starlette.sse import EventSourceResponse
+from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 from ...models.schemas import PublishRequest, PublishResponse
 from ...services.event_manager import event_manager
+from ..dependencies import get_platform_tenant_id
 
 router = APIRouter(tags=["Events"])
 logger = logging.getLogger(__name__)
 
+MAX_IDENTITY_LEN = 64
+
+
+def _normalize_identity(value: str | None) -> str | None:
+    """Normalize identity values: trim whitespace, map empty to None."""
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _validate_identity_length(field_name: str, value: str | None) -> None:
+    """Enforce max identity length constraint for non-null values."""
+    if value is not None and len(value) > MAX_IDENTITY_LEN:
+        raise HTTPException(
+            status_code=422,
+            detail=f"{field_name} must be at most {MAX_IDENTITY_LEN} characters",
+        )
+
 @router.post("/publish", response_model=PublishResponse)
-async def publish_event(request: PublishRequest) -> PublishResponse:
+async def publish_event(
+    request: PublishRequest,
+    platform_tenant_id: str = Depends(get_platform_tenant_id),
+) -> PublishResponse:
     """
     Publish an event to the message bus.
     
@@ -18,6 +42,36 @@ async def publish_event(request: PublishRequest) -> PublishResponse:
     event = request.event
     
     try:
+        resolved_platform_tenant_id = _normalize_identity(platform_tenant_id)
+        if resolved_platform_tenant_id is None:
+            resolved_platform_tenant_id = DEFAULT_PLATFORM_TENANT_ID
+
+        sanitized_tenant_id = _normalize_identity(event.tenant_id)
+        sanitized_user_id = _normalize_identity(event.user_id)
+
+        if sanitized_tenant_id is None:
+            logger.warning(
+                "Rejecting publish for event_id=%s due to missing tenant_id after sanitization",
+                event.id,
+            )
+            raise HTTPException(status_code=422, detail="tenant_id is required")
+
+        if sanitized_user_id is None:
+            logger.warning(
+                "Rejecting publish for event_id=%s due to missing user_id after sanitization",
+                event.id,
+            )
+            raise HTTPException(status_code=422, detail="user_id is required")
+
+        _validate_identity_length("platform_tenant_id", resolved_platform_tenant_id)
+        _validate_identity_length("tenant_id", sanitized_tenant_id)
+        _validate_identity_length("user_id", sanitized_user_id)
+
+        # Trust boundary: platform tenant identity is always authoritative at Event Service ingress.
+        event.platform_tenant_id = resolved_platform_tenant_id
+        event.tenant_id = sanitized_tenant_id
+        event.user_id = sanitized_user_id
+
         # Build the message payload
         # Use model_dump to preserve field names (e.g. correlation_id) for SDK compatibility
         # to_cloudevents_dict() converts to strict CloudEvents (lowercase keys) which breaks SDK
@@ -36,6 +90,8 @@ async def publish_event(request: PublishRequest) -> PublishResponse:
             event_id=event.id,
             message=f"Event published to {topic_str}",
         )
+    except HTTPException:
+        raise
     except RuntimeError as e:
         # Adapter not initialized/connected
         raise HTTPException(status_code=503, detail=str(e))
