@@ -83,6 +83,69 @@ class TestBusClientPublish:
         call_kwargs = bus_client.event_client.publish.call_args[1]
         assert call_kwargs["payload_schema_name"] == "test_result_v1"
 
+    @pytest.mark.asyncio
+    async def test_publish_uses_bound_event_identity_metadata(self, bus_client):
+        """publish() should inherit tenant/user/session from bound event metadata."""
+        event = EventEnvelope(
+            id="evt-123",
+            source="test-agent",
+            type="test.triggered",
+            topic=EventTopic.ACTION_REQUESTS,
+            correlation_id="corr-123",
+            data={"hello": "world"},
+            tenant_id="tenant-123",
+            user_id="user-123",
+            session_id="session-123",
+        )
+
+        token = bus_client.bind_event_metadata(event)
+        try:
+            await bus_client.publish(
+                topic="business-facts",
+                event_type="test.followup",
+                data={"ok": True},
+            )
+        finally:
+            bus_client.reset_event_metadata(token)
+
+        call_kwargs = bus_client.event_client.publish.call_args[1]
+        assert call_kwargs["tenant_id"] == "tenant-123"
+        assert call_kwargs["user_id"] == "user-123"
+        assert call_kwargs["session_id"] == "session-123"
+
+    @pytest.mark.asyncio
+    async def test_publish_prefers_explicit_identity_over_bound_metadata(self, bus_client):
+        """Explicit identity values should override bound event metadata values."""
+        event = EventEnvelope(
+            id="evt-999",
+            source="test-agent",
+            type="test.triggered",
+            topic=EventTopic.ACTION_REQUESTS,
+            correlation_id="corr-999",
+            data={"hello": "world"},
+            tenant_id="tenant-from-event",
+            user_id="user-from-event",
+            session_id="session-from-event",
+        )
+
+        token = bus_client.bind_event_metadata(event)
+        try:
+            await bus_client.publish(
+                topic="business-facts",
+                event_type="test.followup",
+                data={"ok": True},
+                tenant_id="tenant-explicit",
+                user_id="user-explicit",
+                session_id="session-explicit",
+            )
+        finally:
+            bus_client.reset_event_metadata(token)
+
+        call_kwargs = bus_client.event_client.publish.call_args[1]
+        assert call_kwargs["tenant_id"] == "tenant-explicit"
+        assert call_kwargs["user_id"] == "user-explicit"
+        assert call_kwargs["session_id"] == "session-explicit"
+
 
 class TestBusClientConvenienceMethods:
     """Tests for request(), respond(), announce() convenience methods."""

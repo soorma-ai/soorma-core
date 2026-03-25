@@ -12,6 +12,10 @@ from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
 
 
+TENANT_ID = "00000000-0000-0000-0000-000000000000"
+USER_ID = "00000000-0000-0000-0000-000000000001"
+
+
 async def send_greeting_request(name: str = "World"):
     """Send a greeting request and wait for the response."""
     
@@ -54,6 +58,8 @@ async def send_greeting_request(name: str = "World"):
         correlation_id=correlation_id,
         response_event="greeting.completed",
         response_topic="action-results",
+        tenant_id=TENANT_ID,
+        user_id=USER_ID,
     )
     
     print("📤 Request sent!")

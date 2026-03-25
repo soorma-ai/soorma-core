@@ -22,6 +22,7 @@ Usage:
 """
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
+import contextvars
 import httpx
 import logging
 import os
@@ -919,6 +920,44 @@ class BusClient:
         subscribe(): React to events (via EventClient)
     """
     event_client: EventClient = field(default_factory=EventClient)
+    _bound_event_metadata: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
+        default_factory=lambda: contextvars.ContextVar(
+            "soorma_bus_bound_event_metadata",
+            default=None,
+        ),
+        init=False,
+        repr=False,
+    )
+
+    def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
+        """Bind current event metadata for implicit propagation in bus calls."""
+        metadata = {
+            "tenant_id": event.tenant_id,
+            "user_id": event.user_id,
+            "session_id": event.session_id,
+        }
+        return self._bound_event_metadata.set(metadata)
+
+    def reset_event_metadata(self, token: contextvars.Token) -> None:
+        """Reset previously bound event metadata."""
+        self._bound_event_metadata.reset(token)
+
+    def _apply_bound_identity_defaults(
+        self,
+        tenant_id: Optional[str],
+        user_id: Optional[str],
+        session_id: Optional[str],
+    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
+        """Apply tenant/user/session defaults from current bound event metadata."""
+        metadata = self._bound_event_metadata.get()
+        if metadata is None:
+            return tenant_id, user_id, session_id
+
+        return (
+            tenant_id if tenant_id is not None else metadata.get("tenant_id"),
+            user_id if user_id is not None else metadata.get("user_id"),
+            session_id if session_id is not None else metadata.get("session_id"),
+        )
     
     async def publish(
         self,
@@ -963,6 +1002,12 @@ class BusClient:
         Returns:
             The event ID
         """
+        tenant_id, user_id, session_id = self._apply_bound_identity_defaults(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            session_id=session_id,
+        )
+
         return await self.event_client.publish(
             event_type=event_type,
             topic=topic,

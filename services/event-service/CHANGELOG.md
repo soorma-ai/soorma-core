@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added TenancyMiddleware and DI-based platform tenant resolution for publish ingress.
 - Enforced trust-boundary metadata policy on publish endpoint: authoritative platform_tenant_id overwrite, centralized tenant_id/user_id sanitization, required tenant_id/user_id checks, and max-length validation.
 - Added fail-closed publish validation tests for spoofing overwrite, fallback behavior, mandatory identity fields, and oversized platform tenant IDs.
+- Standardized Dockerfile to wheelhouse build/install strategy (`pip wheel`, `--find-links`, `--no-index`) so local shared packages are resolved consistently and runtime installs use prebuilt local artifacts.
 
 ## [0.8.2] - 2026-03-14
 

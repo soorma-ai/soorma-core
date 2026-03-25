@@ -12,6 +12,7 @@
 
 ## Files Modified
 - services/event-service/pyproject.toml
+- services/event-service/Dockerfile
 - services/event-service/src/main.py
 - services/event-service/src/api/routes/events.py
 - services/event-service/tests/test_api.py
@@ -22,6 +23,7 @@
 ## Behavior Implemented
 - Registered shared TenancyMiddleware in Event Service.
 - Added route-level DI identity resolution via get_platform_tenant_id.
+- Standardized container build to wheelhouse strategy (`pip wheel`, `--find-links`, `--no-index`) so local shared packages are resolved and installed consistently with other services.
 - Enforced publish trust-boundary pipeline:
   - normalize tenant_id/user_id via trim + empty-to-None
   - require tenant_id and user_id for all events

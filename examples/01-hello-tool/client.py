@@ -16,6 +16,10 @@ from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
 
 
+TENANT_ID = "00000000-0000-0000-0000-000000000000"
+USER_ID = "00000000-0000-0000-0000-000000000001"
+
+
 async def send_calculation_request(operation: str, a: float, b: float):
     """
     Send a calculation request to the calculator tool.
@@ -80,6 +84,8 @@ async def send_calculation_request(operation: str, a: float, b: float):
         correlation_id=correlation_id,
         response_event=response_event,
         response_topic="action-results",
+        tenant_id=TENANT_ID,
+        user_id=USER_ID,
     )
     
     print("📤 Request sent!")

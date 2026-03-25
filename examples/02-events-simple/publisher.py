@@ -11,6 +11,10 @@ from soorma import EventClient
 from soorma_common.events import EventTopic
 
 
+TENANT_ID = "00000000-0000-0000-0000-000000000000"
+USER_ID = "00000000-0000-0000-0000-000000000001"
+
+
 async def publish_order_workflow():
     """Publish the initial event that triggers the order workflow chain."""
     
@@ -41,6 +45,8 @@ async def publish_order_workflow():
             "items": ["laptop", "mouse"],
             "total": 1500.00,
         },
+        tenant_id=TENANT_ID,
+        user_id=USER_ID,
     )
     print("   ✓ Published to 'business-facts' topic\n")
     
