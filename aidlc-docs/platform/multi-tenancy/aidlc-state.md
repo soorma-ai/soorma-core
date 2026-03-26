@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U7 (services/event-service) - Code Generation COMPLETE (Awaiting Approval)
+- **Current Stage**: CONSTRUCTION - U6 (sdk/python) - Construction Design PR Gate (PENDING Team Approval)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -83,7 +83,15 @@
 - [x] QA Test Case Enrichment — COMPLETE 2026-03-23T07:02:31Z (TC-T-001..008 enriched; enrichment-delta.md created)
 - [x] Construction Design PR Gate — APPROVED 2026-03-23T07:11:42Z (branch: dev)
 - [x] Code Generation — COMPLETE 2026-03-23T15:06:09Z | 21/21 tests pass | 5 files created, 10 files modified
-#### U6 — sdk/python (Wave 4) — blocked on U4 + U5
+#### U6 — sdk/python (Wave 4) — blocked on U4 + U5 — **IN PROGRESS**
+- [x] Unit Initialization (2026-03-25T07:24:58Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
+- [x] Functional Design Plan (construction/plans/sdk-python-functional-design-plan.md) — ANSWERED
+- [x] Functional Design (APPROVED 2026-03-26T07:40:17Z — artifacts at construction/sdk-python/functional-design/)
+- [ ] NFR Requirements (SKIPPED per unit spec)
+- [ ] NFR Design (SKIPPED per unit spec)
+- [ ] Infrastructure Design (SKIPPED per unit spec)
+- [x] QA Test Case Enrichment — COMPLETE 2026-03-26T07:44:43Z (TC-SP-004/005/008/009/010 enriched; TC-SP-011 added; enrichment-delta.md created)
+- [ ] Construction Design PR Gate — PENDING 2026-03-26T07:42:06Z (branch: dev)
 #### U7 — services/event-service (Wave 3) — blocked on U1 + U2 — **IN PROGRESS**
 - [x] Unit Initialization (2026-03-25T02:57:02Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
 - [x] Functional Design Plan (construction/plans/event-service-functional-design-plan.md) — ANSWERED
@@ -151,3 +159,10 @@
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/event-service-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-25T04:14:21Z
 - **Approved**: 2026-03-25T06:12:52Z
+
+### Construction Design PR Gate — sdk-python
+- **Status**: PENDING
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/sdk-python-design-pr-checkpoint-instructions.md
+- **Created**: 2026-03-26T07:42:06Z
+- **Approved**: —
