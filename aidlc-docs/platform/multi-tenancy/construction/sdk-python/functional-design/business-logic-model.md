@@ -9,9 +9,12 @@ Define functional behavior for SDK multi-tenancy refactor in Layer 1 clients and
 - Low-level SDK clients:
   - `soorma.memory.client.MemoryClient` -> renamed to `MemoryServiceClient`
   - `soorma.tracker.client.TrackerServiceClient` (existing name retained)
+  - `soorma.events.EventClient` (multi-tenancy header alignment for Event Service trust boundary)
+  - `soorma.registry.client.RegistryClient` (reviewed as already aligned for this initiative)
 - Layer 2 wrappers:
   - `context.memory`
   - `context.tracker`
+  - `context.bus` (must propagate platform tenant header path through EventClient)
 - CLI init behavior, docs updates, and test scope.
 
 ## Requirement Traceability
@@ -42,11 +45,19 @@ Define functional behavior for SDK multi-tenancy refactor in Layer 1 clients and
   - `X-Service-Tenant-ID` = service tenant
   - `X-User-ID` = service user
 
-4. Wrapper Precedence
+4. Event Publish Identity Projection
+- SDK EventClient publish path must send `X-Tenant-ID` for Event Service middleware so server-side `platform_tenant_id` injection is sourced from authenticated platform header rather than default fallback.
+- Envelope `tenant_id` and `user_id` remain service tenant/user metadata for downstream consumers.
+
+5. Wrapper Precedence
 - Wrapper methods resolve identity using precedence:
   - explicit args from caller
   - otherwise event-bound metadata defaults
 - Explicit caller-provided values always win.
+
+6. Registry Client Scope Rationale
+- RegistryClient already uses init-time platform/developer tenant header (`X-Tenant-ID`) and does not participate in service-tenant/service-user header model.
+- For U6 this is documentation/verification scope, not a functional refactor target.
 
 ## Runtime Flows
 
@@ -79,6 +90,12 @@ Define functional behavior for SDK multi-tenancy refactor in Layer 1 clients and
 3. Rename method parameter names from tenant_id/user_id to service_tenant_id/service_user_id.
 4. Update all low-level-client example and test-driver call paths.
 5. Update SDK tests and architecture docs.
+
+### Flow F: Event Client Alignment
+1. Ensure EventClient has platform tenant identity at init time (env/default compatible path).
+2. Send `X-Tenant-ID` on publish HTTP call to Event Service.
+3. Preserve existing envelope metadata behavior for service tenant/user fields.
+4. Update tests to verify Event Service receives platform tenant header and still enforces server-side `platform_tenant_id` injection.
 
 ## Failure Modes and Handling
 - Missing service_tenant_id or service_user_id at call time -> fail fast with ValueError.

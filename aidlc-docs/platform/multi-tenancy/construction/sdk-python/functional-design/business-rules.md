@@ -7,6 +7,11 @@
 - Rename low-level memory service client class to `MemoryServiceClient` to avoid confusion with `PlatformContext` wrapper `MemoryClient`.
 - Update all affected imports and call sites in this unit.
 
+### BR-1a: Event and Registry naming policy
+- `EventClient`: keep existing public class name for U6 to avoid unnecessary API churn; do not force rename to `EventServiceClient` in this initiative.
+- `RegistryClient`: keep existing name because it is the established platform/developer scoped client and currently serves the high-level registry access role.
+- Naming consistency target is applied where ambiguity exists (`MemoryClient` wrapper vs low-level memory client), not as a blanket rename rule across all clients.
+
 ### BR-2: Two-layer separation
 - Agent code must continue to use wrapper APIs (`context.memory`, `context.tracker`).
 - Wrappers must delegate to low-level service clients.
@@ -22,6 +27,11 @@
 - `service_tenant_id` and `service_user_id` are required for operations that call Memory/Tracker APIs.
 - Missing required values must fail in SDK before request dispatch.
 
+### BR-4a: Validation contract is client-specific
+- Memory/Tracker client calls enforce non-empty `service_tenant_id` and `service_user_id`.
+- Event publish calls enforce platform-tenant header path; service tenant/user remain envelope metadata, not publish headers.
+- Registry client operations enforce platform/developer tenant identity only; no service tenant/user validation applies.
+
 ### BR-5: Wrapper precedence model
 - Wrappers apply fallback defaults from bound event metadata only when explicit args are omitted.
 - Explicitly provided args always take precedence over metadata defaults.
@@ -31,6 +41,14 @@
   - `X-Tenant-ID`
   - `X-Service-Tenant-ID`
   - `X-User-ID`
+
+### BR-6a: Event publish platform header
+- EventClient publish requests to Event Service must include `X-Tenant-ID` so middleware-derived `platform_tenant_id` injection is based on SDK platform identity context.
+- SDK must not set `platform_tenant_id` in outbound envelope payload; Event Service remains trust boundary authority.
+
+### BR-6b: Registry client scope
+- RegistryClient remains platform/developer-tenant scoped and already sends `X-Tenant-ID` at init-time.
+- No service-tenant/service-user header refactor is required for RegistryClient in U6.
 
 ## Migration and Compatibility Rules
 
@@ -43,6 +61,7 @@
 ### BR-8: Low-level caller migration completeness
 - All low-level-client examples and test-driver clients must be updated to renamed parameter names and class renames.
 - No stale low-level call path may remain on old identity parameter names.
+- Any examples/test drivers publishing via EventClient must also be updated to include/verify platform-tenant header propagation path.
 
 ## CLI and Documentation Rules
 

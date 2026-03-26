@@ -33,6 +33,24 @@ Functional entities used by SDK two-tier tenancy behavior.
 - Producer:
   - internal helper in each low-level client.
 
+## Entity: EventPublishHeaders
+- Purpose: HTTP header projection for SDK EventClient -> Event Service publish calls.
+- Structure:
+  - `X-Tenant-ID: platform_tenant_id`
+- Notes:
+  - `tenant_id` and `user_id` remain event envelope metadata for service-tenant/service-user context.
+  - `platform_tenant_id` is not set in envelope by SDK; Event Service injects it.
+
+## Entity: RegistryIdentityModel
+- Purpose: represent RegistryClient's separate tenancy model.
+- Fields:
+  - `developer_tenant_id: str` (platform/developer scope)
+- Headers:
+  - `X-Tenant-ID`
+- Notes:
+  - Registry does not use `X-Service-Tenant-ID` or `X-User-ID`.
+  - Included for scope clarity; not a U6 refactor target.
+
 ## Entity: LowLevelClientConfig
 - Purpose: constructor-time configuration for service clients.
 - Fields:
@@ -60,10 +78,18 @@ Functional entities used by SDK two-tier tenancy behavior.
 
 ## Entity: ValidationContract
 - Purpose: define required identity conditions before request dispatch.
-- Rules:
-  - non-empty `service_tenant_id` required
-  - non-empty `service_user_id` required
-  - fail fast in SDK layer for missing required service identity
+- Rules by client/use case:
+  - MemoryServiceClient / TrackerServiceClient:
+    - non-empty `service_tenant_id` required
+    - non-empty `service_user_id` required
+    - fail fast in SDK layer for missing required service identity
+  - EventClient (publish path):
+    - does not require service identity in HTTP headers
+    - requires platform tenant header path (`X-Tenant-ID`) for Event Service middleware trust boundary
+    - `tenant_id` and `user_id` remain envelope metadata fields (not publish headers)
+  - RegistryClient:
+    - validates/uses platform/developer tenant identity only (`X-Tenant-ID`)
+    - does not use service tenant/user identity fields
 
 ## Entity: RefactorImpactSet
 - Purpose: identify call-site categories requiring coordinated updates.

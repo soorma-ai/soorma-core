@@ -960,3 +960,27 @@ Please load all Inception artifacts and begin the Construction phase for this un
 **Context**: Construction Phase — U6 sdk/python — awaiting functional design approval.
 
 ---
+
+## Functional Design Scope Correction — U6 sdk/python
+**Timestamp**: 2026-03-26T07:15:52Z
+**User Input**: "why is the design only talking about memory service client and tracker service client. don't we also need the registry service client and event service clients (and their wrappers) to be updated as well for this initiative?"
+**AI Response**: Reviewed unit-of-work scope and current SDK implementation. Confirmed: RegistryClient is already aligned to platform-tenant header model and does not require service-tenant/service-user refactor in U6. Identified and documented an EventClient alignment gap: publish HTTP path should include `X-Tenant-ID` so Event Service middleware injects `platform_tenant_id` from platform identity context rather than default fallback. Updated U6 functional design artifacts (business-logic-model, business-rules, domain-entities) to include EventClient/context.bus scope and explicit RegistryClient no-change rationale.
+**Context**: Construction Phase — U6 sdk/python — functional design refinement before approval.
+
+---
+
+## Functional Design Clarification — U6 client naming consistency
+**Timestamp**: 2026-03-26T07:19:57Z
+**User Input**: "shouldn't the event client and registry client be renamed, to match the pattern for memory service client and tracker service client?"
+**AI Response**: Clarified naming policy: keep `EventClient` and `RegistryClient` names in U6. Rationale: no ambiguity requiring rename for Registry, and unnecessary public API churn for Event in this initiative. Updated business-rules.md with explicit naming rule BR-1a documenting targeted consistency approach (rename only where ambiguity exists, specifically low-level memory client vs wrapper).
+**Context**: Construction Phase — U6 sdk/python — naming policy finalized.
+
+---
+
+## Functional Design Clarification — U6 validation contract by client type
+**Timestamp**: 2026-03-26T07:37:48Z
+**User Input**: "just want to make sure that Entity: ValidationContract will vary based on use case. memory and tracker will have both non empty. event will not have this in header or params, but will be in event envelope. registry will not have this at all, only cares about platform tenant id."
+**AI Response**: Confirmed and updated functional design artifacts to explicitly define client-specific validation behavior. domain-entities.md now contains a per-client validation matrix under Entity: ValidationContract (Memory/Tracker require non-empty service tenant/user; Event publish requires platform header path with service tenant/user in envelope metadata; Registry validates only platform/developer tenant). business-rules.md now includes BR-4a capturing same rule boundaries.
+**Context**: Construction Phase — U6 sdk/python — validation contract semantics finalized.
+
+---
