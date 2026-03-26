@@ -888,3 +888,75 @@ Please load all Inception artifacts and begin the Construction phase for this un
 **Context**: Construction Phase — U6 sdk/python — Functional Design planning phase initiated.
 
 ---
+
+## Functional Design Clarification — U6 sdk/python Q1
+**Timestamp**: 2026-03-26T02:54:24Z
+**User Input**: "for Q1, isn't soorma_common.tenancy already not doing option A?"
+**AI Response**: Verified current implementation in libs/soorma-common/src/soorma_common/tenancy.py. `DEFAULT_PLATFORM_TENANT_ID` resolves as `os.environ.get("SOORMA_PLATFORM_TENANT_ID") or "spt_00000000-0000-0000-0000-000000000000"`, which matches Option A behavior (env override first, fallback literal default). Clarified that this resolution occurs at import time.
+**Context**: Construction Phase — U6 sdk/python — Functional Design Q1 clarification.
+
+---
+
+## Functional Design Clarification — U6 sdk/python Q2
+**Timestamp**: 2026-03-26T02:56:45Z
+**User Input**: "for Q2, what is usual practice?"
+**AI Response**: Reviewed existing SDK client patterns in sdk/python/soorma/memory/client.py, sdk/python/soorma/tracker/client.py, and sdk/python/soorma/registry/client.py. Usual practice in this codebase and Python HTTP clients is a small client-level helper that builds headers and explicit `headers=...` on each request call. Recommendation for U6: Option A (internal helper method), not transport middleware/interceptor.
+**Context**: Construction Phase — U6 sdk/python — Functional Design Q2 guidance.
+
+---
+
+## Functional Design Plan Regeneration — U6 sdk/python
+**Timestamp**: 2026-03-26T03:19:26Z
+**User Input**: "I'm not satisfied with the quality of #file:sdk-python-functional-design-plan.md  ... it has many trivial questions and/or has invalid questions, e.g. Q3 is asking about platform tenant id, which is already handled by each service client during initiatilization. review the doc and see if it needs to be regenerated."
+**AI Response**: Reviewed the plan against current SDK code and architecture constraints. Confirmed quality issues: invalid/trivial questions, terminology mismatch (low-level memory client naming), and mixed layer responsibilities. Regenerated construction/plans/sdk-python-functional-design-plan.md with: (1) quality review section, (2) locked decisions for already-resolved Q1/Q2, and (3) a reduced high-signal question set (Q1-Q7) focused on unresolved design decisions: naming strategy, identity propagation mechanism for wrappers, backward compatibility policy, validation policy, CLI surface choice, documentation structure, and test gating scope. Updated execution steps accordingly.
+**Context**: Construction Phase — U6 sdk/python — Functional Design plan quality improvement and regeneration complete.
+
+---
+
+## Functional Design Decision Update — U6 sdk/python Q1
+**Timestamp**: 2026-03-26T03:25:24Z
+**User Input**: "for q1, i think A will be cleanest from readability and devex point of view, even though it seems more refactoring work for now. agree? also all examples will need to be updated that use the lower level service clients in test driver clients."
+**AI Response**: Confirmed agreement. Updated Q1 answer to Option A in construction/plans/sdk-python-functional-design-plan.md and added explicit scope note to update all example/test-driver code paths that use low-level service clients to match renamed parameters/class names.
+**Context**: Construction Phase — U6 sdk/python — Functional Design Q1 decision recorded and migration scope clarified.
+
+---
+
+## Functional Design Clarification — U6 sdk/python Q2
+**Timestamp**: 2026-03-26T03:29:11Z
+**User Input**: "for Q2, will A be sufficient? i think it relies on these being present in event metadata, there maybe times when service tenant and service user need to be explictly provided by agent implementation. no?"
+**AI Response**: Confirmed Option A is sufficient when implemented as fallback defaults, not forced injection. Recorded Q2 answer as Option A with explicit override semantics: wrapper methods use bound metadata only when service_tenant_id/service_user_id are omitted; when agent code passes explicit values, those values take precedence.
+**Context**: Construction Phase — U6 sdk/python — Functional Design Q2 decision and precedence semantics captured.
+
+---
+
+## Functional Design Answers Review — U6 sdk/python
+**Timestamp**: 2026-03-26T03:40:50Z
+**User Input**: "ok, answerd all"
+**AI Response**: Reviewed all answers in construction/plans/sdk-python-functional-design-plan.md. Identified one ambiguity in Q6 response ("maybe A"), which is not definitive per functional-design rules. Created follow-up clarification file at construction/plans/sdk-python-functional-design-clarification-questions.md with a single decision question to finalize documentation scope. Paused artifact generation pending this clarification.
+**Context**: Construction Phase — U6 sdk/python — Functional Design answer validation in progress.
+
+---
+
+## Functional Design Clarification Received — U6 sdk/python
+**Timestamp**: 2026-03-26T03:43:14Z
+**User Input**: "done"
+**AI Response**: Read construction/plans/sdk-python-functional-design-clarification-questions.md and confirmed final Q6 answer as Option A (update ARCHITECTURE_PATTERNS.md Section 1 in-place).
+**Context**: Construction Phase — U6 sdk/python — clarification resolved.
+
+---
+
+## Functional Design Complete — U6 sdk/python
+**Timestamp**: 2026-03-26T03:43:14Z
+**User Input**: "[continuation of session -- clarification completed]"
+**AI Response**: Generated U6 Functional Design artifacts: construction/sdk-python/functional-design/business-logic-model.md, construction/sdk-python/functional-design/domain-entities.md, construction/sdk-python/functional-design/business-rules.md. Finalized plan answers, marked plan execution steps complete, and updated aidlc-state.md current stage and U6 progress.
+**Context**: Construction Phase — U6 sdk/python — Functional Design artifacts ready for review.
+
+---
+
+## Functional Design Approval Prompt — U6 sdk/python
+**Timestamp**: 2026-03-26T03:43:14Z
+**User Input**: "[continuation of session -- no new user input]"
+**AI Response**: Requested explicit user approval for U6 functional design artifacts before proceeding to next stage.
+**Context**: Construction Phase — U6 sdk/python — awaiting functional design approval.
+
+---

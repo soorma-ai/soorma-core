@@ -1,222 +1,157 @@
-# Functional Design Plan — U6 sdk/python
+# Functional Design Plan - U6 sdk/python
 ## Initiative: Multi-Tenancy Model Implementation
-**Date**: 2026-03-25  
-**Unit**: U6 — sdk/python  
-**Dependencies**: U4 (services/memory) ✓ COMPLETE, U5 (services/tracker) ✓ COMPLETE
+**Date**: 2026-03-26
+**Unit**: U6 - sdk/python
+**Dependencies**: U4 (services/memory) complete, U5 (services/tracker) complete
 
 ---
 
-## Unit Context
+## Quality Review Outcome
 
-**U6 Scope** (from unit-of-work.md):
-- Update `MemoryServiceClient.__init__`: accept `platform_tenant_id` parameter; default from `DEFAULT_PLATFORM_TENANT_ID` / `SOORMA_PLATFORM_TENANT_ID` env var
-- Rename per-call params: `tenant_id → service_tenant_id`, `user_id → service_user_id` across all `MemoryServiceClient` methods
-- Send as `X-Tenant-ID` (platform), `X-Service-Tenant-ID` (service tenant), `X-User-ID` (service user) headers
-- Apply same changes to `TrackerServiceClient`
-- Update PlatformContext wrappers (`context.memory`, `context.tracker`) to expose only service tenant/user dims at agent layer
-- Update CLI commands (cli/commands/init.py) to use new `DEFAULT_PLATFORM_TENANT_ID` constant
-- Update all SDK tests
-- Update `docs/ARCHITECTURE_PATTERNS.md` Section 1 documentation
+This plan has been regenerated to remove trivial or invalid questions and to align terminology with current code.
 
-**Components Affected**:
-- C6 — `sdk/python` Service Clients (MemoryServiceClient, TrackerServiceClient)
-- C7 — `sdk/python` PlatformContext Wrappers (MemoryClient, TrackerClient)
-- Updated documentation (ARCHITECTURE_PATTERNS.md)
+### Issues found in prior draft
+- Low-level memory client was referenced as MemoryServiceClient, but current class is `soorma.memory.client.MemoryClient`.
+- Some questions asked to decide behavior that is already implemented (for example platform tenant default resolution).
+- Some questions mixed layer responsibilities (PlatformContext wrapper behavior vs low-level client init behavior).
 
-**Architectural Constraints** (from soorma-core constitution):
-- Strict two-layer SDK architecture: Service Clients (Layer 1) and PlatformContext Wrappers (Layer 2)
-- Agent handlers MUST use `context.memory` and `context.tracker` wrappers ONLY — never import service clients directly
-- Wrapper implementations MUST delegate to underlying service clients using Layer 1 HTTP communication
-- All wrappers receive tenant/user context automatically from event envelope — no explicit parameters to agent handlers
+### Scope reminder for U6
+- Refactor low-level SDK clients to send three headers:
+  - X-Tenant-ID (platform tenant, init-time)
+  - X-Service-Tenant-ID (service tenant, per-call)
+  - X-User-ID (service user, per-call)
+- Rename per-call parameters from tenant_id/user_id to service_tenant_id/service_user_id in Memory and Tracker clients.
+- Update all example/test-driver code paths that use low-level service clients to the renamed parameters and any class renames from this unit.
+- Update PlatformContext wrappers (context.memory, context.tracker) to align with two-tier tenancy model.
+- Update CLI and tests.
+- Update architecture documentation.
 
 ---
 
-## Functional Design Questions
+## Resolved Decisions (No Further Input Required)
 
-**DIRECTIVE**: Below are clarifying questions about implementation approach, design boundaries, and migration strategy. All responses are required to ensure complete, unambiguous functional design artifacts.
+### D1: Platform tenant default resolution
+- **Locked Decision**: Use env-first fallback.
+- **Behavior**: Read SOORMA_PLATFORM_TENANT_ID; if absent, use DEFAULT_PLATFORM_TENANT_ID.
+- **Note**: This is already implemented in soorma-common tenancy constant resolution.
 
-Please answer each question by replacing `[Answer]:` with your response (A, B, C, D, or E if applicable).
-
----
-
-### Q1: Service Client Parameter Binding Strategy
-
-**Context**: `MemoryServiceClient` and `TrackerServiceClient` currently accept tenant/user as **per-call parameters**. We are refactoring to make `platform_tenant_id` an **init-time parameter** (set once at client creation) while `service_tenant_id` and `service_user_id` remain **per-call parameters**.
-
-**Question**: When a service client is instantiated without an explicit `platform_tenant_id` parameter, how should the default value be resolved?
-
-**Options**:
-- A) Read `SOORMA_PLATFORM_TENANT_ID` env var; if absent, use `DEFAULT_PLATFORM_TENANT_ID` constant from `soorma_common.tenancy`
-- B) Always use `DEFAULT_PLATFORM_TENANT_ID` constant; ignore env vars
-- C) Allow both env var and constant, but require one to be explicitly set in `__init__`; raise error if both are absent
-- D) Use `SOORMA_PLATFORM_TENANT_ID` env var only; raise error if absent
-
-[Answer]:
+### D2: Header injection style in low-level clients
+- **Locked Decision**: Use a client-level internal helper to build headers and pass headers explicitly per request.
+- **Reason**: Matches existing SDK client style and keeps request identity explicit.
 
 ---
 
-### Q2: Header Injection in Service Clients
+## Open Functional Design Questions
 
-**Context**: Service clients send identity headers on every HTTP request to Memory Service and Tracker Service. Headers are currently: `X-Tenant-ID` (UUID), `X-User-ID` (UUID). After refactoring, they should be: `X-Tenant-ID` (platform tenant), `X-Service-Tenant-ID` (service tenant), `X-User-ID` (service user).
+Please answer each question by filling the [Answer]: tag.
 
-**Question**: Should the service client methods responsible for header injection be:
+## Question 1
+How should low-level memory client naming be handled to avoid confusion with the PlatformContext MemoryClient wrapper?
 
-**Options**:
-- A) Named `_inject_tenant_headers` (or similar); called in every HTTP request method before sending; builds header dict from `self.platform_tenant_id` + method parameters `service_tenant_id` + `service_user_id`
-- B) Use a requests/httpx middleware or interceptor; automatically injects headers on every outgoing request without explicit per-method calls
-- C) Create a separate header-builder helper class; client methods delegate to it
-- D) Modify the httpx client initialization to use auth handlers or middleware directly tied to tenant metadata
+A) Rename low-level class to MemoryServiceClient now, and update all SDK imports/call sites in this unit
 
-[Answer]:
+B) Keep low-level class name as MemoryClient and only clarify in docs/comments
 
----
+C) Keep class name but add alias export MemoryServiceClient for clarity, migrate internal usage gradually
 
-### Q3: PlatformContext Wrapper Signature Evolution
+D) Other (please describe after [Answer]: tag below)
 
-**Context**: PlatformContext wrappers (`MemoryClient`, `TrackerClient`) currently expose method signatures like:  
-```python
-async def store_task_context(self, task_id: str, tenant_id: str, user_id: str, ...) -> TaskContext
-```
+[Answer]: A - prefer immediate rename for readability and developer experience, accepting near-term refactoring cost.
 
-After refactoring, the unit spec says wrappers should NO LONGER expose `platform_tenant_id` as a parameter. Agent handlers should never set it. However, internally the wrapper MUST pass it to the underlying service client.
+## Question 2
+How should context.memory/context.tracker obtain service_tenant_id and service_user_id by default in handler execution paths?
 
-**Question**: How should wrappers extract event context (service tenant/user IDs) and pass them to underlying service clients?
+A) Add contextvars binding (similar to BusClient metadata binding) for memory/tracker wrappers and apply implicit defaults when args omitted
 
-**Options**:
-- A) Wrappers receive `context: PlatformContext` instance as a method parameter; extract tenant/user from `context.event_envelope`; pass to client
-- B) Wrappers store a reference to the current event envelope at initialization; extract tenant/user from stored enum on every method call
-- C) Wrappers modify method signatures to accept an optional `event_context: EventContext` dataclass; agent handlers must pass it explicitly
-- D) Agent handlers bind tenant/user into wrapper at dispatch time (via dynamic assignment or method binding); wrappers simply use them without explicit parameters
+B) Keep explicit parameters required on wrapper methods; no implicit binding
 
-[Answer]:
+C) Add a shared identity accessor on PlatformContext and have wrappers read from it
 
----
+D) Other (please describe after [Answer]: tag below)
 
-### Q4: CLI Command Initialization Refactoring
+[Answer]: A - sufficient, with explicit-override semantics: wrappers apply metadata defaults only when args are omitted; agent-provided service_tenant_id/service_user_id must always take precedence.
 
-**Context**: `cli/commands/init.py` currently initializes SDK clients (MemoryServiceClient, RegistryClient, etc.). The file reads tenant/user from command-line args and env vars. After refactoring, `MemoryServiceClient.__init__` will accept `platform_tenant_id`, which should default to `DEFAULT_PLATFORM_TENANT_ID` if not supplied.
+## Question 3
+For backward compatibility, how should renamed low-level method parameters be handled (tenant_id/user_id -> service_tenant_id/service_user_id)?
 
-**Question**: How should `cli/commands/init.py` be updated to pass `platform_tenant_id` to the client?
+A) Breaking change now: remove old names and update all internal callers/tests immediately
 
-**Options**:
-- A) Add a new optional CLI flag `--platform-tenant-id` (or `--developer-tenant-id`); if provided, pass it to `MemoryServiceClient.__init__`; if absent, let client use its internal default
-- B) Read from env var `SOORMA_PLATFORM_TENANT_ID` before creating the client; pass it explicitly to `__init__`
-- C) Remove all platform_tenant_id sourcing from CLI and let clients self-initialize from env/constant; CLI only manages service tenant/user
-- D) Create a separate CLI command `init-developer-tenant` to configure platform tenant once; regular `init` command reuses stored value
+B) One-release compatibility: accept both old and new names with deprecation warning, then remove old names next release
 
-[Answer]:
+C) Keep old names permanently as aliases to new names
 
----
+D) Other (please describe after [Answer]: tag below)
 
-### Q5: Test Refactoring Scope
+[Answer]: A is sufficient. we are pre-release and do not have to be backward compatible.
 
-**Context**: SDK has unit tests in `sdk/python/tests/` covering MemoryServiceClient, TrackerServiceClient, PlatformContext wrappers, and agent handler integration. After refactoring, **all** test invocations of service clients and wrappers must use the new parameter signatures.
+## Question 4
+What SDK-side validation should apply for identity parameters before making HTTP calls?
 
-**Question**: For the test refactoring, should we:
+A) Validate non-empty service_tenant_id and service_user_id in wrappers/clients; raise ValueError before request
 
-**Options**:
-- A) Update all existing test fixtures and mocks to use new `platform_tenant_id` init parameter + `service_tenant_id`/`service_user_id` per-call params; run full test suite with new signatures
-- B) Create parallel test files (e.g., `test_memory_client_v2.py`) for new signatures; deprecate old tests; migrate gradually
-- C) Use pytest parametrize to run the same tests with both old and new signatures; mark old-signature tests as deprecated
-- D) Only test the changed code paths; skip legacy signature tests
+B) No SDK validation; pass through and let backend return validation errors
 
-[Answer]:
+C) Hybrid: enforce only non-empty user_id, allow service_tenant_id optional for specific endpoints
 
----
+D) Other (please describe after [Answer]: tag below)
 
-### Q6: Documentation Updates — ARCHITECTURE_PATTERNS.md
+[Answer]: A. we are aligning on always having a service tenant id and user id be provided by the platform tenant's agent implementations. this should also be captured in architecture docs, if not already done.
 
-**Context**: `docs/ARCHITECTURE_PATTERNS.md` Section 1 currently documents headers as `X-Tenant-ID` (client tenant UUID) and `X-User-ID` (user UUID). After refactoring, we have **three** distinct headers: `X-Tenant-ID` (platform tenant), `X-Service-Tenant-ID` (service tenant), `X-User-ID` (service user).
+## Question 5
+How should CLI initialization expose platform tenant configuration for SDK usage?
 
-**Question**: How should Section 1 be restructured to explain the new two-tier tenancy model and header mapping?
+A) Add optional --platform-tenant-id flag and pass to client init when supplied
 
-**Options**:
-- A) Expand Section 1 with a new "Two-Tier Tenancy Model" subsection explaining Tier 1 (Developer/Platform Tenant) vs. Tier 2 (Client Tenant + User); include updated header table; keep current examples but annotate with new header names
-- B) Reorganize entirely: move current Table (service → tenancy tier mapping) to top; add detailed explanation of each tier's purpose and scope; show header examples for Memory/Tracker vs. Registry services
-- C) Create a new Section 1b "SDK Multi-Tenancy Implementation" covering only the SDK perspective (init params + per-call params); defer detailed service-side explanation to service sections (2.1, 2.2, etc.)
-- D) Keep Section 1 mostly unchanged; add a callout box at the top referencing a new "Multi-Tenancy Implementation Guide" document
+B) Do not add new flag; rely on SOORMA_PLATFORM_TENANT_ID/env default resolution only
 
-[Answer]:
+C) Add flag plus persisted local profile/config for reuse
 
----
+D) Other (please describe after [Answer]: tag below)
 
-### Q7: Error Handling & Validation
+[Answer]: B. this is just temporary and will anyway get replaced with future authentication scheme implementation with platform identity service before final releasing.
 
-**Context**: Service clients will now receive `platform_tenant_id` at init time. It's possible to pass an empty string, None, or invalid value.
+## Question 6
+How should docs/ARCHITECTURE_PATTERNS.md be updated for SDK multi-tenancy changes?
 
-**Question**: Should service client `__init__` methods validate `platform_tenant_id`?
+A) Expand Section 1 in-place with updated header mapping and SDK init/per-call parameter split
 
-**Options**:
-- A) No validation in `__init__`; accept any string (including empty), pass as-is to backend; let backend reject invalid values
-- B) Validate non-empty string; raise `ValueError` if empty or None at init time
-- C) Validate format (e.g., must match `spt_` prefix if it's a test/default tenant); raise `ValueError` for non-matching patterns
-- D) Warn if default is used (log at init time: "Using default platform tenant ID `{DEFAULT_PLATFORM_TENANT_ID}`"); no validation
+B) Keep Section 1 concise and add a dedicated subsection specifically for SDK client header behavior
 
-[Answer]:
+C) Add a separate SDK multi-tenancy document and only cross-reference from Section 1
 
----
+D) Other (please describe after [Answer]: tag below)
 
-### Q8: Migration Path for Existing SDK Callers (Non-Agent Code)
+[Answer]: A. keep updates in Section 1 for now; this area will be replaced/reimplemented with proper service authentication in a future release.
 
-**Context**: Some existing code outside of agent handlers may directly instantiate `MemoryServiceClient` and `TrackerServiceClient` with old signatures (e.g., `client = MemoryServiceClient()` then `await client.store_task_context(tenant_id="...", user_id="...")`). After refactoring, the signature becomes `client = MemoryServiceClient(platform_tenant_id="...")` then `await client.store_task_context(service_tenant_id="...", service_user_id="...")`.
+## Question 7
+What test execution scope should gate completion of U6 code generation?
 
-**Question**: How should we handle backward compatibility for non-agent callers?
+A) Full sdk/python test suite plus targeted integration tests touching Memory and Tracker client calls
 
-**Options**:
-- A) **Breaking change**: Remove old signatures entirely; update all callers in `examples/` and tests
-- B) **Deprecation path**: Add new signatures; mark old ones with `@deprecated` warnings; keep both working for one release; plan removal in next version
-- C) **Alias methods**: Add new parameter-named methods (e.g., `store_task_context_v2`) alongside old ones; keep both indefinitely
-- D) **Factory pattern**: Create helper factory functions that wrap the client to accept old signatures and translate to new ones internally
+B) Only targeted unit tests in changed files
 
-[Answer]:
+C) Full workspace tests (all packages/services)
 
----
+D) Other (please describe after [Answer]: tag below)
 
-### Q9: PlatformContext Wrapper Implementation — Tenant/User Extraction Mechanism
-
-**Context**: Currently, agent handler functions receive a `context: PlatformContext` instance that should have access to the current event envelope (containing tenant/user context). Wrappers like `context.memory` need to extract service tenant/user from this envelope and pass to the underlying service client.
-
-**Question**: How is the current event envelope made available to PlatformContext at handler dispatch time?
-
-**Options**:
-- A) Event envelope is passed as a method parameter to every handler; PlatformContext stores it at initialization; wrappers read from stored reference
-- B) Event envelope is bound to a thread-local or context var; PlatformContext queries it at runtime via `contextvars.get_context()` or similar
-- C) PlatformContext is instantiated fresh for every event; envelope is injected into `__init__` at dispatch time
-- D) Handlers bind event envelope to PlatformContext explicitly before calling wrapper methods (e.g., `context.set_event_envelope(envelope)`)
-
-[Answer]:
-
----
-
-### Q10: Service Client Constructor Flexibility
-
-**Context**: Both `MemoryServiceClient` and `TrackerServiceClient` need similar refactoring: platform_tenant_id at init, service tenant/user per-call. But they may have slightly different initialization needs (different base URLs, timeouts, etc.).
-
-**Question**: Should we:
-
-**Options**:
-- A) Apply identical patterns to both; any differences in init parameters are client-specific (documented in their own docstrings)
-- B) Create a base class `TenantedServiceClient` with common init logic; both inherit and extend as needed
-- C) Create a shared initialization helper function; both clients call it to ensure consistent behavior
-- D) Keep them entirely independent; document expected patterns and do manual review for consistency
-
-[Answer]:
+[Answer]: C
 
 ---
 
 ## Plan Execution Steps
 
-Once all questions are answered, Functional Design will execute these steps:
-
-- [ ] Step 1: Analyze all Q1–Q10 answers for consistency and completeness
-- [ ] Step 2: Create `construction/sdk-python/functional-design/business-logic-model.md` — service client architecture, parameter binding strategy, header injection mechanism
-- [ ] Step 3: Create `construction/sdk-python/functional-design/domain-entities.md` — tenant/user parameter entities, header structures, default constant definitions
-- [ ] Step 4: Create `construction/sdk-python/functional-design/business-rules.md` — validation rules, error handling, tenant context extraction logic for wrappers
-- [ ] Step 5: Update `construction/plans/sdk-python-functional-design-plan.md` with all steps marked [x]
-- [ ] Step 6: Notify user that Functional Design is ready for review
+- [x] Step 1: Validate all answers for completeness and ambiguity
+- [x] Step 2: Generate functional design artifacts in aidlc-docs/platform/multi-tenancy/construction/sdk-python/functional-design/
+- [x] Step 3: Update this plan with resolved decisions and mark completion checkboxes
+- [x] Step 4: Present Functional Design completion message for user approval
 
 ---
 
 ## Next Step
 
-**Please answer all 10 questions above by replacing `[Answer]:` with your choice (A, B, C, D, or E).** Once all answers are provided, Functional Design artifacts will be generated.
+Functional Design artifacts have been generated at:
+- aidlc-docs/platform/multi-tenancy/construction/sdk-python/functional-design/business-logic-model.md
+- aidlc-docs/platform/multi-tenancy/construction/sdk-python/functional-design/domain-entities.md
+- aidlc-docs/platform/multi-tenancy/construction/sdk-python/functional-design/business-rules.md
+
+Awaiting user review/approval.

@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U7 (services/event-service) - Code Generation COMPLETE (Awaiting Approval)
+- **Current Stage**: CONSTRUCTION - U6 (sdk/python) - Functional Design COMPLETE (Awaiting Approval)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -83,7 +83,13 @@
 - [x] QA Test Case Enrichment — COMPLETE 2026-03-23T07:02:31Z (TC-T-001..008 enriched; enrichment-delta.md created)
 - [x] Construction Design PR Gate — APPROVED 2026-03-23T07:11:42Z (branch: dev)
 - [x] Code Generation — COMPLETE 2026-03-23T15:06:09Z | 21/21 tests pass | 5 files created, 10 files modified
-#### U6 — sdk/python (Wave 4) — blocked on U4 + U5
+#### U6 — sdk/python (Wave 4) — blocked on U4 + U5 — **IN PROGRESS**
+- [x] Unit Initialization (2026-03-25T07:24:58Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
+- [x] Functional Design Plan (construction/plans/sdk-python-functional-design-plan.md) — ANSWERED
+- [x] Functional Design (awaiting approval 2026-03-26T03:43:14Z — artifacts at construction/sdk-python/functional-design/)
+- [ ] NFR Requirements (SKIPPED per unit spec)
+- [ ] NFR Design (SKIPPED per unit spec)
+- [ ] Infrastructure Design (SKIPPED per unit spec)
 #### U7 — services/event-service (Wave 3) — blocked on U1 + U2 — **IN PROGRESS**
 - [x] Unit Initialization (2026-03-25T02:57:02Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
 - [x] Functional Design Plan (construction/plans/event-service-functional-design-plan.md) — ANSWERED
