@@ -6,31 +6,16 @@
 
 ---
 
-| TC ID | Title | Scope | Priority | Source FR | Narrative | Gherkin | Tabular |
-|---|---|---|---|---|---|---|---|
-| TC-SP-001 | SDK client sends X-Tenant-ID on every request | happy-path | High | FR-7.1 | ✅ | ✅ | ✅ |
-| TC-SP-002 | Memory client sends per-call X-Service-Tenant-ID and X-User-ID | happy-path | High | FR-7.2 | ✅ | ✅ | ✅ |
-| TC-SP-003 | Tracker client sends per-call X-Service-Tenant-ID and X-User-ID | happy-path | High | FR-7.3 | ✅ | ✅ | ✅ |
-| TC-SP-004 | PlatformContext wrappers hide platform_tenant_id from agent code | happy-path | High | FR-7.4 | ✅ | ✅ | ✅ |
-| TC-SP-005 | soorma init CLI stores platform_tenant_id in config | happy-path | Medium | FR-7.5 | ✅ | ✅ | ✅ |
-| TC-SP-006 | SDK tests cover per-call header injection | happy-path | High | FR-7.6 | ✅ | ✅ | ✅ |
-| TC-SP-007 | ARCHITECTURE_PATTERNS.md Section 1 documents two-tier model | happy-path | Medium | FR-8.1 | ✅ | ✅ | ✅ |
-| TC-SP-008 | ARCHITECTURE_PATTERNS.md Section 2 shows per-call identity | happy-path | Medium | FR-8.2 | ✅ | ✅ | ✅ |
-| TC-SP-009 | SDK without platform_tenant_id uses DEFAULT_PLATFORM_TENANT_ID | negative | Medium | FR-7.1, FR-3a.2 | ✅ | ✅ | ✅ |
-| TC-SP-010 | PlatformContext.bus.publish does not forward platform_tenant_id | negative | High | FR-7.4, FR-6.3 | ✅ | ✅ | ✅ |
-
-**Total test cases**: 10
-**Happy path**: 8 (TC-SP-001 to TC-SP-008)
-**Negative**: 2 (TC-SP-009, TC-SP-010)
-
-**FR coverage**:
-- FR-7.1 (platform_tenant_id at init): TC-SP-001, TC-SP-009
-- FR-7.2 (Memory per-call headers): TC-SP-002
-- FR-7.3 (Tracker per-call headers): TC-SP-003
-- FR-7.4 (PlatformContext wrappers): TC-SP-004, TC-SP-010
-- FR-7.5 (CLI init): TC-SP-005
-- FR-7.6 (SDK tests updated): TC-SP-006
-- FR-8.1 (ARCHITECTURE_PATTERNS.md Section 1): TC-SP-007
-- FR-8.2 (ARCHITECTURE_PATTERNS.md Section 2): TC-SP-008
-- FR-6.3 (SDK must not set platform_tenant_id): TC-SP-010
-- FR-3a.2 (default fallback): TC-SP-009
+| Test Case ID | Title | Source | Scope | Priority |
+|---|---|---|---|---|
+| TC-SP-001 | SDK client sends X-Tenant-ID on every request | sdk-python / FR-7.1 | happy-path | High |
+| TC-SP-002 | Memory client sends per-call service identity headers | sdk-python / FR-7.2 | happy-path | High |
+| TC-SP-003 | Tracker client sends per-call service identity headers | sdk-python / FR-7.3 | happy-path | High |
+| TC-SP-004 | Wrappers hide platform tenant and honor explicit override precedence | sdk-python / FR-7.4 | happy-path | High |
+| TC-SP-005 | CLI init relies on env/default path without new platform prompt | sdk-python / FR-7.5 | happy-path | Medium |
+| TC-SP-006 | SDK tests cover identity header behavior for Memory and Tracker | sdk-python / FR-7.6 | happy-path | High |
+| TC-SP-007 | Section 1 docs include two-tier model and three-header mapping | sdk-python / FR-8.1 | happy-path | Medium |
+| TC-SP-008 | Section 1 docs include init/per-call split and Event Service injection note | sdk-python / FR-8.2, FR-8.3 | happy-path | Medium |
+| TC-SP-009 | Client without explicit platform tenant uses env/default fallback | sdk-python / FR-7.1 | happy-path-negative | Medium |
+| TC-SP-010 | Publish payload does not forward platform_tenant_id from SDK | sdk-python / FR-6.3, FR-7.4 | happy-path-negative | High |
+| TC-SP-011 | EventClient publish sends X-Tenant-ID header | sdk-python / FR-8.3 | happy-path | High |
