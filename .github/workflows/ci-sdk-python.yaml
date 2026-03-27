@@ -172,8 +172,8 @@ jobs:
           poetry install
           # Install soorma-service-common local editable (registry-service dependency)
           poetry run pip install -e ../../libs/soorma-service-common
-          # Install registry-service for in-process ASGI transport tests
-          poetry run pip install -e ../../services/registry
+          # Install registry-service with dev extras for sqlite-backed integration tests
+          poetry run pip install -e "../../services/registry[dev]"
 
       - name: Run integration tests
         working-directory: ${{ env.SDK_PATH }}
