@@ -170,6 +170,8 @@ jobs:
           # Install soorma-common local editable
           poetry add --editable ../../libs/soorma-common
           poetry install
+          # Install soorma-service-common local editable (registry-service dependency)
+          poetry run pip install -e ../../libs/soorma-service-common
           # Install registry-service for in-process ASGI transport tests
           poetry run pip install -e ../../services/registry
 
