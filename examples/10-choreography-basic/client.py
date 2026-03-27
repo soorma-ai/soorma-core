@@ -45,8 +45,8 @@ async def show_observability(plan_id: str) -> None:
         # Get plan progress summary
         progress = await tracker.get_plan_progress(
             plan_id=plan_id,
-            tenant_id=TENANT_ID,
-            user_id=USER_ID,
+            service_tenant_id=TENANT_ID,
+            service_user_id=USER_ID,
         )
         
         if progress:
@@ -63,8 +63,8 @@ async def show_observability(plan_id: str) -> None:
         # Get task execution history
         tasks = await tracker.get_plan_tasks(
             plan_id=plan_id,
-            tenant_id=TENANT_ID,
-            user_id=USER_ID,
+            service_tenant_id=TENANT_ID,
+            service_user_id=USER_ID,
         )
         
         if tasks:
@@ -77,8 +77,8 @@ async def show_observability(plan_id: str) -> None:
         # Get event timeline
         timeline = await tracker.get_plan_timeline(
             plan_id=plan_id,
-            tenant_id=TENANT_ID,
-            user_id=USER_ID,
+            service_tenant_id=TENANT_ID,
+            service_user_id=USER_ID,
         )
         
         if timeline and timeline.events:

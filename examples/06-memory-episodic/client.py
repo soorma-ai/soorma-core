@@ -14,7 +14,7 @@ import sys
 import uuid
 from datetime import datetime
 from soorma import EventClient
-from soorma.memory import MemoryClient
+from soorma.memory import MemoryServiceClient
 from soorma_common.events import EventEnvelope, EventTopic
 
 
@@ -31,7 +31,7 @@ class ChatbotClient:
             agent_id="chatbot-client",
             source="chatbot-client"
         )
-        self.memory_client = MemoryClient()
+        self.memory_client = MemoryServiceClient()
         self.session_id = None
         self.waiting_for_response = False
         self.response_event = None
@@ -110,8 +110,8 @@ class ChatbotClient:
                 plan_id=plan_id,
                 goal_event="chat.conversation",
                 goal_data={"type": "episodic_memory_demo"},
-                tenant_id=TENANT_ID,
-                user_id=USER_ID
+                service_tenant_id=TENANT_ID,
+                service_user_id=USER_ID
             )
             return True
         except Exception as e:
@@ -123,8 +123,8 @@ class ChatbotClient:
         try:
             print("\n📋 Fetching plans from working memory...")
             plans = await self.memory_client.list_plans(
-                tenant_id=TENANT_ID,
-                user_id=USER_ID,
+                service_tenant_id=TENANT_ID,
+                service_user_id=USER_ID,
                 limit=20
             )
             return plans if plans else []
@@ -215,8 +215,8 @@ class ChatbotClient:
                             # Delete plan (includes working memory cleanup)
                             await self.memory_client.delete_plan(
                                 plan_id=plan_id,
-                                tenant_id=TENANT_ID,
-                                user_id=USER_ID
+                                service_tenant_id=TENANT_ID,
+                                service_user_id=USER_ID
                             )
                             print(f"✅ Plan deleted: {plan_id}\n")
                             # If we deleted the current session, need to switch

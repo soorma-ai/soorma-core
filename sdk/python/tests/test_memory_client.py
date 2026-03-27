@@ -6,7 +6,7 @@ These tests verify the MemoryClient API wrapper works correctly.
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from soorma.memory import MemoryClient
+from soorma.memory import MemoryServiceClient
 from soorma_common.models import (
     SemanticMemoryResponse,
     EpisodicMemoryResponse,
@@ -18,7 +18,10 @@ from soorma_common.models import (
 @pytest.fixture
 def memory_client():
     """Create a MemoryClient instance for testing."""
-    return MemoryClient(base_url="http://localhost:8083")
+    return MemoryServiceClient(
+        base_url="http://localhost:8083",
+        platform_tenant_id="platform-tenant-1",
+    )
 
 
 @pytest.mark.asyncio
@@ -45,7 +48,8 @@ async def test_store_knowledge(memory_client):
     # Test
     result = await memory_client.store_knowledge(
         content="Test knowledge",
-        user_id="user-1",
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
         metadata={"source": "test"}
     )
     
@@ -54,6 +58,10 @@ async def test_store_knowledge(memory_client):
     assert result.content == "Test knowledge"
     assert result.metadata == {"source": "test"}
     memory_client._client.post.assert_called_once()
+    call_headers = memory_client._client.post.call_args.kwargs["headers"]
+    assert call_headers["X-Tenant-ID"] == "platform-tenant-1"
+    assert call_headers["X-Service-Tenant-ID"] == "tenant-1"
+    assert call_headers["X-User-ID"] == "user-1"
 
 
 @pytest.mark.asyncio
@@ -81,7 +89,12 @@ async def test_search_knowledge(memory_client):
     memory_client._client.post = AsyncMock(return_value=mock_response)
     
     # Test
-    results = await memory_client.search_knowledge(query="test query", user_id="user-1", limit=5)
+    results = await memory_client.search_knowledge(
+        query="test query",
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
+        limit=5,
+    )
     
     # Verify
     assert len(results) == 1
@@ -116,7 +129,8 @@ async def test_log_interaction(memory_client):
         agent_id="agent-1",
         role="assistant",
         content="Test interaction",
-        user_id="test-user"
+        service_tenant_id="tenant-1",
+        service_user_id="test-user"
     )
     
     # Verify
@@ -162,7 +176,8 @@ async def test_get_recent_history(memory_client):
     # Test
     results = await memory_client.get_recent_history(
         agent_id="agent-1",
-        user_id="test-user",
+        service_tenant_id="tenant-1",
+        service_user_id="test-user",
         limit=10
     )
     
@@ -201,7 +216,8 @@ async def test_search_interactions(memory_client):
     results = await memory_client.search_interactions(
         agent_id="agent-1",
         query="relevant",
-        user_id="test-user",
+        service_tenant_id="tenant-1",
+        service_user_id="test-user",
         limit=5
     )
     
@@ -240,7 +256,8 @@ async def test_get_relevant_skills(memory_client):
     results = await memory_client.get_relevant_skills(
         agent_id="agent-1",
         context="user asks about billing",
-        user_id="test-user",
+        service_tenant_id="tenant-1",
+        service_user_id="test-user",
         limit=3
     )
     
@@ -276,8 +293,8 @@ async def test_set_plan_state(memory_client):
         plan_id="plan-123",
         key="research_summary",
         value={"status": "completed"},
-        tenant_id="test-tenant",
-        user_id="test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user"
     )
     
     # Verify
@@ -310,8 +327,8 @@ async def test_get_plan_state(memory_client):
     result = await memory_client.get_plan_state(
         plan_id="plan-123",
         key="research_summary",
-        tenant_id="test-tenant",
-        user_id="test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user"
     )
     
     # Verify
@@ -401,8 +418,8 @@ async def test_create_plan(memory_client):
         plan_id="plan-123",
         goal_event="chat.conversation",
         goal_data={"type": "demo"},
-        tenant_id="tenant-1",
-        user_id="user-1",
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
         session_id="session-456"
     )
     
@@ -414,7 +431,8 @@ async def test_create_plan(memory_client):
     
     # Verify headers were sent
     call_args = memory_client._client.post.call_args
-    assert call_args.kwargs["headers"]["X-Tenant-ID"] == "tenant-1"
+    assert call_args.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
+    assert call_args.kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
     assert call_args.kwargs["headers"]["X-User-ID"] == "user-1"
     memory_client._client.post.assert_called_once()
 
@@ -440,8 +458,8 @@ async def test_delete_plan(memory_client):
     # Test successful deletion
     result = await memory_client.delete_plan(
         plan_id="plan-123",
-        tenant_id="tenant-1",
-        user_id="user-1"
+        service_tenant_id="tenant-1",
+        service_user_id="user-1"
     )
     
     # Verify
@@ -457,7 +475,8 @@ async def test_delete_plan(memory_client):
     # Check second call was to delete plan
     second_call = memory_client._client.delete.call_args_list[1]
     assert "/plans/plan-123" in str(second_call)
-    assert second_call.kwargs["headers"]["X-Tenant-ID"] == "tenant-1"
+    assert second_call.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
+    assert second_call.kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
     assert second_call.kwargs["headers"]["X-User-ID"] == "user-1"
 
 
@@ -478,8 +497,8 @@ async def test_delete_plan_not_found(memory_client):
     # Test
     result = await memory_client.delete_plan(
         plan_id="nonexistent",
-        tenant_id="tenant-1",
-        user_id="user-1"
+        service_tenant_id="tenant-1",
+        service_user_id="user-1"
     )
     
     # Verify returns False for 404
@@ -487,7 +506,7 @@ async def test_delete_plan_not_found(memory_client):
 
 
 @pytest.mark.asyncio
-async def test_list_plans(memory_client):
+async def test_list_plans_requires_identity(memory_client):
     """Test listing plans with tenant_id and user_id."""
     # Mock the httpx client
     mock_response = MagicMock()
@@ -522,8 +541,8 @@ async def test_list_plans(memory_client):
     
     # Test
     results = await memory_client.list_plans(
-        tenant_id="tenant-1",
-        user_id="user-1",
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
         status="running",
         limit=10
     )
@@ -537,7 +556,8 @@ async def test_list_plans(memory_client):
     
     # Verify headers were sent
     call_args = memory_client._client.get.call_args
-    assert call_args.kwargs["headers"]["X-Tenant-ID"] == "tenant-1"
+    assert call_args.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
+    assert call_args.kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
     assert call_args.kwargs["headers"]["X-User-ID"] == "user-1"
     assert call_args.kwargs["params"]["status"] == "running"
     assert call_args.kwargs["params"]["limit"] == 10
@@ -545,8 +565,8 @@ async def test_list_plans(memory_client):
 
 
 @pytest.mark.asyncio
-async def test_list_plans_without_tenant_user(memory_client):
-    """Test listing plans without tenant_id/user_id headers."""
+async def test_list_plans(memory_client):
+    """Test listing plans requires service identity headers."""
     # Mock the httpx client
     mock_response = MagicMock()
     mock_response.json.return_value = []
@@ -556,15 +576,21 @@ async def test_list_plans_without_tenant_user(memory_client):
     memory_client._client.get = AsyncMock(return_value=mock_response)
     
     # Test
-    results = await memory_client.list_plans(limit=20)
+    results = await memory_client.list_plans(
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
+        limit=20,
+    )
     
     # Verify
     assert len(results) == 0
     
-    # Verify no headers were sent (or None was sent)
+    # Verify service identity headers were sent
     call_args = memory_client._client.get.call_args
-    headers = call_args.kwargs.get("headers")
-    assert headers is None or headers == {}
+    headers = call_args.kwargs["headers"]
+    assert headers["X-Tenant-ID"] == "platform-tenant-1"
+    assert headers["X-Service-Tenant-ID"] == "tenant-1"
+    assert headers["X-User-ID"] == "user-1"
     memory_client._client.get.assert_called_once()
 
 
@@ -590,6 +616,8 @@ async def test_create_session(memory_client):
     # Test
     result = await memory_client.create_session(
         session_id="session-789",
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
         name="Test Session",
         metadata={"context": "testing"}
     )
@@ -632,7 +660,11 @@ async def test_list_sessions(memory_client):
     memory_client._client.get = AsyncMock(return_value=mock_response)
     
     # Test
-    results = await memory_client.list_sessions(limit=10)
+    results = await memory_client.list_sessions(
+        service_tenant_id="tenant-1",
+        service_user_id="user-1",
+        limit=10,
+    )
     
     # Verify
     assert len(results) == 2

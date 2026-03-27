@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Dict, Any, List
 
 from soorma.context import MemoryClient, BusClient, RegistryClient, PlatformContext
-from soorma.memory.client import MemoryClient as MemoryServiceClient
+from soorma.memory.client import MemoryServiceClient
 from soorma.registry.client import RegistryClient as RegistryServiceClient
 from soorma.events import EventClient
 from soorma.ai.event_toolkit import EventToolkit
@@ -97,6 +97,7 @@ class TestMemoryClientWrapper:
         # Execute
         result = await wrapper.store_knowledge(
             content="Test knowledge",
+            tenant_id="tenant-1",
             user_id="user-1",
             metadata={"source": "test"}
         )
@@ -104,7 +105,10 @@ class TestMemoryClientWrapper:
         # Verify
         assert result == "sem-123"
         mock_client.store_knowledge.assert_called_once_with(
-            "Test knowledge", user_id="user-1", metadata={"source": "test"}
+            "Test knowledge",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            metadata={"source": "test"},
         )
     
     @pytest.mark.asyncio
@@ -130,14 +134,19 @@ class TestMemoryClientWrapper:
         wrapper._client = mock_client
         
         # Execute
-        results = await wrapper.search_knowledge(query="test query", user_id="user-1", limit=5)
+        results = await wrapper.search_knowledge(query="test query", tenant_id="tenant-1", user_id="user-1", limit=5)
         
         # Verify
         assert len(results) == 1
         assert results[0]["id"] == "mem-1"
         assert results[0]["content"] == "Test content"
         assert results[0]["score"] == 0.95
-        mock_client.search_knowledge.assert_called_once_with("test query", user_id="user-1", limit=5)
+        mock_client.search_knowledge.assert_called_once_with(
+            "test query",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            limit=5,
+        )
     
     @pytest.mark.asyncio
     async def test_search_interactions_with_service(self):
@@ -165,6 +174,7 @@ class TestMemoryClientWrapper:
         results = await wrapper.search_interactions(
             agent_id="agent-1",
             query="relevant",
+            tenant_id="tenant-1",
             user_id="test-user",
             limit=5
         )
@@ -175,7 +185,11 @@ class TestMemoryClientWrapper:
         assert results[0]["content"] == "Relevant interaction"
         assert results[0]["score"] == 0.88
         mock_client.search_interactions.assert_called_once_with(
-            "agent-1", "relevant", "test-user", limit=5
+            "agent-1",
+            "relevant",
+            service_tenant_id="tenant-1",
+            service_user_id="test-user",
+            limit=5,
         )
     
     @pytest.mark.asyncio
@@ -227,19 +241,20 @@ class TestMemoryClientWrapper:
             agent_id="agent-1",
             role="assistant",
             content="Completed research task",
+            tenant_id="tenant-1",
             user_id="test-user",
             metadata={"task_id": "task-1"}
         )
         
         # Verify
         assert result is True
-        # Verify positional arguments (not keyword args)
         mock_client.log_interaction.assert_called_once_with(
             "agent-1",
             "assistant",
             "Completed research task",
-            "test-user",
-            {"task_id": "task-1"}
+            service_tenant_id="tenant-1",
+            service_user_id="test-user",
+            metadata={"task_id": "task-1"},
         )
     
     @pytest.mark.asyncio
@@ -267,6 +282,7 @@ class TestMemoryClientWrapper:
         # Execute
         results = await wrapper.get_recent_history(
             agent_id="agent-1",
+            tenant_id="tenant-1",
             user_id="test-user",
             limit=10
         )
@@ -275,7 +291,12 @@ class TestMemoryClientWrapper:
         assert len(results) == 1
         assert results[0]["id"] == "ep-1"
         assert results[0]["role"] == "assistant"
-        mock_client.get_recent_history.assert_called_once_with("agent-1", "test-user", limit=10)
+        mock_client.get_recent_history.assert_called_once_with(
+            "agent-1",
+            service_tenant_id="tenant-1",
+            service_user_id="test-user",
+            limit=10,
+        )
     
     @pytest.mark.asyncio
     async def test_get_relevant_skills_with_service(self):
@@ -303,6 +324,7 @@ class TestMemoryClientWrapper:
         results = await wrapper.get_relevant_skills(
             agent_id="agent-1",
             context="need to analyze data",
+            tenant_id="tenant-1",
             user_id="test-user",
             limit=3
         )
@@ -313,7 +335,11 @@ class TestMemoryClientWrapper:
         assert results[0]["procedure_type"] == "skill"
         assert results[0]["score"] == 0.88
         mock_client.get_relevant_skills.assert_called_once_with(
-            "agent-1", "need to analyze data", "test-user", limit=3
+            "agent-1",
+            "need to analyze data",
+            service_tenant_id="tenant-1",
+            service_user_id="test-user",
+            limit=3,
         )
     
     @pytest.mark.asyncio
@@ -373,7 +399,11 @@ class TestMemoryClientWrapper:
         # Verify - value passed directly (wrapping happens in set_plan_state)
         assert result is True
         mock_client.set_plan_state.assert_called_once_with(
-            "plan-1", "key1", {"data": "value"}, "test-tenant", "test-user"
+            "plan-1",
+            "key1",
+            {"data": "value"},
+            service_tenant_id="test-tenant",
+            service_user_id="test-user",
         )
     
     @pytest.mark.asyncio
@@ -405,7 +435,10 @@ class TestMemoryClientWrapper:
         # Verify - value returned directly
         assert result == {"data": "value"}
         mock_client.get_plan_state.assert_called_once_with(
-            "plan-1", "key1", "test-tenant", "test-user"
+            "plan-1",
+            "key1",
+            service_tenant_id="test-tenant",
+            service_user_id="test-user",
         )
     
     @pytest.mark.asyncio
@@ -449,8 +482,8 @@ class TestMemoryClientWrapper:
             plan_id="plan-abc",
             goal_event="research.goal",
             goal_data={"topic": "AI agents"},
-            tenant_id="tenant-1",
-            user_id="user-1",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
             session_id="session-1",
             parent_plan_id=None,
         )

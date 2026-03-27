@@ -52,8 +52,8 @@ class TestContextMemoryClientDeletion:
         assert result.deleted is True
         mock_service_client.delete_plan_state.assert_called_once_with(
             plan_id=setup["plan_id"],
-            tenant_id=setup["tenant_id"],
-            user_id=setup["user_id"],
+            service_tenant_id=setup["tenant_id"],
+            service_user_id=setup["user_id"],
             key=setup["key"],
         )
 
@@ -110,8 +110,8 @@ class TestContextMemoryClientDeletion:
         assert result.count_deleted == 5
         mock_service_client.delete_plan_state.assert_called_once_with(
             plan_id=setup["plan_id"],
-            tenant_id=setup["tenant_id"],
-            user_id=setup["user_id"],
+            service_tenant_id=setup["tenant_id"],
+            service_user_id=setup["user_id"],
             key=None,
         )
 

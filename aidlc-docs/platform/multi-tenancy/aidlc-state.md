@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: multi-tenancy
 - **Start Date**: 2026-03-21T23:01:10Z
-- **Current Stage**: CONSTRUCTION - U6 (sdk/python) - Construction Design PR Gate (PENDING Team Approval)
+- **Current Stage**: CONSTRUCTION - Build and Test (IN PROGRESS)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -91,7 +91,10 @@
 - [ ] NFR Design (SKIPPED per unit spec)
 - [ ] Infrastructure Design (SKIPPED per unit spec)
 - [x] QA Test Case Enrichment — COMPLETE 2026-03-26T07:44:43Z (TC-SP-004/005/008/009/010 enriched; TC-SP-011 added; enrichment-delta.md created)
-- [ ] Construction Design PR Gate — PENDING 2026-03-26T07:42:06Z (branch: dev)
+- [x] Construction Design PR Gate — APPROVED 2026-03-27T03:51:24Z (branch: dev)
+- [x] Code Generation Plan (APPROVED 2026-03-27T03:52:10Z — construction/plans/sdk-python-code-generation-plan.md)
+- [x] Code Generation — COMPLETE 2026-03-27T06:15:15Z | focused suite 93/93 pass; full sdk/python suite 506 passed, 5 skipped; repo-wide pytest collection blocked by unrelated import-path issues
+- [x] Code Generation Review — APPROVED 2026-03-27T06:41:40Z
 #### U7 — services/event-service (Wave 3) — blocked on U1 + U2 — **IN PROGRESS**
 - [x] Unit Initialization (2026-03-25T02:57:02Z — extensions loaded: pr-checkpoint, jira-tickets, qa-test-cases (B), security-baseline)
 - [x] Functional Design Plan (construction/plans/event-service-functional-design-plan.md) — ANSWERED
@@ -104,7 +107,7 @@
 - [x] Construction Design PR Gate — APPROVED 2026-03-25T06:12:52Z (branch: dev)
 - [x] Code Generation — COMPLETE 2026-03-25T06:19:57Z | 27/27 tests pass
 
-- [ ] Build and Test (after all units complete)
+- [ ] Build and Test (IN PROGRESS 2026-03-27T06:41:40Z)
 
 ### OPERATIONS PHASE
 - [ ] Operations (Placeholder)
@@ -161,8 +164,8 @@
 - **Approved**: 2026-03-25T06:12:52Z
 
 ### Construction Design PR Gate — sdk-python
-- **Status**: PENDING
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/multi-tenancy/construction/plans/sdk-python-design-pr-checkpoint-instructions.md
 - **Created**: 2026-03-26T07:42:06Z
-- **Approved**: —
+- **Approved**: 2026-03-27T03:51:24Z

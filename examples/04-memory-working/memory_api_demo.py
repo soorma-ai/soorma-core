@@ -7,7 +7,7 @@ how WorkflowState simplifies the code.
 
 import asyncio
 import uuid
-from soorma.memory.client import MemoryClient
+from soorma.memory.client import MemoryServiceClient
 
 
 async def demonstrate_raw_memory_api():
@@ -18,7 +18,7 @@ async def demonstrate_raw_memory_api():
     user_id = "00000000-0000-0000-0000-000000000000"
     
     # Create Memory client directly (not through PlatformContext)
-    memory = MemoryClient()
+    memory = MemoryServiceClient()
     plan_id = str(uuid.uuid4())
     
     print(f"📋 Plan ID: {plan_id}\n")
@@ -31,8 +31,8 @@ async def demonstrate_raw_memory_api():
         plan_id=plan_id,
         key="goal",
         value={"text": "Write a blog post about Docker"},
-        tenant_id=tenant_id,
-        user_id=user_id
+        service_tenant_id=tenant_id,
+        service_user_id=user_id
     )
     print("   ✓ Stored goal")
     
@@ -42,8 +42,8 @@ async def demonstrate_raw_memory_api():
         plan_id=plan_id,
         key="tasks",
         value={"list": ["research", "draft", "review"]},
-        tenant_id=tenant_id,
-        user_id=user_id
+        service_tenant_id=tenant_id,
+        service_user_id=user_id
     )
     print("   ✓ Stored tasks")
     
@@ -53,8 +53,8 @@ async def demonstrate_raw_memory_api():
         plan_id=plan_id,
         key="progress",
         value={"current_task": "research", "completed": []},
-        tenant_id=tenant_id,
-        user_id=user_id
+        service_tenant_id=tenant_id,
+        service_user_id=user_id
     )
     print("   ✓ Stored progress")
     
@@ -78,8 +78,8 @@ async def demonstrate_raw_memory_api():
         plan_id=plan_id,
         key="progress",
         value=progress_data,
-        tenant_id=tenant_id,
-        user_id=user_id
+        service_tenant_id=tenant_id,
+        service_user_id=user_id
     )
     print("   ✓ Updated progress")
     
@@ -92,8 +92,8 @@ async def demonstrate_raw_memory_api():
     delete_key_response = await memory.delete_plan_state(
         plan_id=plan_id,
         key="progress",  # Remove progress tracking
-        tenant_id=tenant_id,
-        user_id=user_id
+        service_tenant_id=tenant_id,
+        service_user_id=user_id
     )
     if delete_key_response.deleted:
         print("   ✓ Deleted 'progress' key")
@@ -104,8 +104,8 @@ async def demonstrate_raw_memory_api():
     print("\n7. Cleaning up all state for the plan...")
     delete_all_response = await memory.delete_plan_state(
         plan_id=plan_id,
-        tenant_id=tenant_id,
-        user_id=user_id
+        service_tenant_id=tenant_id,
+        service_user_id=user_id
     )
     print(f"   ✓ Deleted {delete_all_response.count_deleted} state entries")
     

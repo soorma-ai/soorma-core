@@ -1,6 +1,6 @@
 # Soorma Core: Architecture Patterns
 
-**Version:** 0.7.x (Pre-Production)  
+**Version:** 0.8.x (Pre-Production)  
 **Status:** Living Document  
 **Last Updated:** February 18, 2026
 
@@ -21,7 +21,7 @@ Soorma operates with **two distinct tenancy dimensions**. Understanding this dis
 - **Scope:** **Registry Service only** — agents, events, and payload schemas belong to the developer tenant
 - **Identifier:** Developer Tenant UUID (`SOORMA_DEVELOPER_TENANT_ID` env var)
 - **Current header:** `X-Tenant-ID` (developer UUID) — **no `X-User-ID`**
-- **Future auth:** Developer API Key (v0.8.0+) — replaces the manual env-var header
+- **Future auth:** Developer API Key (v0.9.0+) — replaces the manual env-var header
 - **Example:** Acme Corp's registered workers are invisible to Contoso's workers in the same Soorma deployment
 
 #### Tier 2: Client Tenant + User (Developer's Application Tenancy)
@@ -30,7 +30,7 @@ Soorma operates with **two distinct tenancy dimensions**. Understanding this dis
 - **Purpose:** Isolates one developer's customer's data from another customer's (memory, tasks, plans)
 - **Scope:** **Memory Service, Tracker Service, Event Service** — task contexts, plans, episodic memory
 - **Identifiers:** Client Tenant UUID + User UUID (carried in event envelope)
-- **Current headers:** `X-Tenant-ID` (client tenant UUID) + `X-User-ID` (user UUID)
+- **Current headers:** `X-Tenant-ID` (platform tenant UUID) + `X-Service-Tenant-ID` (client tenant UUID) + `X-User-ID` (user UUID)
 - **Future auth:** JWT token issued by the developer's app — Soorma extracts `tenant_id` + `user_id` from claims
 - **Example:** Acme Corp's customer Alice's conversation history is isolated from customer Bob's
 
@@ -39,9 +39,26 @@ Soorma operates with **two distinct tenancy dimensions**. Understanding this dis
 | Service | Tenancy Tier | Headers (Current) | Future Auth |
 |---------|-------------|-------------------|-------------|
 | **Registry Service** | Developer Tenant | `X-Tenant-ID` (developer UUID only) | Developer API Key |
-| **Memory Service** | Client Tenant + User | `X-Tenant-ID` + `X-User-ID` (client) | JWT (client user token) |
-| **Tracker Service** | Client Tenant + User | `X-Tenant-ID` + `X-User-ID` (client) | JWT (client user token) |
-| **Event Service** | Client Tenant + User | `X-Tenant-ID` + `X-User-ID` (client) | JWT (client user token) |
+| **Memory Service** | Client Tenant + User | `X-Tenant-ID` (platform) + `X-Service-Tenant-ID` (client) + `X-User-ID` | JWT (client user token) |
+| **Tracker Service** | Client Tenant + User | `X-Tenant-ID` (platform) + `X-Service-Tenant-ID` (client) + `X-User-ID` | JWT (client user token) |
+| **Event Service** | Client Tenant + User | `X-Tenant-ID` (platform) + `X-Service-Tenant-ID` (client) + `X-User-ID` | JWT (client user token) |
+
+### Current Multi-Tenancy Header Split
+
+For the current multi-tenancy rollout, SDK and service code must treat identity as a split between a platform tenant and service-scoped caller identity:
+
+| Concern | Current Source | Transport | Notes |
+|---------|----------------|-----------|-------|
+| Platform tenant | `DEFAULT_PLATFORM_TENANT_ID` / `SOORMA_PLATFORM_TENANT_ID` | `X-Tenant-ID` header | Fixed at low-level client construction time for Memory, Tracker, and Event publish paths |
+| Service tenant | Event envelope `tenant_id` or explicit wrapper arg | `X-Service-Tenant-ID` header | Passed per call; represents the developer application's customer tenant |
+| Service user | Event envelope `user_id` or explicit wrapper arg | `X-User-ID` header | Passed per call; represents the end user within the service tenant |
+
+Current SDK rules:
+
+- `MemoryServiceClient` and `TrackerServiceClient` own the platform tenant and project all three headers on every request.
+- PlatformContext wrappers may default `tenant_id` and `user_id` from the bound event envelope, but explicit arguments always win.
+- `EventClient.publish()` must send `X-Tenant-ID` for the platform tenant while keeping `tenant_id` and `user_id` in the event envelope only.
+- SDK callers must not inject `platform_tenant_id` into outbound event payloads or envelopes. Event Service remains the trust boundary for any platform-tenant enrichment.
 
 ---
 
@@ -52,7 +69,8 @@ Soorma operates with **two distinct tenancy dimensions**. Understanding this dis
 SDK-to-service communication uses **custom HTTP headers** for authentication context. The specific headers differ by service tier (see table above):
 
 **Tier 2 services (Memory, Tracker, Event):**
-- `X-Tenant-ID`: Client tenant identifier (UUID)
+- `X-Tenant-ID`: Platform tenant identifier (UUID)
+- `X-Service-Tenant-ID`: Client tenant identifier (UUID)
 - `X-User-ID`: End-user identifier (UUID)
 
 **Tier 1 service (Registry):**
@@ -61,13 +79,14 @@ SDK-to-service communication uses **custom HTTP headers** for authentication con
 **Implementation (Tier 2 — Memory/Tracker/Event services):**
 
 ```python
-# SDK MemoryServiceClient example (client tenant + user headers)
+# SDK MemoryServiceClient example (platform tenant + service tenant + user headers)
 response = await self._client.post(
     f"{self.base_url}/v1/memory/task-context",
     json=data.model_dump(by_alias=True),
     headers={
-        "X-Tenant-ID": client_tenant_id,  # Developer's customer tenant
-        "X-User-ID": user_id,             # End-user within that tenant
+        "X-Tenant-ID": platform_tenant_id,
+        "X-Service-Tenant-ID": client_tenant_id,
+        "X-User-ID": user_id,
     },
 )
 ```
@@ -94,12 +113,13 @@ Services extract these headers and use them for:
 - Audit logging
 
 ```python
-# Memory/Tracker service endpoint example (Tier 2 — client tenant + user)
+# Memory/Tracker service endpoint example (Tier 2 — platform tenant + client tenant + user)
 @router.post("/v1/memory/task-context")
 async def store_task_context(
     data: TaskContextCreate,
-    tenant_id: str = Header(None, alias="X-Tenant-ID"),  # client tenant
-    user_id: str = Header(None, alias="X-User-ID"),      # end-user
+    platform_tenant_id: str = Header(None, alias="X-Tenant-ID"),
+    tenant_id: str = Header(None, alias="X-Service-Tenant-ID"),
+    user_id: str = Header(None, alias="X-User-ID"),
 ):
     # Set session variables for RLS
     await db.execute(f"SET app.tenant_id = '{tenant_id}'")
@@ -135,7 +155,7 @@ CREATE POLICY agents_tenant_isolation ON agents
     USING (tenant_id = current_setting('app.tenant_id')::UUID);
 ```
 
-### Future Pattern: JWT & API Keys (v0.8.0+)
+### Future Pattern: JWT & API Keys (v0.9.0+)
 
 **Status:** 📋 Planned - Not yet implemented
 
@@ -172,10 +192,10 @@ await context.memory.store_task_context(...)
 
 **Migration Plan:**
 
-| Tier | Current (v0.7.x) | v0.8.0+ | v1.0.0 |
+| Tier | Current (v0.8.x) | v0.9.0+ | v1.0.0 |
 |------|-----------------|---------|--------|
 | Developer Tenant (Registry) | `X-Tenant-ID` env var | Developer API Key | API Key only |
-| Client Tenant+User (Memory/Tracker/Event) | `X-Tenant-ID` + `X-User-ID` headers | JWT token | JWT only |
+| Client Tenant+User (Memory/Tracker/Event) | `X-Tenant-ID` + `X-Service-Tenant-ID` + `X-User-ID` headers | JWT token | JWT only |
 
 ---
 
@@ -196,10 +216,10 @@ Soorma SDK follows a **strict two-layer abstraction** to separate low-level serv
 │            Layer 2: PlatformContext Wrappers                │
 │                  (High-Level Agent API)                     │
 │                                                             │
-│  • context.memory  (MemoryClient wrapper)                  │
-│  • context.bus     (BusClient wrapper)                     │
-│  • context.registry (RegistryClient)                       │
-│  • context.tracker (TrackerClient wrapper)                 │
+│  • context.memory  (MemoryClient wrapper)                   │
+│  • context.bus     (BusClient wrapper)                      │
+│  • context.registry (RegistryClient)                        │
+│  • context.tracker (TrackerClient wrapper)                  │
 └────────────────────┬────────────────────────────────────────┘
                      │ Delegates via self._client
                      ▼
@@ -207,11 +227,11 @@ Soorma SDK follows a **strict two-layer abstraction** to separate low-level serv
 │            Layer 1: Service Clients                         │
 │              (Low-Level HTTP Clients)                       │
 │                                                             │
-│  • MemoryServiceClient  (soorma.memory.client)             │
-│  • EventClient          (soorma.events)                    │
-│  • RegistryClient       (soorma.registry.client)           │
-│    └─ NOTE: RegistryClient is ALSO the Layer 2 wrapper     │
-│       (no separate low-level class for Registry)           │
+│  • MemoryServiceClient  (soorma.memory.client)              │
+│  • EventClient          (soorma.events)                     │
+│  • RegistryClient       (soorma.registry.client)            │
+│    └─ NOTE: RegistryClient is ALSO the Layer 2 wrapper      │
+│       (no separate low-level class for Registry)            │
 └────────────────────┬────────────────────────────────────────┘
                      │ HTTP/gRPC
                      ▼
@@ -232,7 +252,7 @@ Soorma SDK follows a **strict two-layer abstraction** to separate low-level serv
 
 **Characteristics:**
 - Direct HTTP calls with `httpx`
-- Manual header injection (`X-Tenant-ID`, `X-User-ID`)
+- Manual header injection (`X-Tenant-ID`, `X-Service-Tenant-ID`, `X-User-ID`)
 - Pydantic model serialization/deserialization
 - Fine-grained error handling
 - **NOT for agent handler use**
@@ -245,8 +265,8 @@ from soorma.memory.client import MemoryServiceClient
 client = MemoryServiceClient(base_url="http://localhost:8083")
 result = await client.store_task_context(
     task_id="task-123",
-    tenant_id="tenant-uuid",  # Manual parameter
-    user_id="user-uuid",      # Manual parameter
+    service_tenant_id="tenant-uuid",  # Manual per-call service tenant
+    service_user_id="user-uuid",      # Manual per-call service user
     ...
 )
 ```
@@ -321,8 +341,8 @@ class MemoryClient:
             task_id=task_id,
             plan_id=plan_id,
             event_type=event_type,
-            tenant_id=tenant_id,  # Extracted from event context
-            user_id=user_id,      # Extracted from event context
+            service_tenant_id=tenant_id,  # Extracted from event context
+            service_user_id=user_id,      # Extracted from event context
             ...
         )
 ```
