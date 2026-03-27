@@ -7,7 +7,7 @@ how WorkflowState simplifies the code.
 
 import asyncio
 import uuid
-from soorma.memory.client import MemoryClient
+from soorma.memory.client import MemoryServiceClient
 
 
 async def demonstrate_raw_memory_api():
@@ -18,7 +18,7 @@ async def demonstrate_raw_memory_api():
     user_id = "00000000-0000-0000-0000-000000000000"
     
     # Create Memory client directly (not through PlatformContext)
-    memory = MemoryClient()
+    memory = MemoryServiceClient()
     plan_id = str(uuid.uuid4())
     
     print(f"📋 Plan ID: {plan_id}\n")

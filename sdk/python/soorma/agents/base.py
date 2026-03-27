@@ -414,11 +414,15 @@ class Agent(ABC):
                         # Filter by topic when provided (EventClient doesn't enforce it)
                         if not self._topic_matches(event.topic, t):
                             return
-                        token = self._context.bus.bind_event_metadata(event)
+                        bus_token = self._context.bus.bind_event_metadata(event)
+                        memory_token = self._context.memory.bind_event_metadata(event)
+                        tracker_token = self._context.tracker.bind_event_metadata(event)
                         try:
                             await h(event, self._context)
                         finally:
-                            self._context.bus.reset_event_metadata(token)
+                            self._context.tracker.reset_event_metadata(tracker_token)
+                            self._context.memory.reset_event_metadata(memory_token)
+                            self._context.bus.reset_event_metadata(bus_token)
                 else:
                     @event_client.on_event(event_type)
                     async def wrapped_handler(
@@ -433,11 +437,15 @@ class Agent(ABC):
                         # Safety check in case handler is registered for multiple event types
                         if event.type != et:
                             return
-                        token = self._context.bus.bind_event_metadata(event)
+                        bus_token = self._context.bus.bind_event_metadata(event)
+                        memory_token = self._context.memory.bind_event_metadata(event)
+                        tracker_token = self._context.tracker.bind_event_metadata(event)
                         try:
                             await h(event, self._context)
                         finally:
-                            self._context.bus.reset_event_metadata(token)
+                            self._context.tracker.reset_event_metadata(tracker_token)
+                            self._context.memory.reset_event_metadata(memory_token)
+                            self._context.bus.reset_event_metadata(bus_token)
         
         # Create context with clients
         from ..context import RegistryClient, MemoryClient, BusClient, TrackerClient

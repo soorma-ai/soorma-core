@@ -4,7 +4,7 @@ import pytest
 from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from soorma.memory.client import MemoryClient
+from soorma.memory.client import MemoryServiceClient
 from soorma_common.models import (
     WorkingMemoryResponse,
     WorkingMemoryDeleteKeyResponse,
@@ -18,7 +18,7 @@ class TestMemoryClientWorkingMemoryDeletion:
     @pytest.fixture
     def client(self):
         """Create and cleanup MemoryClient."""
-        client = MemoryClient(base_url="http://localhost:8083")
+        client = MemoryServiceClient(base_url="http://localhost:8083")
         yield client
         # Note: close() is async, so we can't call it directly in sync fixture
         # The client will be cleaned up via context manager in tests that need it
@@ -52,8 +52,8 @@ class TestMemoryClientWorkingMemoryDeletion:
             # Delete key
             result = await client.delete_plan_state(
                 plan_id=test_ids["plan_id"],
-                tenant_id=test_ids["tenant_id"],
-                user_id=test_ids["user_id"],
+                service_tenant_id=test_ids["tenant_id"],
+                service_user_id=test_ids["user_id"],
                 key=test_ids["key"],
             )
 
@@ -88,8 +88,8 @@ class TestMemoryClientWorkingMemoryDeletion:
             # Delete non-existent key
             result = await client.delete_plan_state(
                 plan_id=test_ids["plan_id"],
-                tenant_id=test_ids["tenant_id"],
-                user_id=test_ids["user_id"],
+                service_tenant_id=test_ids["tenant_id"],
+                service_user_id=test_ids["user_id"],
                 key=test_ids["key"],
             )
 
@@ -116,8 +116,8 @@ class TestMemoryClientWorkingMemoryDeletion:
             # Delete all keys for plan
             result = await client.delete_plan_state(
                 plan_id=test_ids["plan_id"],
-                tenant_id=test_ids["tenant_id"],
-                user_id=test_ids["user_id"],
+                service_tenant_id=test_ids["tenant_id"],
+                service_user_id=test_ids["user_id"],
             )
 
             # Verify
@@ -151,8 +151,8 @@ class TestMemoryClientWorkingMemoryDeletion:
             # Delete all keys from empty plan
             result = await client.delete_plan_state(
                 plan_id=test_ids["plan_id"],
-                tenant_id=test_ids["tenant_id"],
-                user_id=test_ids["user_id"],
+                service_tenant_id=test_ids["tenant_id"],
+                service_user_id=test_ids["user_id"],
             )
 
             # Verify
@@ -176,8 +176,8 @@ class TestMemoryClientWorkingMemoryDeletion:
         with patch.object(client._client, "delete", async_mock):
             await client.delete_plan_state(
                 plan_id=test_ids["plan_id"],
-                tenant_id=test_ids["tenant_id"],
-                user_id=test_ids["user_id"],
+                service_tenant_id=test_ids["tenant_id"],
+                service_user_id=test_ids["user_id"],
                 key=test_ids["key"],
             )
 
@@ -189,7 +189,8 @@ class TestMemoryClientWorkingMemoryDeletion:
             assert test_ids["key"] in call_args[0][0]
             # Check headers include tenant_id and user_id
             headers = call_args[1]["headers"]
-            assert headers["X-Tenant-ID"] == test_ids["tenant_id"]
+            assert headers["X-Tenant-ID"]
+            assert headers["X-Service-Tenant-ID"] == test_ids["tenant_id"]
             assert headers["X-User-ID"] == test_ids["user_id"]
 
 

@@ -23,7 +23,10 @@ from soorma_common.tracking import TaskState
 @pytest.fixture
 def tracker_client():
     """Create TrackerServiceClient instance."""
-    return TrackerServiceClient(base_url="http://localhost:8084")
+    return TrackerServiceClient(
+        base_url="http://localhost:8084",
+        platform_tenant_id="platform-tenant-1",
+    )
 
 
 @pytest.fixture
@@ -61,8 +64,8 @@ class TestGetPlanProgress:
         
         result = await tracker_client.get_plan_progress(
             plan_id=plan_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, PlanProgress)
@@ -74,7 +77,8 @@ class TestGetPlanProgress:
         # Verify headers were sent
         tracker_client._client.get.assert_called_once()
         call_args = tracker_client._client.get.call_args
-        assert call_args.kwargs["headers"]["X-Tenant-ID"] == mock_auth["tenant_id"]
+        assert call_args.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
+        assert call_args.kwargs["headers"]["X-Service-Tenant-ID"] == mock_auth["tenant_id"]
         assert call_args.kwargs["headers"]["X-User-ID"] == mock_auth["user_id"]
     
     @pytest.mark.asyncio
@@ -100,8 +104,8 @@ class TestGetPlanProgress:
         
         result = await tracker_client.get_plan_progress(
             plan_id=plan_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert result is None
@@ -143,8 +147,8 @@ class TestGetPlanTasks:
         
         result = await tracker_client.get_plan_tasks(
             plan_id=plan_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, list)
@@ -188,8 +192,8 @@ class TestGetPlanTimeline:
         
         result = await tracker_client.get_plan_timeline(
             plan_id=plan_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, EventTimeline)
@@ -224,8 +228,8 @@ class TestQueryAgentMetrics:
         result = await tracker_client.query_agent_metrics(
             agent_id=agent_id,
             period=period,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, AgentMetrics)
@@ -263,8 +267,8 @@ class TestHierarchyMethods:
         
         result = await tracker_client.get_sub_plans(
             plan_id=plan_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, list)
@@ -297,8 +301,8 @@ class TestHierarchyMethods:
         
         result = await tracker_client.get_session_plans(
             session_id=session_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, list)
@@ -325,8 +329,8 @@ class TestHierarchyMethods:
         
         result = await tracker_client.get_delegation_group(
             group_id=group_id,
-            tenant_id=mock_auth["tenant_id"],
-            user_id=mock_auth["user_id"],
+            service_tenant_id=mock_auth["tenant_id"],
+            service_user_id=mock_auth["user_id"],
         )
         
         assert isinstance(result, DelegationGroup)

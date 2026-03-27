@@ -10,7 +10,6 @@ framework with four types of memory:
 """
 
 from typing import Any, Dict, List, Optional
-from uuid import UUID
 import httpx
 
 from soorma_common.models import (
@@ -38,9 +37,10 @@ from soorma_common.models import (
     SessionCreate,
     SessionSummary,
 )
+from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 
-class MemoryClient:
+class MemoryServiceClient:
     """
     Client for interacting with the Memory Service API.
     
@@ -55,6 +55,7 @@ class MemoryClient:
         self,
         base_url: str = "http://localhost:8083",
         timeout: float = 30.0,
+        platform_tenant_id: Optional[str] = None,
     ):
         """
         Initialize the memory client.
@@ -62,13 +63,15 @@ class MemoryClient:
         Args:
             base_url: Base URL of the memory service (e.g., "http://localhost:8083")
             timeout: HTTP request timeout in seconds
+            platform_tenant_id: Platform tenant identifier for X-Tenant-ID header
             
         Note:
-            tenant_id and user_id are passed per-request in method calls.
-            This allows a single agent to serve multiple users/tenants.
+            service_tenant_id and service_user_id are passed per-request in method
+            calls. platform_tenant_id is fixed for the client lifetime.
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
         self._client = httpx.AsyncClient(timeout=timeout)
     
     async def close(self):
@@ -82,13 +85,31 @@ class MemoryClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.close()
+
+    def _build_identity_headers(
+        self,
+        service_tenant_id: str,
+        service_user_id: str,
+    ) -> Dict[str, str]:
+        """Build required identity headers for Memory Service requests."""
+        if not service_tenant_id or not service_user_id:
+            raise ValueError(
+                "service_tenant_id and service_user_id are required"
+            )
+
+        return {
+            "X-Tenant-ID": self.platform_tenant_id,
+            "X-Service-Tenant-ID": service_tenant_id,
+            "X-User-ID": service_user_id,
+        }
     
     # Semantic Memory Methods
     
     async def store_knowledge(
         self,
         content: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         external_id: Optional[str] = None,
         is_public: bool = False,
         metadata: Optional[Dict[str, Any]] = None,
@@ -110,7 +131,8 @@ class MemoryClient:
         
         Args:
             content: Knowledge content to store (required)
-            user_id: User who owns this knowledge (required)
+            service_tenant_id: Service tenant identifier (required)
+            service_user_id: User who owns this knowledge (required)
             external_id: Optional user-provided ID for versioning/upsert
             is_public: If True, visible to all users in tenant. Default False (private).
             metadata: Optional metadata dict
@@ -154,7 +176,7 @@ class MemoryClient:
         
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic",
-            params={"user_id": user_id},  # Pass user_id as query parameter for API context
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
             json=data.model_dump(by_alias=True),
         )
         response.raise_for_status()
@@ -163,7 +185,8 @@ class MemoryClient:
     async def query_knowledge(
         self,
         query: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         limit: int = 5,
         include_public: bool = True,
     ) -> List[SemanticMemoryResponse]:
@@ -174,7 +197,8 @@ class MemoryClient:
         
         Args:
             query: Search query text
-            user_id: User performing the query
+            service_tenant_id: Service tenant identifier
+            service_user_id: User performing the query
             limit: Maximum number of results (1-50)
             include_public: If True (default), includes public knowledge from all users
             
@@ -183,8 +207,8 @@ class MemoryClient:
         """
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic/query",
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
             params={
-                "user_id": user_id,
                 "query": query,
                 "limit": limit,
                 "include_public": include_public,
@@ -196,7 +220,8 @@ class MemoryClient:
     async def search_knowledge(
         self,
         query: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         limit: int = 5,
     ) -> List[SemanticMemoryResponse]:
         """
@@ -214,7 +239,13 @@ class MemoryClient:
         Returns:
             List of SemanticMemoryResponse ordered by relevance
         """
-        return await self.query_knowledge(query, user_id, limit, include_public=True)
+        return await self.query_knowledge(
+            query,
+            service_tenant_id,
+            service_user_id,
+            limit,
+            include_public=True,
+        )
     
     # Episodic Memory Methods
     
@@ -223,7 +254,8 @@ class MemoryClient:
         agent_id: str,
         role: str,
         content: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> EpisodicMemoryResponse:
         """
@@ -233,7 +265,8 @@ class MemoryClient:
             agent_id: Agent identifier
             role: Role (user, assistant, system, tool)
             content: Interaction content
-            user_id: User identifier (required in single-tenant mode)
+            service_tenant_id: Service tenant identifier (required)
+            service_user_id: User identifier (required)
             metadata: Optional metadata
             
         Returns:
@@ -249,7 +282,7 @@ class MemoryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/episodic",
             json=data.model_dump(by_alias=True),
-            params={"user_id": user_id},
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return EpisodicMemoryResponse.model_validate(response.json())
@@ -257,7 +290,8 @@ class MemoryClient:
     async def get_recent_history(
         self,
         agent_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         limit: int = 10,
     ) -> List[EpisodicMemoryResponse]:
         """
@@ -273,7 +307,8 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/episodic/recent",
-            params={"agent_id": agent_id, "user_id": user_id, "limit": limit},
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            params={"agent_id": agent_id, "limit": limit},
         )
         response.raise_for_status()
         return [EpisodicMemoryResponse.model_validate(item) for item in response.json()]
@@ -282,7 +317,8 @@ class MemoryClient:
         self,
         agent_id: str,
         query: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         limit: int = 5,
     ) -> List[EpisodicMemoryResponse]:
         """
@@ -299,7 +335,8 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/episodic/search",
-            params={"agent_id": agent_id, "q": query, "user_id": user_id, "limit": limit},
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            params={"agent_id": agent_id, "q": query, "limit": limit},
         )
         response.raise_for_status()
         return [EpisodicMemoryResponse.model_validate(item) for item in response.json()]
@@ -310,7 +347,8 @@ class MemoryClient:
         self,
         agent_id: str,
         context: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         limit: int = 3,
     ) -> List[ProceduralMemoryResponse]:
         """
@@ -329,7 +367,8 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/procedural/context",
-            params={"agent_id": agent_id, "q": context, "user_id": user_id, "limit": limit},
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            params={"agent_id": agent_id, "q": context, "limit": limit},
         )
         response.raise_for_status()
         return [ProceduralMemoryResponse.model_validate(item) for item in response.json()]
@@ -341,8 +380,8 @@ class MemoryClient:
         plan_id: str,
         key: str,
         value: Any,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
     ) -> WorkingMemoryResponse:
         """
         Set or update working memory value for a plan.
@@ -362,10 +401,7 @@ class MemoryClient:
         response = await self._client.put(
             f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
             json=data.model_dump(by_alias=True),
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())
@@ -374,8 +410,8 @@ class MemoryClient:
         self,
         plan_id: str,
         key: str,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
     ) -> WorkingMemoryResponse:
         """
         Get working memory value for a plan.
@@ -394,10 +430,7 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())
@@ -405,8 +438,8 @@ class MemoryClient:
     async def delete_plan_state(
         self,
         plan_id: str,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         key: Optional[str] = None,
     ) -> WorkingMemoryDeleteKeyResponse | WorkingMemoryDeletePlanResponse:
         """
@@ -453,10 +486,7 @@ class MemoryClient:
             # Delete single key
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return WorkingMemoryDeleteKeyResponse.model_validate(response.json())
@@ -464,10 +494,7 @@ class MemoryClient:
             # Delete all keys for plan
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/working/{plan_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return WorkingMemoryDeletePlanResponse.model_validate(response.json())
@@ -497,8 +524,8 @@ class MemoryClient:
         data: Optional[Dict[str, Any]] = None,
         sub_tasks: Optional[List[str]] = None,
         state: Optional[Dict[str, Any]] = None,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        service_tenant_id: Optional[str] = None,
+        service_user_id: Optional[str] = None,
     ) -> TaskContextResponse:
         """
         Store task context for async completion (upsert operation).
@@ -521,8 +548,8 @@ class MemoryClient:
         Returns:
             TaskContextResponse with the stored context
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from task context)")
+        if not service_tenant_id or not service_user_id:
+            raise ValueError("service_tenant_id and service_user_id are required")
         
         request_data = TaskContextCreate(
             task_id=task_id,
@@ -533,17 +560,14 @@ class MemoryClient:
             data=data or {},
             sub_tasks=sub_tasks or [],
             state=state or {},
-            user_id=user_id,
+            user_id=service_user_id,
         )
         
         # POST does upsert so save() can be called multiple times safely
         response = await self._client.post(
             f"{self.base_url}/v1/memory/task-context",
             json=request_data.model_dump(by_alias=True),
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return TaskContextResponse.model_validate(response.json())
@@ -551,8 +575,8 @@ class MemoryClient:
     async def get_task_context(
         self,
         task_id: str,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        service_tenant_id: Optional[str] = None,
+        service_user_id: Optional[str] = None,
     ) -> Optional[TaskContextResponse]:
         """
         Retrieve task context.
@@ -567,16 +591,13 @@ class MemoryClient:
         Returns:
             TaskContextResponse or None if not found
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from task context)")
+        if not service_tenant_id or not service_user_id:
+            raise ValueError("service_tenant_id and service_user_id are required")
         
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/task-context/{task_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return TaskContextResponse.model_validate(response.json())
@@ -590,8 +611,8 @@ class MemoryClient:
         task_id: str,
         sub_tasks: Optional[List[str]] = None,
         state: Optional[Dict[str, Any]] = None,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        service_tenant_id: Optional[str] = None,
+        service_user_id: Optional[str] = None,
     ) -> TaskContextResponse:
         """
         Update task context.
@@ -606,8 +627,8 @@ class MemoryClient:
         Returns:
             TaskContextResponse with updated context
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from task context)")
+        if not service_tenant_id or not service_user_id:
+            raise ValueError("service_tenant_id and service_user_id are required")
         
         request_data = TaskContextUpdate(
             sub_tasks=sub_tasks,
@@ -617,10 +638,7 @@ class MemoryClient:
         response = await self._client.put(
             f"{self.base_url}/v1/memory/task-context/{task_id}",
             json=request_data.model_dump(by_alias=True, exclude_none=True),
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return TaskContextResponse.model_validate(response.json())
@@ -628,8 +646,8 @@ class MemoryClient:
     async def delete_task_context(
         self,
         task_id: str,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        service_tenant_id: Optional[str] = None,
+        service_user_id: Optional[str] = None,
     ) -> bool:
         """
         Delete task context after completion.
@@ -644,16 +662,13 @@ class MemoryClient:
         Returns:
             True if deleted, False if not found
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from task context)")
+        if not service_tenant_id or not service_user_id:
+            raise ValueError("service_tenant_id and service_user_id are required")
         
         try:
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/task-context/{task_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return True
@@ -665,8 +680,8 @@ class MemoryClient:
     async def get_task_by_subtask(
         self,
         sub_task_id: str,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        service_tenant_id: Optional[str] = None,
+        service_user_id: Optional[str] = None,
     ) -> Optional[TaskContextResponse]:
         """
         Find parent task by sub-task correlation ID.
@@ -681,16 +696,13 @@ class MemoryClient:
         Returns:
             TaskContextResponse or None if not found
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from task context)")
+        if not service_tenant_id or not service_user_id:
+            raise ValueError("service_tenant_id and service_user_id are required")
         
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/task-context/by-subtask/{sub_task_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return TaskContextResponse.model_validate(response.json())
@@ -707,8 +719,8 @@ class MemoryClient:
         session_id: Optional[str],
         goal_event: str,
         goal_data: Dict[str, Any],
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         response_event: Optional[str] = None,
         state: Optional[Dict[str, Any]] = None,
         current_state: Optional[str] = None,
@@ -748,10 +760,7 @@ class MemoryClient:
         try:
             response = await self._client.post(
                 f"{self.base_url}/v1/memory/plan-context",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
                 json=request_data.model_dump(by_alias=True),
             )
             response.raise_for_status()
@@ -773,8 +782,8 @@ class MemoryClient:
     async def get_plan_context(
         self,
         plan_id: str,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
     ) -> Optional[PlanContextResponse]:
         """
         Retrieve plan context.
@@ -792,10 +801,7 @@ class MemoryClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/plan-context/{plan_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return PlanContextResponse.model_validate(response.json())
@@ -807,8 +813,8 @@ class MemoryClient:
     async def update_plan_context(
         self,
         plan_id: str,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         state: Optional[Dict[str, Any]] = None,
         current_state: Optional[str] = None,
         correlation_ids: Optional[List[str]] = None,
@@ -835,10 +841,7 @@ class MemoryClient:
         
         response = await self._client.put(
             f"{self.base_url}/v1/memory/plan-context/{plan_id}",
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
             json=request_data.model_dump(by_alias=True, exclude_none=True),
         )
         response.raise_for_status()
@@ -847,8 +850,8 @@ class MemoryClient:
     async def get_plan_by_correlation(
         self,
         correlation_id: str,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
     ) -> Optional[PlanContextResponse]:
         """
         Find plan by task/step correlation ID.
@@ -866,10 +869,7 @@ class MemoryClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/plan-context/by-correlation/{correlation_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return PlanContextResponse.model_validate(response.json())
@@ -885,8 +885,8 @@ class MemoryClient:
         plan_id: str,
         goal_event: str,
         goal_data: Dict[str, Any],
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         session_id: Optional[str] = None,
         parent_plan_id: Optional[str] = None,
     ) -> PlanSummary:
@@ -918,10 +918,7 @@ class MemoryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/plans",
             json=request_data.model_dump(by_alias=True),
-            headers={
-                "X-Tenant-ID": tenant_id,
-                "X-User-ID": user_id,
-            },
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return PlanSummary.model_validate(response.json())
@@ -929,8 +926,8 @@ class MemoryClient:
     async def delete_plan(
         self,
         plan_id: str,
-        tenant_id: str,
-        user_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
     ) -> bool:
         """
         Delete a plan record and all associated working memory state.
@@ -955,8 +952,8 @@ class MemoryClient:
             try:
                 await self.delete_plan_state(
                     plan_id=plan_id,
-                    tenant_id=tenant_id,
-                    user_id=user_id
+                    service_tenant_id=service_tenant_id,
+                    service_user_id=service_user_id,
                 )
             except httpx.HTTPStatusError:
                 # Ignore errors - working memory may not exist
@@ -965,10 +962,7 @@ class MemoryClient:
             # Then delete the Plan record itself
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/plans/{plan_id}",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                    "X-User-ID": user_id,
-                },
+                headers=self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return True
@@ -980,6 +974,8 @@ class MemoryClient:
     async def create_session(
         self,
         session_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         name: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> SessionSummary:
@@ -1004,6 +1000,7 @@ class MemoryClient:
         
         response = await self._client.post(
             f"{self.base_url}/v1/memory/sessions",
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
             json=request_data.model_dump(by_alias=True),
         )
         response.raise_for_status()
@@ -1011,8 +1008,8 @@ class MemoryClient:
     
     async def list_plans(
         self,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        service_tenant_id: str,
+        service_user_id: str,
         status: Optional[str] = None,
         session_id: Optional[str] = None,
         limit: int = 20,
@@ -1036,22 +1033,18 @@ class MemoryClient:
         if session_id:
             params["session_id"] = session_id
         
-        headers = {}
-        if tenant_id:
-            headers["X-Tenant-ID"] = tenant_id
-        if user_id:
-            headers["X-User-ID"] = user_id
-        
         response = await self._client.get(
             f"{self.base_url}/v1/memory/plans",
             params=params,
-            headers=headers if headers else None,
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return [PlanSummary.model_validate(item) for item in response.json()]
     
     async def list_sessions(
         self,
+        service_tenant_id: str,
+        service_user_id: str,
         limit: int = 20,
     ) -> List[SessionSummary]:
         """
@@ -1065,6 +1058,7 @@ class MemoryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/sessions",
+            headers=self._build_identity_headers(service_tenant_id, service_user_id),
             params={"limit": limit},
         )
         response.raise_for_status()

@@ -39,6 +39,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
 from soorma_common.events import EventEnvelope, EventTopic
+from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,7 @@ class EventClient:
         event_service_url: str = "http://localhost:8082",
         agent_id: Optional[str] = None,
         source: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
         tenant_id: Optional[str] = None,
         session_id: Optional[str] = None,
         events_consumed: Optional[List[Any]] = None,
@@ -81,6 +83,7 @@ class EventClient:
             event_service_url: Base URL of the Event Service (e.g., "http://localhost:8082")
             agent_id: Unique identifier for this agent (auto-generated if not provided)
             source: Source identifier for events (defaults to agent_id)
+            platform_tenant_id: Platform tenant ID for X-Tenant-ID header
             tenant_id: Default tenant ID for multi-tenancy
             session_id: Default session ID for correlation
             events_consumed: Optional list of EventDefinition objects to auto-register
@@ -92,6 +95,7 @@ class EventClient:
         self.event_service_url = event_service_url.rstrip("/")
         self.agent_id = agent_id or f"agent-{str(uuid4())[:8]}"
         self.source = source or self.agent_id
+        self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
         self.tenant_id = tenant_id
         self.session_id = session_id
         
@@ -403,6 +407,7 @@ class EventClient:
             response = await self._http_client.post(
                 url,
                 json={"event": event},
+                headers={"X-Tenant-ID": self.platform_tenant_id},
                 timeout=30.0,
             )
             

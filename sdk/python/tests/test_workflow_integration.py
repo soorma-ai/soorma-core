@@ -56,8 +56,8 @@ async def test_workflow_state_with_string_value(mock_service_client):
         "plan-123",
         "goal",
         "buy 100 bitcoins",  # Raw value, no wrapping in store()
-        "test-tenant",
-        "test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user",
     )
     
     # Test: Get string value
@@ -97,8 +97,8 @@ async def test_workflow_state_with_integer_value(mock_service_client):
         "plan-123",
         "current_task_index",
         0,
-        "test-tenant",
-        "test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user",
     )
     
     # Test: Get integer
@@ -138,8 +138,8 @@ async def test_workflow_state_with_list_value(mock_service_client):
         "plan-123",
         "tasks",
         tasks,
-        "test-tenant",
-        "test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user",
     )
     
     # Test: Get list
@@ -179,8 +179,8 @@ async def test_workflow_state_with_dict_value(mock_service_client):
         "plan-123",
         "research",
         research_data,
-        "test-tenant",
-        "test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user",
     )
     
     # Test: Get dict
@@ -227,8 +227,8 @@ async def test_workflow_state_record_action(mock_service_client):
         "plan-123",
         "_action_history",
         {"actions": ["research.started"]},
-        "test-tenant",
-        "test-user"
+        service_tenant_id="test-tenant",
+        service_user_id="test-user",
     )
 
 
@@ -266,8 +266,8 @@ async def test_context_memory_client_store_raw_values(mock_service_client):
             "plan-123",
             key,
             raw_value,
-            "test-tenant",
-            "test-user"
+            service_tenant_id="test-tenant",
+            service_user_id="test-user",
         )
 
 

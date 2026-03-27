@@ -14,7 +14,7 @@ import sys
 import uuid
 from datetime import datetime
 from soorma import EventClient
-from soorma.memory import MemoryClient
+from soorma.memory import MemoryServiceClient
 from soorma_common.events import EventEnvelope, EventTopic
 
 
@@ -31,7 +31,7 @@ class ChatbotClient:
             agent_id="chatbot-client",
             source="chatbot-client"
         )
-        self.memory_client = MemoryClient()
+        self.memory_client = MemoryServiceClient()
         self.session_id = None
         self.waiting_for_response = False
         self.response_event = None

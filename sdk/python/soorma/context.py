@@ -27,7 +27,7 @@ import httpx
 import logging
 import os
 
-from soorma_common.events import EventTopic
+from soorma_common.events import EventEnvelope, EventTopic
 from soorma_common.models import (
     TaskContextResponse,
     PlanContextResponse,
@@ -35,9 +35,18 @@ from soorma_common.models import (
     WorkingMemoryDeleteKeyResponse,
     WorkingMemoryDeletePlanResponse,
 )
+from soorma_common.tracker import (
+    AgentMetrics,
+    DelegationGroup,
+    EventTimeline,
+    PlanExecution,
+    PlanProgress,
+    TaskExecution,
+)
 from .events import EventClient
-from .memory import MemoryClient as MemoryServiceClient
+from .memory import MemoryServiceClient
 from .registry.client import RegistryClient
+from .tracker.client import TrackerServiceClient
 from .ai.event_toolkit import EventToolkit
 
 logger = logging.getLogger(__name__)
@@ -97,6 +106,14 @@ class MemoryClient:
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
     # Note: Local fallback removed - Memory Service required for multi-agent workflows
     _client: Optional[MemoryServiceClient] = field(default=None, repr=False, init=False)
+    _bound_event_identity: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
+        default_factory=lambda: contextvars.ContextVar(
+            "soorma_memory_bound_event_identity",
+            default=None,
+        ),
+        init=False,
+        repr=False,
+    )
     
     async def _ensure_client(self) -> MemoryServiceClient:
         if self._client is None:
@@ -115,6 +132,32 @@ class MemoryClient:
                     f"Memory Service required but unavailable: {e}"
                 ) from e
         return self._client
+
+    def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
+        """Bind current event identity for implicit wrapper defaults."""
+        return self._bound_event_identity.set(
+            {
+                "tenant_id": event.tenant_id,
+                "user_id": event.user_id,
+            }
+        )
+
+    def reset_event_metadata(self, token: contextvars.Token) -> None:
+        """Reset previously bound event identity."""
+        self._bound_event_identity.reset(token)
+
+    def _resolve_identity(
+        self,
+        tenant_id: Optional[str],
+        user_id: Optional[str],
+    ) -> tuple[str, str]:
+        """Resolve service identity from explicit args or bound event metadata."""
+        metadata = self._bound_event_identity.get()
+        resolved_tenant_id = tenant_id if tenant_id is not None else (metadata or {}).get("tenant_id")
+        resolved_user_id = user_id if user_id is not None else (metadata or {}).get("user_id")
+        if not resolved_tenant_id or not resolved_user_id:
+            raise ValueError("tenant_id and user_id are required (get from event context)")
+        return resolved_tenant_id, resolved_user_id
     
     async def retrieve(self, key: str, plan_id: Optional[str] = None, tenant_id: str = None, user_id: str = None) -> Optional[Any]:
         """
@@ -129,13 +172,17 @@ class MemoryClient:
         Returns:
             Stored value if found, None otherwise
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from event context)")
-            
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+
         client = await self._ensure_client()
         try:
             plan = plan_id or DEFAULT_PLAN_ID
-            result = await client.get_plan_state(plan, key, tenant_id, user_id)
+            result = await client.get_plan_state(
+                plan,
+                key,
+                service_tenant_id=tenant_id,
+                service_user_id=user_id,
+            )
             # Return value directly - no unwrapping needed
             return result.value
         except Exception as e:
@@ -164,19 +211,25 @@ class MemoryClient:
         Returns:
             True if store succeeded
         """
-        if not tenant_id or not user_id:
-            raise ValueError("tenant_id and user_id are required (get from event context)")
-            
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+
         client = await self._ensure_client()
         plan = plan_id or DEFAULT_PLAN_ID
         # Pass value directly - set_plan_state wraps it in WorkingMemorySet
-        await client.set_plan_state(plan, key, value, tenant_id, user_id)
+        await client.set_plan_state(
+            plan,
+            key,
+            value,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
         return True
     
     async def store_knowledge(
         self,
         content: str,
-        user_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
@@ -191,13 +244,20 @@ class MemoryClient:
             Memory ID if successful, None otherwise
         """
         client = await self._ensure_client()
-        result = await client.store_knowledge(content, user_id=user_id, metadata=metadata or {})
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        result = await client.store_knowledge(
+            content,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+            metadata=metadata or {},
+        )
         return str(result.id)
     
     async def search_knowledge(
         self,
         query: str,
-        user_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
@@ -212,7 +272,13 @@ class MemoryClient:
             List of matching knowledge entries with similarity scores
         """
         client = await self._ensure_client()
-        results = await client.search_knowledge(query, user_id=user_id, limit=limit)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        results = await client.search_knowledge(
+            query,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+            limit=limit,
+        )
         return [
             {
                 "id": r.id,
@@ -228,7 +294,8 @@ class MemoryClient:
         self,
         agent_id: str,
         query: str,
-        user_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
@@ -244,7 +311,14 @@ class MemoryClient:
             List of matching interaction entries with similarity scores
         """
         client = await self._ensure_client()
-        results = await client.search_interactions(agent_id, query, user_id, limit=limit)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        results = await client.search_interactions(
+            agent_id,
+            query,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+            limit=limit,
+        )
         return [
             {
                 "id": r.id,
@@ -262,7 +336,8 @@ class MemoryClient:
         agent_id: str,
         role: str,
         content: str,
-        user_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
@@ -279,13 +354,22 @@ class MemoryClient:
             True if log succeeded
         """
         client = await self._ensure_client()
-        await client.log_interaction(agent_id, role, content, user_id, metadata)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        await client.log_interaction(
+            agent_id,
+            role,
+            content,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+            metadata=metadata,
+        )
         return True
     
     async def get_recent_history(
         self,
         agent_id: str,
-        user_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
         """
@@ -300,7 +384,13 @@ class MemoryClient:
             List of recent interactions ordered by recency
         """
         client = await self._ensure_client()
-        results = await client.get_recent_history(agent_id, user_id, limit=limit)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        results = await client.get_recent_history(
+            agent_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+            limit=limit,
+        )
         return [
             {
                 "id": r.id,
@@ -316,7 +406,8 @@ class MemoryClient:
         self,
         agent_id: str,
         context: str,
-        user_id: str,
+        tenant_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         limit: int = 3,
     ) -> List[Dict[str, Any]]:
         """
@@ -332,7 +423,14 @@ class MemoryClient:
             List of relevant skills ordered by relevance
         """
         client = await self._ensure_client()
-        results = await client.get_relevant_skills(agent_id, context, user_id, limit=limit)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        results = await client.get_relevant_skills(
+            agent_id,
+            context,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+            limit=limit,
+        )
         return [
             {
                 "id": r.id,
@@ -380,10 +478,11 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.delete_plan_state(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
             key=key,
         )
     
@@ -421,10 +520,11 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.delete_plan_state(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
             key=None,
         )
 
@@ -482,6 +582,7 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.store_task_context(
             task_id=task_id,
             plan_id=plan_id,
@@ -491,8 +592,8 @@ class MemoryClient:
             data=data,
             sub_tasks=sub_tasks,
             state=state,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
 
     async def get_task_context(
@@ -526,7 +627,12 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
-        return await client.get_task_context(task_id, tenant_id=tenant_id, user_id=user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_task_context(
+            task_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
 
     async def update_task_context(
         self,
@@ -565,12 +671,13 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.update_task_context(
             task_id=task_id,
             sub_tasks=sub_tasks,
             state=state,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
 
     async def delete_task_context(
@@ -603,7 +710,12 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
-        return await client.delete_task_context(task_id, tenant_id=tenant_id, user_id=user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.delete_task_context(
+            task_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
 
     async def get_task_by_subtask(
         self,
@@ -642,7 +754,12 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
-        return await client.get_task_by_subtask(sub_task_id, tenant_id=tenant_id, user_id=user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_task_by_subtask(
+            sub_task_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
 
     # Plan Context (for Planner state machine persistence - RF-SDK-006)
 
@@ -705,13 +822,14 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.store_plan_context(
             plan_id=plan_id,
             session_id=session_id,
             goal_event=goal_event,
             goal_data=goal_data,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
             response_event=response_event,
             state=state,
             current_state=current_state,
@@ -756,10 +874,11 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.get_plan_context(
             plan_id=plan_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
 
     async def get_plan_by_correlation(
@@ -805,10 +924,11 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.get_plan_by_correlation(
             correlation_id=correlation_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
 
     async def create_plan(
@@ -856,12 +976,13 @@ class MemoryClient:
             ```
         """
         client = await self._ensure_client()
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await client.create_plan(
             plan_id=plan_id,
             goal_event=goal_event,
             goal_data=goal_data,
-            tenant_id=tenant_id,
-            user_id=user_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
             session_id=session_id,
             parent_plan_id=parent_plan_id,
         )
@@ -887,6 +1008,7 @@ class MemoryClient:
         Returns:
             Dict of goal routing metadata, or None if not found.
         """
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
         return await self.retrieve(
             key=f"_soorma:goal:{correlation_id}",
             # Must match the plan_id used by on_goal when storing this metadata.
@@ -1321,6 +1443,14 @@ class TrackerClient:
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"))
     _client: Optional["TrackerServiceClient"] = field(default=None, repr=False, init=False)
+    _bound_event_identity: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
+        default_factory=lambda: contextvars.ContextVar(
+            "soorma_tracker_bound_event_identity",
+            default=None,
+        ),
+        init=False,
+        repr=False,
+    )
     
     async def _ensure_client(self) -> "TrackerServiceClient":
         """Lazy initialization of TrackerServiceClient."""
@@ -1328,6 +1458,32 @@ class TrackerClient:
             from .tracker.client import TrackerServiceClient
             self._client = TrackerServiceClient(base_url=self.base_url)
         return self._client
+
+    def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
+        """Bind current event identity for implicit tracker defaults."""
+        return self._bound_event_identity.set(
+            {
+                "tenant_id": event.tenant_id,
+                "user_id": event.user_id,
+            }
+        )
+
+    def reset_event_metadata(self, token: contextvars.Token) -> None:
+        """Reset previously bound tracker identity."""
+        self._bound_event_identity.reset(token)
+
+    def _resolve_identity(
+        self,
+        tenant_id: Optional[str],
+        user_id: Optional[str],
+    ) -> tuple[str, str]:
+        """Resolve service identity from explicit args or bound event metadata."""
+        metadata = self._bound_event_identity.get()
+        resolved_tenant_id = tenant_id if tenant_id is not None else (metadata or {}).get("tenant_id")
+        resolved_user_id = user_id if user_id is not None else (metadata or {}).get("user_id")
+        if not resolved_tenant_id or not resolved_user_id:
+            raise ValueError("tenant_id and user_id are required (get from event context)")
+        return resolved_tenant_id, resolved_user_id
     
     async def get_plan_progress(
         self,
@@ -1348,7 +1504,12 @@ class TrackerClient:
         """
         from soorma_common.tracker import PlanProgress
         client = await self._ensure_client()
-        return await client.get_plan_progress(plan_id, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_plan_progress(
+            plan_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def get_plan_tasks(
         self,
@@ -1369,7 +1530,12 @@ class TrackerClient:
         """
         from soorma_common.tracker import TaskExecution
         client = await self._ensure_client()
-        return await client.get_plan_tasks(plan_id, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_plan_tasks(
+            plan_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def get_plan_timeline(
         self,
@@ -1390,7 +1556,12 @@ class TrackerClient:
         """
         from soorma_common.tracker import EventTimeline
         client = await self._ensure_client()
-        return await client.get_plan_timeline(plan_id, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_plan_timeline(
+            plan_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def query_agent_metrics(
         self,
@@ -1413,7 +1584,13 @@ class TrackerClient:
         """
         from soorma_common.tracker import AgentMetrics
         client = await self._ensure_client()
-        return await client.query_agent_metrics(agent_id, period, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.query_agent_metrics(
+            agent_id,
+            period,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def get_sub_plans(
         self,
@@ -1434,7 +1611,12 @@ class TrackerClient:
         """
         from soorma_common.tracker import PlanExecution
         client = await self._ensure_client()
-        return await client.get_sub_plans(plan_id, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_sub_plans(
+            plan_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def get_session_plans(
         self,
@@ -1455,7 +1637,12 @@ class TrackerClient:
         """
         from soorma_common.tracker import PlanExecution
         client = await self._ensure_client()
-        return await client.get_session_plans(session_id, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_session_plans(
+            session_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def get_delegation_group(
         self,
@@ -1476,7 +1663,12 @@ class TrackerClient:
         """
         from soorma_common.tracker import DelegationGroup
         client = await self._ensure_client()
-        return await client.get_delegation_group(group_id, tenant_id, user_id)
+        tenant_id, user_id = self._resolve_identity(tenant_id, user_id)
+        return await client.get_delegation_group(
+            group_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
+        )
     
     async def close(self) -> None:
         """Close the underlying service client."""

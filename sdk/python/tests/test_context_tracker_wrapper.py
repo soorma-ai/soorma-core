@@ -69,7 +69,9 @@ class TestTrackerClientWrapper:
         # Verify delegation
         assert result == mock_progress
         mock_service_client.get_plan_progress.assert_called_once_with(
-            plan_id, tenant_id, user_id
+            plan_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
     
     @pytest.mark.asyncio
@@ -103,7 +105,9 @@ class TestTrackerClientWrapper:
         
         assert result == mock_tasks
         mock_service_client.get_plan_tasks.assert_called_once_with(
-            plan_id, tenant_id, user_id
+            plan_id,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
     
     @pytest.mark.asyncio

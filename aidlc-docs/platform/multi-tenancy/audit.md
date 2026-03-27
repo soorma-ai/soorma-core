@@ -245,11 +245,27 @@
 
 ---
 
+## Code Generation Execution COMPLETE — U6 (sdk/python)
+**Timestamp**: 2026-03-27T06:15:15Z
+**User Input**: "doone"
+**AI Response**: Executed U6 sdk/python code generation after approved plan. Implemented low-level Memory/Tracker client multi-tenancy alignment, wrapper identity defaulting, EventClient publish platform-tenant header projection, and agent-side wrapper metadata binding. Renamed the low-level memory client to MemoryServiceClient, updated SDK examples/tests, created construction/sdk-python/code/code-summary.md, and updated ARCHITECTURE_PATTERNS.md Section 1. Verification results: focused SDK suite 93 passed; full sdk/python suite 506 passed, 5 skipped; repo-wide pytest from repo root blocked during collection by pre-existing import-path issues (`tests.conftest` / `tests.*` resolution) outside U6 scope.
+**Context**: CONSTRUCTION - U6 (sdk/python) — Code Generation complete; ready for stage completion review
+
+---
+
 ## Code Generation Execution COMPLETE — U2 (soorma-service-common)
 **Timestamp**: 2026-03-22T08:48:07Z
 **User Input**: "[Session resumed] Execute code generation plan. Source soorma-core/.venv/bin/activate before any python or pip."
 **AI Response**: All 23 steps executed. STUB: pyproject.toml, README, __init__.py, py.typed, middleware.py (NotImplementedError), dependencies.py (NotImplementedError), tenant_context.py (NotImplementedError), deletion.py (ABC). RED: 4 test files; 29 failed (NotImplementedError), 11 passed (structural). GREEN: implemented dispatch, get_platform_tenant_id/service_tenant_id/service_user_id, create_get_tenanted_db, set_config_for_session, create_get_tenant_context; 40/40 passed. REFACTOR: __init__.py cleaned. code-summary.md + nfr-design-patterns.md created. Plan checkboxes and aidlc-state.md updated.
 **Context**: Construction Phase — U2 Code Generation complete — 40/40 tests pass
+
+---
+
+## Code Generation Review APPROVED — U6 (sdk/python)
+**Timestamp**: 2026-03-27T06:41:40Z
+**User Input**: "ok, code looks good"
+**AI Response**: Recorded explicit user approval for U6 code generation review. Updated aidlc-state.md to mark U6 Code Generation Review approved and advanced workflow to Build and Test stage (in progress).
+**Context**: CONSTRUCTION - U6 (sdk/python) review approved; transitioning to Build and Test
 
 ---
 

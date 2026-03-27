@@ -43,9 +43,9 @@ Functional design rules in force: BR-1, BR-1a, BR-2, BR-3, BR-4, BR-4a, BR-5, BR
 - [x] Step 4 — Create this code-generation plan document
 - [x] Step 5 — Summarize implementation approach for user review
 - [x] Step 6 — Log code-generation plan approval prompt in audit.md
-- [ ] Step 7 — Wait for explicit user approval to execute Part 2
-- [ ] Step 8 — Record user approval in audit.md
-- [ ] Step 9 — Update aidlc-state.md for execution start
+- [x] Step 7 — Wait for explicit user approval to execute Part 2
+- [x] Step 8 — Record user approval in audit.md
+- [x] Step 9 — Update aidlc-state.md for execution start
 
 ---
 
@@ -53,77 +53,77 @@ Functional design rules in force: BR-1, BR-1a, BR-2, BR-3, BR-4, BR-4a, BR-5, BR
 
 ### Group 1: SDK Service Client Refactor
 
-- [ ] Step 10 — Refactor memory low-level client class and exports
+- [x] Step 10 — Refactor memory low-level client class and exports
   - Rename class to MemoryServiceClient
   - Update constructor to support platform_tenant_id init-time defaulting
   - Keep API shape consistent with two-layer architecture
-- [ ] Step 11 — Update Memory client method signatures
+- [x] Step 11 — Update Memory client method signatures
   - Rename per-call args to service_tenant_id and service_user_id
   - Add fail-closed non-empty validation
   - Ensure header projection: X-Tenant-ID, X-Service-Tenant-ID, X-User-ID
-- [ ] Step 12 — Update TrackerServiceClient signatures and header projection
+- [x] Step 12 — Update TrackerServiceClient signatures and header projection
   - Rename per-call args to service_tenant_id and service_user_id
   - Add fail-closed non-empty validation
   - Ensure same three-header behavior as Memory
-- [ ] Step 13 — Update EventClient publish request path
+- [x] Step 13 — Update EventClient publish request path
   - Ensure X-Tenant-ID is always sent on publish
   - Preserve trust boundary by not writing platform_tenant_id into outbound payload
 
 ### Group 2: PlatformContext Wrapper Alignment
 
-- [ ] Step 14 — Update context.memory wrapper methods
+- [x] Step 14 — Update context.memory wrapper methods
   - Rename wrapper parameters to service_tenant_id/service_user_id
   - Apply metadata defaults only when explicit args are omitted
   - Ensure explicit args take precedence over defaults
-- [ ] Step 15 — Update context.tracker wrapper methods
+- [x] Step 15 — Update context.tracker wrapper methods
   - Rename wrapper parameters to service_tenant_id/service_user_id
   - Apply same precedence model as memory wrapper
-- [ ] Step 16 — Verify wrapper completeness
+- [x] Step 16 — Verify wrapper completeness
   - Confirm all modified service-client methods have wrapper coverage
   - Confirm agent-facing paths use wrappers and do not import service clients directly
 
 ### Group 3: SDK Call-Site and CLI Updates
 
-- [ ] Step 17 — Update SDK call sites and examples using low-level clients
+- [x] Step 17 — Update SDK call sites and examples using low-level clients
   - Replace old tenant_id/user_id argument names
   - Update imports for MemoryServiceClient rename where needed
-- [ ] Step 18 — Update CLI initialization behavior
+- [x] Step 18 — Update CLI initialization behavior
   - Align init path with DEFAULT_PLATFORM_TENANT_ID and env-first resolution
   - Keep no new CLI platform-tenant flag per approved design decision
 
 ### Group 4: Tests
 
-- [ ] Step 19 — Update unit tests for Memory and Tracker low-level clients
+- [x] Step 19 — Update unit tests for Memory and Tracker low-level clients
   - Validate argument naming migration
   - Validate three-header outbound projection
   - Validate fail-closed behavior for missing service identity
-- [ ] Step 20 — Update wrapper tests
+- [x] Step 20 — Update wrapper tests
   - Validate wrapper defaulting and explicit-override precedence
   - Validate delegation to low-level clients with renamed args
-- [ ] Step 21 — Add/update EventClient publish tests
+- [x] Step 21 — Add/update EventClient publish tests
   - Validate X-Tenant-ID presence on publish calls
   - Validate platform_tenant_id not set by SDK payload path
-- [ ] Step 22 — Execute test gate (decision C)
+- [x] Step 22 — Execute test gate (decision C)
   - Run full sdk/python tests
   - Run affected integration checks for memory/tracker compatibility
   - Run full workspace regression pass
 
 ### Group 5: Documentation and Progress Artifacts
 
-- [ ] Step 23 — Update docs/ARCHITECTURE_PATTERNS.md Section 1
+- [x] Step 23 — Update docs/ARCHITECTURE_PATTERNS.md Section 1
   - Add three-header mapping table
   - Clarify init-time vs per-call identity split
   - Document Event Service platform_tenant_id injection trust boundary
-- [ ] Step 24 — Create/update U6 code summary artifact
+- [x] Step 24 — Create/update U6 code summary artifact
   - Path: aidlc-docs/platform/multi-tenancy/construction/sdk-python/code/code-summary.md
   - Include modified/created file inventory and test results
-- [ ] Step 25 — Update relevant changelog/docs touched by U6 code changes
+- [x] Step 25 — Update relevant changelog/docs touched by U6 code changes
 
 ### Group 6: Workflow Tracking
 
-- [ ] Step 26 — Mark completed execution checkboxes in this plan as work is performed
-- [ ] Step 27 — Update aidlc-state.md for U6 code generation progress and completion
-- [ ] Step 28 — Prepare U6 for construction stage completion review
+- [x] Step 26 — Mark completed execution checkboxes in this plan as work is performed
+- [x] Step 27 — Update aidlc-state.md for U6 code generation progress and completion
+- [x] Step 28 — Prepare U6 for construction stage completion review
 
 ---
 

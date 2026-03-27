@@ -9,14 +9,17 @@ Focus: SDK contract and integration with Memory Service API
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from soorma.memory.client import MemoryClient
+from soorma.memory.client import MemoryServiceClient
 from soorma_common.models import SemanticMemoryResponse
 
 
 @pytest.fixture
 def memory_client():
     """Create a MemoryClient instance for testing."""
-    return MemoryClient(base_url="http://localhost:8083")
+    return MemoryServiceClient(
+        base_url="http://localhost:8083",
+        platform_tenant_id="platform-tenant-1",
+    )
 
 
 class TestSemanticUpsertSDK:
@@ -46,7 +49,8 @@ class TestSemanticUpsertSDK:
         # Call store_knowledge with external_id
         result = await memory_client.store_knowledge(
             content="Docker v2",
-            user_id="user-alice",
+            service_tenant_id="tenant-1",
+            service_user_id="user-alice",
             external_id="doc-docker",
             metadata={"version": "2.0"}
         )
@@ -57,9 +61,11 @@ class TestSemanticUpsertSDK:
         assert result.user_id == "user-alice"
         assert result.is_public == False
         
-        # Verify API call includes user_id as query parameter
+        # Verify API call includes identity headers
         call_kwargs = memory_client._client.post.call_args.kwargs
-        assert call_kwargs["params"]["user_id"] == "user-alice"
+        assert call_kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
+        assert call_kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
+        assert call_kwargs["headers"]["X-User-ID"] == "user-alice"
         
         # Verify DTO doesn't include user_id in body
         dto_payload = call_kwargs["json"]
@@ -91,7 +97,8 @@ class TestSemanticUpsertSDK:
         # Call without external_id (relies on content_hash)
         result = await memory_client.store_knowledge(
             content="Python is a programming language",
-            user_id="user-bob"
+            service_tenant_id="tenant-1",
+            service_user_id="user-bob"
         )
         
         # Verify result
@@ -126,7 +133,8 @@ class TestSemanticUpsertSDK:
         # Store as public
         result = await memory_client.store_knowledge(
             content="Team's API best practices",
-            user_id="user-alice",
+            service_tenant_id="tenant-1",
+            service_user_id="user-alice",
             external_id="best-practices",
             is_public=True  # Mark as public
         )
@@ -162,7 +170,8 @@ class TestSemanticUpsertSDK:
         # Store without specifying is_public (should default to False)
         result = await memory_client.store_knowledge(
             content="My private notes",
-            user_id="user-charlie"
+            service_tenant_id="tenant-1",
+            service_user_id="user-charlie"
         )
         
         # Verify defaults to private
@@ -178,7 +187,7 @@ class TestSemanticQuerySDK:
 
     @pytest.mark.asyncio
     async def test_query_knowledge_passes_user_id(self, memory_client):
-        """Should pass user_id as query parameter in query requests."""
+        """Should pass service identity in headers for query requests."""
         # Setup mock
         mock_response = MagicMock()
         mock_response.json.return_value = [
@@ -203,7 +212,8 @@ class TestSemanticQuerySDK:
         # Call query_knowledge
         results = await memory_client.query_knowledge(
             query="search term",
-            user_id="user-alice",
+            service_tenant_id="tenant-1",
+            service_user_id="user-alice",
             limit=5,
             include_public=True
         )
@@ -213,9 +223,10 @@ class TestSemanticQuerySDK:
         assert results[0].content == "Search result"
         assert results[0].user_id == "user-alice"
         
-        # Verify user_id passed as query parameter
+        # Verify service identity passed via headers
         call_kwargs = memory_client._client.post.call_args.kwargs
-        assert call_kwargs["params"]["user_id"] == "user-alice"
+        assert call_kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
+        assert call_kwargs["headers"]["X-User-ID"] == "user-alice"
         
         # Verify all params passed as query parameters (not JSON body)
         params = call_kwargs["params"]
@@ -252,7 +263,8 @@ class TestSemanticQuerySDK:
         # Query without public knowledge
         results = await memory_client.query_knowledge(
             query="search",
-            user_id="user-bob",
+            service_tenant_id="tenant-1",
+            service_user_id="user-bob",
             include_public=False
         )
         
@@ -288,7 +300,8 @@ class TestSemanticMetadataSDK:
         # Store with tags
         result = await memory_client.store_knowledge(
             content="Docker content",
-            user_id="user-dave",
+            service_tenant_id="tenant-1",
+            service_user_id="user-dave",
             tags=["docker", "containers"]
         )
         
@@ -323,7 +336,8 @@ class TestSemanticMetadataSDK:
         # Store with source
         result = await memory_client.store_knowledge(
             content="Python content",
-            user_id="user-eve",
+            service_tenant_id="tenant-1",
+            service_user_id="user-eve",
             source="documentation"
         )
         
