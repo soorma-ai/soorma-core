@@ -7,6 +7,7 @@ from .dependencies import (
     get_platform_tenant_id,
     get_service_tenant_id,
     get_service_user_id,
+    require_user_context,
     create_get_tenanted_db,
     set_config_for_session,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "get_platform_tenant_id",
     "get_service_tenant_id",
     "get_service_user_id",
+    "require_user_context",
     "create_get_tenanted_db",
     "set_config_for_session",
     # Identity bundle
