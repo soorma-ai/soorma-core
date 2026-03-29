@@ -100,3 +100,104 @@
 **Context**: Awaiting explicit Application Design approval.
 
 ---
+
+## Application Design - Approval
+**Timestamp**: 2026-03-29T19:14:07Z
+**AI Prompt**: "Please review application-design artifacts and approve to continue to Units Generation."
+**User Response**: "appriving design"
+**Status**: Approved
+**Context**: Application Design approved; proceeding to Units Generation planning.
+
+---
+
+## Units Generation - Plan Created
+**Timestamp**: 2026-03-29T19:14:25Z
+**User Input**: "appriving design"
+**AI Response**: Created unit-of-work-plan.md with baseline decomposition (U1 shared dependency, U2 memory runtime alignment, U3 schema/index/migration/tests) and three focused [Answer] questions for granularity, sequencing, and test ownership. Updated aidlc-state.md to mark Application Design complete and Units Generation planning in progress.
+**Context**: Units Planning in progress — awaiting user answers.
+
+---
+
+## Units Generation - Question Clarification and Answer Update
+**Timestamp**: 2026-03-29T19:35:43Z
+**User Input**: "help me understand q3 better and what are those options" and "yes, add the answer with rationale"
+**AI Response**: Explained Q3 options (test ownership boundary) and recorded Q3 as Answer A in unit-of-work-plan.md with rationale: memory service tests own cross-scope behavior/isolation, shared-library tests stay focused on dependency contract behavior.
+**Context**: Units Planning answers updated; awaiting final ambiguity resolution and planning approval prompt.
+
+---
+
+## Units Generation - Answer Normalization
+**Timestamp**: 2026-03-29T19:36:05Z
+**User Input**: Existing Q2 freeform response in unit-of-work-plan.md
+**AI Response**: Normalized Q2 to explicit Answer A (strict sequential U1 -> U2 -> U3) with rationale matching the existing user intent: dependency ordering and per-unit testability on completion.
+**Context**: Units Planning answers now explicit and unambiguous.
+
+---
+
+## Units Generation - Answers Complete
+**Timestamp**: 2026-03-29T19:37:55Z
+**User Input**: "all questions answered"
+**AI Response**: Verified all unit-of-work-plan answers are complete and unambiguous: Q1=A, Q2=A, Q3=A with rationale. Planning prerequisites are satisfied.
+**Context**: Ready for Units Planning approval gate before generation.
+
+---
+
+## Units Generation - Planning Approval Prompt Issued
+**Timestamp**: 2026-03-29T19:37:55Z
+**AI Prompt**: "Unit of work plan complete. Review the plan in aidlc-docs/platform/memory-identity-scope/inception/plans/unit-of-work-plan.md. Ready to proceed to generation?"
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Awaiting explicit planning approval to start Units Generation Part 2.
+
+---
+
+## Units Generation - Planning Approval
+**Timestamp**: 2026-03-29T19:38:41Z
+**AI Prompt**: "Unit of work plan complete. Review the plan in aidlc-docs/platform/memory-identity-scope/inception/plans/unit-of-work-plan.md. Ready to proceed to generation?"
+**User Response**: "yes"
+**Status**: Approved
+**Context**: Units Planning approved; executing Units Generation Part 2.
+
+---
+
+## Units Generation - Artifacts Generated
+**Timestamp**: 2026-03-29T19:38:41Z
+**User Input**: "yes"
+**AI Response**: Generated unit artifacts in inception/application-design/: unit-of-work.md, unit-of-work-dependency.md, and unit-of-work-story-map.md. Updated unit-of-work-plan.md checkboxes (planning + generation) to complete and marked Units Generation complete in aidlc-state.md.
+**Context**: Units Generation complete — awaiting user approval before transitioning to Construction Phase.
+
+---
+
+## Units Generation - Approval
+**Timestamp**: 2026-03-29T19:43:40Z
+**AI Prompt**: "Units Generation complete. Approve to proceed to Construction Phase."
+**User Response**: "approved"
+**Status**: Approved
+**Context**: Inception stages are complete; checking extension gates before Construction.
+
+---
+
+## PR Checkpoint - Inception Gate Triggered
+**Timestamp**: 2026-03-29T19:43:40Z
+**User Input**: "approved"
+**AI Response**: Detected enabled `pr-checkpoint` extension and git repository present (`dev` branch). Inception PR gate is required before Construction can start. Prompting for explicit branch confirmation (default: dev) prior to generating PR instructions.
+**Context**: Blocked at Inception PR Gate awaiting branch confirmation.
+
+---
+
+## PR Checkpoint - Branch Confirmation
+**Timestamp**: 2026-03-29T19:44:27Z
+**AI Prompt**: "Current branch is dev. Confirm using dev or provide a different branch."
+**User Response**: "yes, dev"
+**Status**: Confirmed
+**Context**: Using `dev` for Inception PR Gate instructions.
+
+---
+
+## PR Checkpoint - Inception Instructions Generated
+**Timestamp**: 2026-03-29T19:44:27Z
+**User Input**: "yes, dev"
+**AI Response**: Generated inception PR checkpoint instructions at inception/plans/pr-checkpoint-instructions.md, persisted Inception PR Gate state as PENDING in aidlc-state.md with branch `dev`, and blocked workflow pending team PR approval confirmation.
+**Context**: Inception PR Gate active. Construction is blocked until PR approval is confirmed.
+
+---
