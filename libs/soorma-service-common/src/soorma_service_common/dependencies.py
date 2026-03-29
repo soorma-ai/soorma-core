@@ -4,11 +4,81 @@ FastAPI dependency functions for tenancy identity extraction and RLS activation.
 These functions read identity dimensions from request.state (populated by
 TenancyMiddleware) and activate PostgreSQL RLS via set_config.
 """
+import logging
 from typing import AsyncGenerator, Callable, Optional
 
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from .tenant_context import TenantContext
+
+
+LOGGER = logging.getLogger(__name__)
+
+TENANT_IDENTITY_REQUIRED_MESSAGE = "Missing required tenant identity context"
+USER_IDENTITY_REQUIRED_MESSAGE = "Missing required user identity context"
+BOTH_IDENTITIES_REQUIRED_MESSAGE = (
+    "Missing required tenant and user identity context"
+)
+
+
+def _is_blank(value: Optional[str]) -> bool:
+    """Return True when value is absent or whitespace-only."""
+    return value is None or value.strip() == ""
+
+
+def _log_identity_validation_failure(
+    platform_tenant_id: str,
+    failure_reason: str,
+) -> None:
+    """Emit safe structured warning logs without service-identity dimensions."""
+    LOGGER.warning(
+        "identity_validation_failed",
+        extra={
+            "event_name": "identity_validation_failed",
+            "severity": "warning",
+            "platform_tenant_id": platform_tenant_id,
+            "failure_reason": failure_reason,
+        },
+    )
+
+
+def require_user_context(context: TenantContext) -> TenantContext:
+    """Validate service-tenant and service-user context for user-scoped operations.
+
+    Args:
+        context: Resolved tenant context containing platform, service-tenant,
+            and service-user identity dimensions.
+
+    Returns:
+        The same ``TenantContext`` object unchanged when validation passes.
+
+    Raises:
+        HTTPException: Raised with status ``400`` when identity context is
+            missing or blank.
+    """
+    missing_service_tenant = _is_blank(context.service_tenant_id)
+    missing_service_user = _is_blank(context.service_user_id)
+
+    if not missing_service_tenant and not missing_service_user:
+        return context
+
+    if missing_service_tenant and missing_service_user:
+        failure_reason = "missing_service_tenant_id,missing_service_user_id"
+        detail = BOTH_IDENTITIES_REQUIRED_MESSAGE
+    elif missing_service_tenant:
+        failure_reason = "missing_service_tenant_id"
+        detail = TENANT_IDENTITY_REQUIRED_MESSAGE
+    else:
+        failure_reason = "missing_service_user_id"
+        detail = USER_IDENTITY_REQUIRED_MESSAGE
+
+    _log_identity_validation_failure(
+        platform_tenant_id=context.platform_tenant_id,
+        failure_reason=failure_reason,
+    )
+    raise HTTPException(status_code=400, detail=detail)
 
 
 async def _set_config_dim(db: AsyncSession, key: str, value: str) -> None:

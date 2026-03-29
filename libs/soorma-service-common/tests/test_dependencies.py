@@ -8,14 +8,17 @@ They MUST fail with NotImplementedError until implementations are complete.
 import pytest
 from unittest.mock import AsyncMock, call, patch
 from sqlalchemy import text
+from fastapi import HTTPException
 
 from soorma_service_common.dependencies import (
     create_get_tenanted_db,
     get_platform_tenant_id,
     get_service_tenant_id,
     get_service_user_id,
+    require_user_context,
     set_config_for_session,
 )
+from soorma_service_common.tenant_context import TenantContext
 
 
 class TestGetPlatformTenantId:
@@ -244,3 +247,79 @@ class TestSetConfigForSession:
         assert "app.platform_tenant_id" in keys_used
         assert "app.service_tenant_id" in keys_used
         assert "app.service_user_id" in keys_used
+
+
+class TestRequireUserContext:
+    """require_user_context validates service tenant and user dimensions."""
+
+    def test_returns_same_context_on_success(self):
+        """Valid context passes through unchanged."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            db=AsyncMock(),
+        )
+
+        result = require_user_context(context)
+        assert result is context
+
+    def test_raises_400_when_service_tenant_missing(self):
+        """Missing service tenant fails fast with generic 400 message."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id=None,
+            service_user_id="user-1",
+            db=AsyncMock(),
+        )
+
+        with pytest.raises(HTTPException) as err:
+            require_user_context(context)
+
+        assert err.value.status_code == 400
+        assert err.value.detail == "Missing required tenant identity context"
+
+    def test_raises_400_when_service_user_missing(self):
+        """Missing service user fails fast with generic 400 message."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id=None,
+            db=AsyncMock(),
+        )
+
+        with pytest.raises(HTTPException) as err:
+            require_user_context(context)
+
+        assert err.value.status_code == 400
+        assert err.value.detail == "Missing required user identity context"
+
+    def test_raises_400_when_service_tenant_whitespace(self):
+        """Whitespace-only service tenant is invalid."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="   ",
+            service_user_id="user-1",
+            db=AsyncMock(),
+        )
+
+        with pytest.raises(HTTPException) as err:
+            require_user_context(context)
+
+        assert err.value.status_code == 400
+        assert err.value.detail == "Missing required tenant identity context"
+
+    def test_raises_400_when_service_user_whitespace(self):
+        """Whitespace-only service user is invalid."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="\t\n",
+            db=AsyncMock(),
+        )
+
+        with pytest.raises(HTTPException) as err:
+            require_user_context(context)
+
+        assert err.value.status_code == 400
+        assert err.value.detail == "Missing required user identity context"
