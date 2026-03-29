@@ -568,3 +568,101 @@ end-to-end without my confirmation at each gate."
 **Context**: User-directed repository checkpoint before continuing unit-2.
 
 ---
+
+## Construction Session Resumption - unit-2 Request Received
+**Timestamp**: 2026-03-29T22:55:37Z
+**User Input**: "using AI-DLC, resume the construction for unit-2 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Resumed initiative context from aidlc-state.md and loaded mandatory AI-DLC common rules, session continuity rules, content validation rules, question format rules, construction functional design rules, and prior inception/unit artifacts required for unit-2 continuation.
+**Context**: Session continuity handling for in-progress CONSTRUCTION stage (Functional Design, unit-2 planning).
+
+---
+
+## Construction Phase Initialization (Session Reload) - unit-2 Resume
+**Timestamp**: 2026-03-29T22:55:37Z
+**User Input**: "using AI-DLC, resume the construction for unit-2 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Construction Phase Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] for current session context before resuming construction-stage execution.
+**Context**: Mandatory extension reload completed on construction session resumption.
+
+---
+
+## Unit Initialization - unit-2 (Session Reload)
+**Timestamp**: 2026-03-29T22:55:50Z
+**User Input**: "using AI-DLC, resume the construction for unit-2 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-2) and reloaded relevant inception/requirements/application-design artifacts plus existing unit-2 plan context.
+**Context**: Per-unit extension/rule activation confirmed for resumed unit-2 workflow.
+
+---
+
+## Functional Design - unit-2 Resume Prompt Issued
+**Timestamp**: 2026-03-29T22:56:02Z
+**AI Prompt**: "Please complete all [Answer] fields in construction/plans/unit-2-functional-design-plan.md so functional-design artifacts can be generated and reviewed."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Functional Design (unit-2) planning is active and blocked on unanswered clarification questions.
+
+---
+
+## Functional Design - unit-2 Q1 Clarification
+**Timestamp**: 2026-03-29T22:58:35Z
+**User Input**: "for q1, what is the tradeoff between option A and C"
+**AI Response**: Provided tradeoff guidance: Option A (router-level dependency) gives stronger default-deny safety and lower maintenance risk by enforcing user context across all current/future endpoints in the router; Option C (per-endpoint all operations) offers finer explicitness but increases omission risk and review burden whenever endpoints are added/changed.
+**Context**: Clarification provided to help finalize Q1 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Q2 Clarification
+**Timestamp**: 2026-03-29T23:00:30Z
+**User Input**: "for q2, we don't yet have admin endpoint pattern, what is reasonable option to establish this pattern"
+**AI Response**: Recommended establishing admin endpoint policy with Option A as the baseline pattern: admin routes remain exempt from require_user_context and are explicitly tenant-scoped with separate admin authorization checks. This sets a clean boundary between user-scoped business APIs and system/admin APIs while avoiding premature coupling to end-user identity requirements.
+**Context**: Clarification provided to help finalize Q2 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Q2 Answer Recorded
+**Timestamp**: 2026-03-29T23:01:55Z
+**User Input**: "ok, add option A with details. (do we need explicit admin auth rules now?)"
+**AI Response**: Updated unit-2 functional-design plan with Q2 Answer A and explicit admin pattern details: admin routes stay exempt from require_user_context, remain tenant-scoped, and require explicit server-side admin authorization checks on every admin endpoint; endpoints needing end-user ownership checks are out of admin scope.
+**Context**: Q2 decision captured and documented for downstream functional-design artifact generation.
+
+---
+
+## Functional Design - unit-2 Q3 Clarification
+**Timestamp**: 2026-03-29T23:03:58Z
+**User Input**: "for Q3, since we have context injected, is option C better and simpler then other options>"
+**AI Response**: Clarified that Option C is not preferred for this initiative even with context injected at route boundary. Recommended Option A because it preserves explicit service/CRUD contracts, aligns with approved FR-10 signature-propagation requirements, and keeps lower layers framework-agnostic and easier to test. Option C can be reconsidered in a future refactor if a dedicated internal identity context object is introduced without coupling CRUD/service layers to web request context.
+**Context**: Clarification provided to help finalize Q3 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Q4 Clarification
+**Timestamp**: 2026-03-29T23:05:10Z
+**User Input**: "help me understand q4"
+**AI Response**: Explained Q4 implementation-boundary tradeoff: A updates runtime conflict-target logic now and defers schema/index migration to unit-3 (fits current unit sequencing); B combines runtime and migration in unit-2 for earlier parity but increases scope/risk crossover; C defers all changes until unit-3, reducing immediate churn but prolonging inconsistency window.
+**Context**: Clarification provided to help finalize Q4 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Answers Received
+**Timestamp**: 2026-03-29T23:08:36Z
+**User Input**: "questions answered"
+**AI Response**: Validated all unit-2 functional-design plan answers are complete and unambiguous (Q1=A, Q2=A with explicit admin auth boundary details, Q3=A, Q4=A, Q5=A, Q6=B).
+**Context**: Functional Design planning inputs complete; proceeding to artifact generation.
+
+---
+
+## Functional Design - unit-2 Artifacts Generated
+**Timestamp**: 2026-03-29T23:08:36Z
+**User Input**: "questions answered"
+**AI Response**: Generated unit-2 functional design artifacts: `construction/unit-2/functional-design/business-logic-model.md`, `construction/unit-2/functional-design/business-rules.md`, and `construction/unit-2/functional-design/domain-entities.md`. Updated unit-2 functional-design plan checklist to complete and moved aidlc-state current stage to review awaiting approval.
+**Context**: Functional Design content generated and ready for review gate.
+
+---
+
+## Functional Design - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-29T23:08:36Z
+**AI Prompt**: "Please review Unit-2 functional design artifacts and choose Request Changes or Continue to Next Stage (NFR Requirements)."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval before transitioning to NFR Requirements.
+
+---

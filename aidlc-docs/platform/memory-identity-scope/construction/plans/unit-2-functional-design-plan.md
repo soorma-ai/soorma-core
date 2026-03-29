@@ -18,12 +18,12 @@ Design detailed business logic for applying shared identity validation to user-s
 ## Functional Design Plan Checklist
 - [x] Step 1: Analyze unit-2 scope, boundaries, and requirement ownership.
 - [x] Step 2: Identify affected routers, services, and CRUD modules for runtime alignment.
-- [ ] Step 3: Capture clarifications via [Answer] questions below.
-- [ ] Step 4: Generate functional design artifacts:
+- [x] Step 3: Capture clarifications via [Answer] questions below.
+- [x] Step 4: Generate functional design artifacts:
   - `construction/unit-2/functional-design/business-logic-model.md`
   - `construction/unit-2/functional-design/business-rules.md`
   - `construction/unit-2/functional-design/domain-entities.md`
-- [ ] Step 5: Present functional design completion gate for explicit approval.
+- [x] Step 5: Present functional design completion gate for explicit approval.
 
 ## Clarification Questions
 Please fill all `[Answer]:` fields.
@@ -39,7 +39,7 @@ C) Apply per-endpoint dependency for all operations (read/write) instead of rout
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: Option A for consistency and safety
 
 ### Question 2
 For admin route behavior, which policy should functional design enforce?
@@ -52,7 +52,7 @@ C) Split admin endpoints: only destructive admin operations require user context
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A — Keep admin endpoints exempt from `require_user_context` and explicitly tenant-scoped only. Establish admin pattern now as: (1) admin routes are system/operational scope only, (2) every admin endpoint must have explicit server-side admin authorization checks, (3) no endpoint requiring end-user ownership checks belongs in admin routes.
 
 ### Question 3
 For plans/sessions/task_context/plan_context CRUD alignment, which signature policy should be designed?
@@ -65,7 +65,7 @@ C) Introduce a context object parameter instead of explicit tuple parameters in 
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A)
 
 ### Question 4
 For semantic upsert conflict-target alignment in unit-2, what implementation boundary should be used now?
@@ -78,7 +78,7 @@ C) Keep runtime unchanged until unit-3 schema work is complete
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A)
 
 ### Question 5
 For failure response behavior when identity is missing on user-scoped routes, which design contract should be explicit?
@@ -91,7 +91,7 @@ C) Return 422 validation errors to match schema validation style
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A)
 
 ### Question 6
 For unit-2 functional design testability guidance (not full test authoring), what should be included in design artifacts?
@@ -104,7 +104,7 @@ C) Include only acceptance criteria references, defer scenario details to unit-3
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B)
 
 ## Notes
 - If any answer is ambiguous, follow-up clarification questions will be added before artifact generation.
