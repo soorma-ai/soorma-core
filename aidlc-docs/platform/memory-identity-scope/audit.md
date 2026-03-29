@@ -450,3 +450,121 @@
 **Context**: Workflow is blocked pending team PR review and explicit approval confirmation.
 
 ---
+
+## Construction Session Resumption - Request Received
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Using AI-DLC, resume the memory-identity-scope initiative in the platform area.
+
+aidlc-state.md is at: #file:aidlc-state.md 
+Project repo: backend
+
+Intent: The Construction Design PR for unit-1 has been approved by
+the team. Please load all design artifacts for this unit and proceed to Code Generation.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: Resumed the existing initiative from `aidlc-state.md`, loaded mandatory AI-DLC common rules, loaded enabled extension rule files for this session, and prepared construction-session continuity flow for unit-1.
+**Context**: Session continuity handling for in-progress CONSTRUCTION stage.
+
+---
+
+## Construction Phase Initialization (Session Reload)
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Intent: The Construction Design PR for unit-1 has been approved by the team. Please load all design artifacts for this unit and proceed to Code Generation."
+**AI Response**: Construction Phase Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline].
+**Context**: Mandatory extension reload on construction session resumption.
+
+---
+
+## Unit Initialization - unit-1 (Session Reload)
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Please load all design artifacts for this unit and proceed to Code Generation."
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-1), then loaded unit-1 functional design, NFR requirements, NFR design, and relevant inception artifacts for code-stage context.
+**Context**: Per-unit extension/rule activation and artifact hydration complete.
+
+---
+
+## PR Checkpoint - unit-1 Approval Confirmed
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Intent: The Construction Design PR for unit-1 has been approved by the team."
+**AI Response**: Treated user confirmation as explicit team approval; verified branch state (`dev`) with merge evidence (`git branch --merged main` includes `dev`), and marked Construction Design PR Gate - unit-1 as APPROVED in `aidlc-state.md`.
+**Context**: PR checkpoint gate cleared; workflow unblocked for Code Generation planning.
+
+---
+
+## Code Generation - unit-1 Planning Completed
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Please load all design artifacts for this unit and proceed to Code Generation."
+**AI Response**: Created `construction/plans/unit-1-code-generation-plan.md` with explicit brownfield file targets, architecture-pattern alignment, TDD sequence (STUB -> RED -> GREEN -> REFACTOR), test scope, and progress checkboxes.
+**Context**: Code Generation Part 1 complete; waiting at approval gate before Part 2 execution.
+
+---
+
+## Code Generation - unit-1 Approval Prompt Issued
+**Timestamp**: 2026-03-29T22:33:53Z
+**AI Prompt**: "Please review Unit-1 code generation plan and approve to continue to Code Generation implementation."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to start code generation execution.
+
+---
+
+## Code Generation - unit-1 Planning Approval
+**Timestamp**: 2026-03-29T22:41:07Z
+**AI Prompt**: "Please review Unit-1 code generation plan and approve to continue to Code Generation implementation."
+**User Response**: "plan looks good"
+**Status**: Approved
+**Context**: Code Generation plan approved; executing Part 2 generation steps for unit-1.
+
+---
+
+## Code Generation - unit-1 Execution Completed
+**Timestamp**: 2026-03-29T22:41:07Z
+**User Input**: "plan looks good"
+**AI Response**: Executed unit-1 code generation using STUB -> RED -> GREEN -> REFACTOR cycle in `libs/soorma-service-common`: added `require_user_context` dependency, exported it via package top-level API, added behavioral tests in `test_dependencies.py`, verified RED failures were `NotImplementedError`, then implemented and passed tests (`test_dependencies.py`: 20 passed; full shared-library tests: 45 passed). Generated execution summary at `construction/unit-1/code/code-generation-summary.md`.
+**Context**: Code Generation Part 2 completed for unit-1; awaiting user review and explicit approval before next stage.
+
+---
+
+## Code Generation - unit-1 Review Prompt Issued
+**Timestamp**: 2026-03-29T22:41:07Z
+**AI Prompt**: "Code generation complete for unit-1. Please review generated code and confirm whether to request changes or continue to next stage."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed beyond unit-1 code generation gate.
+
+---
+
+## Code Generation - unit-1 Approval
+**Timestamp**: 2026-03-29T22:43:22Z
+**AI Prompt**: "Code generation complete for unit-1. Please review generated code and confirm whether to request changes or continue to next stage."
+**User Response**: "code looks good"
+**Status**: Approved
+**Context**: Code Generation approved for unit-1; proceeding to next unit per strict sequence.
+
+---
+
+## Unit Initialization - unit-2
+**Timestamp**: 2026-03-29T22:43:22Z
+**User Input**: "code looks good"
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-2).
+**Context**: Per-unit extension activation complete for unit-2.
+
+---
+
+## Functional Design - unit-2 Kickoff
+**Timestamp**: 2026-03-29T22:43:22Z
+**User Input**: "code looks good"
+**AI Response**: Started Functional Design for unit-2 and created `construction/plans/unit-2-functional-design-plan.md` with checklist and [Answer]-based clarification questions.
+**Context**: Functional Design for unit-2 is in progress; waiting for user answers in the plan file.
+
+---
+
+## Repo Management - Unit-1 Commit and Push Request
+**Timestamp**: 2026-03-29T22:47:36Z
+**User Input**: "before we start work for unit-2, lets commit and push the artifacts and generated code for unit-1"
+**AI Response**: Acknowledged request and prepared a focused unit-1 commit/push flow that stages only unit-1 generated code and artifacts while excluding unit-2 planning artifacts.
+**Context**: User-directed repository checkpoint before continuing unit-2.
+
+---
