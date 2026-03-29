@@ -1,0 +1,6 @@
+| Test Case ID | Title | Preconditions | Steps | Expected Result | Priority | Source | Construction Path |
+|---|---|---|---|---|---|---|---|
+| TC-U2-001 | Enforce require_user_context on user-scoped routers | User-scoped router has dependency | 1) Send request missing service identity 2) Observe response | HTTP 400 and no handler execution | High | unit-2 / FR-3 | aidlc-docs/platform/memory-identity-scope/construction/unit-2/ |
+| TC-U2-002 | Keep admin endpoints exempt from user-context dependency | Admin router without dependency | 1) Call admin endpoint without service_user_id | No dependency-driven 400 | High | unit-2 / NFR-2 | aidlc-docs/platform/memory-identity-scope/construction/unit-2/ |
+| TC-U2-003 | Enforce full identity tuple in plans and sessions CRUD | Data exists for identity A; caller is identity B | 1) Attempt list/get/update/delete as identity B | No read/mutate leakage across identities | High | unit-2 / FR-4 | aidlc-docs/platform/memory-identity-scope/construction/unit-2/ |
+| TC-U2-004 | Align upsert conflict targets to scoped identity | Existing row for identity A | 1) Upsert same key as identity B | No cross-identity overwrite | High | unit-2 / FR-6 | aidlc-docs/platform/memory-identity-scope/construction/unit-2/ |

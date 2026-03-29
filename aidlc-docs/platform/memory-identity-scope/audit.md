@@ -201,3 +201,252 @@
 **Context**: Inception PR Gate active. Construction is blocked until PR approval is confirmed.
 
 ---
+
+## PR Checkpoint - Inception Approval Confirmed
+**Timestamp**: 2026-03-29T20:04:23Z
+**AI Prompt**: "Confirm PR Approved"
+**User Response**: "PR approved"
+**Status**: Approved
+**Context**: Inception PR Gate marked APPROVED in aidlc-state.md. Construction phase unlocked; awaiting explicit unit selection.
+
+---
+
+## Construction Phase - Unit Selection and Start Request
+**Timestamp**: 2026-03-29T20:09:16Z
+**User Input**: "using AI-DLC, start the construction for unit-1 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Confirmed explicit selection of Unit-1 and initiated Construction start sequence: mandatory rule reload, Construction Phase Initialization, Unit Initialization, and Functional Design kickoff artifacts for Unit-1.
+**Context**: Construction kickoff request received and accepted.
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-03-29T20:09:45Z
+**User Input**: "using AI-DLC, start the construction for unit-1 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Loaded enabled extension full-rule files for current construction context from state configuration: pr-checkpoint, qa-test-cases, and security-baseline. Skipped jira-tickets because it is disabled in aidlc-state.md.
+**Context**: Construction Phase Initialization complete; extension rules active for Unit-1 stages.
+
+---
+
+## Unit Initialization - unit-1
+**Timestamp**: 2026-03-29T20:09:48Z
+**User Input**: "using AI-DLC, start the construction for unit-1 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Reloaded enabled extension full-rule files for per-unit session safety: pr-checkpoint, qa-test-cases, security-baseline (unit: unit-1).
+**Context**: Unit Initialization complete; proceeding to Functional Design for unit-1.
+
+---
+
+## Functional Design - unit-1 Kickoff
+**Timestamp**: 2026-03-29T20:09:49Z
+**User Input**: "using AI-DLC, start the construction for unit-1 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Started Functional Design for unit-1, created construction directories, and prepared a dedicated question-based functional design plan file with [Answer] tags.
+**Context**: Functional Design is in progress; awaiting user answers in the plan file.
+
+---
+
+## Functional Design - unit-1 Q5 Answer Update
+**Timestamp**: 2026-03-29T20:47:23Z
+**User Input**: "for Q5, option C seems better?"
+**AI Response**: Confirmed Option C as a valid and stronger long-term extensibility choice and recorded Q5 as Answer C with rationale in the unit-1 functional design plan.
+**Context**: Functional Design answers updated; awaiting remaining unanswered questions.
+
+---
+
+## Functional Design - unit-1 Answers Received
+**Timestamp**: 2026-03-29T20:50:06Z
+**User Input**: "answers done"
+**AI Response**: Validated all six answers are complete and unambiguous, generated Unit-1 functional design artifacts (`business-logic-model.md`, `business-rules.md`, `domain-entities.md`), updated functional-design plan checkboxes to complete, and prepared stage review output.
+**Context**: Functional Design content generated and ready for approval gate.
+
+---
+
+## Functional Design - unit-1 Approval Prompt Issued
+**Timestamp**: 2026-03-29T20:50:06Z
+**AI Prompt**: "Please review Unit-1 functional design artifacts and approve to continue to NFR Requirements."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed to NFR Requirements.
+
+---
+
+## Functional Design - unit-1 Approval
+**Timestamp**: 2026-03-29T20:59:06Z
+**AI Prompt**: "Please review Unit-1 functional design artifacts and approve to continue to NFR Requirements."
+**User Response**: "approved"
+**Status**: Approved
+**Context**: Functional Design approved for unit-1; transitioning to NFR Requirements stage.
+
+---
+
+## NFR Requirements - unit-1 Kickoff
+**Timestamp**: 2026-03-29T20:59:06Z
+**User Input**: "approved"
+**AI Response**: Started NFR Requirements for unit-1, analyzed functional design artifacts, and created unit-1-nfr-requirements-plan.md with embedded [Answer] questions.
+**Context**: NFR Requirements is in progress and awaiting user answers.
+
+---
+
+## NFR Requirements - unit-1 Q2 Clarification
+**Timestamp**: 2026-03-29T21:03:20Z
+**User Input**: "i'm not sure i understand q2. will services be able to specify custom failure messages as argument to dependency? is it really needed?"
+**AI Response**: Clarified Q2 scope: this question is about shared-library default message consistency policy, not per-route custom message arguments. Recommended using centralized shared defaults and avoiding custom per-service message arguments for this initiative unless a concrete use case requires overrides.
+**Context**: NFR Requirements clarification provided; awaiting remaining answers in the plan file.
+
+---
+
+## NFR Requirements - unit-1 Q3 Strategy Discussion
+**Timestamp**: 2026-03-29T21:08:26Z
+**User Input**: "Q3 raises an interesting point ... in a multi-tenant deployment, how reasonable is it to add platform tenant as a filter / search field in logs, so that logs can be isolated and retrieved, or exposed, to each platform tenant customer? or is that not a good way to provide troubleshooting to platform tenants, and a different approach is better? don't need to solve for that now in this initiaitve but may want to revisit later for end to end implementation based on whatever strategy makes sense."
+**AI Response**: Confirmed this is a valid concern and recorded Q3 as an interim decision of Option B for this initiative (log platform tenant only, never service tenant/user), with an explicit note to revisit tenant-facing troubleshooting architecture in a future cross-service design effort.
+**Context**: NFR Requirements Q3 captured with deferred end-to-end observability strategy.
+
+---
+
+## NFR Requirements - unit-1 Answers Received
+**Timestamp**: 2026-03-29T21:12:17Z
+**User Input**: "all answers done"
+**AI Response**: Validated NFR answers (Q1=A, Q2=A, Q3=B with deferred observability strategy note, Q4=A, Q5=A), generated `nfr-requirements.md` and `tech-stack-decisions.md`, updated NFR plan checkboxes to complete, and prepared stage review output.
+**Context**: NFR Requirements content generated and ready for approval gate.
+
+---
+
+## NFR Requirements - unit-1 Approval Prompt Issued
+**Timestamp**: 2026-03-29T21:12:17Z
+**AI Prompt**: "Please review Unit-1 NFR requirements artifacts and approve to continue to NFR Design."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed to NFR Design.
+
+---
+
+## NFR Requirements - unit-1 Approval
+**Timestamp**: 2026-03-29T21:52:21Z
+**AI Prompt**: "Please review Unit-1 NFR requirements artifacts and approve to continue to NFR Design."
+**User Response**: "approved"
+**Status**: Approved
+**Context**: NFR Requirements approved for unit-1; transitioning to NFR Design stage.
+
+---
+
+## NFR Design - unit-1 Kickoff
+**Timestamp**: 2026-03-29T21:52:21Z
+**User Input**: "approved"
+**AI Response**: Started NFR Design for unit-1, analyzed NFR requirement artifacts, and created unit-1-nfr-design-plan.md with embedded [Answer] questions.
+**Context**: NFR Design is in progress and awaiting user answers.
+
+---
+
+## NFR Design - unit-1 Q4 Clarification
+**Timestamp**: 2026-03-29T21:58:17Z
+**User Input**: "not sure understand q4"
+**AI Response**: Clarified that Q4 asks how explicitly to model Unit-1 logical boundaries in design artifacts (single component vs component + seams/providers), and updated question wording with a plain-language clarification line.
+**Context**: NFR Design clarification provided; awaiting Q4 and Q5 answers.
+
+---
+
+## NFR Design - unit-1 Answers Received
+**Timestamp**: 2026-03-29T22:00:50Z
+**User Input**: "answers provided"
+**AI Response**: Validated NFR design answers (Q1=B, Q2=A, Q3=A, Q4=A, Q5=A with issue-ready deferred-decision content), generated `nfr-design-patterns.md` and `logical-components.md`, updated NFR design plan checkboxes to complete, and prepared stage review output.
+**Context**: NFR Design content generated and ready for approval gate.
+
+---
+
+## NFR Design - unit-1 Approval Prompt Issued
+**Timestamp**: 2026-03-29T22:00:50Z
+**AI Prompt**: "Please review Unit-1 NFR design artifacts and approve to continue to Code Generation."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed to Code Generation planning.
+
+---
+
+## NFR Design - Deferred Troubleshooting Scope Clarification
+**Timestamp**: 2026-03-29T22:08:13Z
+**User Input**: "for deferred tenant scoped troubleshooting model ... that would be generic troubleshooting model for all of soorma-core infrastructure and not specific to identity validation, right?"
+**AI Response**: Confirmed the long-term strategy should be platform-wide observability/troubleshooting architecture across Soorma Core services, while this initiative only documents identity-validation as the concrete trigger/use-case that surfaced the need.
+**Context**: Scope clarification provided; NFR Design approval remains pending.
+
+---
+
+## NFR Design - Deferred Issue Scope Update
+**Timestamp**: 2026-03-29T22:09:17Z
+**User Input**: "yes, update content to track issue for general capability in a later initiative"
+**AI Response**: Updated deferred architecture decision content in `nfr-design-patterns.md` to track a platform-wide, cross-service tenant-scoped troubleshooting capability as a separate later initiative, with issue-ready title/body/goals/non-goals/acceptance criteria.
+**Context**: Deferred decision generalized from identity-validation use case to Soorma Core platform capability roadmap item.
+
+---
+
+## NFR Design - Pattern 2 Scope Clarification
+**Timestamp**: 2026-03-29T22:14:10Z
+**User Input**: "this pattern 2: structure logging -- is that defining a generic library for structure logging that can be used by all soorma-core services and libraries?"
+**AI Response**: Clarified that Unit-1 Pattern 2 defines a local design seam and structured logging contract for this dependency, not a new generic cross-platform logging library in this initiative. Noted that a reusable platform-wide logging capability can be planned as a separate later initiative.
+**Context**: Scope clarification provided; NFR Design approval remains pending.
+
+---
+
+## NFR Design - Deferred Initiative Explicitness Clarification
+**Timestamp**: 2026-03-29T22:15:47Z
+**User Input**: "would that be part of the deferred initiative we are logging issue for? is that implied or need to be explicitly called out?"
+**AI Response**: Confirmed it should be part of the deferred initiative and updated issue-ready content to explicitly call out evaluating a reusable cross-service structured logging capability, including explicit non-goal that no shared logging library implementation happens in this initiative.
+**Context**: Deferred initiative scope now explicit for future planning and triage.
+
+---
+
+## NFR Design - unit-1 Approval
+**Timestamp**: 2026-03-29T22:18:26Z
+**AI Prompt**: "Please review Unit-1 NFR design artifacts and approve to continue to Code Generation."
+**User Response**: "design looks good"
+**Status**: Approved
+**Context**: NFR Design approved for unit-1; proceeding to post-design extension ordering checks.
+
+---
+
+## QA Test Cases - unit-1 Enrichment Blocked
+**Timestamp**: 2026-03-29T22:18:38Z
+**User Input**: "design looks good"
+**AI Response**: Enrichment precondition check failed: required inception test spec files under `inception/test-cases/unit-1/` are missing (`test-specs-narrative.md`, `test-specs-gherkin.md`, `test-specs-tabular.md`, `test-case-index.md`). Per qa-test-cases extension rules, construction enrichment is blocked until inception test specs are generated.
+**Context**: Workflow blocked before construction design PR gate and code generation.
+
+---
+
+## QA Test Cases - Inception Artifacts Generated
+**Timestamp**: 2026-03-29T22:22:46Z
+**User Input**: "generate missing inception qa artifacts"
+**AI Response**: Generated inception QA test spec artifacts for `unit-1`, `unit-2`, and `unit-3` under `inception/test-cases/` (narrative, gherkin, tabular, and index files per unit) using approved requirements and unit definitions.
+**Context**: QA inception prerequisites satisfied for construction enrichment flow.
+
+---
+
+## QA Test Cases - unit-1 Enrichment Completed
+**Timestamp**: 2026-03-29T22:22:46Z
+**User Input**: "generate missing inception qa artifacts"
+**AI Response**: Executed unit-1 construction enrichment by updating inception test specs in place and creating `inception/test-cases/unit-1/enrichment-delta.md` with modified and added test-case traceability.
+**Context**: QA test-case extension no longer blocks unit-1 post-design flow.
+
+---
+
+## PR Checkpoint - unit-1 Branch Confirmation Prompt Issued
+**Timestamp**: 2026-03-29T22:22:46Z
+**AI Prompt**: "Current branch is dev. Confirm using dev for the Unit-1 construction design PR gate, or provide a different branch name."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit branch confirmation before generating construction design PR instructions.
+
+---
+
+## PR Checkpoint - unit-1 Branch Confirmation
+**Timestamp**: 2026-03-29T22:27:23Z
+**AI Prompt**: "Current branch is dev. Confirm using dev for the Unit-1 construction design PR gate, or provide a different branch name."
+**User Response**: "yea uaw dev branch"
+**Status**: Confirmed
+**Context**: Using `dev` branch for Unit-1 construction design PR checkpoint instructions.
+
+---
+
+## PR Checkpoint - unit-1 Instructions Generated
+**Timestamp**: 2026-03-29T22:27:23Z
+**User Input**: "yea uaw dev branch"
+**AI Response**: Generated construction design PR checkpoint instructions at `construction/plans/unit-1-design-pr-checkpoint-instructions.md` and persisted Construction Design PR Gate - unit-1 status as PENDING in `aidlc-state.md`.
+**Context**: Workflow is blocked pending team PR review and explicit approval confirmation.
+
+---
