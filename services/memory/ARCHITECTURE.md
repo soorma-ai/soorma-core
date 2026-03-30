@@ -338,3 +338,28 @@ CREATE POLICY user_agent_isolation ON episodic_memory
 3. **Audit Trail:** All queries execute within the context of specific tenant/user IDs, enabling database-level audit logging if needed.
 
 **Code Reference:** See `services/memory/src/memory_service/core/database.py` (`set_session_context()`) and `services/memory/src/memory_service/core/middleware.py` for implementation details.
+
+### 8.5 Admin Boundary and Data Access Separation
+
+**Decision:** Keep admin flows and user-scoped flows as separate API and data-access paths.
+
+**User-scoped flow (ownership semantics):**
+- Route category: standard memory routes (`/v1/memory/plans`, `/sessions`, `/task-context`, etc.)
+- Identity gate: `require_user_context` (service tenant + service user required)
+- Service/CRUD contract: full identity tuple is mandatory (`platform_tenant_id`, `service_tenant_id`, `service_user_id`, plus resource key)
+- Data behavior: read/write operations enforce caller ownership isolation
+
+**Admin flow (operational semantics):**
+- Route category: admin routes (`/v1/memory/admin/...`)
+- Identity gate: no end-user ownership dependency by default
+- Authorization: explicit server-side admin authorization required on each endpoint
+- Data behavior: explicit operational scope parameters (platform tenant, service tenant, service user) and dedicated admin service operations
+
+**Why this split is required:**
+- Prevents accidental bypass of ownership filters by privileged maintenance operations.
+- Avoids overloading user CRUD contracts with administrative semantics.
+- Keeps security review straightforward: ownership checks in user routes, privileged checks in admin routes.
+
+**Implementation rule:**
+- Admin endpoints MUST NOT reuse user-scoped CRUD methods that assume caller ownership.
+- If admin read/list operations are added later, define dedicated admin query paths with explicit scope and authorization.

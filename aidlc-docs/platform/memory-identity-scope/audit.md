@@ -666,3 +666,69 @@ end-to-end without my confirmation at each gate."
 **Context**: Waiting for explicit user approval before transitioning to NFR Requirements.
 
 ---
+
+## Functional Design - unit-2 Admin Boundary Clarification
+**Timestamp**: 2026-03-30T01:21:22Z
+**User Input**: "what is example of admin boundary flow? how will CRUD operations work with admin flows?"
+**AI Response**: Provided concrete boundary examples using current memory admin routes and target unit-2 policy: user-scoped flows enforce require_user_context and full-identity CRUD predicates, while admin flows use explicitly authorized admin endpoints and dedicated operational deletion/query paths that are tenant-scoped by explicit route parameters and must not rely on end-user ownership semantics.
+**Context**: Clarification provided during Functional Design review gate; awaiting user approval or change requests.
+
+---
+
+## Functional Design - unit-2 Documentation Enhancement
+**Timestamp**: 2026-03-30T01:24:58Z
+**User Input**: "yes, this documentation will be helpful for reference and any future tech design etc. maybe add to architecture pattern or similar technical design documents where data access design / architecture is documented."
+**AI Response**: Added admin-boundary and data-access separation guidance to shared architecture references: updated `services/memory/ARCHITECTURE.md` with a dedicated section describing user ownership flows vs admin operational flows and updated `docs/ARCHITECTURE_PATTERNS.md` with a reusable cross-service pattern and non-negotiable separation rule.
+**Context**: User-requested design documentation refinement applied during unit-2 Functional Design review gate.
+
+---
+
+## Functional Design - unit-2 Approval
+**Timestamp**: 2026-03-30T01:29:03Z
+**AI Prompt**: "Functional Design review gate for unit-2 is still active. Please choose Request Changes or Continue to Next Stage (NFR Requirements)."
+**User Response**: "approved design"
+**Status**: Approved
+**Context**: Functional Design approved for unit-2; transitioning to NFR Requirements stage.
+
+---
+
+## NFR Requirements - unit-2 Kickoff
+**Timestamp**: 2026-03-30T01:29:03Z
+**User Input**: "approved design"
+**AI Response**: Started NFR Requirements for unit-2, reviewed functional design artifacts, and created `construction/plans/unit-2-nfr-requirements-plan.md` with embedded [Answer] clarification questions covering performance, admin authorization baseline, validation-failure logging, fail-closed reliability behavior, and testability expectations.
+**Context**: NFR Requirements is in progress and awaiting user answers.
+
+---
+
+## NFR Requirements - unit-2 Q4 Clarification
+**Timestamp**: 2026-03-30T01:32:02Z
+**User Input**: "for q4, what is the implication of choosing C vs A"
+**AI Response**: Clarified implications: Option A enforces fail-closed behavior at service boundary with predictable security posture and clearer debugging, while Option C allows deeper execution and depends on DB constraints as last line of defense, increasing risk of partial side effects, inconsistent error surfaces, and weaker defense-in-depth.
+**Context**: Clarification provided to help finalize Q4 answer in unit-2 NFR requirements plan.
+
+---
+
+## NFR Requirements - unit-2 Answers Received
+**Timestamp**: 2026-03-30T01:33:51Z
+**User Input**: "answers provided"
+**AI Response**: Validated all unit-2 NFR answers are complete and unambiguous (Q1=A, Q2=A, Q3=B, Q4=A, Q5=B).
+**Context**: NFR Requirements planning inputs complete; proceeding to artifact generation.
+
+---
+
+## NFR Requirements - unit-2 Artifacts Generated
+**Timestamp**: 2026-03-30T01:33:51Z
+**User Input**: "answers provided"
+**AI Response**: Generated unit-2 NFR artifacts at `construction/unit-2/nfr-requirements/nfr-requirements.md` and `construction/unit-2/nfr-requirements/tech-stack-decisions.md`, completed plan checklist, and moved state to NFR Requirements review awaiting approval.
+**Context**: NFR Requirements content generated and ready for review gate.
+
+---
+
+## NFR Requirements - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-30T01:33:51Z
+**AI Prompt**: "Please review Unit-2 NFR requirements artifacts and choose Request Changes or Continue to Next Stage (NFR Design)."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval before transitioning to NFR Design.
+
+---
