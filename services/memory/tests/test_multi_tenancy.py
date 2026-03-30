@@ -214,6 +214,49 @@ class TestServiceUserIdRequiresServiceTenantId:
         )
 
         assert entry is None  # empty DB — just verifying no signature error
+        stmt = db_session.execute.call_args.args[0]
+        assert "service_tenant_id" in str(stmt)
+
+
+class TestIdentityScopedUniqueness:
+    """Validate identity-scoped uniqueness constraints on key memory models."""
+
+    def test_working_memory_unique_constraint_includes_full_identity(self):
+        """Working memory uniqueness must include tenant and user identity."""
+        constraints = WorkingMemory.__table__.constraints
+        target = next(c for c in constraints if getattr(c, "name", None) == "working_memory_scope_unique")
+        columns = [col.name for col in target.columns]
+        assert columns == [
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+            "key",
+        ]
+
+    def test_plan_unique_constraint_includes_full_identity(self):
+        """Plan uniqueness must include tenant and user identity."""
+        constraints = Plan.__table__.constraints
+        target = next(c for c in constraints if getattr(c, "name", None) == "plan_unique")
+        columns = [col.name for col in target.columns]
+        assert columns == [
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+        ]
+
+    def test_session_unique_constraint_includes_full_identity(self):
+        """Session uniqueness must include tenant and user identity."""
+        constraints = Session.__table__.constraints
+        target = next(c for c in constraints if getattr(c, "name", None) == "sessions_unique")
+        columns = [col.name for col in target.columns]
+        assert columns == [
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "session_id",
+        ]
 
 
 # ---------------------------------------------------------------------------

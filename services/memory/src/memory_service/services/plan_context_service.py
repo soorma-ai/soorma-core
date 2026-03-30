@@ -46,6 +46,8 @@ class PlanContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         data: PlanContextCreate,
     ) -> PlanContextResponse:
         """
@@ -56,6 +58,8 @@ class PlanContextService:
         plan_context = await crud_upsert(
             db,
             platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
             data.plan_id,
             data.session_id,
             data.goal_event,
@@ -73,10 +77,18 @@ class PlanContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         plan_id: str,
     ) -> Optional[PlanContextResponse]:
         """Get plan context by plan ID."""
-        plan_context = await crud_get(db, platform_tenant_id, plan_id)
+        plan_context = await crud_get(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            plan_id,
+        )
         if not plan_context:
             return None
         
@@ -86,6 +98,8 @@ class PlanContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         plan_id: str,
         data: PlanContextUpdate,
     ) -> Optional[PlanContextResponse]:
@@ -97,6 +111,8 @@ class PlanContextService:
         plan_context = await crud_update(
             db,
             platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
             plan_id,
             data.state,
             data.current_state,
@@ -113,6 +129,8 @@ class PlanContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         plan_id: str,
     ) -> bool:
         """
@@ -121,7 +139,13 @@ class PlanContextService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, platform_tenant_id, plan_id)
+        deleted = await crud_delete(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            plan_id,
+        )
         if deleted:
             await db.commit()
         
@@ -131,10 +155,18 @@ class PlanContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         correlation_id: str,
     ) -> Optional[PlanContextResponse]:
         """Find plan by correlation ID."""
-        plan_context = await crud_get_by_correlation(db, platform_tenant_id, correlation_id)
+        plan_context = await crud_get_by_correlation(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            correlation_id,
+        )
         if not plan_context:
             return None
         

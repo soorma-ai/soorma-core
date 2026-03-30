@@ -849,3 +849,112 @@ end-to-end without my confirmation at each gate."
 **Context**: Workflow is blocked pending team PR review and explicit approval confirmation.
 
 ---
+
+## Construction Session Resumption - unit-2 Approval Received
+**Timestamp**: 2026-03-30T05:04:03Z
+**User Input**: "using AI-DLC resume memory-identity-scope initiatve in the platform area using #file:aidlc-state.md as current state.
+construction PR for unit-2 has been approved."
+**AI Response**: Resumed the initiative from `aidlc-state.md`, loaded mandatory AI-DLC common rules, loaded enabled extension rule files, loaded prior inception/unit-2 design artifacts, and prepared construction continuity flow to clear the pending PR gate and enter Code Generation planning.
+**Context**: Session continuity handling for CONSTRUCTION phase resume.
+
+---
+
+## Construction Phase Initialization (Session Reload) - unit-2 Resume
+**Timestamp**: 2026-03-30T05:04:03Z
+**User Input**: "construction PR for unit-2 has been approved."
+**AI Response**: Construction Phase Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline].
+**Context**: Mandatory extension reload completed for resumed construction session.
+
+---
+
+## Unit Initialization - unit-2 (Session Reload)
+**Timestamp**: 2026-03-30T05:04:03Z
+**User Input**: "construction PR for unit-2 has been approved."
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-2).
+**Context**: Per-unit extension/rule activation confirmed prior to code-generation stage resume.
+
+---
+
+## PR Checkpoint - unit-2 Approval Confirmed
+**Timestamp**: 2026-03-30T05:04:03Z
+**User Input**: "construction PR for unit-2 has been approved."
+**AI Response**: Treated user confirmation as explicit team approval; verified branch state (`dev`) with merge evidence (`git branch --merged main` includes `dev`), then marked Construction Design PR Gate - unit-2 as APPROVED in `aidlc-state.md`.
+**Context**: PR checkpoint gate cleared; workflow unblocked for Code Generation planning.
+
+---
+
+## Code Generation - unit-2 Planning Completed
+**Timestamp**: 2026-03-30T05:04:03Z
+**User Input**: "using AI-DLC resume memory-identity-scope initiatve in the platform area using #file:aidlc-state.md as current state.
+construction PR for unit-2 has been approved."
+**AI Response**: Created `construction/plans/unit-2-code-generation-plan.md` with explicit brownfield targets across API/service/CRUD layers, architecture-pattern alignment, STUB -> RED -> GREEN -> REFACTOR sequencing, focused test scope, and plan-level checkbox tracking.
+**Context**: Code Generation Part 1 complete for unit-2; waiting at approval gate before Part 2 execution.
+
+---
+
+## Code Generation - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-30T05:04:03Z
+**AI Prompt**: "Please review Unit-2 code generation plan and approve to continue to Code Generation implementation."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to start unit-2 code generation execution.
+
+---
+
+## Code Generation - unit-2 Planning Approval
+**Timestamp**: 2026-03-30T05:13:37Z
+**AI Prompt**: "Please review Unit-2 code generation plan and approve to continue to Code Generation implementation."
+**User Response**: "plan approved"
+**Status**: Approved
+**Context**: Code Generation Part 1 approved; executing Part 2 generation steps for unit-2.
+
+---
+
+## Code Generation - unit-2 Execution Completed
+**Timestamp**: 2026-03-30T05:13:37Z
+**User Input**: "plan approved"
+**AI Response**: Executed unit-2 code generation across Memory Service API/service/CRUD layers: enforced user-context route dependency on user-scoped routers, added explicit admin authorization guard on admin routes, propagated full identity tuple through plans/sessions/task_context/plan_context call chains, aligned task/plan context upsert conflict targets, aligned semantic private conflict targets to include service tenant, updated focused tests, and generated code summary at `construction/unit-2/code/code-generation-summary.md`. Ran memory test suite successfully: `133 passed, 19 skipped`.
+**Context**: Code Generation Part 2 completed for unit-2; awaiting user review and explicit approval before next stage.
+
+---
+
+## Code Generation - unit-2 Review Prompt Issued
+**Timestamp**: 2026-03-30T05:13:37Z
+**AI Prompt**: "Code generation complete for unit-2. Please review generated code and confirm whether to request changes or continue to next stage."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed to Build and Test planning.
+
+---
+
+## Code Generation - unit-2 Review Change Request (Shared Admin Guard)
+**Timestamp**: 2026-03-30T05:21:06Z
+**User Input**: "should require_admin_authorization be in the soorma_service_common so that it can be reused / updated consistently across all services?" and "yes please apply the change"
+**AI Response**: Implemented requested refactor by adding a reusable `create_require_admin_authorization` factory in `libs/soorma-service-common/src/soorma_service_common/dependencies.py`, exporting it from package `__init__.py`, and updating memory service to consume the shared factory while preserving the existing `X-Memory-Admin-Key` contract. Verified behavior with `tests/test_api_validation.py` (`4 passed, 17 skipped`).
+**Context**: Post-review code change applied within unit-2 Code Generation review gate; awaiting updated user approval.
+
+---
+
+## Code Generation - unit-2 Review Change Request (LC-2-5 Logging Gap)
+**Timestamp**: 2026-03-30T05:36:49Z
+**User Input**: "ok, lets patch for LC-2-5 gap. also what is the plan for design debt in LC-2-4"
+**AI Response**: Patched shared validation logging to include optional `correlation_id`/`request_id` in warning events (`soorma_service_common.dependencies.require_user_context`), wired memory service wrapper to pass `X-Correlation-ID` and `X-Request-ID` headers, and added shared-library unit test coverage for logging fields. Validation passed: `libs/soorma-service-common/tests/test_dependencies.py` (`21 passed`) and `services/memory/tests/test_api_validation.py` (`4 passed, 17 skipped`).
+**Context**: Post-review LC-2-5 implementation gap closed during unit-2 Code Generation review gate.
+
+---
+
+## Code Generation - unit-2 Review Change Request (Shared User-Context Adapter + Pattern Scan)
+**Timestamp**: 2026-03-30T05:42:40Z
+**User Input**: "yes, implement this clean. also look for any other similar sub-optimal design patterns in current code generation"
+**AI Response**: Implemented clean centralization by adding `create_require_user_context_dependency` in `soorma-service-common` (shared request-header extraction + validation delegation), updated memory service to consume this shared adapter, and added focused tests for adapter behavior. Validation passed: `libs/soorma-service-common/tests/test_dependencies.py` (`23 passed`) and `services/memory/tests/test_api_validation.py` (`4 passed, 17 skipped`). Per request, started targeted scan for similar sub-optimal patterns in unit-2 generated runtime paths and identified additional identity-scope abstraction debt candidates for review.
+**Context**: Post-review architecture refinement and design-debt discovery during unit-2 Code Generation review gate.
+
+---
+
+## Code Generation - unit-2 Review Change Request (Address All Findings)
+**Timestamp**: 2026-03-30T05:50:28Z
+**User Input**: "ok, we need to address all of these findings"
+**AI Response**: Implemented all identified findings end-to-end in memory runtime and model layers: (1) working-memory uniqueness and readback scope aligned to full identity tuple; (2) service tenant predicates added to user-scoped semantic, episodic, procedural, and working CRUD query paths; (3) plans and sessions uniqueness constraints aligned to full identity tuple; and (4) repeated identity assertions/predicate boilerplate reduced via shared CRUD helper (`crud/_identity.py`) reused across plans/sessions/task_context/plan_context/semantic/episodic/procedural/working modules. Added regression coverage for identity-scoped uniqueness constraints and query predicate assertions. Validation passed: `tests/test_working_memory_deletion.py tests/test_multi_tenancy.py tests/test_semantic_crud.py` (`36 passed`) and `tests/test_working_memory.py tests/test_api_validation.py` (`19 passed, 17 skipped`).
+**Context**: Comprehensive remediation of post-scan findings during unit-2 Code Generation review gate.
+
+---

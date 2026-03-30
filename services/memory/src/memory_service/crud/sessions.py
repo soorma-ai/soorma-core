@@ -5,6 +5,7 @@ from sqlalchemy import select, delete, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from memory_service.models.memory import Session
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def create_session(
@@ -17,7 +18,7 @@ async def create_session(
     metadata: Optional[dict] = None,
 ) -> Session:
     """Create a new session."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     session = Session(
         platform_tenant_id=platform_tenant_id,
         service_tenant_id=service_tenant_id,
@@ -35,12 +36,19 @@ async def create_session(
 async def get_session(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     session_id: str,
 ) -> Optional[Session]:
     """Get session by ID."""
     result = await db.execute(
         select(Session).where(
-            Session.platform_tenant_id == platform_tenant_id,
+            *scoped_identity_filters(
+                Session,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             Session.session_id == session_id,
         )
     )
@@ -50,13 +58,19 @@ async def get_session(
 async def list_sessions(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
     service_user_id: str,
     limit: int = 20,
 ) -> List[Session]:
     """List sessions for a user."""
+    require_platform_tenant_id(platform_tenant_id)
     query = select(Session).where(
-        Session.platform_tenant_id == platform_tenant_id,
-        Session.service_user_id == service_user_id,
+        *scoped_identity_filters(
+            Session,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+        ),
     ).order_by(desc(Session.last_interaction)).limit(limit)
     
     result = await db.execute(query)
@@ -66,10 +80,18 @@ async def list_sessions(
 async def update_session_interaction(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     session_id: str,
 ) -> Optional[Session]:
     """Update session last_interaction timestamp."""
-    session = await get_session(db, platform_tenant_id, session_id)
+    session = await get_session(
+        db,
+        platform_tenant_id,
+        service_tenant_id,
+        service_user_id,
+        session_id,
+    )
     if not session:
         return None
     
@@ -84,12 +106,19 @@ async def update_session_interaction(
 async def delete_session(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     session_id: str,
 ) -> bool:
     """Delete session."""
     result = await db.execute(
         delete(Session).where(
-            Session.platform_tenant_id == platform_tenant_id,
+            *scoped_identity_filters(
+                Session,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             Session.session_id == session_id,
         )
     )

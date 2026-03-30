@@ -103,7 +103,16 @@ class WorkingMemory(Base):
     value = Column(JSON, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("plan_id", "key", name="plan_key_unique"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+            "key",
+            name="working_memory_scope_unique",
+        ),
+    )
 
 
 class TaskContext(Base):
@@ -126,7 +135,15 @@ class TaskContext(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("platform_tenant_id", "task_id", name="task_context_unique"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "task_id",
+            name="task_context_unique",
+        ),
+    )
 
 
 class PlanContext(Base):
@@ -150,7 +167,15 @@ class PlanContext(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("plan_id", name="plan_context_unique"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+            name="plan_context_unique",
+        ),
+    )
 
 
 class Plan(Base):
@@ -172,7 +197,13 @@ class Plan(Base):
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("platform_tenant_id", "plan_id", name="plan_unique"),
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+            name="plan_unique",
+        ),
         CheckConstraint(
             "status IN ('running', 'completed', 'failed', 'paused')",
             name="plan_status_check",
@@ -195,4 +226,12 @@ class Session(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     last_interaction = Column(DateTime, default=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("platform_tenant_id", "session_id", name="sessions_unique"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "session_id",
+            name="sessions_unique",
+        ),
+    )

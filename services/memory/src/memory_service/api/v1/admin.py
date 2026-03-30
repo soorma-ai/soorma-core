@@ -6,10 +6,15 @@ Uses bare get_db (no tenant context) — these are admin/platform-level operatio
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from memory_service.core.dependencies import require_admin_authorization
 from memory_service.core.database import get_db
 from memory_service.services.data_deletion import MemoryDataDeletion
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["Admin"],
+    dependencies=[Depends(require_admin_authorization)],
+)
 
 
 @router.delete("/platform/{platform_tenant_id}", status_code=204)

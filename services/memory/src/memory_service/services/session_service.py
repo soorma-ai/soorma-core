@@ -67,10 +67,18 @@ class SessionService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         session_id: str,
     ) -> Optional[SessionSummary]:
         """Get session by ID."""
-        session = await crud_get(db, platform_tenant_id, session_id)
+        session = await crud_get(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            session_id,
+        )
         if not session:
             return None
         
@@ -80,17 +88,26 @@ class SessionService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
         service_user_id: str,
         limit: int = 20,
     ) -> List[SessionSummary]:
         """List sessions for a user."""
-        sessions = await crud_list(db, platform_tenant_id, service_user_id, limit)
+        sessions = await crud_list(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            limit,
+        )
         return [self._to_summary(s) for s in sessions]
     
     async def update_interaction(
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         session_id: str,
     ) -> Optional[SessionSummary]:
         """
@@ -98,7 +115,13 @@ class SessionService:
         
         Transaction boundary: Commits after successful update.
         """
-        session = await crud_update_interaction(db, platform_tenant_id, session_id)
+        session = await crud_update_interaction(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            session_id,
+        )
         if not session:
             return None
         
@@ -110,6 +133,8 @@ class SessionService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         session_id: str,
     ) -> bool:
         """
@@ -118,7 +143,13 @@ class SessionService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, platform_tenant_id, session_id)
+        deleted = await crud_delete(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            session_id,
+        )
         if deleted:
             await db.commit()
         

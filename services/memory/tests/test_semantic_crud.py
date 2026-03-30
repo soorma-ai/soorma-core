@@ -176,6 +176,11 @@ class TestSearchSemanticMemory:
             
             # Verify execute was called (statement includes tenant filter)
             mock_db.execute.assert_called_once()
+            assert executed_stmt is not None
+            query_text = str(executed_stmt)
+            assert "platform_tenant_id" in query_text
+            assert "service_tenant_id" in query_text
+            assert "service_user_id" in query_text
 
     @pytest.mark.asyncio
     async def test_search_preserves_metadata_field_name(self):

@@ -78,10 +78,18 @@ class TaskContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         task_id: str,
     ) -> Optional[TaskContextResponse]:
         """Get task context by task ID."""
-        task_context = await crud_get(db, platform_tenant_id, task_id)
+        task_context = await crud_get(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            task_id,
+        )
         if not task_context:
             return None
         
@@ -91,6 +99,8 @@ class TaskContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         task_id: str,
         data: TaskContextUpdate,
     ) -> Optional[TaskContextResponse]:
@@ -102,6 +112,8 @@ class TaskContextService:
         task_context = await crud_update(
             db,
             platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
             task_id,
             data.sub_tasks,
             data.state,
@@ -117,6 +129,8 @@ class TaskContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         task_id: str,
     ) -> bool:
         """
@@ -125,7 +139,13 @@ class TaskContextService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, platform_tenant_id, task_id)
+        deleted = await crud_delete(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            task_id,
+        )
         if deleted:
             await db.commit()
         
@@ -135,10 +155,18 @@ class TaskContextService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         sub_task_id: str,
     ) -> Optional[TaskContextResponse]:
         """Find parent task by sub-task ID."""
-        task_context = await crud_get_by_subtask(db, platform_tenant_id, sub_task_id)
+        task_context = await crud_get_by_subtask(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            sub_task_id,
+        )
         if not task_context:
             return None
         

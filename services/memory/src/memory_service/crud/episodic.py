@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from memory_service.models.memory import EpisodicMemory
 from soorma_common.models import EpisodicMemoryCreate, EpisodicMemoryResponse
 from memory_service.services.embedding import embedding_service
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def create_episodic_memory(
@@ -17,7 +18,7 @@ async def create_episodic_memory(
     data: EpisodicMemoryCreate,
 ) -> EpisodicMemory:
     """Create a new episodic memory entry."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Generate embedding
     embedding = await embedding_service.generate_embedding(data.content)
 
@@ -46,12 +47,16 @@ async def get_recent_episodic_memory(
     limit: int = 10,
 ) -> List[EpisodicMemoryResponse]:
     """Get recent episodic memories for a user/agent pair."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     stmt = (
         select(EpisodicMemory)
         .where(
-            EpisodicMemory.platform_tenant_id == platform_tenant_id,
-            EpisodicMemory.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                EpisodicMemory,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             EpisodicMemory.agent_id == agent_id,
         )
         .order_by(desc(EpisodicMemory.created_at))
@@ -86,7 +91,7 @@ async def search_episodic_memory(
     limit: int = 5,
 ) -> List[EpisodicMemoryResponse]:
     """Search episodic memory using vector similarity."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Generate query embedding
     query_embedding = await embedding_service.generate_embedding(query)
 
@@ -97,8 +102,12 @@ async def search_episodic_memory(
             (1 - EpisodicMemory.embedding.cosine_distance(query_embedding)).label("score"),
         )
         .where(
-            EpisodicMemory.platform_tenant_id == platform_tenant_id,
-            EpisodicMemory.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                EpisodicMemory,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             EpisodicMemory.agent_id == agent_id,
         )
         .order_by((1 - EpisodicMemory.embedding.cosine_distance(query_embedding)).desc())

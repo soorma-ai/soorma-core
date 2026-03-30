@@ -6,7 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 
 from memory_service.models.memory import WorkingMemory
-from soorma_common.models import WorkingMemorySet, WorkingMemoryResponse
+from soorma_common.models import WorkingMemorySet
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def set_working_memory(
@@ -19,7 +20,7 @@ async def set_working_memory(
     data: WorkingMemorySet,
 ) -> WorkingMemory:
     """Set or update working memory value."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Use PostgreSQL INSERT ... ON CONFLICT UPDATE (upsert)
     stmt = insert(WorkingMemory).values(
         platform_tenant_id=platform_tenant_id,
@@ -30,7 +31,13 @@ async def set_working_memory(
         value=data.value,
     )
     stmt = stmt.on_conflict_do_update(
-        constraint="plan_key_unique",
+        index_elements=[
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+            "key",
+        ],
         set_={"value": data.value},
     )
 
@@ -40,7 +47,12 @@ async def set_working_memory(
     # Fetch the updated record
     result = await db.execute(
         select(WorkingMemory).where(
-            WorkingMemory.platform_tenant_id == platform_tenant_id,
+            *scoped_identity_filters(
+                WorkingMemory,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             WorkingMemory.plan_id == plan_id,
             WorkingMemory.key == key,
         )
@@ -58,10 +70,14 @@ async def get_working_memory(
     key: str,
 ) -> Optional[WorkingMemory]:
     """Get working memory value."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     stmt = select(WorkingMemory).where(
-        WorkingMemory.platform_tenant_id == platform_tenant_id,
-        WorkingMemory.service_user_id == service_user_id,
+        *scoped_identity_filters(
+            WorkingMemory,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+        ),
         WorkingMemory.plan_id == plan_id,
         WorkingMemory.key == key,
     )
@@ -89,11 +105,15 @@ async def delete_working_memory_key(
     Returns:
         True if key was deleted, False if key did not exist
     """
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Build query to delete
     stmt = delete(WorkingMemory).where(
-        WorkingMemory.platform_tenant_id == platform_tenant_id,
-        WorkingMemory.service_user_id == service_user_id,
+        *scoped_identity_filters(
+            WorkingMemory,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+        ),
         WorkingMemory.plan_id == plan_id,
         WorkingMemory.key == key,
     )
@@ -123,11 +143,15 @@ async def delete_working_memory_plan(
     Returns:
         Count of rows deleted
     """
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Build query to delete all keys for this plan
     stmt = delete(WorkingMemory).where(
-        WorkingMemory.platform_tenant_id == platform_tenant_id,
-        WorkingMemory.service_user_id == service_user_id,
+        *scoped_identity_filters(
+            WorkingMemory,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+        ),
         WorkingMemory.plan_id == plan_id,
     )
     

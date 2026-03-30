@@ -5,6 +5,7 @@ from sqlalchemy import select, delete, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from memory_service.models.memory import Plan
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def create_plan(
@@ -19,7 +20,7 @@ async def create_plan(
     parent_plan_id: Optional[str] = None,
 ) -> Plan:
     """Create a new plan."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     plan = Plan(
         platform_tenant_id=platform_tenant_id,
         service_tenant_id=service_tenant_id,
@@ -40,12 +41,19 @@ async def create_plan(
 async def get_plan(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
 ) -> Optional[Plan]:
     """Get plan by ID."""
     result = await db.execute(
         select(Plan).where(
-            Plan.platform_tenant_id == platform_tenant_id,
+            *scoped_identity_filters(
+                Plan,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             Plan.plan_id == plan_id,
         )
     )
@@ -55,15 +63,21 @@ async def get_plan(
 async def list_plans(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
     service_user_id: str,
     status: Optional[str] = None,
     session_id: Optional[str] = None,
     limit: int = 20,
 ) -> List[Plan]:
     """List plans for a user."""
+    require_platform_tenant_id(platform_tenant_id)
     query = select(Plan).where(
-        Plan.platform_tenant_id == platform_tenant_id,
-        Plan.service_user_id == service_user_id,
+        *scoped_identity_filters(
+            Plan,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+        ),
     )
     
     if status:
@@ -80,11 +94,19 @@ async def list_plans(
 async def update_plan(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
     status: Optional[str] = None,
 ) -> Optional[Plan]:
     """Update plan."""
-    plan = await get_plan(db, platform_tenant_id, plan_id)
+    plan = await get_plan(
+        db,
+        platform_tenant_id,
+        service_tenant_id,
+        service_user_id,
+        plan_id,
+    )
     if not plan:
         return None
     
@@ -99,12 +121,19 @@ async def update_plan(
 async def delete_plan(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
 ) -> bool:
     """Delete plan."""
     result = await db.execute(
         delete(Plan).where(
-            Plan.platform_tenant_id == platform_tenant_id,
+            *scoped_identity_filters(
+                Plan,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             Plan.plan_id == plan_id,
         )
     )

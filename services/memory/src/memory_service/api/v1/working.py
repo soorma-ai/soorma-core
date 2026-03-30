@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from memory_service.core.dependencies import TenantContext, get_tenant_context
+from memory_service.core.dependencies import TenantContext, require_user_tenant_context
 from soorma_common.models import (
     WorkingMemorySet,
     WorkingMemoryResponse,
@@ -19,7 +19,7 @@ async def set_plan_state(
     plan_id: str,
     key: str,
     data: WorkingMemorySet,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Set or update working memory value for a plan."""
     return await working_memory_service.set(
@@ -37,7 +37,7 @@ async def set_plan_state(
 async def get_plan_state(
     plan_id: str,
     key: str,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Get working memory value for a plan."""
     result = await working_memory_service.get(
@@ -60,7 +60,7 @@ async def get_plan_state(
 async def delete_plan_state_key(
     plan_id: str,
     key: str,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Delete a single working memory key for a plan."""
     result = await working_memory_service.delete_key(
@@ -82,7 +82,7 @@ async def delete_plan_state_key(
 @router.delete("/{plan_id}", response_model=WorkingMemoryDeletePlanResponse)
 async def delete_plan_state(
     plan_id: str,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Delete all working memory for a plan."""
     return await working_memory_service.delete_plan(
