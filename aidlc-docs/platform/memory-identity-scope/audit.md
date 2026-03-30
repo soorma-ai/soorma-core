@@ -450,3 +450,402 @@
 **Context**: Workflow is blocked pending team PR review and explicit approval confirmation.
 
 ---
+
+## Construction Session Resumption - Request Received
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Using AI-DLC, resume the memory-identity-scope initiative in the platform area.
+
+aidlc-state.md is at: #file:aidlc-state.md 
+Project repo: backend
+
+Intent: The Construction Design PR for unit-1 has been approved by
+the team. Please load all design artifacts for this unit and proceed to Code Generation.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: Resumed the existing initiative from `aidlc-state.md`, loaded mandatory AI-DLC common rules, loaded enabled extension rule files for this session, and prepared construction-session continuity flow for unit-1.
+**Context**: Session continuity handling for in-progress CONSTRUCTION stage.
+
+---
+
+## Construction Phase Initialization (Session Reload)
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Intent: The Construction Design PR for unit-1 has been approved by the team. Please load all design artifacts for this unit and proceed to Code Generation."
+**AI Response**: Construction Phase Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline].
+**Context**: Mandatory extension reload on construction session resumption.
+
+---
+
+## Unit Initialization - unit-1 (Session Reload)
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Please load all design artifacts for this unit and proceed to Code Generation."
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-1), then loaded unit-1 functional design, NFR requirements, NFR design, and relevant inception artifacts for code-stage context.
+**Context**: Per-unit extension/rule activation and artifact hydration complete.
+
+---
+
+## PR Checkpoint - unit-1 Approval Confirmed
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Intent: The Construction Design PR for unit-1 has been approved by the team."
+**AI Response**: Treated user confirmation as explicit team approval; verified branch state (`dev`) with merge evidence (`git branch --merged main` includes `dev`), and marked Construction Design PR Gate - unit-1 as APPROVED in `aidlc-state.md`.
+**Context**: PR checkpoint gate cleared; workflow unblocked for Code Generation planning.
+
+---
+
+## Code Generation - unit-1 Planning Completed
+**Timestamp**: 2026-03-29T22:33:53Z
+**User Input**: "Please load all design artifacts for this unit and proceed to Code Generation."
+**AI Response**: Created `construction/plans/unit-1-code-generation-plan.md` with explicit brownfield file targets, architecture-pattern alignment, TDD sequence (STUB -> RED -> GREEN -> REFACTOR), test scope, and progress checkboxes.
+**Context**: Code Generation Part 1 complete; waiting at approval gate before Part 2 execution.
+
+---
+
+## Code Generation - unit-1 Approval Prompt Issued
+**Timestamp**: 2026-03-29T22:33:53Z
+**AI Prompt**: "Please review Unit-1 code generation plan and approve to continue to Code Generation implementation."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to start code generation execution.
+
+---
+
+## Code Generation - unit-1 Planning Approval
+**Timestamp**: 2026-03-29T22:41:07Z
+**AI Prompt**: "Please review Unit-1 code generation plan and approve to continue to Code Generation implementation."
+**User Response**: "plan looks good"
+**Status**: Approved
+**Context**: Code Generation plan approved; executing Part 2 generation steps for unit-1.
+
+---
+
+## Code Generation - unit-1 Execution Completed
+**Timestamp**: 2026-03-29T22:41:07Z
+**User Input**: "plan looks good"
+**AI Response**: Executed unit-1 code generation using STUB -> RED -> GREEN -> REFACTOR cycle in `libs/soorma-service-common`: added `require_user_context` dependency, exported it via package top-level API, added behavioral tests in `test_dependencies.py`, verified RED failures were `NotImplementedError`, then implemented and passed tests (`test_dependencies.py`: 20 passed; full shared-library tests: 45 passed). Generated execution summary at `construction/unit-1/code/code-generation-summary.md`.
+**Context**: Code Generation Part 2 completed for unit-1; awaiting user review and explicit approval before next stage.
+
+---
+
+## Code Generation - unit-1 Review Prompt Issued
+**Timestamp**: 2026-03-29T22:41:07Z
+**AI Prompt**: "Code generation complete for unit-1. Please review generated code and confirm whether to request changes or continue to next stage."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed beyond unit-1 code generation gate.
+
+---
+
+## Code Generation - unit-1 Approval
+**Timestamp**: 2026-03-29T22:43:22Z
+**AI Prompt**: "Code generation complete for unit-1. Please review generated code and confirm whether to request changes or continue to next stage."
+**User Response**: "code looks good"
+**Status**: Approved
+**Context**: Code Generation approved for unit-1; proceeding to next unit per strict sequence.
+
+---
+
+## Unit Initialization - unit-2
+**Timestamp**: 2026-03-29T22:43:22Z
+**User Input**: "code looks good"
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-2).
+**Context**: Per-unit extension activation complete for unit-2.
+
+---
+
+## Functional Design - unit-2 Kickoff
+**Timestamp**: 2026-03-29T22:43:22Z
+**User Input**: "code looks good"
+**AI Response**: Started Functional Design for unit-2 and created `construction/plans/unit-2-functional-design-plan.md` with checklist and [Answer]-based clarification questions.
+**Context**: Functional Design for unit-2 is in progress; waiting for user answers in the plan file.
+
+---
+
+## Repo Management - Unit-1 Commit and Push Request
+**Timestamp**: 2026-03-29T22:47:36Z
+**User Input**: "before we start work for unit-2, lets commit and push the artifacts and generated code for unit-1"
+**AI Response**: Acknowledged request and prepared a focused unit-1 commit/push flow that stages only unit-1 generated code and artifacts while excluding unit-2 planning artifacts.
+**Context**: User-directed repository checkpoint before continuing unit-2.
+
+---
+
+## Construction Session Resumption - unit-2 Request Received
+**Timestamp**: 2026-03-29T22:55:37Z
+**User Input**: "using AI-DLC, resume the construction for unit-2 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Resumed initiative context from aidlc-state.md and loaded mandatory AI-DLC common rules, session continuity rules, content validation rules, question format rules, construction functional design rules, and prior inception/unit artifacts required for unit-2 continuation.
+**Context**: Session continuity handling for in-progress CONSTRUCTION stage (Functional Design, unit-2 planning).
+
+---
+
+## Construction Phase Initialization (Session Reload) - unit-2 Resume
+**Timestamp**: 2026-03-29T22:55:37Z
+**User Input**: "using AI-DLC, resume the construction for unit-2 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Construction Phase Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] for current session context before resuming construction-stage execution.
+**Context**: Mandatory extension reload completed on construction session resumption.
+
+---
+
+## Unit Initialization - unit-2 (Session Reload)
+**Timestamp**: 2026-03-29T22:55:50Z
+**User Input**: "using AI-DLC, resume the construction for unit-2 in the memory-identity-scope initiative in the platform area using #file:aidlc-state.md as state file."
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-2) and reloaded relevant inception/requirements/application-design artifacts plus existing unit-2 plan context.
+**Context**: Per-unit extension/rule activation confirmed for resumed unit-2 workflow.
+
+---
+
+## Functional Design - unit-2 Resume Prompt Issued
+**Timestamp**: 2026-03-29T22:56:02Z
+**AI Prompt**: "Please complete all [Answer] fields in construction/plans/unit-2-functional-design-plan.md so functional-design artifacts can be generated and reviewed."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Functional Design (unit-2) planning is active and blocked on unanswered clarification questions.
+
+---
+
+## Functional Design - unit-2 Q1 Clarification
+**Timestamp**: 2026-03-29T22:58:35Z
+**User Input**: "for q1, what is the tradeoff between option A and C"
+**AI Response**: Provided tradeoff guidance: Option A (router-level dependency) gives stronger default-deny safety and lower maintenance risk by enforcing user context across all current/future endpoints in the router; Option C (per-endpoint all operations) offers finer explicitness but increases omission risk and review burden whenever endpoints are added/changed.
+**Context**: Clarification provided to help finalize Q1 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Q2 Clarification
+**Timestamp**: 2026-03-29T23:00:30Z
+**User Input**: "for q2, we don't yet have admin endpoint pattern, what is reasonable option to establish this pattern"
+**AI Response**: Recommended establishing admin endpoint policy with Option A as the baseline pattern: admin routes remain exempt from require_user_context and are explicitly tenant-scoped with separate admin authorization checks. This sets a clean boundary between user-scoped business APIs and system/admin APIs while avoiding premature coupling to end-user identity requirements.
+**Context**: Clarification provided to help finalize Q2 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Q2 Answer Recorded
+**Timestamp**: 2026-03-29T23:01:55Z
+**User Input**: "ok, add option A with details. (do we need explicit admin auth rules now?)"
+**AI Response**: Updated unit-2 functional-design plan with Q2 Answer A and explicit admin pattern details: admin routes stay exempt from require_user_context, remain tenant-scoped, and require explicit server-side admin authorization checks on every admin endpoint; endpoints needing end-user ownership checks are out of admin scope.
+**Context**: Q2 decision captured and documented for downstream functional-design artifact generation.
+
+---
+
+## Functional Design - unit-2 Q3 Clarification
+**Timestamp**: 2026-03-29T23:03:58Z
+**User Input**: "for Q3, since we have context injected, is option C better and simpler then other options>"
+**AI Response**: Clarified that Option C is not preferred for this initiative even with context injected at route boundary. Recommended Option A because it preserves explicit service/CRUD contracts, aligns with approved FR-10 signature-propagation requirements, and keeps lower layers framework-agnostic and easier to test. Option C can be reconsidered in a future refactor if a dedicated internal identity context object is introduced without coupling CRUD/service layers to web request context.
+**Context**: Clarification provided to help finalize Q3 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Q4 Clarification
+**Timestamp**: 2026-03-29T23:05:10Z
+**User Input**: "help me understand q4"
+**AI Response**: Explained Q4 implementation-boundary tradeoff: A updates runtime conflict-target logic now and defers schema/index migration to unit-3 (fits current unit sequencing); B combines runtime and migration in unit-2 for earlier parity but increases scope/risk crossover; C defers all changes until unit-3, reducing immediate churn but prolonging inconsistency window.
+**Context**: Clarification provided to help finalize Q4 answer in unit-2 functional design plan.
+
+---
+
+## Functional Design - unit-2 Answers Received
+**Timestamp**: 2026-03-29T23:08:36Z
+**User Input**: "questions answered"
+**AI Response**: Validated all unit-2 functional-design plan answers are complete and unambiguous (Q1=A, Q2=A with explicit admin auth boundary details, Q3=A, Q4=A, Q5=A, Q6=B).
+**Context**: Functional Design planning inputs complete; proceeding to artifact generation.
+
+---
+
+## Functional Design - unit-2 Artifacts Generated
+**Timestamp**: 2026-03-29T23:08:36Z
+**User Input**: "questions answered"
+**AI Response**: Generated unit-2 functional design artifacts: `construction/unit-2/functional-design/business-logic-model.md`, `construction/unit-2/functional-design/business-rules.md`, and `construction/unit-2/functional-design/domain-entities.md`. Updated unit-2 functional-design plan checklist to complete and moved aidlc-state current stage to review awaiting approval.
+**Context**: Functional Design content generated and ready for review gate.
+
+---
+
+## Functional Design - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-29T23:08:36Z
+**AI Prompt**: "Please review Unit-2 functional design artifacts and choose Request Changes or Continue to Next Stage (NFR Requirements)."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval before transitioning to NFR Requirements.
+
+---
+
+## Functional Design - unit-2 Admin Boundary Clarification
+**Timestamp**: 2026-03-30T01:21:22Z
+**User Input**: "what is example of admin boundary flow? how will CRUD operations work with admin flows?"
+**AI Response**: Provided concrete boundary examples using current memory admin routes and target unit-2 policy: user-scoped flows enforce require_user_context and full-identity CRUD predicates, while admin flows use explicitly authorized admin endpoints and dedicated operational deletion/query paths that are tenant-scoped by explicit route parameters and must not rely on end-user ownership semantics.
+**Context**: Clarification provided during Functional Design review gate; awaiting user approval or change requests.
+
+---
+
+## Functional Design - unit-2 Documentation Enhancement
+**Timestamp**: 2026-03-30T01:24:58Z
+**User Input**: "yes, this documentation will be helpful for reference and any future tech design etc. maybe add to architecture pattern or similar technical design documents where data access design / architecture is documented."
+**AI Response**: Added admin-boundary and data-access separation guidance to shared architecture references: updated `services/memory/ARCHITECTURE.md` with a dedicated section describing user ownership flows vs admin operational flows and updated `docs/ARCHITECTURE_PATTERNS.md` with a reusable cross-service pattern and non-negotiable separation rule.
+**Context**: User-requested design documentation refinement applied during unit-2 Functional Design review gate.
+
+---
+
+## Functional Design - unit-2 Approval
+**Timestamp**: 2026-03-30T01:29:03Z
+**AI Prompt**: "Functional Design review gate for unit-2 is still active. Please choose Request Changes or Continue to Next Stage (NFR Requirements)."
+**User Response**: "approved design"
+**Status**: Approved
+**Context**: Functional Design approved for unit-2; transitioning to NFR Requirements stage.
+
+---
+
+## NFR Requirements - unit-2 Kickoff
+**Timestamp**: 2026-03-30T01:29:03Z
+**User Input**: "approved design"
+**AI Response**: Started NFR Requirements for unit-2, reviewed functional design artifacts, and created `construction/plans/unit-2-nfr-requirements-plan.md` with embedded [Answer] clarification questions covering performance, admin authorization baseline, validation-failure logging, fail-closed reliability behavior, and testability expectations.
+**Context**: NFR Requirements is in progress and awaiting user answers.
+
+---
+
+## NFR Requirements - unit-2 Q4 Clarification
+**Timestamp**: 2026-03-30T01:32:02Z
+**User Input**: "for q4, what is the implication of choosing C vs A"
+**AI Response**: Clarified implications: Option A enforces fail-closed behavior at service boundary with predictable security posture and clearer debugging, while Option C allows deeper execution and depends on DB constraints as last line of defense, increasing risk of partial side effects, inconsistent error surfaces, and weaker defense-in-depth.
+**Context**: Clarification provided to help finalize Q4 answer in unit-2 NFR requirements plan.
+
+---
+
+## NFR Requirements - unit-2 Answers Received
+**Timestamp**: 2026-03-30T01:33:51Z
+**User Input**: "answers provided"
+**AI Response**: Validated all unit-2 NFR answers are complete and unambiguous (Q1=A, Q2=A, Q3=B, Q4=A, Q5=B).
+**Context**: NFR Requirements planning inputs complete; proceeding to artifact generation.
+
+---
+
+## NFR Requirements - unit-2 Artifacts Generated
+**Timestamp**: 2026-03-30T01:33:51Z
+**User Input**: "answers provided"
+**AI Response**: Generated unit-2 NFR artifacts at `construction/unit-2/nfr-requirements/nfr-requirements.md` and `construction/unit-2/nfr-requirements/tech-stack-decisions.md`, completed plan checklist, and moved state to NFR Requirements review awaiting approval.
+**Context**: NFR Requirements content generated and ready for review gate.
+
+---
+
+## NFR Requirements - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-30T01:33:51Z
+**AI Prompt**: "Please review Unit-2 NFR requirements artifacts and choose Request Changes or Continue to Next Stage (NFR Design)."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval before transitioning to NFR Design.
+
+---
+
+## NFR Requirements - unit-2 Approval
+**Timestamp**: 2026-03-30T04:12:52Z
+**AI Prompt**: "Please review Unit-2 NFR requirements artifacts and choose Request Changes or Continue to Next Stage (NFR Design)."
+**User Response**: "approved"
+**Status**: Approved
+**Context**: NFR Requirements approved for unit-2; transitioning to NFR Design stage.
+
+---
+
+## NFR Design - unit-2 Kickoff
+**Timestamp**: 2026-03-30T04:12:52Z
+**User Input**: "approved"
+**AI Response**: Started NFR Design for unit-2, analyzed unit-2 NFR requirements artifacts, and created `construction/plans/unit-2-nfr-design-plan.md` with embedded [Answer] clarification questions focused on fail-closed layering, admin authorization pattern baseline, structured logging schema, predicate-consistency design mechanism, and pattern-to-test traceability depth.
+**Context**: NFR Design is in progress and awaiting user answers.
+
+---
+
+## NFR Design - unit-2 Q1 Clarification
+**Timestamp**: 2026-03-30T04:14:39Z
+**User Input**: "help me understand what q1 is about? what is implication of those choices?"
+**AI Response**: Clarified that Q1 chooses guard-layer placement for fail-closed identity enforcement: A centralizes at API boundary but risks internal bypass, B centralizes at service boundary but can be less explicit at route edge, and C uses layered defense (route + mandatory service backstop) with highest safety but some duplication. Recommended C for this initiative's security and reliability goals.
+**Context**: Clarification provided to help finalize Q1 answer in unit-2 NFR design plan.
+
+---
+
+## NFR Design - unit-2 Q2 Clarification
+**Timestamp**: 2026-03-30T04:16:29Z
+**User Input**: "similarly help with understanding q2 and choices"
+**AI Response**: Clarified Q2 as choosing authorization implementation shape for admin endpoints: A uses shared per-endpoint admin guard dependency for consistency/reuse, B uses inline checks in handlers with higher drift risk, and C uses global middleware-only checks which can be too coarse for route-specific policy. Recommended A as baseline with explicit endpoint application.
+**Context**: Clarification provided to help finalize Q2 answer in unit-2 NFR design plan.
+
+---
+
+## NFR Design - unit-2 Q4 Clarification
+**Timestamp**: 2026-03-30T04:19:11Z
+**User Input**: "for q4, ,does option a or b add unnecessary complexity? how reusable will these be, can they be used by other service CRUDs?"
+**AI Response**: Clarified that Option A adds modest upfront abstraction cost but improves consistency and long-term reuse by centralizing identity predicate construction, while Option B minimizes immediate complexity but increases drift risk and repeated maintenance across modules. Recommended Option A if helper API is kept small and identity-agnostic so it can be reused by other service CRUD layers.
+**Context**: Clarification provided to help finalize Q4 answer in unit-2 NFR design plan.
+
+---
+
+## NFR Design - unit-2 Q4 Answer Recorded
+**Timestamp**: 2026-03-30T04:20:40Z
+**User Input**: "ok, lets add that answer with rationale practical recommendation"
+**AI Response**: Updated Q4 answer in `construction/plans/unit-2-nfr-design-plan.md` to Option A with rationale and practical implementation guidance: use a small identity-agnostic predicate helper surface and avoid over-abstracting business-specific clauses to preserve reuse across other service CRUD layers.
+**Context**: Q4 decision captured for unit-2 NFR design planning.
+
+---
+
+## NFR Design - unit-2 Answers Received
+**Timestamp**: 2026-03-30T04:22:26Z
+**User Input**: "answers done"
+**AI Response**: Validated all unit-2 NFR design answers are complete and unambiguous (Q1=C, Q2=A, Q3=A, Q4=A with rationale, Q5=B).
+**Context**: NFR Design planning inputs complete; proceeding to artifact generation.
+
+---
+
+## NFR Design - unit-2 Artifacts Generated
+**Timestamp**: 2026-03-30T04:22:26Z
+**User Input**: "answers done"
+**AI Response**: Generated unit-2 NFR design artifacts: `construction/unit-2/nfr-design/nfr-design-patterns.md` and `construction/unit-2/nfr-design/logical-components.md`. Updated plan checklist to complete and moved state to NFR Design review awaiting approval.
+**Context**: NFR Design content generated and ready for review gate.
+
+---
+
+## NFR Design - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-30T04:22:26Z
+**AI Prompt**: "Please review Unit-2 NFR design artifacts and choose Request Changes or Continue to Next Stage (Code Generation)."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval before transitioning to Code Generation.
+
+---
+
+## NFR Design - unit-2 Approval
+**Timestamp**: 2026-03-30T04:30:53Z
+**AI Prompt**: "Please review Unit-2 NFR design artifacts and choose Request Changes or Continue to Next Stage (Code Generation)."
+**User Response**: "nfr design approved"
+**Status**: Approved
+**Context**: NFR Design approved for unit-2; transitioning to post-design extension ordering checks.
+
+---
+
+## QA Test Cases - unit-2 Enrichment Completed
+**Timestamp**: 2026-03-30T04:30:53Z
+**User Input**: "nfr design approved"
+**AI Response**: Executed unit-2 construction enrichment by updating inception test specs in place (`test-specs-narrative.md`, `test-specs-gherkin.md`, `test-specs-tabular.md`, `test-case-index.md`) and creating `inception/test-cases/unit-2/enrichment-delta.md`.
+**Context**: QA test-case extension prerequisites are satisfied for unit-2 design PR checkpoint.
+
+---
+
+## PR Checkpoint - unit-2 Branch Confirmation Prompt Issued
+**Timestamp**: 2026-03-30T04:30:53Z
+**AI Prompt**: "Current branch is dev. Confirm using dev for the Unit-2 construction design PR gate, or provide a different branch name."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit branch confirmation before generating unit-2 construction design PR instructions.
+
+---
+
+## PR Checkpoint - unit-2 Branch Confirmation
+**Timestamp**: 2026-03-30T04:33:17Z
+**AI Prompt**: "Current branch is dev. Confirm using dev for the Unit-2 construction design PR gate, or provide a different branch name."
+**User Response**: "use dev"
+**Status**: Confirmed
+**Context**: Using `dev` branch for Unit-2 construction design PR checkpoint instructions.
+
+---
+
+## PR Checkpoint - unit-2 Instructions Generated
+**Timestamp**: 2026-03-30T04:33:17Z
+**User Input**: "use dev"
+**AI Response**: Generated construction design PR checkpoint instructions at `construction/plans/unit-2-design-pr-checkpoint-instructions.md` and persisted Construction Design PR Gate - unit-2 status as PENDING in `aidlc-state.md`.
+**Context**: Workflow is blocked pending team PR review and explicit approval confirmation.
+
+---

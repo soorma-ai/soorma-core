@@ -16,6 +16,7 @@ Scenario: Keep admin endpoints exempt from user-context dependency
   Given an admin endpoint without require_user_context
   When called without service_user_id
   Then no dependency-driven HTTP 400 is raised
+  And endpoint-level admin authorization guard is enforced
 
 @negative @TC-U2-003
 Scenario: Enforce full identity tuple in plans and sessions CRUD
@@ -32,3 +33,12 @@ Scenario: Align upsert conflict targets to scoped identity
   Given an existing upsert record for identity A
   When identity B upserts with matching business key fields
   Then no cross-identity overwrite occurs
+
+@negative @TC-U2-005
+Scenario: Enforce service-layer fail-closed identity backstop
+  # Source: unit-2 / NFR-4
+  # Construction: aidlc-docs/platform/memory-identity-scope/construction/unit-2/code/
+  Given an internal service invocation path that bypasses route-level guard
+  When the service receives a missing identity dimension
+  Then the service raises a validation exception before CRUD execution
+  And a warning log event includes platform_tenant_id only

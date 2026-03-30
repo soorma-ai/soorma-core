@@ -473,6 +473,22 @@ await context.memory.store_knowledge(
 )
 ```
 
+### Admin Boundary and Data Access Separation
+
+When a service exposes operational/admin endpoints, enforce a strict separation between user ownership flows and admin flows.
+
+**User ownership flows:**
+- Apply user-context validation at route boundary.
+- Pass full identity tuple through service and CRUD layers.
+- Use ownership-scoped predicates for read/write operations.
+
+**Admin operational flows:**
+- Do not rely on user ownership dependencies by default.
+- Require explicit server-side admin authorization checks per endpoint.
+- Use dedicated admin service/query paths with explicit scope parameters.
+
+**Non-negotiable rule:** admin endpoints must not silently reuse user-scoped CRUD methods that are designed around caller ownership semantics.
+
 ---
 
 ## 5. State Management Patterns
