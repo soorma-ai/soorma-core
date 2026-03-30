@@ -6,7 +6,7 @@
 - **Functional Area**: platform
 - **Feature**: memory-identity-scope
 - **Start Date**: 2026-03-28T05:38:28Z
-- **Current Stage**: CONSTRUCTION - Code Generation (unit-2) Review Required
+- **Current Stage**: CONSTRUCTION - Code Generation (unit-3) Review Required
 
 ## Execution Plan Summary
 - **Total Stages**: 16
@@ -61,6 +61,11 @@
 - [x] NFR Requirements (unit-2)
 - [x] NFR Design (unit-2)
 - [x] Code Generation (unit-2)
+- [x] Unit Initialization (unit-3)
+- [ ] Functional Design (unit-3) (SKIPPED - schema/index migration unit, no new business logic)
+- [ ] NFR Requirements (unit-3) (SKIPPED - no new runtime NFR surface; focus is schema/runtime parity)
+- [ ] NFR Design (unit-3) (SKIPPED - no additional NFR patterns beyond existing approved baseline)
+- [x] Code Generation (unit-3)
 - [ ] Build and Test
 
 ### OPERATIONS PHASE
