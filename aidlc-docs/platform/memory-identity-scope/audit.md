@@ -732,3 +732,120 @@ end-to-end without my confirmation at each gate."
 **Context**: Waiting for explicit user approval before transitioning to NFR Design.
 
 ---
+
+## NFR Requirements - unit-2 Approval
+**Timestamp**: 2026-03-30T04:12:52Z
+**AI Prompt**: "Please review Unit-2 NFR requirements artifacts and choose Request Changes or Continue to Next Stage (NFR Design)."
+**User Response**: "approved"
+**Status**: Approved
+**Context**: NFR Requirements approved for unit-2; transitioning to NFR Design stage.
+
+---
+
+## NFR Design - unit-2 Kickoff
+**Timestamp**: 2026-03-30T04:12:52Z
+**User Input**: "approved"
+**AI Response**: Started NFR Design for unit-2, analyzed unit-2 NFR requirements artifacts, and created `construction/plans/unit-2-nfr-design-plan.md` with embedded [Answer] clarification questions focused on fail-closed layering, admin authorization pattern baseline, structured logging schema, predicate-consistency design mechanism, and pattern-to-test traceability depth.
+**Context**: NFR Design is in progress and awaiting user answers.
+
+---
+
+## NFR Design - unit-2 Q1 Clarification
+**Timestamp**: 2026-03-30T04:14:39Z
+**User Input**: "help me understand what q1 is about? what is implication of those choices?"
+**AI Response**: Clarified that Q1 chooses guard-layer placement for fail-closed identity enforcement: A centralizes at API boundary but risks internal bypass, B centralizes at service boundary but can be less explicit at route edge, and C uses layered defense (route + mandatory service backstop) with highest safety but some duplication. Recommended C for this initiative's security and reliability goals.
+**Context**: Clarification provided to help finalize Q1 answer in unit-2 NFR design plan.
+
+---
+
+## NFR Design - unit-2 Q2 Clarification
+**Timestamp**: 2026-03-30T04:16:29Z
+**User Input**: "similarly help with understanding q2 and choices"
+**AI Response**: Clarified Q2 as choosing authorization implementation shape for admin endpoints: A uses shared per-endpoint admin guard dependency for consistency/reuse, B uses inline checks in handlers with higher drift risk, and C uses global middleware-only checks which can be too coarse for route-specific policy. Recommended A as baseline with explicit endpoint application.
+**Context**: Clarification provided to help finalize Q2 answer in unit-2 NFR design plan.
+
+---
+
+## NFR Design - unit-2 Q4 Clarification
+**Timestamp**: 2026-03-30T04:19:11Z
+**User Input**: "for q4, ,does option a or b add unnecessary complexity? how reusable will these be, can they be used by other service CRUDs?"
+**AI Response**: Clarified that Option A adds modest upfront abstraction cost but improves consistency and long-term reuse by centralizing identity predicate construction, while Option B minimizes immediate complexity but increases drift risk and repeated maintenance across modules. Recommended Option A if helper API is kept small and identity-agnostic so it can be reused by other service CRUD layers.
+**Context**: Clarification provided to help finalize Q4 answer in unit-2 NFR design plan.
+
+---
+
+## NFR Design - unit-2 Q4 Answer Recorded
+**Timestamp**: 2026-03-30T04:20:40Z
+**User Input**: "ok, lets add that answer with rationale practical recommendation"
+**AI Response**: Updated Q4 answer in `construction/plans/unit-2-nfr-design-plan.md` to Option A with rationale and practical implementation guidance: use a small identity-agnostic predicate helper surface and avoid over-abstracting business-specific clauses to preserve reuse across other service CRUD layers.
+**Context**: Q4 decision captured for unit-2 NFR design planning.
+
+---
+
+## NFR Design - unit-2 Answers Received
+**Timestamp**: 2026-03-30T04:22:26Z
+**User Input**: "answers done"
+**AI Response**: Validated all unit-2 NFR design answers are complete and unambiguous (Q1=C, Q2=A, Q3=A, Q4=A with rationale, Q5=B).
+**Context**: NFR Design planning inputs complete; proceeding to artifact generation.
+
+---
+
+## NFR Design - unit-2 Artifacts Generated
+**Timestamp**: 2026-03-30T04:22:26Z
+**User Input**: "answers done"
+**AI Response**: Generated unit-2 NFR design artifacts: `construction/unit-2/nfr-design/nfr-design-patterns.md` and `construction/unit-2/nfr-design/logical-components.md`. Updated plan checklist to complete and moved state to NFR Design review awaiting approval.
+**Context**: NFR Design content generated and ready for review gate.
+
+---
+
+## NFR Design - unit-2 Approval Prompt Issued
+**Timestamp**: 2026-03-30T04:22:26Z
+**AI Prompt**: "Please review Unit-2 NFR design artifacts and choose Request Changes or Continue to Next Stage (Code Generation)."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval before transitioning to Code Generation.
+
+---
+
+## NFR Design - unit-2 Approval
+**Timestamp**: 2026-03-30T04:30:53Z
+**AI Prompt**: "Please review Unit-2 NFR design artifacts and choose Request Changes or Continue to Next Stage (Code Generation)."
+**User Response**: "nfr design approved"
+**Status**: Approved
+**Context**: NFR Design approved for unit-2; transitioning to post-design extension ordering checks.
+
+---
+
+## QA Test Cases - unit-2 Enrichment Completed
+**Timestamp**: 2026-03-30T04:30:53Z
+**User Input**: "nfr design approved"
+**AI Response**: Executed unit-2 construction enrichment by updating inception test specs in place (`test-specs-narrative.md`, `test-specs-gherkin.md`, `test-specs-tabular.md`, `test-case-index.md`) and creating `inception/test-cases/unit-2/enrichment-delta.md`.
+**Context**: QA test-case extension prerequisites are satisfied for unit-2 design PR checkpoint.
+
+---
+
+## PR Checkpoint - unit-2 Branch Confirmation Prompt Issued
+**Timestamp**: 2026-03-30T04:30:53Z
+**AI Prompt**: "Current branch is dev. Confirm using dev for the Unit-2 construction design PR gate, or provide a different branch name."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit branch confirmation before generating unit-2 construction design PR instructions.
+
+---
+
+## PR Checkpoint - unit-2 Branch Confirmation
+**Timestamp**: 2026-03-30T04:33:17Z
+**AI Prompt**: "Current branch is dev. Confirm using dev for the Unit-2 construction design PR gate, or provide a different branch name."
+**User Response**: "use dev"
+**Status**: Confirmed
+**Context**: Using `dev` branch for Unit-2 construction design PR checkpoint instructions.
+
+---
+
+## PR Checkpoint - unit-2 Instructions Generated
+**Timestamp**: 2026-03-30T04:33:17Z
+**User Input**: "use dev"
+**AI Response**: Generated construction design PR checkpoint instructions at `construction/plans/unit-2-design-pr-checkpoint-instructions.md` and persisted Construction Design PR Gate - unit-2 status as PENDING in `aidlc-state.md`.
+**Context**: Workflow is blocked pending team PR review and explicit approval confirmation.
+
+---

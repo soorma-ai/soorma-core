@@ -20,6 +20,7 @@ Construction artifacts: aidlc-docs/platform/memory-identity-scope/construction/u
 Technical references:
 - aidlc-docs/platform/memory-identity-scope/inception/requirements/requirements.md
 - aidlc-docs/platform/memory-identity-scope/inception/application-design/unit-of-work.md
+- aidlc-docs/platform/memory-identity-scope/construction/unit-2/nfr-design/nfr-design-patterns.md
 
 ### TC-U2-002 - Keep admin endpoints exempt from user-context dependency
 Context: Validates NFR-2 and FR-3 carveout for admin/system-scoped endpoints.
@@ -30,13 +31,14 @@ Preconditions:
 Steps:
 1. Invoke admin endpoint without service_user_id.
 2. Observe behavior.
-Expected outcome: No 400 caused by require_user_context; admin behavior remains intentionally tenant/system scoped.
+Expected outcome: No 400 caused by require_user_context; admin behavior remains intentionally tenant/system scoped and endpoint-level admin authorization guard is enforced.
 Scope: negative
 Priority: High
 Source: unit-2 / NFR-2
 Construction artifacts: aidlc-docs/platform/memory-identity-scope/construction/unit-2/
 Technical references:
 - aidlc-docs/platform/memory-identity-scope/inception/requirements/requirements.md
+- aidlc-docs/platform/memory-identity-scope/construction/unit-2/nfr-design/nfr-design-patterns.md
 
 ### TC-U2-003 - Enforce full identity tuple in plans and sessions CRUD
 Context: Verifies FR-4 and FR-5 query predicate alignment in runtime path.
@@ -54,6 +56,7 @@ Source: unit-2 / FR-4
 Construction artifacts: aidlc-docs/platform/memory-identity-scope/construction/unit-2/
 Technical references:
 - aidlc-docs/platform/memory-identity-scope/inception/requirements/requirements.md
+- aidlc-docs/platform/memory-identity-scope/construction/unit-2/nfr-design/nfr-design-patterns.md
 
 ### TC-U2-004 - Align upsert conflict targets to scoped identity
 Context: Validates FR-6, FR-7, and FR-9 runtime conflict target behavior for context/semantic paths.
@@ -71,3 +74,23 @@ Source: unit-2 / FR-6
 Construction artifacts: aidlc-docs/platform/memory-identity-scope/construction/unit-2/
 Technical references:
 - aidlc-docs/platform/memory-identity-scope/inception/requirements/requirements.md
+- aidlc-docs/platform/memory-identity-scope/construction/unit-2/nfr-design/nfr-design-patterns.md
+
+### TC-U2-005 - Enforce service-layer fail-closed identity backstop
+Context: Verifies Unit-2 NFR design requirement that service boundary rejects missing identity context even if route-level guard is bypassed.
+Scenario: Service method is invoked through an internal path with missing service identity dimensions.
+Preconditions:
+1. Service method receives missing service_tenant_id and/or service_user_id.
+2. Route-level guard is not part of this execution path.
+Steps:
+1. Invoke service operation with incomplete identity tuple.
+2. Observe service behavior before CRUD execution.
+3. Observe validation warning log event schema.
+Expected outcome: Service fails closed with explicit validation exception, CRUD is not executed, and warning log includes platform_tenant_id only.
+Scope: negative
+Priority: High
+Source: unit-2 / NFR-4
+Construction artifacts: aidlc-docs/platform/memory-identity-scope/construction/unit-2/code/
+Technical references:
+- aidlc-docs/platform/memory-identity-scope/construction/unit-2/nfr-design/nfr-design-patterns.md
+- aidlc-docs/platform/memory-identity-scope/construction/unit-2/nfr-design/logical-components.md
