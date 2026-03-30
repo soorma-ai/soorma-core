@@ -958,3 +958,61 @@ construction PR for unit-2 has been approved."
 **Context**: Comprehensive remediation of post-scan findings during unit-2 Code Generation review gate.
 
 ---
+
+## Code Generation - unit-2 Review Approval and unit-3 Transition
+**Timestamp**: 2026-03-30T06:02:07Z
+**User Input**: "no, that's ok. we'll finish the unit-2 code review, merge the PR knowing that main is unstable and then quickly work on unit-3 to get done, so that main branch becomes stable again."
+**AI Response**: Treated this as explicit approval to continue past unit-2 code-generation review and immediately transition to unit-3 work. Started unit-3 construction continuation with strict sequencing (U1 -> U2 -> U3) and prepared unit-3 code-generation planning artifacts focused on schema/index/migration alignment.
+**Context**: unit-2 review gate closed; unit-3 construction planning initiated to restore main branch stability.
+
+---
+
+## Unit Initialization - unit-3
+**Timestamp**: 2026-03-30T06:02:07Z
+**User Input**: "...quickly work on unit-3..."
+**AI Response**: Unit Initialization: loaded extension rules for [pr-checkpoint, qa-test-cases, security-baseline] (unit: unit-3).
+**Context**: Per-unit extension activation complete for unit-3.
+
+---
+
+## Code Generation - unit-3 Planning Started
+**Timestamp**: 2026-03-30T06:02:07Z
+**User Input**: "...quickly work on unit-3..."
+**AI Response**: Started Code Generation Part 1 for unit-3 (schema/index/migration + validation tests), created unit-3 code-generation plan with explicit steps and checklist tracking, and moved to approval gate before implementation.
+**Context**: Waiting for explicit user approval to execute unit-3 code generation.
+
+---
+
+## Code Generation - unit-3 Planning Approval
+**Timestamp**: 2026-03-30T06:05:51Z
+**AI Prompt**: "Please review unit-3 code-generation plan and choose Request Changes or Continue to Next Stage."
+**User Response**: "approved"
+**Status**: Approved
+**Context**: Code Generation Part 1 approved for unit-3; executing Part 2 generation.
+
+---
+
+## Code Generation - unit-3 Execution Completed
+**Timestamp**: 2026-03-30T06:05:51Z
+**User Input**: "approved"
+**AI Response**: Implemented unit-3 schema/index/migration parity in `services/memory/alembic/versions/009_identity_scope_constraint_parity.py`: working-memory full-identity unique constraint; task_context/plan_context full-identity unique constraints; plans/sessions full-identity unique constraints; semantic private index alignment including service tenant; deterministic downgrade parity. Generated summary at `construction/unit-3/code/code-generation-summary.md`. Validation passed: `tests/test_working_memory_deletion.py tests/test_multi_tenancy.py tests/test_semantic_crud.py` (`36 passed`) and `tests/test_working_memory.py tests/test_api_validation.py` (`19 passed, 17 skipped`).
+**Context**: Code Generation Part 2 completed for unit-3; awaiting review-gate decision.
+
+---
+
+## Code Generation - unit-3 Review Prompt Issued
+**Timestamp**: 2026-03-30T06:05:51Z
+**AI Prompt**: "Code generation complete for unit-3. Please review generated code and confirm whether to request changes or continue to next stage."
+**User Response**: "(pending)"
+**Status**: Pending
+**Context**: Waiting for explicit user approval to proceed to Build and Test.
+
+---
+
+## Code Generation - unit-3 Review Change Request (Migration Revision ID Length)
+**Timestamp**: 2026-03-30T06:08:48Z
+**User Input**: "db migration has these issues: ... value too long for type character varying(32) ... UPDATE alembic_version SET version_num='009_identity_scope_constraint_parity' ..."
+**AI Response**: Diagnosed alembic metadata failure caused by revision identifier length exceeding `alembic_version.version_num` width (VARCHAR(32)). Updated migration revision identifier from `009_identity_scope_constraint_parity` to `009_scope_constraint_parity` in `services/memory/alembic/versions/009_identity_scope_constraint_parity.py` while keeping migration logic unchanged.
+**Context**: unit-3 review-phase fix applied to unblock Alembic upgrade execution.
+
+---
