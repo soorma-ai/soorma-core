@@ -126,7 +126,15 @@ class TaskContext(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("platform_tenant_id", "task_id", name="task_context_unique"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "task_id",
+            name="task_context_unique",
+        ),
+    )
 
 
 class PlanContext(Base):
@@ -150,7 +158,15 @@ class PlanContext(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    __table_args__ = (UniqueConstraint("plan_id", name="plan_context_unique"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_tenant_id",
+            "service_tenant_id",
+            "service_user_id",
+            "plan_id",
+            name="plan_context_unique",
+        ),
+    )
 
 
 class Plan(Base):

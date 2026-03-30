@@ -73,10 +73,18 @@ class PlanService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         plan_id: str,
     ) -> Optional[PlanSummary]:
         """Get plan by ID."""
-        plan = await crud_get(db, platform_tenant_id, plan_id)
+        plan = await crud_get(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            plan_id,
+        )
         if not plan:
             return None
         
@@ -86,19 +94,30 @@ class PlanService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
         service_user_id: str,
         status: Optional[str] = None,
         session_id: Optional[str] = None,
         limit: int = 20,
     ) -> List[PlanSummary]:
         """List plans for a user with optional filters."""
-        plans = await crud_list(db, platform_tenant_id, service_user_id, status, session_id, limit)
+        plans = await crud_list(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            status,
+            session_id,
+            limit,
+        )
         return [self._to_summary(p) for p in plans]
     
     async def update(
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         plan_id: str,
         data: PlanUpdate,
     ) -> Optional[PlanSummary]:
@@ -107,7 +126,14 @@ class PlanService:
         
         Transaction boundary: Commits after successful update.
         """
-        plan = await crud_update(db, platform_tenant_id, plan_id, data.status)
+        plan = await crud_update(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            plan_id,
+            data.status,
+        )
         if not plan:
             return None
         
@@ -119,6 +145,8 @@ class PlanService:
         self,
         db: AsyncSession,
         platform_tenant_id: str,
+        service_tenant_id: str,
+        service_user_id: str,
         plan_id: str,
     ) -> bool:
         """
@@ -127,7 +155,13 @@ class PlanService:
         Transaction boundary: Commits after successful deletion.
         Returns True if deleted, False if not found.
         """
-        deleted = await crud_delete(db, platform_tenant_id, plan_id)
+        deleted = await crud_delete(
+            db,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+            plan_id,
+        )
         if deleted:
             await db.commit()
         

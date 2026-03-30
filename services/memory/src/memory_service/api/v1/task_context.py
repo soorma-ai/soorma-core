@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from memory_service.core.dependencies import TenantContext, get_tenant_context
+from memory_service.core.dependencies import TenantContext, require_user_tenant_context
 from soorma_common.models import (
     TaskContextCreate,
     TaskContextUpdate,
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/task-context", tags=["Task Context"])
 @router.post("", response_model=TaskContextResponse, status_code=status.HTTP_200_OK)
 async def store_task_context_endpoint(
     data: TaskContextCreate,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Store task context (insert or update if exists)."""
     return await task_context_service.upsert(context.db, context.platform_tenant_id, context.service_tenant_id, context.service_user_id, data)
@@ -25,10 +25,16 @@ async def store_task_context_endpoint(
 @router.get("/{task_id}", response_model=TaskContextResponse)
 async def get_task_context_endpoint(
     task_id: str,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Get task context by task ID."""
-    result = await task_context_service.get(context.db, context.platform_tenant_id, task_id)
+    result = await task_context_service.get(
+        context.db,
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
+        task_id,
+    )
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -41,10 +47,17 @@ async def get_task_context_endpoint(
 async def update_task_context_endpoint(
     task_id: str,
     data: TaskContextUpdate,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Update task context."""
-    result = await task_context_service.update(context.db, context.platform_tenant_id, task_id, data)
+    result = await task_context_service.update(
+        context.db,
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
+        task_id,
+        data,
+    )
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -56,10 +69,16 @@ async def update_task_context_endpoint(
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task_context_endpoint(
     task_id: str,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Delete task context."""
-    deleted = await task_context_service.delete(context.db, context.platform_tenant_id, task_id)
+    deleted = await task_context_service.delete(
+        context.db,
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
+        task_id,
+    )
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -70,10 +89,16 @@ async def delete_task_context_endpoint(
 @router.get("/by-subtask/{sub_task_id}", response_model=TaskContextResponse)
 async def get_task_by_subtask_endpoint(
     sub_task_id: str,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Find parent task by sub-task ID."""
-    result = await task_context_service.get_by_subtask(context.db, context.platform_tenant_id, sub_task_id)
+    result = await task_context_service.get_by_subtask(
+        context.db,
+        context.platform_tenant_id,
+        context.service_tenant_id,
+        context.service_user_id,
+        sub_task_id,
+    )
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -11,6 +11,8 @@ from memory_service.models.memory import PlanContext
 async def upsert_plan_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
     session_id: Optional[str],
     goal_event: str,
@@ -25,6 +27,8 @@ async def upsert_plan_context(
     # Use PostgreSQL's INSERT ... ON CONFLICT DO UPDATE
     stmt = insert(PlanContext).values(
         platform_tenant_id=platform_tenant_id,
+        service_tenant_id=service_tenant_id,
+        service_user_id=service_user_id,
         plan_id=plan_id,
         session_id=session_id,
         goal_event=goal_event,
@@ -34,7 +38,7 @@ async def upsert_plan_context(
         current_state=current_state,
         correlation_ids=correlation_ids,
     ).on_conflict_do_update(
-        index_elements=['plan_id'],
+        index_elements=['platform_tenant_id', 'service_tenant_id', 'service_user_id', 'plan_id'],
         set_=dict(
             state=state,
             current_state=current_state,
@@ -52,12 +56,16 @@ async def upsert_plan_context(
 async def get_plan_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
 ) -> Optional[PlanContext]:
     """Get plan context by plan ID."""
     result = await db.execute(
         select(PlanContext).where(
             PlanContext.platform_tenant_id == platform_tenant_id,
+            PlanContext.service_tenant_id == service_tenant_id,
+            PlanContext.service_user_id == service_user_id,
             PlanContext.plan_id == plan_id,
         )
     )
@@ -67,13 +75,21 @@ async def get_plan_context(
 async def update_plan_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
     state: Optional[Dict[str, Any]] = None,
     current_state: Optional[str] = None,
     correlation_ids: Optional[List[str]] = None,
 ) -> Optional[PlanContext]:
     """Update plan context."""
-    plan_context = await get_plan_context(db, platform_tenant_id, plan_id)
+    plan_context = await get_plan_context(
+        db,
+        platform_tenant_id,
+        service_tenant_id,
+        service_user_id,
+        plan_id,
+    )
     if not plan_context:
         return None
     
@@ -92,12 +108,16 @@ async def update_plan_context(
 async def delete_plan_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     plan_id: str,
 ) -> bool:
     """Delete plan context."""
     result = await db.execute(
         delete(PlanContext).where(
             PlanContext.platform_tenant_id == platform_tenant_id,
+            PlanContext.service_tenant_id == service_tenant_id,
+            PlanContext.service_user_id == service_user_id,
             PlanContext.plan_id == plan_id,
         )
     )
@@ -108,6 +128,8 @@ async def delete_plan_context(
 async def get_plan_by_correlation(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     correlation_id: str,
 ) -> Optional[PlanContext]:
     """Find plan by task/step correlation ID."""
@@ -116,6 +138,8 @@ async def get_plan_by_correlation(
     result = await db.execute(
         select(PlanContext).where(
             PlanContext.platform_tenant_id == platform_tenant_id,
+            PlanContext.service_tenant_id == service_tenant_id,
+            PlanContext.service_user_id == service_user_id,
             PlanContext.correlation_ids.op('@>')(cast([correlation_id], JSONB)),
         )
     )

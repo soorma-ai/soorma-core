@@ -30,6 +30,10 @@ class Settings(BaseSettings):
         "DEFAULT_TENANT_ID", "spt_00000000-0000-0000-0000-000000000000"
     )
 
+    # Admin authorization for privileged maintenance endpoints.
+    # This is an explicit server-side guard, separate from user-scoped identity.
+    memory_admin_api_key: str = os.environ.get("MEMORY_ADMIN_API_KEY", "dev-memory-admin")
+
     model_config = ConfigDict(
         env_file=".env",
         case_sensitive=False

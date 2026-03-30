@@ -17,6 +17,7 @@ from soorma_common.models import PlanContextCreate, PlanContextUpdate
 
 TEST_PLATFORM_TENANT_ID = "spt_test-00000"
 TEST_SERVICE_TENANT_ID = "st_test-tenant"
+TEST_SERVICE_USER_ID = "su_test-user"
 TEST_PLAN_ID = "test-plan-123"
 TEST_SESSION_ID = "test-session-456"
 
@@ -30,6 +31,7 @@ class TestPlanContextService:
         return {
             "platform_tenant_id": TEST_PLATFORM_TENANT_ID,
             "service_tenant_id": TEST_SERVICE_TENANT_ID,
+            "service_user_id": TEST_SERVICE_USER_ID,
             "plan_id": TEST_PLAN_ID,
             "session_id": TEST_SESSION_ID,
         }
@@ -54,6 +56,8 @@ class TestPlanContextService:
         result = await plan_context_service.upsert(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             data=plan_context_data,
         )
 
@@ -80,12 +84,16 @@ class TestPlanContextService:
         await plan_context_service.upsert(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             data=plan_context_data,
         )
 
         result = await plan_context_service.get(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             plan_id=test_ids["plan_id"],
         )
 
@@ -100,6 +108,8 @@ class TestPlanContextService:
         result = await plan_context_service.get(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             plan_id="nonexistent-plan",
         )
         assert result is None
@@ -121,6 +131,8 @@ class TestPlanContextService:
         await plan_context_service.upsert(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             data=plan_context_data,
         )
 
@@ -132,6 +144,8 @@ class TestPlanContextService:
         result = await plan_context_service.update(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             plan_id=test_ids["plan_id"],
             data=update_data,
         )
@@ -158,12 +172,16 @@ class TestPlanContextService:
         await plan_context_service.upsert(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             data=plan_context_data,
         )
 
         deleted = await plan_context_service.delete(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             plan_id=test_ids["plan_id"],
         )
         assert deleted is True
@@ -171,6 +189,8 @@ class TestPlanContextService:
         result = await plan_context_service.get(
             db=db_session,
             platform_tenant_id=test_ids["platform_tenant_id"],
+            service_tenant_id=test_ids["service_tenant_id"],
+            service_user_id=test_ids["service_user_id"],
             plan_id=test_ids["plan_id"],
         )
         assert result is None

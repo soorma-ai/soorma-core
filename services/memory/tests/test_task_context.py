@@ -99,6 +99,8 @@ class TestTaskContextCRUD:
         result = await get_task_context(
             db_session,
             task_data["platform_tenant_id"],
+            task_data["service_tenant_id"],
+            task_data["service_user_id"],
             task_data["task_id"],
         )
         
@@ -111,6 +113,8 @@ class TestTaskContextCRUD:
         result = await get_task_context(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             "non-existent-task",
         )
         
@@ -126,6 +130,8 @@ class TestTaskContextCRUD:
         result = await update_task_context(
             db_session,
             task_data["platform_tenant_id"],
+            task_data["service_tenant_id"],
+            task_data["service_user_id"],
             task_data["task_id"],
             sub_tasks=new_sub_tasks,
             state=new_state,
@@ -143,6 +149,8 @@ class TestTaskContextCRUD:
         deleted = await delete_task_context(
             db_session,
             task_data["platform_tenant_id"],
+            task_data["service_tenant_id"],
+            task_data["service_user_id"],
             task_data["task_id"],
         )
         
@@ -152,6 +160,8 @@ class TestTaskContextCRUD:
         result = await get_task_context(
             db_session,
             task_data["platform_tenant_id"],
+            task_data["service_tenant_id"],
+            task_data["service_user_id"],
             task_data["task_id"],
         )
         
@@ -162,6 +172,8 @@ class TestTaskContextCRUD:
         deleted = await delete_task_context(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             "non-existent-task",
         )
         
@@ -174,6 +186,8 @@ class TestTaskContextCRUD:
         result = await get_task_by_subtask(
             db_session,
             task_data["platform_tenant_id"],
+            task_data["service_tenant_id"],
+            task_data["service_user_id"],
             "subtask-1",
         )
         
@@ -186,6 +200,8 @@ class TestTaskContextCRUD:
         result = await get_task_by_subtask(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             "non-existent-subtask",
         )
         
@@ -211,12 +227,24 @@ class TestTaskContextCRUD:
         await upsert_task_context(db_session, **data2)
         
         # Retrieve for tenant 1
-        result1 = await get_task_context(db_session, tenant1_id, task_id)
+        result1 = await get_task_context(
+            db_session,
+            tenant1_id,
+            data1["service_tenant_id"],
+            data1["service_user_id"],
+            task_id,
+        )
         assert result1 is not None
         assert result1.data == data1["data"]
         
         # Retrieve for tenant 2
-        result2 = await get_task_context(db_session, tenant2_id, task_id)
+        result2 = await get_task_context(
+            db_session,
+            tenant2_id,
+            data2["service_tenant_id"],
+            data2["service_user_id"],
+            task_id,
+        )
         assert result2 is not None
         assert result2.data == data2["data"]
 
@@ -290,6 +318,8 @@ class TestTaskContextService:
         result = await service.get(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["task_id"],
         )
         
@@ -314,6 +344,8 @@ class TestTaskContextService:
         result = await service.update(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["task_id"],
             update_data,
         )
@@ -335,6 +367,8 @@ class TestTaskContextService:
         deleted = await service.delete(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["task_id"],
         )
         
@@ -344,6 +378,8 @@ class TestTaskContextService:
         result = await service.get(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             test_ids["task_id"],
         )
         
@@ -362,6 +398,8 @@ class TestTaskContextService:
         result = await service.get_by_subtask(
             db_session,
             test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
             "validate",
         )
         
@@ -425,6 +463,8 @@ class TestTaskContextSubTaskTracking:
             parent = await get_task_by_subtask(
                 db_session,
                 test_ids["platform_tenant_id"],
+                test_ids["service_tenant_id"],
+                test_ids["service_user_id"],
                 subtask_id,
             )
             assert parent is not None

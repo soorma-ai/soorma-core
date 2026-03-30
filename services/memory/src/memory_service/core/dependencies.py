@@ -12,11 +12,15 @@ Memory Service Authentication Model (v0.7.x):
 
   v0.8.0+: will be replaced with API Key / machine token validation.
 """
+from fastapi import Depends, Header, HTTPException, status
+
 from soorma_service_common import (  # noqa: F401
     TenantContext,
     create_get_tenant_context,
     create_get_tenanted_db,
+  require_user_context,
 )
+from memory_service.core.config import settings
 from memory_service.core.database import get_db
 
 # Bind memory service's get_db to the tenancy wrapper.
@@ -26,4 +30,28 @@ get_tenanted_db = create_get_tenanted_db(get_db)
 # Combine identity + RLS-activated session into a single bundle dependency.
 get_tenant_context = create_get_tenant_context(get_tenanted_db)
 
-__all__ = ["TenantContext", "get_tenant_context", "get_tenanted_db"]
+
+def require_user_tenant_context(
+  context: TenantContext = Depends(get_tenant_context),
+) -> TenantContext:
+  """Enforce user-scoped identity dimensions and return validated context."""
+  return require_user_context(context)
+
+
+def require_admin_authorization(
+  admin_key: str | None = Header(default=None, alias="X-Memory-Admin-Key"),
+) -> None:
+  """Require explicit admin key for privileged admin endpoints."""
+  if admin_key != settings.memory_admin_api_key:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Admin authorization required",
+    )
+
+__all__ = [
+  "TenantContext",
+  "get_tenant_context",
+  "get_tenanted_db",
+  "require_user_tenant_context",
+  "require_admin_authorization",
+]

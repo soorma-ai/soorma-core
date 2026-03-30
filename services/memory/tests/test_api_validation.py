@@ -6,6 +6,10 @@ from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch
 
 from memory_service.main import app
+from memory_service.core.config import settings
+from memory_service.core.database import get_db
+from memory_service.core.dependencies import TenantContext, get_tenant_context
+from memory_service.services.data_deletion import MemoryDataDeletion
 
 
 @pytest.fixture
@@ -24,6 +28,67 @@ class TestHealthEndpoint:
         # Health endpoint returns service info
         data = response.json()
         assert "status" in data or "service_name" in data
+
+
+class TestIdentityAndAdminGuards:
+    """Validation tests for route-level identity and admin authorization guards."""
+
+    def test_user_scoped_route_rejects_missing_service_user_context(self, client):
+        """User-scoped routes must fail closed when service user context is absent."""
+
+        async def _override_missing_user_context():
+            return TenantContext(
+                platform_tenant_id="spt_test-00000",
+                service_tenant_id="st_test-tenant",
+                service_user_id=None,
+                db=AsyncMock(),
+            )
+
+        app.dependency_overrides[get_tenant_context] = _override_missing_user_context
+        try:
+            response = client.get(
+                "/v1/memory/semantic/search",
+                params={"q": "tenant scoped search", "limit": 1},
+            )
+            assert response.status_code == 400
+            assert "Missing required user identity context" in response.text
+        finally:
+            app.dependency_overrides.pop(get_tenant_context, None)
+
+    def test_admin_route_requires_authorization_key(self, client):
+        """Admin routes must enforce explicit server-side authorization."""
+
+        async def _override_db():
+            yield AsyncMock()
+
+        app.dependency_overrides[get_db] = _override_db
+        try:
+            response = client.delete("/v1/memory/admin/platform/spt_test-00000")
+            assert response.status_code == 403
+            assert "Admin authorization required" in response.text
+        finally:
+            app.dependency_overrides.pop(get_db, None)
+
+    def test_admin_route_accepts_valid_authorization_key(self, client):
+        """Admin routes should proceed when a valid admin key is supplied."""
+
+        async def _override_db():
+            yield AsyncMock()
+
+        app.dependency_overrides[get_db] = _override_db
+        with patch.object(
+            MemoryDataDeletion,
+            "delete_by_platform_tenant",
+            new=AsyncMock(return_value=0),
+        ):
+            try:
+                response = client.delete(
+                    "/v1/memory/admin/platform/spt_test-00000",
+                    headers={"X-Memory-Admin-Key": settings.memory_admin_api_key},
+                )
+                assert response.status_code == 204
+            finally:
+                app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.mark.skip("Integration test — requires PostgreSQL (get_tenant_context dependency)")

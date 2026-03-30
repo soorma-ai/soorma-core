@@ -38,7 +38,7 @@ async def upsert_task_context(
         sub_tasks=sub_tasks,
         state=state,
     ).on_conflict_do_update(
-        index_elements=['platform_tenant_id', 'task_id'],
+        index_elements=['platform_tenant_id', 'service_tenant_id', 'service_user_id', 'task_id'],
         set_=dict(
             plan_id=plan_id,
             data=data,
@@ -57,12 +57,16 @@ async def upsert_task_context(
 async def get_task_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     task_id: str,
 ) -> Optional[TaskContext]:
     """Get task context by task ID."""
     result = await db.execute(
         select(TaskContext).where(
             TaskContext.platform_tenant_id == platform_tenant_id,
+            TaskContext.service_tenant_id == service_tenant_id,
+            TaskContext.service_user_id == service_user_id,
             TaskContext.task_id == task_id,
         )
     )
@@ -72,12 +76,20 @@ async def get_task_context(
 async def update_task_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     task_id: str,
     sub_tasks: Optional[List[str]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> Optional[TaskContext]:
     """Update task context."""
-    task_context = await get_task_context(db, platform_tenant_id, task_id)
+    task_context = await get_task_context(
+        db,
+        platform_tenant_id,
+        service_tenant_id,
+        service_user_id,
+        task_id,
+    )
     if not task_context:
         return None
     
@@ -94,12 +106,16 @@ async def update_task_context(
 async def delete_task_context(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     task_id: str,
 ) -> bool:
     """Delete task context."""
     result = await db.execute(
         delete(TaskContext).where(
             TaskContext.platform_tenant_id == platform_tenant_id,
+            TaskContext.service_tenant_id == service_tenant_id,
+            TaskContext.service_user_id == service_user_id,
             TaskContext.task_id == task_id,
         )
     )
@@ -110,6 +126,8 @@ async def delete_task_context(
 async def get_task_by_subtask(
     db: AsyncSession,
     platform_tenant_id: str,
+    service_tenant_id: str,
+    service_user_id: str,
     sub_task_id: str,
 ) -> Optional[TaskContext]:
     """Find parent task by sub-task ID."""
@@ -120,6 +138,8 @@ async def get_task_by_subtask(
     result = await db.execute(
         select(TaskContext).where(
             TaskContext.platform_tenant_id == platform_tenant_id,
+            TaskContext.service_tenant_id == service_tenant_id,
+            TaskContext.service_user_id == service_user_id,
         )
     )
     for task in result.scalars().all():

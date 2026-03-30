@@ -6,7 +6,7 @@ RF-ARCH-014: User-scoped privacy (default private, optional public)
 
 from fastapi import APIRouter, Depends, Query
 
-from memory_service.core.dependencies import TenantContext, get_tenant_context
+from memory_service.core.dependencies import TenantContext, require_user_tenant_context
 from soorma_common.models import SemanticMemoryCreate, SemanticMemoryResponse
 from memory_service.services.semantic_memory_service import semantic_memory_service
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/semantic", tags=["Semantic Memory"])
 @router.post("", response_model=SemanticMemoryResponse, status_code=201)
 async def store_knowledge(
     data: SemanticMemoryCreate,
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Store or update knowledge in semantic memory (upsert).
     
@@ -44,7 +44,7 @@ async def query_knowledge(
     query: str = Query(..., description="Search query text"),
     limit: int = Query(5, ge=1, le=50, description="Maximum number of results"),
     include_public: bool = Query(True, description="Include public knowledge from all users"),
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Query semantic memory using vector similarity with privacy support.
     
@@ -73,7 +73,7 @@ async def query_knowledge(
 async def search_semantic(
     q: str = Query(..., description="Search query"),
     limit: int = Query(5, ge=1, le=50, description="Maximum number of results"),
-    context: TenantContext = Depends(get_tenant_context),
+    context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Search semantic memory using vector similarity (backward compatibility endpoint).
     

@@ -104,7 +104,7 @@ async def upsert_semantic_memory(
             conflict_where = text('external_id IS NOT NULL AND is_public = TRUE')
         else:
             # Private knowledge: unique per user
-            conflict_target = ['platform_tenant_id', 'service_user_id', 'external_id']
+            conflict_target = ['platform_tenant_id', 'service_tenant_id', 'service_user_id', 'external_id']
             conflict_where = text('external_id IS NOT NULL AND is_public = FALSE')
     else:
         # Upsert by content_hash
@@ -114,7 +114,7 @@ async def upsert_semantic_memory(
             conflict_where = text('is_public = TRUE')
         else:
             # Private knowledge: unique per user
-            conflict_target = ['platform_tenant_id', 'service_user_id', 'content_hash']
+            conflict_target = ['platform_tenant_id', 'service_tenant_id', 'service_user_id', 'content_hash']
             conflict_where = text('is_public = FALSE')
     
     # Add the ON CONFLICT clause
