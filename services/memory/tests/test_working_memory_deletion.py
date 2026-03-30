@@ -29,6 +29,7 @@ class TestWorkingMemoryDeletion:
             "service_user_id": TEST_SERVICE_USER_ID,
             "plan_id": "plan-test-001",
             "other_platform_tenant_id": "spt_other-tenant",
+            "other_service_tenant_id": "st_other-tenant",
             "other_service_user_id": "su_other-user",
             "other_plan_id": "plan-other-001",
         }
@@ -286,6 +287,54 @@ class TestWorkingMemoryDeletion:
             key,
         )
         assert retrieved is not None
+
+    async def test_get_respects_service_tenant_isolation(
+        self, db_session: AsyncSession, test_ids
+    ):
+        """Same user and plan/key in different service tenants must be isolated."""
+        key = "tenant_specific_key"
+
+        await set_working_memory(
+            db_session,
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
+            test_ids["plan_id"],
+            key,
+            WorkingMemorySet(value={"tenant": "A"}),
+        )
+
+        await set_working_memory(
+            db_session,
+            test_ids["platform_tenant_id"],
+            test_ids["other_service_tenant_id"],
+            test_ids["service_user_id"],
+            test_ids["plan_id"],
+            key,
+            WorkingMemorySet(value={"tenant": "B"}),
+        )
+
+        tenant_a = await get_working_memory(
+            db_session,
+            test_ids["platform_tenant_id"],
+            test_ids["service_tenant_id"],
+            test_ids["service_user_id"],
+            test_ids["plan_id"],
+            key,
+        )
+        tenant_b = await get_working_memory(
+            db_session,
+            test_ids["platform_tenant_id"],
+            test_ids["other_service_tenant_id"],
+            test_ids["service_user_id"],
+            test_ids["plan_id"],
+            key,
+        )
+
+        assert tenant_a is not None
+        assert tenant_b is not None
+        assert tenant_a.value == {"tenant": "A"}
+        assert tenant_b.value == {"tenant": "B"}
 
     async def test_delete_respects_plan_isolation(
         self, db_session: AsyncSession, test_ids

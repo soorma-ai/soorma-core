@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from memory_service.models.memory import PlanContext
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def upsert_plan_context(
@@ -23,7 +24,7 @@ async def upsert_plan_context(
     correlation_ids: List[str],
 ) -> PlanContext:
     """Upsert plan context (insert or update if exists)."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Use PostgreSQL's INSERT ... ON CONFLICT DO UPDATE
     stmt = insert(PlanContext).values(
         platform_tenant_id=platform_tenant_id,
@@ -63,9 +64,12 @@ async def get_plan_context(
     """Get plan context by plan ID."""
     result = await db.execute(
         select(PlanContext).where(
-            PlanContext.platform_tenant_id == platform_tenant_id,
-            PlanContext.service_tenant_id == service_tenant_id,
-            PlanContext.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                PlanContext,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             PlanContext.plan_id == plan_id,
         )
     )
@@ -115,9 +119,12 @@ async def delete_plan_context(
     """Delete plan context."""
     result = await db.execute(
         delete(PlanContext).where(
-            PlanContext.platform_tenant_id == platform_tenant_id,
-            PlanContext.service_tenant_id == service_tenant_id,
-            PlanContext.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                PlanContext,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             PlanContext.plan_id == plan_id,
         )
     )
@@ -137,9 +144,12 @@ async def get_plan_by_correlation(
     # Check if correlation_ids array contains the correlation_id
     result = await db.execute(
         select(PlanContext).where(
-            PlanContext.platform_tenant_id == platform_tenant_id,
-            PlanContext.service_tenant_id == service_tenant_id,
-            PlanContext.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                PlanContext,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             PlanContext.correlation_ids.op('@>')(cast([correlation_id], JSONB)),
         )
     )

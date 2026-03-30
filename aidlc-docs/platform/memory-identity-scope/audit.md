@@ -926,3 +926,35 @@ construction PR for unit-2 has been approved."
 **Context**: Waiting for explicit user approval to proceed to Build and Test planning.
 
 ---
+
+## Code Generation - unit-2 Review Change Request (Shared Admin Guard)
+**Timestamp**: 2026-03-30T05:21:06Z
+**User Input**: "should require_admin_authorization be in the soorma_service_common so that it can be reused / updated consistently across all services?" and "yes please apply the change"
+**AI Response**: Implemented requested refactor by adding a reusable `create_require_admin_authorization` factory in `libs/soorma-service-common/src/soorma_service_common/dependencies.py`, exporting it from package `__init__.py`, and updating memory service to consume the shared factory while preserving the existing `X-Memory-Admin-Key` contract. Verified behavior with `tests/test_api_validation.py` (`4 passed, 17 skipped`).
+**Context**: Post-review code change applied within unit-2 Code Generation review gate; awaiting updated user approval.
+
+---
+
+## Code Generation - unit-2 Review Change Request (LC-2-5 Logging Gap)
+**Timestamp**: 2026-03-30T05:36:49Z
+**User Input**: "ok, lets patch for LC-2-5 gap. also what is the plan for design debt in LC-2-4"
+**AI Response**: Patched shared validation logging to include optional `correlation_id`/`request_id` in warning events (`soorma_service_common.dependencies.require_user_context`), wired memory service wrapper to pass `X-Correlation-ID` and `X-Request-ID` headers, and added shared-library unit test coverage for logging fields. Validation passed: `libs/soorma-service-common/tests/test_dependencies.py` (`21 passed`) and `services/memory/tests/test_api_validation.py` (`4 passed, 17 skipped`).
+**Context**: Post-review LC-2-5 implementation gap closed during unit-2 Code Generation review gate.
+
+---
+
+## Code Generation - unit-2 Review Change Request (Shared User-Context Adapter + Pattern Scan)
+**Timestamp**: 2026-03-30T05:42:40Z
+**User Input**: "yes, implement this clean. also look for any other similar sub-optimal design patterns in current code generation"
+**AI Response**: Implemented clean centralization by adding `create_require_user_context_dependency` in `soorma-service-common` (shared request-header extraction + validation delegation), updated memory service to consume this shared adapter, and added focused tests for adapter behavior. Validation passed: `libs/soorma-service-common/tests/test_dependencies.py` (`23 passed`) and `services/memory/tests/test_api_validation.py` (`4 passed, 17 skipped`). Per request, started targeted scan for similar sub-optimal patterns in unit-2 generated runtime paths and identified additional identity-scope abstraction debt candidates for review.
+**Context**: Post-review architecture refinement and design-debt discovery during unit-2 Code Generation review gate.
+
+---
+
+## Code Generation - unit-2 Review Change Request (Address All Findings)
+**Timestamp**: 2026-03-30T05:50:28Z
+**User Input**: "ok, we need to address all of these findings"
+**AI Response**: Implemented all identified findings end-to-end in memory runtime and model layers: (1) working-memory uniqueness and readback scope aligned to full identity tuple; (2) service tenant predicates added to user-scoped semantic, episodic, procedural, and working CRUD query paths; (3) plans and sessions uniqueness constraints aligned to full identity tuple; and (4) repeated identity assertions/predicate boilerplate reduced via shared CRUD helper (`crud/_identity.py`) reused across plans/sessions/task_context/plan_context/semantic/episodic/procedural/working modules. Added regression coverage for identity-scoped uniqueness constraints and query predicate assertions. Validation passed: `tests/test_working_memory_deletion.py tests/test_multi_tenancy.py tests/test_semantic_crud.py` (`36 passed`) and `tests/test_working_memory.py tests/test_api_validation.py` (`19 passed, 17 skipped`).
+**Context**: Comprehensive remediation of post-scan findings during unit-2 Code Generation review gate.
+
+---

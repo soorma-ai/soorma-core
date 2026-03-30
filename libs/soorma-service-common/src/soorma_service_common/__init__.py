@@ -8,6 +8,8 @@ from .dependencies import (
     get_service_tenant_id,
     get_service_user_id,
     require_user_context,
+    create_require_user_context_dependency,
+    create_require_admin_authorization,
     create_get_tenanted_db,
     set_config_for_session,
 )
@@ -22,6 +24,8 @@ __all__ = [
     "get_service_tenant_id",
     "get_service_user_id",
     "require_user_context",
+    "create_require_user_context_dependency",
+    "create_require_admin_authorization",
     "create_get_tenanted_db",
     "set_config_for_session",
     # Identity bundle

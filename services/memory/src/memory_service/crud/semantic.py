@@ -10,6 +10,7 @@ from pgvector.sqlalchemy import Vector
 from memory_service.models.memory import SemanticMemory
 from soorma_common.models import SemanticMemoryCreate, SemanticMemoryResponse
 from memory_service.services.embedding import embedding_service
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 def generate_content_hash(content: str) -> str:
@@ -58,7 +59,7 @@ async def upsert_semantic_memory(
         - Updates existing entry if constraint matches
         - Creates new entry if no match found
     """
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Generate content hash
     content_hash = generate_content_hash(content)
     
@@ -195,7 +196,7 @@ async def search_semantic_memory(
     Returns:
         List of SemanticMemoryResponse sorted by relevance score
     """
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Generate query embedding
     query_embedding = await embedding_service.generate_embedding(query)
 
@@ -205,16 +206,22 @@ async def search_semantic_memory(
         where_clause = (
             (SemanticMemory.platform_tenant_id == platform_tenant_id) &
             (
-                (SemanticMemory.service_user_id == service_user_id) |
+                (
+                    (SemanticMemory.service_tenant_id == service_tenant_id) &
+                    (SemanticMemory.service_user_id == service_user_id)
+                ) |
                 (SemanticMemory.is_public == True)
             )
         )
     else:
         # Return only user's private knowledge
-        where_clause = (
-            (SemanticMemory.platform_tenant_id == platform_tenant_id) &
-            (SemanticMemory.service_user_id == service_user_id)
+        private_filters = scoped_identity_filters(
+            SemanticMemory,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
         )
+        where_clause = private_filters[0] & private_filters[1] & private_filters[2]
 
     # Vector similarity search using cosine distance
     stmt = (

@@ -5,6 +5,7 @@ from sqlalchemy import select, delete, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from memory_service.models.memory import Session
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def create_session(
@@ -17,7 +18,7 @@ async def create_session(
     metadata: Optional[dict] = None,
 ) -> Session:
     """Create a new session."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     session = Session(
         platform_tenant_id=platform_tenant_id,
         service_tenant_id=service_tenant_id,
@@ -42,9 +43,12 @@ async def get_session(
     """Get session by ID."""
     result = await db.execute(
         select(Session).where(
-            Session.platform_tenant_id == platform_tenant_id,
-            Session.service_tenant_id == service_tenant_id,
-            Session.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                Session,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             Session.session_id == session_id,
         )
     )
@@ -59,10 +63,14 @@ async def list_sessions(
     limit: int = 20,
 ) -> List[Session]:
     """List sessions for a user."""
+    require_platform_tenant_id(platform_tenant_id)
     query = select(Session).where(
-        Session.platform_tenant_id == platform_tenant_id,
-        Session.service_tenant_id == service_tenant_id,
-        Session.service_user_id == service_user_id,
+        *scoped_identity_filters(
+            Session,
+            platform_tenant_id,
+            service_tenant_id,
+            service_user_id,
+        ),
     ).order_by(desc(Session.last_interaction)).limit(limit)
     
     result = await db.execute(query)
@@ -105,9 +113,12 @@ async def delete_session(
     """Delete session."""
     result = await db.execute(
         delete(Session).where(
-            Session.platform_tenant_id == platform_tenant_id,
-            Session.service_tenant_id == service_tenant_id,
-            Session.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                Session,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             Session.session_id == session_id,
         )
     )

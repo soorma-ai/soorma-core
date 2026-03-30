@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 
 from memory_service.models.memory import TaskContext
+from memory_service.crud._identity import require_platform_tenant_id, scoped_identity_filters
 
 
 async def upsert_task_context(
@@ -23,7 +24,7 @@ async def upsert_task_context(
     state: Dict[str, Any],
 ) -> TaskContext:
     """Upsert task context (insert or update if exists)."""
-    assert platform_tenant_id, "platform_tenant_id is required"
+    require_platform_tenant_id(platform_tenant_id)
     # Use PostgreSQL's INSERT ... ON CONFLICT DO UPDATE
     stmt = insert(TaskContext).values(
         platform_tenant_id=platform_tenant_id,
@@ -64,9 +65,12 @@ async def get_task_context(
     """Get task context by task ID."""
     result = await db.execute(
         select(TaskContext).where(
-            TaskContext.platform_tenant_id == platform_tenant_id,
-            TaskContext.service_tenant_id == service_tenant_id,
-            TaskContext.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                TaskContext,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             TaskContext.task_id == task_id,
         )
     )
@@ -113,9 +117,12 @@ async def delete_task_context(
     """Delete task context."""
     result = await db.execute(
         delete(TaskContext).where(
-            TaskContext.platform_tenant_id == platform_tenant_id,
-            TaskContext.service_tenant_id == service_tenant_id,
-            TaskContext.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                TaskContext,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
             TaskContext.task_id == task_id,
         )
     )
@@ -137,9 +144,12 @@ async def get_task_by_subtask(
     # small, so fetching and filtering in Python is acceptable.
     result = await db.execute(
         select(TaskContext).where(
-            TaskContext.platform_tenant_id == platform_tenant_id,
-            TaskContext.service_tenant_id == service_tenant_id,
-            TaskContext.service_user_id == service_user_id,
+            *scoped_identity_filters(
+                TaskContext,
+                platform_tenant_id,
+                service_tenant_id,
+                service_user_id,
+            ),
         )
     )
     for task in result.scalars().all():

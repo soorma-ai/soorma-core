@@ -7,7 +7,7 @@ TenancyMiddleware) and activate PostgreSQL RLS via set_config.
 import logging
 from typing import AsyncGenerator, Callable, Optional
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,20 +31,33 @@ def _is_blank(value: Optional[str]) -> bool:
 def _log_identity_validation_failure(
     platform_tenant_id: str,
     failure_reason: str,
+    correlation_id: Optional[str] = None,
+    request_id: Optional[str] = None,
 ) -> None:
     """Emit safe structured warning logs without service-identity dimensions."""
+    extra = {
+        "event_name": "identity_validation_failed",
+        "severity": "warning",
+        "platform_tenant_id": platform_tenant_id,
+        "failure_reason": failure_reason,
+    }
+    if correlation_id:
+        extra["correlation_id"] = correlation_id
+    if request_id:
+        extra["request_id"] = request_id
+
     LOGGER.warning(
         "identity_validation_failed",
-        extra={
-            "event_name": "identity_validation_failed",
-            "severity": "warning",
-            "platform_tenant_id": platform_tenant_id,
-            "failure_reason": failure_reason,
-        },
+        extra=extra,
     )
 
 
-def require_user_context(context: TenantContext) -> TenantContext:
+def require_user_context(
+    context: TenantContext,
+    *,
+    correlation_id: Optional[str] = None,
+    request_id: Optional[str] = None,
+) -> TenantContext:
     """Validate service-tenant and service-user context for user-scoped operations.
 
     Args:
@@ -77,8 +90,74 @@ def require_user_context(context: TenantContext) -> TenantContext:
     _log_identity_validation_failure(
         platform_tenant_id=context.platform_tenant_id,
         failure_reason=failure_reason,
+        correlation_id=correlation_id,
+        request_id=request_id,
     )
     raise HTTPException(status_code=400, detail=detail)
+
+
+def create_require_admin_authorization(
+    expected_api_key: str,
+    *,
+    header_name: str = "X-Admin-Key",
+    error_detail: str = "Admin authorization required",
+) -> Callable[[], None]:
+    """Create a reusable FastAPI dependency for admin authorization checks.
+
+    Args:
+        expected_api_key: API key value required for admin access.
+        header_name: Header alias used to read the provided API key.
+        error_detail: Error message returned when authorization fails.
+
+    Returns:
+        A FastAPI dependency function that raises HTTP 403 on mismatch.
+    """
+
+    def require_admin_authorization(
+        provided_api_key: Optional[str] = Header(default=None, alias=header_name),
+    ) -> None:
+        """Validate admin API key from request header."""
+        if provided_api_key != expected_api_key:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=error_detail,
+            )
+
+    return require_admin_authorization
+
+
+def create_require_user_context_dependency(
+    get_tenant_context: Callable,
+    *,
+    correlation_header_name: str = "X-Correlation-ID",
+    request_header_name: str = "X-Request-ID",
+) -> Callable:
+    """Create a reusable FastAPI dependency for user-context validation.
+
+    This adapter centralizes request-header extraction for correlation/request IDs
+    and delegates the core validation logic to ``require_user_context``.
+
+    Args:
+        get_tenant_context: Bound tenant-context dependency for the service.
+        correlation_header_name: Request header carrying correlation identifier.
+        request_header_name: Request header carrying request identifier.
+
+    Returns:
+        A FastAPI dependency function that returns validated ``TenantContext``.
+    """
+
+    def require_user_tenant_context(
+        request: Request,
+        context: TenantContext = Depends(get_tenant_context),
+    ) -> TenantContext:
+        """Validate user context and include optional request identifiers in logs."""
+        return require_user_context(
+            context,
+            correlation_id=request.headers.get(correlation_header_name),
+            request_id=request.headers.get(request_header_name),
+        )
+
+    return require_user_tenant_context
 
 
 async def _set_config_dim(db: AsyncSession, key: str, value: str) -> None:

@@ -11,6 +11,8 @@ Implemented unit-2 runtime identity alignment across Memory Service API, service
 - Section 7 (Testing): behavior tests updated and added for guard enforcement and scoped access.
 
 ## Modified Application Files
+- libs/soorma-service-common/src/soorma_service_common/dependencies.py
+- libs/soorma-service-common/src/soorma_service_common/__init__.py
 - services/memory/src/memory_service/core/config.py
 - services/memory/src/memory_service/core/dependencies.py
 - services/memory/src/memory_service/api/v1/admin.py
@@ -43,6 +45,12 @@ Implemented unit-2 runtime identity alignment across Memory Service API, service
 4. Updated task_context and plan_context upsert conflict targets to full identity tuple.
 5. Updated semantic private conflict targets to include `service_tenant_id`.
 6. Aligned ORM unique constraints for task_context and plan_context with updated runtime conflict targets.
+7. Centralized admin authorization dependency logic in shared `soorma_service_common` via reusable factory and consumed it from memory service.
+8. Centralized user-context dependency adapter logic in shared `soorma_service_common` via `create_require_user_context_dependency` and removed memory-local request-header extraction wrapper.
+9. Aligned working-memory upsert and read/delete predicates to full identity tuple, including service tenant/user filters.
+10. Added service-tenant predicate enforcement to user-scoped semantic/episodic/procedural query paths.
+11. Aligned `plans` and `sessions` model uniqueness constraints to full identity tuple.
+12. Introduced shared CRUD identity helper (`crud/_identity.py`) and reused it across memory CRUD modules to reduce predicate drift.
 
 ## Verification
 Executed:
@@ -50,6 +58,12 @@ Executed:
 
 Result:
 - `133 passed, 19 skipped`
+
+Additional focused post-review validations:
+- `/Users/amit/ws/github/soorma-ai/soorma-core/.venv/bin/python -m pytest tests/test_dependencies.py -q` (from `libs/soorma-service-common`) -> `23 passed`
+- `/Users/amit/ws/github/soorma-ai/soorma-core/.venv/bin/python -m pytest tests/test_api_validation.py -q` (from `services/memory`) -> `4 passed, 17 skipped`
+- `/Users/amit/ws/github/soorma-ai/soorma-core/.venv/bin/python -m pytest tests/test_working_memory_deletion.py tests/test_multi_tenancy.py tests/test_semantic_crud.py -q` (from `services/memory`) -> `36 passed`
+- `/Users/amit/ws/github/soorma-ai/soorma-core/.venv/bin/python -m pytest tests/test_working_memory.py tests/test_api_validation.py -q` (from `services/memory`) -> `19 passed, 17 skipped`
 
 ## Requirement Traceability
 - FR-3: user-scoped endpoint guard enforcement

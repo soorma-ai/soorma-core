@@ -11,6 +11,7 @@ from sqlalchemy import text
 from fastapi import HTTPException
 
 from soorma_service_common.dependencies import (
+    create_require_user_context_dependency,
     create_get_tenanted_db,
     get_platform_tenant_id,
     get_service_tenant_id,
@@ -323,3 +324,67 @@ class TestRequireUserContext:
 
         assert err.value.status_code == 400
         assert err.value.detail == "Missing required user identity context"
+
+    def test_logs_correlation_and_request_id_when_provided(self):
+        """Validation warning includes correlation_id/request_id when provided."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id=None,
+            service_user_id="user-1",
+            db=AsyncMock(),
+        )
+
+        with patch("soorma_service_common.dependencies.LOGGER.warning") as warning_mock:
+            with pytest.raises(HTTPException):
+                require_user_context(
+                    context,
+                    correlation_id="corr-123",
+                    request_id="req-456",
+                )
+
+        warning_mock.assert_called_once()
+        kwargs = warning_mock.call_args.kwargs
+        assert kwargs["extra"]["correlation_id"] == "corr-123"
+        assert kwargs["extra"]["request_id"] == "req-456"
+
+
+class TestCreateRequireUserContextDependency:
+    """Factory tests for centralized user-context dependency adapter."""
+
+    def test_factory_returns_callable(self):
+        """Factory should return a callable FastAPI dependency."""
+
+        def _mock_get_tenant_context():
+            return None
+
+        dependency = create_require_user_context_dependency(_mock_get_tenant_context)
+        assert callable(dependency)
+
+    def test_dependency_reads_headers_and_passes_ids_to_validation(self):
+        """Adapter must extract request headers and delegate IDs to validator."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id=None,
+            service_user_id="user-1",
+            db=AsyncMock(),
+        )
+
+        def _mock_get_tenant_context():
+            return context
+
+        dependency = create_require_user_context_dependency(_mock_get_tenant_context)
+
+        request = AsyncMock()
+        request.headers = {
+            "X-Correlation-ID": "corr-789",
+            "X-Request-ID": "req-101",
+        }
+
+        with patch("soorma_service_common.dependencies.LOGGER.warning") as warning_mock:
+            with pytest.raises(HTTPException):
+                dependency(request=request, context=context)
+
+        warning_mock.assert_called_once()
+        kwargs = warning_mock.call_args.kwargs
+        assert kwargs["extra"]["correlation_id"] == "corr-789"
+        assert kwargs["extra"]["request_id"] == "req-101"

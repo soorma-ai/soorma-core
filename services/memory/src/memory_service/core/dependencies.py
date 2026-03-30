@@ -12,13 +12,14 @@ Memory Service Authentication Model (v0.7.x):
 
   v0.8.0+: will be replaced with API Key / machine token validation.
 """
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends
 
 from soorma_service_common import (  # noqa: F401
     TenantContext,
     create_get_tenant_context,
     create_get_tenanted_db,
-  require_user_context,
+    create_require_user_context_dependency,
+    create_require_admin_authorization,
 )
 from memory_service.core.config import settings
 from memory_service.core.database import get_db
@@ -31,22 +32,17 @@ get_tenanted_db = create_get_tenanted_db(get_db)
 get_tenant_context = create_get_tenant_context(get_tenanted_db)
 
 
-def require_user_tenant_context(
-  context: TenantContext = Depends(get_tenant_context),
-) -> TenantContext:
-  """Enforce user-scoped identity dimensions and return validated context."""
-  return require_user_context(context)
+require_user_tenant_context = create_require_user_context_dependency(
+  get_tenant_context,
+  correlation_header_name="X-Correlation-ID",
+  request_header_name="X-Request-ID",
+)
 
 
-def require_admin_authorization(
-  admin_key: str | None = Header(default=None, alias="X-Memory-Admin-Key"),
-) -> None:
-  """Require explicit admin key for privileged admin endpoints."""
-  if admin_key != settings.memory_admin_api_key:
-    raise HTTPException(
-      status_code=status.HTTP_403_FORBIDDEN,
-      detail="Admin authorization required",
-    )
+require_admin_authorization = create_require_admin_authorization(
+  settings.memory_admin_api_key,
+  header_name="X-Memory-Admin-Key",
+)
 
 __all__ = [
   "TenantContext",
