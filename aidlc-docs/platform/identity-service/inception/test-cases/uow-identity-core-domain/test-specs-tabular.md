@@ -1,0 +1,5 @@
+| Test Case ID | Title | Preconditions | Steps | Expected Result | Priority | Source | Construction Path |
+|---|---|---|---|---|---|---|---|
+| TC-UICD-001 | Tenant onboarding creates identity domain | Valid onboarding payload; admin actor | 1) Submit request 2) Run onboarding 3) Verify state | Domain + bootstrap admin created | High | uow-identity-core-domain / FR-1 | aidlc-docs/platform/identity-service/construction/uow-identity-core-domain/ |
+| TC-UICD-002 | Token issuance returns mandatory claims | Active principal exists | 1) Request token 2) Decode token | Mandatory claims populated | High | uow-identity-core-domain / FR-6 | aidlc-docs/platform/identity-service/construction/uow-identity-core-domain/ |
+| TC-UICD-003 | Unregistered delegated issuer denied | Unknown issuer assertion | 1) Submit assertion 2) Validate trust | Denied with audit event | High | uow-identity-core-domain / FR-5 | aidlc-docs/platform/identity-service/construction/uow-identity-core-domain/ |
