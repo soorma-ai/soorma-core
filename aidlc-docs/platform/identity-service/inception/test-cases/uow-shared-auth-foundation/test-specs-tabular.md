@@ -1,0 +1,5 @@
+| Test Case ID | Title | Preconditions | Steps | Expected Result | Priority | Source | Construction Path |
+|---|---|---|---|---|---|---|---|
+| TC-USAF-001 | JWT context resolved from authenticated request | Valid JWT; route policy configured | 1) Send JWT request 2) Resolve auth context 3) Inspect request state | JWT context accepted and propagated | High | uow-shared-auth-foundation / FR-11 | aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/ |
+| TC-USAF-002 | Legacy context translated during coexistence | Coexistence enabled; legacy headers present | 1) Send header-only request 2) Run adapter 3) Inspect context output | Context translated; route call site unchanged | High | uow-shared-auth-foundation / FR-11 | aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/ |
+| TC-USAF-003 | Missing auth context fails closed | No JWT and no legacy headers | 1) Send unauthenticated request 2) Validate context | Request denied with safe error | High | uow-shared-auth-foundation / NFR-2 | aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/ |

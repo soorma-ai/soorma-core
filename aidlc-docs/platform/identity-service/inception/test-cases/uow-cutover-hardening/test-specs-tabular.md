@@ -1,0 +1,5 @@
+| Test Case ID | Title | Preconditions | Steps | Expected Result | Priority | Source | Construction Path |
+|---|---|---|---|---|---|---|---|
+| TC-UCH-001 | JWT-only ingress after cutover | Cutover enabled; valid JWT | 1) Send JWT request | Request succeeds on JWT-only path | High | uow-cutover-hardening / FR-11 | aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/ |
+| TC-UCH-002 | Header-only request denied post-cutover | Cutover enabled; no JWT | 1) Send header-only request | Access denied safely | High | uow-cutover-hardening / FR-11 | aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/ |
+| TC-UCH-003 | Security telemetry emitted for denied legacy access | Denied legacy request generated | 1) Trigger denial 2) Inspect telemetry | Structured denial event present | Medium | uow-cutover-hardening / FR-13 | aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/ |

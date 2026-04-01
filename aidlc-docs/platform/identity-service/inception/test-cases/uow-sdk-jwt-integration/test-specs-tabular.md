@@ -1,0 +1,5 @@
+| Test Case ID | Title | Preconditions | Steps | Expected Result | Priority | Source | Construction Path |
+|---|---|---|---|---|---|---|---|
+| TC-USJI-001 | Wrapper calls remain signature-compatible | Existing wrapper usage | 1) Run existing call pattern 2) Observe compile/runtime behavior | No signature change needed | High | uow-sdk-jwt-integration / FR-12 | aidlc-docs/platform/identity-service/construction/uow-sdk-jwt-integration/ |
+| TC-USJI-002 | SDK sends JWT auth on outbound calls | JWT configured in SDK env | 1) Execute SDK call 2) Inspect outbound auth | JWT transmitted and accepted | High | uow-sdk-jwt-integration / FR-11 | aidlc-docs/platform/identity-service/construction/uow-sdk-jwt-integration/ |
+| TC-USJI-003 | Invalid JWT rejected through wrapper flow | Invalid JWT configured | 1) Execute SDK call | Denied with safe error | High | uow-sdk-jwt-integration / NFR-2 | aidlc-docs/platform/identity-service/construction/uow-sdk-jwt-integration/ |
