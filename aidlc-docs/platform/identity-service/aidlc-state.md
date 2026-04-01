@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: INCEPTION - Requirements Analysis
+- **Current Stage**: INCEPTION - User Stories (Planning)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -20,18 +20,18 @@
 - **Path Convention**: All paths are relative to repo root — never use absolute/machine-specific paths
 
 ## Extension Configuration
-| Extension | Enabled | Decided At |
-|---|---|---|
-| JIRA Tickets | Pending | Requirements Analysis |
-| Team Collaboration Review Gates | Pending | Requirements Analysis |
-| QA Test Cases | Pending | Requirements Analysis |
-| Security Baseline | Pending | Requirements Analysis |
+| Extension | Enabled | Decided At | Notes |
+|---|---|---|---|
+| JIRA Tickets | Yes | Requirements Analysis | Opted in |
+| Team Collaboration Review Gates | Yes | Requirements Analysis | Opted in |
+| QA Test Cases | Yes | Requirements Analysis | Opted in - scope: happy-path-negative |
+| Security Baseline | Yes | Requirements Analysis | Opted in |
 
 ## Stage Progress
 ### 🔵 INCEPTION PHASE
 - [x] Workspace Detection
 - [x] Reverse Engineering
-- [ ] Requirements Analysis
+- [x] Requirements Analysis
 - [ ] User Stories
 - [ ] Workflow Planning
 - [ ] Application Design
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: INCEPTION
-- **Current Stage**: Requirements Analysis (questions pending)
-- **Next Stage**: Requirements document generation
-- **Status**: Awaiting question responses
+- **Current Stage**: User Stories Planning (awaiting answers)
+- **Next Stage**: User Stories Generation (after plan approval)
+- **Status**: Awaiting user input
 
 ## Reverse Engineering Status
 - [x] Reverse Engineering - Completed on 2026-04-01T00:42:04Z
