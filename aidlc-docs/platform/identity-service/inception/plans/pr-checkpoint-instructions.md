@@ -33,7 +33,8 @@ Use the PR Title and PR Description provided below.
 
 ## PR Description
 
-`## Initiative Summary
+```
+## Initiative Summary
 This PR contains completed Inception artifacts for the identity-service initiative in soorma-core. The initiative defines a platform-tenant identity domain, principal lifecycle management, delegated trust model, and phased JWT rollout compatible with existing dependency injection contracts.
 
 The scope and decomposition are structured for incremental mergeability across four units of work with explicit dependency order and security constraints.
@@ -60,6 +61,6 @@ The scope and decomposition are structured for incremental mergeability across f
 
 ## Additional Inception QA Artifacts
 - Inception test cases root: `aidlc-docs/platform/identity-service/inception/test-cases/`
-`
+```
 
 Once your PR has been reviewed and approved by your team, return to your AI IDE and confirm approval to continue the AI-DLC workflow.
