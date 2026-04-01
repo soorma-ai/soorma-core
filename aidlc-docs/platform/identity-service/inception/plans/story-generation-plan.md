@@ -4,21 +4,21 @@
 Create high-quality user stories and personas for the identity-service initiative with explicit acceptance criteria, INVEST compliance, and traceability to requirements.
 
 ## Execution Checklist
-- [ ] Step 1 - Confirm approved breakdown approach from user answers
-- [ ] Step 2 - Finalize persona scope and actor boundaries
-- [ ] Step 3 - Define story granularity and epic grouping rules
-- [ ] Step 4 - Generate `personas.md`
-- [ ] Step 5 - Generate `stories.md` with INVEST-compliant stories
-- [ ] Step 6 - Attach acceptance criteria to each story
-- [ ] Step 7 - Validate traceability (requirements -> stories -> personas)
-- [ ] Step 8 - Final quality pass and stage completion summary
+- [x] Step 1 - Confirm approved breakdown approach from user answers
+- [x] Step 2 - Finalize persona scope and actor boundaries
+- [x] Step 3 - Define story granularity and epic grouping rules
+- [x] Step 4 - Generate `personas.md`
+- [x] Step 5 - Generate `stories.md` with INVEST-compliant stories
+- [x] Step 6 - Attach acceptance criteria to each story
+- [x] Step 7 - Validate traceability (requirements -> stories -> personas)
+- [x] Step 8 - Final quality pass and stage completion summary
 
 ## Mandatory Artifacts
-- [ ] Generate stories.md with user stories following INVEST criteria
-- [ ] Generate personas.md with user archetypes and characteristics
-- [ ] Ensure stories are Independent, Negotiable, Valuable, Estimable, Small, Testable
-- [ ] Include acceptance criteria for each story
-- [ ] Map personas to relevant user stories
+- [x] Generate stories.md with user stories following INVEST criteria
+- [x] Generate personas.md with user archetypes and characteristics
+- [x] Ensure stories are Independent, Negotiable, Valuable, Estimable, Small, Testable
+- [x] Include acceptance criteria for each story
+- [x] Map personas to relevant user stories
 
 ## Story Breakdown Options
 - **User Journey-Based**: Best when primary concern is end-to-end flow clarity.
@@ -49,7 +49,7 @@ E) Hybrid: Epic + Persona + Feature (recommended)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: e)
 
 ## Question 2
 Which personas must be explicitly modeled in `personas.md` for v1?
@@ -64,7 +64,7 @@ D) Platform Admin + Platform Developer + Machine Principal Operator + Delegated 
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: d)
 
 ## Question 3
 How should we split stories for incremental implementation sequencing?
@@ -79,7 +79,7 @@ D) Hybrid: capability-first with layer subtasks (recommended)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: d)
 
 ## Question 4
 Which acceptance-criteria style should be default in stories?
@@ -94,7 +94,7 @@ D) Outcome-only criteria (no scenario syntax)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: c)
 
 ## Question 5
 Should stories explicitly include backward compatibility constraints (for FR-11 phased rollout) as acceptance criteria?
@@ -105,7 +105,7 @@ B) No - keep compatibility only in technical notes outside stories
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: a)
 
 ## Question 6
 How many top-level epics should we target for user stories?
@@ -120,7 +120,7 @@ D) Let AI decide based on INVEST after persona mapping
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: d)
 
 ## Approval
 Once all answers are filled in, confirm this message in chat:
