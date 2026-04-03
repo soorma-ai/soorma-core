@@ -573,3 +573,195 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - Functional Design approval gate
 
 ---
+
+## Functional Design - Approval
+**Timestamp**: 2026-04-03T17:46:35Z
+**User Input**: "functional design approved"
+**AI Response**: "Accepted functional design approval for uow-shared-auth-foundation and transitioned workflow to NFR Requirements stage."
+**Context**: CONSTRUCTION - Functional Design approval gate passed
+
+---
+
+## NFR Requirements - Planning Start
+**Timestamp**: 2026-04-03T17:46:35Z
+**User Input**: "functional design approved"
+**AI Response**: "Started NFR Requirements planning and generated the NFR requirements plan with clarifying questions for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Q2 Clarification
+**Timestamp**: 2026-04-03T17:49:03Z
+**User Input**: "for Q2, what does option D mean? what woul dbe profile based tiers and how will they get validated?"
+**AI Response**: "Explained profile-based throughput tiers as predefined load classes (for example low/medium/high) with separate success criteria and test runs per tier, including validation methodology and pass/fail gates for each tier."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Tier Validation Execution Clarification
+**Timestamp**: 2026-04-03T17:51:10Z
+**User Input**: "how will the tier validation executed? will this be part of unit tests, or will these be part of QA acceptance testing?"
+**AI Response**: "Clarified that tier validation is non-unit performance validation: defined in NFR/test instructions and executed as performance/integration acceptance runs, while unit tests cover correctness paths only."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q2 Answer Confirmed
+**Timestamp**: 2026-04-03T17:52:28Z
+**User Input**: "ok, lets record option D with recommended tiers and rationale / details"
+**AI Response**: "Updated Question 2 answer to option D with explicit per-instance tiers (100/500/1000 RPS plus optional burst), validation model, and rationale for tier-based acceptance performance testing."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q7 Clarification
+**Timestamp**: 2026-04-03T17:55:33Z
+**User Input**: "help me understand q7 and it's options"
+**AI Response**: "Explained each Q7 verification level from basic tests through coexistence regression, synthetic production-like load validation, and staged canary validation, including tradeoffs and recommended choice for this initiative."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q7 Option Selection Clarification
+**Timestamp**: 2026-04-03T17:58:15Z
+**User Input**: "since this is open core project, cannot make any assumptions about canary deploy, and probably also cannot make assumptions about performance characteristics (unless we also document / specify a reference spec for deployment / runtime), what option makes sense based on these?"
+**AI Response**: "Recommended choosing option B as the portable baseline gate for open-core (tests + coexistence regression), with optional performance/canary validations treated as deployment-profile-specific extensions rather than mandatory global gate assumptions."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q7 Answer Confirmed
+**Timestamp**: 2026-04-03T17:59:18Z
+**User Input**: "ok, lets record the recommended option B with rationale and details"
+**AI Response**: "Updated Question 7 answer to option B with open-core rationale, required coexistence regression scope, and guidance that performance/canary validations are profile-specific extensions rather than global mandatory assumptions."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Answers Validation Clarification Required
+**Timestamp**: 2026-04-03T18:02:00Z
+**User Input**: "all answers provided"
+**AI Response**: "During NFR answer validation, detected a blocking contradiction: Q8 selected no compatibility constraints, which conflicts with previously approved FR-11 compatibility requirements for coexistence. Created clarification file and paused NFR artifact generation pending explicit resolution."
+**Context**: CONSTRUCTION - NFR Requirements planning validation
+
+---
+
+## NFR Requirements - FR-11 Override Clarification
+**Timestamp**: 2026-04-03T18:05:33Z
+**User Input**: "hmm, based on the functional design and entities, it seems like we will need some changed to dependency injection, right? given that is it reasonable to override FR-11?"
+**AI Response**: "Clarified that internal DI implementation changes can be made without overriding FR-11 as long as route/handler call sites remain non-breaking during coexistence; recommended selecting a compatibility option that preserves external contracts rather than removing constraints."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Pre-release Refactor Strategy Clarification
+**Timestamp**: 2026-04-03T18:08:53Z
+**User Input**: "since we are pre-release, and all code that might be impacted (basically the services in soorma-core) are in scope, isn't it better to just refactor those services, if needed, instead of adding complexity with wrappers / adapters just for the sake of keeping backwards compatibility, when there is no external implementation relying on a stable contract?"
+**AI Response**: "Assessed that for pre-release and fully in-scope services, a direct refactor can be reasonable if explicitly approved as a requirement change; advised documenting FR-11 override decision and tightening regression coverage to manage cross-service risk without introducing unnecessary compatibility indirection."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Clarification Answer Confirmed
+**Timestamp**: 2026-04-03T18:10:05Z
+**User Input**: "yes, lets record answer with option D and rationale details"
+**AI Response**: "Recorded clarification answer as Option D with rationale details, updated NFR Q8 compatibility decision accordingly, and resumed NFR artifact generation with explicit FR-11 override traceability note."
+**Context**: CONSTRUCTION - NFR Requirements clarification resolved
+
+---
+
+## NFR Requirements - Answers Complete
+**Timestamp**: 2026-04-03T18:10:05Z
+**User Input**: "yes, lets record answer with option D and rationale details"
+**AI Response**: "Validated all NFR answers and generated NFR artifacts for uow-shared-auth-foundation: nfr-requirements.md and tech-stack-decisions.md."
+**Context**: CONSTRUCTION - NFR Requirements execution
+
+---
+
+## NFR Requirements - Approval Prompt
+**Timestamp**: 2026-04-03T18:10:05Z
+**User Input**: "yes, lets record answer with option D and rationale details"
+**AI Response**: "Prepared and presented the NFR Requirements completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - NFR Requirements approval gate
+
+---
+
+## NFR Requirements - Approval
+**Timestamp**: 2026-04-03T18:14:39Z
+**User Input**: "approved NFR requirements"
+**AI Response**: "Accepted NFR Requirements approval for uow-shared-auth-foundation and transitioned workflow to NFR Design stage."
+**Context**: CONSTRUCTION - NFR Requirements approval gate passed
+
+---
+
+## NFR Design - Planning Start
+**Timestamp**: 2026-04-03T18:14:39Z
+**User Input**: "approved NFR requirements"
+**AI Response**: "Started NFR Design planning and generated the NFR design plan with targeted clarifying questions for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Q1 Clarification
+**Timestamp**: 2026-04-03T18:16:28Z
+**User Input**: "help me understand q1 and its options"
+**AI Response**: "Explained Q1 trust-policy resilience pattern options (cache-aside TTL fail-closed, read-through fallback, two-level cache with staleness guard, direct source only) with tradeoffs and recommended option aligned to approved NFR resilience decision."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q2 Clarification
+**Timestamp**: 2026-04-03T18:17:52Z
+**User Input**: "help me understand q2 and its options"
+**AI Response**: "Explained Q2 observability tracing-boundary options from minimal dependency spans to full per-decision event-span correlation, with recommendation based on approved observability depth and security audit requirements."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q3 Clarification
+**Timestamp**: 2026-04-03T18:20:05Z
+**User Input**: "help me understand q3 and its options"
+**AI Response**: "Explained Q3 logical componenting options for profile-based performance validation support, from documentation-only approach to threshold modeling and runtime adaptation, with tradeoffs and recommendation aligned to open-core assumptions."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q3 Answer Confirmed
+**Timestamp**: 2026-04-03T18:21:37Z
+**User Input**: "ok, add answer as C with rationale"
+**AI Response**: "Updated Question 3 answer to option C with rationale emphasizing portable design, explicit guardrail threshold modeling, and controlled runtime complexity."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Clarification
+**Timestamp**: 2026-04-03T18:23:00Z
+**User Input**: "help me understand q5 and its options"
+**AI Response**: "Explained Q5 security-depth options for issuer pinning and replay resistance from basic allowlist checks to replay-store abstraction and anomaly-signal hooks, with recommendation based on selected NFR hardening depth."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Answer Confirmed
+**Timestamp**: 2026-04-03T18:24:22Z
+**User Input**: "yes, add C with rationale"
+**AI Response**: "Updated Question 5 answer to option C with rationale focused on practical replay resistance, explicit replay-store expiry policy design, and balanced security depth for this unit."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q7 Clarification
+**Timestamp**: 2026-04-03T18:24:42Z
+**User Input**: "help me understand q7 and its options"
+**AI Response**: "Explained Q7 logical component split options from monolithic auth dependency to decomposed validator/trust/observability/resilience components, with recommendation aligned to selected observability and resilience requirements."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q7 Answer Confirmed
+**Timestamp**: 2026-04-03T18:25:43Z
+**User Input**: "yes, add D with rationale"
+**AI Response**: "Updated Question 7 answer to option D with rationale emphasizing alignment to approved resilience and observability decisions plus clearer component-level separation for maintainability and testing."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---

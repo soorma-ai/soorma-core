@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Functional Design (Review Gate Pending)
+- **Current Stage**: CONSTRUCTION - NFR Design (Planning)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -39,8 +39,8 @@
 
 ### 🟢 CONSTRUCTION PHASE
 - [x] Construction Phase Initialization
-- [ ] Functional Design
-- [ ] NFR Requirements
+- [x] Functional Design
+- [x] NFR Requirements
 - [ ] NFR Design
 - [ ] Infrastructure Design
 - [ ] Code Generation
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Functional Design (Review Gate Pending) - uow-shared-auth-foundation
-- **Next Stage**: NFR Requirements (after explicit Functional Design approval)
-- **Status**: Awaiting user approval
+- **Current Stage**: NFR Design (Planning) - uow-shared-auth-foundation
+- **Next Stage**: NFR Design (answer collection and artifact generation)
+- **Status**: In progress
 
 ## Units Generation Status
 - [x] Units Planning - Completed
