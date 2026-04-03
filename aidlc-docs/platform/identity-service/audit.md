@@ -433,3 +433,143 @@ for tenant's identity service's users, following namespace convention is expecte
 **Context**: INCEPTION - Reverse Engineering start
 
 ---
+
+## Session Continuity - Construction Resume Request
+**Timestamp**: 2026-04-03T05:04:37Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-shared-auth-foundation\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Loaded mandatory architecture rules and AI-DLC rule files, then resumed session continuity checks and loaded required Inception artifacts in preparation for Construction kickoff."
+**Context**: Session continuity - resume request intake
+
+---
+
+## PR Checkpoint - Pending Approval Confirmation Prompt
+**Timestamp**: 2026-04-03T05:04:48Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-shared-auth-foundation\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Detected a pending Inception PR gate in aidlc-state.md, checked git evidence (current branch: dev, and dev appears in branches merged into main), and prepared to request explicit user confirmation before unlocking Construction."
+**Context**: PR checkpoint session-resume gate - approval confirmation required
+
+---
+
+## PR Checkpoint - Approval Confirmation
+**Timestamp**: 2026-04-03T05:07:13Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Accepted explicit Inception PR approval confirmation, updated PR checkpoint state to APPROVED, and unlocked Construction phase execution."
+**Context**: PR checkpoint gate passed
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-03T05:07:16Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-03T05:07:16Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-shared-auth-foundation)."
+**Context**: CONSTRUCTION - per-unit initialization
+
+---
+
+## Functional Design - Planning Start
+**Timestamp**: 2026-04-03T05:07:16Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Started Functional Design for unit uow-shared-auth-foundation and prepared the functional design plan/questions artifact for user answers."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Q4 Clarification
+**Timestamp**: 2026-04-03T05:15:29Z
+**User Input**: "for Q4, most of the use cases will require platform tenant id, service tenant id and service user. the principal will only be when we add support for platform tenant's developer / admin workflows and for extended / delegated JWT on behalf of the platform tenant, right?"
+**AI Response**: "Confirmed the tuple-first auth-context direction and updated Question 4 answer in the functional design plan to encode platform/service tenant-user tuple as primary context with principal fields as conditional/optional based on workflow type."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Clarification
+**Timestamp**: 2026-04-03T05:18:03Z
+**User Input**: "hmm for q5, why would we centralized any route authn/authz in the shared logic? wouldn't that be defined by each service for it's own routes / endpoints?"
+**AI Response**: "Confirmed service-owned route auth policy model and updated Question 5 answer to keep route-level authn/authz exceptions per-service while limiting shared logic to reusable context parsing/validation primitives and defaults."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Clarification
+**Timestamp**: 2026-04-03T05:22:10Z
+**User Input**: "i need help understanding q6 better. for delegated JWT claims that also have same service tenant id and service user id in the JWT claims, why would the business logic and any enforcement not be the same as if these were coming as headers from trusted tenant agent with valide JWT (for platform tenant id)?"
+**AI Response**: "Provided clarification on why structural validation should be centralized while trust-policy enforcement remains a hook: equal claim values do not imply equal trust provenance, so delegated assertions need issuer/flow-aware checks to prevent privilege confusion and preserve service-owned authorization policy boundaries."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Trust Policy Hook Example Request
+**Timestamp**: 2026-04-03T05:24:53Z
+**User Input**: "what is this \"trust policy hook contract\"? give me a concrete example to understand this better"
+**AI Response**: "Provided a concrete contract example with input/output model, route policy integration, and decision outcomes showing how shared auth dependencies perform structural validation while delegating provenance-based trust decisions through a pluggable policy hook."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Answer Confirmed
+**Timestamp**: 2026-04-03T05:28:17Z
+**User Input**: "yes, lets add this answer with rationale and details / definitions"
+**AI Response**: "Updated Question 6 answer in the functional design plan with option C and detailed trust-policy hook definitions, responsibilities, decision contract, fail-closed behavior, and provenance rationale."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q9 Clarification
+**Timestamp**: 2026-04-03T05:32:22Z
+**User Input**: "for Q9 why do we need any feature flag or environment flag? we support dual mode (with JWT being authoratative when present) and then remove the code / support for header when JWT implementation is complete. Is there value in controlling this with a feature / environment flag independent of code removal?"
+**AI Response**: "Confirmed the phase-by-phase code-evolution approach without runtime auth flags and updated Question 9 answer to no runtime feature/environment flag, with rationale about deterministic behavior and reduced operational drift."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q10 Clarification
+**Timestamp**: 2026-04-03T05:34:45Z
+**User Input**: "is the q10 about unit test coverage? if so then we need everything / full coverage"
+**AI Response**: "Confirmed Q10 as testability/coverage contract and updated Question 10 to comprehensive option D with explicit full-coverage expectation across unit, integration, coexistence regression, and failure-injection scenarios."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Answers Complete
+**Timestamp**: 2026-04-03T05:37:01Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated all functional-design plan answers as complete and non-ambiguous, then generated functional-design artifacts: business-logic-model.md, business-rules.md, and domain-entities.md for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Functional Design execution
+
+---
+
+## Functional Design - Approval Prompt
+**Timestamp**: 2026-04-03T05:37:01Z
+**User Input**: "all answers provided"
+**AI Response**: "Prepared and presented the Functional Design completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - Functional Design approval gate
+
+---
