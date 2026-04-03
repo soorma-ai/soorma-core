@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - NFR Design (Review Gate Pending)
+- **Current Stage**: CONSTRUCTION - Infrastructure Design (Planning)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -41,7 +41,7 @@
 - [x] Construction Phase Initialization
 - [x] Functional Design
 - [x] NFR Requirements
-- [ ] NFR Design
+- [x] NFR Design
 - [ ] Infrastructure Design
 - [ ] Code Generation
 - [ ] Build and Test
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: NFR Design (Review Gate Pending) - uow-shared-auth-foundation
-- **Next Stage**: Infrastructure Design (after explicit NFR Design approval)
-- **Status**: Awaiting user approval
+- **Current Stage**: Infrastructure Design (Planning) - uow-shared-auth-foundation
+- **Next Stage**: Infrastructure Design (answer collection and artifact generation)
+- **Status**: In progress
 
 ## Units Generation Status
 - [x] Units Planning - Completed

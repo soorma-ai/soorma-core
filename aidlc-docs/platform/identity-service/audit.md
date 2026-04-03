@@ -781,3 +781,67 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - NFR Design approval gate
 
 ---
+
+## NFR Design - Approval
+**Timestamp**: 2026-04-03T22:15:50Z
+**User Input**: "NFR design approved"
+**AI Response**: "Accepted NFR Design approval for uow-shared-auth-foundation and transitioned workflow to Infrastructure Design stage."
+**Context**: CONSTRUCTION - NFR Design approval gate passed
+
+---
+
+## Infrastructure Design - Planning Start
+**Timestamp**: 2026-04-03T22:15:50Z
+**User Input**: "NFR design approved"
+**AI Response**: "Started Infrastructure Design planning and generated the infrastructure-design plan with targeted clarifying questions for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Q1 Clarification
+**Timestamp**: 2026-04-03T22:18:41Z
+**User Input**: "for Q1, what is the benefit for choosing D over B? will it result in overengineering, without knowing adoption and which clouds will get used? or is it about making the design generic and interoperable with all clouds regardless of choice?"
+**AI Response**: "Explained D vs B tradeoff and recommended B for this open-core stage: provider-neutral cloud-ready baseline with optional provider mappings, avoiding premature multi-cloud operational complexity until concrete adoption requires it."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q1 Answer Confirmed
+**Timestamp**: 2026-04-03T22:19:45Z
+**User Input**: "yes add answer"
+**AI Response**: "Updated Infrastructure Design Question 1 to option B with rationale emphasizing provider-neutral portability and avoidance of premature multi-cloud complexity."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q2 Clarification
+**Timestamp**: 2026-04-03T22:21:31Z
+**User Input**: "for q2, what is the value of persistence? is this not something that will get initiatized as part of service startup everytime? or is this something decoupled from service code / logic?"
+**AI Response**: "Clarified persistence value for trust-policy and replay state: startup initialization cannot preserve distributed consistency or replay protection across restarts/instances; durable state is an infrastructure concern decoupled from runtime process memory and improves correctness and security under scale/failover."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q2 Answer Confirmed
+**Timestamp**: 2026-04-03T22:23:29Z
+**User Input**: "lets add answer with rationale to choose B, we can adopt shared cache as future enhancement if/when need arises"
+**AI Response**: "Updated Infrastructure Design Question 2 to option B with rationale for durable baseline simplicity and explicit future path to shared-cache enhancement when scale or latency needs require it."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q3 Clarification
+**Timestamp**: 2026-04-03T22:25:48Z
+**User Input**: "help me understand q3 and its options. if this is about deployment model, it will likely be serverless to begin with (e.g. GCP cloudrun, AWS ECS) with option to move to k8s later. is that what option B about?"
+**AI Response**: "Clarified that Cloud Run/ECS are containerized deployment models (option B/C territory depending on sidecar usage), while option D typically means function-style serverless baseline; recommended choosing B or X with explicit 'container-serverless baseline now, k8s later' wording."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q3 Answer Confirmed
+**Timestamp**: 2026-04-03T22:26:49Z
+**User Input**: "yes, add answer with rationale"
+**AI Response**: "Updated Infrastructure Design Question 3 with explicit container-serverless baseline (Cloud Run/ECS-style) and rationale, including future Kubernetes migration path when justified by scale/operations."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
