@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation Review (uow-shared-auth-foundation correction pass)
+- **Current Stage**: CONSTRUCTION - Functional Design Review (uow-identity-core-domain)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation (Correction pass complete; review gate pending) - uow-shared-auth-foundation
-- **Next Stage**: Functional Design Planning - uow-identity-core-domain
-- **Status**: Awaiting user approval to re-close unit-1 after correction pass
+- **Current Stage**: Functional Design Review - uow-identity-core-domain
+- **Next Stage**: NFR Requirements Planning - uow-identity-core-domain
+- **Status**: Awaiting user approval for functional design artifacts in construction/uow-identity-core-domain/functional-design/
 
 ## Units Generation Status
 - [x] Units Planning - Completed

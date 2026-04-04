@@ -26,6 +26,78 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Functional Design - Q5 Clarification
+**Timestamp**: 2026-04-04T22:11:41Z
+**User Input**: "help me understand q5 and its options"
+**AI Response**: "Explained Q5 collision-handling options for external principal mapping policies by comparing strict-reject, last-writer-wins, and tenant-configurable deterministic merge behavior, including identity integrity, operational safety, and auditability trade-offs."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-04T22:10:16Z
+**User Input**: "yes, record answer with rationale"
+**AI Response**: "Recorded Question 4 as option B with rationale aligned to FR-11 incremental rollout, day-1 platform operability, delegated-issuer policy gating, and deferred full issuance matrix until later integration/cutover units complete."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q4 Clarification
+**Timestamp**: 2026-04-04T22:08:15Z
+**User Input**: "for Q4, what does SDK JET inegration mean? also based on discussions so far, what option is reasonable?"
+**AI Response**: "Clarified that SDK JWT integration refers to FR-11 phase 2 where SDK wrappers/clients start sending JWT-authenticated requests while preserving existing handler/router usage patterns. Recommended Option B for this unit: allow platform-principal issuance on trusted existing call paths and gate delegated issuance behind registered issuer policy controls; avoid full issuance matrix until later units complete integration and hardening."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Day-1 Dependency Clarification
+**Timestamp**: 2026-04-04T22:03:24Z
+**User Input**: "will option C result in some day 1 dependency for platform tenant to get operational? or can they still get operational on day 1 using out of the box soorma-core platform without any setup / build on their side?"
+**AI Response**: "Clarified that option C does not have to block day-1 operation if platform-managed defaults are provided. Tenant can be operational out-of-box using platform principals and baseline issuance immediately, while delegated issuer policy fields can default to safe templates and remain optional until delegated external identity flows are enabled."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Clarification
+**Timestamp**: 2026-04-04T22:00:18Z
+**User Input**: "help me understand q3 and its options"
+**AI Response**: "Explained Q3 delegated issuer registration options by comparing minimum identity-only registration, key-material plus lifecycle metadata, and policy-bound registration with audience and claim-mapping references, including security/operational trade-offs and recommendation for v1." 
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-04T22:05:00Z
+**User Input**: "ok, lets record the answer with this day-1 rationale detail"
+**AI Response**: "Recorded Question 3 as option C with explicit day-1 rationale: platform tenants can be operational out-of-box using baseline platform-principal flows while delegated issuer policy controls remain opt-in with safe platform-managed defaults."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q2 Answer Recorded
+**Timestamp**: 2026-04-04T21:57:14Z
+**User Input**: "yes, record answer with rationale details"
+**AI Response**: "Recorded Question 2 as option C (hybrid) with rationale that soorma-core enforces fixed platform roles for core authorization while tenant-defined namespaced roles are permitted for delegated/tenant-owned access control domains, with no implicit privilege mapping and explicit deny-by-default policy constraints."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q2 Clarification
+**Timestamp**: 2026-04-04T21:55:44Z
+**User Input**: "for q2, what is the value of allowing tenant defined role extensions? is that for delegated JWT? as far as soorma-core itself is concerned, it will only check for the roles defined by the soorma-core platform, and any tenant defined roled would likely be part of extended JWT claims in delegated flow and not used by soorma-core services itself, can be used by the tenant's own services and agents for their tenant specific access control based on those custom roles."
+**AI Response**: "Clarified that tenant-defined role extensions are primarily for delegated/custom tenant workflows and should not expand soorma-core authorization semantics by default. Recommended a hybrid model where soorma-core enforces a fixed platform role baseline while tenant-specific roles are namespaced metadata/claims for delegated tenant services unless explicitly mapped by policy for specific routes."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q1 Answer Recorded
+**Timestamp**: 2026-04-04T21:50:24Z
+**User Input**: "ok, lets record the answer with rationale and appropriate details"
+**AI Response**: "Recorded Question 1 answer in the functional-design plan as Option X with detailed transaction boundary, onboarding authority model, post-bootstrap principal lifecycle flow, deployment-time bootstrap stance, and explicit rationale aligned to FR-1/FR-4 and fail-closed incremental delivery."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
 ## Session Continuity - Resume Request
 **Timestamp**: 2026-04-04T06:07:13Z
 **User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
@@ -1107,5 +1179,207 @@ end-to-end without my confirmation at each gate."
 **User Input**: "answered"
 **AI Response**: "Prepared and presented the Infrastructure Design completion review gate with standardized Request Changes / Continue to Next Stage options."
 **Context**: CONSTRUCTION - Infrastructure Design approval gate
+
+---
+
+## Construction Resume Request
+**Timestamp**: 2026-04-04T07:15:08Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Accepted resume intent for identity-service and began session continuity handling for Construction on uow-identity-core-domain with explicit approval-gate mode."
+**Context**: CONSTRUCTION - resume intake
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-04T07:15:09Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-04T07:15:10Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-identity-core-domain)."
+**Context**: CONSTRUCTION - per-unit initialization
+
+---
+
+## Session Continuity - Inception Artifacts Load
+**Timestamp**: 2026-04-04T07:15:11Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Loaded all inception artifacts for identity-service initiative (45 files across reverse-engineering, requirements, user-stories, application-design, plans, jira-tickets, and test-cases) to establish full construction context."
+**Context**: CONSTRUCTION - session continuity artifact loading
+
+---
+
+## Functional Design - Resume Status
+**Timestamp**: 2026-04-04T07:15:12Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed Functional Design planning for uow-identity-core-domain using existing plan artifact and detected pending unanswered [Answer] tags requiring user input before artifact generation can continue."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Q1 Clarification
+**Timestamp**: 2026-04-04T21:37:45Z
+**User Input**: "help me understand q1 and it's options."
+**AI Response**: "Explained Q1 onboarding transaction boundary options (single transaction, two-step, saga), including consistency/failure trade-offs and guidance on when each fits this unit's incremental delivery strategy."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q1 Follow-up Clarification
+**Timestamp**: 2026-04-04T21:43:02Z
+**User Input**: "hmm, I'm thinking that tenant domain and one admin should be single transaction, and then let the admin (authenticated) handle adding other principals (users and machines) as per their need. will that work? or do we need to bootstrap all (tenants, admins, principals) as part of startup / deployment of new soorma-core solution?"
+**AI Response**: "Confirmed the proposed model works and is preferred for v1: create tenant domain plus one bootstrap admin atomically, then require authenticated admin-driven lifecycle APIs for additional principals. Clarified that full principal bootstrap during platform startup/deployment is not required and is generally discouraged except for optional seed/demo profiles."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Onboarding Authority Clarification
+**Timestamp**: 2026-04-04T21:48:24Z
+**User Input**: "ok, before we record that answer, i'm assuming this is about bootstrapping a new platform tenant and their first admin. but, what about multi-tenancy of soorma-core itself, do we need to add some super-user for soorma-core who will be authorized for onboarding / bootstrapping these platform tenants? or will these be self-service (i.e. each platform admin will self onboard their tenant on soorma-core)?"
+**AI Response**: "Clarified onboarding authority model: do not bootstrap all tenants/principals at deployment; onboarding is a runtime flow. A root trust path is still required to create a new platform tenant boundary, which can be implemented as operator-admin authorization or controlled self-service via signed invite/claim token. Recommended v1 default: operator-admin (or equivalent control-plane authority) creates tenant + first admin atomically, then tenant admin self-manages remaining principals."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Deterministic Merge Suggestion
+**Timestamp**: 2026-04-04T22:14:34Z
+**User Input**: "yes, suggest"
+**AI Response**: "Provided a concrete deterministic merge-policy template for Q5 rationale: reject by default, allow optional explicit merge mode with deterministic precedence rules, immutable binding constraints for high-risk principals, and mandatory audit/change-review controls."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Answer Recorded
+**Timestamp**: 2026-04-04T22:17:18Z
+**User Input**: "yes, record with rationale"
+**AI Response**: "Recorded Question 5 as option C with rationale: reject-by-default collision handling, optional deterministic merge for bounded contexts, explicit precedence rules, no silent canonical remap, and mandatory admin-override plus structured audit controls."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q5 Documentation Clarification
+**Timestamp**: 2026-04-04T22:18:34Z
+**User Input**: "what about the recommended merge policy template? how do we record / document that?"
+**AI Response**: "Documented the deterministic merge policy template directly in the functional-design plan under Question 5 rationale, including default mode, opt-in merge mode, scope and principal guards, precedence rules, remap safety, and required collision-resolution audit event schema expectations."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Concepts Clarification
+**Timestamp**: 2026-04-04T22:23:55Z
+**User Input**: "i want to understand the concepts / terms in q5 discussion. for example, what is \"binding\"? what is identity mapping? if soorma-core identity owns principals, then why would there is any collisions, or is this about delegated use case? how does that delegated use case works and why would there be a collision? are platform tenants being allowed to register multiple issuers who can define different service tenant user with same identity and that's the possibility for collision?"
+**AI Response**: "Clarified key terms and mechanics: binding is the persisted association between an external asserted identity key and a canonical principal; identity mapping is the normalization rule that computes canonical identity from external claims. Explained collisions mainly arise in delegated issuer scenarios (including multi-issuer-per-tenant possibilities), where different assertions can compete for the same canonical principal or remap an existing external key, requiring deterministic policy and audit controls."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Reference Documentation Added
+**Timestamp**: 2026-04-04T22:28:05Z
+**User Input**: "yes, add documentation to help with understand and reference later."
+**AI Response**: "Added reusable Q5 reference documentation directly in the functional-design plan: glossary definitions (identity mapping, binding, canonical key, collision), delegated flow context, concrete collision scenarios, and expected handling summary for downstream functional design and code generation stages."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Recommendation Clarification
+**Timestamp**: 2026-04-04T22:31:30Z
+**User Input**: "for q6, based on discussions so far, is option A still recommended?"
+**AI Response**: "Confirmed option A remains the best fit: domain-specific typed error codes with stable HTTP mapping support fail-closed behavior, predictable client handling, and safe non-sensitive error responses required by the initiative's NFR/security constraints."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q8 Implementation Scope Clarification
+**Timestamp**: 2026-04-04T22:35:40Z
+**User Input**: "for q8, if we choose anything other than full (option C), then this unit will not have a functioning identity service, right? will that require another unit of work for concrete implementation?"
+**AI Response**: "Clarified that option C is not required for a functioning identity service in this unit. Option B (domain model plus repository contracts) is sufficient to implement concrete behavior in the same unit while deferring deep schema-level details to code/infrastructure artifacts as needed. Option A may increase implementation ambiguity and risk but does not inherently force a new unit if existing persistence contracts are already stable."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Answers Submitted
+**Timestamp**: 2026-04-04T22:40:20Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Accepted completion of functional-design plan answers for uow-identity-core-domain and started Step 5 answer validation and ambiguity check."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Answers Validation Complete
+**Timestamp**: 2026-04-04T22:40:22Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Validated answers for Questions 1-10; no contradictions or blocking ambiguities detected."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Artifact Generation Complete
+**Timestamp**: 2026-04-04T22:40:23Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Generated functional-design artifacts for uow-identity-core-domain: business-logic-model.md, business-rules.md, and domain-entities.md; updated plan checkboxes for steps 5-6."
+**Context**: CONSTRUCTION - Functional Design execution
+
+---
+
+## Functional Design - Review Gate Presented
+**Timestamp**: 2026-04-04T22:40:24Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Updated plan checkbox for Step 7, updated aidlc-state current status to Functional Design review pending approval, and presented standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - Functional Design approval gate
 
 ---
