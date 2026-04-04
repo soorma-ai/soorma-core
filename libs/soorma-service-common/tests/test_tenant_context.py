@@ -7,7 +7,11 @@ They MUST fail with NotImplementedError until implementations are complete.
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from soorma_service_common.tenant_context import TenantContext, create_get_tenant_context
+from soorma_service_common.tenant_context import (
+    TenantContext,
+    create_get_tenant_context,
+    to_canonical_auth_context,
+)
 
 
 class TestTenantContextDataclass:
@@ -122,3 +126,53 @@ class TestCreateGetTenantContext:
 
         ctx = await get_tenant_context(req, mock_async_session)
         assert ctx.db is mock_async_session
+
+    @pytest.mark.asyncio
+    async def test_tenant_context_carries_auth_metadata(
+        self, make_mock_request, mock_async_session
+    ):
+        """Auth metadata is propagated from request.state when available."""
+
+        async def mock_get_tenanted_db():
+            yield mock_async_session
+
+        get_tenant_context = create_get_tenant_context(mock_get_tenanted_db)
+        req = make_mock_request(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+        )
+        req.state.principal_id = "principal-1"
+        req.state.principal_type = "machine"
+        req.state.roles = ["worker"]
+        req.state.auth_issuer = "soorma-identity"
+        req.state.auth_audience = "soorma-services"
+        req.state.auth_source = "jwt"
+        req.headers = {"X-Correlation-ID": "corr-1"}
+
+        ctx = await get_tenant_context(req, mock_async_session)
+        assert ctx.principal_id == "principal-1"
+        assert ctx.principal_type == "machine"
+        assert ctx.roles == ["worker"]
+        assert ctx.issuer == "soorma-identity"
+        assert ctx.audience == "soorma-services"
+        assert ctx.auth_source == "jwt"
+        assert ctx.correlation_id == "corr-1"
+
+
+class TestCanonicalAuthContext:
+    """Conversion from TenantContext to CanonicalAuthContext."""
+
+    def test_to_canonical_auth_context_sets_delegated_flag(self, mock_async_session):
+        """Delegated flag is true when tenant and user tuple is present."""
+        context = TenantContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            db=mock_async_session,
+            auth_source="jwt",
+        )
+
+        canonical = to_canonical_auth_context(context)
+        assert canonical.delegated_claims_present is True
+        assert canonical.auth_source == "jwt"

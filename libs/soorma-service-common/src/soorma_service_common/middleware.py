@@ -48,7 +48,7 @@ class TenancyMiddleware(BaseHTTPMiddleware):
             return None
         return auth_value[len(_BEARER_PREFIX):].strip() or None
 
-    def _resolve_identity_from_jwt(self, token: str) -> tuple[str, str | None, str | None]:
+    def _resolve_identity_from_jwt(self, token: str) -> tuple[str, str | None, str | None, str | None, str | None, list[str], str | None, str | None]:
         """Resolve platform/service identity tuple from JWT claims.
 
         JWT is authoritative when present; callers must never fall back to headers
@@ -92,7 +92,23 @@ class TenancyMiddleware(BaseHTTPMiddleware):
         service_tenant_id = str(service_tenant).strip() if service_tenant is not None else None
         service_user_id = str(service_user).strip() if service_user is not None else None
 
-        return platform_tenant_id, service_tenant_id or None, service_user_id or None
+        principal_id = str(claims.get("principal_id") or "").strip() or None
+        principal_type = str(claims.get("principal_type") or "").strip() or None
+        raw_roles = claims.get("roles") or []
+        roles = [str(role).strip() for role in raw_roles if str(role).strip()]
+        claim_issuer = str(claims.get("iss") or "").strip() or issuer
+        claim_audience = str(claims.get("aud") or "").strip() or audience
+
+        return (
+            platform_tenant_id,
+            service_tenant_id or None,
+            service_user_id or None,
+            principal_id,
+            principal_type,
+            roles,
+            claim_issuer,
+            claim_audience,
+        )
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
@@ -115,7 +131,13 @@ class TenancyMiddleware(BaseHTTPMiddleware):
                     request.state.platform_tenant_id,
                     request.state.service_tenant_id,
                     request.state.service_user_id,
+                    request.state.principal_id,
+                    request.state.principal_type,
+                    request.state.roles,
+                    request.state.auth_issuer,
+                    request.state.auth_audience,
                 ) = self._resolve_identity_from_jwt(bearer_token)
+                request.state.auth_source = "jwt"
             except HTTPException as exc:
                 return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
         else:
@@ -124,5 +146,11 @@ class TenancyMiddleware(BaseHTTPMiddleware):
             )
             request.state.service_tenant_id = request.headers.get("x-service-tenant-id") or None
             request.state.service_user_id = request.headers.get("x-user-id") or None
+            request.state.principal_id = None
+            request.state.principal_type = None
+            request.state.roles = []
+            request.state.auth_issuer = None
+            request.state.auth_audience = None
+            request.state.auth_source = "legacy-header"
 
         return await call_next(request)

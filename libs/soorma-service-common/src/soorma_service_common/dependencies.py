@@ -11,7 +11,13 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .tenant_context import TenantContext
+from .tenant_context import (
+    CanonicalAuthContext,
+    RouteAuthPolicy,
+    TenantContext,
+    TrustDecision,
+    to_canonical_auth_context,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -21,6 +27,7 @@ USER_IDENTITY_REQUIRED_MESSAGE = "Missing required user identity context"
 BOTH_IDENTITIES_REQUIRED_MESSAGE = (
     "Missing required tenant and user identity context"
 )
+INVALID_DELEGATED_CONTEXT_MESSAGE = "Invalid delegated identity context"
 
 
 def _is_blank(value: Optional[str]) -> bool:
@@ -158,6 +165,107 @@ def create_require_user_context_dependency(
         )
 
     return require_user_tenant_context
+
+
+TrustPolicyHook = Callable[[CanonicalAuthContext, RouteAuthPolicy], TrustDecision]
+
+
+def validate_delegated_context_structure(context: CanonicalAuthContext) -> None:
+    """Validate delegated tuple structure for canonical context.
+
+    Delegated context is valid when both service_tenant_id and service_user_id are
+    present and non-blank, or when both are absent.
+    """
+    tenant_present = not _is_blank(context.service_tenant_id)
+    user_present = not _is_blank(context.service_user_id)
+    if tenant_present == user_present:
+        return
+    raise HTTPException(status_code=401, detail=INVALID_DELEGATED_CONTEXT_MESSAGE)
+
+
+def default_trust_policy_hook(
+    context: CanonicalAuthContext,
+    policy: RouteAuthPolicy,
+) -> TrustDecision:
+    """Default trust-policy decision for coexistence phase.
+
+    - Header-based/internal flows are trusted by default.
+    - JWT delegated flows require route policy to allow delegated context.
+    - Optional issuer allowlist is enforced when configured.
+    """
+    delegated = bool(context.delegated_claims_present) and (
+        (context.auth_source or "").strip().lower() == "jwt"
+    )
+    source = (context.auth_source or "legacy-header").strip().lower()
+
+    if delegated and not policy.allow_delegated_context:
+        return TrustDecision(
+            allowed=False,
+            provenance="denied",
+            reason="delegated_context_not_allowed",
+            policy_id=policy.route_id,
+        )
+
+    if delegated and policy.allowed_issuers:
+        issuer = (context.issuer or "").strip()
+        if issuer not in policy.allowed_issuers:
+            return TrustDecision(
+                allowed=False,
+                provenance="denied",
+                reason="issuer_not_allowed",
+                policy_id=policy.route_id,
+            )
+
+    flow = "delegated_issuer" if source == "jwt" and delegated else "internal_agent"
+    if policy.allowed_flows and flow not in policy.allowed_flows:
+        return TrustDecision(
+            allowed=False,
+            provenance="denied",
+            reason="flow_not_allowed",
+            policy_id=policy.route_id,
+        )
+
+    provenance = "trusted_delegated" if flow == "delegated_issuer" else "trusted_internal"
+    return TrustDecision(
+        allowed=True,
+        provenance=provenance,
+        reason="allowed",
+        policy_id=policy.route_id,
+    )
+
+
+def evaluate_trust_policy(
+    context: CanonicalAuthContext,
+    policy: RouteAuthPolicy,
+    trust_policy_hook: Optional[TrustPolicyHook] = None,
+) -> TrustDecision:
+    """Evaluate trust policy and enforce fail-closed behavior."""
+    validate_delegated_context_structure(context)
+    decision = (trust_policy_hook or default_trust_policy_hook)(context, policy)
+    if not decision.allowed:
+        raise HTTPException(status_code=403, detail="Trust policy denied")
+    return decision
+
+
+def create_trust_guard_dependency(
+    get_tenant_context: Callable,
+    route_policy: RouteAuthPolicy,
+    *,
+    trust_policy_hook: Optional[TrustPolicyHook] = None,
+) -> Callable:
+    """Create a dependency that enforces trust policy for a route."""
+
+    def require_trusted_context(
+        request: Request,
+        context: TenantContext = Depends(get_tenant_context),
+    ) -> TenantContext:
+        canonical = to_canonical_auth_context(context)
+        decision = evaluate_trust_policy(canonical, route_policy, trust_policy_hook)
+        request.state.auth_provenance = decision.provenance
+        request.state.trust_decision_reason = decision.reason
+        return context
+
+    return require_trusted_context
 
 
 async def _set_config_dim(db: AsyncSession, key: str, value: str) -> None:

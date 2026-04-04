@@ -11,4 +11,16 @@ Event Service Authentication Model (v0.7.x):
 
 from soorma_service_common import get_platform_tenant_id  # noqa: F401
 
-__all__ = ["get_platform_tenant_id"]
+from soorma_service_common import RouteAuthPolicy  # noqa: F401
+
+
+default_event_route_policy = RouteAuthPolicy(
+  route_id="event-service.default",
+  auth_required=True,
+  allow_delegated_context=False,
+)
+
+__all__ = [
+  "get_platform_tenant_id",
+  "default_event_route_policy",
+]
