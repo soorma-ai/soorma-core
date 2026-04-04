@@ -101,3 +101,76 @@ class TestTenancyMiddlewareNoDbCall:
         # dispatch(self, request, call_next) — no db parameter
         assert "db" not in param_names
         assert "session" not in param_names
+
+
+class TestTenancyMiddlewareJwtCoexistence:
+    """JWT precedence and coexistence behavior for middleware identity extraction."""
+
+    def test_jwt_present_uses_jwt_identity_over_headers(self, make_test_app, monkeypatch):
+        """When JWT is present and valid, JWT claims override conflicting headers."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_jwt",
+                "service_tenant_id": "tenant_jwt",
+                "service_user_id": "user_jwt",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Tenant-ID": "spt_header",
+                "X-Service-Tenant-ID": "tenant_header",
+                "X-User-ID": "user_header",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["platform_tenant_id"] == "spt_jwt"
+        assert response.json()["service_tenant_id"] == "tenant_jwt"
+        assert response.json()["service_user_id"] == "user_jwt"
+
+    def test_invalid_jwt_fails_no_header_fallback(self, make_test_app, monkeypatch):
+        """Invalid JWT must fail closed and never fall back to headers."""
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": "Bearer not-a-valid-token",
+                "X-Tenant-ID": "spt_header",
+                "X-Service-Tenant-ID": "tenant_header",
+                "X-User-ID": "user_header",
+            },
+        )
+        assert response.status_code == 401
+
+    def test_no_jwt_uses_legacy_headers(self, make_test_app):
+        """If JWT is absent, middleware must continue legacy header path."""
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "X-Tenant-ID": "spt_header",
+                "X-Service-Tenant-ID": "tenant_header",
+                "X-User-ID": "user_header",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["platform_tenant_id"] == "spt_header"
+        assert response.json()["service_tenant_id"] == "tenant_header"
+        assert response.json()["service_user_id"] == "user_header"

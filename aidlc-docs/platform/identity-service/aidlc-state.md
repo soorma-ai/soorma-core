@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation (Part 1 Planning Pending Approval)
+- **Current Stage**: CONSTRUCTION - Functional Design Planning (uow-identity-core-domain)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -43,7 +43,7 @@
 - [x] NFR Requirements
 - [x] NFR Design
 - [x] Infrastructure Design
-- [ ] Code Generation
+- [x] Code Generation
 - [ ] Build and Test
 
 ### 🟡 OPERATIONS PHASE
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation (Part 1 Planning) - uow-shared-auth-foundation
-- **Next Stage**: Code Generation (Part 2 Generation after plan approval)
-- **Status**: Awaiting user approval of code generation plan
+- **Current Stage**: Functional Design (Part 1 Planning) - uow-identity-core-domain
+- **Next Stage**: Functional Design (Part 2 Generation after plan answers/approval)
+- **Status**: Awaiting user responses for functional design planning questions
 
 ## Units Generation Status
 - [x] Units Planning - Completed

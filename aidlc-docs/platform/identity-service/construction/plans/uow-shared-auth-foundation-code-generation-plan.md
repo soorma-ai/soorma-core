@@ -52,14 +52,14 @@
 - [x] Step 4 - Define implementation slices and test strategy with STUB -> RED -> GREEN -> REFACTOR.
 - [x] Step 5 - Generate this code generation plan artifact.
 - [x] Step 6 - Record approval prompt in audit.md and request user approval for this plan.
-- [ ] Step 7 - STUB phase: add/adjust shared auth contract scaffolding and placeholder logic where needed.
-- [ ] Step 8 - RED phase: write/adjust tests for real expected JWT precedence, trust hook gating, and fail-closed behavior (failing for correct reasons).
-- [ ] Step 9 - GREEN phase: implement JWT/header coexistence logic, canonical context normalization, and error semantics to satisfy tests.
-- [ ] Step 10 - REFACTOR phase: clean up duplication, align imports/contracts, and verify architecture constraints remain intact.
-- [ ] Step 11 - Execute focused test suites for shared library and affected services.
-- [ ] Step 12 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/code/code-generation-summary.md.
-- [ ] Step 13 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
-- [ ] Step 14 - On approval, update aidlc-state.md and audit.md, then transition to next stage.
+- [x] Step 7 - STUB phase: add/adjust shared auth contract scaffolding and placeholder logic where needed.
+- [x] Step 8 - RED phase: write/adjust tests for real expected JWT precedence, trust hook gating, and fail-closed behavior (failing for correct reasons).
+- [x] Step 9 - GREEN phase: implement JWT/header coexistence logic, canonical context normalization, and error semantics to satisfy tests.
+- [x] Step 10 - REFACTOR phase: clean up duplication, align imports/contracts, and verify architecture constraints remain intact.
+- [x] Step 11 - Execute focused test suites for shared library and affected services.
+- [x] Step 12 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/code/code-generation-summary.md.
+- [x] Step 13 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
+- [x] Step 14 - On approval, update aidlc-state.md and audit.md, then transition to next stage.
 
 ## Step 7-10 Detailed Scope
 1. Shared auth contract layer:
