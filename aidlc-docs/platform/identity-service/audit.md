@@ -1439,3 +1439,107 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - NFR Requirements approval gate
 
 ---
+
+## NFR Requirements Approval
+**Timestamp**: 2026-04-04T23:32:09Z
+**User Input**: "NFR requirements approved"
+**AI Response**: "Accepted NFR Requirements approval for uow-identity-core-domain and advanced to NFR Design stage."
+**Context**: CONSTRUCTION - NFR Requirements approval gate passed
+
+---
+
+## NFR Design - Planning Start
+**Timestamp**: 2026-04-04T23:32:10Z
+**User Input**: "NFR requirements approved"
+**AI Response**: "Started NFR Design planning for uow-identity-core-domain using approved NFR requirements artifacts and generated a context-appropriate NFR design plan file."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Questions Presented
+**Timestamp**: 2026-04-04T23:32:11Z
+**User Input**: "NFR requirements approved"
+**AI Response**: "Presented NFR design question plan for user completion at construction/plans/uow-identity-core-domain-nfr-design-plan.md and paused for answers before NFR design artifact generation."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Q2 Clarification
+**Timestamp**: 2026-04-04T23:36:23Z
+**User Input**: "help me understand options for q2"
+**AI Response**: "Explained Q2 key-rotation propagation options by comparing atomic pointer swap, event-driven invalidation, hybrid swap+event model, and polling, including consistency-latency trade-offs and recommendation aligned to immediate-effect rotation requirement."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Shared-Auth Q3 Confirmation
+**Timestamp**: 2026-04-04T23:38:00Z
+**User Input**: "did we already answer q3 in uow-shared-auth-foundation"
+**AI Response**: "Confirmed yes. In uow-shared-auth-foundation NFR design plan, Question 3 is already answered as option C with rationale (policy-driven guardrail thresholds object without runtime adaptive behavior assumptions)."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Clarification
+**Timestamp**: 2026-04-04T23:39:56Z
+**User Input**: "help me undertand q5 options"
+**AI Response**: "Explained Q5 collision-handling component-pattern options by comparing inline checks, dedicated evaluator, evaluator plus override-gateway, and simulation-capable design; highlighted control-depth vs complexity trade-offs and recommendation aligned to prior collision-policy decisions."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q7 Prior-Answer Clarification
+**Timestamp**: 2026-04-04T23:45:59Z
+**User Input**: "i thnk we have already answered q7, either in this unit or previous uow-shared-auth-foundation"
+**AI Response**: "Confirmed current unit Q7 is still unanswered in uow-identity-core-domain NFR design plan. Clarified that previous unit's Q7 was a different question (component split), so it cannot be reused directly; however, rollout-gate intent can be aligned with already approved NFR requirements baseline for this unit."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Stage Purpose Clarification
+**Timestamp**: 2026-04-04T23:47:02Z
+**User Input**: "if we already approved NFR requirements, then why do we have these questions again?"
+**AI Response**: "Explained stage intent separation: NFR Requirements sets target outcomes (what quality constraints must hold), while NFR Design defines concrete design patterns/components to realize those constraints (how they will be implemented). Confirmed repeated themes can be inherited to reduce rework, and only unresolved implementation-pattern choices should require fresh answers."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Answer Prefill Requested
+**Timestamp**: 2026-04-04T23:48:05Z
+**User Input**: "yes please"
+**AI Response**: "Prefilled remaining unanswered NFR design responses in the current unit plan using inherited approved decisions and consistency defaults: Q7 set to B and Q8 set to D."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Answers Submitted
+**Timestamp**: 2026-04-04T23:49:07Z
+**User Input**: "all answers provided"
+**AI Response**: "Accepted completion of NFR design plan answers for uow-identity-core-domain and started answer validation and ambiguity checks."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Answers Validation Complete
+**Timestamp**: 2026-04-04T23:49:08Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated answers for Questions 1-8; inherited-strategy responses were resolved against approved shared-auth foundation and current-unit NFR requirements artifacts with no blocking contradictions detected."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Artifact Generation Complete
+**Timestamp**: 2026-04-04T23:49:09Z
+**User Input**: "all answers provided"
+**AI Response**: "Generated NFR design artifacts for uow-identity-core-domain: nfr-design-patterns.md and logical-components.md; updated plan checkboxes for steps 4-5."
+**Context**: CONSTRUCTION - NFR Design execution
+
+---
+
+## NFR Design - Review Gate Presented
+**Timestamp**: 2026-04-04T23:49:10Z
+**User Input**: "all answers provided"
+**AI Response**: "Updated plan checkbox for Step 6, updated aidlc-state current status to NFR Design review pending approval, and presented standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - NFR Design approval gate
+
+---
