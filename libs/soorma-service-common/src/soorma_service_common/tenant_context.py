@@ -4,7 +4,7 @@ TenantContext dataclass and dependency factory for bundle injection.
 Combining all three identity dimensions with an RLS-activated DB session
 into a single Depends() reduces boilerplate across Memory and Tracker routes.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from fastapi import Depends, Request
@@ -31,6 +31,76 @@ class TenantContext:
     service_tenant_id: Optional[str]
     service_user_id: Optional[str]
     db: AsyncSession
+    principal_id: Optional[str] = None
+    principal_type: Optional[str] = None
+    roles: list[str] = field(default_factory=list)
+    issuer: Optional[str] = None
+    audience: Optional[str] = None
+    auth_source: Optional[str] = None
+    correlation_id: Optional[str] = None
+
+
+@dataclass
+class CanonicalAuthContext:
+    """Canonical auth context used for trust-policy evaluation."""
+
+    platform_tenant_id: str
+    service_tenant_id: Optional[str]
+    service_user_id: Optional[str]
+    principal_id: Optional[str] = None
+    principal_type: Optional[str] = None
+    roles: list[str] = field(default_factory=list)
+    issuer: Optional[str] = None
+    audience: Optional[str] = None
+    auth_source: Optional[str] = None
+    correlation_id: Optional[str] = None
+    delegated_claims_present: bool = False
+
+
+@dataclass
+class RouteAuthPolicy:
+    """Route-level trust policy owned by each consuming service."""
+
+    route_id: str
+    auth_required: bool = True
+    allow_delegated_context: bool = False
+    allowed_flows: list[str] = field(default_factory=lambda: ["internal_agent"])
+    allowed_issuers: list[str] = field(default_factory=list)
+    required_roles: list[str] = field(default_factory=list)
+
+
+@dataclass
+class TrustDecision:
+    """Trust-policy evaluation outcome."""
+
+    allowed: bool
+    provenance: str
+    reason: str
+    policy_id: Optional[str] = None
+
+
+def to_canonical_auth_context(context: TenantContext) -> CanonicalAuthContext:
+    """Convert a TenantContext into a CanonicalAuthContext."""
+    auth_source = (context.auth_source or "").strip().lower() or None
+    delegated_present = bool(
+        auth_source == "jwt"
+        and context.service_tenant_id
+        and context.service_user_id
+    )
+
+    return CanonicalAuthContext(
+        platform_tenant_id=context.platform_tenant_id,
+        service_tenant_id=context.service_tenant_id,
+        service_user_id=context.service_user_id,
+        principal_id=context.principal_id,
+        principal_type=context.principal_type,
+        roles=list(context.roles or []),
+        issuer=context.issuer,
+        audience=context.audience,
+        auth_source=auth_source,
+        correlation_id=context.correlation_id,
+        delegated_claims_present=delegated_present,
+    )
 
 
 def create_get_tenant_context(get_tenanted_db: Callable) -> Callable:
@@ -71,6 +141,13 @@ def create_get_tenant_context(get_tenanted_db: Callable) -> Callable:
             service_tenant_id=request.state.service_tenant_id,
             service_user_id=request.state.service_user_id,
             db=db,
+            principal_id=getattr(request.state, "principal_id", None),
+            principal_type=getattr(request.state, "principal_type", None),
+            roles=list(getattr(request.state, "roles", []) or []),
+            issuer=getattr(request.state, "auth_issuer", None),
+            audience=getattr(request.state, "auth_audience", None),
+            auth_source=getattr(request.state, "auth_source", None),
+            correlation_id=request.headers.get("X-Correlation-ID"),
         )
 
     return get_tenant_context

@@ -15,9 +15,11 @@ Memory Service Authentication Model (v0.7.x):
 from fastapi import Depends
 
 from soorma_service_common import (  # noqa: F401
+    RouteAuthPolicy,
     TenantContext,
     create_get_tenant_context,
     create_get_tenanted_db,
+    create_trust_guard_dependency,
     create_require_user_context_dependency,
     create_require_admin_authorization,
 )
@@ -38,6 +40,17 @@ require_user_tenant_context = create_require_user_context_dependency(
   request_header_name="X-Request-ID",
 )
 
+default_memory_route_policy = RouteAuthPolicy(
+  route_id="memory.default",
+  auth_required=True,
+  allow_delegated_context=False,
+)
+
+require_trusted_tenant_context = create_trust_guard_dependency(
+  get_tenant_context,
+  default_memory_route_policy,
+)
+
 
 require_admin_authorization = create_require_admin_authorization(
   settings.memory_admin_api_key,
@@ -49,5 +62,7 @@ __all__ = [
   "get_tenant_context",
   "get_tenanted_db",
   "require_user_tenant_context",
+  "default_memory_route_policy",
+  "require_trusted_tenant_context",
   "require_admin_authorization",
 ]

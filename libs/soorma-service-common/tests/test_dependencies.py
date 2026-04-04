@@ -12,14 +12,21 @@ from fastapi import HTTPException
 
 from soorma_service_common.dependencies import (
     create_require_user_context_dependency,
+    default_trust_policy_hook,
+    evaluate_trust_policy,
     create_get_tenanted_db,
     get_platform_tenant_id,
     get_service_tenant_id,
     get_service_user_id,
+    validate_delegated_context_structure,
     require_user_context,
     set_config_for_session,
 )
-from soorma_service_common.tenant_context import TenantContext
+from soorma_service_common.tenant_context import (
+    CanonicalAuthContext,
+    RouteAuthPolicy,
+    TenantContext,
+)
 
 
 class TestGetPlatformTenantId:
@@ -388,3 +395,78 @@ class TestCreateRequireUserContextDependency:
         kwargs = warning_mock.call_args.kwargs
         assert kwargs["extra"]["correlation_id"] == "corr-789"
         assert kwargs["extra"]["request_id"] == "req-101"
+
+
+class TestTrustPolicyUtilities:
+    """Tests for delegated-structure validation and trust-policy evaluation."""
+
+    def test_validate_delegated_context_structure_accepts_pair(self):
+        context = CanonicalAuthContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            auth_source="jwt",
+            delegated_claims_present=True,
+        )
+        validate_delegated_context_structure(context)
+
+    def test_validate_delegated_context_structure_rejects_partial_tuple(self):
+        context = CanonicalAuthContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id=None,
+            auth_source="jwt",
+            delegated_claims_present=True,
+        )
+        with pytest.raises(HTTPException) as err:
+            validate_delegated_context_structure(context)
+        assert err.value.status_code == 401
+
+    def test_default_trust_policy_denies_disallowed_delegated_context(self):
+        context = CanonicalAuthContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            auth_source="jwt",
+            issuer="issuer-a",
+            delegated_claims_present=True,
+        )
+        policy = RouteAuthPolicy(
+            route_id="test.route",
+            allow_delegated_context=False,
+            allowed_flows=["internal_agent", "delegated_issuer"],
+        )
+        decision = default_trust_policy_hook(context, policy)
+        assert decision.allowed is False
+        assert decision.reason == "delegated_context_not_allowed"
+
+    def test_evaluate_trust_policy_raises_403_on_denied_decision(self):
+        context = CanonicalAuthContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            auth_source="jwt",
+            issuer="issuer-a",
+            delegated_claims_present=True,
+        )
+        policy = RouteAuthPolicy(route_id="test.route", allow_delegated_context=False)
+        with pytest.raises(HTTPException) as err:
+            evaluate_trust_policy(context, policy)
+        assert err.value.status_code == 403
+
+    def test_evaluate_trust_policy_allows_internal_header_flow(self):
+        context = CanonicalAuthContext(
+            platform_tenant_id="spt_acme",
+            service_tenant_id="tenant-1",
+            service_user_id="user-1",
+            auth_source="legacy-header",
+            delegated_claims_present=True,
+        )
+        policy = RouteAuthPolicy(
+            route_id="test.route",
+            allow_delegated_context=False,
+            allowed_flows=["internal_agent"],
+        )
+        decision = evaluate_trust_policy(context, policy)
+        assert decision.allowed is True
+        assert decision.provenance == "trusted_internal"

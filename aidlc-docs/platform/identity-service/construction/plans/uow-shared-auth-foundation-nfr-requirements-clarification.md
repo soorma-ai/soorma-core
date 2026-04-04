@@ -29,3 +29,14 @@ Rationale and details:
 
 ## Note
 If you choose D or X with an FR-11 override, I will update requirements traceability in the NFR artifact notes to reflect the deliberate scope change.
+
+## Supersession Update
+This clarification outcome is superseded by the later coexistence-safety alignment update.
+
+Current governing rule for this unit:
+- JWT is authoritative when present.
+- If JWT is present and invalid, fail closed with no header fallback.
+- If JWT is absent, legacy headers remain accepted during coexistence.
+
+Authoritative source for current decision:
+- aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/nfr-requirements/nfr-requirements.md

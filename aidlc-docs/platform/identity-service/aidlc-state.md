@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Extension Gates (QA Enrichment + Design PR Checkpoint Pending)
+- **Current Stage**: CONSTRUCTION - Code Generation Review (uow-shared-auth-foundation correction pass)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -43,7 +43,7 @@
 - [x] NFR Requirements
 - [x] NFR Design
 - [x] Infrastructure Design
-- [ ] Code Generation
+- [x] Code Generation
 - [ ] Build and Test
 
 ### 🟡 OPERATIONS PHASE
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Extension Gates (QA enrichment complete; Construction Design PR checkpoint pending) - uow-shared-auth-foundation
-- **Next Stage**: Code Generation (after explicit Construction Design PR checkpoint approval)
-- **Status**: Awaiting user approval
+- **Current Stage**: Code Generation (Correction pass complete; review gate pending) - uow-shared-auth-foundation
+- **Next Stage**: Functional Design Planning - uow-identity-core-domain
+- **Status**: Awaiting user approval to re-close unit-1 after correction pass
 
 ## Units Generation Status
 - [x] Units Planning - Completed
@@ -69,10 +69,11 @@
 - **Approved**: 2026-04-03T05:07:13Z
 
 ### Construction Design PR Gate - uow-shared-auth-foundation
-- **Status**: PENDING
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/identity-service/construction/plans/pr-checkpoint-uow-shared-auth-foundation-design-instructions.md
 - **Created**: 2026-04-04T05:50:23Z
+- **Approved**: 2026-04-04T06:08:56Z
 
 ## Reverse Engineering Status
 - [x] Reverse Engineering - Completed on 2026-04-01T00:42:04Z

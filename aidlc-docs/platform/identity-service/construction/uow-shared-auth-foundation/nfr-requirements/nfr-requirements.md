@@ -58,16 +58,19 @@ This document defines non-functional requirements for the shared authentication 
   - synthetic production-like load validation
   - staged canary validation
 
-## NFR-8 Compatibility Strategy (Approved Override)
-- Decision: no compatibility constraints for this unit (intentional FR-11 override for this unit scope).
-- Justification:
-  - pre-release state
-  - all impacted services in scope
-  - no assumed external stable-contract reliance
-  - avoid temporary adapter complexity
+## NFR-8 Compatibility Strategy (Coexistence Safety)
+- Decision: enforce coexistence safety for this unit.
+- Required runtime behavior:
+  - JWT is authoritative when present.
+  - If JWT is present and invalid, fail closed (no header fallback).
+  - If JWT is absent, accept legacy headers during coexistence.
+- Compatibility guardrails:
+  - service APIs must remain operational for existing header-based callers until later cutover units complete
+  - route-level business authorization remains service-owned
+  - no JWT-only transition in this unit
 - Compensating controls:
-  - coordinated refactor across impacted services
-  - mandatory cross-service regression gate before next phase
+  - mandatory cross-service coexistence regression matrix before unit completion
+  - explicit tests for JWT-present, JWT-absent-header-path, and invalid-JWT-fail-fast behavior
 
 ## NFR-9 Security Hardening Depth
 - Decision: baseline + issuer pinning checks + replay protection hooks.
@@ -86,5 +89,5 @@ This document defines non-functional requirements for the shared authentication 
   - service integration and coexistence regressions
 
 ## Traceability Notes
-- This unit includes an approved compatibility override decision for FR-11 constraints, limited to this pre-release, in-scope refactor context.
-- Override source: construction clarification artifact for NFR Q8 compatibility resolution.
+- This unit aligns to FR-11 phased coexistence semantics for merge-safe progression.
+- Clarification artifact for NFR Q8 is superseded by the coexistence-safety resolution captured in this document.

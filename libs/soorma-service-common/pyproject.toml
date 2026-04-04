@@ -7,6 +7,7 @@ license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.104.0",
+    "pyjwt>=2.8.0",
     "sqlalchemy[asyncio]>=2.0.0",
     "soorma-common",
 ]
