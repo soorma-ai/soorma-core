@@ -26,6 +26,30 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Infrastructure Design Approval
+**Timestamp**: 2026-04-04T05:50:23Z
+**User Input**: "design approved"
+**AI Response**: "Accepted Infrastructure Design approval and advanced to extension-mandated pre-code checkpoints for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate passed
+
+---
+
+## Extension Execution - QA Construction Enrichment
+**Timestamp**: 2026-04-04T05:50:23Z
+**User Input**: "design approved"
+**AI Response**: "Executed QA construction enrichment by updating inception test-case artifacts in place (narrative, gherkin, tabular, index) and creating construction enrichment delta at construction/test-cases/uow-shared-auth-foundation/enrichment-delta.md."
+**Context**: CONSTRUCTION - Extension gate execution before code generation
+
+---
+
+## Extension Execution - Construction Design PR Checkpoint Setup
+**Timestamp**: 2026-04-04T05:50:23Z
+**User Input**: "design approved"
+**AI Response**: "Generated construction design PR checkpoint instructions and set Construction Design PR Gate status to PENDING in aidlc-state.md."
+**Context**: CONSTRUCTION - Team collaboration review gate setup
+
+---
+
 ## PR Checkpoint Branch Confirmation
 **Timestamp**: 2026-04-01T06:52:22Z
 **User Input**: "Use dev"
@@ -431,5 +455,497 @@ for tenant's identity service's users, following namespace convention is expecte
 "
 **AI Response**: "Started brownfield reverse-engineering analysis for soorma-core identity-service initiative and gathered architecture evidence across SDK, services, and shared libraries."
 **Context**: INCEPTION - Reverse Engineering start
+
+---
+
+## Session Continuity - Construction Resume Request
+**Timestamp**: 2026-04-03T05:04:37Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-shared-auth-foundation\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Loaded mandatory architecture rules and AI-DLC rule files, then resumed session continuity checks and loaded required Inception artifacts in preparation for Construction kickoff."
+**Context**: Session continuity - resume request intake
+
+---
+
+## PR Checkpoint - Pending Approval Confirmation Prompt
+**Timestamp**: 2026-04-03T05:04:48Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-shared-auth-foundation\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Detected a pending Inception PR gate in aidlc-state.md, checked git evidence (current branch: dev, and dev appears in branches merged into main), and prepared to request explicit user confirmation before unlocking Construction."
+**Context**: PR checkpoint session-resume gate - approval confirmation required
+
+---
+
+## PR Checkpoint - Approval Confirmation
+**Timestamp**: 2026-04-03T05:07:13Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Accepted explicit Inception PR approval confirmation, updated PR checkpoint state to APPROVED, and unlocked Construction phase execution."
+**Context**: PR checkpoint gate passed
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-03T05:07:16Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-03T05:07:16Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-shared-auth-foundation)."
+**Context**: CONSTRUCTION - per-unit initialization
+
+---
+
+## Functional Design - Planning Start
+**Timestamp**: 2026-04-03T05:07:16Z
+**User Input**: "yes, PR has been approved"
+**AI Response**: "Started Functional Design for unit uow-shared-auth-foundation and prepared the functional design plan/questions artifact for user answers."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Q4 Clarification
+**Timestamp**: 2026-04-03T05:15:29Z
+**User Input**: "for Q4, most of the use cases will require platform tenant id, service tenant id and service user. the principal will only be when we add support for platform tenant's developer / admin workflows and for extended / delegated JWT on behalf of the platform tenant, right?"
+**AI Response**: "Confirmed the tuple-first auth-context direction and updated Question 4 answer in the functional design plan to encode platform/service tenant-user tuple as primary context with principal fields as conditional/optional based on workflow type."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Clarification
+**Timestamp**: 2026-04-03T05:18:03Z
+**User Input**: "hmm for q5, why would we centralized any route authn/authz in the shared logic? wouldn't that be defined by each service for it's own routes / endpoints?"
+**AI Response**: "Confirmed service-owned route auth policy model and updated Question 5 answer to keep route-level authn/authz exceptions per-service while limiting shared logic to reusable context parsing/validation primitives and defaults."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Clarification
+**Timestamp**: 2026-04-03T05:22:10Z
+**User Input**: "i need help understanding q6 better. for delegated JWT claims that also have same service tenant id and service user id in the JWT claims, why would the business logic and any enforcement not be the same as if these were coming as headers from trusted tenant agent with valide JWT (for platform tenant id)?"
+**AI Response**: "Provided clarification on why structural validation should be centralized while trust-policy enforcement remains a hook: equal claim values do not imply equal trust provenance, so delegated assertions need issuer/flow-aware checks to prevent privilege confusion and preserve service-owned authorization policy boundaries."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Trust Policy Hook Example Request
+**Timestamp**: 2026-04-03T05:24:53Z
+**User Input**: "what is this \"trust policy hook contract\"? give me a concrete example to understand this better"
+**AI Response**: "Provided a concrete contract example with input/output model, route policy integration, and decision outcomes showing how shared auth dependencies perform structural validation while delegating provenance-based trust decisions through a pluggable policy hook."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Answer Confirmed
+**Timestamp**: 2026-04-03T05:28:17Z
+**User Input**: "yes, lets add this answer with rationale and details / definitions"
+**AI Response**: "Updated Question 6 answer in the functional design plan with option C and detailed trust-policy hook definitions, responsibilities, decision contract, fail-closed behavior, and provenance rationale."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q9 Clarification
+**Timestamp**: 2026-04-03T05:32:22Z
+**User Input**: "for Q9 why do we need any feature flag or environment flag? we support dual mode (with JWT being authoratative when present) and then remove the code / support for header when JWT implementation is complete. Is there value in controlling this with a feature / environment flag independent of code removal?"
+**AI Response**: "Confirmed the phase-by-phase code-evolution approach without runtime auth flags and updated Question 9 answer to no runtime feature/environment flag, with rationale about deterministic behavior and reduced operational drift."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q10 Clarification
+**Timestamp**: 2026-04-03T05:34:45Z
+**User Input**: "is the q10 about unit test coverage? if so then we need everything / full coverage"
+**AI Response**: "Confirmed Q10 as testability/coverage contract and updated Question 10 to comprehensive option D with explicit full-coverage expectation across unit, integration, coexistence regression, and failure-injection scenarios."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Answers Complete
+**Timestamp**: 2026-04-03T05:37:01Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated all functional-design plan answers as complete and non-ambiguous, then generated functional-design artifacts: business-logic-model.md, business-rules.md, and domain-entities.md for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Functional Design execution
+
+---
+
+## Functional Design - Approval Prompt
+**Timestamp**: 2026-04-03T05:37:01Z
+**User Input**: "all answers provided"
+**AI Response**: "Prepared and presented the Functional Design completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - Functional Design approval gate
+
+---
+
+## Functional Design - Approval
+**Timestamp**: 2026-04-03T17:46:35Z
+**User Input**: "functional design approved"
+**AI Response**: "Accepted functional design approval for uow-shared-auth-foundation and transitioned workflow to NFR Requirements stage."
+**Context**: CONSTRUCTION - Functional Design approval gate passed
+
+---
+
+## NFR Requirements - Planning Start
+**Timestamp**: 2026-04-03T17:46:35Z
+**User Input**: "functional design approved"
+**AI Response**: "Started NFR Requirements planning and generated the NFR requirements plan with clarifying questions for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Q2 Clarification
+**Timestamp**: 2026-04-03T17:49:03Z
+**User Input**: "for Q2, what does option D mean? what woul dbe profile based tiers and how will they get validated?"
+**AI Response**: "Explained profile-based throughput tiers as predefined load classes (for example low/medium/high) with separate success criteria and test runs per tier, including validation methodology and pass/fail gates for each tier."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Tier Validation Execution Clarification
+**Timestamp**: 2026-04-03T17:51:10Z
+**User Input**: "how will the tier validation executed? will this be part of unit tests, or will these be part of QA acceptance testing?"
+**AI Response**: "Clarified that tier validation is non-unit performance validation: defined in NFR/test instructions and executed as performance/integration acceptance runs, while unit tests cover correctness paths only."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q2 Answer Confirmed
+**Timestamp**: 2026-04-03T17:52:28Z
+**User Input**: "ok, lets record option D with recommended tiers and rationale / details"
+**AI Response**: "Updated Question 2 answer to option D with explicit per-instance tiers (100/500/1000 RPS plus optional burst), validation model, and rationale for tier-based acceptance performance testing."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q7 Clarification
+**Timestamp**: 2026-04-03T17:55:33Z
+**User Input**: "help me understand q7 and it's options"
+**AI Response**: "Explained each Q7 verification level from basic tests through coexistence regression, synthetic production-like load validation, and staged canary validation, including tradeoffs and recommended choice for this initiative."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q7 Option Selection Clarification
+**Timestamp**: 2026-04-03T17:58:15Z
+**User Input**: "since this is open core project, cannot make any assumptions about canary deploy, and probably also cannot make assumptions about performance characteristics (unless we also document / specify a reference spec for deployment / runtime), what option makes sense based on these?"
+**AI Response**: "Recommended choosing option B as the portable baseline gate for open-core (tests + coexistence regression), with optional performance/canary validations treated as deployment-profile-specific extensions rather than mandatory global gate assumptions."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q7 Answer Confirmed
+**Timestamp**: 2026-04-03T17:59:18Z
+**User Input**: "ok, lets record the recommended option B with rationale and details"
+**AI Response**: "Updated Question 7 answer to option B with open-core rationale, required coexistence regression scope, and guidance that performance/canary validations are profile-specific extensions rather than global mandatory assumptions."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Answers Validation Clarification Required
+**Timestamp**: 2026-04-03T18:02:00Z
+**User Input**: "all answers provided"
+**AI Response**: "During NFR answer validation, detected a blocking contradiction: Q8 selected no compatibility constraints, which conflicts with previously approved FR-11 compatibility requirements for coexistence. Created clarification file and paused NFR artifact generation pending explicit resolution."
+**Context**: CONSTRUCTION - NFR Requirements planning validation
+
+---
+
+## NFR Requirements - FR-11 Override Clarification
+**Timestamp**: 2026-04-03T18:05:33Z
+**User Input**: "hmm, based on the functional design and entities, it seems like we will need some changed to dependency injection, right? given that is it reasonable to override FR-11?"
+**AI Response**: "Clarified that internal DI implementation changes can be made without overriding FR-11 as long as route/handler call sites remain non-breaking during coexistence; recommended selecting a compatibility option that preserves external contracts rather than removing constraints."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Pre-release Refactor Strategy Clarification
+**Timestamp**: 2026-04-03T18:08:53Z
+**User Input**: "since we are pre-release, and all code that might be impacted (basically the services in soorma-core) are in scope, isn't it better to just refactor those services, if needed, instead of adding complexity with wrappers / adapters just for the sake of keeping backwards compatibility, when there is no external implementation relying on a stable contract?"
+**AI Response**: "Assessed that for pre-release and fully in-scope services, a direct refactor can be reasonable if explicitly approved as a requirement change; advised documenting FR-11 override decision and tightening regression coverage to manage cross-service risk without introducing unnecessary compatibility indirection."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Clarification Answer Confirmed
+**Timestamp**: 2026-04-03T18:10:05Z
+**User Input**: "yes, lets record answer with option D and rationale details"
+**AI Response**: "Recorded clarification answer as Option D with rationale details, updated NFR Q8 compatibility decision accordingly, and resumed NFR artifact generation with explicit FR-11 override traceability note."
+**Context**: CONSTRUCTION - NFR Requirements clarification resolved
+
+---
+
+## NFR Requirements - Answers Complete
+**Timestamp**: 2026-04-03T18:10:05Z
+**User Input**: "yes, lets record answer with option D and rationale details"
+**AI Response**: "Validated all NFR answers and generated NFR artifacts for uow-shared-auth-foundation: nfr-requirements.md and tech-stack-decisions.md."
+**Context**: CONSTRUCTION - NFR Requirements execution
+
+---
+
+## NFR Requirements - Approval Prompt
+**Timestamp**: 2026-04-03T18:10:05Z
+**User Input**: "yes, lets record answer with option D and rationale details"
+**AI Response**: "Prepared and presented the NFR Requirements completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - NFR Requirements approval gate
+
+---
+
+## NFR Requirements - Approval
+**Timestamp**: 2026-04-03T18:14:39Z
+**User Input**: "approved NFR requirements"
+**AI Response**: "Accepted NFR Requirements approval for uow-shared-auth-foundation and transitioned workflow to NFR Design stage."
+**Context**: CONSTRUCTION - NFR Requirements approval gate passed
+
+---
+
+## NFR Design - Planning Start
+**Timestamp**: 2026-04-03T18:14:39Z
+**User Input**: "approved NFR requirements"
+**AI Response**: "Started NFR Design planning and generated the NFR design plan with targeted clarifying questions for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Q1 Clarification
+**Timestamp**: 2026-04-03T18:16:28Z
+**User Input**: "help me understand q1 and its options"
+**AI Response**: "Explained Q1 trust-policy resilience pattern options (cache-aside TTL fail-closed, read-through fallback, two-level cache with staleness guard, direct source only) with tradeoffs and recommended option aligned to approved NFR resilience decision."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q2 Clarification
+**Timestamp**: 2026-04-03T18:17:52Z
+**User Input**: "help me understand q2 and its options"
+**AI Response**: "Explained Q2 observability tracing-boundary options from minimal dependency spans to full per-decision event-span correlation, with recommendation based on approved observability depth and security audit requirements."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q3 Clarification
+**Timestamp**: 2026-04-03T18:20:05Z
+**User Input**: "help me understand q3 and its options"
+**AI Response**: "Explained Q3 logical componenting options for profile-based performance validation support, from documentation-only approach to threshold modeling and runtime adaptation, with tradeoffs and recommendation aligned to open-core assumptions."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q3 Answer Confirmed
+**Timestamp**: 2026-04-03T18:21:37Z
+**User Input**: "ok, add answer as C with rationale"
+**AI Response**: "Updated Question 3 answer to option C with rationale emphasizing portable design, explicit guardrail threshold modeling, and controlled runtime complexity."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Clarification
+**Timestamp**: 2026-04-03T18:23:00Z
+**User Input**: "help me understand q5 and its options"
+**AI Response**: "Explained Q5 security-depth options for issuer pinning and replay resistance from basic allowlist checks to replay-store abstraction and anomaly-signal hooks, with recommendation based on selected NFR hardening depth."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Answer Confirmed
+**Timestamp**: 2026-04-03T18:24:22Z
+**User Input**: "yes, add C with rationale"
+**AI Response**: "Updated Question 5 answer to option C with rationale focused on practical replay resistance, explicit replay-store expiry policy design, and balanced security depth for this unit."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q7 Clarification
+**Timestamp**: 2026-04-03T18:24:42Z
+**User Input**: "help me understand q7 and its options"
+**AI Response**: "Explained Q7 logical component split options from monolithic auth dependency to decomposed validator/trust/observability/resilience components, with recommendation aligned to selected observability and resilience requirements."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q7 Answer Confirmed
+**Timestamp**: 2026-04-03T18:25:43Z
+**User Input**: "yes, add D with rationale"
+**AI Response**: "Updated Question 7 answer to option D with rationale emphasizing alignment to approved resilience and observability decisions plus clearer component-level separation for maintainability and testing."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Answers Complete
+**Timestamp**: 2026-04-03T19:16:27Z
+**User Input**: "answers provided"
+**AI Response**: "Validated all NFR Design plan answers and generated NFR design artifacts for uow-shared-auth-foundation: nfr-design-patterns.md and logical-components.md."
+**Context**: CONSTRUCTION - NFR Design execution
+
+---
+
+## NFR Design - Approval Prompt
+**Timestamp**: 2026-04-03T19:16:27Z
+**User Input**: "answers provided"
+**AI Response**: "Prepared and presented the NFR Design completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - NFR Design approval gate
+
+---
+
+## NFR Design - Approval
+**Timestamp**: 2026-04-03T22:15:50Z
+**User Input**: "NFR design approved"
+**AI Response**: "Accepted NFR Design approval for uow-shared-auth-foundation and transitioned workflow to Infrastructure Design stage."
+**Context**: CONSTRUCTION - NFR Design approval gate passed
+
+---
+
+## Infrastructure Design - Planning Start
+**Timestamp**: 2026-04-03T22:15:50Z
+**User Input**: "NFR design approved"
+**AI Response**: "Started Infrastructure Design planning and generated the infrastructure-design plan with targeted clarifying questions for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Q1 Clarification
+**Timestamp**: 2026-04-03T22:18:41Z
+**User Input**: "for Q1, what is the benefit for choosing D over B? will it result in overengineering, without knowing adoption and which clouds will get used? or is it about making the design generic and interoperable with all clouds regardless of choice?"
+**AI Response**: "Explained D vs B tradeoff and recommended B for this open-core stage: provider-neutral cloud-ready baseline with optional provider mappings, avoiding premature multi-cloud operational complexity until concrete adoption requires it."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q1 Answer Confirmed
+**Timestamp**: 2026-04-03T22:19:45Z
+**User Input**: "yes add answer"
+**AI Response**: "Updated Infrastructure Design Question 1 to option B with rationale emphasizing provider-neutral portability and avoidance of premature multi-cloud complexity."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q2 Clarification
+**Timestamp**: 2026-04-03T22:21:31Z
+**User Input**: "for q2, what is the value of persistence? is this not something that will get initiatized as part of service startup everytime? or is this something decoupled from service code / logic?"
+**AI Response**: "Clarified persistence value for trust-policy and replay state: startup initialization cannot preserve distributed consistency or replay protection across restarts/instances; durable state is an infrastructure concern decoupled from runtime process memory and improves correctness and security under scale/failover."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q2 Answer Confirmed
+**Timestamp**: 2026-04-03T22:23:29Z
+**User Input**: "lets add answer with rationale to choose B, we can adopt shared cache as future enhancement if/when need arises"
+**AI Response**: "Updated Infrastructure Design Question 2 to option B with rationale for durable baseline simplicity and explicit future path to shared-cache enhancement when scale or latency needs require it."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q3 Clarification
+**Timestamp**: 2026-04-03T22:25:48Z
+**User Input**: "help me understand q3 and its options. if this is about deployment model, it will likely be serverless to begin with (e.g. GCP cloudrun, AWS ECS) with option to move to k8s later. is that what option B about?"
+**AI Response**: "Clarified that Cloud Run/ECS are containerized deployment models (option B/C territory depending on sidecar usage), while option D typically means function-style serverless baseline; recommended choosing B or X with explicit 'container-serverless baseline now, k8s later' wording."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q3 Answer Confirmed
+**Timestamp**: 2026-04-03T22:26:49Z
+**User Input**: "yes, add answer with rationale"
+**AI Response**: "Updated Infrastructure Design Question 3 with explicit container-serverless baseline (Cloud Run/ECS-style) and rationale, including future Kubernetes migration path when justified by scale/operations."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q5 Contextual Answer
+**Timestamp**: 2026-04-04T05:33:40Z
+**User Input**: "for q5, we'll have soorma-core services accessible over public network by authenticated agents / services developed by platform tenants. additionally, we'll have platform tenant' end user clients accessing few services (e.g. future user agent, future triage dashboards etc) using either platorm tenant user JWT, or delegated JWT of their service tenant users. help answer with this context."
+**AI Response**: "Updated Question 5 with a gateway-boundary networking pattern: externally reachable flows terminate at shared gateway/reverse proxy, selected endpoints exposed with JWT-based auth, and service-to-service mTLS where supported."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - mTLS Requirement Clarification
+**Timestamp**: 2026-04-04T05:36:36Z
+**User Input**: "the answer for q5 has mTLS for internal service to service ... how will this work for local development stack, or developer's self hosted use of open core soorma core with their own cloud provider? will this require some mTLS setup for services to work?"
+**AI Response**: "Clarified that mTLS should be a profile-based hardening control (recommended/enabled where supported) rather than a universal runtime prerequisite; local development and basic self-hosted deployments can run without mTLS by default while production profiles enforce it when platform capabilities are present."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Bootstrap Requirement Clarification
+**Timestamp**: 2026-04-04T05:38:40Z
+**User Input**: "yes, lets add clarification to make sure there is no hard requirement or upfront infra cost/requirement for bootstrap. also, is the API gateway also a bootstrap infra requirement?"
+**AI Response**: "Updated Q5 rationale to explicitly state that mTLS is not a bootstrap hard requirement and that a full API gateway is optional at bootstrap; a minimal reverse proxy/ingress boundary is sufficient initially with progressive hardening later."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q7 Answer Guidance
+**Timestamp**: 2026-04-04T05:40:13Z
+**User Input**: "help answer q7 based on all previous answers / discussions"
+**AI Response**: "Provided recommended Q7 selection and rationale based on prior decisions (pre-release direct refactor, FR-11 override compensating controls, and progressive infrastructure hardening posture)."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q6 Answer Guidance
+**Timestamp**: 2026-04-04T05:41:01Z
+**User Input**: "help answer q6 based on all previous answers / discussions"
+**AI Response**: "Provided recommended Q6 selection and rationale aligned to prior decisions: fail-closed behavior, classified trust-policy error taxonomy, deterministic behavior for portability, and avoidance of service-specific permissive fallback complexity."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q6 Answer Confirmed
+**Timestamp**: 2026-04-04T05:41:40Z
+**User Input**: "yes, add answer with rationale"
+**AI Response**: "Updated Infrastructure Design Question 6 with an explicit answer and rationale consistent with prior open-core bootstrap and portability tradeoff decisions."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Answers Validation Clarification Required
+**Timestamp**: 2026-04-04T05:42:36Z
+**User Input**: "ok, all answers provided"
+**AI Response**: "Detected contradiction between Q1 (provider-neutral baseline) and Q6 (provider-specific-only documentation). Created focused clarification file and paused infrastructure artifact generation pending explicit resolution."
+**Context**: CONSTRUCTION - Infrastructure Design planning validation
+
+---
+
+## Infrastructure Design - Clarification Answer Confirmed
+**Timestamp**: 2026-04-04T05:43:49Z
+**User Input**: "answered"
+**AI Response**: "Resolved infrastructure documentation strategy contradiction using clarification answer: dual-track approach with provider-neutral core plus GCP concrete reference mapping."
+**Context**: CONSTRUCTION - Infrastructure Design clarification resolved
+
+---
+
+## Infrastructure Design - Answers Complete
+**Timestamp**: 2026-04-04T05:43:49Z
+**User Input**: "answered"
+**AI Response**: "Validated infrastructure plan answers and generated infrastructure-design artifacts: infrastructure-design.md and deployment-architecture.md for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Infrastructure Design execution
+
+---
+
+## Infrastructure Design - Approval Prompt
+**Timestamp**: 2026-04-04T05:43:49Z
+**User Input**: "answered"
+**AI Response**: "Prepared and presented the Infrastructure Design completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate
 
 ---
