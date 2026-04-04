@@ -26,6 +26,86 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Session Continuity - Resume Request
+**Timestamp**: 2026-04-04T06:07:13Z
+**User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
+**AI Response**: "Resumed workflow context from aidlc-state.md, reloaded mandatory common rules, architecture patterns, enabled extension rules, and prior initiative artifacts for construction-stage continuity."
+**Context**: Session continuity - construction resume intake
+
+---
+
+## PR Checkpoint - Pending Approval Confirmation Prompt
+**Timestamp**: 2026-04-04T06:07:13Z
+**User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
+**AI Response**: "Detected pending Construction Design PR gate for uow-shared-auth-foundation and prepared approval confirmation prompt before unlocking Code Generation."
+**Context**: CONSTRUCTION - Team collaboration review gate pending confirmation
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-04T06:07:23Z
+**User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-04T06:07:23Z
+**User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-shared-auth-foundation)."
+**Context**: CONSTRUCTION - per-unit initialization (session reload)
+
+---
+
+## PR Checkpoint - Merge Evidence Verification
+**Timestamp**: 2026-04-04T06:08:14Z
+**User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
+**AI Response**: "Checked git merge evidence for pending Construction Design PR gate. Default branch detected as main; pending branch dev appears in branches merged into main. Explicit user confirmation is still required before approving the gate."
+**Context**: CONSTRUCTION - pending PR checkpoint verification
+
+---
+
+## PR Checkpoint - Approval Confirmation
+**Timestamp**: 2026-04-04T06:10:00Z
+**User Input**: "yes PR approved"
+**AI Response**: "Accepted explicit Construction Design PR approval confirmation for uow-shared-auth-foundation, updated checkpoint state to APPROVED, and unlocked Code Generation."
+**Context**: CONSTRUCTION - Team collaboration review gate passed
+
+---
+
+## Code Generation - Planning Start
+**Timestamp**: 2026-04-04T06:10:00Z
+**User Input**: "yes PR approved"
+**AI Response**: "Started Code Generation Part 1 planning for uow-shared-auth-foundation and generated detailed plan at aidlc-docs/platform/identity-service/construction/plans/uow-shared-auth-foundation-code-generation-plan.md."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Approval Prompt
+**Timestamp**: 2026-04-04T06:10:00Z
+**User Input**: "yes PR approved"
+**AI Response**: "Prepared and presented the code generation plan approval gate; awaiting explicit user approval before Part 2 execution."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate
+
+---
+
+## Code Generation - Design Consistency Review Question
+**Timestamp**: 2026-04-04T06:16:34Z
+**User Input**: "i realize that this unit of work is only updating all existing libraries, but actual identity service will be in next unit of work. given that, there will not ne any way to issue a valid JWT. therefore, in this unit of work, we need the validation library to accept headers when there is no JWT. review the requirements and designs of this unit of work, and if we chose to not have this backwards compatibility, then merging this unit of work in main will result in breakage of soorma-core, until the next of unit of work is completed and there is a way to issue JWT. is that correct?"
+**AI Response**: "Reviewed requirements and unit design artifacts. Confirmed coexistence behavior is explicitly defined: JWT is authoritative when present, and legacy headers are accepted when JWT is absent. Identified one ambiguity in NFR-8 wording that could be misread as disabling compatibility constraints despite FR-11 and functional design requiring coexistence."
+**Context**: CONSTRUCTION - Code Generation Part 1 review clarification
+
+---
+
+## Code Generation - Inconsistency Fix and NFR Clarification
+**Timestamp**: 2026-04-04T06:19:04Z
+**User Input**: "yes, lets fix any inconsistencies. also help me understand what is the purpose of NFR? is this not used for code gen, only FR and business rules are used?"
+**AI Response**: "Applied consistency updates across NFR and planning artifacts to enforce coexistence safety (JWT authoritative when present, no fallback on invalid JWT, legacy headers accepted when JWT is absent). Added supersession note to outdated clarification artifact and aligned code-generation plan scope."
+**Context**: CONSTRUCTION - Code Generation Part 1 request changes
+
+---
+
 ## Infrastructure Design Approval
 **Timestamp**: 2026-04-04T05:50:23Z
 **User Input**: "design approved"

@@ -11,7 +11,10 @@ These decisions map NFR requirements to practical implementation/testing tooling
 ## 2) Validation and Policy Evaluation
 - Token validation: centralized in shared dependency layer.
 - Trust-policy evaluation: pluggable contract from shared dependency to service route policy.
-- Compatibility policy for this unit: approved direct-refactor model (no temporary compatibility wrappers required).
+- Compatibility policy for this unit: coexistence-safe rollout.
+  - JWT authoritative when present.
+  - Legacy headers accepted when JWT is absent.
+  - Invalid JWT fails closed with no header fallback.
 
 ## 3) Observability Stack Requirements
 - Logging: structured logs with schema validation in CI.
@@ -39,9 +42,10 @@ These decisions map NFR requirements to practical implementation/testing tooling
 - Keep advanced runtime validation as profile-specific extension guidance.
 - Retain strong portable baseline gate via coexistence regression matrix.
 
-## 8) Risk and Mitigation for Compatibility Override
-- Risk: coordinated multi-service refactor may introduce integration regressions.
+## 8) Risk and Mitigation for Coexistence Safety
+- Risk: auth-path transition may introduce regressions across mixed JWT/header callers.
 - Mitigation:
   - mandatory cross-service regression matrix before cutover progression
+  - explicit coverage for header-only coexistence path until cutover unit is complete
   - explicit test focus on deny-path and precedence behavior
   - staged verification in CI/integration environments prior to header-path removal phase
