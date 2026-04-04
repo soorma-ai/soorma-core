@@ -15,11 +15,11 @@ Memory Service Authentication Model (v0.7.x):
 from fastapi import Depends
 
 from soorma_service_common import (  # noqa: F401
-  RouteAuthPolicy,
+    RouteAuthPolicy,
     TenantContext,
     create_get_tenant_context,
     create_get_tenanted_db,
-  create_trust_guard_dependency,
+    create_trust_guard_dependency,
     create_require_user_context_dependency,
     create_require_admin_authorization,
 )
