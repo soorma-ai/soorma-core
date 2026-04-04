@@ -12,9 +12,9 @@
 - [x] Step 1 - Analyze design artifacts and infrastructure implications
 - [x] Step 2 - Draft infrastructure design plan and question set
 - [x] Step 3 - Store this infrastructure design plan file
-- [ ] Step 4 - Collect and validate all answers
-- [ ] Step 5 - Generate infrastructure design artifacts
-- [ ] Step 6 - Present Infrastructure Design completion gate
+- [x] Step 4 - Collect and validate all answers
+- [x] Step 5 - Generate infrastructure design artifacts
+- [x] Step 6 - Present Infrastructure Design completion gate
 
 ## Infrastructure Design Clarifying Questions
 Please answer each question by filling the [Answer]: field.
@@ -92,7 +92,7 @@ D) C + security event stream for anomaly processing
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: c)
 
 ## Question 5
 What networking boundary pattern should be assumed for auth-sensitive service ingress?
@@ -107,7 +107,15 @@ D) Public ingress allowed for all service endpoints
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: X) Service ingress behind shared gateway/reverse proxy for all externally reachable flows, with mTLS for service-to-service traffic where supported.
+
+Context-driven rationale:
+- Soorma-core services are expected to be reachable over public network by authenticated tenant-developed agents/services.
+- Selected end-user-facing services (for example future user-agent and triage dashboard paths) will also be externally reachable using either platform-tenant user JWTs or delegated service-tenant JWTs.
+- Therefore, public exposure should be controlled at gateway boundary, not as unrestricted direct public ingress for every endpoint.
+- Internal service-to-service calls should use stronger transport posture (mTLS where supported) while retaining token-based application-layer authorization.
+- Bootstrap posture: mTLS is a profile-based hardening control, not a mandatory prerequisite for local development or basic self-hosted startup.
+- Bootstrap posture: a full-feature API gateway is not a hard bootstrap requirement; a minimal reverse proxy/ingress boundary is sufficient initially, with gateway capabilities added as adoption and operational needs grow.
 
 ## Question 6
 For open-core portability, how should infrastructure assumptions be documented?
@@ -122,7 +130,12 @@ D) Minimal infra documentation at this stage
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: X) Dual-track documentation: provider-neutral core plus one concrete provider reference implementation (GCP as initial reference).
+
+Rationale:
+- Keeps bootstrap guidance concrete and actionable using one real provider mapping.
+- Preserves open-core portability by retaining provider-neutral primary patterns.
+- Avoids premature multi-provider implementation burden while creating a clear future path for additional provider mappings.
 
 ## Question 7
 Given approved compatibility override and direct refactor strategy, what deployment safety gate should be required before advancing to Code Generation?
@@ -137,7 +150,7 @@ D) B + C + environment smoke checks for each impacted service
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: d)
 
 ## Approval
 After filling all answers, reply in chat:

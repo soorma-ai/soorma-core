@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Infrastructure Design (Planning)
+- **Current Stage**: CONSTRUCTION - Infrastructure Design (Review Gate Pending)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Infrastructure Design (Planning) - uow-shared-auth-foundation
-- **Next Stage**: Infrastructure Design (answer collection and artifact generation)
-- **Status**: In progress
+- **Current Stage**: Infrastructure Design (Review Gate Pending) - uow-shared-auth-foundation
+- **Next Stage**: Code Generation (after explicit Infrastructure Design approval)
+- **Status**: Awaiting user approval
 
 ## Units Generation Status
 - [x] Units Planning - Completed

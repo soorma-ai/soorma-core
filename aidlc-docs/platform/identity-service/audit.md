@@ -845,3 +845,83 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - Infrastructure Design planning clarification
 
 ---
+
+## Infrastructure Design - Q5 Contextual Answer
+**Timestamp**: 2026-04-04T05:33:40Z
+**User Input**: "for q5, we'll have soorma-core services accessible over public network by authenticated agents / services developed by platform tenants. additionally, we'll have platform tenant' end user clients accessing few services (e.g. future user agent, future triage dashboards etc) using either platorm tenant user JWT, or delegated JWT of their service tenant users. help answer with this context."
+**AI Response**: "Updated Question 5 with a gateway-boundary networking pattern: externally reachable flows terminate at shared gateway/reverse proxy, selected endpoints exposed with JWT-based auth, and service-to-service mTLS where supported."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - mTLS Requirement Clarification
+**Timestamp**: 2026-04-04T05:36:36Z
+**User Input**: "the answer for q5 has mTLS for internal service to service ... how will this work for local development stack, or developer's self hosted use of open core soorma core with their own cloud provider? will this require some mTLS setup for services to work?"
+**AI Response**: "Clarified that mTLS should be a profile-based hardening control (recommended/enabled where supported) rather than a universal runtime prerequisite; local development and basic self-hosted deployments can run without mTLS by default while production profiles enforce it when platform capabilities are present."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Bootstrap Requirement Clarification
+**Timestamp**: 2026-04-04T05:38:40Z
+**User Input**: "yes, lets add clarification to make sure there is no hard requirement or upfront infra cost/requirement for bootstrap. also, is the API gateway also a bootstrap infra requirement?"
+**AI Response**: "Updated Q5 rationale to explicitly state that mTLS is not a bootstrap hard requirement and that a full API gateway is optional at bootstrap; a minimal reverse proxy/ingress boundary is sufficient initially with progressive hardening later."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q7 Answer Guidance
+**Timestamp**: 2026-04-04T05:40:13Z
+**User Input**: "help answer q7 based on all previous answers / discussions"
+**AI Response**: "Provided recommended Q7 selection and rationale based on prior decisions (pre-release direct refactor, FR-11 override compensating controls, and progressive infrastructure hardening posture)."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q6 Answer Guidance
+**Timestamp**: 2026-04-04T05:41:01Z
+**User Input**: "help answer q6 based on all previous answers / discussions"
+**AI Response**: "Provided recommended Q6 selection and rationale aligned to prior decisions: fail-closed behavior, classified trust-policy error taxonomy, deterministic behavior for portability, and avoidance of service-specific permissive fallback complexity."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Q6 Answer Confirmed
+**Timestamp**: 2026-04-04T05:41:40Z
+**User Input**: "yes, add answer with rationale"
+**AI Response**: "Updated Infrastructure Design Question 6 with an explicit answer and rationale consistent with prior open-core bootstrap and portability tradeoff decisions."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Answers Validation Clarification Required
+**Timestamp**: 2026-04-04T05:42:36Z
+**User Input**: "ok, all answers provided"
+**AI Response**: "Detected contradiction between Q1 (provider-neutral baseline) and Q6 (provider-specific-only documentation). Created focused clarification file and paused infrastructure artifact generation pending explicit resolution."
+**Context**: CONSTRUCTION - Infrastructure Design planning validation
+
+---
+
+## Infrastructure Design - Clarification Answer Confirmed
+**Timestamp**: 2026-04-04T05:43:49Z
+**User Input**: "answered"
+**AI Response**: "Resolved infrastructure documentation strategy contradiction using clarification answer: dual-track approach with provider-neutral core plus GCP concrete reference mapping."
+**Context**: CONSTRUCTION - Infrastructure Design clarification resolved
+
+---
+
+## Infrastructure Design - Answers Complete
+**Timestamp**: 2026-04-04T05:43:49Z
+**User Input**: "answered"
+**AI Response**: "Validated infrastructure plan answers and generated infrastructure-design artifacts: infrastructure-design.md and deployment-architecture.md for uow-shared-auth-foundation."
+**Context**: CONSTRUCTION - Infrastructure Design execution
+
+---
+
+## Infrastructure Design - Approval Prompt
+**Timestamp**: 2026-04-04T05:43:49Z
+**User Input**: "answered"
+**AI Response**: "Prepared and presented the Infrastructure Design completion review gate with standardized Request Changes / Continue to Next Stage options."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate
+
+---
