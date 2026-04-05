@@ -7,7 +7,10 @@ They MUST fail with NotImplementedError until middleware.dispatch is implemented
 import pytest
 from fastapi.testclient import TestClient
 
-from soorma_service_common.middleware import TenancyMiddleware
+from soorma_service_common.middleware import (
+    TenancyMiddleware,
+    configure_platform_tenant_openapi,
+)
 
 
 class TestTenancyMiddlewareHeaderExtraction:
@@ -174,3 +177,54 @@ class TestTenancyMiddlewareJwtCoexistence:
         assert response.json()["platform_tenant_id"] == "spt_header"
         assert response.json()["service_tenant_id"] == "tenant_header"
         assert response.json()["service_user_id"] == "user_header"
+
+
+class TestOpenApiPlatformTenantHeader:
+    """OpenAPI helper exposes X-Tenant-ID in Swagger docs for Try it out."""
+
+    def test_openapi_includes_platform_tenant_security_scheme(self, make_test_app):
+        """Configured app schema should include a global API key header scheme."""
+        app = make_test_app()
+        configure_platform_tenant_openapi(app)
+
+        schema = app.openapi()
+        scheme = schema["components"]["securitySchemes"]["PlatformTenantHeader"]
+
+        assert scheme["type"] == "apiKey"
+        assert scheme["in"] == "header"
+        assert scheme["name"] == "X-Tenant-ID"
+        assert {"PlatformTenantHeader": []} in schema["security"]
+
+    def test_openapi_includes_platform_tenant_operation_header(self, make_test_app):
+        """Configured schema should expose X-Tenant-ID directly on operations."""
+        app = make_test_app()
+        configure_platform_tenant_openapi(app)
+
+        schema = app.openapi()
+        parameters = schema["paths"]["/test"]["get"].get("parameters", [])
+        header_params = [
+            p
+            for p in parameters
+            if p.get("in") == "header" and p.get("name") == "X-Tenant-ID"
+        ]
+
+        assert len(header_params) == 1
+        assert header_params[0]["required"] is False
+
+    def test_configure_platform_tenant_openapi_is_idempotent(self, make_test_app):
+        """Repeated helper calls should not duplicate global security entries."""
+        app = make_test_app()
+        configure_platform_tenant_openapi(app)
+        configure_platform_tenant_openapi(app)
+
+        schema = app.openapi()
+        security_entries = schema.get("security", [])
+        parameters = schema["paths"]["/test"]["get"].get("parameters", [])
+        header_params = [
+            p
+            for p in parameters
+            if p.get("in") == "header" and p.get("name") == "X-Tenant-ID"
+        ]
+
+        assert security_entries.count({"PlatformTenantHeader": []}) == 1
+        assert len(header_params) == 1

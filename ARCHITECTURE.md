@@ -5,6 +5,7 @@ This document defines the platform architecture, services, and infrastructure of
 
 **For Developer Experience:** See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)  
 **For Agent Patterns:** See [docs/agent_patterns/README.md](docs/agent_patterns/README.md)
+**For Identity Domain Documentation:** See [docs/identity_service/README.md](docs/identity_service/README.md)
 
 ---
 
@@ -18,7 +19,7 @@ This repository (`soorma-core`) contains the **complete open-source foundation**
 | Component | Description |
 | :--- | :--- |
 | **SDK** | Python SDK for building agents (install from source: `pip install -e sdk/python`) |
-| **Services** | Registry, Event Service, Memory Service, and Gateway microservices |
+| **Services** | Registry, Event Service, Memory Service, Identity Service, and Gateway microservices |
 | **Libraries** | Common models and utilities |
 | **Examples** | Working examples demonstrating patterns |
 | **IaC** | Infrastructure as Code for self-hosting |
@@ -139,6 +140,25 @@ See [docs/memory_system/README.md](docs/memory_system/README.md) for detailed us
   - Request routing
   - API versioning
 
+### 2.5 Identity Service
+
+* **Tech:** FastAPI + SQLAlchemy + Alembic + PostgreSQL
+* **Role:** Platform-tenant identity domain and token issuance authority
+* **Features:**
+    - Tenant identity domain onboarding with bootstrap principal creation
+    - Principal lifecycle APIs (create, update, revoke)
+    - Token issuance with mandatory identity claim contract
+    - Delegated issuer trust registration and validation
+    - Mapping collision governance and explicit override controls
+    - Typed safe error envelopes and audit event persistence
+
+**API Prefix:** `/v1/identity`
+
+**See also:**
+- [docs/identity_service/README.md](docs/identity_service/README.md)
+- [docs/identity_service/ARCHITECTURE.md](docs/identity_service/ARCHITECTURE.md)
+- [docs/identity_service/USE_CASES.md](docs/identity_service/USE_CASES.md)
+
 ---
 
 ## 3. Directory Structure
@@ -178,6 +198,12 @@ soorma-core/                    # Open Source Repository (MIT)
 │   ├── memory/                 # Memory Service (state + embeddings)
 │   │   ├── src/                # Memory service implementation
 │   │   └── test/               # Memory service tests
+│   │
+│   ├── identity-service/       # Identity Domain Service
+│   │   ├── src/identity_service/   # FastAPI application and domain services
+│   │   ├── alembic/            # Database migrations
+│   │   ├── tests/              # Service tests
+│   │   └── README.md           # Service guide
 │   └── gateway/                # API Gateway (planned)
 │
 ├── examples/                   # Working Example Implementations
@@ -579,6 +605,7 @@ Services:
 - Registry Service: Port 8000
 - Memory Service: Port 8002
 - Event Service: Port 8082
+- Identity Service: Port 8085
 - NATS: Port 4222
 - PostgreSQL: Port 5432
 
@@ -649,6 +676,8 @@ See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for testing guidelines.
 
 ✅ Registry, Memory and Event Service
 
+✅ Identity Service (tenant onboarding, principal lifecycle, token issuance)
+
 ✅ Dynamic event discovery
 
 ✅ Autonomous choreography examples
@@ -697,6 +726,7 @@ Not just demos. Real reliability, observability, and scalability from day one.
 - [Event System](docs/event_system/README.md) - Event-driven architecture, topics, messaging
 - [Memory System](docs/memory_system/README.md) - CoALA framework and memory types
 - [Discovery](docs/discovery/README.md) - Registry and capability discovery
+- [Identity Service](docs/identity_service/README.md) - Identity domain APIs, architecture, and use cases
 - [Examples](examples/) - Working implementations
 
 **Getting Started:** See [README.md](README.md) for installation and quick start.

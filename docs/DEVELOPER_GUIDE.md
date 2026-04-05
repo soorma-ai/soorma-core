@@ -512,7 +512,29 @@ curl http://localhost:8081/agents
 curl http://localhost:8081/events
 ```
 
-### 7.4 Deploying
+### 7.4 Identity Service Quick Start
+
+```bash
+# Start local infrastructure (includes identity service)
+soorma dev --build --start
+
+# Point SDK wrappers/clients to local identity endpoint
+export SOORMA_IDENTITY_URL=http://localhost:8085
+
+# Optional: local identity/JWT test overrides
+export IDENTITY_ADMIN_API_KEY=dev-identity-admin
+export IDENTITY_SIGNING_KEY=dev-identity-signing-key
+export SOORMA_AUTH_JWT_SECRET=dev-identity-signing-key
+export SOORMA_AUTH_JWT_ISSUER=soorma-identity-service
+export SOORMA_AUTH_JWT_AUDIENCE=soorma-services
+```
+
+For complete environment variable documentation and auth behavior details, see:
+- [Identity Service Technical Guide](./identity_service/README.md)
+- [Identity Service Architecture](./identity_service/ARCHITECTURE.md)
+- [Service README](../services/identity-service/README.md)
+
+### 7.5 Deploying
 
 ```bash
 # Build Docker image for your agent
@@ -536,6 +558,7 @@ docker compose -f production.yml up -d
 - [Event System](./event_system/README.md) - Event-driven architecture, topics, messaging
 - [Memory System](./memory_system/README.md) - CoALA framework and memory types
 - [Discovery](./discovery/README.md) - Registry and capability discovery
+- [Identity Service](./identity_service/README.md) - Identity domain APIs, architecture, and use cases
 
 **For Core Contributors (different scope):**
 - [SESSION_INITIALIZATION.md](./SESSION_INITIALIZATION.md) - MANDATORY workflow for soorma-core contributions

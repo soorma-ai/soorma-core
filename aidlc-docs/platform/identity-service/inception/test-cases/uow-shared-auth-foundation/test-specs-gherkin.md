@@ -9,13 +9,13 @@ Scenario: Resolve JWT auth context
   # Construction: aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/
   # Technical refs: business-rules.md, nfr-design-patterns.md
 
-@happy-path-negative @TC-USAF-002
-Scenario: Deny legacy header-only request under compatibility override
-  Given compatibility override is approved for this unit
+@happy-path @TC-USAF-002
+Scenario: Accept legacy header-only request during FR-11 coexistence
+  Given FR-11 phase 1 or phase 2 coexistence mode is active
   And a request has legacy headers only
   When auth dependency validates context
-  Then access is denied with no header-compat fallback
-  # Source: uow-shared-auth-foundation / NFR-8 override (FR-11 compatibility decision)
+  Then header-derived canonical context is accepted and propagated
+  # Source: uow-shared-auth-foundation / FR-11 compatibility constraint
   # Construction: aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/
   # Technical refs: nfr-requirements.md, business-rules.md
 

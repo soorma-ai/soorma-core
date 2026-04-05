@@ -272,8 +272,8 @@ class TestRequireUserContext:
         result = require_user_context(context)
         assert result is context
 
-    def test_raises_400_when_service_tenant_missing(self):
-        """Missing service tenant fails fast with generic 400 message."""
+    def test_raises_401_when_service_tenant_missing(self):
+        """Missing service tenant fails fast with generic 401 message."""
         context = TenantContext(
             platform_tenant_id="spt_acme",
             service_tenant_id=None,
@@ -284,11 +284,11 @@ class TestRequireUserContext:
         with pytest.raises(HTTPException) as err:
             require_user_context(context)
 
-        assert err.value.status_code == 400
+        assert err.value.status_code == 401
         assert err.value.detail == "Missing required tenant identity context"
 
-    def test_raises_400_when_service_user_missing(self):
-        """Missing service user fails fast with generic 400 message."""
+    def test_raises_401_when_service_user_missing(self):
+        """Missing service user fails fast with generic 401 message."""
         context = TenantContext(
             platform_tenant_id="spt_acme",
             service_tenant_id="tenant-1",
@@ -299,10 +299,10 @@ class TestRequireUserContext:
         with pytest.raises(HTTPException) as err:
             require_user_context(context)
 
-        assert err.value.status_code == 400
+        assert err.value.status_code == 401
         assert err.value.detail == "Missing required user identity context"
 
-    def test_raises_400_when_service_tenant_whitespace(self):
+    def test_raises_401_when_service_tenant_whitespace(self):
         """Whitespace-only service tenant is invalid."""
         context = TenantContext(
             platform_tenant_id="spt_acme",
@@ -314,10 +314,10 @@ class TestRequireUserContext:
         with pytest.raises(HTTPException) as err:
             require_user_context(context)
 
-        assert err.value.status_code == 400
+        assert err.value.status_code == 401
         assert err.value.detail == "Missing required tenant identity context"
 
-    def test_raises_400_when_service_user_whitespace(self):
+    def test_raises_401_when_service_user_whitespace(self):
         """Whitespace-only service user is invalid."""
         context = TenantContext(
             platform_tenant_id="spt_acme",
@@ -329,7 +329,7 @@ class TestRequireUserContext:
         with pytest.raises(HTTPException) as err:
             require_user_context(context)
 
-        assert err.value.status_code == 400
+        assert err.value.status_code == 401
         assert err.value.detail == "Missing required user identity context"
 
     def test_logs_correlation_and_request_id_when_provided(self):

@@ -2,7 +2,7 @@
 soorma-service-common — Shared FastAPI/Starlette infrastructure for Soorma backend services.
 """
 
-from .middleware import TenancyMiddleware
+from .middleware import TenancyMiddleware, configure_platform_tenant_openapi
 from .dependencies import (
     get_platform_tenant_id,
     get_service_tenant_id,
@@ -30,6 +30,7 @@ from .deletion import PlatformTenantDataDeletion
 __all__ = [
     # Middleware
     "TenancyMiddleware",
+    "configure_platform_tenant_openapi",
     # Dependency functions
     "get_platform_tenant_id",
     "get_service_tenant_id",

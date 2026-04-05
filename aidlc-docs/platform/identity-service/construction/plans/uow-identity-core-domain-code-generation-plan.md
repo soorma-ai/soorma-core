@@ -143,14 +143,14 @@
 - [x] Step 4 - Define explicit generation sequence with STUB -> RED -> GREEN -> REFACTOR testing strategy.
 - [x] Step 5 - Create this plan file as the single source of truth for Code Generation execution.
 - [x] Step 6 - Log approval prompt in audit.md and request explicit user approval before Part 2 execution.
-- [ ] Step 7 - STUB phase: scaffold identity-service package, API modules, models, services, and wrapper contracts with placeholder behavior.
-- [ ] Step 8 - RED phase: add/adjust tests for onboarding, issuance claim contract, delegated trust deny paths, and wrapper surface contracts (failing for correct reasons).
-- [ ] Step 9 - GREEN phase: implement onboarding, lifecycle, issuance, delegated trust, mapping/collision logic, and wrapper delegation to satisfy tests.
-- [ ] Step 10 - REFACTOR phase: remove duplication, align imports/contracts, harden typed error mapping, and preserve architecture constraints.
-- [ ] Step 11 - Integrate local dev stack metadata for identity-service (service definitions, compose generation, and CLI tests).
-- [ ] Step 12 - Run focused test suites for new service, shared models, SDK wrapper contracts, and negative security paths.
-- [ ] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-identity-core-domain/code/code-generation-summary.md.
-- [ ] Step 14 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
+- [x] Step 7 - STUB phase: scaffold identity-service package, API modules, models, services, and wrapper contracts with placeholder behavior.
+- [x] Step 8 - RED phase: add/adjust tests for onboarding, issuance claim contract, delegated trust deny paths, and wrapper surface contracts (failing for correct reasons).
+- [x] Step 9 - GREEN phase: implement onboarding, lifecycle, issuance, delegated trust, mapping/collision logic, and wrapper delegation to satisfy tests.
+- [x] Step 10 - REFACTOR phase: remove duplication, align imports/contracts, harden typed error mapping, and preserve architecture constraints.
+- [x] Step 11 - Integrate local dev stack metadata for identity-service (service definitions, compose generation, and CLI tests).
+- [x] Step 12 - Run focused test suites for new service, shared models, SDK wrapper contracts, and negative security paths.
+- [x] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-identity-core-domain/code/code-generation-summary.md.
+- [x] Step 14 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
 - [ ] Step 15 - On approval, update aidlc-state.md and audit.md, then transition to next stage.
 
 ## Detailed Generation Sequence

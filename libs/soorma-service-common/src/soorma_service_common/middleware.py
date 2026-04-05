@@ -11,6 +11,7 @@ import os
 from typing import Callable
 
 import jwt
+from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -25,6 +26,92 @@ _BEARER_PREFIX = "bearer "
 _JWT_SECRET_ENV = "SOORMA_AUTH_JWT_SECRET"
 _JWT_ISSUER_ENV = "SOORMA_AUTH_JWT_ISSUER"
 _JWT_AUDIENCE_ENV = "SOORMA_AUTH_JWT_AUDIENCE"
+
+
+def configure_platform_tenant_openapi(
+    app: FastAPI,
+    *,
+    scheme_name: str = "PlatformTenantHeader",
+    header_name: str = "X-Tenant-ID",
+) -> None:
+    """Expose platform tenant header in Swagger/OpenAPI for all operations.
+
+    This adds an API key security scheme backed by ``X-Tenant-ID`` and applies it
+    globally so Swagger UI can send the header via the Authorize dialog.
+    """
+
+    original_openapi = app.openapi
+
+    def custom_openapi():
+        if app.openapi_schema:
+            return app.openapi_schema
+
+        schema = original_openapi()
+        components = schema.setdefault("components", {})
+        security_schemes = components.setdefault("securitySchemes", {})
+        security_schemes[scheme_name] = {
+            "type": "apiKey",
+            "in": "header",
+            "name": header_name,
+            "description": "Required Soorma platform tenant context header.",
+        }
+
+        security = schema.setdefault("security", [])
+        tenant_security = {scheme_name: []}
+        if tenant_security not in security:
+            security.append(tenant_security)
+
+        # Also expose X-Tenant-ID as an operation header parameter so it appears
+        # directly in Swagger "Try it out" forms.
+        paths = schema.get("paths", {})
+        for path, methods in paths.items():
+            if path == "/health":
+                continue
+            if not isinstance(methods, dict):
+                continue
+
+            for method_name, operation in methods.items():
+                if method_name.lower() not in {
+                    "get",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options",
+                    "head",
+                    "trace",
+                }:
+                    continue
+                if not isinstance(operation, dict):
+                    continue
+
+                parameters = operation.setdefault("parameters", [])
+                already_present = any(
+                    isinstance(param, dict)
+                    and param.get("in") == "header"
+                    and str(param.get("name", "")).lower() == header_name.lower()
+                    for param in parameters
+                )
+                if already_present:
+                    continue
+
+                parameters.append(
+                    {
+                        "name": header_name,
+                        "in": "header",
+                        "required": False,
+                        "schema": {"type": "string"},
+                        "description": (
+                            "Soorma platform tenant context header. "
+                            "Use this for tenant-scoped API calls."
+                        ),
+                    }
+                )
+
+        app.openapi_schema = schema
+        return app.openapi_schema
+
+    app.openapi = custom_openapi
 
 
 class TenancyMiddleware(BaseHTTPMiddleware):

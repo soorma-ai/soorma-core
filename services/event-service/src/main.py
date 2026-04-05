@@ -17,7 +17,7 @@ from typing import AsyncGenerator, Dict
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from soorma_common import __version__
-from soorma_service_common import TenancyMiddleware
+from soorma_service_common import TenancyMiddleware, configure_platform_tenant_openapi
 
 from .core.config import settings
 from .services.event_manager import event_manager
@@ -75,6 +75,7 @@ app.add_middleware(
 
 # Add tenancy middleware
 app.add_middleware(TenancyMiddleware)
+configure_platform_tenant_openapi(app)
 
 # Include routers
 app.include_router(health.router)

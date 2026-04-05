@@ -50,6 +50,7 @@ from .context import (
     MemoryClient,
     BusClient,
     TrackerClient,
+    IdentityClient,
 )
 from .agents import Agent, Planner, Worker, Tool
 from .agents.planner import Goal, Plan, Task
@@ -74,6 +75,7 @@ __all__ = [
     "MemoryClient",
     "BusClient",
     "TrackerClient",
+    "IdentityClient",
     # Events
     "EventClient",
     "EventTopic",

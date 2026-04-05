@@ -3,7 +3,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from soorma_service_common import TenancyMiddleware
+from soorma_service_common import TenancyMiddleware, configure_platform_tenant_openapi
 
 from tracker_service import __version__
 from tracker_service.core.config import settings
@@ -58,6 +58,7 @@ app.add_middleware(
 
 # Add tenancy middleware
 app.add_middleware(TenancyMiddleware)
+configure_platform_tenant_openapi(app)
 
 # Include API routers
 app.include_router(v1_router)

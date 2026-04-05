@@ -50,7 +50,7 @@ class TestIdentityAndAdminGuards:
                 "/v1/memory/semantic/search",
                 params={"q": "tenant scoped search", "limit": 1},
             )
-            assert response.status_code == 400
+            assert response.status_code == 401
             assert "Missing required user identity context" in response.text
         finally:
             app.dependency_overrides.pop(get_tenant_context, None)

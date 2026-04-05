@@ -45,6 +45,20 @@ Key features:
 
 [Documentation →](./memory/README.md)
 
+### Identity Service
+**Port:** 8085  
+**Purpose:** Identity domain service for onboarding, principal lifecycle, delegated trust, and token issuance  
+**Tech:** FastAPI + PostgreSQL
+
+Key features:
+- Platform tenant onboarding bootstrap
+- Principal lifecycle operations
+- Delegated issuer trust registration
+- Token issuance policy enforcement (platform and delegated)
+- External identity mapping policy evaluation
+
+[Documentation →](./identity-service/README.md)
+
 ### Gateway (Planned)
 **Port:** TBD  
 **Purpose:** API Gateway for unified external access

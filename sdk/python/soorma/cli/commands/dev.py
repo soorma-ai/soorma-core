@@ -2,7 +2,7 @@
 soorma dev - Start local development environment.
 
 Implements the "Infra in Docker" pattern:
-- Infrastructure (Registry, Event Service, Memory Service, NATS, PostgreSQL) runs in Docker containers
+- Infrastructure (Registry, Event Service, Memory Service, Tracker Service, Identity Service, NATS, PostgreSQL) runs in Docker containers
 - Developers run their agent code separately with injected environment variables
 """
 
@@ -22,149 +22,187 @@ DOCKER_COMPOSE_TEMPLATE = '''# Soorma Local Development Stack
 # Infrastructure runs in Docker, your agent runs on the host
 
 services:
-  # PostgreSQL with pgvector - Database for Memory & Registry Services
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: soorma-postgres
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    environment:
-      - POSTGRES_USER=soorma
-      - POSTGRES_PASSWORD=soorma
-      - POSTGRES_DB=postgres
-      - POSTGRES_INITDB_ARGS=--encoding=UTF8
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U soorma -d postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+    # PostgreSQL with pgvector - Database for Memory & Registry Services
+    postgres:
+        image: pgvector/pgvector:pg16
+        container_name: soorma-postgres
+        ports:
+            - "${POSTGRES_PORT:-5432}:5432"
+        environment:
+            - POSTGRES_USER=soorma
+            - POSTGRES_PASSWORD=soorma
+            - POSTGRES_DB=postgres
+            - POSTGRES_INITDB_ARGS=--encoding=UTF8
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            - ./postgres-init:/docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U soorma -d postgres"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
 
-  # NATS - Event Bus
-  nats:
-    image: nats:2.10-alpine
-    container_name: soorma-nats
-    ports:
-      - "${NATS_PORT:-4222}:4222"      # Client connections
-      - "${NATS_HTTP_PORT:-8222}:8222" # HTTP monitoring
-    command: ["--jetstream", "--http_port", "8222"]
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
+    # NATS - Event Bus
+    nats:
+        image: nats:2.10-alpine
+        container_name: soorma-nats
+        ports:
+            - "${NATS_PORT:-4222}:4222"      # Client connections
+            - "${NATS_HTTP_PORT:-8222}:8222" # HTTP monitoring
+        command: ["--jetstream", "--http_port", "8222"]
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+            interval: 5s
+            timeout: 3s
+            retries: 3
 
-  # Registry Service - Agent & Event Registration
-  # Uses local image if available, falls back to public when published
-  registry:
-    image: ${REGISTRY_IMAGE:-registry-service:latest}
-    container_name: soorma-registry
-    ports:
-      - "${REGISTRY_PORT:-8081}:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/registry
-      - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/registry
-      - NATS_URL=nats://nats:4222
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+    # Registry Service - Agent & Event Registration
+    # Uses local image if available, falls back to public when published
+    registry:
+        image: ${REGISTRY_IMAGE:-registry-service:latest}
+        container_name: soorma-registry
+        ports:
+            - "${REGISTRY_PORT:-8081}:8000"
+        environment:
+            - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/registry
+            - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/registry
+            - NATS_URL=nats://nats:4222
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
+        depends_on:
+            postgres:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
 
-  # Event Service - PubSub Proxy (SSE + REST)
-  event-service:
-    image: ${EVENT_SERVICE_IMAGE:-event-service:latest}
-    container_name: soorma-event-service
-    ports:
-      - "${EVENT_SERVICE_PORT:-8082}:8082"
-    environment:
-      - EVENT_ADAPTER=nats
-      - NATS_URL=nats://nats:4222
-      - DEBUG=false
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health').read()"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
+    # Event Service - PubSub Proxy (SSE + REST)
+    event-service:
+        image: ${EVENT_SERVICE_IMAGE:-event-service:latest}
+        container_name: soorma-event-service
+        ports:
+            - "${EVENT_SERVICE_PORT:-8082}:8082"
+        environment:
+            - EVENT_ADAPTER=nats
+            - NATS_URL=nats://nats:4222
+            - DEBUG=false
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
+        depends_on:
+            postgres:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health').read()"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
 
-  # Memory Service - Persistent Memory Layer (CoALA)
-  memory-service:
-    image: ${MEMORY_SERVICE_IMAGE:-memory-service:latest}
-    container_name: soorma-memory
-    ports:
-      - "${MEMORY_SERVICE_PORT:-8083}:8002"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/memory
-      - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/memory
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - IS_LOCAL_TESTING=true
-      - IS_PROD=false
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health').read()"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+    # Memory Service - Persistent Memory Layer (CoALA)
+    memory-service:
+        image: ${MEMORY_SERVICE_IMAGE:-memory-service:latest}
+        container_name: soorma-memory
+        ports:
+            - "${MEMORY_SERVICE_PORT:-8083}:8002"
+        environment:
+            - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/memory
+            - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/memory
+            - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+            - IS_LOCAL_TESTING=true
+            - IS_PROD=false
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health').read()"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
 
-  # Tracker Service - Event-driven observability
-  tracker-service:
-    image: ${TRACKER_SERVICE_IMAGE:-tracker-service:latest}
-    container_name: soorma-tracker
-    ports:
-      - "${TRACKER_SERVICE_PORT:-8084}:8084"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/tracker
-      - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/tracker
-      - NATS_URL=nats://nats:4222
-      - IS_LOCAL_TESTING=true
-      - IS_PROD=false
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health').read()"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    # Tracker Service - Event-driven observability
+    tracker-service:
+        image: ${TRACKER_SERVICE_IMAGE:-tracker-service:latest}
+        container_name: soorma-tracker
+        ports:
+            - "${TRACKER_SERVICE_PORT:-8084}:8084"
+        environment:
+            - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/tracker
+            - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/tracker
+            - NATS_URL=nats://nats:4222
+            - IS_LOCAL_TESTING=true
+            - IS_PROD=false
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
+        depends_on:
+            postgres:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health').read()"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 20s
+
+    # Identity Service - Tenant onboarding, principal lifecycle, token issuance
+    identity-service:
+        image: ${IDENTITY_SERVICE_IMAGE:-identity-service:latest}
+        container_name: soorma-identity-service
+        ports:
+            - "${IDENTITY_SERVICE_PORT:-8085}:8085"
+        environment:
+            - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/identity
+            - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/identity
+            - IS_PROD=false
+            - IDENTITY_ADMIN_API_KEY=${IDENTITY_ADMIN_API_KEY:-dev-identity-admin}
+            - IDENTITY_SIGNING_KEY=${IDENTITY_SIGNING_KEY:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8085/health').read()"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 20s
 
 volumes:
-  postgres-data:
-    name: soorma-postgres-data
+    postgres-data:
+        name: soorma-postgres-data
 
 networks:
-  default:
-    name: soorma-dev
+    default:
+        name: soorma-dev
 '''
 
 # PostgreSQL initialization script
 # Creates pgvector extension and separate databases for each service
-POSTGRES_INIT_SQL = '''-- Initialize Soorma PostgreSQL Databases
+POSTGRES_INIT_SQL = r'''-- Initialize Soorma PostgreSQL Databases
 -- Creates separate databases for each service and enables pgvector extension
 
 -- Create databases for each service (only if they don't exist)
 SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\\gexec
 SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\\gexec
 SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\\gexec
+SELECT 'CREATE DATABASE identity' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'identity')\\gexec
 
 -- Connect to registry database and enable pgvector
 \\c registry
@@ -250,7 +288,16 @@ SERVICE_DEFINITIONS = {
         "dockerfile": "services/tracker/Dockerfile",
         "name": "Tracker Service",
     },
+    "identity-service": {
+        "local_image": "identity-service:latest",
+        "public_image": "ghcr.io/soorma-ai/identity-service:latest",
+        "dockerfile": "services/identity-service/Dockerfile",
+        "name": "Identity Service",
+    },
 }
+
+# Databases required by services in the local development stack.
+SERVICE_DATABASES = ["registry", "memory", "tracker", "identity"]
 
 
 def check_service_image(service_key: str) -> Optional[str]:
@@ -399,6 +446,85 @@ def wait_for_infrastructure(registry_port: int, timeout: int = 60) -> bool:
     return False
 
 
+def wait_for_postgres(timeout: int = 60) -> bool:
+    """Wait until PostgreSQL accepts connections inside the dev container."""
+    start = time.time()
+    while time.time() - start < timeout:
+        result = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "soorma-postgres",
+                "psql",
+                "-U",
+                "soorma",
+                "-d",
+                "postgres",
+                "-tAc",
+                "SELECT 1",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and "1" in result.stdout:
+            return True
+        time.sleep(1)
+    return False
+
+
+def ensure_service_databases() -> None:
+    """Create missing service databases in an idempotent way.
+
+    This is required when developers already have an existing postgres volume:
+    docker-entrypoint init scripts only run on first volume initialization.
+    """
+    for db_name in SERVICE_DATABASES:
+        exists_result = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "soorma-postgres",
+                "psql",
+                "-U",
+                "soorma",
+                "-d",
+                "postgres",
+                "-tAc",
+                f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if exists_result.returncode != 0:
+            raise RuntimeError(
+                f"Failed to check existence of database '{db_name}': {exists_result.stderr.strip()}"
+            )
+
+        if "1" in exists_result.stdout:
+            continue
+
+        create_result = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "soorma-postgres",
+                "psql",
+                "-U",
+                "soorma",
+                "-d",
+                "postgres",
+                "-c",
+                f"CREATE DATABASE {db_name};",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if create_result.returncode != 0:
+            raise RuntimeError(
+                f"Failed to create database '{db_name}': {create_result.stderr.strip()}"
+            )
+
+
 def dev_stack(
     start: bool = typer.Option(
         False,
@@ -450,6 +576,11 @@ def dev_stack(
         "--tracker-service-port",
         help="Port for the Tracker Service.",
     ),
+    identity_service_port: int = typer.Option(
+        8085,
+        "--identity-service-port",
+        help="Port for the Identity Service.",
+    ),
     postgres_port: int = typer.Option(
         5432,
         "--postgres-port",
@@ -471,6 +602,7 @@ def dev_stack(
     • Event Service - PubSub proxy (SSE + REST)
     • Memory Service - Persistent memory layer (CoALA)
     • Tracker Service - Event-driven observability
+    • Identity Service - Onboarding, principals, and token issuance
     • NATS - Event bus with JetStream
     • PostgreSQL - Database with pgvector
     
@@ -489,6 +621,7 @@ def dev_stack(
       SOORMA_EVENT_SERVICE_URL=http://localhost:8082
       SOORMA_MEMORY_SERVICE_URL=http://localhost:8083
       SOORMA_TRACKER_SERVICE_URL=http://localhost:8084
+      SOORMA_IDENTITY_URL=http://localhost:8085
       SOORMA_NATS_URL=nats://localhost:4222
     """
     # Check Docker availability
@@ -571,9 +704,16 @@ def dev_stack(
     event_service_image = service_images.get("event-service", "event-service:latest")
     memory_service_image = service_images.get("memory-service", "memory-service:latest")
     tracker_service_image = service_images.get("tracker-service", "tracker-service:latest")
+    identity_service_image = service_images.get("identity-service", "identity-service:latest")
     
-    # Get OpenAI API key from environment
+    # Get optional local development secrets from environment.
+    # Defaults are intentionally deterministic for local-only stacks.
     openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+    identity_admin_api_key = os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
+    identity_signing_key = os.environ.get("IDENTITY_SIGNING_KEY", "dev-identity-signing-key")
+    soorma_auth_jwt_secret = os.environ.get("SOORMA_AUTH_JWT_SECRET", identity_signing_key)
+    soorma_auth_jwt_issuer = os.environ.get("SOORMA_AUTH_JWT_ISSUER", "soorma-identity-service")
+    soorma_auth_jwt_audience = os.environ.get("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
     
     # Write .env file with custom ports and service images
     env_content = f"""# Soorma Local Development Environment
@@ -587,8 +727,15 @@ MEMORY_SERVICE_PORT={memory_service_port}
 MEMORY_SERVICE_IMAGE={memory_service_image or 'memory-service:latest'}
 TRACKER_SERVICE_PORT={tracker_service_port}
 TRACKER_SERVICE_IMAGE={tracker_service_image or 'tracker-service:latest'}
+IDENTITY_SERVICE_PORT={identity_service_port}
+IDENTITY_SERVICE_IMAGE={identity_service_image or 'identity-service:latest'}
 POSTGRES_PORT={postgres_port}
 OPENAI_API_KEY={openai_api_key}
+IDENTITY_ADMIN_API_KEY={identity_admin_api_key}
+IDENTITY_SIGNING_KEY={identity_signing_key}
+SOORMA_AUTH_JWT_SECRET={soorma_auth_jwt_secret}
+SOORMA_AUTH_JWT_ISSUER={soorma_auth_jwt_issuer}
+SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
 """
     env_file.write_text(env_content)
     
@@ -631,13 +778,38 @@ OPENAI_API_KEY={openai_api_key}
     
     # Start infrastructure
     typer.echo("📦 Starting infrastructure (Docker)...")
-    typer.echo(f"   Registry:        http://localhost:{registry_port}")
-    typer.echo(f"   Event Service:   http://localhost:{event_service_port}")
-    typer.echo(f"   Memory Service:  http://localhost:{memory_service_port}")
-    typer.echo(f"   Tracker Service: http://localhost:{tracker_service_port}")
-    typer.echo(f"   NATS:            nats://localhost:{nats_port}")
-    typer.echo(f"   PostgreSQL:      postgresql://localhost:{postgres_port}")
+    typer.echo(f"   Registry:         http://localhost:{registry_port}")
+    typer.echo(f"   Event Service:    http://localhost:{event_service_port}")
+    typer.echo(f"   Memory Service:   http://localhost:{memory_service_port}")
+    typer.echo(f"   Tracker Service:  http://localhost:{tracker_service_port}")
+    typer.echo(f"   Identity Service: http://localhost:{identity_service_port}")
+    typer.echo(f"   NATS:             nats://localhost:{nats_port}")
+    typer.echo(f"   PostgreSQL:       postgresql://localhost:{postgres_port}")
     typer.echo("")
+
+    # Start foundational infra first so we can ensure required DBs exist
+    foundation_result = subprocess.run(
+        base_cmd + ["up", "-d", "postgres", "nats"],
+        cwd=soorma_dir,
+        capture_output=True,
+        text=True,
+    )
+    if foundation_result.returncode != 0:
+        typer.echo("❌ Failed to start foundational infrastructure:", err=True)
+        typer.echo(foundation_result.stderr, err=True)
+        raise typer.Exit(1)
+
+    typer.echo("   ⏳ Waiting for PostgreSQL to be ready...")
+    if not wait_for_postgres(timeout=60):
+        typer.echo("❌ PostgreSQL failed to become ready.", err=True)
+        raise typer.Exit(1)
+
+    try:
+        ensure_service_databases()
+        typer.echo("   ✓ Service databases verified.")
+    except RuntimeError as exc:
+        typer.echo(f"❌ {exc}", err=True)
+        raise typer.Exit(1)
     
     # Pull images (quiet mode)
     subprocess.run(
@@ -682,6 +854,13 @@ OPENAI_API_KEY={openai_api_key}
     typer.echo(f"  export SOORMA_EVENT_SERVICE_URL=http://localhost:{event_service_port}")
     typer.echo(f"  export SOORMA_MEMORY_SERVICE_URL=http://localhost:{memory_service_port}")
     typer.echo(f"  export SOORMA_TRACKER_SERVICE_URL=http://localhost:{tracker_service_port}")
+    typer.echo(f"  export SOORMA_IDENTITY_URL=http://localhost:{identity_service_port}")
     typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
+    typer.echo("  # Optional local overrides for identity/JWT testing:")
+    typer.echo("  export IDENTITY_ADMIN_API_KEY=dev-identity-admin")
+    typer.echo("  export IDENTITY_SIGNING_KEY=dev-identity-signing-key")
+    typer.echo("  export SOORMA_AUTH_JWT_SECRET=dev-identity-signing-key")
+    typer.echo("  export SOORMA_AUTH_JWT_ISSUER=soorma-identity-service")
+    typer.echo("  export SOORMA_AUTH_JWT_AUDIENCE=soorma-services")
     typer.echo("  python agent.py")
     raise typer.Exit(0)

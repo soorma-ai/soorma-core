@@ -47,6 +47,7 @@ from .events import EventClient
 from .memory import MemoryServiceClient
 from .registry.client import RegistryClient
 from .tracker.client import TrackerServiceClient
+from .identity.wrapper import IdentityClient
 from .ai.event_toolkit import EventToolkit
 
 logger = logging.getLogger(__name__)
@@ -1691,6 +1692,7 @@ class PlatformContext:
         memory: Distributed State Management
         bus: Event Choreography
         tracker: Observability & State Machines
+        identity: Identity domain wrapper APIs
         toolkit: AI-friendly event discovery and generation utilities
     
     Usage:
@@ -1717,6 +1719,7 @@ class PlatformContext:
     memory: MemoryClient
     bus: BusClient
     tracker: TrackerClient
+    identity: IdentityClient
     toolkit: EventToolkit
     
     def __init__(
@@ -1725,6 +1728,7 @@ class PlatformContext:
         memory: MemoryClient = None,
         bus: BusClient = None,
         tracker: TrackerClient = None,
+        identity: IdentityClient = None,
         toolkit: EventToolkit = None,
     ):
         """
@@ -1735,12 +1739,14 @@ class PlatformContext:
             memory: Memory client with tenant_id/user_id configured (required for memory operations)
             bus: Bus client (optional)
             tracker: Tracker client (optional)
+            identity: Identity wrapper client (optional)
             toolkit: EventToolkit for AI-friendly event utilities (optional)
         """
         self.registry = registry or RegistryClient(base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"))
         self.memory = memory or MemoryClient()
         self.bus = bus or BusClient()
         self.tracker = tracker or TrackerClient()
+        self.identity = identity or IdentityClient()
         # Toolkit reuses registry client - no async with needed when using context.toolkit!
         self.toolkit = toolkit or EventToolkit(registry_url=self.registry.base_url, registry_client=self.registry)
     
@@ -1754,6 +1760,7 @@ class PlatformContext:
             SOORMA_EVENT_SERVICE_URL: Event service URL (default: http://localhost:8082)
             SOORMA_MEMORY_URL: Memory service URL (default: http://localhost:8083)
             SOORMA_TRACKER_URL: Tracker service URL (default: http://localhost:8084)
+            SOORMA_IDENTITY_URL: Identity service URL (default: http://localhost:8085)
             
         Returns:
             PlatformContext with clients configured from environment
@@ -1778,6 +1785,9 @@ class PlatformContext:
             tracker=TrackerClient(
                 base_url=os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"),
             ),
+            identity=IdentityClient(
+                base_url=os.getenv("SOORMA_IDENTITY_URL", "http://localhost:8085"),
+            ),
             toolkit=EventToolkit(registry_url=registry_url, registry_client=registry_client),
         )
     
@@ -1787,4 +1797,5 @@ class PlatformContext:
         await self.memory.close()
         await self.bus.close()
         await self.tracker.close()
+        await self.identity.close()
         # EventToolkit doesn't need explicit close - it uses context managers internally

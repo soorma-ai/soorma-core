@@ -75,7 +75,7 @@ def require_user_context(
         The same ``TenantContext`` object unchanged when validation passes.
 
     Raises:
-        HTTPException: Raised with status ``400`` when identity context is
+        HTTPException: Raised with status ``401`` when identity context is
             missing or blank.
     """
     missing_service_tenant = _is_blank(context.service_tenant_id)
@@ -100,7 +100,7 @@ def require_user_context(
         correlation_id=correlation_id,
         request_id=request_id,
     )
-    raise HTTPException(status_code=400, detail=detail)
+    raise HTTPException(status_code=401, detail=detail)
 
 
 def create_require_admin_authorization(
