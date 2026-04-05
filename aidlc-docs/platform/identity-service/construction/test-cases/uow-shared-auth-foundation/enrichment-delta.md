@@ -21,9 +21,9 @@ This delta documents construction-stage enrichment updates applied in place to i
 - Added explicit technical references to construction design artifacts.
 
 2. TC-USAF-002
-- Re-scoped from coexistence translation success to explicit fail-closed denial for header-only requests.
-- Traceability updated to approved NFR-8 compatibility override (FR-11 decision override for this unit).
-- Scope updated to happy-path-negative in index/gherkin.
+- Re-scoped to explicit FR-11 coexistence acceptance behavior for header-only requests when JWT is absent.
+- Traceability updated to FR-11 compatibility constraint for phase-1/phase-2 backward-compatible rollout.
+- Scope updated to happy-path in index/gherkin.
 
 3. TC-USAF-003
 - Tightened expected result to explicit 401 safe-error behavior aligned to business rules.

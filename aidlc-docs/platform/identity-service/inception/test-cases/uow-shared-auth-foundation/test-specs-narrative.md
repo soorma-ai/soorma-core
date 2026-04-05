@@ -14,17 +14,17 @@ Source: uow-shared-auth-foundation / FR-11
 Construction artifacts: aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/
 Technical references: libs/soorma-service-common; construction/uow-shared-auth-foundation/functional-design/business-rules.md; construction/uow-shared-auth-foundation/nfr-design/nfr-design-patterns.md
 
-### TC-USAF-002 - Legacy header-only request denied under compatibility override
-Context: Enforces approved NFR-8 compatibility override for this unit (no header-compat fallback path).
+### TC-USAF-002 - Legacy header-only request accepted during FR-11 coexistence
+Context: Validates approved FR-11 coexistence behavior for this unit (header compatibility fallback remains active while JWT is absent).
 Scenario: Request uses legacy header context without JWT.
 Steps:
 1. Send request with legacy headers only.
 2. Invoke shared dependency auth context resolver.
-3. Observe auth decision and response envelope.
-Expected: Request is denied fail-closed; no compatibility translation path is used.
-Scope: negative
+3. Observe resolved auth context and downstream propagation metadata.
+Expected: Header-derived canonical context is accepted and propagated when JWT is absent.
+Scope: happy-path
 Priority: High
-Source: uow-shared-auth-foundation / NFR-8 override (FR-11 compatibility decision)
+Source: uow-shared-auth-foundation / FR-11 compatibility constraint
 Construction artifacts: aidlc-docs/platform/identity-service/construction/uow-shared-auth-foundation/
 Technical references: libs/soorma-service-common; construction/uow-shared-auth-foundation/nfr-requirements/nfr-requirements.md; construction/uow-shared-auth-foundation/functional-design/business-rules.md
 
