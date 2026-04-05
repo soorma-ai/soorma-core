@@ -1543,3 +1543,83 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - NFR Design approval gate
 
 ---
+
+## NFR Design Approval
+**Timestamp**: 2026-04-04T23:55:26Z
+**User Input**: "design approved."
+**AI Response**: "Accepted NFR Design approval for uow-identity-core-domain and advanced to Infrastructure Design stage."
+**Context**: CONSTRUCTION - NFR Design approval gate passed
+
+---
+
+## Infrastructure Design - Planning Start
+**Timestamp**: 2026-04-04T23:55:27Z
+**User Input**: "design approved."
+**AI Response**: "Started Infrastructure Design planning for uow-identity-core-domain using functional and NFR design artifacts and generated a context-appropriate infrastructure design plan file."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Questions Presented
+**Timestamp**: 2026-04-04T23:55:28Z
+**User Input**: "design approved."
+**AI Response**: "Presented infrastructure design question plan for user completion at construction/plans/uow-identity-core-domain-infrastructure-design-plan.md and paused for answers before infrastructure design artifact generation."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Aligned Answer Prefill
+**Timestamp**: 2026-04-04T23:57:37Z
+**User Input**: "review the decisions from uow-shared-auth-foundation and answer questions that are aligned"
+**AI Response**: "Reviewed approved infrastructure decisions from uow-shared-auth-foundation and prefilled aligned answers in the current unit infrastructure design plan, including rationale where option sets differed (notably key-management and replay/policy-cache mapping baselines)."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Answers Submitted
+**Timestamp**: 2026-04-05T00:02:46Z
+**User Input**: "all answers done"
+**AI Response**: "Accepted completion of infrastructure design plan answers for uow-identity-core-domain and started answer validation and ambiguity checks."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Answers Validation Complete
+**Timestamp**: 2026-04-05T00:02:47Z
+**User Input**: "all answers done"
+**AI Response**: "Validated answers for Questions 1-7; inherited and prefetched responses were resolved against approved shared-auth-foundation infrastructure decisions and current unit NFR/functional constraints with no blocking contradictions detected."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Artifact Generation Complete
+**Timestamp**: 2026-04-05T00:02:48Z
+**User Input**: "all answers done"
+**AI Response**: "Generated infrastructure design artifacts for uow-identity-core-domain: infrastructure-design.md and deployment-architecture.md; updated plan checkboxes for steps 4-5."
+**Context**: CONSTRUCTION - Infrastructure Design execution
+
+---
+
+## Infrastructure Design - Review Gate Presented
+**Timestamp**: 2026-04-05T00:02:49Z
+**User Input**: "all answers done"
+**AI Response**: "Updated plan checkbox for Step 6, updated aidlc-state current status to Infrastructure Design review pending approval, and prepared standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate
+
+---
+
+## Infrastructure Design - Bootstrap Profile Clarification
+**Timestamp**: 2026-04-05T00:20:09Z
+**User Input**: "i want to understand bootstrap profile from deployment architecture better ... currently for local setup, developers can bring up soorma-core infrastructure using docker compose, and the docker networking takes care of named base url for each service. will that need to change now and need to add a reverse proxy or something like kong in the local dev stack?"
+**AI Response**: "Clarified that local Docker Compose service-to-service networking can remain unchanged for bootstrap profile. A reverse proxy/API gateway (for example Kong) is not mandatory for local development unless teams need gateway-specific behaviors (routing policy, auth plugins, external edge simulation). Recommended keeping bootstrap default minimal and optionalizing gateway profile for integration/hardening scenarios."
+**Context**: CONSTRUCTION - Infrastructure Design review clarification
+
+---
+
+## Infrastructure Design - Clarification Documentation Update
+**Timestamp**: 2026-04-05T00:22:27Z
+**User Input**: "ok, good clarification. does this need to be documented anywhere, or is this implicit and understood anywhere we need to make any decision?"
+**AI Response**: "Documented this explicitly in unit infrastructure artifacts to avoid ambiguity in future decisions: local Docker Compose service-name networking remains valid for bootstrap profile, and local gateway/reverse-proxy is optional for edge-behavior simulation only."
+**Context**: CONSTRUCTION - Infrastructure Design review clarification
+
+---

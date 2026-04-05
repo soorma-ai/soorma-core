@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - NFR Design Review (uow-identity-core-domain)
+- **Current Stage**: CONSTRUCTION - Infrastructure Design Review Gate (uow-identity-core-domain)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: NFR Design Review - uow-identity-core-domain
-- **Next Stage**: Infrastructure Design Planning - uow-identity-core-domain
-- **Status**: Awaiting user approval for nfr design artifacts in construction/uow-identity-core-domain/nfr-design/
+- **Current Stage**: Infrastructure Design Review Gate - uow-identity-core-domain
+- **Next Stage**: Code Generation Planning - uow-identity-core-domain
+- **Status**: Awaiting user approval for generated infrastructure design artifacts
 
 ## Units Generation Status
 - [x] Units Planning - Completed
