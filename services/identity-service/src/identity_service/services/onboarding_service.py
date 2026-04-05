@@ -17,24 +17,27 @@ class OnboardingService:
         request: OnboardingRequest,
     ) -> OnboardingResponse:
         """Create tenant domain and bootstrap principal atomically."""
-        domain_result = await tenant_domain_repository.create_domain(
-            db,
-            {
-                "tenant_domain_id": request.tenant_domain_id,
-                "platform_tenant_id": request.platform_tenant_id,
-                "created_by": request.created_by,
-                "status": "active",
-            },
-        )
-        await principal_repository.create_principal(
-            db,
-            {
-                "principal_id": request.bootstrap_admin_principal_id,
-                "tenant_domain_id": request.tenant_domain_id,
-                "principal_type": "admin",
-                "lifecycle_state": "active",
-            },
-        )
+        async with db.begin():
+            domain_result = await tenant_domain_repository.create_domain(
+                db,
+                {
+                    "tenant_domain_id": request.tenant_domain_id,
+                    "platform_tenant_id": request.platform_tenant_id,
+                    "created_by": request.created_by,
+                    "status": "active",
+                },
+                commit=False,
+            )
+            await principal_repository.create_principal(
+                db,
+                {
+                    "principal_id": request.bootstrap_admin_principal_id,
+                    "tenant_domain_id": request.tenant_domain_id,
+                    "principal_type": "admin",
+                    "lifecycle_state": "active",
+                },
+                commit=False,
+            )
         await audit_service.write_best_effort_event(
             db,
             event_type="identity.onboarding.completed",

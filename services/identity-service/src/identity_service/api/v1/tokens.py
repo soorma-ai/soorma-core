@@ -1,9 +1,10 @@
 """Token issuance API endpoints."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from soorma_common.models import TokenIssueRequest, TokenIssueResponse
 
 from identity_service.core.dependencies import TenantContext, require_user_tenant_context
+from identity_service.services.errors import IdentityServiceError
 from identity_service.services.token_service import token_service
 
 router = APIRouter(prefix="/tokens", tags=["Tokens"])
@@ -15,4 +16,14 @@ async def issue_token(
     context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Issue token."""
-    return await token_service.issue_token(context.db, request)
+    try:
+        return await token_service.issue_token(context.db, request)
+    except IdentityServiceError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={
+                "code": exc.code,
+                "message": exc.message,
+                "correlation_id": context.correlation_id,
+            },
+        ) from exc

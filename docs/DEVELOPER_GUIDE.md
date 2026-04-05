@@ -536,6 +536,7 @@ docker compose -f production.yml up -d
 - [Event System](./event_system/README.md) - Event-driven architecture, topics, messaging
 - [Memory System](./memory_system/README.md) - CoALA framework and memory types
 - [Discovery](./discovery/README.md) - Registry and capability discovery
+- [Identity Service](./identity_service/README.md) - Identity domain APIs, architecture, and use cases
 
 **For Core Contributors (different scope):**
 - [SESSION_INITIALIZATION.md](./SESSION_INITIALIZATION.md) - MANDATORY workflow for soorma-core contributions

@@ -11,7 +11,13 @@ from identity_service.models.domain import Principal
 class PrincipalRepository:
     """Principal lifecycle persistence repository."""
 
-    async def create_principal(self, db: AsyncSession, payload: dict[str, object]) -> dict[str, object]:
+    async def create_principal(
+        self,
+        db: AsyncSession,
+        payload: dict[str, object],
+        *,
+        commit: bool = True,
+    ) -> dict[str, object]:
         """Persist principal with idempotent semantics."""
         principal_id = str(payload["principal_id"])
         existing = await db.get(Principal, principal_id)
@@ -33,8 +39,11 @@ class PrincipalRepository:
             updated_at=datetime.now(UTC),
         )
         db.add(model)
-        await db.commit()
-        await db.refresh(model)
+        if commit:
+            await db.commit()
+            await db.refresh(model)
+        else:
+            await db.flush()
         return {
             "principal_id": model.principal_id,
             "tenant_domain_id": model.tenant_domain_id,

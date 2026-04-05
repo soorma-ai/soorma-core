@@ -64,5 +64,17 @@ async def test_mapping_collision_without_override_is_denied(db_session):
         override_requested=True,
     )
     override_response = await mapping_service.evaluate_mapping(db_session, override)
-    assert override_response.decision == "allow"
-    assert override_response.reason_code == "override_accepted"
+    assert override_response.decision == "deny"
+    assert override_response.reason_code == "override_admin_required"
+
+    admin_override = MappingEvaluationRequest(
+        tenant_domain_id="td-acme",
+        source_issuer_id="issuer-1",
+        external_identity_key="ext-123",
+        canonical_identity_key="canonical-789",
+        principal_id="principal-admin",
+        override_requested=True,
+    )
+    admin_override_response = await mapping_service.evaluate_mapping(db_session, admin_override)
+    assert admin_override_response.decision == "allow"
+    assert admin_override_response.reason_code == "override_accepted"

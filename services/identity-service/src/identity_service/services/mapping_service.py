@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from soorma_common.models import MappingEvaluationRequest, MappingEvaluationResponse
 
 from identity_service.crud.mappings import mapping_repository
+from identity_service.crud.principals import principal_repository
 from identity_service.services.audit_service import audit_service
 
 
@@ -16,6 +17,22 @@ class MappingService:
         request: MappingEvaluationRequest,
     ) -> MappingEvaluationResponse:
         """Evaluate mapping collision policy."""
+        if request.override_requested:
+            principal = await principal_repository.get_principal(db, request.principal_id)
+            if principal is None or str(principal["principal_type"]) != "admin":
+                await audit_service.write_best_effort_event(
+                    db,
+                    event_type="identity.mapping.evaluated",
+                    payload=(
+                        f"tenant_domain_id={request.tenant_domain_id},"
+                        "decision=deny,reason=override_admin_required"
+                    ),
+                )
+                return MappingEvaluationResponse(
+                    decision="deny",
+                    reason_code="override_admin_required",
+                )
+
         result = await mapping_repository.evaluate_collision(
             db,
             {
