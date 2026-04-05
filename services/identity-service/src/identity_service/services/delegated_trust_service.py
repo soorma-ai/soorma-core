@@ -1,5 +1,7 @@
 """Delegated issuer trust service."""
 
+from uuid import uuid4
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from soorma_common.models import DelegatedIssuerRequest, DelegatedIssuerResponse
 
@@ -10,25 +12,32 @@ from identity_service.services.audit_service import audit_service
 class DelegatedTrustService:
     """Delegated trust registration and validation service."""
 
-    async def register_issuer(self, db: AsyncSession, request: DelegatedIssuerRequest) -> DelegatedIssuerResponse:
+    async def register_issuer(
+        self,
+        db: AsyncSession,
+        request: DelegatedIssuerRequest,
+        *,
+        actor_id: str,
+    ) -> DelegatedIssuerResponse:
         """Register delegated issuer."""
+        delegated_issuer_id = f"di_{uuid4().hex}"
         result = await delegated_issuer_repository.register_issuer(
             db,
             {
-                "delegated_issuer_id": request.delegated_issuer_id,
+                "delegated_issuer_id": delegated_issuer_id,
                 "tenant_domain_id": request.tenant_domain_id,
                 "issuer_id": request.issuer_id,
                 "jwk_set_ref_or_material": request.jwk_set_ref_or_material,
                 "audience_policy_ref": request.audience_policy_ref,
                 "claim_mapping_policy_ref": request.claim_mapping_policy_ref,
-                "created_by": request.created_by,
+                "created_by": actor_id,
                 "status": "active",
             },
         )
         await audit_service.write_best_effort_event(
             db,
             event_type="identity.delegated_issuer.registered",
-            payload=f"delegated_issuer_id={request.delegated_issuer_id}",
+            payload=f"delegated_issuer_id={delegated_issuer_id}",
         )
         return DelegatedIssuerResponse(
             delegated_issuer_id=str(result["delegated_issuer_id"]),

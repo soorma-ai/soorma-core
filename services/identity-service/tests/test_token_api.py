@@ -8,6 +8,7 @@ from soorma_common.models import (
     DelegatedIssuerRequest,
     OnboardingRequest,
     TokenIssueRequest,
+    TokenIssuanceType,
 )
 
 from identity_service.core.dependencies import TenantContext, require_user_tenant_context
@@ -22,20 +23,15 @@ from identity_service.services.token_service import token_service
 @pytest.mark.asyncio
 async def test_platform_token_issuance_returns_bearer_token(db_session):
     """Platform issuance should return a bearer token payload."""
-    await onboarding_service.onboard_tenant(
+    onboarding = await onboarding_service.onboard_tenant(
         db_session,
-        OnboardingRequest(
-            tenant_domain_id="td-acme",
-            platform_tenant_id="pt-acme",
-            bootstrap_admin_principal_id="principal-1",
-            created_by="system",
-        ),
+        OnboardingRequest(),
+        actor_id="system",
     )
 
     request = TokenIssueRequest(
-        tenant_domain_id="td-acme",
-        principal_id="principal-1",
-        issuance_type="platform",
+        principal_id=onboarding.bootstrap_admin_principal_id,
+        issuance_type=TokenIssuanceType.PLATFORM,
     )
 
     response = await token_service.issue_token(db_session, request)
@@ -51,10 +47,10 @@ async def test_platform_token_issuance_returns_bearer_token(db_session):
         options={"verify_aud": False},
     )
     assert claims["iss"] == "soorma-identity-service"
-    assert claims["sub"] == "principal-1"
+    assert claims["sub"] == onboarding.bootstrap_admin_principal_id
     assert claims["aud"] == "soorma-services"
-    assert claims["platform_tenant_id"] == "pt-acme"
-    assert claims["principal_id"] == "principal-1"
+    assert claims["platform_tenant_id"] == onboarding.platform_tenant_id
+    assert claims["principal_id"] == onboarding.bootstrap_admin_principal_id
     assert claims["principal_type"] == "admin"
     assert claims["roles"] == ["admin"]
     assert claims["jti"]
@@ -65,20 +61,15 @@ async def test_platform_token_issuance_returns_bearer_token(db_session):
 @pytest.mark.asyncio
 async def test_delegated_issuance_denied_when_issuer_not_trusted(db_session):
     """Delegated issuance should fail closed without trusted issuer context."""
-    await onboarding_service.onboard_tenant(
+    onboarding = await onboarding_service.onboard_tenant(
         db_session,
-        OnboardingRequest(
-            tenant_domain_id="td-acme",
-            platform_tenant_id="pt-acme",
-            bootstrap_admin_principal_id="principal-1",
-            created_by="system",
-        ),
+        OnboardingRequest(),
+        actor_id="system",
     )
 
     request = TokenIssueRequest(
-        tenant_domain_id="td-acme",
-        principal_id="principal-1",
-        issuance_type="delegated",
+        principal_id=onboarding.bootstrap_admin_principal_id,
+        issuance_type=TokenIssuanceType.DELEGATED,
         delegated_issuer_id="issuer-unknown",
     )
 
@@ -91,7 +82,7 @@ async def test_delegated_issuance_denied_when_issuer_not_trusted(db_session):
     denied_record = (
         await db_session.execute(
             select(TokenIssuanceRecord).where(
-                TokenIssuanceRecord.principal_id == "principal-1",
+                TokenIssuanceRecord.principal_id == onboarding.bootstrap_admin_principal_id,
                 TokenIssuanceRecord.decision == "denied",
             )
         )
@@ -112,35 +103,29 @@ async def test_delegated_issuance_denied_when_issuer_not_trusted(db_session):
 @pytest.mark.asyncio
 async def test_delegated_issuance_allowed_when_issuer_trusted(db_session):
     """Delegated issuance should return token when issuer trust exists."""
-    await onboarding_service.onboard_tenant(
+    onboarding = await onboarding_service.onboard_tenant(
         db_session,
-        OnboardingRequest(
-            tenant_domain_id="td-acme",
-            platform_tenant_id="pt-acme",
-            bootstrap_admin_principal_id="principal-1",
-            created_by="system",
-        ),
+        OnboardingRequest(),
+        actor_id="system",
     )
-    await delegated_trust_service.register_issuer(
+    delegated = await delegated_trust_service.register_issuer(
         db_session,
         DelegatedIssuerRequest(
-            delegated_issuer_id="issuer-1",
-            tenant_domain_id="td-acme",
+            tenant_domain_id=onboarding.tenant_domain_id,
             issuer_id="soorma-identity-service",
             jwk_set_ref_or_material="https://issuer.example/jwks.json",
             audience_policy_ref="aud-default",
             claim_mapping_policy_ref="claim-default",
-            created_by="admin-1",
         ),
+        actor_id="admin-1",
     )
 
     response = await token_service.issue_token(
         db_session,
         TokenIssueRequest(
-            tenant_domain_id="td-acme",
-            principal_id="principal-1",
-            issuance_type="delegated",
-            delegated_issuer_id="issuer-1",
+            principal_id=onboarding.bootstrap_admin_principal_id,
+            issuance_type=TokenIssuanceType.DELEGATED,
+            delegated_issuer_id=delegated.delegated_issuer_id,
         ),
     )
     assert response.token_type == "Bearer"
@@ -150,19 +135,15 @@ async def test_delegated_issuance_allowed_when_issuer_trusted(db_session):
 @pytest.mark.asyncio
 async def test_delegated_issuer_denial_returns_typed_safe_error_envelope(db_session):
     """Denied delegated issuance should return stable typed error payload from API."""
-    await onboarding_service.onboard_tenant(
+    onboarding = await onboarding_service.onboard_tenant(
         db_session,
-        OnboardingRequest(
-            tenant_domain_id="td-http",
-            platform_tenant_id="pt-http",
-            bootstrap_admin_principal_id="principal-http",
-            created_by="system",
-        ),
+        OnboardingRequest(),
+        actor_id="system",
     )
 
     async def _override_user_context() -> TenantContext:
         return TenantContext(
-            platform_tenant_id="pt-http",
+            platform_tenant_id=onboarding.platform_tenant_id,
             service_tenant_id="svc-http",
             service_user_id="user-http",
             db=db_session,
@@ -176,11 +157,11 @@ async def test_delegated_issuer_denial_returns_typed_safe_error_envelope(db_sess
             response = await async_client.post(
                 "/v1/identity/tokens/issue",
                 json={
-                    "tenant_domain_id": "td-http",
-                    "principal_id": "principal-http",
+                    "principal_id": onboarding.bootstrap_admin_principal_id,
                     "issuance_type": "delegated",
                     "delegated_issuer_id": "issuer-missing",
                 },
+                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
             )
 
         assert response.status_code == 403

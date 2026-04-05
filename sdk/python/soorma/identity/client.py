@@ -1,5 +1,6 @@
 """Identity Service client (Layer 1)."""
 
+import os
 from typing import Optional, TypeVar
 
 import httpx
@@ -31,10 +32,12 @@ class IdentityServiceClient:
         base_url: str = "http://localhost:8085",
         timeout: float = 30.0,
         platform_tenant_id: Optional[str] = None,
+        admin_api_key: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
+        self.admin_api_key = admin_api_key or os.getenv("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
         self._client = httpx.AsyncClient(timeout=timeout)
 
     async def close(self) -> None:
@@ -60,6 +63,7 @@ class IdentityServiceClient:
             "X-Tenant-ID": self.platform_tenant_id,
             "X-Service-Tenant-ID": service_tenant_id,
             "X-User-ID": service_user_id,
+            "X-Identity-Admin-Key": self.admin_api_key,
         }
 
     async def _post(
@@ -76,8 +80,6 @@ class IdentityServiceClient:
             headers=self._build_identity_headers(service_tenant_id, service_user_id),
             json=payload.model_dump(by_alias=True),
         )
-        if response.status_code == 403:
-            raise PermissionError("delegated issuer is not trusted")
         response.raise_for_status()
         return response_model.model_validate(response.json())
 
@@ -156,8 +158,6 @@ class IdentityServiceClient:
             headers=self._build_identity_headers(service_tenant_id, service_user_id),
             json={},
         )
-        if response.status_code == 403:
-            raise PermissionError("delegated issuer is not trusted")
         response.raise_for_status()
         return PrincipalResponse.model_validate(response.json())
 

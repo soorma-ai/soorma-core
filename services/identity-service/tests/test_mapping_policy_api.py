@@ -11,42 +11,38 @@ from identity_service.services.mapping_service import mapping_service
 @pytest.mark.asyncio
 async def test_mapping_collision_without_override_is_denied(db_session):
     """Collision should be denied when override is not requested."""
-    await onboarding_service.onboard_tenant(
+    onboarding = await onboarding_service.onboard_tenant(
         db_session,
-        OnboardingRequest(
-            tenant_domain_id="td-acme",
-            platform_tenant_id="pt-acme",
-            bootstrap_admin_principal_id="principal-admin",
-            created_by="system",
-        ),
+        OnboardingRequest(),
+        actor_id="system",
     )
-    await principal_service.create_principal(
+    principal_two = await principal_service.create_principal(
         db_session,
         PrincipalRequest(
-            principal_id="principal-2",
-            tenant_domain_id="td-acme",
+            tenant_domain_id=onboarding.tenant_domain_id,
             principal_type="developer",
             lifecycle_state="active",
+            external_ref="principal2@example.com",
         ),
     )
 
     initial_request = MappingEvaluationRequest(
-        tenant_domain_id="td-acme",
+        tenant_domain_id=onboarding.tenant_domain_id,
         source_issuer_id="issuer-1",
         external_identity_key="ext-123",
         canonical_identity_key="canonical-456",
-        principal_id="principal-admin",
+        principal_id=onboarding.bootstrap_admin_principal_id,
         override_requested=False,
     )
     initial_response = await mapping_service.evaluate_mapping(db_session, initial_request)
     assert initial_response.decision == "allow"
 
     request = MappingEvaluationRequest(
-        tenant_domain_id="td-acme",
+        tenant_domain_id=onboarding.tenant_domain_id,
         source_issuer_id="issuer-1",
         external_identity_key="ext-123",
         canonical_identity_key="canonical-456",
-        principal_id="principal-2",
+        principal_id=principal_two.principal_id,
         override_requested=False,
     )
 
@@ -56,11 +52,11 @@ async def test_mapping_collision_without_override_is_denied(db_session):
     assert response.reason_code == "collision_no_override"
 
     override = MappingEvaluationRequest(
-        tenant_domain_id="td-acme",
+        tenant_domain_id=onboarding.tenant_domain_id,
         source_issuer_id="issuer-1",
         external_identity_key="ext-123",
         canonical_identity_key="canonical-789",
-        principal_id="principal-2",
+        principal_id=principal_two.principal_id,
         override_requested=True,
     )
     override_response = await mapping_service.evaluate_mapping(db_session, override)
@@ -68,11 +64,11 @@ async def test_mapping_collision_without_override_is_denied(db_session):
     assert override_response.reason_code == "override_admin_required"
 
     admin_override = MappingEvaluationRequest(
-        tenant_domain_id="td-acme",
+        tenant_domain_id=onboarding.tenant_domain_id,
         source_issuer_id="issuer-1",
         external_identity_key="ext-123",
         canonical_identity_key="canonical-789",
-        principal_id="principal-admin",
+        principal_id=onboarding.bootstrap_admin_principal_id,
         override_requested=True,
     )
     admin_override_response = await mapping_service.evaluate_mapping(db_session, admin_override)

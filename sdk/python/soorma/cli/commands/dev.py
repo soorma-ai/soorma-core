@@ -67,6 +67,9 @@ services:
             - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/registry
             - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/registry
             - NATS_URL=nats://nats:4222
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -89,6 +92,9 @@ services:
             - EVENT_ADAPTER=nats
             - NATS_URL=nats://nats:4222
             - DEBUG=false
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -113,6 +119,9 @@ services:
             - OPENAI_API_KEY=${OPENAI_API_KEY:-}
             - IS_LOCAL_TESTING=true
             - IS_PROD=false
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -135,6 +144,9 @@ services:
             - NATS_URL=nats://nats:4222
             - IS_LOCAL_TESTING=true
             - IS_PROD=false
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -157,6 +169,11 @@ services:
             - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/identity
             - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/identity
             - IS_PROD=false
+            - IDENTITY_ADMIN_API_KEY=${IDENTITY_ADMIN_API_KEY:-dev-identity-admin}
+            - IDENTITY_SIGNING_KEY=${IDENTITY_SIGNING_KEY:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
+            - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -607,8 +624,14 @@ def dev_stack(
     tracker_service_image = service_images.get("tracker-service", "tracker-service:latest")
     identity_service_image = service_images.get("identity-service", "identity-service:latest")
     
-    # Get OpenAI API key from environment
+    # Get optional local development secrets from environment.
+    # Defaults are intentionally deterministic for local-only stacks.
     openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+    identity_admin_api_key = os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
+    identity_signing_key = os.environ.get("IDENTITY_SIGNING_KEY", "dev-identity-signing-key")
+    soorma_auth_jwt_secret = os.environ.get("SOORMA_AUTH_JWT_SECRET", identity_signing_key)
+    soorma_auth_jwt_issuer = os.environ.get("SOORMA_AUTH_JWT_ISSUER", "soorma-identity-service")
+    soorma_auth_jwt_audience = os.environ.get("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
     
     # Write .env file with custom ports and service images
     env_content = f"""# Soorma Local Development Environment
@@ -626,6 +649,11 @@ IDENTITY_SERVICE_PORT={identity_service_port}
 IDENTITY_SERVICE_IMAGE={identity_service_image or 'identity-service:latest'}
 POSTGRES_PORT={postgres_port}
 OPENAI_API_KEY={openai_api_key}
+IDENTITY_ADMIN_API_KEY={identity_admin_api_key}
+IDENTITY_SIGNING_KEY={identity_signing_key}
+SOORMA_AUTH_JWT_SECRET={soorma_auth_jwt_secret}
+SOORMA_AUTH_JWT_ISSUER={soorma_auth_jwt_issuer}
+SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
 """
     env_file.write_text(env_content)
     
@@ -722,5 +750,11 @@ OPENAI_API_KEY={openai_api_key}
     typer.echo(f"  export SOORMA_TRACKER_SERVICE_URL=http://localhost:{tracker_service_port}")
     typer.echo(f"  export SOORMA_IDENTITY_URL=http://localhost:{identity_service_port}")
     typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
+    typer.echo("  # Optional local overrides for identity/JWT testing:")
+    typer.echo("  export IDENTITY_ADMIN_API_KEY=dev-identity-admin")
+    typer.echo("  export IDENTITY_SIGNING_KEY=dev-identity-signing-key")
+    typer.echo("  export SOORMA_AUTH_JWT_SECRET=dev-identity-signing-key")
+    typer.echo("  export SOORMA_AUTH_JWT_ISSUER=soorma-identity-service")
+    typer.echo("  export SOORMA_AUTH_JWT_AUDIENCE=soorma-services")
     typer.echo("  python agent.py")
     raise typer.Exit(0)

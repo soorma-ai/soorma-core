@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from soorma_common.models import TokenIssueRequest, TokenIssueResponse
+from soorma_common.models import TokenIssueRequest, TokenIssueResponse, TokenIssuanceType
 
 from identity_service.crud.principals import principal_repository
 from identity_service.crud.tenant_domains import tenant_domain_repository
@@ -34,7 +34,8 @@ class TokenService:
                 status_code=403,
             )
 
-        tenant_domain = await tenant_domain_repository.get_domain(db, request.tenant_domain_id)
+        tenant_domain_id = str(principal["tenant_domain_id"])
+        tenant_domain = await tenant_domain_repository.get_domain(db, tenant_domain_id)
         if tenant_domain is None:
             raise IdentityServiceError(
                 code="tenant_domain_not_found",
@@ -42,15 +43,15 @@ class TokenService:
                 status_code=404,
             )
 
-        if request.issuance_type == "delegated":
+        if request.issuance_type == TokenIssuanceType.DELEGATED:
             is_trusted = await delegated_trust_service.is_trusted(db, request.delegated_issuer_id)
             if not is_trusted:
                 await token_record_repository.create_record(
                     db,
                     {
-                        "tenant_domain_id": request.tenant_domain_id,
+                        "tenant_domain_id": tenant_domain_id,
                         "principal_id": request.principal_id,
-                        "issuance_type": request.issuance_type,
+                        "issuance_type": request.issuance_type.value,
                         "decision": "denied",
                         "decision_reason_code": "delegated_issuer_untrusted",
                     },
@@ -59,7 +60,7 @@ class TokenService:
                     db,
                     event_type="identity.token.denied",
                     payload=(
-                        f"tenant_domain_id={request.tenant_domain_id},"
+                        f"tenant_domain_id={tenant_domain_id},"
                         f"principal_id={request.principal_id},reason=delegated_issuer_untrusted"
                     ),
                 )
@@ -79,8 +80,8 @@ class TokenService:
             "principal_id": request.principal_id,
             "principal_type": str(principal["principal_type"]),
             "roles": [str(principal["principal_type"])],
-            "tenant_domain_id": request.tenant_domain_id,
-            "issuance_type": request.issuance_type,
+            "tenant_domain_id": tenant_domain_id,
+            "issuance_type": request.issuance_type.value,
             "iat": int(issued_at.timestamp()),
         }
         if request.delegated_issuer_id:
@@ -89,9 +90,9 @@ class TokenService:
         await token_record_repository.create_record(
             db,
             {
-                "tenant_domain_id": request.tenant_domain_id,
+                "tenant_domain_id": tenant_domain_id,
                 "principal_id": request.principal_id,
-                "issuance_type": request.issuance_type,
+                "issuance_type": request.issuance_type.value,
                 "decision": "issued",
                 "decision_reason_code": "ok",
                 "issued_at": issued_at,
@@ -101,8 +102,8 @@ class TokenService:
             db,
             event_type="identity.token.issued",
             payload=(
-                f"tenant_domain_id={request.tenant_domain_id},"
-                f"principal_id={request.principal_id},issuance_type={request.issuance_type}"
+                f"tenant_domain_id={tenant_domain_id},"
+                f"principal_id={request.principal_id},issuance_type={request.issuance_type.value}"
             ),
         )
         return TokenIssueResponse(token=token, token_type="Bearer")

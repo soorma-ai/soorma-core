@@ -24,6 +24,7 @@ class TestIdentityServiceClientContracts:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "tenant_domain_id": "tenant-domain-1",
+            "platform_tenant_id": "platform-tenant-1",
             "bootstrap_admin_principal_id": "principal-1",
             "status": "created",
         }
@@ -33,12 +34,7 @@ class TestIdentityServiceClientContracts:
         identity_client._client.post = AsyncMock(return_value=mock_response)
 
         result = await identity_client.onboard_tenant(
-            payload=OnboardingRequest(
-                tenant_domain_id="tenant-domain-1",
-                platform_tenant_id="platform-tenant-1",
-                bootstrap_admin_principal_id="principal-1",
-                created_by="system",
-            ),
+            payload=OnboardingRequest(),
             service_tenant_id="svc-tenant",
             service_user_id="svc-user",
         )

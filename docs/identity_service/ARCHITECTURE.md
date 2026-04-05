@@ -130,6 +130,16 @@ Primary runtime settings in `src/identity_service/core/config.py`:
 - `IS_PROD`
 - `IDENTITY_ADMIN_API_KEY`
 
+Additional runtime auth/signing settings used by middleware/provider:
+- `IDENTITY_SIGNING_KEY`
+- `SOORMA_AUTH_JWT_SECRET`
+- `SOORMA_AUTH_JWT_ISSUER`
+- `SOORMA_AUTH_JWT_AUDIENCE`
+
+Local stack behavior:
+- `soorma dev --start` generates `.soorma/docker-compose.yml` and `.soorma/.env` and injects local defaults for the above identity/JWT variables.
+- Exporting these variables before `soorma dev --start` overrides generated defaults for local testing.
+
 ## Architecture Alignment
 
 This service aligns with `docs/ARCHITECTURE_PATTERNS.md` sections:

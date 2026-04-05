@@ -6,6 +6,7 @@ by services, SDKs, and clients across the platform.
 """
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
@@ -283,26 +284,30 @@ class EventQueryResponse(BaseDTO):
 
 
 class OnboardingRequest(BaseDTO):
-    """Request to bootstrap an identity domain for a tenant."""
-    tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
-    platform_tenant_id: str = Field(..., description="Platform tenant identifier.")
-    bootstrap_admin_principal_id: str = Field(..., description="Initial admin principal identifier.")
-    created_by: str = Field(..., description="Actor who initiated onboarding.")
+    """Request to bootstrap an identity domain for a tenant.
+
+    Identity-service owns generation of platform identity identifiers.
+    """
+    bootstrap_admin_external_ref: Optional[str] = Field(
+        default=None,
+        description="Optional external reference to bind for the bootstrap admin principal.",
+    )
 
 
 class OnboardingResponse(BaseDTO):
     """Response for tenant identity onboarding."""
     tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
+    platform_tenant_id: str = Field(..., description="Platform tenant identifier.")
     bootstrap_admin_principal_id: str = Field(..., description="Bootstrapped admin principal identifier.")
     status: str = Field(..., description="Onboarding status.")
 
 
 class PrincipalRequest(BaseDTO):
     """Request to create or update an identity principal."""
-    principal_id: str = Field(..., description="Principal identifier.")
     tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
     principal_type: str = Field(..., description="Principal type (user, service, etc).")
     lifecycle_state: str = Field(default="active", description="Lifecycle state.")
+    external_ref: Optional[str] = Field(default=None, description="External reference identifier.")
 
 
 class PrincipalResponse(BaseDTO):
@@ -312,11 +317,20 @@ class PrincipalResponse(BaseDTO):
     lifecycle_state: str = Field(..., description="Current lifecycle state.")
 
 
+class TokenIssuanceType(str, Enum):
+    """Supported token issuance modes."""
+
+    PLATFORM = "platform"
+    DELEGATED = "delegated"
+
+
 class TokenIssueRequest(BaseDTO):
     """Request to issue a platform or delegated token."""
-    tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
     principal_id: str = Field(..., description="Principal identifier.")
-    issuance_type: str = Field(default="platform", description="Token issuance mode.")
+    issuance_type: TokenIssuanceType = Field(
+        default=TokenIssuanceType.PLATFORM,
+        description="Token issuance mode.",
+    )
     delegated_issuer_id: Optional[str] = Field(default=None, description="Delegated issuer identifier.")
 
 
@@ -328,13 +342,11 @@ class TokenIssueResponse(BaseDTO):
 
 class DelegatedIssuerRequest(BaseDTO):
     """Request to register or update delegated issuer trust metadata."""
-    delegated_issuer_id: str = Field(..., description="Delegated issuer identifier.")
     tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
     issuer_id: str = Field(..., description="External issuer identifier.")
     jwk_set_ref_or_material: str = Field(..., description="JWK set reference or inline material.")
     audience_policy_ref: str = Field(..., description="Audience policy reference.")
     claim_mapping_policy_ref: str = Field(..., description="Claim mapping policy reference.")
-    created_by: str = Field(..., description="Actor who created the delegated issuer trust record.")
 
 
 class DelegatedIssuerResponse(BaseDTO):

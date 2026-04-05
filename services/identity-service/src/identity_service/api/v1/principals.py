@@ -3,7 +3,11 @@
 from fastapi import APIRouter, Depends
 from soorma_common.models import PrincipalRequest, PrincipalResponse
 
-from identity_service.core.dependencies import TenantContext, require_user_tenant_context
+from identity_service.core.dependencies import (
+    TenantContext,
+    require_admin_authorization,
+    require_user_tenant_context,
+)
 from identity_service.services.principal_service import principal_service
 
 router = APIRouter(prefix="/principals", tags=["Principals"])
@@ -12,6 +16,7 @@ router = APIRouter(prefix="/principals", tags=["Principals"])
 @router.post("", response_model=PrincipalResponse)
 async def create_principal(
     request: PrincipalRequest,
+    _admin: None = Depends(require_admin_authorization),
     context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Create principal."""
@@ -22,6 +27,7 @@ async def create_principal(
 async def update_principal(
     principal_id: str,
     request: PrincipalRequest,
+    _admin: None = Depends(require_admin_authorization),
     context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Update principal."""
@@ -31,6 +37,7 @@ async def update_principal(
 @router.post("/{principal_id}/revoke", response_model=PrincipalResponse)
 async def revoke_principal(
     principal_id: str,
+    _admin: None = Depends(require_admin_authorization),
     context: TenantContext = Depends(require_user_tenant_context),
 ):
     """Revoke principal."""

@@ -8,6 +8,7 @@ from soorma_common.models import (
     OnboardingResponse,
     TokenIssueRequest,
     TokenIssueResponse,
+    TokenIssuanceType,
 )
 
 from soorma.identity.client import IdentityServiceClient
@@ -33,14 +34,12 @@ class TestIdentityWrapper:
     async def test_onboard_tenant_delegates(self, identity_wrapper: IdentityClient, mock_service_client: AsyncMock):
         """Wrapper should forward onboarding calls to low-level service client."""
         payload = OnboardingRequest(
-            tenant_domain_id="tenant-domain-1",
-            platform_tenant_id="platform-tenant-1",
-            bootstrap_admin_principal_id="principal-1",
-            created_by="system",
+            bootstrap_admin_external_ref="admin@example.com",
         )
         mock_service_client.onboard_tenant = AsyncMock(
             return_value=OnboardingResponse(
                 tenant_domain_id="tenant-domain-1",
+                platform_tenant_id="platform-tenant-1",
                 bootstrap_admin_principal_id="principal-1",
                 status="created",
             )
@@ -66,9 +65,8 @@ class TestIdentityWrapper:
         with pytest.raises(ValueError, match="tenant_id and user_id are required"):
             await identity_wrapper.issue_token(
                 payload=TokenIssueRequest(
-                    tenant_domain_id="tenant-domain-1",
                     principal_id="principal-1",
-                    issuance_type="platform",
+                    issuance_type=TokenIssuanceType.PLATFORM,
                 )
             )
 
@@ -83,9 +81,8 @@ class TestIdentityWrapper:
 
         result = await identity_wrapper.issue_token(
             payload=TokenIssueRequest(
-                tenant_domain_id="tenant-domain-1",
                 principal_id="principal-1",
-                issuance_type="platform",
+                issuance_type=TokenIssuanceType.PLATFORM,
             ),
             tenant_id="svc-tenant",
             user_id="svc-user",
@@ -96,9 +93,8 @@ class TestIdentityWrapper:
         assert result.token
         mock_service_client.issue_token.assert_called_once_with(
             TokenIssueRequest(
-                tenant_domain_id="tenant-domain-1",
                 principal_id="principal-1",
-                issuance_type="platform",
+                issuance_type=TokenIssuanceType.PLATFORM,
             ),
             service_tenant_id="svc-tenant",
             service_user_id="svc-user",
