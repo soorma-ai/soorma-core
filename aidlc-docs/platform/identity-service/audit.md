@@ -26,6 +26,78 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Functional Design - Q5 Clarification
+**Timestamp**: 2026-04-04T22:11:41Z
+**User Input**: "help me understand q5 and its options"
+**AI Response**: "Explained Q5 collision-handling options for external principal mapping policies by comparing strict-reject, last-writer-wins, and tenant-configurable deterministic merge behavior, including identity integrity, operational safety, and auditability trade-offs."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-04T22:10:16Z
+**User Input**: "yes, record answer with rationale"
+**AI Response**: "Recorded Question 4 as option B with rationale aligned to FR-11 incremental rollout, day-1 platform operability, delegated-issuer policy gating, and deferred full issuance matrix until later integration/cutover units complete."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q4 Clarification
+**Timestamp**: 2026-04-04T22:08:15Z
+**User Input**: "for Q4, what does SDK JET inegration mean? also based on discussions so far, what option is reasonable?"
+**AI Response**: "Clarified that SDK JWT integration refers to FR-11 phase 2 where SDK wrappers/clients start sending JWT-authenticated requests while preserving existing handler/router usage patterns. Recommended Option B for this unit: allow platform-principal issuance on trusted existing call paths and gate delegated issuance behind registered issuer policy controls; avoid full issuance matrix until later units complete integration and hardening."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Day-1 Dependency Clarification
+**Timestamp**: 2026-04-04T22:03:24Z
+**User Input**: "will option C result in some day 1 dependency for platform tenant to get operational? or can they still get operational on day 1 using out of the box soorma-core platform without any setup / build on their side?"
+**AI Response**: "Clarified that option C does not have to block day-1 operation if platform-managed defaults are provided. Tenant can be operational out-of-box using platform principals and baseline issuance immediately, while delegated issuer policy fields can default to safe templates and remain optional until delegated external identity flows are enabled."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Clarification
+**Timestamp**: 2026-04-04T22:00:18Z
+**User Input**: "help me understand q3 and its options"
+**AI Response**: "Explained Q3 delegated issuer registration options by comparing minimum identity-only registration, key-material plus lifecycle metadata, and policy-bound registration with audience and claim-mapping references, including security/operational trade-offs and recommendation for v1." 
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-04T22:05:00Z
+**User Input**: "ok, lets record the answer with this day-1 rationale detail"
+**AI Response**: "Recorded Question 3 as option C with explicit day-1 rationale: platform tenants can be operational out-of-box using baseline platform-principal flows while delegated issuer policy controls remain opt-in with safe platform-managed defaults."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q2 Answer Recorded
+**Timestamp**: 2026-04-04T21:57:14Z
+**User Input**: "yes, record answer with rationale details"
+**AI Response**: "Recorded Question 2 as option C (hybrid) with rationale that soorma-core enforces fixed platform roles for core authorization while tenant-defined namespaced roles are permitted for delegated/tenant-owned access control domains, with no implicit privilege mapping and explicit deny-by-default policy constraints."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q2 Clarification
+**Timestamp**: 2026-04-04T21:55:44Z
+**User Input**: "for q2, what is the value of allowing tenant defined role extensions? is that for delegated JWT? as far as soorma-core itself is concerned, it will only check for the roles defined by the soorma-core platform, and any tenant defined roled would likely be part of extended JWT claims in delegated flow and not used by soorma-core services itself, can be used by the tenant's own services and agents for their tenant specific access control based on those custom roles."
+**AI Response**: "Clarified that tenant-defined role extensions are primarily for delegated/custom tenant workflows and should not expand soorma-core authorization semantics by default. Recommended a hybrid model where soorma-core enforces a fixed platform role baseline while tenant-specific roles are namespaced metadata/claims for delegated tenant services unless explicitly mapped by policy for specific routes."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q1 Answer Recorded
+**Timestamp**: 2026-04-04T21:50:24Z
+**User Input**: "ok, lets record the answer with rationale and appropriate details"
+**AI Response**: "Recorded Question 1 answer in the functional-design plan as Option X with detailed transaction boundary, onboarding authority model, post-bootstrap principal lifecycle flow, deployment-time bootstrap stance, and explicit rationale aligned to FR-1/FR-4 and fail-closed incremental delivery."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
 ## Session Continuity - Resume Request
 **Timestamp**: 2026-04-04T06:07:13Z
 **User Input**: "using AI-DLC, i'd like to resume #file:aidlc-state.md"
@@ -1107,5 +1179,543 @@ end-to-end without my confirmation at each gate."
 **User Input**: "answered"
 **AI Response**: "Prepared and presented the Infrastructure Design completion review gate with standardized Request Changes / Continue to Next Stage options."
 **Context**: CONSTRUCTION - Infrastructure Design approval gate
+
+---
+
+## Construction Resume Request
+**Timestamp**: 2026-04-04T07:15:08Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Accepted resume intent for identity-service and began session continuity handling for Construction on uow-identity-core-domain with explicit approval-gate mode."
+**Context**: CONSTRUCTION - resume intake
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-04T07:15:09Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-04T07:15:10Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-identity-core-domain)."
+**Context**: CONSTRUCTION - per-unit initialization
+
+---
+
+## Session Continuity - Inception Artifacts Load
+**Timestamp**: 2026-04-04T07:15:11Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Loaded all inception artifacts for identity-service initiative (45 files across reverse-engineering, requirements, user-stories, application-design, plans, jira-tickets, and test-cases) to establish full construction context."
+**Context**: CONSTRUCTION - session continuity artifact loading
+
+---
+
+## Functional Design - Resume Status
+**Timestamp**: 2026-04-04T07:15:12Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-identity-core-domain\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed Functional Design planning for uow-identity-core-domain using existing plan artifact and detected pending unanswered [Answer] tags requiring user input before artifact generation can continue."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Q1 Clarification
+**Timestamp**: 2026-04-04T21:37:45Z
+**User Input**: "help me understand q1 and it's options."
+**AI Response**: "Explained Q1 onboarding transaction boundary options (single transaction, two-step, saga), including consistency/failure trade-offs and guidance on when each fits this unit's incremental delivery strategy."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q1 Follow-up Clarification
+**Timestamp**: 2026-04-04T21:43:02Z
+**User Input**: "hmm, I'm thinking that tenant domain and one admin should be single transaction, and then let the admin (authenticated) handle adding other principals (users and machines) as per their need. will that work? or do we need to bootstrap all (tenants, admins, principals) as part of startup / deployment of new soorma-core solution?"
+**AI Response**: "Confirmed the proposed model works and is preferred for v1: create tenant domain plus one bootstrap admin atomically, then require authenticated admin-driven lifecycle APIs for additional principals. Clarified that full principal bootstrap during platform startup/deployment is not required and is generally discouraged except for optional seed/demo profiles."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Onboarding Authority Clarification
+**Timestamp**: 2026-04-04T21:48:24Z
+**User Input**: "ok, before we record that answer, i'm assuming this is about bootstrapping a new platform tenant and their first admin. but, what about multi-tenancy of soorma-core itself, do we need to add some super-user for soorma-core who will be authorized for onboarding / bootstrapping these platform tenants? or will these be self-service (i.e. each platform admin will self onboard their tenant on soorma-core)?"
+**AI Response**: "Clarified onboarding authority model: do not bootstrap all tenants/principals at deployment; onboarding is a runtime flow. A root trust path is still required to create a new platform tenant boundary, which can be implemented as operator-admin authorization or controlled self-service via signed invite/claim token. Recommended v1 default: operator-admin (or equivalent control-plane authority) creates tenant + first admin atomically, then tenant admin self-manages remaining principals."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Deterministic Merge Suggestion
+**Timestamp**: 2026-04-04T22:14:34Z
+**User Input**: "yes, suggest"
+**AI Response**: "Provided a concrete deterministic merge-policy template for Q5 rationale: reject by default, allow optional explicit merge mode with deterministic precedence rules, immutable binding constraints for high-risk principals, and mandatory audit/change-review controls."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Answer Recorded
+**Timestamp**: 2026-04-04T22:17:18Z
+**User Input**: "yes, record with rationale"
+**AI Response**: "Recorded Question 5 as option C with rationale: reject-by-default collision handling, optional deterministic merge for bounded contexts, explicit precedence rules, no silent canonical remap, and mandatory admin-override plus structured audit controls."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q5 Documentation Clarification
+**Timestamp**: 2026-04-04T22:18:34Z
+**User Input**: "what about the recommended merge policy template? how do we record / document that?"
+**AI Response**: "Documented the deterministic merge policy template directly in the functional-design plan under Question 5 rationale, including default mode, opt-in merge mode, scope and principal guards, precedence rules, remap safety, and required collision-resolution audit event schema expectations."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Concepts Clarification
+**Timestamp**: 2026-04-04T22:23:55Z
+**User Input**: "i want to understand the concepts / terms in q5 discussion. for example, what is \"binding\"? what is identity mapping? if soorma-core identity owns principals, then why would there is any collisions, or is this about delegated use case? how does that delegated use case works and why would there be a collision? are platform tenants being allowed to register multiple issuers who can define different service tenant user with same identity and that's the possibility for collision?"
+**AI Response**: "Clarified key terms and mechanics: binding is the persisted association between an external asserted identity key and a canonical principal; identity mapping is the normalization rule that computes canonical identity from external claims. Explained collisions mainly arise in delegated issuer scenarios (including multi-issuer-per-tenant possibilities), where different assertions can compete for the same canonical principal or remap an existing external key, requiring deterministic policy and audit controls."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q5 Reference Documentation Added
+**Timestamp**: 2026-04-04T22:28:05Z
+**User Input**: "yes, add documentation to help with understand and reference later."
+**AI Response**: "Added reusable Q5 reference documentation directly in the functional-design plan: glossary definitions (identity mapping, binding, canonical key, collision), delegated flow context, concrete collision scenarios, and expected handling summary for downstream functional design and code generation stages."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Recommendation Clarification
+**Timestamp**: 2026-04-04T22:31:30Z
+**User Input**: "for q6, based on discussions so far, is option A still recommended?"
+**AI Response**: "Confirmed option A remains the best fit: domain-specific typed error codes with stable HTTP mapping support fail-closed behavior, predictable client handling, and safe non-sensitive error responses required by the initiative's NFR/security constraints."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q8 Implementation Scope Clarification
+**Timestamp**: 2026-04-04T22:35:40Z
+**User Input**: "for q8, if we choose anything other than full (option C), then this unit will not have a functioning identity service, right? will that require another unit of work for concrete implementation?"
+**AI Response**: "Clarified that option C is not required for a functioning identity service in this unit. Option B (domain model plus repository contracts) is sufficient to implement concrete behavior in the same unit while deferring deep schema-level details to code/infrastructure artifacts as needed. Option A may increase implementation ambiguity and risk but does not inherently force a new unit if existing persistence contracts are already stable."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Answers Submitted
+**Timestamp**: 2026-04-04T22:40:20Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Accepted completion of functional-design plan answers for uow-identity-core-domain and started Step 5 answer validation and ambiguity check."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Answers Validation Complete
+**Timestamp**: 2026-04-04T22:40:22Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Validated answers for Questions 1-10; no contradictions or blocking ambiguities detected."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Artifact Generation Complete
+**Timestamp**: 2026-04-04T22:40:23Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Generated functional-design artifacts for uow-identity-core-domain: business-logic-model.md, business-rules.md, and domain-entities.md; updated plan checkboxes for steps 5-6."
+**Context**: CONSTRUCTION - Functional Design execution
+
+---
+
+## Functional Design - Review Gate Presented
+**Timestamp**: 2026-04-04T22:40:24Z
+**User Input**: "ok, all design plan answers provided"
+**AI Response**: "Updated plan checkbox for Step 7, updated aidlc-state current status to Functional Design review pending approval, and presented standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - Functional Design approval gate
+
+---
+
+## Functional Design Approval
+**Timestamp**: 2026-04-04T23:19:36Z
+**User Input**: "design approved"
+**AI Response**: "Accepted Functional Design approval for uow-identity-core-domain and advanced to NFR Requirements stage."
+**Context**: CONSTRUCTION - Functional Design approval gate passed
+
+---
+
+## NFR Requirements - Planning Start
+**Timestamp**: 2026-04-04T23:19:37Z
+**User Input**: "design approved"
+**AI Response**: "Started NFR Requirements planning for uow-identity-core-domain using completed functional-design artifacts and generated a context-appropriate NFR question plan file."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Questions Presented
+**Timestamp**: 2026-04-04T23:19:38Z
+**User Input**: "design approved"
+**AI Response**: "Presented NFR requirements question plan for user completion at construction/plans/uow-identity-core-domain-nfr-requirements-plan.md and paused for answers before artifact generation."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Answers Submitted
+**Timestamp**: 2026-04-04T23:25:52Z
+**User Input**: "all answers provided"
+**AI Response**: "Accepted completion of NFR requirements plan answers for uow-identity-core-domain and started answer validation and ambiguity checks."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Answers Validation Complete
+**Timestamp**: 2026-04-04T23:25:53Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated answers for Questions 1-9 and resolved inherited-answer references using uow-shared-auth-foundation approved NFR artifacts; no blocking contradictions detected."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Artifact Generation Complete
+**Timestamp**: 2026-04-04T23:25:54Z
+**User Input**: "all answers provided"
+**AI Response**: "Generated NFR requirements artifacts for uow-identity-core-domain: nfr-requirements.md and tech-stack-decisions.md; updated NFR plan checkboxes for steps 4-5."
+**Context**: CONSTRUCTION - NFR Requirements execution
+
+---
+
+## NFR Requirements - Review Gate Presented
+**Timestamp**: 2026-04-04T23:25:55Z
+**User Input**: "all answers provided"
+**AI Response**: "Updated NFR plan checkbox for Step 6, updated aidlc-state current status to NFR Requirements review pending approval, and presented standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - NFR Requirements approval gate
+
+---
+
+## NFR Requirements Approval
+**Timestamp**: 2026-04-04T23:32:09Z
+**User Input**: "NFR requirements approved"
+**AI Response**: "Accepted NFR Requirements approval for uow-identity-core-domain and advanced to NFR Design stage."
+**Context**: CONSTRUCTION - NFR Requirements approval gate passed
+
+---
+
+## NFR Design - Planning Start
+**Timestamp**: 2026-04-04T23:32:10Z
+**User Input**: "NFR requirements approved"
+**AI Response**: "Started NFR Design planning for uow-identity-core-domain using approved NFR requirements artifacts and generated a context-appropriate NFR design plan file."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Questions Presented
+**Timestamp**: 2026-04-04T23:32:11Z
+**User Input**: "NFR requirements approved"
+**AI Response**: "Presented NFR design question plan for user completion at construction/plans/uow-identity-core-domain-nfr-design-plan.md and paused for answers before NFR design artifact generation."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Q2 Clarification
+**Timestamp**: 2026-04-04T23:36:23Z
+**User Input**: "help me understand options for q2"
+**AI Response**: "Explained Q2 key-rotation propagation options by comparing atomic pointer swap, event-driven invalidation, hybrid swap+event model, and polling, including consistency-latency trade-offs and recommendation aligned to immediate-effect rotation requirement."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Shared-Auth Q3 Confirmation
+**Timestamp**: 2026-04-04T23:38:00Z
+**User Input**: "did we already answer q3 in uow-shared-auth-foundation"
+**AI Response**: "Confirmed yes. In uow-shared-auth-foundation NFR design plan, Question 3 is already answered as option C with rationale (policy-driven guardrail thresholds object without runtime adaptive behavior assumptions)."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Clarification
+**Timestamp**: 2026-04-04T23:39:56Z
+**User Input**: "help me undertand q5 options"
+**AI Response**: "Explained Q5 collision-handling component-pattern options by comparing inline checks, dedicated evaluator, evaluator plus override-gateway, and simulation-capable design; highlighted control-depth vs complexity trade-offs and recommendation aligned to prior collision-policy decisions."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q7 Prior-Answer Clarification
+**Timestamp**: 2026-04-04T23:45:59Z
+**User Input**: "i thnk we have already answered q7, either in this unit or previous uow-shared-auth-foundation"
+**AI Response**: "Confirmed current unit Q7 is still unanswered in uow-identity-core-domain NFR design plan. Clarified that previous unit's Q7 was a different question (component split), so it cannot be reused directly; however, rollout-gate intent can be aligned with already approved NFR requirements baseline for this unit."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Stage Purpose Clarification
+**Timestamp**: 2026-04-04T23:47:02Z
+**User Input**: "if we already approved NFR requirements, then why do we have these questions again?"
+**AI Response**: "Explained stage intent separation: NFR Requirements sets target outcomes (what quality constraints must hold), while NFR Design defines concrete design patterns/components to realize those constraints (how they will be implemented). Confirmed repeated themes can be inherited to reduce rework, and only unresolved implementation-pattern choices should require fresh answers."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Answer Prefill Requested
+**Timestamp**: 2026-04-04T23:48:05Z
+**User Input**: "yes please"
+**AI Response**: "Prefilled remaining unanswered NFR design responses in the current unit plan using inherited approved decisions and consistency defaults: Q7 set to B and Q8 set to D."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Answers Submitted
+**Timestamp**: 2026-04-04T23:49:07Z
+**User Input**: "all answers provided"
+**AI Response**: "Accepted completion of NFR design plan answers for uow-identity-core-domain and started answer validation and ambiguity checks."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Answers Validation Complete
+**Timestamp**: 2026-04-04T23:49:08Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated answers for Questions 1-8; inherited-strategy responses were resolved against approved shared-auth foundation and current-unit NFR requirements artifacts with no blocking contradictions detected."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Artifact Generation Complete
+**Timestamp**: 2026-04-04T23:49:09Z
+**User Input**: "all answers provided"
+**AI Response**: "Generated NFR design artifacts for uow-identity-core-domain: nfr-design-patterns.md and logical-components.md; updated plan checkboxes for steps 4-5."
+**Context**: CONSTRUCTION - NFR Design execution
+
+---
+
+## NFR Design - Review Gate Presented
+**Timestamp**: 2026-04-04T23:49:10Z
+**User Input**: "all answers provided"
+**AI Response**: "Updated plan checkbox for Step 6, updated aidlc-state current status to NFR Design review pending approval, and presented standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - NFR Design approval gate
+
+---
+
+## NFR Design Approval
+**Timestamp**: 2026-04-04T23:55:26Z
+**User Input**: "design approved."
+**AI Response**: "Accepted NFR Design approval for uow-identity-core-domain and advanced to Infrastructure Design stage."
+**Context**: CONSTRUCTION - NFR Design approval gate passed
+
+---
+
+## Infrastructure Design - Planning Start
+**Timestamp**: 2026-04-04T23:55:27Z
+**User Input**: "design approved."
+**AI Response**: "Started Infrastructure Design planning for uow-identity-core-domain using functional and NFR design artifacts and generated a context-appropriate infrastructure design plan file."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Questions Presented
+**Timestamp**: 2026-04-04T23:55:28Z
+**User Input**: "design approved."
+**AI Response**: "Presented infrastructure design question plan for user completion at construction/plans/uow-identity-core-domain-infrastructure-design-plan.md and paused for answers before infrastructure design artifact generation."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Aligned Answer Prefill
+**Timestamp**: 2026-04-04T23:57:37Z
+**User Input**: "review the decisions from uow-shared-auth-foundation and answer questions that are aligned"
+**AI Response**: "Reviewed approved infrastructure decisions from uow-shared-auth-foundation and prefilled aligned answers in the current unit infrastructure design plan, including rationale where option sets differed (notably key-management and replay/policy-cache mapping baselines)."
+**Context**: CONSTRUCTION - Infrastructure Design planning clarification
+
+---
+
+## Infrastructure Design - Answers Submitted
+**Timestamp**: 2026-04-05T00:02:46Z
+**User Input**: "all answers done"
+**AI Response**: "Accepted completion of infrastructure design plan answers for uow-identity-core-domain and started answer validation and ambiguity checks."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Answers Validation Complete
+**Timestamp**: 2026-04-05T00:02:47Z
+**User Input**: "all answers done"
+**AI Response**: "Validated answers for Questions 1-7; inherited and prefetched responses were resolved against approved shared-auth-foundation infrastructure decisions and current unit NFR/functional constraints with no blocking contradictions detected."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Artifact Generation Complete
+**Timestamp**: 2026-04-05T00:02:48Z
+**User Input**: "all answers done"
+**AI Response**: "Generated infrastructure design artifacts for uow-identity-core-domain: infrastructure-design.md and deployment-architecture.md; updated plan checkboxes for steps 4-5."
+**Context**: CONSTRUCTION - Infrastructure Design execution
+
+---
+
+## Infrastructure Design - Review Gate Presented
+**Timestamp**: 2026-04-05T00:02:49Z
+**User Input**: "all answers done"
+**AI Response**: "Updated plan checkbox for Step 6, updated aidlc-state current status to Infrastructure Design review pending approval, and prepared standardized Request Changes / Continue to Next Stage gate."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate
+
+---
+
+## Infrastructure Design - Bootstrap Profile Clarification
+**Timestamp**: 2026-04-05T00:20:09Z
+**User Input**: "i want to understand bootstrap profile from deployment architecture better ... currently for local setup, developers can bring up soorma-core infrastructure using docker compose, and the docker networking takes care of named base url for each service. will that need to change now and need to add a reverse proxy or something like kong in the local dev stack?"
+**AI Response**: "Clarified that local Docker Compose service-to-service networking can remain unchanged for bootstrap profile. A reverse proxy/API gateway (for example Kong) is not mandatory for local development unless teams need gateway-specific behaviors (routing policy, auth plugins, external edge simulation). Recommended keeping bootstrap default minimal and optionalizing gateway profile for integration/hardening scenarios."
+**Context**: CONSTRUCTION - Infrastructure Design review clarification
+
+---
+
+## Infrastructure Design - Clarification Documentation Update
+**Timestamp**: 2026-04-05T00:22:27Z
+**User Input**: "ok, good clarification. does this need to be documented anywhere, or is this implicit and understood anywhere we need to make any decision?"
+**AI Response**: "Documented this explicitly in unit infrastructure artifacts to avoid ambiguity in future decisions: local Docker Compose service-name networking remains valid for bootstrap profile, and local gateway/reverse-proxy is optional for edge-behavior simulation only."
+**Context**: CONSTRUCTION - Infrastructure Design review clarification
+
+---
+
+## Infrastructure Design Approval
+**Timestamp**: 2026-04-05T00:24:25Z
+**User Input**: "infra design look good"
+**AI Response**: "Accepted Infrastructure Design approval for uow-identity-core-domain and transitioned to Code Generation Part 1 planning."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate passed
+
+---
+
+## Code Generation - Planning Start
+**Timestamp**: 2026-04-05T00:26:11Z
+**User Input**: "infra design look good"
+**AI Response**: "Started Code Generation Part 1 planning for uow-identity-core-domain using approved functional, NFR, and infrastructure artifacts plus inception story/dependency mappings."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Generated
+**Timestamp**: 2026-04-05T00:26:12Z
+**User Input**: "infra design look good"
+**AI Response**: "Generated detailed code generation plan at construction/plans/uow-identity-core-domain-code-generation-plan.md with explicit story traceability, architecture alignment, wrapper completeness checks, and executable step sequence."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Approval Prompt
+**Timestamp**: 2026-04-05T00:26:13Z
+**User Input**: "infra design look good"
+**AI Response**: "Prepared standardized Request Changes / Continue to Next Stage plan-approval gate for uow-identity-core-domain code generation and paused pending explicit user approval."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate
+
+---
+
+## Workflow Compliance - Missing Step Alert
+**Timestamp**: 2026-04-05T00:31:01Z
+**User Input**: "i think you missed some ai-dlc steps that must be executed before code generation"
+**AI Response**: "Validated extension rules and confirmed two missing pre-code-generation steps for this unit: QA construction enrichment pass and Construction Design PR checkpoint gate. Began remediation before any code generation execution."
+**Context**: CONSTRUCTION - compliance correction
+
+---
+
+## QA Test Cases - Construction Enrichment Complete
+**Timestamp**: 2026-04-05T00:31:02Z
+**User Input**: "i think you missed some ai-dlc steps that must be executed before code generation"
+**AI Response**: "Executed required QA construction enrichment for uow-identity-core-domain by updating inception test specs in place (narrative, gherkin, tabular, index) and creating enrichment-delta.md with modified and added test-case traceability."
+**Context**: CONSTRUCTION - qa-test-cases enrichment
+
+---
+
+## PR Checkpoint - Construction Gate Prerequisite Check
+**Timestamp**: 2026-04-05T00:31:03Z
+**User Input**: "i think you missed some ai-dlc steps that must be executed before code generation"
+**AI Response**: "Verified git prerequisite for PR checkpoint (repository detected), detected current branch `dev`, and detected default remote branch hint `origin/main`. Awaiting explicit user branch confirmation before generating construction design PR checkpoint instructions for uow-identity-core-domain."
+**Context**: CONSTRUCTION - pr-checkpoint gate setup
+
+---
+
+## Workflow Status Correction
+**Timestamp**: 2026-04-05T00:31:04Z
+**User Input**: "i think you missed some ai-dlc steps that must be executed before code generation"
+**AI Response**: "Updated aidlc-state current status to reflect pre-codegen gate remediation state and paused code-generation progression until Construction Design PR gate is completed."
+**Context**: CONSTRUCTION - lifecycle state correction
+
+---
+
+## PR Checkpoint - Branch Confirmation Prompt
+**Timestamp**: 2026-04-05T00:31:47Z
+**User Input**: "i think you missed some ai-dlc steps that must be executed before code generation"
+**AI Response**: "Created construction/plans/uow-identity-core-domain-design-pr-checkpoint-branch-questions.md to collect explicit branch confirmation for the Construction Design PR gate (current detected branch: dev)."
+**Context**: CONSTRUCTION - pr-checkpoint gate setup
+
+---
+
+## PR Checkpoint - Branch Confirmation Received
+**Timestamp**: 2026-04-05T00:33:43Z
+**User Input**: "answer done"
+**AI Response**: "Read branch confirmation answers and resolved branch selection to `dev` from construction/plans/uow-identity-core-domain-design-pr-checkpoint-branch-questions.md."
+**Context**: CONSTRUCTION - pr-checkpoint gate setup
+
+---
+
+## PR Checkpoint - Construction Design Instructions Generated
+**Timestamp**: 2026-04-05T00:33:44Z
+**User Input**: "answer done"
+**AI Response**: "Generated construction design PR checkpoint instructions for uow-identity-core-domain at construction/plans/uow-identity-core-domain-design-pr-checkpoint-instructions.md and updated PR checkpoint state to PENDING."
+**Context**: CONSTRUCTION - pr-checkpoint gate
+
+---
+
+## PR Checkpoint - Construction Design Gate Presented
+**Timestamp**: 2026-04-05T00:33:45Z
+**User Input**: "answer done"
+**AI Response**: "Presented blocking Construction Design PR review gate and paused workflow pending explicit confirmation that team PR review is approved."
+**Context**: CONSTRUCTION - pr-checkpoint approval gate
 
 ---
