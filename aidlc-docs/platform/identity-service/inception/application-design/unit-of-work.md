@@ -40,6 +40,7 @@
   - Preserve two-layer SDK contracts and handler ergonomics.
   - Validate wrapper compatibility with identity core APIs.
   - Introduce canonical `tenant_id` semantics while retaining temporary backward-compatible aliases needed before Unit 4 cutover.
+  - Add `soorma dev` tenant bootstrap CLI capability so local developers can initialize tenant onboarding without manual curl/Swagger flows.
 - **Primary Artifacts/Targets**:
   - SDK wrapper/client integration updates.
   - Integration tests across SDK and service boundaries.
@@ -62,6 +63,9 @@
 - [ ] Add integration tests for coexistence mode: JWT-only success, JWT+legacy matching success, JWT+legacy mismatch denial.
 - [ ] Add token-issuance authorization tests: caller-self success, caller-target mismatch denial, and scoped admin override success.
 - [ ] Add signing/verification compatibility tests for asymmetric path (issue with private key, validate with public key/JWKS).
+- [ ] Add `soorma dev` tenant bootstrap command for local onboarding automation (no manual curl/Swagger required).
+- [ ] Add CLI tests for bootstrap command success and fail-closed behavior (auth/context/config errors).
+- [ ] Add CLI docs for bootstrap usage, required env/config, and output contract.
 
 ### Unit 3 Done Criteria
 - JWT path is primary and validated across SDK wrappers/clients.
