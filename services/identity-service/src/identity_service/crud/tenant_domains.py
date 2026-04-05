@@ -1,6 +1,6 @@
 """Tenant domain repository."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,7 +33,7 @@ class TenantDomainRepository:
             platform_tenant_id=str(payload["platform_tenant_id"]),
             status=str(payload.get("status", "active")),
             created_by=str(payload["created_by"]),
-            created_at=datetime.now(UTC),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(model)
         if commit:

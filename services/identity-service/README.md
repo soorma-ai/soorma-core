@@ -43,9 +43,12 @@ Optional request tracing headers:
 - `X-Correlation-ID`
 - `X-Request-ID`
 
-If service-tenant or service-user context is missing, requests fail closed.
+Non-admin routes fail closed when service-tenant or service-user context is missing.
 
-Sensitive endpoints (`/onboarding`, `/principals`, `/delegated-issuers`, `/tokens/issue`) require admin authorization in addition to request context headers.
+Admin-route exception:
+- Admin-authorized routes (`/onboarding`, `/principals`, `/delegated-issuers`, `/tokens/issue`) accept platform-tenant context with `X-Identity-Admin-Key` and may execute without `X-Service-Tenant-ID` and `X-User-ID`.
+
+Sensitive endpoints (`/onboarding`, `/principals`, `/delegated-issuers`, `/tokens/issue`) require admin authorization and platform tenant context.
 
 ## Request Contract Notes
 

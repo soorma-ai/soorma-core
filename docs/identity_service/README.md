@@ -53,9 +53,12 @@ Optional tracing headers:
 - `X-Request-ID`
 
 Behavior:
-- missing user-context dimensions fail closed
+- non-admin routes fail closed when service-tenant/service-user context is missing
 - request validation logs preserve correlation IDs when present
 - token issuance deny paths return typed safe error payloads
+
+Admin-route exception:
+- Admin-authorized routes (`/v1/identity/onboarding`, `/v1/identity/principals`, `/v1/identity/delegated-issuers`, `/v1/identity/tokens/issue`) accept platform-tenant context with `X-Identity-Admin-Key` and do not require service-tenant/service-user headers.
 
 ## Security And Behavior Notes
 

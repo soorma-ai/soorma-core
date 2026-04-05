@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from soorma_service_common import TenancyMiddleware
+from soorma_service_common import TenancyMiddleware, configure_platform_tenant_openapi
 
 from identity_service import __version__
 from identity_service.core.config import settings
@@ -42,6 +42,7 @@ app.add_middleware(
 )
 
 app.add_middleware(TenancyMiddleware)
+configure_platform_tenant_openapi(app)
 app.include_router(v1_router)
 
 

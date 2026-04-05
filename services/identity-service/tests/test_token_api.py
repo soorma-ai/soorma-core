@@ -11,7 +11,7 @@ from soorma_common.models import (
     TokenIssuanceType,
 )
 
-from identity_service.core.dependencies import TenantContext, require_user_tenant_context
+from identity_service.core.dependencies import TenantContext, get_tenant_context
 from identity_service.main import app
 from identity_service.models.domain import IdentityAuditEvent, TokenIssuanceRecord
 from identity_service.services.delegated_trust_service import delegated_trust_service
@@ -150,7 +150,7 @@ async def test_delegated_issuer_denial_returns_typed_safe_error_envelope(db_sess
             correlation_id="corr-http-1",
         )
 
-    app.dependency_overrides[require_user_tenant_context] = _override_user_context
+    app.dependency_overrides[get_tenant_context] = _override_user_context
     try:
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as async_client:
@@ -170,4 +170,84 @@ async def test_delegated_issuer_denial_returns_typed_safe_error_envelope(db_sess
         assert payload["detail"]["message"] == "Delegated issuer is not trusted."
         assert payload["detail"]["correlation_id"] == "corr-http-1"
     finally:
-        app.dependency_overrides.pop(require_user_tenant_context, None)
+        app.dependency_overrides.pop(get_tenant_context, None)
+
+
+@pytest.mark.asyncio
+async def test_platform_token_issue_allows_admin_without_service_user_context(db_session):
+    """Admin token issuance endpoint should not require service tenant/user headers."""
+    onboarding = await onboarding_service.onboard_tenant(
+        db_session,
+        OnboardingRequest(),
+        actor_id="system",
+    )
+
+    async def _override_tenant_context() -> TenantContext:
+        return TenantContext(
+            platform_tenant_id=onboarding.platform_tenant_id,
+            service_tenant_id=None,
+            service_user_id=None,
+            db=db_session,
+        )
+
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as async_client:
+            response = await async_client.post(
+                "/v1/identity/tokens/issue",
+                json={
+                    "principal_id": onboarding.bootstrap_admin_principal_id,
+                    "issuance_type": "platform",
+                },
+                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+            )
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["tokenType"] == "Bearer"
+        assert isinstance(payload["token"], str)
+        assert payload["token"]
+    finally:
+        app.dependency_overrides.pop(get_tenant_context, None)
+
+
+@pytest.mark.asyncio
+async def test_platform_token_issue_rejects_platform_tenant_mismatch(db_session):
+    """Admin token issuance should fail when principal belongs to another platform tenant."""
+    tenant_a = await onboarding_service.onboard_tenant(
+        db_session,
+        OnboardingRequest(),
+        actor_id="system",
+    )
+    tenant_b = await onboarding_service.onboard_tenant(
+        db_session,
+        OnboardingRequest(),
+        actor_id="system",
+    )
+
+    async def _override_tenant_context() -> TenantContext:
+        return TenantContext(
+            platform_tenant_id=tenant_a.platform_tenant_id,
+            service_tenant_id=None,
+            service_user_id=None,
+            db=db_session,
+        )
+
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as async_client:
+            response = await async_client.post(
+                "/v1/identity/tokens/issue",
+                json={
+                    "principal_id": tenant_b.bootstrap_admin_principal_id,
+                    "issuance_type": "platform",
+                },
+                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+            )
+
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Principal does not belong to current platform tenant context."
+    finally:
+        app.dependency_overrides.pop(get_tenant_context, None)

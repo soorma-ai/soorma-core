@@ -1,6 +1,6 @@
 """Token issuance repository."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +20,7 @@ class TokenRecordRepository:
             issuance_type=str(payload.get("issuance_type", "platform")),
             decision=str(payload.get("decision", "issued")),
             decision_reason_code=str(payload.get("decision_reason_code", "ok")),
-            issued_at=payload.get("issued_at") or datetime.now(UTC),
+            issued_at=payload.get("issued_at") or datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(record)
         await db.commit()

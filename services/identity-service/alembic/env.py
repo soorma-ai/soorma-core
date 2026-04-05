@@ -23,17 +23,30 @@ def _load_module(module_name: str, path: str):
     return module
 
 
-db_module = _load_module(
-    "identity_service_db",
-    os.path.join(PROJECT_ROOT, "src", "identity_service", "core", "db.py"),
-)
-Base = db_module.Base
+def _load_metadata_base():
+    """Load SQLAlchemy Base and register model metadata.
 
-# Import models so metadata is fully registered before autogenerate/use.
-_load_module(
-    "identity_service_domain",
-    os.path.join(PROJECT_ROOT, "src", "identity_service", "models", "domain.py"),
-)
+    Prefer importing from the installed package (runtime container path),
+    and fall back to loading source files when running from a source checkout.
+    """
+    try:
+        from identity_service.core.db import Base as installed_base
+        import identity_service.models.domain  # noqa: F401
+
+        return installed_base
+    except ModuleNotFoundError:
+        db_module = _load_module(
+            "identity_service_db",
+            os.path.join(PROJECT_ROOT, "src", "identity_service", "core", "db.py"),
+        )
+        _load_module(
+            "identity_service_domain",
+            os.path.join(PROJECT_ROOT, "src", "identity_service", "models", "domain.py"),
+        )
+        return db_module.Base
+
+
+Base = _load_metadata_base()
 
 
 def get_database_url() -> str:

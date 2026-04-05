@@ -30,7 +30,7 @@ class OnboardingService:
         platform_tenant_id = self._new_identity_id("pt")
         bootstrap_admin_principal_id = self._new_identity_id("pr")
 
-        async with db.begin():
+        try:
             domain_result = await tenant_domain_repository.create_domain(
                 db,
                 {
@@ -52,6 +52,11 @@ class OnboardingService:
                 },
                 commit=False,
             )
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
+
         await audit_service.write_best_effort_event(
             db,
             event_type="identity.onboarding.completed",

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from memory_service import __version__
 from memory_service.core.config import settings
-from soorma_service_common import TenancyMiddleware
+from soorma_service_common import TenancyMiddleware, configure_platform_tenant_openapi
 from memory_service.api.v1 import router as v1_router
 
 
@@ -46,6 +46,7 @@ app.add_middleware(
 
 # Add tenancy middleware
 app.add_middleware(TenancyMiddleware)
+configure_platform_tenant_openapi(app)
 
 # Include API routes
 app.include_router(v1_router)

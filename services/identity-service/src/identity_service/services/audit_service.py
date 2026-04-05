@@ -1,6 +1,6 @@
 """Identity audit service."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,7 @@ class AuditService:
             correlation_id=str(uuid4()),
             payload_summary=payload,
             critical=critical,
-            emitted_at=datetime.now(UTC),
+            emitted_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(event)
         await db.commit()

@@ -1,6 +1,6 @@
 """Delegated issuer repository."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -32,7 +32,7 @@ class DelegatedIssuerRepository:
             audience_policy_ref=str(payload["audience_policy_ref"]),
             claim_mapping_policy_ref=str(payload["claim_mapping_policy_ref"]),
             created_by=str(payload["created_by"]),
-            created_at=datetime.now(UTC),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(model)
         await db.commit()

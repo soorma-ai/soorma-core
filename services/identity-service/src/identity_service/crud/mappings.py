@@ -1,6 +1,6 @@
 """Mapping and binding repository."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,8 +38,8 @@ class MappingRepository:
                     canonical_identity_key=canonical_identity_key,
                     principal_id=principal_id,
                     verification_state="verified",
-                    created_at=datetime.now(UTC),
-                    updated_at=datetime.now(UTC),
+                    created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                    updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
                 )
             )
             await db.commit()
@@ -56,7 +56,7 @@ class MappingRepository:
 
         existing_row.principal_id = principal_id
         existing_row.canonical_identity_key = canonical_identity_key
-        existing_row.updated_at = datetime.now(UTC)
+        existing_row.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await db.commit()
         return {"decision": "allow", "reason_code": "override_accepted"}
 

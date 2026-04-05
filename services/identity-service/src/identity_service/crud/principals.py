@@ -1,6 +1,6 @@
 """Principal repository."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -35,8 +35,8 @@ class PrincipalRepository:
             principal_type=str(payload["principal_type"]),
             lifecycle_state=str(payload.get("lifecycle_state", "active")),
             external_ref=str(payload["external_ref"]) if payload.get("external_ref") is not None else None,
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(model)
         if commit:
@@ -61,7 +61,7 @@ class PrincipalRepository:
         model.principal_type = str(payload["principal_type"])
         model.lifecycle_state = str(payload.get("lifecycle_state", model.lifecycle_state))
         model.external_ref = str(payload["external_ref"]) if payload.get("external_ref") is not None else model.external_ref
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await db.commit()
         await db.refresh(model)
         return {
@@ -88,7 +88,7 @@ class PrincipalRepository:
         if model is None:
             raise ValueError(f"principal not found: {principal_id}")
         model.lifecycle_state = "revoked"
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await db.commit()
         await db.refresh(model)
         return {

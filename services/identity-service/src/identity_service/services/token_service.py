@@ -1,6 +1,6 @@
 """Token issuance service."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,7 +70,7 @@ class TokenService:
                     status_code=403,
                 )
 
-        issued_at = datetime.now(UTC)
+        issued_at = datetime.now(timezone.utc)
         claims = {
             "iss": "soorma-identity-service",
             "sub": request.principal_id,
@@ -95,7 +95,7 @@ class TokenService:
                 "issuance_type": request.issuance_type.value,
                 "decision": "issued",
                 "decision_reason_code": "ok",
-                "issued_at": issued_at,
+                "issued_at": issued_at.replace(tzinfo=None),
             },
         )
         await audit_service.write_best_effort_event(

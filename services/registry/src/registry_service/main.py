@@ -5,7 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from soorma_service_common import TenancyMiddleware
+from soorma_service_common import TenancyMiddleware, configure_platform_tenant_openapi
 
 from .core.config import settings
 from .core.background_tasks import background_task_manager
@@ -53,6 +53,7 @@ app.add_middleware(
 
 # Extract platform_tenant_id from X-Tenant-ID header per request
 app.add_middleware(TenancyMiddleware)
+configure_platform_tenant_openapi(app)
 
 # Include API router
 app.include_router(router)

@@ -296,6 +296,9 @@ SERVICE_DEFINITIONS = {
     },
 }
 
+# Databases required by services in the local development stack.
+SERVICE_DATABASES = ["registry", "memory", "tracker", "identity"]
+
 
 def check_service_image(service_key: str) -> Optional[str]:
     """
@@ -441,6 +444,85 @@ def wait_for_infrastructure(registry_port: int, timeout: int = 60) -> bool:
         time.sleep(1)
     
     return False
+
+
+def wait_for_postgres(timeout: int = 60) -> bool:
+    """Wait until PostgreSQL accepts connections inside the dev container."""
+    start = time.time()
+    while time.time() - start < timeout:
+        result = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "soorma-postgres",
+                "psql",
+                "-U",
+                "soorma",
+                "-d",
+                "postgres",
+                "-tAc",
+                "SELECT 1",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and "1" in result.stdout:
+            return True
+        time.sleep(1)
+    return False
+
+
+def ensure_service_databases() -> None:
+    """Create missing service databases in an idempotent way.
+
+    This is required when developers already have an existing postgres volume:
+    docker-entrypoint init scripts only run on first volume initialization.
+    """
+    for db_name in SERVICE_DATABASES:
+        exists_result = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "soorma-postgres",
+                "psql",
+                "-U",
+                "soorma",
+                "-d",
+                "postgres",
+                "-tAc",
+                f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if exists_result.returncode != 0:
+            raise RuntimeError(
+                f"Failed to check existence of database '{db_name}': {exists_result.stderr.strip()}"
+            )
+
+        if "1" in exists_result.stdout:
+            continue
+
+        create_result = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "soorma-postgres",
+                "psql",
+                "-U",
+                "soorma",
+                "-d",
+                "postgres",
+                "-c",
+                f"CREATE DATABASE {db_name};",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if create_result.returncode != 0:
+            raise RuntimeError(
+                f"Failed to create database '{db_name}': {create_result.stderr.strip()}"
+            )
 
 
 def dev_stack(
@@ -704,6 +786,30 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
     typer.echo(f"   NATS:             nats://localhost:{nats_port}")
     typer.echo(f"   PostgreSQL:       postgresql://localhost:{postgres_port}")
     typer.echo("")
+
+    # Start foundational infra first so we can ensure required DBs exist
+    foundation_result = subprocess.run(
+        base_cmd + ["up", "-d", "postgres", "nats"],
+        cwd=soorma_dir,
+        capture_output=True,
+        text=True,
+    )
+    if foundation_result.returncode != 0:
+        typer.echo("❌ Failed to start foundational infrastructure:", err=True)
+        typer.echo(foundation_result.stderr, err=True)
+        raise typer.Exit(1)
+
+    typer.echo("   ⏳ Waiting for PostgreSQL to be ready...")
+    if not wait_for_postgres(timeout=60):
+        typer.echo("❌ PostgreSQL failed to become ready.", err=True)
+        raise typer.Exit(1)
+
+    try:
+        ensure_service_databases()
+        typer.echo("   ✓ Service databases verified.")
+    except RuntimeError as exc:
+        typer.echo(f"❌ {exc}", err=True)
+        raise typer.Exit(1)
     
     # Pull images (quiet mode)
     subprocess.run(
