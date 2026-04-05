@@ -1719,3 +1719,83 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - pr-checkpoint approval gate
 
 ---
+
+## PR Checkpoint - Construction Design Approval
+**Timestamp**: 2026-04-05T00:40:52Z
+**User Input**: "PR approved"
+**AI Response**: "Accepted explicit team approval for Construction Design PR gate of uow-identity-core-domain and marked checkpoint status APPROVED in aidlc-state.md."
+**Context**: CONSTRUCTION - pr-checkpoint approval gate passed
+
+---
+
+## Code Generation - Planning Resume
+**Timestamp**: 2026-04-05T00:40:53Z
+**User Input**: "PR approved"
+**AI Response**: "Resumed Code Generation Part 1 context for uow-identity-core-domain using the previously generated code generation plan and updated current status back to code generation planning."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Approval Prompt (Re-presented)
+**Timestamp**: 2026-04-05T00:40:54Z
+**User Input**: "PR approved"
+**AI Response**: "Re-presented the standardized Request Changes / Continue to Next Stage gate for construction/plans/uow-identity-core-domain-code-generation-plan.md before any code generation execution."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate
+
+---
+
+## Code Generation - Plan Approval
+**Timestamp**: 2026-04-05T00:43:53Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Accepted explicit approval of construction/plans/uow-identity-core-domain-code-generation-plan.md and transitioned workflow to Code Generation Part 2 execution."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate passed
+
+---
+
+## Code Generation - Execution Start
+**Timestamp**: 2026-04-05T00:43:54Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Started Code Generation Part 2 for uow-identity-core-domain with STUB phase execution and architecture compliance reload."
+**Context**: CONSTRUCTION - Code Generation Part 2 execution
+
+---
+
+## Code Generation - STUB Phase Complete
+**Timestamp**: 2026-04-05T01:18:33Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Completed STUB scaffolding for identity-service and SDK identity wrapper surfaces, including service/API/model/crud skeletons, Alembic environment + initial migration file, and baseline tests. Updated plan Step 7 to complete."
+**Context**: CONSTRUCTION - Code Generation Part 2 (STUB)
+
+---
+
+## Code Generation - RED and GREEN Execution
+**Timestamp**: 2026-04-05T01:18:33Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Executed RED by running targeted tests that failed due NotImplementedError in onboarding/principal/token/delegated/mapping service contracts and SDK wrapper/client contracts. Implemented GREEN logic for these contracts, reran focused service and SDK tests to passing, and completed refactor/dev-stack integration updates including soorma dev identity-service wiring. Updated plan Steps 8-12 to complete."
+**Context**: CONSTRUCTION - Code Generation Part 2 (RED->GREEN->REFACTOR)
+
+---
+
+## Code Generation - Summary Artifact and Review Gate Ready
+**Timestamp**: 2026-04-05T01:18:33Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Generated code-stage summary artifact at construction/uow-identity-core-domain/code/code-generation-summary.md, updated plan Step 13 to complete, and advanced aidlc-state current stage to Code Generation completion review gate awaiting explicit user approval."
+**Context**: CONSTRUCTION - Code Generation completion gate preparation
+
+---
+
+## Code Generation - Completion Review Prompt
+**Timestamp**: 2026-04-05T01:23:14Z
+**User Input**: "code gen plan looks good"
+**AI Response**: "Prepared Code Generation completion review gate for uow-identity-core-domain with standardized options (Request Changes / Continue to Next Stage) and paused pending explicit user decision."
+**Context**: CONSTRUCTION - Code Generation approval gate
+
+---
+
+## Code Generation - Review Clarification Request
+**Timestamp**: 2026-04-05T01:26:07Z
+**User Input**: "why is #file:dto.py not following design pattern of the repo, it is reusable and should have been in soorma-common right?"
+**AI Response**: "Analyzed architecture and service patterns to validate whether identity DTO placement should follow shared soorma-common contracts versus local service-only models; preparing recommendation and corrective options."
+**Context**: CONSTRUCTION - Code Generation completion review clarification
+
+---

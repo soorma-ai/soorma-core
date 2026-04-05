@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Construction Design PR Gate (uow-identity-core-domain)
+- **Current Stage**: CONSTRUCTION - Code Generation Planning (uow-identity-core-domain)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Construction Design PR Gate - uow-identity-core-domain
-- **Next Stage**: Code Generation Planning - uow-identity-core-domain
-- **Status**: Design PR checkpoint instructions generated; awaiting team review approval confirmation
+- **Current Stage**: Code Generation Completion Review Gate - uow-identity-core-domain
+- **Next Stage**: Build and Test (pending code-generation approval)
+- **Status**: Code Generation Part 2 executed through summary artifact; awaiting explicit code-generation review approval
 
 ## Units Generation Status
 - [x] Units Planning - Completed
@@ -76,11 +76,11 @@
 - **Approved**: 2026-04-04T06:08:56Z
 
 ### Construction Design PR Gate - uow-identity-core-domain
-- **Status**: PENDING
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/identity-service/construction/plans/uow-identity-core-domain-design-pr-checkpoint-instructions.md
 - **Created**: 2026-04-05T00:33:44Z
-- **Approved**: —
+- **Approved**: 2026-04-05T00:40:52Z
 
 ## Reverse Engineering Status
 - [x] Reverse Engineering - Completed on 2026-04-01T00:42:04Z

@@ -50,6 +50,16 @@ class TestServiceDefinitions:
         assert event_service["dockerfile"] == "services/event-service/Dockerfile"
         assert event_service["name"] == "Event Service"
 
+    def test_identity_service_defined(self):
+        """Identity service should be properly defined."""
+        assert "identity-service" in SERVICE_DEFINITIONS
+
+        identity_service = SERVICE_DEFINITIONS["identity-service"]
+        assert identity_service["local_image"] == "identity-service:latest"
+        assert identity_service["public_image"] == "ghcr.io/soorma-ai/identity-service:latest"
+        assert identity_service["dockerfile"] == "services/identity-service/Dockerfile"
+        assert identity_service["name"] == "Identity Service"
+
     def test_registry_dockerfile_path(self):
         """Registry dockerfile should be relative to soorma-core root."""
         registry = SERVICE_DEFINITIONS["registry"]
