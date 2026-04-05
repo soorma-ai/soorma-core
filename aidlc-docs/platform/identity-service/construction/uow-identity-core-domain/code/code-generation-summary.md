@@ -1,34 +1,43 @@
 # Code Generation Summary - uow-identity-core-domain
 
 ## Scope Completed
-- Established new `services/identity-service` package scaffold with FastAPI entrypoint, router modules, core config/db/dependencies, DTO and domain models, CRUD/service layers, Alembic migration environment, and initial migration.
-- Implemented GREEN-phase service behavior for:
-  - onboarding response contract
-  - principal create/update/revoke lifecycle contract
-  - token issuance (platform) and fail-closed delegated deny path
-  - delegated issuer register/update trust contract
-  - mapping collision decision contract
-- Added SDK identity layer contracts:
-  - low-level `IdentityServiceClient` HTTP methods for onboarding, principal lifecycle, token issuance, delegated issuer operations, and mapping evaluation
-  - high-level `IdentityClient` wrapper methods integrated into `PlatformContext` as `context.identity`
-  - top-level SDK exports updated to include `IdentityClient`
-- Integrated local dev stack metadata for identity-service:
-  - `soorma dev` compose template service stanza
-  - service image definitions and build mapping
-  - CLI option/env wiring for identity service port and URL export
-  - PostgreSQL init SQL includes identity database creation
+- Implemented a concrete `services/identity-service` runtime with FastAPI routing, async SQLAlchemy persistence, Alembic migrations, domain DTOs/models, CRUD repositories, and service orchestration.
+- Delivered DB-backed identity domain capabilities:
+  - tenant onboarding with bootstrap principal creation
+  - principal lifecycle create/update/revoke flows
+  - token issuance for platform and delegated modes
+  - delegated issuer registration and update
+  - mapping evaluation with deny-first policy behavior
+- Implemented fail-closed and typed error behavior for security-sensitive paths:
+  - delegated issuer untrusted denial with stable API error envelope
+  - explicit 401/403 behavior for missing/invalid context and authorization
+  - correlation-aware error payload behavior where applicable
+- Added concrete admin and tenant-scope hardening on identity write/issuance routes:
+  - admin-key protected onboarding/principal/delegated/token routes
+  - platform-tenant ownership checks on resource-targeted admin operations
+  - principal update payload tenant-domain consistency validation against persisted principal scope
+- Completed transactional and persistence hardening:
+  - onboarding atomicity/rollback behavior with active-transaction compatibility
+  - timestamp normalization for DB writes to avoid asyncpg naive/aware datetime mismatches
+  - stable audit and issuance record writes for token and identity lifecycle flows
+- Completed runtime/dev bootstrap hardening for local workflows:
+  - Alembic env import strategy supports both installed-package and source layouts
+  - `soorma dev` startup sequencing now ensures required service databases exist before migrations/services start
+- Added Swagger/OpenAPI tenant-header visibility improvements via shared helper wiring so `X-Tenant-ID` is visible for interactive usage.
 
 ## STUB -> RED -> GREEN -> REFACTOR Evidence
 - STUB: scaffolded identity-service and SDK identity wrapper/client contracts with placeholders.
 - RED: executed targeted tests and captured failures due `NotImplementedError` across onboarding, principal, token, delegated trust, mapping, and SDK wrapper/client contracts.
-- GREEN: implemented service and SDK methods to satisfy contract tests.
-- REFACTOR: expanded wrapper completeness (principal/delegated update/revoke methods), aligned migration filename with plan (`0001_identity_core_init.py`), and cleaned dev command SQL string warning.
+- GREEN: implemented service and SDK methods to satisfy contract tests and concrete DB-backed behavior.
+- REFACTOR/HARDENING: iteratively tightened route dependencies, authorization scope guards, transaction handling, datetime persistence semantics, and local startup resilience while preserving contract behavior.
 
 ## Focused Tests Executed
-- `PYTHONPATH=services/identity-service/src ... pytest services/identity-service/tests -q` -> 7 passed
-- `PYTHONPATH=sdk/python ... pytest sdk/python/tests/test_context_identity_wrapper.py sdk/python/tests/test_identity_service_client.py sdk/python/tests/cli/test_dev.py::TestServiceDefinitions -q` -> 10 passed
+- `python -m pytest services/identity-service/tests` -> 22 passed
+- `python -m pytest services/identity-service/tests/test_principal_lifecycle_api.py` -> 5 passed
+- `python -m pytest libs/soorma-service-common/tests/test_middleware.py` -> 17 passed
+- `python -m pytest sdk/python/tests/cli/test_dev.py` -> 20 passed
 
 ## Notes and Follow-up
-- Current implementation is intentionally minimal for this unit and centered on contract correctness and fail-closed behavior.
-- Persistence and DB-backed state transitions are scaffolded and can be deepened in subsequent hardening/cutover units.
-- Delegated issuance currently denies when trusted issuer context is absent, matching the negative-path requirement for this unit.
+- This unit is now implemented as concrete, DB-backed identity-service behavior with production-style fail-closed controls for the current phase.
+- Remaining roadmap work is primarily in later units (SDK JWT convergence and final cutover), including canonical JWT tenant-only propagation, asymmetric signing/JWKS finalization, and legacy compatibility removal.
+- Delegated issuance deny-first behavior remains intentionally enforced unless trusted issuer context is explicitly established.
