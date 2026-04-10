@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation Planning (uow-identity-core-domain)
+- **Current Stage**: CONSTRUCTION - Functional Design Completion Review Gate (uow-sdk-jwt-integration)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation Completion Review Gate - uow-identity-core-domain
-- **Next Stage**: Build and Test (pending code-generation approval)
-- **Status**: Code Generation Part 2 executed through summary artifact; awaiting explicit code-generation review approval
+- **Current Stage**: Functional Design Completion Review Gate - uow-sdk-jwt-integration
+- **Next Stage**: NFR Requirements (pending functional-design approval)
+- **Status**: Functional design answers analyzed and artifacts generated for uow-sdk-jwt-integration; awaiting explicit review decision
 
 ## Units Generation Status
 - [x] Units Planning - Completed

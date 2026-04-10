@@ -1799,3 +1799,177 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - Code Generation completion review clarification
 
 ---
+
+## Session Continuity - Resume Request
+**Timestamp**: 2026-04-10T05:36:09Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-sdk-jwt-integration\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed workflow context from aidlc-state.md, loaded mandatory common AI-DLC rules, reloaded enabled extension rules, loaded architecture patterns, and loaded inception artifacts (reverse-engineering, requirements, user stories, application-design, unit mapping, and uow-sdk-jwt-integration inception test specs)."
+**Context**: Session continuity - construction resume intake
+
+---
+
+## Construction Phase Initialization - Session Reload
+**Timestamp**: 2026-04-10T05:36:09Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-sdk-jwt-integration\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Code Generation - Pending Approval Gate Re-presented
+**Timestamp**: 2026-04-10T05:36:36Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-sdk-jwt-integration\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Detected pending mandatory approval gate from uow-identity-core-domain Code Generation completion review and prepared standardized gate prompt. Workflow is paused until explicit user decision (Request Changes or Continue to Next Stage)."
+**Context**: CONSTRUCTION - Code Generation approval gate (dependency precondition before unit switch)
+
+---
+
+## Code Generation - Approval Recorded
+**Timestamp**: 2026-04-10T05:46:06Z
+**User Input**: "record approval, that work is complete"
+**AI Response**: "Accepted explicit approval for uow-identity-core-domain Code Generation completion review gate, marked code-generation plan final transition step complete, and advanced workflow to the next unit as requested."
+**Context**: CONSTRUCTION - Code Generation approval gate passed
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-10T05:46:06Z
+**User Input**: "record approval, that work is complete"
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-sdk-jwt-integration)."
+**Context**: CONSTRUCTION - per-unit initialization
+
+---
+
+## Functional Design - Planning Start
+**Timestamp**: 2026-04-10T05:46:06Z
+**User Input**: "record approval, that work is complete"
+**AI Response**: "Started Functional Design planning for uow-sdk-jwt-integration and generated planning artifact with embedded clarification questions at construction/plans/uow-sdk-jwt-integration-functional-design-plan.md."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Q2 Clarification
+**Timestamp**: 2026-04-10T05:52:32Z
+**User Input**: "for Q2, what does mismatch agains compatibility aloas mean?"
+**AI Response**: "Clarified that compatibility alias mismatch means JWT tenant identity does not equal any temporary legacy tenant alias value carried for transitional compatibility. Explained that this indicates conflicting identity context and that fail-closed denial is the safest expected behavior."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q2 Validity Clarification
+**Timestamp**: 2026-04-10T05:53:54Z
+**User Input**: "but in Q1 we chose to only sent JWT, and not send headers. then is Q2 still valid?"
+**AI Response**: "Confirmed Q2 is conditionally applicable: with strict JWT-only outbound SDK behavior, alias mismatch checks are mostly not expected on that path, but still relevant as a safety invariant for transitional clients, proxies, or any request path where legacy alias inputs may still appear. Recommended treating mismatch as fail-closed whenever alias data is present."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Clarification
+**Timestamp**: 2026-04-10T05:56:41Z
+**User Input**: "for q3, how can admin key be used for JWT token request?"
+**AI Response**: "Clarified that the admin key is used only to authenticate and authorize the token-issuance API caller during bootstrap compatibility mode, not as the JWT signing key. The identity service validates admin-key scope and tenant binding, then issues JWTs using its own asymmetric private signing key, with strict auditing and fail-closed checks."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-10T05:58:35Z
+**User Input**: "ok, add the admin key for JWT token request as answer to Q3 with rationale and clarification"
+**AI Response**: "Recorded Question 3 as option C in uow-sdk-jwt-integration functional design plan with explicit rationale and clarification: admin key is caller-auth for issuance API requests in compatibility phase, while JWT signing remains asymmetric and service-owned, with tenant/scope policy checks enforced fail-closed."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q4 Clarification
+**Timestamp**: 2026-04-10T06:01:46Z
+**User Input**: "for q4, i can understand option A. help me understand other options and when/how/why they get used"
+**AI Response**: "Explained Q4 options B and C with usage intent and trade-offs: B allows self-issue plus tightly scoped admin override for operational/admin workflows with mandatory policy and audit controls; C permits any authenticated principal in-tenant to issue for others and is generally avoided due to over-broad privilege and abuse risk in multi-tenant security-sensitive systems."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-10T06:03:39Z
+**User Input**: "lets add answer B with some clarification"
+**AI Response**: "Recorded Question 4 as option B in uow-sdk-jwt-integration functional design plan and added clarification that self-issue is default, admin override is tightly scoped and audited, and policy/tenant violations fail closed."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q6 Clarification
+**Timestamp**: 2026-04-10T06:05:57Z
+**User Input**: "help me understand q6 options, why would we ever pick anything other than option A?"
+**AI Response**: "Explained Q6 option trade-offs and when B/C are intentionally selected: A is preferred for strict backward compatibility in this unit; B is used for explicit API evolution programs where parallel wrapper surfaces are intentionally introduced; C is used when migration requires temporary opt-in behavior controls without immediately breaking callers, then removed at cutover."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Answer Recorded
+**Timestamp**: 2026-04-10T06:07:32Z
+**User Input**: "yes, add answer A with rationale"
+**AI Response**: "Recorded Question 6 as option A in uow-sdk-jwt-integration functional design plan with rationale emphasizing strict wrapper signature compatibility, internal JWT behavior injection, and reduced migration risk for incremental rollout."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q7 Clarification
+**Timestamp**: 2026-04-10T06:09:00Z
+**User Input**: "for q7, my preference is option B, does it have any side effects or future limitations"
+**AI Response**: "Explained that Q7 option B (idempotent bootstrap) is generally the preferred operational model, with side effects mainly around state-drift masking, ownership ambiguity, and stricter audit/validation requirements. Clarified mitigation patterns and noted long-term need for explicit reconcile/override controls."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q7 Answer Recorded
+**Timestamp**: 2026-04-10T06:10:28Z
+**User Input**: "ok, add answer with appropriate safety callout"
+**AI Response**: "Recorded Question 7 as option B in uow-sdk-jwt-integration functional design plan and added explicit safety callout: strict idempotent outcomes, fail-closed drift handling, immutable field protection, and structured audit logging."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Answers Intake and Analysis
+**Timestamp**: 2026-04-10T06:13:13Z
+**User Input**: "all answers providd"
+**AI Response**: "Validated all answers in uow-sdk-jwt-integration-functional-design-plan.md, confirmed no blocking ambiguities, and executed Step 5 (collect and analyze answers)."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Artifacts Generated and Review Prompt Prepared
+**Timestamp**: 2026-04-10T06:13:14Z
+**User Input**: "all answers providd"
+**AI Response**: "Generated functional design artifacts for uow-sdk-jwt-integration (business-logic-model.md, business-rules.md, domain-entities.md), updated plan checkboxes for Steps 6-7, updated aidlc-state to Functional Design completion review gate, and prepared standardized Request Changes / Continue to Next Stage prompt."
+**Context**: CONSTRUCTION - Functional Design completion gate preparation
+
+---
