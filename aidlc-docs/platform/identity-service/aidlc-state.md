@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Functional Design Completion Review Gate (uow-sdk-jwt-integration)
+- **Current Stage**: CONSTRUCTION - NFR Design Planning (uow-sdk-jwt-integration)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Functional Design Completion Review Gate - uow-sdk-jwt-integration
-- **Next Stage**: NFR Requirements (pending functional-design approval)
-- **Status**: Functional design answers analyzed and artifacts generated for uow-sdk-jwt-integration; awaiting explicit review decision
+- **Current Stage**: NFR Design Planning - uow-sdk-jwt-integration
+- **Next Stage**: NFR Design Answers Review - uow-sdk-jwt-integration
+- **Status**: NFR requirements approved; NFR design question plan generated and awaiting answers
 
 ## Units Generation Status
 - [x] Units Planning - Completed

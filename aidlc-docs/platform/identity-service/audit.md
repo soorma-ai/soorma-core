@@ -1997,3 +1997,99 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - Functional Design review request changes
 
 ---
+
+## Functional Design - Approval Recorded
+**Timestamp**: 2026-04-11T05:40:52Z
+**User Input**: "ok, functional design looks good"
+**AI Response**: "Accepted explicit functional design approval for uow-sdk-jwt-integration and advanced workflow to NFR Requirements stage."
+**Context**: CONSTRUCTION - Functional Design approval gate passed
+
+---
+
+## NFR Requirements - Planning Start
+**Timestamp**: 2026-04-11T05:40:52Z
+**User Input**: "ok, functional design looks good"
+**AI Response**: "Started NFR Requirements planning for uow-sdk-jwt-integration and generated plan/questions file at construction/plans/uow-sdk-jwt-integration-nfr-requirements-plan.md."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Answers Prompt
+**Timestamp**: 2026-04-11T05:40:52Z
+**User Input**: "ok, functional design looks good"
+**AI Response**: "Prepared NFR Requirements answer gate by requesting completion of all [Answer] fields in construction/plans/uow-sdk-jwt-integration-nfr-requirements-plan.md before artifact generation."
+**Context**: CONSTRUCTION - NFR Requirements planning prompt
+
+---
+
+## NFR Requirements - Q1 Clarification
+**Timestamp**: 2026-04-11T05:43:15Z
+**User Input**: "for q1, if we choose a specific target instead of best effort, what does that mean for implementation? do we make any specific code / design choice based on selected parameter?"
+**AI Response**: "Clarified that selecting an explicit latency target is a design constraint, not just reporting metadata. It drives concrete implementation choices such as caching strategy, token verification path optimization, key-discovery behavior, timeout budgets, instrumentation granularity, and test/load gate criteria; best-effort does not force these deterministic engineering trade-offs."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q1 Answer Recorded
+**Timestamp**: 2026-04-11T05:45:00Z
+**User Input**: "ok, lets use 100ms and add answer with rationale"
+**AI Response**: "Recorded Question 1 as option C (<=100 ms p95) in uow-sdk-jwt-integration NFR requirements plan and added rationale linking this target to measurable compatibility-phase constraints and regression gating."
+**Context**: CONSTRUCTION - NFR Requirements planning answers capture
+
+---
+
+## NFR Requirements - Q5 Decision Clarification
+**Timestamp**: 2026-04-11T05:47:39Z
+**User Input**: "give all discussion and answer choices so far, for q5 only JWKS is the right option, correct?"
+**AI Response**: "Summarized current NFR answers and Q5 option trade-offs. Clarified that for Unit 3 compatibility phase, JWKS-only is not the only valid choice; JWKS primary with deterministic static fallback is generally the safer compatibility selection, while JWKS-only is typically a stricter final-state posture more aligned with post-cutover enforcement."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q5 Answer Recorded
+**Timestamp**: 2026-04-11T05:49:12Z
+**User Input**: "ok, add answer c with rationale"
+**AI Response**: "Recorded Question 5 as option C in uow-sdk-jwt-integration NFR requirements plan with rationale: JWKS primary plus deterministic static fallback for compatibility-phase resilience, explicit precedence controls, and clean progression to stricter cutover posture."
+**Context**: CONSTRUCTION - NFR Requirements planning answers capture
+
+---
+
+## NFR Requirements - Q7 Clarification
+**Timestamp**: 2026-04-11T05:50:47Z
+**User Input**: "help me understand q7 and its options"
+**AI Response**: "Explained Q7 reliability options for idempotent bootstrap outcomes, including trade-offs between simple success/failure, deterministic outcome contracts with fail-closed drift handling, interactive retries, and deferral to later units. Recommended deterministic outcomes with fail-closed drift for this compatibility phase."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Answers Validation
+**Timestamp**: 2026-04-11T05:53:08Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated that all NFR planning questions (Q1-Q9) are answered in the Unit 3 NFR requirements plan with no remaining ambiguity blockers for artifact generation."
+**Context**: CONSTRUCTION - NFR Requirements planning validation complete
+
+---
+
+## NFR Requirements - Artifact Generation and Completion Gate Preparation
+**Timestamp**: 2026-04-11T05:53:08Z
+**User Input**: "all answers provided"
+**AI Response**: "Generated Unit 3 NFR artifacts at construction/uow-sdk-jwt-integration/nfr-requirements/nfr-requirements.md and construction/uow-sdk-jwt-integration/nfr-requirements/tech-stack-decisions.md, completed plan checklist Steps 4-6, updated aidlc-state to NFR Requirements Completion Review, and prepared standardized Request Changes / Continue to Next Stage prompt."
+**Context**: CONSTRUCTION - NFR Requirements completion gate preparation
+
+---
+
+## NFR Requirements - Approval Recorded
+**Timestamp**: 2026-04-11T05:59:12Z
+**User Input**: "NFR requirements look good"
+**AI Response**: "Accepted explicit NFR Requirements approval for uow-sdk-jwt-integration and transitioned workflow to NFR Design stage."
+**Context**: CONSTRUCTION - NFR Requirements approval gate passed
+
+---
+
+## NFR Design - Planning Start and Answers Prompt
+**Timestamp**: 2026-04-11T05:59:12Z
+**User Input**: "NFR requirements look good"
+**AI Response**: "Started NFR Design planning for uow-sdk-jwt-integration, generated planning/questions artifact at construction/plans/uow-sdk-jwt-integration-nfr-design-plan.md, and requested user answers for all [Answer] fields before design artifact generation."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
