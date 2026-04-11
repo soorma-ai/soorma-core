@@ -1958,6 +1958,14 @@ end-to-end without my confirmation at each gate."
 
 ---
 
+## Functional Design - Signing Model Consistency Clarification
+**Timestamp**: 2026-04-11T05:32:17Z
+**User Input**: "BLM-4 and BR-08 mention that identity service will sign JWT using asymmetric key. Have we confirmed if that's what identity service does? i recall it was using symetric / shared secret. will things break if idetity service and SDK are not in sync?"
+**AI Response**: "Verified current implementation is still symmetric HS256/shared-secret based for both issuance and bearer verification in runtime middleware. Clarified that asymmetric statements in functional-design artifacts represent target design intent for this unit, not current baseline behavior. Confirmed mismatch between signer/verifier expectations (algorithm/key path) will fail closed with 401 on service ingress."
+**Context**: CONSTRUCTION - Functional Design completion review clarification
+
+---
+
 ## Functional Design - Answers Intake and Analysis
 **Timestamp**: 2026-04-10T06:13:13Z
 **User Input**: "all answers providd"
@@ -1971,5 +1979,21 @@ end-to-end without my confirmation at each gate."
 **User Input**: "all answers providd"
 **AI Response**: "Generated functional design artifacts for uow-sdk-jwt-integration (business-logic-model.md, business-rules.md, domain-entities.md), updated plan checkboxes for Steps 6-7, updated aidlc-state to Functional Design completion review gate, and prepared standardized Request Changes / Continue to Next Stage prompt."
 **Context**: CONSTRUCTION - Functional Design completion gate preparation
+
+---
+
+## Functional Design - Unit Scope Clarification (Asymmetric + Well-Known)
+**Timestamp**: 2026-04-11T05:34:49Z
+**User Input**: "ok, so does this mean well also change identity service to use asymmetric key and wellknown endpoint in this unit of work? or is that a dependency that needs to be tracked separately?"
+**AI Response**: "Clarified scope split: Unit 3 should introduce compatibility-phase asymmetric issuance and verifier distribution support (including JWKS/well-known style discovery path where selected), while final symmetric-path removal and strict enforcement belongs to Unit 4 cutover. Recommended tracking asymmetric/JWKS implementation as explicit Unit 3 deliverables with dependency sequencing, not as a detached initiative unless formally descoped."
+**Context**: CONSTRUCTION - Functional Design completion review clarification
+
+---
+
+## Functional Design - Request Changes Applied (Identity-Service Tracking)
+**Timestamp**: 2026-04-11T05:38:07Z
+**User Input**: "ok, so i did not see any mention of identity service change in the functional design artifacts, so it's not clear how / where that work and requirement is being tracked"
+**AI Response**: "Applied request changes by adding explicit identity-service work tracking sections in Unit 3 functional design artifacts: business-logic-model, business-rules, and domain-entities. Added concrete implementation surfaces, dependency boundary notes, JWKS publication tracking entity, and guardrail rules linking required work to the Unit 3 migration checklist."
+**Context**: CONSTRUCTION - Functional Design review request changes
 
 ---

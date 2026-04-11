@@ -12,6 +12,25 @@ Define functional behavior for SDK JWT integration while preserving wrapper comp
 - Idempotent local tenant bootstrap command behavior.
 - Typed SDK exception contracts for auth failures.
 
+## Identity Service Change Tracking (Unit 3)
+Identity-service implementation is in-scope for this unit and tracked as part of compatibility-phase cryptography and verifier distribution rollout, not as a separate detached initiative.
+
+Primary tracking source:
+- aidlc-docs/platform/identity-service/construction/plans/uow-sdk-jwt-integration-migration-checklist.md
+
+Owned implementation targets in identity-service:
+- services/identity-service/src/identity_service/services/provider_facade.py
+   - Introduce asymmetric signing path with explicit `alg` and `kid` metadata.
+   - Keep bounded compatibility behavior only where required by unit sequencing.
+- services/identity-service/src/identity_service/services/token_service.py
+   - Enforce compatibility-phase issuance policy (self-issue default + scoped admin override).
+- services/identity-service/src/identity_service/api/v1/tokens.py
+   - Expose issuance behavior consistent with new signer/verifier contracts.
+- services/identity-service/src/identity_service/main.py and API routing
+   - Add or register JWKS publication path for verifier discovery in compatibility phase.
+- services/identity-service/tests/test_provider_facade.py and services/identity-service/tests/test_token_api.py
+   - Add asymmetric issuance verification and unknown-`kid`/invalid-signature negative tests.
+
 ## Transaction and Decision Boundaries
 1. SDK outbound call boundary:
    - Wrapper composes auth context and delegates to service client.
@@ -73,6 +92,11 @@ Define functional behavior for SDK JWT integration while preserving wrapper comp
 - Issuance API caller-auth contract supports temporary admin-key compatibility path.
 - Verifier model supports static key fallback and JWKS path with deterministic precedence.
 - CLI bootstrap returns deterministic machine-readable result codes.
+
+## Dependency Boundary Note
+- Unit 3 introduces and validates asymmetric + JWKS compatibility path.
+- Unit 4 removes symmetric normal-path reliance and enforces asymmetric-only production posture.
+- If any Unit 3 cryptography/discovery item is deferred, deferral must be explicitly recorded as a descoped exception in the migration checklist before stage approval.
 
 ## Security and Reliability Controls
 - Fail-closed on JWT validation errors and tenant mismatch.

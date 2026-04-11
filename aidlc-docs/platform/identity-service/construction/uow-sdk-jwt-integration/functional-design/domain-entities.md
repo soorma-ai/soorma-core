@@ -69,6 +69,15 @@ This unit defines functional entities and value objects for SDK JWT integration 
   - cache_ttl
   - unknown_kid_behavior
 
+### JwksPublicationState
+- Purpose: Tracks identity-service publication state for compatibility-phase verifier discovery.
+- Key attributes:
+  - jwks_uri
+  - metadata_uri
+  - active_kids
+  - rotation_version
+  - publication_status
+
 ### BootstrapExecutionState
 - Purpose: State model for idempotent `soorma dev` tenant bootstrap.
 - Key attributes:
@@ -108,6 +117,7 @@ Represents structured audit payload for override, mismatch, and bootstrap decisi
 6. Self-issue is default; admin override requires explicit scoped authorization.
 7. Bootstrap idempotency cannot silently overwrite immutable identity/trust fields.
 8. SDK auth failures surface as typed safe exceptions.
+9. If JWKS distribution is enabled, identity-service publication state must be available and consistent with active signing key set.
 
 ## Conceptual Repositories/Services
 - JwtContextResolver
@@ -115,6 +125,15 @@ Represents structured audit payload for override, mismatch, and bootstrap decisi
 - IssuancePolicyEvaluator
 - SigningMaterialProvider
 - VerifierPolicyResolver
+- JwksPublicationProvider
 - BootstrapStateEvaluator
 - SdkErrorMapper
 - SecurityAuditEmitter
+
+## Identity-Service Tracking Links
+- Primary checklist: aidlc-docs/platform/identity-service/construction/plans/uow-sdk-jwt-integration-migration-checklist.md
+- Expected implementation surfaces:
+  - services/identity-service/src/identity_service/services/provider_facade.py
+  - services/identity-service/src/identity_service/services/token_service.py
+  - services/identity-service/src/identity_service/api/v1/tokens.py
+  - services/identity-service/src/identity_service/main.py

@@ -62,6 +62,15 @@ Mandatory matrix includes wrapper unit tests, SDK-service integration happy path
 ### BR-20 Negative Security Paths
 At minimum, negative matrix covers invalid JWT, unknown `kid`, tenant mismatch, and unauthorized issue-for-other.
 
+### BR-21 Identity-Service Work Is In Scope for Unit 3
+Identity-service cryptography and verifier-distribution changes required for compatibility phase are part of this unit's implementation scope and must be tracked in Unit 3 artifacts.
+
+### BR-22 Compatibility-Phase JWKS Publication Requirement
+When JWKS verifier distribution is selected for compatibility phase, identity-service must publish discovery data for consumers (JWKS and related metadata path) and tests must validate consumer retrieval/validation behavior.
+
+### BR-23 Unit Dependency Guardrail
+Asymmetric/JWKS work cannot be treated as an implicit external dependency for this unit unless formally descoped and documented in the Unit 3 migration checklist with explicit impact/risk acknowledgement.
+
 ## Security Baseline Alignment
 - SECURITY-03: Structured audit/logging required for overrides, mismatch denials, and bootstrap outcomes.
 - SECURITY-08: Server-side authorization checks required for issuance and tenant-bound decisions.
