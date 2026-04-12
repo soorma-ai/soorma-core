@@ -2093,3 +2093,115 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - NFR Design planning
 
 ---
+
+## NFR Design - Q1 Clarification
+**Timestamp**: 2026-04-12T18:59:42Z
+**User Input**: "help me understand Q1, also what options make sense based on decisions so far"
+**AI Response**: "Explained that Q1 defines deterministic verifier-source precedence under outage/degradation, mapped each option against approved Unit 3 NFR decisions, and recommended Option A (JWKS primary -> bounded static fallback -> fail closed) as the aligned choice."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Verifier Scope Clarification
+**Timestamp**: 2026-04-12T19:01:45Z
+**User Input**: "who is the \"verifier\" in this context? is the SDK and agents verifying signature? or is this for identity service (and other soorma-core services) to verify signature of JWT token presented by SDK and agents to those service's APIs?"
+**AI Response**: "Clarified that verifier in this context is service-side verification logic (identity-service and other soorma-core services through shared auth middleware/dependencies) that validates JWT signature and claims on inbound API requests; SDK/agents are token presenters, not primary signature verifiers in this flow."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q1 Implementation Intent Clarification
+**Timestamp**: 2026-04-12T19:03:44Z
+**User Input**: "ok, so then is Q1 intended to create work for server side library used by these soorma-core services? or is this question only to document how verification will work on server side (assuming its already implemented this way)"
+**AI Response**: "Clarified that Q1 is a design-decision gate for Unit 3 and is not documentation-only; if current shared auth/server verification path does not already satisfy the selected deterministic precedence and fail-closed behavior, implementation work in server-side shared auth libraries and service integrations is required in this unit."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q1 Answer Recorded
+**Timestamp**: 2026-04-12T19:04:36Z
+**User Input**: "yes, record answer with rationale"
+**AI Response**: "Recorded Question 1 as option A in uow-sdk-jwt-integration NFR Design plan and added rationale: deterministic verifier precedence (JWKS primary, bounded static fallback, fail closed) aligned to approved Unit 3 NFR posture."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q2 Scope and Options Clarification
+**Timestamp**: 2026-04-12T19:05:45Z
+**User Input**: "yes, help with understanding Q2, it's scope (i.e. what work does this impact) and then help understand the options"
+**AI Response**: "Explained Q2 implementation scope and option tradeoffs for JWKS/discovery cache strategy, mapped impact to shared server-side verifier components, and recommended the option aligned to approved Unit 3 NFR posture (bounded resilience with deterministic fail-closed behavior)."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q2 Answer Recorded
+**Timestamp**: 2026-04-12T19:07:04Z
+**User Input**: "yes, record answer B with rationale"
+**AI Response**: "Recorded Question 2 as option B in uow-sdk-jwt-integration NFR Design plan with rationale: TTL plus jittered proactive refresh and hard-expiry fail-closed behavior to balance resilience, performance stability, and security posture."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q3 Options Clarification
+**Timestamp**: 2026-04-12T19:08:42Z
+**User Input**: "help with q3 options"
+**AI Response**: "Explained Q3 key-rotation distribution options, mapped each option to approved Unit 3 constraints (<=5-minute propagation, deterministic fail-closed behavior, bounded resilience), and recommended event-triggered invalidation with bounded polling backstop as best-fit design choice."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-12T19:09:19Z
+**User Input**: "yes ,record"
+**AI Response**: "Recorded Question 3 as option B in uow-sdk-jwt-integration NFR Design plan with rationale: event-triggered invalidation plus bounded polling backstop to meet propagation, resilience, and deterministic fail-closed requirements."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q4 Options Clarification
+**Timestamp**: 2026-04-12T19:10:27Z
+**User Input**: "yes, help with q4 options"
+**AI Response**: "Explained Q4 bootstrap component-pattern options, mapped each option to approved deterministic outcome contract (CREATED/REUSED/FAILED_DRIFT) and fail-closed drift posture, and recommended the option that explicitly includes protected-config drift classification with fail-closed guardrails."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-12T19:11:54Z
+**User Input**: "yes, record C with rationale"
+**AI Response**: "Recorded Question 4 as option C in uow-sdk-jwt-integration NFR Design plan with rationale: explicit protected-config drift classification and fail-closed guardrails over a typed bootstrap evaluator to preserve deterministic outcomes and safety posture."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q5 Options Clarification
+**Timestamp**: 2026-04-12T19:12:24Z
+**User Input**: "help understand q5 options"
+**AI Response**: "Explained Q5 observability trace-boundary options, mapped each option to approved NFR telemetry and override-audit durability requirements, and recommended the minimum boundary that captures verification source/fallback plus issuance override and audit-write decision points."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Answer Recorded
+**Timestamp**: 2026-04-12T19:13:25Z
+**User Input**: "ok, record C with rationale"
+**AI Response**: "Recorded Question 5 as option C in uow-sdk-jwt-integration NFR Design plan with rationale: minimum actionable trace boundary includes verifier source/fallback plus issuance override and audit-write decision spans, aligned to Unit 3 observability and audit durability constraints."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q6 Persistence Split Clarification
+**Timestamp**: 2026-04-12T19:14:27Z
+**User Input**: "for q6, what is this \"persistence design split\"? what do these options mean"
+**AI Response**: "Clarified that persistence design split means how security/audit events are partitioned across synchronous versus asynchronous persistence paths; explained each option's reliability, latency, and audit-durability trade-offs and mapped recommended direction to approved Unit 3 hardening posture."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q6 Answer Recorded
+**Timestamp**: 2026-04-12T19:15:34Z
+**User Input**: "yes, record B with rationale"
+**AI Response**: "Recorded Question 6 as option B in uow-sdk-jwt-integration NFR Design plan with rationale: critical override/security events persist synchronously for durability while non-critical events persist asynchronously for operational efficiency."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
