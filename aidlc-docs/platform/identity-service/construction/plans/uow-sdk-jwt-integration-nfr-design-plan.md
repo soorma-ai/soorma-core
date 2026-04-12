@@ -10,9 +10,9 @@
 - [x] Step 1 - Analyze NFR requirements
 - [x] Step 2 - Draft NFR design plan and question set
 - [x] Step 3 - Store this NFR design plan file
-- [ ] Step 4 - Collect and validate all answers
-- [ ] Step 5 - Generate NFR design artifacts
-- [ ] Step 6 - Present NFR Design completion gate
+- [x] Step 4 - Collect and validate all answers
+- [x] Step 5 - Generate NFR design artifacts
+- [x] Step 6 - Present NFR Design completion gate
 
 ## NFR Design Clarifying Questions
 Please answer each question by filling the [Answer]: field.
