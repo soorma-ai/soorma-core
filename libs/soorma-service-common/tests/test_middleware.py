@@ -4,13 +4,42 @@ Tests for TenancyMiddleware.
 RED phase: all tests assert real expected behavior.
 They MUST fail with NotImplementedError until middleware.dispatch is implemented.
 """
+import json
 import pytest
 from fastapi.testclient import TestClient
+from jwt.algorithms import RSAAlgorithm
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
 from soorma_service_common.middleware import (
     TenancyMiddleware,
     configure_platform_tenant_openapi,
 )
+
+
+def _generate_rsa_keypair() -> tuple[str, str]:
+    """Generate PEM keypair for RS256 middleware tests."""
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    return private_pem, public_pem
+
+
+def _build_jwks_json(kid: str, public_pem: str) -> str:
+    """Build JWKS JSON containing a single RSA key."""
+    public_key_obj = load_pem_public_key(public_pem.encode("utf-8"))
+    jwk_payload = json.loads(RSAAlgorithm.to_jwk(public_key_obj))
+    jwk_payload.update({"kid": kid, "use": "sig", "alg": "RS256"})
+    return json.dumps({"keys": [jwk_payload]})
 
 
 class TestTenancyMiddlewareHeaderExtraction:
@@ -109,8 +138,8 @@ class TestTenancyMiddlewareNoDbCall:
 class TestTenancyMiddlewareJwtCoexistence:
     """JWT precedence and coexistence behavior for middleware identity extraction."""
 
-    def test_jwt_present_uses_jwt_identity_over_headers(self, make_test_app, monkeypatch):
-        """When JWT is present and valid, JWT claims override conflicting headers."""
+    def test_jwt_present_with_matching_alias_headers_succeeds(self, make_test_app, monkeypatch):
+        """When JWT and alias headers match, request succeeds on JWT canonical path."""
         import jwt
 
         monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
@@ -135,14 +164,47 @@ class TestTenancyMiddlewareJwtCoexistence:
             headers={
                 "Authorization": f"Bearer {token}",
                 "X-Tenant-ID": "spt_header",
-                "X-Service-Tenant-ID": "tenant_header",
-                "X-User-ID": "user_header",
+                "X-Service-Tenant-ID": "tenant_jwt",
+                "X-User-ID": "user_jwt",
             },
         )
         assert response.status_code == 200
         assert response.json()["platform_tenant_id"] == "spt_jwt"
         assert response.json()["service_tenant_id"] == "tenant_jwt"
         assert response.json()["service_user_id"] == "user_jwt"
+
+    def test_jwt_with_mismatching_alias_headers_fails_closed(self, make_test_app, monkeypatch):
+        """When JWT and alias headers disagree, middleware denies fail-closed."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_jwt",
+                "service_tenant_id": "tenant_jwt",
+                "service_user_id": "user_jwt",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Service-Tenant-ID": "tenant_header",
+                "X-User-ID": "user_jwt",
+            },
+        )
+
+        assert response.status_code == 401
 
     def test_invalid_jwt_fails_no_header_fallback(self, make_test_app, monkeypatch):
         """Invalid JWT must fail closed and never fall back to headers."""
@@ -241,6 +303,239 @@ class TestTenancyMiddlewareJwtCoexistence:
                 "X-Tenant-ID": "spt_header",
             },
         )
+        assert response.status_code == 401
+
+    def test_rs256_jwt_uses_jwks_primary_success(self, make_test_app, monkeypatch):
+        """RS256 JWT should validate with JWKS primary verifier material."""
+        import jwt
+
+        private_pem, public_pem = _generate_rsa_keypair()
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", _build_jwks_json("kid-main", public_pem))
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-main", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Service-Tenant-ID": "tenant_rs",
+                "X-User-ID": "user_rs",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["platform_tenant_id"] == "spt_rs"
+
+    def test_rs256_jwt_unknown_kid_denied(self, make_test_app, monkeypatch):
+        """RS256 JWT with unknown kid should fail closed."""
+        import jwt
+
+        private_pem, public_pem = _generate_rsa_keypair()
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", _build_jwks_json("kid-main", public_pem))
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-unknown", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get("/test", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 401
+
+    def test_rs256_jwt_jwks_primary_failure_does_not_use_fallback(self, make_test_app, monkeypatch):
+        """When JWKS has kid but signature fails, middleware must fail closed."""
+        import jwt
+
+        valid_private_pem, valid_public_pem = _generate_rsa_keypair()
+        stale_private_pem, stale_public_pem = _generate_rsa_keypair()
+
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", _build_jwks_json("kid-main", stale_public_pem))
+        monkeypatch.setenv("SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON", json.dumps({"kid-main": valid_public_pem}))
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            valid_private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-main", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get("/test", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 401
+
+    def test_rs256_jwt_static_fallback_when_jwks_unavailable(self, make_test_app, monkeypatch):
+        """Static RS256 fallback should be used when JWKS primary source is unavailable."""
+        import jwt
+
+        private_pem, public_pem = _generate_rsa_keypair()
+
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", "{invalid-json")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON", json.dumps({"kid-main": public_pem}))
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-main", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get("/test", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+
+    def test_rs256_jwt_uses_jwks_url_discovery(self, make_test_app, monkeypatch):
+        """Middleware should fetch JWKS via discovery URL when configured."""
+        import jwt
+
+        private_pem, public_pem = _generate_rsa_keypair()
+        jwks_json = _build_jwks_json("kid-main", public_pem)
+
+        class _FakeResponse:
+            def __init__(self, payload: str):
+                self._payload = payload
+
+            def read(self) -> bytes:
+                return self._payload.encode("utf-8")
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        def _fake_urlopen(url: str, timeout: float):
+            assert url == "http://identity.local/v1/identity/.well-known/jwks.json"
+            assert timeout > 0
+            return _FakeResponse(jwks_json)
+
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_URL", "http://identity.local/v1/identity/.well-known/jwks.json")
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_CACHE_TTL_SECONDS", "60")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+        monkeypatch.delenv("SOORMA_AUTH_JWKS_JSON", raising=False)
+        monkeypatch.setattr("soorma_service_common.middleware.urllib.request.urlopen", _fake_urlopen)
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-main", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get("/test", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+
+    def test_rs256_jwt_uses_discovery_issuer_when_explicit_issuer_unset(self, make_test_app, monkeypatch):
+        """Issuer trust should be derived from OpenID config when explicit issuer is unset."""
+        import jwt
+
+        private_pem, public_pem = _generate_rsa_keypair()
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", _build_jwks_json("kid-main", public_pem))
+        monkeypatch.setenv(
+            "SOORMA_AUTH_OPENID_CONFIGURATION_JSON",
+            json.dumps({"issuer": "soorma-identity"}),
+        )
+        monkeypatch.delenv("SOORMA_AUTH_JWT_ISSUER", raising=False)
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-main", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get("/test", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+
+    def test_rs256_jwt_discovery_issuer_mismatch_denied(self, make_test_app, monkeypatch):
+        """Token should be denied when OpenID-discovered issuer does not match claim issuer."""
+        import jwt
+
+        private_pem, public_pem = _generate_rsa_keypair()
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", _build_jwks_json("kid-main", public_pem))
+        monkeypatch.setenv(
+            "SOORMA_AUTH_OPENID_CONFIGURATION_JSON",
+            json.dumps({"issuer": "trusted-issuer"}),
+        )
+        monkeypatch.delenv("SOORMA_AUTH_JWT_ISSUER", raising=False)
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_rs",
+                "service_tenant_id": "tenant_rs",
+                "service_user_id": "user_rs",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            private_pem,
+            algorithm="RS256",
+            headers={"kid": "kid-main", "alg": "RS256"},
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get("/test", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
 
 
