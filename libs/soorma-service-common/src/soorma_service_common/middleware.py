@@ -26,6 +26,7 @@ _BEARER_PREFIX = "bearer "
 _JWT_SECRET_ENV = "SOORMA_AUTH_JWT_SECRET"
 _JWT_ISSUER_ENV = "SOORMA_AUTH_JWT_ISSUER"
 _JWT_AUDIENCE_ENV = "SOORMA_AUTH_JWT_AUDIENCE"
+_ALLOWED_PRINCIPAL_TYPES = frozenset({"admin", "service", "agent", "user"})
 
 
 def configure_platform_tenant_openapi(
@@ -181,7 +182,12 @@ class TenancyMiddleware(BaseHTTPMiddleware):
 
         principal_id = str(claims.get("principal_id") or "").strip() or None
         principal_type = str(claims.get("principal_type") or "").strip() or None
+        if principal_type is not None and principal_type not in _ALLOWED_PRINCIPAL_TYPES:
+            raise HTTPException(status_code=401, detail="Invalid JWT")
+
         raw_roles = claims.get("roles") or []
+        if not isinstance(raw_roles, (list, tuple, set)):
+            raise HTTPException(status_code=401, detail="Invalid JWT")
         roles = [str(role).strip() for role in raw_roles if str(role).strip()]
         claim_issuer = str(claims.get("iss") or "").strip() or issuer
         claim_audience = str(claims.get("aud") or "").strip() or audience

@@ -248,6 +248,53 @@ async def test_platform_token_issue_rejects_platform_tenant_mismatch(db_session)
             )
 
         assert response.status_code == 403
-        assert response.json()["detail"] == "Principal does not belong to current platform tenant context."
+        payload = response.json()
+        assert payload["detail"]["code"] == "principal_platform_tenant_mismatch"
+        assert payload["detail"]["message"] == "Principal does not belong to current platform tenant context."
+    finally:
+        app.dependency_overrides.pop(get_tenant_context, None)
+
+
+@pytest.mark.asyncio
+async def test_platform_tenant_mismatch_returns_typed_safe_error_envelope(db_session):
+    """Platform mismatch denial should return stable typed error payload from API."""
+    tenant_a = await onboarding_service.onboard_tenant(
+        db_session,
+        OnboardingRequest(),
+        actor_id="system",
+    )
+    tenant_b = await onboarding_service.onboard_tenant(
+        db_session,
+        OnboardingRequest(),
+        actor_id="system",
+    )
+
+    async def _override_tenant_context() -> TenantContext:
+        return TenantContext(
+            platform_tenant_id=tenant_a.platform_tenant_id,
+            service_tenant_id="svc-http",
+            service_user_id="user-http",
+            db=db_session,
+            correlation_id="corr-platform-mismatch",
+        )
+
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as async_client:
+            response = await async_client.post(
+                "/v1/identity/tokens/issue",
+                json={
+                    "principal_id": tenant_b.bootstrap_admin_principal_id,
+                    "issuance_type": "platform",
+                },
+                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+            )
+
+        assert response.status_code == 403
+        payload = response.json()
+        assert payload["detail"]["code"] == "principal_platform_tenant_mismatch"
+        assert payload["detail"]["message"] == "Principal does not belong to current platform tenant context."
+        assert payload["detail"]["correlation_id"] == "corr-platform-mismatch"
     finally:
         app.dependency_overrides.pop(get_tenant_context, None)

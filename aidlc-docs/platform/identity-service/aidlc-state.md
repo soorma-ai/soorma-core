@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation Planning (uow-sdk-jwt-integration)
+- **Current Stage**: CONSTRUCTION - Code Generation Completion Gate (uow-sdk-jwt-integration)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation Planning - uow-sdk-jwt-integration
-- **Next Stage**: Code Generation Plan Approval - uow-sdk-jwt-integration
-- **Status**: Construction Design PR gate approved; code-generation plan created and awaiting explicit approval before Part 2 execution
+- **Current Stage**: Code Generation Completion Gate - uow-sdk-jwt-integration
+- **Next Stage**: Build and Test
+- **Status**: Code Generation Part 2 completed for uow-sdk-jwt-integration; awaiting explicit completion-gate decision
 
 ## Units Generation Status
 - [x] Units Planning - Completed

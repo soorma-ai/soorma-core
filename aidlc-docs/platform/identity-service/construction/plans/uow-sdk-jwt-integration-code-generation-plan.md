@@ -111,28 +111,28 @@
 - [x] Step 4 - Define implementation slices with STUB -> RED -> GREEN -> REFACTOR strategy and negative security coverage.
 - [x] Step 5 - Create this code-generation plan artifact for Unit 3.
 - [x] Step 6 - Log code-generation approval prompt in audit.md and request explicit plan approval.
-- [ ] Step 7 - Wait for explicit user approval of this plan before executing Part 2.
-- [ ] Step 8 - STUB phase (complete when 8A, 8B, and 8C are checked).
-- [ ] Step 8A - STUB (SDK): placeholders for JWT transport hooks and wrapper-internal integration seams.
-- [ ] Step 8B - STUB (identity-service): placeholders for issuance policy checks, verifier selection, and deny-path contracts.
-- [ ] Step 8C - STUB (shared dependency): placeholders for canonical tenant/user extraction and fail-closed dependency contracts.
-- [ ] Step 9 - RED phase (complete when 9A, 9B, and 9C are checked).
-- [ ] Step 9A - RED (SDK): failing tests for canonical JWT outbound behavior and wrapper compatibility.
-- [ ] Step 9B - RED (identity-service): failing tests for mismatch deny, unknown kid/signature deny, and issuance-policy protections.
-- [ ] Step 9C - RED (shared dependency): failing tests for middleware/dependency canonical claim handling and fail-closed paths.
-- [ ] Step 10 - GREEN phase (complete when 10A, 10B, and 10C are checked).
-- [ ] Step 10A - GREEN (SDK): implement internal JWT-first behavior while keeping public wrapper signatures stable.
-- [ ] Step 10B - GREEN (identity-service): implement compatibility-phase auth/authorization and verifier-distribution behavior.
-- [ ] Step 10C - GREEN (shared dependency): implement deterministic claim verification and safe error mapping support.
-- [ ] Step 11 - REFACTOR phase (complete when 11A, 11B, and 11C are checked).
-- [ ] Step 11A - REFACTOR (SDK): remove duplication and tighten internal auth transport contract boundaries.
-- [ ] Step 11B - REFACTOR (identity-service): align error taxonomy and simplify policy decision paths without changing behavior.
-- [ ] Step 11C - REFACTOR (shared dependency): tighten middleware/dependency contracts and preserve deterministic precedence behavior.
-- [ ] Step 12 - Execute focused test suites (complete when 12A, 12B, and 12C are checked).
-- [ ] Step 12A - Tests (SDK): wrappers/clients and CLI bootstrap behavior.
-- [ ] Step 12B - Tests (identity-service): issuance, verifier-selection, and deny-path coverage.
-- [ ] Step 12C - Tests (shared dependency): middleware and dependency validation coverage.
-- [ ] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-sdk-jwt-integration/code/code-generation-summary.md.
+- [x] Step 7 - Wait for explicit user approval of this plan before executing Part 2.
+- [x] Step 8 - STUB phase (complete when 8A, 8B, and 8C are checked).
+- [x] Step 8A - STUB (SDK): placeholders for JWT transport hooks and wrapper-internal integration seams.
+- [x] Step 8B - STUB (identity-service): placeholders for issuance policy checks, verifier selection, and deny-path contracts.
+- [x] Step 8C - STUB (shared dependency): placeholders for canonical tenant/user extraction and fail-closed dependency contracts.
+- [x] Step 9 - RED phase (complete when 9A, 9B, and 9C are checked).
+- [x] Step 9A - RED (SDK): failing tests for canonical JWT outbound behavior and wrapper compatibility.
+- [x] Step 9B - RED (identity-service): failing tests for mismatch deny, unknown kid/signature deny, and issuance-policy protections.
+- [x] Step 9C - RED (shared dependency): failing tests for middleware/dependency canonical claim handling and fail-closed paths.
+- [x] Step 10 - GREEN phase (complete when 10A, 10B, and 10C are checked).
+- [x] Step 10A - GREEN (SDK): implement internal JWT-first behavior while keeping public wrapper signatures stable.
+- [x] Step 10B - GREEN (identity-service): implement compatibility-phase auth/authorization and verifier-distribution behavior.
+- [x] Step 10C - GREEN (shared dependency): implement deterministic claim verification and safe error mapping support.
+- [x] Step 11 - REFACTOR phase (complete when 11A, 11B, and 11C are checked).
+- [x] Step 11A - REFACTOR (SDK): remove duplication and tighten internal auth transport contract boundaries.
+- [x] Step 11B - REFACTOR (identity-service): align error taxonomy and simplify policy decision paths without changing behavior.
+- [x] Step 11C - REFACTOR (shared dependency): tighten middleware/dependency contracts and preserve deterministic precedence behavior.
+- [x] Step 12 - Execute focused test suites (complete when 12A, 12B, and 12C are checked).
+- [x] Step 12A - Tests (SDK): wrappers/clients and CLI bootstrap behavior.
+- [x] Step 12B - Tests (identity-service): issuance, verifier-selection, and deny-path coverage.
+- [x] Step 12C - Tests (shared dependency): middleware and dependency validation coverage.
+- [x] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-sdk-jwt-integration/code/code-generation-summary.md.
 - [ ] Step 14 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
 - [ ] Step 15 - On approval, update aidlc-state.md and audit.md, then transition to next stage.
 

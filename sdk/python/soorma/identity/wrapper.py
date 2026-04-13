@@ -69,8 +69,10 @@ class IdentityClient:
     ) -> tuple[str, str]:
         """Resolve identity from explicit args or bound event metadata."""
         metadata = self._bound_event_identity.get()
-        resolved_tenant_id = tenant_id if tenant_id is not None else (metadata or {}).get("tenant_id")
-        resolved_user_id = user_id if user_id is not None else (metadata or {}).get("user_id")
+        raw_tenant_id = tenant_id if tenant_id is not None else (metadata or {}).get("tenant_id")
+        raw_user_id = user_id if user_id is not None else (metadata or {}).get("user_id")
+        resolved_tenant_id = str(raw_tenant_id).strip() if raw_tenant_id is not None else None
+        resolved_user_id = str(raw_user_id).strip() if raw_user_id is not None else None
         if not resolved_tenant_id or not resolved_user_id:
             raise ValueError("tenant_id and user_id are required (get from event context)")
         return resolved_tenant_id, resolved_user_id

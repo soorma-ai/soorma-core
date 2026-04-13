@@ -178,6 +178,71 @@ class TestTenancyMiddlewareJwtCoexistence:
         assert response.json()["service_tenant_id"] == "tenant_header"
         assert response.json()["service_user_id"] == "user_header"
 
+    def test_jwt_invalid_principal_type_fails_closed(self, make_test_app, monkeypatch):
+        """JWT with unsupported principal_type must fail closed (401)."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_jwt",
+                "service_tenant_id": "tenant_jwt",
+                "service_user_id": "user_jwt",
+                "principal_type": "robot",
+                "roles": ["admin"],
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Tenant-ID": "spt_header",
+            },
+        )
+        assert response.status_code == 401
+
+    def test_jwt_roles_must_be_list_fails_closed(self, make_test_app, monkeypatch):
+        """JWT with malformed roles claim must fail closed (401)."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "platform_tenant_id": "spt_jwt",
+                "service_tenant_id": "tenant_jwt",
+                "service_user_id": "user_jwt",
+                "roles": "admin",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Tenant-ID": "spt_header",
+            },
+        )
+        assert response.status_code == 401
+
 
 class TestOpenApiPlatformTenantHeader:
     """OpenAPI helper exposes X-Tenant-ID in Swagger docs for Try it out."""
