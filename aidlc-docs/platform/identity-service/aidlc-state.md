@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - NFR Design Completion Review (uow-sdk-jwt-integration)
+- **Current Stage**: CONSTRUCTION - Infrastructure Design Completion Review (uow-sdk-jwt-integration)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: NFR Design Completion Review - uow-sdk-jwt-integration
-- **Next Stage**: Infrastructure Design - uow-sdk-jwt-integration (pending approval)
-- **Status**: NFR design artifacts generated; awaiting explicit user review decision
+- **Current Stage**: Infrastructure Design Completion Review - uow-sdk-jwt-integration
+- **Next Stage**: Code Generation - uow-sdk-jwt-integration (pending approval)
+- **Status**: Infrastructure design artifacts generated; awaiting explicit user review decision
 
 ## Units Generation Status
 - [x] Units Planning - Completed
