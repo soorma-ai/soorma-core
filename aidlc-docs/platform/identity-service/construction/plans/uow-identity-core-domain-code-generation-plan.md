@@ -151,7 +151,7 @@
 - [x] Step 12 - Run focused test suites for new service, shared models, SDK wrapper contracts, and negative security paths.
 - [x] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-identity-core-domain/code/code-generation-summary.md.
 - [x] Step 14 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
-- [ ] Step 15 - On approval, update aidlc-state.md and audit.md, then transition to next stage.
+- [x] Step 15 - On approval, update aidlc-state.md and audit.md, then transition to next stage.
 
 ## Detailed Generation Sequence
 1. Project structure setup (brownfield add):

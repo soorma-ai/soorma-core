@@ -1799,3 +1799,537 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - Code Generation completion review clarification
 
 ---
+
+## Session Continuity - Resume Request
+**Timestamp**: 2026-04-10T05:36:09Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-sdk-jwt-integration\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed workflow context from aidlc-state.md, loaded mandatory common AI-DLC rules, reloaded enabled extension rules, loaded architecture patterns, and loaded inception artifacts (reverse-engineering, requirements, user stories, application-design, unit mapping, and uow-sdk-jwt-integration inception test specs)."
+**Context**: Session continuity - construction resume intake
+
+---
+
+## Construction Phase Initialization - Session Reload
+**Timestamp**: 2026-04-10T05:36:09Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-sdk-jwt-integration\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Code Generation - Pending Approval Gate Re-presented
+**Timestamp**: 2026-04-10T05:36:36Z
+**User Input**: "Using AI-DLC, resume the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-sdk-jwt-integration\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Detected pending mandatory approval gate from uow-identity-core-domain Code Generation completion review and prepared standardized gate prompt. Workflow is paused until explicit user decision (Request Changes or Continue to Next Stage)."
+**Context**: CONSTRUCTION - Code Generation approval gate (dependency precondition before unit switch)
+
+---
+
+## Code Generation - Approval Recorded
+**Timestamp**: 2026-04-10T05:46:06Z
+**User Input**: "record approval, that work is complete"
+**AI Response**: "Accepted explicit approval for uow-identity-core-domain Code Generation completion review gate, marked code-generation plan final transition step complete, and advanced workflow to the next unit as requested."
+**Context**: CONSTRUCTION - Code Generation approval gate passed
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-10T05:46:06Z
+**User Input**: "record approval, that work is complete"
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-sdk-jwt-integration)."
+**Context**: CONSTRUCTION - per-unit initialization
+
+---
+
+## Functional Design - Planning Start
+**Timestamp**: 2026-04-10T05:46:06Z
+**User Input**: "record approval, that work is complete"
+**AI Response**: "Started Functional Design planning for uow-sdk-jwt-integration and generated planning artifact with embedded clarification questions at construction/plans/uow-sdk-jwt-integration-functional-design-plan.md."
+**Context**: CONSTRUCTION - Functional Design planning
+
+---
+
+## Functional Design - Q2 Clarification
+**Timestamp**: 2026-04-10T05:52:32Z
+**User Input**: "for Q2, what does mismatch agains compatibility aloas mean?"
+**AI Response**: "Clarified that compatibility alias mismatch means JWT tenant identity does not equal any temporary legacy tenant alias value carried for transitional compatibility. Explained that this indicates conflicting identity context and that fail-closed denial is the safest expected behavior."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q2 Validity Clarification
+**Timestamp**: 2026-04-10T05:53:54Z
+**User Input**: "but in Q1 we chose to only sent JWT, and not send headers. then is Q2 still valid?"
+**AI Response**: "Confirmed Q2 is conditionally applicable: with strict JWT-only outbound SDK behavior, alias mismatch checks are mostly not expected on that path, but still relevant as a safety invariant for transitional clients, proxies, or any request path where legacy alias inputs may still appear. Recommended treating mismatch as fail-closed whenever alias data is present."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Clarification
+**Timestamp**: 2026-04-10T05:56:41Z
+**User Input**: "for q3, how can admin key be used for JWT token request?"
+**AI Response**: "Clarified that the admin key is used only to authenticate and authorize the token-issuance API caller during bootstrap compatibility mode, not as the JWT signing key. The identity service validates admin-key scope and tenant binding, then issues JWTs using its own asymmetric private signing key, with strict auditing and fail-closed checks."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-10T05:58:35Z
+**User Input**: "ok, add the admin key for JWT token request as answer to Q3 with rationale and clarification"
+**AI Response**: "Recorded Question 3 as option C in uow-sdk-jwt-integration functional design plan with explicit rationale and clarification: admin key is caller-auth for issuance API requests in compatibility phase, while JWT signing remains asymmetric and service-owned, with tenant/scope policy checks enforced fail-closed."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q4 Clarification
+**Timestamp**: 2026-04-10T06:01:46Z
+**User Input**: "for q4, i can understand option A. help me understand other options and when/how/why they get used"
+**AI Response**: "Explained Q4 options B and C with usage intent and trade-offs: B allows self-issue plus tightly scoped admin override for operational/admin workflows with mandatory policy and audit controls; C permits any authenticated principal in-tenant to issue for others and is generally avoided due to over-broad privilege and abuse risk in multi-tenant security-sensitive systems."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-10T06:03:39Z
+**User Input**: "lets add answer B with some clarification"
+**AI Response**: "Recorded Question 4 as option B in uow-sdk-jwt-integration functional design plan and added clarification that self-issue is default, admin override is tightly scoped and audited, and policy/tenant violations fail closed."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q6 Clarification
+**Timestamp**: 2026-04-10T06:05:57Z
+**User Input**: "help me understand q6 options, why would we ever pick anything other than option A?"
+**AI Response**: "Explained Q6 option trade-offs and when B/C are intentionally selected: A is preferred for strict backward compatibility in this unit; B is used for explicit API evolution programs where parallel wrapper surfaces are intentionally introduced; C is used when migration requires temporary opt-in behavior controls without immediately breaking callers, then removed at cutover."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q6 Answer Recorded
+**Timestamp**: 2026-04-10T06:07:32Z
+**User Input**: "yes, add answer A with rationale"
+**AI Response**: "Recorded Question 6 as option A in uow-sdk-jwt-integration functional design plan with rationale emphasizing strict wrapper signature compatibility, internal JWT behavior injection, and reduced migration risk for incremental rollout."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Q7 Clarification
+**Timestamp**: 2026-04-10T06:09:00Z
+**User Input**: "for q7, my preference is option B, does it have any side effects or future limitations"
+**AI Response**: "Explained that Q7 option B (idempotent bootstrap) is generally the preferred operational model, with side effects mainly around state-drift masking, ownership ambiguity, and stricter audit/validation requirements. Clarified mitigation patterns and noted long-term need for explicit reconcile/override controls."
+**Context**: CONSTRUCTION - Functional Design planning clarification
+
+---
+
+## Functional Design - Q7 Answer Recorded
+**Timestamp**: 2026-04-10T06:10:28Z
+**User Input**: "ok, add answer with appropriate safety callout"
+**AI Response**: "Recorded Question 7 as option B in uow-sdk-jwt-integration functional design plan and added explicit safety callout: strict idempotent outcomes, fail-closed drift handling, immutable field protection, and structured audit logging."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Signing Model Consistency Clarification
+**Timestamp**: 2026-04-11T05:32:17Z
+**User Input**: "BLM-4 and BR-08 mention that identity service will sign JWT using asymmetric key. Have we confirmed if that's what identity service does? i recall it was using symetric / shared secret. will things break if idetity service and SDK are not in sync?"
+**AI Response**: "Verified current implementation is still symmetric HS256/shared-secret based for both issuance and bearer verification in runtime middleware. Clarified that asymmetric statements in functional-design artifacts represent target design intent for this unit, not current baseline behavior. Confirmed mismatch between signer/verifier expectations (algorithm/key path) will fail closed with 401 on service ingress."
+**Context**: CONSTRUCTION - Functional Design completion review clarification
+
+---
+
+## Functional Design - Answers Intake and Analysis
+**Timestamp**: 2026-04-10T06:13:13Z
+**User Input**: "all answers providd"
+**AI Response**: "Validated all answers in uow-sdk-jwt-integration-functional-design-plan.md, confirmed no blocking ambiguities, and executed Step 5 (collect and analyze answers)."
+**Context**: CONSTRUCTION - Functional Design planning answers capture
+
+---
+
+## Functional Design - Artifacts Generated and Review Prompt Prepared
+**Timestamp**: 2026-04-10T06:13:14Z
+**User Input**: "all answers providd"
+**AI Response**: "Generated functional design artifacts for uow-sdk-jwt-integration (business-logic-model.md, business-rules.md, domain-entities.md), updated plan checkboxes for Steps 6-7, updated aidlc-state to Functional Design completion review gate, and prepared standardized Request Changes / Continue to Next Stage prompt."
+**Context**: CONSTRUCTION - Functional Design completion gate preparation
+
+---
+
+## Functional Design - Unit Scope Clarification (Asymmetric + Well-Known)
+**Timestamp**: 2026-04-11T05:34:49Z
+**User Input**: "ok, so does this mean well also change identity service to use asymmetric key and wellknown endpoint in this unit of work? or is that a dependency that needs to be tracked separately?"
+**AI Response**: "Clarified scope split: Unit 3 should introduce compatibility-phase asymmetric issuance and verifier distribution support (including JWKS/well-known style discovery path where selected), while final symmetric-path removal and strict enforcement belongs to Unit 4 cutover. Recommended tracking asymmetric/JWKS implementation as explicit Unit 3 deliverables with dependency sequencing, not as a detached initiative unless formally descoped."
+**Context**: CONSTRUCTION - Functional Design completion review clarification
+
+---
+
+## Functional Design - Request Changes Applied (Identity-Service Tracking)
+**Timestamp**: 2026-04-11T05:38:07Z
+**User Input**: "ok, so i did not see any mention of identity service change in the functional design artifacts, so it's not clear how / where that work and requirement is being tracked"
+**AI Response**: "Applied request changes by adding explicit identity-service work tracking sections in Unit 3 functional design artifacts: business-logic-model, business-rules, and domain-entities. Added concrete implementation surfaces, dependency boundary notes, JWKS publication tracking entity, and guardrail rules linking required work to the Unit 3 migration checklist."
+**Context**: CONSTRUCTION - Functional Design review request changes
+
+---
+
+## Functional Design - Approval Recorded
+**Timestamp**: 2026-04-11T05:40:52Z
+**User Input**: "ok, functional design looks good"
+**AI Response**: "Accepted explicit functional design approval for uow-sdk-jwt-integration and advanced workflow to NFR Requirements stage."
+**Context**: CONSTRUCTION - Functional Design approval gate passed
+
+---
+
+## NFR Requirements - Planning Start
+**Timestamp**: 2026-04-11T05:40:52Z
+**User Input**: "ok, functional design looks good"
+**AI Response**: "Started NFR Requirements planning for uow-sdk-jwt-integration and generated plan/questions file at construction/plans/uow-sdk-jwt-integration-nfr-requirements-plan.md."
+**Context**: CONSTRUCTION - NFR Requirements planning
+
+---
+
+## NFR Requirements - Answers Prompt
+**Timestamp**: 2026-04-11T05:40:52Z
+**User Input**: "ok, functional design looks good"
+**AI Response**: "Prepared NFR Requirements answer gate by requesting completion of all [Answer] fields in construction/plans/uow-sdk-jwt-integration-nfr-requirements-plan.md before artifact generation."
+**Context**: CONSTRUCTION - NFR Requirements planning prompt
+
+---
+
+## NFR Requirements - Q1 Clarification
+**Timestamp**: 2026-04-11T05:43:15Z
+**User Input**: "for q1, if we choose a specific target instead of best effort, what does that mean for implementation? do we make any specific code / design choice based on selected parameter?"
+**AI Response**: "Clarified that selecting an explicit latency target is a design constraint, not just reporting metadata. It drives concrete implementation choices such as caching strategy, token verification path optimization, key-discovery behavior, timeout budgets, instrumentation granularity, and test/load gate criteria; best-effort does not force these deterministic engineering trade-offs."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q1 Answer Recorded
+**Timestamp**: 2026-04-11T05:45:00Z
+**User Input**: "ok, lets use 100ms and add answer with rationale"
+**AI Response**: "Recorded Question 1 as option C (<=100 ms p95) in uow-sdk-jwt-integration NFR requirements plan and added rationale linking this target to measurable compatibility-phase constraints and regression gating."
+**Context**: CONSTRUCTION - NFR Requirements planning answers capture
+
+---
+
+## NFR Requirements - Q5 Decision Clarification
+**Timestamp**: 2026-04-11T05:47:39Z
+**User Input**: "give all discussion and answer choices so far, for q5 only JWKS is the right option, correct?"
+**AI Response**: "Summarized current NFR answers and Q5 option trade-offs. Clarified that for Unit 3 compatibility phase, JWKS-only is not the only valid choice; JWKS primary with deterministic static fallback is generally the safer compatibility selection, while JWKS-only is typically a stricter final-state posture more aligned with post-cutover enforcement."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Q5 Answer Recorded
+**Timestamp**: 2026-04-11T05:49:12Z
+**User Input**: "ok, add answer c with rationale"
+**AI Response**: "Recorded Question 5 as option C in uow-sdk-jwt-integration NFR requirements plan with rationale: JWKS primary plus deterministic static fallback for compatibility-phase resilience, explicit precedence controls, and clean progression to stricter cutover posture."
+**Context**: CONSTRUCTION - NFR Requirements planning answers capture
+
+---
+
+## NFR Requirements - Q7 Clarification
+**Timestamp**: 2026-04-11T05:50:47Z
+**User Input**: "help me understand q7 and its options"
+**AI Response**: "Explained Q7 reliability options for idempotent bootstrap outcomes, including trade-offs between simple success/failure, deterministic outcome contracts with fail-closed drift handling, interactive retries, and deferral to later units. Recommended deterministic outcomes with fail-closed drift for this compatibility phase."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification
+
+---
+
+## NFR Requirements - Answers Validation
+**Timestamp**: 2026-04-11T05:53:08Z
+**User Input**: "all answers provided"
+**AI Response**: "Validated that all NFR planning questions (Q1-Q9) are answered in the Unit 3 NFR requirements plan with no remaining ambiguity blockers for artifact generation."
+**Context**: CONSTRUCTION - NFR Requirements planning validation complete
+
+---
+
+## NFR Requirements - Artifact Generation and Completion Gate Preparation
+**Timestamp**: 2026-04-11T05:53:08Z
+**User Input**: "all answers provided"
+**AI Response**: "Generated Unit 3 NFR artifacts at construction/uow-sdk-jwt-integration/nfr-requirements/nfr-requirements.md and construction/uow-sdk-jwt-integration/nfr-requirements/tech-stack-decisions.md, completed plan checklist Steps 4-6, updated aidlc-state to NFR Requirements Completion Review, and prepared standardized Request Changes / Continue to Next Stage prompt."
+**Context**: CONSTRUCTION - NFR Requirements completion gate preparation
+
+---
+
+## NFR Requirements - Approval Recorded
+**Timestamp**: 2026-04-11T05:59:12Z
+**User Input**: "NFR requirements look good"
+**AI Response**: "Accepted explicit NFR Requirements approval for uow-sdk-jwt-integration and transitioned workflow to NFR Design stage."
+**Context**: CONSTRUCTION - NFR Requirements approval gate passed
+
+---
+
+## NFR Design - Planning Start and Answers Prompt
+**Timestamp**: 2026-04-11T05:59:12Z
+**User Input**: "NFR requirements look good"
+**AI Response**: "Started NFR Design planning for uow-sdk-jwt-integration, generated planning/questions artifact at construction/plans/uow-sdk-jwt-integration-nfr-design-plan.md, and requested user answers for all [Answer] fields before design artifact generation."
+**Context**: CONSTRUCTION - NFR Design planning
+
+---
+
+## NFR Design - Q1 Clarification
+**Timestamp**: 2026-04-12T18:59:42Z
+**User Input**: "help me understand Q1, also what options make sense based on decisions so far"
+**AI Response**: "Explained that Q1 defines deterministic verifier-source precedence under outage/degradation, mapped each option against approved Unit 3 NFR decisions, and recommended Option A (JWKS primary -> bounded static fallback -> fail closed) as the aligned choice."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Verifier Scope Clarification
+**Timestamp**: 2026-04-12T19:01:45Z
+**User Input**: "who is the \"verifier\" in this context? is the SDK and agents verifying signature? or is this for identity service (and other soorma-core services) to verify signature of JWT token presented by SDK and agents to those service's APIs?"
+**AI Response**: "Clarified that verifier in this context is service-side verification logic (identity-service and other soorma-core services through shared auth middleware/dependencies) that validates JWT signature and claims on inbound API requests; SDK/agents are token presenters, not primary signature verifiers in this flow."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q1 Implementation Intent Clarification
+**Timestamp**: 2026-04-12T19:03:44Z
+**User Input**: "ok, so then is Q1 intended to create work for server side library used by these soorma-core services? or is this question only to document how verification will work on server side (assuming its already implemented this way)"
+**AI Response**: "Clarified that Q1 is a design-decision gate for Unit 3 and is not documentation-only; if current shared auth/server verification path does not already satisfy the selected deterministic precedence and fail-closed behavior, implementation work in server-side shared auth libraries and service integrations is required in this unit."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q1 Answer Recorded
+**Timestamp**: 2026-04-12T19:04:36Z
+**User Input**: "yes, record answer with rationale"
+**AI Response**: "Recorded Question 1 as option A in uow-sdk-jwt-integration NFR Design plan and added rationale: deterministic verifier precedence (JWKS primary, bounded static fallback, fail closed) aligned to approved Unit 3 NFR posture."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q2 Scope and Options Clarification
+**Timestamp**: 2026-04-12T19:05:45Z
+**User Input**: "yes, help with understanding Q2, it's scope (i.e. what work does this impact) and then help understand the options"
+**AI Response**: "Explained Q2 implementation scope and option tradeoffs for JWKS/discovery cache strategy, mapped impact to shared server-side verifier components, and recommended the option aligned to approved Unit 3 NFR posture (bounded resilience with deterministic fail-closed behavior)."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q2 Answer Recorded
+**Timestamp**: 2026-04-12T19:07:04Z
+**User Input**: "yes, record answer B with rationale"
+**AI Response**: "Recorded Question 2 as option B in uow-sdk-jwt-integration NFR Design plan with rationale: TTL plus jittered proactive refresh and hard-expiry fail-closed behavior to balance resilience, performance stability, and security posture."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q3 Options Clarification
+**Timestamp**: 2026-04-12T19:08:42Z
+**User Input**: "help with q3 options"
+**AI Response**: "Explained Q3 key-rotation distribution options, mapped each option to approved Unit 3 constraints (<=5-minute propagation, deterministic fail-closed behavior, bounded resilience), and recommended event-triggered invalidation with bounded polling backstop as best-fit design choice."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-12T19:09:19Z
+**User Input**: "yes ,record"
+**AI Response**: "Recorded Question 3 as option B in uow-sdk-jwt-integration NFR Design plan with rationale: event-triggered invalidation plus bounded polling backstop to meet propagation, resilience, and deterministic fail-closed requirements."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q4 Options Clarification
+**Timestamp**: 2026-04-12T19:10:27Z
+**User Input**: "yes, help with q4 options"
+**AI Response**: "Explained Q4 bootstrap component-pattern options, mapped each option to approved deterministic outcome contract (CREATED/REUSED/FAILED_DRIFT) and fail-closed drift posture, and recommended the option that explicitly includes protected-config drift classification with fail-closed guardrails."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-12T19:11:54Z
+**User Input**: "yes, record C with rationale"
+**AI Response**: "Recorded Question 4 as option C in uow-sdk-jwt-integration NFR Design plan with rationale: explicit protected-config drift classification and fail-closed guardrails over a typed bootstrap evaluator to preserve deterministic outcomes and safety posture."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q5 Options Clarification
+**Timestamp**: 2026-04-12T19:12:24Z
+**User Input**: "help understand q5 options"
+**AI Response**: "Explained Q5 observability trace-boundary options, mapped each option to approved NFR telemetry and override-audit durability requirements, and recommended the minimum boundary that captures verification source/fallback plus issuance override and audit-write decision points."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q5 Answer Recorded
+**Timestamp**: 2026-04-12T19:13:25Z
+**User Input**: "ok, record C with rationale"
+**AI Response**: "Recorded Question 5 as option C in uow-sdk-jwt-integration NFR Design plan with rationale: minimum actionable trace boundary includes verifier source/fallback plus issuance override and audit-write decision spans, aligned to Unit 3 observability and audit durability constraints."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Q6 Persistence Split Clarification
+**Timestamp**: 2026-04-12T19:14:27Z
+**User Input**: "for q6, what is this \"persistence design split\"? what do these options mean"
+**AI Response**: "Clarified that persistence design split means how security/audit events are partitioned across synchronous versus asynchronous persistence paths; explained each option's reliability, latency, and audit-durability trade-offs and mapped recommended direction to approved Unit 3 hardening posture."
+**Context**: CONSTRUCTION - NFR Design planning clarification
+
+---
+
+## NFR Design - Q6 Answer Recorded
+**Timestamp**: 2026-04-12T19:15:34Z
+**User Input**: "yes, record B with rationale"
+**AI Response**: "Recorded Question 6 as option B in uow-sdk-jwt-integration NFR Design plan with rationale: critical override/security events persist synchronously for durability while non-critical events persist asynchronously for operational efficiency."
+**Context**: CONSTRUCTION - NFR Design planning answers capture
+
+---
+
+## NFR Design - Answers Validation
+**Timestamp**: 2026-04-12T19:16:24Z
+**User Input**: "ok, all answers provided"
+**AI Response**: "Validated that all NFR Design questions (Q1-Q7) are answered in the Unit 3 plan with sufficient specificity to generate design artifacts without ambiguity blockers."
+**Context**: CONSTRUCTION - NFR Design planning validation complete
+
+---
+
+## NFR Design - Artifact Generation and Completion Gate Preparation
+**Timestamp**: 2026-04-12T19:16:24Z
+**User Input**: "ok, all answers provided"
+**AI Response**: "Generated Unit 3 NFR Design artifacts at construction/uow-sdk-jwt-integration/nfr-design/nfr-design-patterns.md and construction/uow-sdk-jwt-integration/nfr-design/logical-components.md, completed plan checklist Steps 4-6, updated aidlc-state to NFR Design Completion Review, and prepared standardized Request Changes / Continue to Next Stage prompt."
+**Context**: CONSTRUCTION - NFR Design completion gate preparation
+
+---
+
+## NFR Design - Approval Recorded
+**Timestamp**: 2026-04-12T23:36:33Z
+**User Input**: "design approved"
+**AI Response**: "Accepted explicit NFR Design approval for uow-sdk-jwt-integration and advanced workflow to Infrastructure Design stage."
+**Context**: CONSTRUCTION - NFR Design approval gate passed
+
+---
+
+## Infrastructure Design - Planning Start and Answers Prompt
+**Timestamp**: 2026-04-12T23:36:33Z
+**User Input**: "design approved"
+**AI Response**: "Started Infrastructure Design planning for uow-sdk-jwt-integration, generated planning/questions artifact at construction/plans/uow-sdk-jwt-integration-infrastructure-design-plan.md, and requested user answers for all [Answer] fields before infrastructure artifact generation."
+**Context**: CONSTRUCTION - Infrastructure Design planning
+
+---
+
+## Infrastructure Design - Unit-2 Alignment Review and Q1 Answer Recorded
+**Timestamp**: 2026-04-13T21:36:20Z
+**User Input**: "for q1, lets use same paradigm as unit-2 (identity service). i think it was local baseline + provider-neutral + 1 reference for GCP. check that and select appropriate answer. also review other questions for alignment with choices in unit-2."
+**AI Response**: "Verified Unit 2 infrastructure baseline and recorded Question 1 as option B with rationale in the Unit 3 infrastructure-design plan. Completed alignment review for Questions 2-7 against Unit 2 decisions and prepared recommended aligned options for user confirmation."
+**Context**: CONSTRUCTION - Infrastructure Design planning answers capture and alignment review
+
+---
+
+## Infrastructure Design - Aligned Answers Recorded
+**Timestamp**: 2026-04-13T21:37:54Z
+**User Input**: "yes, lets record answers in alignment"
+**AI Response**: "Recorded aligned answers for remaining Infrastructure Design questions (Q2-Q7) in the Unit 3 plan with rationale based on Unit 2 baseline and Unit 3 NFR constraints."
+**Context**: CONSTRUCTION - Infrastructure Design planning answers capture
+
+---
+
+## Infrastructure Design - Answers Validation
+**Timestamp**: 2026-04-13T21:38:27Z
+**User Input**: "yes, lets record answers in alignment"
+**AI Response**: "Validated all Infrastructure Design plan questions (Q1-Q7) are answered with sufficient specificity and no unresolved ambiguity blockers."
+**Context**: CONSTRUCTION - Infrastructure Design planning validation complete
+
+---
+
+## Infrastructure Design - Artifact Generation and Completion Gate Preparation
+**Timestamp**: 2026-04-13T21:38:27Z
+**User Input**: "yes, lets record answers in alignment"
+**AI Response**: "Generated Unit 3 Infrastructure Design artifacts at construction/uow-sdk-jwt-integration/infrastructure-design/infrastructure-design.md and construction/uow-sdk-jwt-integration/infrastructure-design/deployment-architecture.md, completed plan checklist Steps 5-6, updated aidlc-state to Infrastructure Design Completion Review, and prepared standardized Request Changes / Continue to Next Stage prompt."
+**Context**: CONSTRUCTION - Infrastructure Design completion gate preparation
+
+---
+
+## Infrastructure Design Approval
+**Timestamp**: 2026-04-13T21:50:23Z
+**User Input**: "design approved"
+**AI Response**: "Accepted Infrastructure Design approval for uow-sdk-jwt-integration and transitioned to pre-code-generation extension gates."
+**Context**: CONSTRUCTION - Infrastructure Design approval gate passed
+
+---
+
+## QA Test Cases - Construction Enrichment Complete
+**Timestamp**: 2026-04-13T21:58:14Z
+**User Input**: "design approved"
+**AI Response**: "Executed required QA construction enrichment for uow-sdk-jwt-integration by updating inception test specs in place (narrative, gherkin, tabular, index) and creating enrichment-delta.md with modified and added test-case traceability."
+**Context**: CONSTRUCTION - qa-test-cases enrichment
+
+---
+
+## PR Checkpoint - Construction Gate Prerequisite Check
+**Timestamp**: 2026-04-13T21:58:14Z
+**User Input**: "design approved"
+**AI Response**: "Verified git prerequisite for PR checkpoint (repository detected), detected current branch `dev`, and detected default remote branch hint `main`. Awaiting explicit user branch confirmation before generating construction design PR checkpoint instructions for uow-sdk-jwt-integration."
+**Context**: CONSTRUCTION - pr-checkpoint gate setup
+
+---
+
+## Workflow Status Correction
+**Timestamp**: 2026-04-13T21:58:14Z
+**User Input**: "design approved"
+**AI Response**: "Updated aidlc-state current status to reflect pre-codegen gate progression and paused code-generation planning until Construction Design PR gate setup is complete."
+**Context**: CONSTRUCTION - lifecycle state correction
+
+---
+
+## PR Checkpoint - Branch Confirmation Prompt
+**Timestamp**: 2026-04-13T21:58:14Z
+**User Input**: "design approved"
+**AI Response**: "Created construction/plans/uow-sdk-jwt-integration-design-pr-checkpoint-branch-questions.md to collect explicit branch confirmation for the Construction Design PR gate (current detected branch: dev)."
+**Context**: CONSTRUCTION - pr-checkpoint gate setup
+
+---
+
+## PR Checkpoint - Branch Confirmation Received
+**Timestamp**: 2026-04-13T22:00:02Z
+**User Input**: "A)"
+**AI Response**: "Resolved branch confirmation to `dev` for the Construction Design PR gate of uow-sdk-jwt-integration."
+**Context**: CONSTRUCTION - pr-checkpoint gate setup
+
+---
+
+## PR Checkpoint - Construction Design Instructions Generated
+**Timestamp**: 2026-04-13T22:00:02Z
+**User Input**: "A)"
+**AI Response**: "Generated construction design PR checkpoint instructions for uow-sdk-jwt-integration at construction/plans/uow-sdk-jwt-integration-design-pr-checkpoint-instructions.md and updated PR checkpoint state to PENDING."
+**Context**: CONSTRUCTION - pr-checkpoint gate
+
+---
+
+## PR Checkpoint - Construction Design Gate Presented
+**Timestamp**: 2026-04-13T22:00:02Z
+**User Input**: "A)"
+**AI Response**: "Presented blocking Construction Design PR review gate for uow-sdk-jwt-integration and paused workflow pending explicit confirmation that team PR review is approved."
+**Context**: CONSTRUCTION - pr-checkpoint approval gate
+
+---
