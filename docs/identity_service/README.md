@@ -123,6 +123,8 @@ python -m pytest libs/soorma-service-common/tests/test_dependencies.py
 ## Related Docs
 
 - Architecture details: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- JWT technical architecture: [JWT_TECHNICAL_ARCHITECTURE.md](./JWT_TECHNICAL_ARCHITECTURE.md)
+- Asymmetric bootstrap primer: [ASYMMETRIC_BOOTSTRAP_PRIMER.md](./ASYMMETRIC_BOOTSTRAP_PRIMER.md)
 - Use-case scenarios: [USE_CASES.md](./USE_CASES.md)
 - Service README: [services/identity-service/README.md](../../services/identity-service/README.md)
 - QA coverage matrix (Unit-1/Unit-2): [aidlc-docs/platform/identity-service/construction/test-cases/qa-coverage-unit1-unit2.md](../../aidlc-docs/platform/identity-service/construction/test-cases/qa-coverage-unit1-unit2.md)

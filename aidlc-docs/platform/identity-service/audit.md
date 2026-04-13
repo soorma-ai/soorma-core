@@ -2509,3 +2509,27 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - Code Generation Part 2 issuer-trust clarification and hardening
 
 ---
+
+## Code Generation - JWT Technical Architecture Documentation
+**Timestamp**: 2026-04-13T23:34:28Z
+**User Input**: "ok, document how identity service's JWT issue works in a technical design / architecture document under docs/ directory. this document should cover following:\n- what are the environment settings etc. need to be enabled for identity service to start up with correct JWT enabled settings\n- how does soorma-service-common middleware performs JWT validation and it's two tier multi-tenancy model\n- how does soorma dev CLI configures the local stack (e.g. seed keys, configuration etc.)\n- how does SDK clients use JWT to authenticate API requests to soorma-core infrastructure services"
+**AI Response**: "Added a new technical architecture document at docs/identity_service/JWT_TECHNICAL_ARCHITECTURE.md covering requested topics: identity-service JWT issuance/discovery design, full environment configuration matrix for correct JWT enablement (including asymmetric + JWKS paths), soorma-service-common middleware validation flow and two-tier tenancy model, soorma dev local stack bootstrap configuration and deterministic drift behavior, and SDK client JWT authentication behavior (identity client JWT path plus current compatibility behavior for other infrastructure clients). Updated docs/identity_service/README.md to link the new architecture document."
+**Context**: CONSTRUCTION - Documentation artifact creation requested by user
+
+---
+
+## Code Generation - Asymmetric Bootstrap Primer Documentation
+**Timestamp**: 2026-04-13T23:47:17Z
+**User Input**: "can the soorma dev CLI not bootstrap asymmetric mode (instead of asking developer to export RS256 related env vars)? otherwise, at the very least, give detailed instructions for how to generate keys etc. and how to populate each environment variable. this could be documented as a separate primer (to keep the JWT tech architecture document uncluttered)."
+**AI Response**: "Documented current behavior and added a separate primer at docs/identity_service/ASYMMETRIC_BOOTSTRAP_PRIMER.md with detailed, copy-paste instructions: RSA key generation commands, PEM escaping for environment-safe values, complete RS256/JWKS environment variable setup with per-variable purpose mapping, stack restart/drift-handling workflow, and validation steps for discovery/JWKS/middleware. Added links from docs/identity_service/README.md and docs/identity_service/JWT_TECHNICAL_ARCHITECTURE.md to keep the architecture document uncluttered while preserving operational detail."
+**Context**: CONSTRUCTION - Documentation refinement requested by user
+
+---
+
+## Code Generation - JWT Architecture Link Path Fix
+**Timestamp**: 2026-04-13T23:53:14Z
+**User Input**: "fix the links using relative path in the JWT tech architecture doc"
+**AI Response**: "Updated references in docs/identity_service/JWT_TECHNICAL_ARCHITECTURE.md to use correct relative markdown links from the document location: ARCHITECTURE_PATTERNS reference now points to ../ARCHITECTURE_PATTERNS.md and asymmetric primer reference now points to ./ASYMMETRIC_BOOTSTRAP_PRIMER.md."
+**Context**: CONSTRUCTION - Documentation correction requested by user
+
+---
