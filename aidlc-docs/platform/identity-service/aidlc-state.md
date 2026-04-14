@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - NFR Design Completion Gate (uow-cutover-hardening)
+- **Current Stage**: CONSTRUCTION - Infrastructure Design Planning and Questions (uow-cutover-hardening)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: NFR Design Completion Gate - uow-cutover-hardening
-- **Next Stage**: Infrastructure Design - uow-cutover-hardening
-- **Status**: NFR design answers were validated and NFR design artifacts generated for uow-cutover-hardening; awaiting explicit user approval at stage completion gate
+- **Current Stage**: Infrastructure Design Planning and Questions - uow-cutover-hardening
+- **Next Stage**: Infrastructure Design Artifact Generation - uow-cutover-hardening
+- **Status**: NFR design approved for uow-cutover-hardening; infrastructure design planning and clarifying questions prepared; awaiting explicit user answers before generating infrastructure design artifacts
 
 ## Units Generation Status
 - [x] Units Planning - Completed
