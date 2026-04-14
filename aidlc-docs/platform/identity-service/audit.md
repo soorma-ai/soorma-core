@@ -2661,3 +2661,159 @@ seems like github CI workflow need some fix"
 **Context**: CONSTRUCTION - CI failure triage and packaging fix
 
 ---
+
+## Construction Session Resumption - Start Unit Request
+**Timestamp**: 2026-04-14T17:47:32Z
+**User Input**: "Using AI-DLC, start construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Loaded mandatory AI-DLC common rules (process overview, session continuity, content validation, question format) from rule details, loaded opt-in extension prompts, and loaded full construction-stage rule files. Loaded docs/ARCHITECTURE_PATTERNS.md in full to satisfy soorma-core architecture gate before planning. Loaded full rules for enabled extensions (jira-tickets, pr-checkpoint, qa-test-cases, security-baseline) as part of construction session re-initialization. Loaded and synthesized inception artifacts for identity-service, including reverse-engineering, requirements, user stories, application design, plans, jira tickets, and test-case artifacts (including uow-cutover-hardening test specs) to prepare for construction start."
+**Context**: CONSTRUCTION - Session continuity, Construction Phase Initialization, and Unit Initialization (uow-cutover-hardening)
+
+---
+
+## Construction Unit Initialization - Approval Prompt
+**Timestamp**: 2026-04-14T17:48:02Z
+**User Input**: "N/A (AI-DLC gate prompt)"
+**AI Response**: "Prepared unit initialization completion gate for uow-cutover-hardening with explicit stop-before-next-stage behavior. Next stage is Functional Design, pending explicit user approval."
+**Context**: CONSTRUCTION - Unit Initialization completion gate prompt logged before requesting approval
+
+---
+
+## Functional Design Stage - User Approval to Continue
+**Timestamp**: 2026-04-14T17:51:48Z
+**User Input**: "state looks good, lets continue."
+**AI Response**: "Accepted approval for Unit Initialization completion gate. Proceeded to Functional Design stage for uow-cutover-hardening: analyzed unit context and dependencies from inception artifacts and prepared a functional design plan with embedded clarification questions in the construction plans directory."
+**Context**: CONSTRUCTION - Functional Design stage start (uow-cutover-hardening)
+
+---
+
+## Functional Design Stage - Clarification Questions Prompt
+**Timestamp**: 2026-04-14T17:51:54Z
+**User Input**: "N/A (AI-DLC gate prompt)"
+**AI Response**: "Prepared functional design clarification questions in aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-functional-design-plan.md and paused for explicit user answers before artifact generation."
+**Context**: CONSTRUCTION - Functional Design Step 5 pending user answers (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q1 Clarification and Answer Capture
+**Timestamp**: 2026-04-14T17:56:10Z
+**User Input**: "for Q1, we need single cutover. option A mentions that, but with a flag. why do we need flag? i do not want any cleanup later to remove flag"
+**AI Response**: "Clarified that a runtime cutover flag is not mandatory for this initiative. Updated Question 1 options to include a no-flag one-time cutover model and recorded Q1 as Option A (released JWT-only code path with no runtime feature flag), with rollback handled by deployment rollback procedure rather than flag reversal."
+**Context**: CONSTRUCTION - Functional Design planning clarification and Q1 answer capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q2 Clarification and Answer Capture
+**Timestamp**: 2026-04-14T17:58:04Z
+**User Input**: "for Q2, if we choose option A then what happens to token issue endpoint? isn't B the only right choice?"
+**AI Response**: "Clarified that choosing Q2 option A would also require JWT on token issuance, which creates bootstrap recursion for first-token acquisition unless an out-of-band credential path exists. Updated Q2 wording to make this explicit and recorded Q2 as option B: token-issuance endpoint uses trusted caller credentials while all other secured endpoints require JWT."
+**Context**: CONSTRUCTION - Functional Design planning clarification and Q2 answer capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q3 Clarification
+**Timestamp**: 2026-04-14T18:00:31Z
+**User Input**: "for q3, what does admin override looks like? is that different from trusted caller token request?"
+**AI Response**: "Clarified that trusted-caller request and admin override are different controls in the same issuance flow. Trusted-caller authentication establishes who may call token issuance; admin override is an authorization elevation that permits issue-for-other beyond self-issue policy, and must require explicit reason/scope with audit telemetry. Updated Q3 wording and added an in-file clarification note to reflect this separation."
+**Context**: CONSTRUCTION - Functional Design planning clarification (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q3 Override Authority Model Clarification
+**Timestamp**: 2026-04-14T18:03:16Z
+**User Input**: "so how will this admin override be provided? will that be some kind of scope / claim in the oringal principal's JWT token request by the trusted caller (who is assumed to have admin override authority)?"
+**AI Response**: "Clarified override authority model: admin override is derived from authenticated caller authorization context, not self-asserted request fields. If caller authentication is JWT-based, override can be represented via caller JWT scope/role claims; if caller authentication is API-key/admin-key based, override is resolved via server-side policy binding for that credential. Issuance payload fields like target principal and override reason are required inputs but do not grant authorization by themselves. Updated Q3 clarification note in functional design plan to codify this behavior."
+**Context**: CONSTRUCTION - Functional Design planning clarification (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q3 Answer Recorded
+**Timestamp**: 2026-04-14T18:05:12Z
+**User Input**: "ok, lets answer B with this context / rationale"
+**AI Response**: "Recorded Question 3 as option B in the functional design plan, including rationale that self-issue is baseline, issue-for-other requires explicit admin override derived from caller authorization context, request payload does not grant override authority, override requires reason/scope audit, and tenant-boundary fail-closed checks are mandatory."
+**Context**: CONSTRUCTION - Functional Design planning answers capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q4 Answer Recorded
+**Timestamp**: 2026-04-14T18:07:28Z
+**User Input**: "for q4, we only need to fix now and do not need any backward compatibility or grace period. similar to hard fix as part of release in Q1"
+**AI Response**: "Recorded Question 4 as option A in the functional design plan with hard-fix rationale: immediate convergence to canonical tenant_id in this release, no backward-compatibility aliases, no grace period, and release-coordinated rollout instead of dual-contract support."
+**Context**: CONSTRUCTION - Functional Design planning answers capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q5 Clarification and Answer Recorded
+**Timestamp**: 2026-04-14T18:09:23Z
+**User Input**: "for q5, is there any value in option B (production fallback)? with hard cutover posture i'm thinking option A is appropriate"
+**AI Response**: "Confirmed that option B has transitional value only for staged migrations and emergency compatibility windows, but it conflicts with this initiative's hard cutover posture. Recorded Question 5 as option A in the functional design plan with rationale: enforce RS256 signing, JWKS/public-key verification, remove shared-secret production coupling, and avoid downgrade/fallback behavior in normal production path."
+**Context**: CONSTRUCTION - Functional Design planning clarification and answers capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q5 Local Dev Bootstrap Clarification
+**Timestamp**: 2026-04-14T18:12:13Z
+**User Input**: "ok, but then what about local dev stack using soorma dev CLI? h256 fallback allowed for a simple bootstrap, do we need to now implement asymmetric key bootstrap process?"
+**AI Response**: "Clarified that under hard cutover posture, production remains RS256 plus JWKS/public-key verification only. For local development simplicity, the preferred path is asymmetric bootstrap automation in soorma dev CLI (generate or seed RS256 keys and JWKS wiring). HS256 should not be normal production fallback; if retained at all, it must be explicit non-production test mode and not the default local dev path. Updated Q5 rationale notes in the functional design plan to capture this policy."
+**Context**: CONSTRUCTION - Functional Design planning clarification (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q8 Rollback Clarification
+**Timestamp**: 2026-04-14T18:15:05Z
+**User Input**: "with hard custom over posture, do we really need to address rollback in q8?"
+**AI Response**: "Clarified that rollback readiness is still required even with hard cutover posture, but it should be modeled as release/deployment rollback with deterministic verification checks rather than runtime feature-flag rollback. Added a Q8 clarification note to the functional design plan to make this distinction explicit."
+**Context**: CONSTRUCTION - Functional Design planning clarification (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q8 Answer Recorded
+**Timestamp**: 2026-04-14T18:15:58Z
+**User Input**: "ok, record option A with context"
+**AI Response**: "Recorded Question 8 as option A in the functional design plan with hard-cutover context: rollback remains required, but as release/deployment rollback with deterministic verification checks instead of runtime flag reversal."
+**Context**: CONSTRUCTION - Functional Design planning answers capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q9 Scope Clarification
+**Timestamp**: 2026-04-14T18:17:09Z
+**User Input**: "for q9, will option A result in scope creep, or is that reasonable choice?"
+**AI Response**: "Clarified that option A is a reasonable choice and not scope creep when kept within already-approved Unit 4 scope. Added Q9 clarification note that Unit 4 already includes delegated-issuer OIDC/JWKS finalization per approved scope, and that scope creep only occurs if work expands into new product surface. Also noted that option B is a deliberate deferral requiring explicit re-baselining against Unit 4 exit criteria."
+**Context**: CONSTRUCTION - Functional Design planning clarification (uow-cutover-hardening)
+
+---
+
+## Functional Design - Q9 Answer Recorded
+**Timestamp**: 2026-04-14T18:19:11Z
+**User Input**: "ok record answer as suggested"
+**AI Response**: "Recorded Question 9 as option A in the functional design plan with bounded-scope rationale: delegated issuer OIDC/JWKS finalization is within approved Unit 4 scope when constrained to issuer trust validation, JWKS retrieval/cache/rotation handling, and policy-gated delegated claim acceptance."
+**Context**: CONSTRUCTION - Functional Design planning answers capture (uow-cutover-hardening)
+
+---
+
+## Functional Design - Artifacts Generated
+**Timestamp**: 2026-04-14T18:20:46Z
+**User Input**: "N/A (AI-DLC execution step)"
+**AI Response**: "Completed Functional Design Step 6 for uow-cutover-hardening by generating artifacts at aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/functional-design/: business-logic-model.md, business-rules.md, and domain-entities.md. Updated the functional design plan checklist to mark Steps 5-7 complete and recorded all question answers in-plan."
+**Context**: CONSTRUCTION - Functional Design artifact generation (uow-cutover-hardening)
+
+---
+
+## Functional Design - Completion Gate Prompt
+**Timestamp**: 2026-04-14T18:20:47Z
+**User Input**: "N/A (AI-DLC gate prompt)"
+**AI Response**: "Prepared Functional Design completion gate for uow-cutover-hardening and paused workflow for explicit user approval before proceeding to NFR Requirements."
+**Context**: CONSTRUCTION - Functional Design completion approval prompt logged
+
+---
+
+---

@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation Completion Gate (uow-sdk-jwt-integration)
+- **Current Stage**: CONSTRUCTION - Functional Design Completion Gate (uow-cutover-hardening)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation Completion Gate - uow-sdk-jwt-integration
-- **Next Stage**: Build and Test
-- **Status**: Code Generation Part 2 completed for uow-sdk-jwt-integration; awaiting explicit completion-gate decision
+- **Current Stage**: Functional Design Completion Gate - uow-cutover-hardening
+- **Next Stage**: NFR Requirements - uow-cutover-hardening
+- **Status**: Functional design artifacts generated for uow-cutover-hardening and awaiting explicit approval at stage completion gate
 
 ## Units Generation Status
 - [x] Units Planning - Completed
