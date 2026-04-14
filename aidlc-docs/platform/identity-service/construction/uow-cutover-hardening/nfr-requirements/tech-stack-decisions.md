@@ -47,8 +47,9 @@ These decisions map NFR requirements for hard cutover into implementation and va
 - Rollback readiness is required before proceeding to later construction stages.
 
 ## 7) Local Development Bootstrap
-- `soorma dev` default bootstrap remains asymmetric (RS256 keypair + JWKS wiring).
-- HS256 is not the default local path for this unit.
+- Current state: `soorma dev` local bootstrap defaults to symmetric HS256 shared-secret setup.
+- Target for this unit: change `soorma dev` default bootstrap to asymmetric (RS256 keypair + JWKS wiring).
+- After this unit's cutover implementation, HS256 is not the default local path.
 - Local developer ergonomics are addressed via automation, not by weakening production-aligned trust contracts.
 
 ## 8) Delegated Issuer Finalization

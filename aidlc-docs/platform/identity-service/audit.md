@@ -2872,4 +2872,28 @@ end-to-end without my confirmation at each gate."
 
 ---
 
+## NFR Requirements - Tech Stack Wording Correction
+**Timestamp**: 2026-04-14T19:03:04Z
+**User Input**: "in #sym:## 7) Local Development Bootstrap it says default bootstrap \"remains\" asymmetric, however current bootstrap is NOT asymmetric (current is symmetric with h256 shared secret key)"
+**AI Response**: "Acknowledged and corrected the wording in tech-stack-decisions.md to reflect actual current state and target transition: current local bootstrap is symmetric HS256 shared-secret, target in this unit is to change default bootstrap to asymmetric RS256 plus JWKS wiring, and HS256 is no longer default after cutover implementation."
+**Context**: CONSTRUCTION - NFR Requirements artifact correction based on user review
+
+---
+
+## NFR Requirements Stage - User Approval to Continue
+**Timestamp**: 2026-04-14T19:05:02Z
+**User Input**: "ok, nfr requirements approved"
+**AI Response**: "Accepted NFR Requirements approval for uow-cutover-hardening and advanced workflow to NFR Design stage. Loaded NFR requirements artifacts and prepared the NFR design planning context for this unit."
+**Context**: CONSTRUCTION - NFR Design stage start (uow-cutover-hardening)
+
+---
+
+## NFR Design Stage - Clarification Questions Prompt
+**Timestamp**: 2026-04-14T19:05:02Z
+**User Input**: "N/A (AI-DLC gate prompt)"
+**AI Response**: "Created aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-nfr-design-plan.md with NFR design clarifying questions and paused workflow for explicit user answers before generating NFR design artifacts."
+**Context**: CONSTRUCTION - NFR Design Step 4 pending answers (uow-cutover-hardening)
+
+---
+
 ---
