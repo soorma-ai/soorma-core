@@ -2631,3 +2631,33 @@ soorma-postgres  | psql:/docker-entrypoint-initdb.d/01-init.sql:5: error: invali
 **Context**: CONSTRUCTION - runtime failure triage and fix
 
 ---
+
+## CI Failure Triage - Missing jwt Module During SDK Test Collection
+**Timestamp**: 2026-04-14T07:47:32Z
+**User Input**: "soorma-service-common unit tests are failing with github CI, following is an example error:
+```
+_____________ ERROR collecting tests/test_goal_context_dispatch.py _____________
+ImportError while importing test module '/home/runner/work/soorma-core/soorma-core/sdk/python/tests/test_goal_context_dispatch.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+	return _bootstrap._gcd_import(name[level:], package, level)
+		   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_goal_context_dispatch.py:16: in <module>
+	from soorma.agents.planner import GoalContext
+soorma/__init__.py:47: in <module>
+	from .context import (
+soorma/context.py:50: in <module>
+	from .identity.wrapper import IdentityClient
+soorma/identity/__init__.py:3: in <module>
+	from .client import IdentityServiceClient
+soorma/identity/client.py:8: in <module>
+	import jwt
+E   ModuleNotFoundError: No module named 'jwt'
+```
+
+seems like github CI workflow need some fix"
+**AI Response**: "Identified root cause as SDK package dependency gap (not workflow orchestration): `soorma/identity/client.py` imports `jwt` but `sdk/python/pyproject.toml` did not declare `pyjwt`. Added `pyjwt>=2.8.0` to SDK runtime dependencies in `sdk/python/pyproject.toml`. Verified targeted failure path by running `sdk/python/tests/test_goal_context_dispatch.py` locally with all tests passing (10 passed). Confirmed `libs/soorma-service-common` already declares `pyjwt`, so CI failure originates from SDK dependency resolution during SDK test collection."
+**Context**: CONSTRUCTION - CI failure triage and packaging fix
+
+---

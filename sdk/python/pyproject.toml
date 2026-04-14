@@ -24,6 +24,7 @@ typer = ">=0.13.0"  # 0.12.x had packaging issues with typer-slim split
 rich = ">=10.11.0"
 httpx = ">=0.26.0"  # For EventClient SSE streaming
 soorma-common = ">=0.8.0"
+pyjwt = ">=2.8.0"  # Required by identity client (import jwt)
 litellm = {version = "^1.36", optional = true}  # For ChoreographyPlanner LLM integration
 
 [tool.poetry.extras]
