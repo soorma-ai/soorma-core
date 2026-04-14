@@ -2816,4 +2816,60 @@ end-to-end without my confirmation at each gate."
 
 ---
 
+## NFR Requirements Stage - User Approval to Continue
+**Timestamp**: 2026-04-14T18:42:55Z
+**User Input**: "design approved"
+**AI Response**: "Accepted Functional Design approval for uow-cutover-hardening and advanced workflow to NFR Requirements stage. Prepared unit-specific NFR requirements planning context from functional design artifacts and migration checklist."
+**Context**: CONSTRUCTION - NFR Requirements stage start (uow-cutover-hardening)
+
+---
+
+## NFR Requirements Stage - Clarification Questions Prompt
+**Timestamp**: 2026-04-14T18:42:55Z
+**User Input**: "N/A (AI-DLC gate prompt)"
+**AI Response**: "Created aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-nfr-requirements-plan.md with NFR clarifying questions and paused workflow for explicit user answers before generating NFR requirements artifacts."
+**Context**: CONSTRUCTION - NFR Requirements Step 4 pending answers (uow-cutover-hardening)
+
+---
+
+## NFR Requirements - Prefill from Prior Unit Baseline
+**Timestamp**: 2026-04-14T18:45:16Z
+**User Input**: "use the previous unit NFRs to answer as many as possible then i'll answer remaining"
+**AI Response**: "Applied direct baseline mappings from uow-sdk-jwt-integration NFR decisions to uow-cutover-hardening NFR plan: Q1=B (<=100 ms), Q2=D (tiered throughput profile), Q3=B (bounded last-known-good cache then fail closed), Q4=C (<=5 minute key rotation propagation objective), and Q5=C (logs + metrics + tracing). Left Q6-Q9 unanswered for user confirmation due cutover policy and scope sensitivity."
+**Context**: CONSTRUCTION - NFR Requirements planning answers prefill (uow-cutover-hardening)
+
+---
+
+## NFR Requirements - Q6 Dependency Clarification
+**Timestamp**: 2026-04-14T18:50:27Z
+**User Input**: "for q6, if we select an alert option, will this create a dependency for soorma-core (e.g. now also need some prometheus or grafana to implement alerts)?"
+**AI Response**: "Clarified that selecting Q6 options B or C sets alerting requirements but does not force a new monitoring vendor dependency. Alerting can be implemented with existing observability tooling in soorma-core environments. If alert wiring is not available in this unit, option D remains valid to document alert recommendations now and defer concrete implementation to a later stage. Added this clarification note under Q6 in the NFR plan."
+**Context**: CONSTRUCTION - NFR Requirements planning clarification (uow-cutover-hardening)
+
+---
+
+## NFR Requirements - Answers Received
+**Timestamp**: 2026-04-14T18:54:04Z
+**User Input**: "all nfr requirements answers provided"
+**AI Response**: "Validated that all NFR requirement questions (Q1 through Q9) are answered in the unit NFR requirements plan and proceeded to artifact generation for uow-cutover-hardening."
+**Context**: CONSTRUCTION - NFR Requirements Step 4 completion (uow-cutover-hardening)
+
+---
+
+## NFR Requirements - Artifacts Generated
+**Timestamp**: 2026-04-14T18:54:04Z
+**User Input**: "N/A (AI-DLC execution step)"
+**AI Response**: "Completed NFR Requirements Step 5 for uow-cutover-hardening by generating artifacts at aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/nfr-requirements/: nfr-requirements.md and tech-stack-decisions.md. Updated the NFR requirements plan checklist to mark Steps 4-6 complete."
+**Context**: CONSTRUCTION - NFR Requirements artifact generation (uow-cutover-hardening)
+
+---
+
+## NFR Requirements - Completion Gate Prompt
+**Timestamp**: 2026-04-14T18:54:04Z
+**User Input**: "N/A (AI-DLC gate prompt)"
+**AI Response**: "Prepared NFR Requirements completion gate for uow-cutover-hardening and paused workflow for explicit user approval before proceeding to NFR Design."
+**Context**: CONSTRUCTION - NFR Requirements completion approval prompt logged
+
+---
+
 ---
