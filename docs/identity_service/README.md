@@ -68,6 +68,9 @@ Admin-route exception:
 - Mapping collision default is deny unless explicit override is requested and caller principal qualifies.
 - Platform identity record IDs are service-owned and generated server-side.
 - Sensitive write/issuance routes require admin authorization.
+- Current issuance model authenticates a trusted caller (`X-Identity-Admin-Key`) rather than per-principal client credentials.
+- Platform tenants are expected to enforce their own requester authentication/authorization in front of `/v1/identity/tokens/issue` and map authenticated callers to Soorma principal IDs.
+- Principal registration does not currently generate principal-specific `client_id` / `client_secret` credentials.
 
 ## Hardened Request Contract Summary
 
@@ -123,6 +126,9 @@ python -m pytest libs/soorma-service-common/tests/test_dependencies.py
 ## Related Docs
 
 - Architecture details: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- JWT technical architecture: [JWT_TECHNICAL_ARCHITECTURE.md](./JWT_TECHNICAL_ARCHITECTURE.md)
+- Asymmetric bootstrap primer: [ASYMMETRIC_BOOTSTRAP_PRIMER.md](./ASYMMETRIC_BOOTSTRAP_PRIMER.md)
+- Future work PRD (JWT-first auth target): [FUTURE_PRD_JWT_FIRST_AUTH.md](./FUTURE_PRD_JWT_FIRST_AUTH.md)
 - Use-case scenarios: [USE_CASES.md](./USE_CASES.md)
 - Service README: [services/identity-service/README.md](../../services/identity-service/README.md)
 - QA coverage matrix (Unit-1/Unit-2): [aidlc-docs/platform/identity-service/construction/test-cases/qa-coverage-unit1-unit2.md](../../aidlc-docs/platform/identity-service/construction/test-cases/qa-coverage-unit1-unit2.md)

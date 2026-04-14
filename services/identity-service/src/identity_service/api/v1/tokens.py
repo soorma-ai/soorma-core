@@ -1,6 +1,6 @@
 """Token issuance API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from soorma_common.models import TokenIssueRequest, TokenIssueResponse
 
 from identity_service.core.dependencies import (
@@ -23,19 +23,28 @@ async def _ensure_principal_platform_match(
     """Fail closed when principal is outside current platform tenant context."""
     principal = await principal_repository.get_principal(context.db, principal_id)
     if principal is None:
-        raise HTTPException(status_code=404, detail="Principal was not found.")
+        raise IdentityServiceError(
+            code="principal_not_found",
+            message="Principal was not found.",
+            status_code=404,
+        )
 
     tenant_domain = await tenant_domain_repository.get_domain(
         context.db,
         str(principal["tenant_domain_id"]),
     )
     if tenant_domain is None:
-        raise HTTPException(status_code=404, detail="Tenant domain was not found.")
+        raise IdentityServiceError(
+            code="tenant_domain_not_found",
+            message="Tenant domain was not found.",
+            status_code=404,
+        )
 
     if str(tenant_domain["platform_tenant_id"]) != context.platform_tenant_id:
-        raise HTTPException(
+        raise IdentityServiceError(
+            code="principal_platform_tenant_mismatch",
+            message="Principal does not belong to current platform tenant context.",
             status_code=403,
-            detail="Principal does not belong to current platform tenant context.",
         )
 
 
@@ -46,10 +55,12 @@ async def issue_token(
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Issue token."""
-    await _ensure_principal_platform_match(context, request.principal_id)
     try:
+        await _ensure_principal_platform_match(context, request.principal_id)
         return await token_service.issue_token(context.db, request)
     except IdentityServiceError as exc:
+        from fastapi import HTTPException
+
         raise HTTPException(
             status_code=exc.status_code,
             detail={

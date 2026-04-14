@@ -270,6 +270,16 @@ class TestPlatformContext:
             assert context.memory.base_url == "http://memory:8083"
             assert context.tracker.base_url == "http://tracker:8084"
 
+    def test_set_auth_token_propagates_to_wrappers(self):
+        """Injected bearer token should be available to memory/tracker wrappers."""
+        from soorma import PlatformContext
+
+        context = PlatformContext()
+        context.set_auth_token("jwt-token-value")
+
+        assert context.memory.auth_token == "jwt-token-value"
+        assert context.tracker.auth_token == "jwt-token-value"
+
 
 class TestDataClasses:
     """Tests for data classes (Goal, Plan, Task, etc.)."""

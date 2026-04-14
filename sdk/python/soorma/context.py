@@ -105,6 +105,7 @@ class MemoryClient:
             over direct memory calls. These are low-level APIs.
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
+    auth_token: Optional[str] = None
     # Note: Local fallback removed - Memory Service required for multi-agent workflows
     _client: Optional[MemoryServiceClient] = field(default=None, repr=False, init=False)
     _bound_event_identity: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
@@ -118,7 +119,7 @@ class MemoryClient:
     
     async def _ensure_client(self) -> MemoryServiceClient:
         if self._client is None:
-            self._client = MemoryServiceClient(base_url=self.base_url)
+            self._client = MemoryServiceClient(base_url=self.base_url, auth_token=self.auth_token)
             # Test connection
             try:
                 await self._client.health()
@@ -133,6 +134,12 @@ class MemoryClient:
                     f"Memory Service required but unavailable: {e}"
                 ) from e
         return self._client
+
+    def set_auth_token(self, auth_token: Optional[str]) -> None:
+        """Set optional bearer token used for downstream service calls."""
+        self.auth_token = auth_token
+        if self._client is not None:
+            self._client.auth_token = auth_token
 
     def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
         """Bind current event identity for implicit wrapper defaults."""
@@ -1443,6 +1450,7 @@ class TrackerClient:
         get_delegation_group(): Get parallel delegation group status
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"))
+    auth_token: Optional[str] = None
     _client: Optional["TrackerServiceClient"] = field(default=None, repr=False, init=False)
     _bound_event_identity: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
         default_factory=lambda: contextvars.ContextVar(
@@ -1457,8 +1465,14 @@ class TrackerClient:
         """Lazy initialization of TrackerServiceClient."""
         if self._client is None:
             from .tracker.client import TrackerServiceClient
-            self._client = TrackerServiceClient(base_url=self.base_url)
+            self._client = TrackerServiceClient(base_url=self.base_url, auth_token=self.auth_token)
         return self._client
+
+    def set_auth_token(self, auth_token: Optional[str]) -> None:
+        """Set optional bearer token used for downstream tracker calls."""
+        self.auth_token = auth_token
+        if self._client is not None:
+            self._client.auth_token = auth_token
 
     def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
         """Bind current event identity for implicit tracker defaults."""
@@ -1730,6 +1744,7 @@ class PlatformContext:
         tracker: TrackerClient = None,
         identity: IdentityClient = None,
         toolkit: EventToolkit = None,
+        auth_token: Optional[str] = None,
     ):
         """
         Create a PlatformContext with configured clients.
@@ -1743,12 +1758,15 @@ class PlatformContext:
             toolkit: EventToolkit for AI-friendly event utilities (optional)
         """
         self.registry = registry or RegistryClient(base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"))
-        self.memory = memory or MemoryClient()
+        self.memory = memory or MemoryClient(auth_token=auth_token)
         self.bus = bus or BusClient()
-        self.tracker = tracker or TrackerClient()
+        self.tracker = tracker or TrackerClient(auth_token=auth_token)
         self.identity = identity or IdentityClient()
         # Toolkit reuses registry client - no async with needed when using context.toolkit!
         self.toolkit = toolkit or EventToolkit(registry_url=self.registry.base_url, registry_client=self.registry)
+
+        if auth_token is not None:
+            self.set_auth_token(auth_token)
     
     @classmethod
     def from_env(cls) -> "PlatformContext":
@@ -1761,6 +1779,7 @@ class PlatformContext:
             SOORMA_MEMORY_URL: Memory service URL (default: http://localhost:8083)
             SOORMA_TRACKER_URL: Tracker service URL (default: http://localhost:8084)
             SOORMA_IDENTITY_URL: Identity service URL (default: http://localhost:8085)
+            SOORMA_AUTH_TOKEN: Optional injected bearer token for memory/tracker calls
             
         Returns:
             PlatformContext with clients configured from environment
@@ -1784,12 +1803,19 @@ class PlatformContext:
             bus=BusClient(event_client=event_client),
             tracker=TrackerClient(
                 base_url=os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"),
+                auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
             ),
             identity=IdentityClient(
                 base_url=os.getenv("SOORMA_IDENTITY_URL", "http://localhost:8085"),
             ),
             toolkit=EventToolkit(registry_url=registry_url, registry_client=registry_client),
+            auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
         )
+
+    def set_auth_token(self, auth_token: Optional[str]) -> None:
+        """Inject or replace bearer token for downstream service wrappers."""
+        self.memory.set_auth_token(auth_token)
+        self.tracker.set_auth_token(auth_token)
     
     async def close(self) -> None:
         """Close all clients."""

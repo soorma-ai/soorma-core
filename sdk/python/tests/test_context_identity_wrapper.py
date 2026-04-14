@@ -99,3 +99,22 @@ class TestIdentityWrapper:
             service_tenant_id="svc-tenant",
             service_user_id="svc-user",
         )
+
+    @pytest.mark.asyncio
+    async def test_blank_identity_values_fail_closed(self, identity_wrapper: IdentityClient):
+        """Wrapper must reject blank tenant/user values instead of delegating."""
+        mock_service_client = AsyncMock(spec=IdentityServiceClient)
+        mock_service_client.issue_token = AsyncMock(
+            return_value=TokenIssueResponse(token_type="Bearer", token="stub-token")
+        )
+        identity_wrapper._client = mock_service_client
+
+        with pytest.raises(ValueError, match="tenant_id and user_id are required"):
+            await identity_wrapper.issue_token(
+                payload=TokenIssueRequest(
+                    principal_id="principal-1",
+                    issuance_type=TokenIssuanceType.PLATFORM,
+                ),
+                tenant_id="   ",
+                user_id="\t",
+            )

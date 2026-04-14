@@ -64,6 +64,22 @@ async def test_store_knowledge(memory_client):
     assert call_headers["X-User-ID"] == "user-1"
 
 
+def test_build_identity_headers_includes_authorization_when_auth_token_present():
+    """Client should include Authorization header when auth token is injected."""
+    memory_client = MemoryServiceClient(
+        base_url="http://localhost:8083",
+        platform_tenant_id="platform-tenant-1",
+        auth_token="jwt-token-value",
+    )
+
+    headers = memory_client._build_identity_headers("tenant-1", "user-1")
+
+    assert headers["Authorization"] == "Bearer jwt-token-value"
+    assert headers["X-Tenant-ID"] == "platform-tenant-1"
+    assert headers["X-Service-Tenant-ID"] == "tenant-1"
+    assert headers["X-User-ID"] == "user-1"
+
+
 @pytest.mark.asyncio
 async def test_search_knowledge(memory_client):
     """Test searching semantic memory."""

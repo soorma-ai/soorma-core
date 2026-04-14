@@ -12,10 +12,16 @@ from typer.testing import CliRunner
 
 from soorma.cli.main import app
 from soorma.cli.commands.dev import (
+    BOOTSTRAP_OUTCOME_CREATED,
+    BOOTSTRAP_OUTCOME_FAILED_DRIFT,
+    BOOTSTRAP_OUTCOME_REUSED,
     SERVICE_DEFINITIONS,
+    build_bootstrap_fingerprint,
     check_service_image,
+    determine_bootstrap_outcome,
     find_soorma_core_root,
     get_soorma_dir,
+    write_bootstrap_state,
 )
 
 
@@ -189,6 +195,59 @@ class TestGetSoormaDir:
         result = get_soorma_dir()
         
         assert result == soorma_dir
+
+
+class TestBootstrapState:
+    """Tests for deterministic bootstrap outcome and state persistence."""
+
+    def test_fingerprint_is_deterministic(self):
+        """Fingerprint should be stable regardless of dict key ordering."""
+        a = {"registry_port": "8081", "identity_service_port": "8085"}
+        b = {"identity_service_port": "8085", "registry_port": "8081"}
+
+        assert build_bootstrap_fingerprint(a) == build_bootstrap_fingerprint(b)
+
+    def test_determine_outcome_created_when_no_state(self, tmp_path):
+        """Missing state file should return CREATED outcome."""
+        state_file = tmp_path / "bootstrap-state.json"
+        outcome = determine_bootstrap_outcome(state_file, "fp-1")
+        assert outcome == BOOTSTRAP_OUTCOME_CREATED
+
+    def test_determine_outcome_reused_when_fingerprint_matches(self, tmp_path):
+        """Matching persisted fingerprint should return REUSED outcome."""
+        state_file = tmp_path / "bootstrap-state.json"
+        state_file.write_text('{"fingerprint":"fp-1"}\n')
+
+        outcome = determine_bootstrap_outcome(state_file, "fp-1")
+        assert outcome == BOOTSTRAP_OUTCOME_REUSED
+
+    def test_determine_outcome_failed_drift_when_fingerprint_mismatch(self, tmp_path):
+        """Fingerprint mismatch should fail closed with FAILED_DRIFT."""
+        state_file = tmp_path / "bootstrap-state.json"
+        state_file.write_text('{"fingerprint":"fp-old"}\n')
+
+        outcome = determine_bootstrap_outcome(state_file, "fp-new")
+        assert outcome == BOOTSTRAP_OUTCOME_FAILED_DRIFT
+
+    def test_determine_outcome_failed_drift_on_malformed_state(self, tmp_path):
+        """Unreadable state file should fail closed with FAILED_DRIFT."""
+        state_file = tmp_path / "bootstrap-state.json"
+        state_file.write_text("{not-json")
+
+        outcome = determine_bootstrap_outcome(state_file, "fp-1")
+        assert outcome == BOOTSTRAP_OUTCOME_FAILED_DRIFT
+
+    def test_write_bootstrap_state_persists_config_and_fingerprint(self, tmp_path):
+        """Persisted bootstrap state should include fingerprint and config payload."""
+        state_file = tmp_path / "bootstrap-state.json"
+        config = {"registry_port": "8081", "identity_service_port": "8085"}
+
+        write_bootstrap_state(state_file, "fp-abc", config)
+
+        payload = state_file.read_text()
+        assert '"fingerprint": "fp-abc"' in payload
+        assert '"registry_port": "8081"' in payload
+        assert '"updated_at": ' in payload
 
 
 class TestDevCommand:

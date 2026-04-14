@@ -11,6 +11,9 @@ import sys
 import time
 import subprocess
 import shutil
+import json
+import hashlib
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Optional, List
 
@@ -199,17 +202,17 @@ POSTGRES_INIT_SQL = r'''-- Initialize Soorma PostgreSQL Databases
 -- Creates separate databases for each service and enables pgvector extension
 
 -- Create databases for each service (only if they don't exist)
-SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\\gexec
-SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\\gexec
-SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\\gexec
-SELECT 'CREATE DATABASE identity' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'identity')\\gexec
+SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\gexec
+SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\gexec
+SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\gexec
+SELECT 'CREATE DATABASE identity' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'identity')\gexec
 
 -- Connect to registry database and enable pgvector
-\\c registry
+\c registry
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Connect to memory database and enable pgvector
-\\c memory
+\c memory
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Note: tracker database doesn't need pgvector extension
@@ -298,6 +301,46 @@ SERVICE_DEFINITIONS = {
 
 # Databases required by services in the local development stack.
 SERVICE_DATABASES = ["registry", "memory", "tracker", "identity"]
+
+# Deterministic bootstrap outcomes for local stack initialization.
+BOOTSTRAP_OUTCOME_CREATED = "CREATED"
+BOOTSTRAP_OUTCOME_REUSED = "REUSED"
+BOOTSTRAP_OUTCOME_FAILED_DRIFT = "FAILED_DRIFT"
+BOOTSTRAP_STATE_FILE = "bootstrap-state.json"
+
+
+def build_bootstrap_fingerprint(config: dict[str, str]) -> str:
+    """Build deterministic fingerprint for stack bootstrap configuration."""
+    canonical = json.dumps(config, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def determine_bootstrap_outcome(state_file: Path, fingerprint: str) -> str:
+    """Determine bootstrap outcome from prior state and current fingerprint."""
+    if not state_file.exists():
+        return BOOTSTRAP_OUTCOME_CREATED
+
+    try:
+        payload = json.loads(state_file.read_text())
+    except (OSError, json.JSONDecodeError):
+        return BOOTSTRAP_OUTCOME_FAILED_DRIFT
+
+    previous_fingerprint = str(payload.get("fingerprint") or "").strip()
+    if not previous_fingerprint:
+        return BOOTSTRAP_OUTCOME_FAILED_DRIFT
+    if previous_fingerprint != fingerprint:
+        return BOOTSTRAP_OUTCOME_FAILED_DRIFT
+    return BOOTSTRAP_OUTCOME_REUSED
+
+
+def write_bootstrap_state(state_file: Path, fingerprint: str, config: dict[str, str]) -> None:
+    """Persist bootstrap state for deterministic reuse/drift detection."""
+    payload = {
+        "fingerprint": fingerprint,
+        "config": config,
+        "updated_at": datetime.now(UTC).isoformat(),
+    }
+    state_file.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n")
 
 
 def check_service_image(service_key: str) -> Optional[str]:
@@ -631,6 +674,7 @@ def dev_stack(
     soorma_dir = get_soorma_dir()
     compose_file = soorma_dir / "docker-compose.yml"
     env_file = soorma_dir / ".env"
+    bootstrap_state_file = soorma_dir / BOOTSTRAP_STATE_FILE
     
     # Write docker-compose.yml
     compose_file.write_text(DOCKER_COMPOSE_TEMPLATE)
@@ -748,6 +792,8 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
             typer.echo("🛑 Stopping Soorma development stack and removing volumes...")
             typer.echo("   ⚠️  This will delete all database data!")
             result = subprocess.run(base_cmd + ["down", "-v"], cwd=soorma_dir)
+            if bootstrap_state_file.exists():
+                bootstrap_state_file.unlink()
         else:
             typer.echo("🛑 Stopping Soorma development stack...")
             result = subprocess.run(base_cmd + ["down"], cwd=soorma_dir)
@@ -767,6 +813,39 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
         typer.echo("📋 Infrastructure logs (Ctrl+C to exit):")
         subprocess.run(base_cmd + ["logs", "-f"], cwd=soorma_dir)
         raise typer.Exit(0)
+
+    bootstrap_config = {
+        "nats_port": str(nats_port),
+        "registry_port": str(registry_port),
+        "event_service_port": str(event_service_port),
+        "memory_service_port": str(memory_service_port),
+        "tracker_service_port": str(tracker_service_port),
+        "identity_service_port": str(identity_service_port),
+        "postgres_port": str(postgres_port),
+        "registry_image": registry_image,
+        "event_service_image": event_service_image,
+        "memory_service_image": memory_service_image,
+        "tracker_service_image": tracker_service_image,
+        "identity_service_image": identity_service_image,
+        "identity_admin_api_key": identity_admin_api_key,
+        "identity_signing_key": identity_signing_key,
+        "soorma_auth_jwt_secret": soorma_auth_jwt_secret,
+        "soorma_auth_jwt_issuer": soorma_auth_jwt_issuer,
+        "soorma_auth_jwt_audience": soorma_auth_jwt_audience,
+    }
+    bootstrap_fingerprint = build_bootstrap_fingerprint(bootstrap_config)
+    bootstrap_outcome = determine_bootstrap_outcome(
+        bootstrap_state_file,
+        bootstrap_fingerprint,
+    )
+    if bootstrap_outcome == BOOTSTRAP_OUTCOME_FAILED_DRIFT:
+        typer.echo("❌ Bootstrap outcome: FAILED_DRIFT", err=True)
+        typer.echo(
+            "Detected drift between current dev stack configuration and existing bootstrap state.",
+            err=True,
+        )
+        typer.echo("Run `soorma dev --stop --clean` to reset and bootstrap again.", err=True)
+        raise typer.Exit(1)
     
     # Default behavior is to start infrastructure (--start is explicit but not required)
     # Print banner
@@ -839,6 +918,10 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
         raise typer.Exit(1)
     
     typer.echo("   ✓ Infrastructure ready!")
+    typer.echo("")
+
+    write_bootstrap_state(bootstrap_state_file, bootstrap_fingerprint, bootstrap_config)
+    typer.echo(f"✓ Bootstrap outcome: {bootstrap_outcome}")
     typer.echo("")
     
     # Infrastructure is started - provide instructions for running agents

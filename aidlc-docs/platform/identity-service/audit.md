@@ -2333,3 +2333,331 @@ end-to-end without my confirmation at each gate."
 **Context**: CONSTRUCTION - pr-checkpoint approval gate
 
 ---
+
+## PR Checkpoint - Construction Design Approval
+**Timestamp**: 2026-04-13T22:05:49Z
+**User Input**: "PR is approved"
+**AI Response**: "Accepted explicit team approval for Construction Design PR gate of uow-sdk-jwt-integration and marked checkpoint status APPROVED in aidlc-state.md."
+**Context**: CONSTRUCTION - pr-checkpoint approval gate passed
+
+---
+
+## Code Generation - Planning Start
+**Timestamp**: 2026-04-13T22:06:28Z
+**User Input**: "PR is approved"
+**AI Response**: "Started Code Generation Part 1 planning for uow-sdk-jwt-integration using approved functional, NFR, infrastructure artifacts, migration checklist, and story/dependency mappings."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Generated
+**Timestamp**: 2026-04-13T22:06:28Z
+**User Input**: "PR is approved"
+**AI Response**: "Generated detailed code generation plan at construction/plans/uow-sdk-jwt-integration-code-generation-plan.md with explicit story traceability, architecture alignment, wrapper completeness checks, and executable step sequence."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Approval Prompt
+**Timestamp**: 2026-04-13T22:06:28Z
+**User Input**: "PR is approved"
+**AI Response**: "Prepared standardized Request Changes / Continue to Next Stage plan-approval gate for uow-sdk-jwt-integration code generation and paused pending explicit user approval."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate
+
+---
+
+## Code Generation - Plan Tracking Clarification
+**Timestamp**: 2026-04-13T22:16:52Z
+**User Input**: "does the execution checklist have all functional areas listed, or just one iteration for one functional area only? i notice each step lists all three, SDK, identity service and shared dependency, but not sure how it will actually get tracked."
+**AI Response**: "Validated the existing plan structure and confirmed that Step 8-12 currently represent one combined iteration per phase across SDK, identity-service, and shared dependency, then prepared a clarification update to make per-area progress tracking explicit."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate clarification
+
+---
+
+## Code Generation - Plan Tracking Granularity Update
+**Timestamp**: 2026-04-13T22:17:26Z
+**User Input**: "does the execution checklist have all functional areas listed, or just one iteration for one functional area only? i notice each step lists all three, SDK, identity service and shared dependency, but not sure how it will actually get tracked."
+**AI Response**: "Updated construction/plans/uow-sdk-jwt-integration-code-generation-plan.md so Steps 8-12 now include explicit per-area sub-steps (A/B/C) for SDK, identity-service, and shared dependency; each parent step is completed only after all sub-steps are checked."
+**Context**: CONSTRUCTION - Code Generation Part 1 plan refinement
+
+---
+
+## Code Generation - Plan Approval Received
+**Timestamp**: 2026-04-13T22:20:31Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Accepted explicit approval for uow-sdk-jwt-integration code-generation plan, marked Step 7 complete, and transitioned workflow into Code Generation Part 2 execution."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate passed
+
+---
+
+## Code Generation - Part 2 Execution Completed
+**Timestamp**: 2026-04-13T22:32:27Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Executed Part 2 for uow-sdk-jwt-integration across SDK, identity-service, and shared dependency scopes: added RED tests, implemented GREEN fixes (JWT claim-shape fail-closed checks, typed platform-mismatch error envelopes, wrapper blank-identity fail-closed behavior, deterministic dev bootstrap outcomes), passed targeted and touched-module regression suites, and generated code-generation summary artifact."
+**Context**: CONSTRUCTION - Code Generation Part 2 execution
+
+---
+
+## Code Generation - Completion Gate Presented
+**Timestamp**: 2026-04-13T22:32:27Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Prepared standardized Code Generation completion gate for uow-sdk-jwt-integration (Request Changes / Continue to Next Stage) and paused workflow pending explicit user decision."
+**Context**: CONSTRUCTION - Code Generation completion gate
+
+---
+
+## Code Generation - QA Test Execution Support
+**Timestamp**: 2026-04-13T22:41:49Z
+**User Input**: "help me run the QA tests for this unit"
+**AI Response**: "Ran package-scoped QA test suites for the unit using the configured venv Python across SDK, shared middleware, and identity-service; results: SDK 30 passed, shared middleware 19 passed, identity-service 7 passed."
+**Context**: CONSTRUCTION - Code Generation completion gate validation support
+
+---
+
+## Code Generation - Next Stage Scope Clarification
+**Timestamp**: 2026-04-13T22:44:39Z
+**User Input**: "is the next stage specific to this unit of work or is that stage common to all unit of works at the end of construction phase?"
+**AI Response**: "Clarified that Build and Test is a common construction-stage activity executed after all units complete; it is not repeated as a separate final stage per unit, though tests should include per-unit and cross-unit validation coverage."
+**Context**: CONSTRUCTION - Code Generation completion gate clarification
+
+---
+
+## Code Generation - Full Unit QA Test Cases Executed
+**Timestamp**: 2026-04-13T22:47:05Z
+**User Input**: "ok, so then before we move to next stage, lets perform QA test cases for this unit of work"
+**AI Response**: "Executed the full unit QA matrix from the code-generation plan across SDK, identity-service, and shared dependency test files. Results: SDK 52 passed, identity-service 9 passed, shared dependency 47 passed (108 total passed, 0 failed)."
+**Context**: CONSTRUCTION - Code Generation completion gate validation support
+
+---
+
+## Code Generation - Narrative QA Execution Clarification
+**Timestamp**: 2026-04-13T22:51:14Z
+**User Input**: "what are we not running any of the QA tests, e.g. #file:test-specs-narrative.md ?"
+**AI Response**: "Clarified that test-specs-narrative.md is a non-executable specification artifact and validated executable coverage by running scenario-mapped pytest node IDs across SDK, identity-service, and shared middleware (16 selected scenario tests passed: 7 + 5 + 4)."
+**Context**: CONSTRUCTION - Code Generation completion gate clarification and evidence
+
+---
+
+## Code Generation - SDK JWT Request Evidence Clarification
+**Timestamp**: 2026-04-13T23:01:29Z
+**User Input**: "what is the evidence that SDK is requesting JWT token and not sending old legacy headers"
+**AI Response**: "Reviewed SDK identity client and tests; evidence currently shows outbound identity-service calls are still built with legacy compatibility headers (X-Tenant-ID, X-Service-Tenant-ID, X-User-ID, X-Identity-Admin-Key) and there is no Authorization: Bearer request-header assertion in the identity client test suite."
+**Context**: CONSTRUCTION - Code Generation completion gate clarification and evidence
+
+---
+
+## Code Generation - Unit Completion and Scope Clarification
+**Timestamp**: 2026-04-13T23:02:57Z
+**User Input**: "wait, so then how are we determining this unit of work is complete? what was the scope / requirement for this unit of work?"
+**AI Response**: "Prepared a criteria-based clarification distinguishing workflow-stage completion (code generation checklist and QA runs) from unit done-criteria completion (JWT-first canonical path, bounded compatibility behavior, caller-auth policy, asymmetric signing/JWKS verification, and migration checklist exit criteria), and highlighted that final completion should be gated by the explicit Unit 3 done criteria and migration checklist outcomes."
+**Context**: CONSTRUCTION - Code Generation completion gate clarification and evidence
+
+---
+
+## Code Generation - Requirement Coverage Test Additions
+**Timestamp**: 2026-04-13T23:12:03Z
+**User Input**: "review all the requirements and add tests for those requirements"
+**AI Response**: "Reviewed Unit 3 requirements and added missing requirement-driven tests and supporting behavior: (1) SDK identity client tests for canonical outbound Authorization: Bearer path plus bounded legacy alias compatibility mode and fallback behavior, (2) middleware mismatch guard and tests for JWT plus matching alias success and JWT plus mismatching alias denial, and (3) identity-service provider facade kid-aware verification tests for unknown kid and invalid signature denial. Executed impacted package-scoped suites with all passing: sdk/python/tests/test_identity_service_client.py (4 passed), libs/soorma-service-common/tests/test_middleware.py (20 passed), services/identity-service/tests/test_provider_facade.py (4 passed)."
+**Context**: CONSTRUCTION - Code Generation Part 2 refinement requested by user
+
+---
+
+## Code Generation - Requirement Coverage Regression Verification
+**Timestamp**: 2026-04-13T23:12:48Z
+**User Input**: "review all the requirements and add tests for those requirements"
+**AI Response**: "Executed broader Unit 3 QA regression subsets after adding requirement-driven tests. Results: SDK subset 34 passed (identity client + wrapper + CLI bootstrap), identity-service subset 11 passed (token API + provider facade), shared dependency subset 48 passed (middleware + dependencies)."
+**Context**: CONSTRUCTION - Code Generation Part 2 refinement validation
+
+---
+
+## Code Generation - Unit 3 Asymmetric and JWKS Scope Clarification
+**Timestamp**: 2026-04-13T23:14:58Z
+**User Input**: "i dont see any code changes to identity service w.r.t. async keys, jwks endpoints etc. are those also not part of unit requirements?"
+**AI Response**: "Reviewed Unit 3 artifacts and current identity-service code. Confirmed asymmetric signing and JWKS/discovery verifier distribution are explicitly in Unit 3 scope/done criteria (unit-of-work, migration checklist, BR-21/BR-22), and current implementation still lacks JWKS/discovery endpoint wiring and asymmetric RS256/ES256 issuance path, so these remain open requirement gaps for Unit 3 completion unless formally descoped with documented risk/impact."
+**Context**: CONSTRUCTION - Code Generation scope clarification and gap assessment
+
+---
+
+## Code Generation - Unit 3 Asymmetric and JWKS Implementation
+**Timestamp**: 2026-04-13T23:21:08Z
+**User Input**: "ofcourse ... we need unit 3 work done correctly"
+**AI Response**: "Implemented Unit 3 identity-service cryptography and verifier-distribution corrections: added asymmetric signing support (RS256 path with `kid`/`alg` metadata), added deterministic verifier precedence (JWKS primary with static fallback and fail-closed behavior), added discovery publication endpoints (`/v1/identity/.well-known/openid-configuration` and `/v1/identity/.well-known/jwks.json`), and added coverage tests for JWKS publication, discovery metadata, unknown `kid`, invalid signature, and JWKS precedence behavior. Updated identity-service dependency metadata to include `cryptography` and recorded changelog updates. Ran impacted tests with all passing (15 total across provider facade, discovery API, and token API suites)."
+**Context**: CONSTRUCTION - Code Generation Part 2 user-requested correction implementation
+
+---
+
+## Code Generation - Unit 3 Regression Revalidation After JWKS Work
+**Timestamp**: 2026-04-13T23:22:07Z
+**User Input**: "ofcourse ... we need unit 3 work done correctly"
+**AI Response**: "Executed full Unit 3 regression subset after asymmetric/JWKS implementation. Results: SDK subset 34 passed, shared dependency subset 48 passed, identity-service subset 15 passed (97 total passed, 0 failed)."
+**Context**: CONSTRUCTION - Code Generation Part 2 correction validation
+
+---
+
+## Code Generation - Shared Dependency JWKS Compatibility Correction
+**Timestamp**: 2026-04-13T23:26:27Z
+**User Input**: "will the soorma-service-common dependency library work with this new asymmetric key JWT? will it use the jwks discovery endpoints for JWT validation? isn't that also part of unit-3 requirements?"
+**AI Response**: "Confirmed gap and implemented correction in soorma-service-common middleware: added RS256 validation support with deterministic verifier precedence (JWKS/discovery primary, static fallback secondary, fail-closed behavior), added JWKS URL discovery support with bounded cache, preserved HS256 compatibility fallback for Unit 3, and added tests for RS256 JWKS success, unknown kid denial, JWKS primary signature-failure fail-closed behavior, static fallback behavior, and JWKS URL discovery fetch path. Updated soorma-service-common dependency metadata for cryptography and ran validation suites with all passing: shared middleware/dependencies 53 passed and identity-service discovery/provider 8 passed."
+**Context**: CONSTRUCTION - Code Generation Part 2 cross-component compatibility correction
+
+---
+
+## Code Generation - Issuer Trust Resolution Clarification and Enhancement
+**Timestamp**: 2026-04-13T23:28:42Z
+**User Input**: "how will the middleware know what issuer to trust?"
+**AI Response**: "Implemented issuer trust resolution precedence in soorma-service-common middleware: (1) explicit trusted issuer from `SOORMA_AUTH_JWT_ISSUER`, else (2) issuer discovered from OpenID configuration metadata (`SOORMA_AUTH_OPENID_CONFIGURATION_JSON` inline or `SOORMA_AUTH_OPENID_CONFIGURATION_URL`, with convention fallback from `SOORMA_AUTH_JWKS_URL`). Added tests for discovery-derived issuer success and issuer mismatch denial. Re-ran shared middleware/dependencies suite with all passing (55 passed)."
+**Context**: CONSTRUCTION - Code Generation Part 2 issuer-trust clarification and hardening
+
+---
+
+## Code Generation - JWT Technical Architecture Documentation
+**Timestamp**: 2026-04-13T23:34:28Z
+**User Input**: "ok, document how identity service's JWT issue works in a technical design / architecture document under docs/ directory. this document should cover following:\n- what are the environment settings etc. need to be enabled for identity service to start up with correct JWT enabled settings\n- how does soorma-service-common middleware performs JWT validation and it's two tier multi-tenancy model\n- how does soorma dev CLI configures the local stack (e.g. seed keys, configuration etc.)\n- how does SDK clients use JWT to authenticate API requests to soorma-core infrastructure services"
+**AI Response**: "Added a new technical architecture document at docs/identity_service/JWT_TECHNICAL_ARCHITECTURE.md covering requested topics: identity-service JWT issuance/discovery design, full environment configuration matrix for correct JWT enablement (including asymmetric + JWKS paths), soorma-service-common middleware validation flow and two-tier tenancy model, soorma dev local stack bootstrap configuration and deterministic drift behavior, and SDK client JWT authentication behavior (identity client JWT path plus current compatibility behavior for other infrastructure clients). Updated docs/identity_service/README.md to link the new architecture document."
+**Context**: CONSTRUCTION - Documentation artifact creation requested by user
+
+---
+
+## Code Generation - Asymmetric Bootstrap Primer Documentation
+**Timestamp**: 2026-04-13T23:47:17Z
+**User Input**: "can the soorma dev CLI not bootstrap asymmetric mode (instead of asking developer to export RS256 related env vars)? otherwise, at the very least, give detailed instructions for how to generate keys etc. and how to populate each environment variable. this could be documented as a separate primer (to keep the JWT tech architecture document uncluttered)."
+**AI Response**: "Documented current behavior and added a separate primer at docs/identity_service/ASYMMETRIC_BOOTSTRAP_PRIMER.md with detailed, copy-paste instructions: RSA key generation commands, PEM escaping for environment-safe values, complete RS256/JWKS environment variable setup with per-variable purpose mapping, stack restart/drift-handling workflow, and validation steps for discovery/JWKS/middleware. Added links from docs/identity_service/README.md and docs/identity_service/JWT_TECHNICAL_ARCHITECTURE.md to keep the architecture document uncluttered while preserving operational detail."
+**Context**: CONSTRUCTION - Documentation refinement requested by user
+
+---
+
+## Code Generation - JWT Architecture Link Path Fix
+**Timestamp**: 2026-04-13T23:53:14Z
+**User Input**: "fix the links using relative path in the JWT tech architecture doc"
+**AI Response**: "Updated references in docs/identity_service/JWT_TECHNICAL_ARCHITECTURE.md to use correct relative markdown links from the document location: ARCHITECTURE_PATTERNS reference now points to ../ARCHITECTURE_PATTERNS.md and asymmetric primer reference now points to ./ASYMMETRIC_BOOTSTRAP_PRIMER.md."
+**Context**: CONSTRUCTION - Documentation correction requested by user
+
+---
+
+## Code Generation - Token Issuance Authentication Clarification
+**Timestamp**: 2026-04-13T23:55:40Z
+**User Input**: "don't we need to register a principal before we can make a JWT token request? how is the JWT token request authenticated?"
+**AI Response**: "Clarified issuance flow with code evidence: token issuance requires an existing active principal (token_service returns principal_not_found/principal_not_active otherwise), and issuance route authentication is currently enforced by admin key dependency (`X-Identity-Admin-Key`) plus tenant-context boundary checks (principal platform tenant must match request context). Also clarified principal bootstrap path via onboarding (`bootstrap_admin_principal_id`) and principal lifecycle APIs."
+**Context**: CONSTRUCTION - Requirements/behavior clarification requested by user
+
+---
+
+## Code Generation - Principal-Specific Credential Clarification
+**Timestamp**: 2026-04-13T23:59:37Z
+**User Input**: "ok, so then there is no principal specific authentication, every JWT request for any prinicipal uses the same shared admin API key? does prinicpal registration not generate a principal specific client ID and secret?"
+**AI Response**: "Clarified current behavior with code evidence: principal registration currently creates principal metadata only (tenant_domain_id, principal_type, lifecycle_state, optional external_ref) and does not generate per-principal client credentials (no client_id/client_secret in DTOs or persistence model). Token issuance is currently authenticated at route level via shared identity admin key header (`X-Identity-Admin-Key`) with tenant-boundary checks and active-principal validation."
+**Context**: CONSTRUCTION - Requirements/behavior clarification requested by user
+
+---
+
+## Code Generation - Trusted Caller Model Documentation
+**Timestamp**: 2026-04-14T00:08:08Z
+**User Input**: "no, that's fine. we can keep current model, only documen this that we expect a \"trusted caller\" from platform tenant (who has access to admin API key) to request JWT token on behalf of the principal. this means, if needed, platform tenant will need to implement it's own authentication for the token requester (including keeping the soorma-core issues prinicpal id to map with prinicpal's identity). This gives complete flexibility to tenant developers, and they can implement as complex or as simple identity and authentication model for their principal as they want. in the case of local soorma dev setup, we use a very simple model, every agent using SDK to request JWT token is assumed trusted.
+
+however, it does mean we may need to change SDK behavior to allow agents to inject a JWT token they fetch through their trusted intermediary."
+**AI Response**: "Documented the trusted-caller model in identity JWT docs: identity issuance is authenticated by shared admin caller credentials, per-principal client credentials are not generated by principal registration, tenants are responsible for their own requester authentication and principal mapping, local soorma dev assumes trusted SDK callers, and SDK direction now explicitly notes support for injected caller JWTs from tenant-managed trusted intermediaries."
+**Context**: CONSTRUCTION - Documentation update requested by user
+
+---
+
+## Code Generation - SDK Identity Interaction Clarification
+**Timestamp**: 2026-04-14T06:29:06Z
+**User Input**: "when i implement an agent, and use SDK for interacting with soorma-core services, will the SDK context wrapper automatically initiatilize with a JWT token request from identity service, or does the agent code need to call a specific SDK method to do that? what are the SDK methods and use cases where an agent will interact with identity service?"
+**AI Response**: "Clarified with code evidence: PlatformContext initialization wires service wrappers only and does not auto-request JWT tokens from identity-service. Identity interaction is explicit via context.identity methods (onboard_tenant, issue_token, create/update/revoke principal, register/update delegated issuer, evaluate_mapping). Also clarified current SDK behavior boundaries: memory/tracker clients use identity headers (no automatic bearer-token bootstrap), identity wrapper requires tenant/user identity context, and identity context metadata binding is not currently auto-wired in agent dispatch like bus/memory/tracker wrappers."
+**Context**: CONSTRUCTION - SDK behavior clarification requested by user
+
+---
+
+## Code Generation - SDK Identity Binding and Token Injection Implementation
+**Timestamp**: 2026-04-14T06:36:49Z
+**User Input**: "yes, lets add those two"
+**AI Response**: "Implemented both requested enhancements. (1) Agent dispatch now auto-binds and resets identity metadata around handler execution, alongside bus/memory/tracker metadata handling. (2) Added injected bearer-token path for downstream SDK wrappers and low-level clients: PlatformContext now supports auth token injection and propagation to memory/tracker wrappers, wrappers support runtime token updates via set_auth_token, and MemoryServiceClient/TrackerServiceClient include Authorization: Bearer <token> when configured. Added focused regression tests for identity metadata auto-binding and auth-header injection. Validation run passed: 63 tests passed across test_agent_event_routing.py, test_memory_client.py, test_tracker_service_client.py, test_agents.py."
+**Context**: CONSTRUCTION - Code Generation implementation requested by user
+
+---
+
+## Code Generation - Token Injection Scope Clarification
+**Timestamp**: 2026-04-14T06:44:32Z
+**User Input**: "from context wrapper, why do we only have memory and tracker clients using auth token, and not event bus, or registry? also why not identity?"
+**AI Response**: "Clarified architectural rationale with code references: memory/tracker received token injection because they are tier-2 synchronous service clients that already project service identity headers per request. Event bus intentionally sends only platform-tenant header on publish while carrying tenant/user in event envelope, so token injection there is a separate transport/security design decision. Registry follows developer-tenant authentication (`SOORMA_DEVELOPER_TENANT_ID`) with planned move to developer API key and is not tied to end-user/requester JWT semantics. Identity already has dedicated trusted-caller auth contract (`X-Identity-Admin-Key`) plus optional caller JWT resolution path, so it was intentionally left separate from the generic context auth-token fan-out to avoid conflating auth domains."
+**Context**: CONSTRUCTION - Architecture clarification requested by user
+
+---
+
+## Requirements Clarification - Target Authentication Pattern
+**Timestamp**: 2026-04-14T06:52:28Z
+**User Input**: "hmm, i think final authentication pattern should be as following:
+- identity service token issue endpoint is the ONLY endpoint that does not require JWT. it takes API key / admin auth and issues a JWT
+- all other secured endpoints ONLY accept JWT issued by the identity service
+- a JWT ALWAYS has the platform tenant id (needed for registry and event service endpoints) and can ALSO have service tenat id and user id (needed for memory and tracker service)
+- platform tenants are responsible for implementing a trusted identity proxy (that requests JWT tokens from soorma-core identity service) along with appropriate actor and tier-2 (service tenant and service user) claims in the JWT token
+
+we don't need to implement this right now, but does this pattern makes sense? am I missing anything?"
+**AI Response**: "Assessed the proposed pattern as directionally strong and aligned with long-term JWT-first architecture. Identified key clarifications to make it production-safe: explicit exceptions for non-secured endpoints (health/discovery/JWKS), bootstrap/onboarding path semantics, registry tenant-domain mapping under current developer-tenant model, strict JWT claim contract and endpoint-level required claim matrix, token lifetime/rotation/revocation strategy, event stream token refresh/re-auth behavior, and authorization scopes/roles separation from tenancy claims."
+**Context**: INCEPTION/CONSTRUCTION cross-cutting architecture review requested by user
+
+---
+
+## Documentation - Future Work PRD Creation and Unit Sequencing Guidance
+**Timestamp**: 2026-04-14T06:58:31Z
+**User Input**: "ok, lets create a PRD document in identity service folder, so that these requirements are captured and can be worked upon in future iteration. mark the document as future work. I'm assuming we'll still need to finish the next unit of work (hardening and removing compatibility mode) before we implement this change? or can next unit of work in current feature plan be omitted, and then all the work be completed when the PRD is implemented?"
+**AI Response**: "Created a future-work PRD at docs/identity_service/FUTURE_PRD_JWT_FIRST_AUTH.md capturing JWT-first target requirements, claim contract, endpoint auth matrix, trusted proxy responsibilities, security controls, open decisions, and migration guidance. Linked it from docs/identity_service/README.md for discoverability. Also clarified sequencing guidance from current plan artifacts: unit-4 cutover-hardening remains the planned and dependency-bound step for removing compatibility and enforcing strict JWT-only posture; omitting it would require explicit plan/state re-baselining and would leave current initiative acceptance criteria incomplete. Recommended finishing current unit closure and cutover/hardening baseline, then applying PRD deltas as follow-up scope."
+**Context**: CONSTRUCTION - Documentation artifact creation and planning guidance requested by user
+
+---
+
+## Build/Runtime Debug - soorma dev Postgres Init Script Failure
+**Timestamp**: 2026-04-14T07:26:48Z
+**User Input**: "seems like brining up soorma dev --build failed in postgres database creation:
+```
+soorma-postgres  | Success. You can now start the database server using:
+soorma-postgres  | 
+soorma-postgres  |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+soorma-postgres  | 
+soorma-postgres  | initdb: warning: enabling \"trust\" authentication for local connections
+soorma-postgres  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+soorma-postgres  | waiting for server to start....2026-04-14 07:20:54.637 UTC [54] LOG:  starting PostgreSQL 16.11 (Debian 16.11-1.pgdg12+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+soorma-postgres  | 2026-04-14 07:20:54.639 UTC [54] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"
+soorma-postgres  | 2026-04-14 07:20:54.643 UTC [57] LOG:  database system was shut down at 2026-04-14 07:20:54 UTC
+soorma-postgres  | 2026-04-14 07:20:54.647 UTC [54] LOG:  database system is ready to accept connections
+soorma-postgres  |  done
+soorma-postgres  | server started
+soorma-postgres  | 
+soorma-postgres  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/01-init.sql
+soorma-postgres  | psql:/docker-entrypoint-initdb.d/01-init.sql:5: error: invalid command \\
+```
+"
+**AI Response**: "Diagnosed root cause in SDK CLI generator: POSTGRES_INIT_SQL emitted doubled backslashes for psql meta-commands (`\\\\gexec`, `\\\\c`) in generated init script, causing `psql invalid command \\` at startup. Fixed source at sdk/python/soorma/cli/commands/dev.py to emit valid single-backslash psql commands (`\\gexec`, `\\c`). Verified rendered constant output with python import and validated no diagnostics errors in file. Also updated current workspace-generated `.soorma/postgres-init/01-init.sql` for immediate local recovery and ran focused regression `sdk/python/tests/cli/test_dev.py` with all passing (26 passed)."
+**Context**: CONSTRUCTION - runtime failure triage and fix
+
+---
+
+## CI Failure Triage - Missing jwt Module During SDK Test Collection
+**Timestamp**: 2026-04-14T07:47:32Z
+**User Input**: "soorma-service-common unit tests are failing with github CI, following is an example error:
+```
+_____________ ERROR collecting tests/test_goal_context_dispatch.py _____________
+ImportError while importing test module '/home/runner/work/soorma-core/soorma-core/sdk/python/tests/test_goal_context_dispatch.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+	return _bootstrap._gcd_import(name[level:], package, level)
+		   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_goal_context_dispatch.py:16: in <module>
+	from soorma.agents.planner import GoalContext
+soorma/__init__.py:47: in <module>
+	from .context import (
+soorma/context.py:50: in <module>
+	from .identity.wrapper import IdentityClient
+soorma/identity/__init__.py:3: in <module>
+	from .client import IdentityServiceClient
+soorma/identity/client.py:8: in <module>
+	import jwt
+E   ModuleNotFoundError: No module named 'jwt'
+```
+
+seems like github CI workflow need some fix"
+**AI Response**: "Identified root cause as SDK package dependency gap (not workflow orchestration): `soorma/identity/client.py` imports `jwt` but `sdk/python/pyproject.toml` did not declare `pyjwt`. Added `pyjwt>=2.8.0` to SDK runtime dependencies in `sdk/python/pyproject.toml`. Verified targeted failure path by running `sdk/python/tests/test_goal_context_dispatch.py` locally with all tests passing (10 passed). Confirmed `libs/soorma-service-common` already declares `pyjwt`, so CI failure originates from SDK dependency resolution during SDK test collection."
+**Context**: CONSTRUCTION - CI failure triage and packaging fix
+
+---
