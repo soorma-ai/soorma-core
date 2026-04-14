@@ -202,17 +202,17 @@ POSTGRES_INIT_SQL = r'''-- Initialize Soorma PostgreSQL Databases
 -- Creates separate databases for each service and enables pgvector extension
 
 -- Create databases for each service (only if they don't exist)
-SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\\gexec
-SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\\gexec
-SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\\gexec
-SELECT 'CREATE DATABASE identity' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'identity')\\gexec
+SELECT 'CREATE DATABASE registry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'registry')\gexec
+SELECT 'CREATE DATABASE memory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'memory')\gexec
+SELECT 'CREATE DATABASE tracker' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'tracker')\gexec
+SELECT 'CREATE DATABASE identity' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'identity')\gexec
 
 -- Connect to registry database and enable pgvector
-\\c registry
+\c registry
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Connect to memory database and enable pgvector
-\\c memory
+\c memory
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Note: tracker database doesn't need pgvector extension

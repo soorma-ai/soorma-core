@@ -2605,3 +2605,29 @@ we don't need to implement this right now, but does this pattern makes sense? am
 **Context**: CONSTRUCTION - Documentation artifact creation and planning guidance requested by user
 
 ---
+
+## Build/Runtime Debug - soorma dev Postgres Init Script Failure
+**Timestamp**: 2026-04-14T07:26:48Z
+**User Input**: "seems like brining up soorma dev --build failed in postgres database creation:
+```
+soorma-postgres  | Success. You can now start the database server using:
+soorma-postgres  | 
+soorma-postgres  |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+soorma-postgres  | 
+soorma-postgres  | initdb: warning: enabling \"trust\" authentication for local connections
+soorma-postgres  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+soorma-postgres  | waiting for server to start....2026-04-14 07:20:54.637 UTC [54] LOG:  starting PostgreSQL 16.11 (Debian 16.11-1.pgdg12+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+soorma-postgres  | 2026-04-14 07:20:54.639 UTC [54] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"
+soorma-postgres  | 2026-04-14 07:20:54.643 UTC [57] LOG:  database system was shut down at 2026-04-14 07:20:54 UTC
+soorma-postgres  | 2026-04-14 07:20:54.647 UTC [54] LOG:  database system is ready to accept connections
+soorma-postgres  |  done
+soorma-postgres  | server started
+soorma-postgres  | 
+soorma-postgres  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/01-init.sql
+soorma-postgres  | psql:/docker-entrypoint-initdb.d/01-init.sql:5: error: invalid command \\
+```
+"
+**AI Response**: "Diagnosed root cause in SDK CLI generator: POSTGRES_INIT_SQL emitted doubled backslashes for psql meta-commands (`\\\\gexec`, `\\\\c`) in generated init script, causing `psql invalid command \\` at startup. Fixed source at sdk/python/soorma/cli/commands/dev.py to emit valid single-backslash psql commands (`\\gexec`, `\\c`). Verified rendered constant output with python import and validated no diagnostics errors in file. Also updated current workspace-generated `.soorma/postgres-init/01-init.sql` for immediate local recovery and ran focused regression `sdk/python/tests/cli/test_dev.py` with all passing (26 passed)."
+**Context**: CONSTRUCTION - runtime failure triage and fix
+
+---
