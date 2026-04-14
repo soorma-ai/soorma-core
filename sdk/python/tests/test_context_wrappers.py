@@ -360,7 +360,10 @@ class TestMemoryClientWrapper:
             # Verify
             assert client == mock_instance
             assert wrapper._client == mock_instance
-            mock_client_class.assert_called_once_with(base_url="http://memory:8002")
+            mock_client_class.assert_called_once_with(
+                base_url="http://memory:8002",
+                auth_token=None,
+            )
             mock_instance.health.assert_called_once()
     
     @pytest.mark.asyncio
