@@ -68,6 +68,9 @@ Admin-route exception:
 - Mapping collision default is deny unless explicit override is requested and caller principal qualifies.
 - Platform identity record IDs are service-owned and generated server-side.
 - Sensitive write/issuance routes require admin authorization.
+- Current issuance model authenticates a trusted caller (`X-Identity-Admin-Key`) rather than per-principal client credentials.
+- Platform tenants are expected to enforce their own requester authentication/authorization in front of `/v1/identity/tokens/issue` and map authenticated callers to Soorma principal IDs.
+- Principal registration does not currently generate principal-specific `client_id` / `client_secret` credentials.
 
 ## Hardened Request Contract Summary
 

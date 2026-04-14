@@ -37,6 +37,13 @@ Token issuance flow:
 3. Provider facade signs JWT with configured signing algorithm and key material.
 4. Token response returns token + tokenType=Bearer.
 
+Trusted-caller contract (current model):
+
+- Identity service authenticates the token requester as a trusted platform-tenant caller via `X-Identity-Admin-Key`.
+- Identity service does not perform principal-specific client credential authentication at `/tokens/issue` in Unit 3.
+- Principal registration stores principal identity metadata (`tenant_domain_id`, `principal_type`, `lifecycle_state`, `external_ref`) and does not mint `client_id` / `client_secret` pairs.
+- The platform tenant is responsible for its own requester authentication model in front of this endpoint and for mapping its caller identity to the Soorma principal ID used for issuance.
+
 Relevant code paths:
 
 - services/identity-service/src/identity_service/api/v1/tokens.py
@@ -220,6 +227,11 @@ Current default local values are compatibility-oriented:
 - SOORMA_AUTH_JWT_ISSUER=soorma-identity-service
 - SOORMA_AUTH_JWT_AUDIENCE=soorma-services
 
+Local trust assumption:
+
+- In local `soorma dev` mode, SDK callers that can reach the identity issuance path are treated as trusted by default.
+- This is intentionally simple for developer ergonomics and is not a replacement for tenant-specific requester authentication in production deployments.
+
 ### 6.2 Deterministic bootstrap behavior
 
 CLI computes a fingerprint from key configuration inputs and returns:
@@ -254,6 +266,18 @@ IdentityServiceClient behavior:
 Relevant code path:
 
 - sdk/python/soorma/identity/client.py
+
+### 7.1.1 Trusted intermediary integration direction
+
+To preserve tenant flexibility, SDK should support caller-provided JWT injection obtained from a tenant-managed trusted intermediary.
+
+Expected behavior for that extension:
+
+1. Allow agent/runtime code to provide a pre-fetched bearer token to SDK requests.
+2. Prefer injected token over SDK local token minting heuristics.
+3. Preserve existing compatibility behavior when no injected token is provided.
+
+This keeps Soorma core issuance semantics stable while allowing each tenant to implement simple or advanced requester authentication models independently.
 
 ### 7.2 Other SDK infrastructure clients (current compatibility state)
 
