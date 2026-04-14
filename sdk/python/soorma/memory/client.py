@@ -56,6 +56,7 @@ class MemoryServiceClient:
         base_url: str = "http://localhost:8083",
         timeout: float = 30.0,
         platform_tenant_id: Optional[str] = None,
+        auth_token: Optional[str] = None,
     ):
         """
         Initialize the memory client.
@@ -72,6 +73,7 @@ class MemoryServiceClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
+        self.auth_token = auth_token
         self._client = httpx.AsyncClient(timeout=timeout)
     
     async def close(self):
@@ -97,11 +99,14 @@ class MemoryServiceClient:
                 "service_tenant_id and service_user_id are required"
             )
 
-        return {
+        headers = {
             "X-Tenant-ID": self.platform_tenant_id,
             "X-Service-Tenant-ID": service_tenant_id,
             "X-User-ID": service_user_id,
         }
+        if self.auth_token:
+            headers["Authorization"] = f"Bearer {self.auth_token}"
+        return headers
     
     # Semantic Memory Methods
     

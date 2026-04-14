@@ -417,9 +417,11 @@ class Agent(ABC):
                         bus_token = self._context.bus.bind_event_metadata(event)
                         memory_token = self._context.memory.bind_event_metadata(event)
                         tracker_token = self._context.tracker.bind_event_metadata(event)
+                        identity_token = self._context.identity.bind_event_metadata(event)
                         try:
                             await h(event, self._context)
                         finally:
+                            self._context.identity.reset_event_metadata(identity_token)
                             self._context.tracker.reset_event_metadata(tracker_token)
                             self._context.memory.reset_event_metadata(memory_token)
                             self._context.bus.reset_event_metadata(bus_token)
@@ -440,9 +442,11 @@ class Agent(ABC):
                         bus_token = self._context.bus.bind_event_metadata(event)
                         memory_token = self._context.memory.bind_event_metadata(event)
                         tracker_token = self._context.tracker.bind_event_metadata(event)
+                        identity_token = self._context.identity.bind_event_metadata(event)
                         try:
                             await h(event, self._context)
                         finally:
+                            self._context.identity.reset_event_metadata(identity_token)
                             self._context.tracker.reset_event_metadata(tracker_token)
                             self._context.memory.reset_event_metadata(memory_token)
                             self._context.bus.reset_event_metadata(bus_token)

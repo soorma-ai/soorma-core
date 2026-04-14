@@ -183,3 +183,25 @@ async def test_on_event_filters_by_topic(monkeypatch: pytest.MonkeyPatch) -> Non
 
     assert len(received) == 1
     assert received[0].topic == EventTopic.ACTION_RESULTS
+
+
+@pytest.mark.asyncio
+async def test_on_event_binds_identity_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Event dispatch should bind/reset identity metadata around handler execution."""
+    monkeypatch.setattr(base_module, "EventClient", FakeEventClient)
+
+    planner = Planner(name="identity-bind-planner")
+
+    @planner.on_event("identity.test", topic=EventTopic.ACTION_RESULTS)
+    async def handle_event(event: EventEnvelope, context: Any) -> None:
+        return None
+
+    await planner._initialize_context()
+    planner.context.identity.bind_event_metadata = MagicMock(return_value="identity-token")
+    planner.context.identity.reset_event_metadata = MagicMock()
+
+    client = planner.context.bus.event_client
+    await client.dispatch(_make_event("identity.test", EventTopic.ACTION_RESULTS))
+
+    planner.context.identity.bind_event_metadata.assert_called_once()
+    planner.context.identity.reset_event_metadata.assert_called_once_with("identity-token")

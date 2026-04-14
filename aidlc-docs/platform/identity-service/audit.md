@@ -2559,3 +2559,49 @@ however, it does mean we may need to change SDK behavior to allow agents to inje
 **Context**: CONSTRUCTION - Documentation update requested by user
 
 ---
+
+## Code Generation - SDK Identity Interaction Clarification
+**Timestamp**: 2026-04-14T06:29:06Z
+**User Input**: "when i implement an agent, and use SDK for interacting with soorma-core services, will the SDK context wrapper automatically initiatilize with a JWT token request from identity service, or does the agent code need to call a specific SDK method to do that? what are the SDK methods and use cases where an agent will interact with identity service?"
+**AI Response**: "Clarified with code evidence: PlatformContext initialization wires service wrappers only and does not auto-request JWT tokens from identity-service. Identity interaction is explicit via context.identity methods (onboard_tenant, issue_token, create/update/revoke principal, register/update delegated issuer, evaluate_mapping). Also clarified current SDK behavior boundaries: memory/tracker clients use identity headers (no automatic bearer-token bootstrap), identity wrapper requires tenant/user identity context, and identity context metadata binding is not currently auto-wired in agent dispatch like bus/memory/tracker wrappers."
+**Context**: CONSTRUCTION - SDK behavior clarification requested by user
+
+---
+
+## Code Generation - SDK Identity Binding and Token Injection Implementation
+**Timestamp**: 2026-04-14T06:36:49Z
+**User Input**: "yes, lets add those two"
+**AI Response**: "Implemented both requested enhancements. (1) Agent dispatch now auto-binds and resets identity metadata around handler execution, alongside bus/memory/tracker metadata handling. (2) Added injected bearer-token path for downstream SDK wrappers and low-level clients: PlatformContext now supports auth token injection and propagation to memory/tracker wrappers, wrappers support runtime token updates via set_auth_token, and MemoryServiceClient/TrackerServiceClient include Authorization: Bearer <token> when configured. Added focused regression tests for identity metadata auto-binding and auth-header injection. Validation run passed: 63 tests passed across test_agent_event_routing.py, test_memory_client.py, test_tracker_service_client.py, test_agents.py."
+**Context**: CONSTRUCTION - Code Generation implementation requested by user
+
+---
+
+## Code Generation - Token Injection Scope Clarification
+**Timestamp**: 2026-04-14T06:44:32Z
+**User Input**: "from context wrapper, why do we only have memory and tracker clients using auth token, and not event bus, or registry? also why not identity?"
+**AI Response**: "Clarified architectural rationale with code references: memory/tracker received token injection because they are tier-2 synchronous service clients that already project service identity headers per request. Event bus intentionally sends only platform-tenant header on publish while carrying tenant/user in event envelope, so token injection there is a separate transport/security design decision. Registry follows developer-tenant authentication (`SOORMA_DEVELOPER_TENANT_ID`) with planned move to developer API key and is not tied to end-user/requester JWT semantics. Identity already has dedicated trusted-caller auth contract (`X-Identity-Admin-Key`) plus optional caller JWT resolution path, so it was intentionally left separate from the generic context auth-token fan-out to avoid conflating auth domains."
+**Context**: CONSTRUCTION - Architecture clarification requested by user
+
+---
+
+## Requirements Clarification - Target Authentication Pattern
+**Timestamp**: 2026-04-14T06:52:28Z
+**User Input**: "hmm, i think final authentication pattern should be as following:
+- identity service token issue endpoint is the ONLY endpoint that does not require JWT. it takes API key / admin auth and issues a JWT
+- all other secured endpoints ONLY accept JWT issued by the identity service
+- a JWT ALWAYS has the platform tenant id (needed for registry and event service endpoints) and can ALSO have service tenat id and user id (needed for memory and tracker service)
+- platform tenants are responsible for implementing a trusted identity proxy (that requests JWT tokens from soorma-core identity service) along with appropriate actor and tier-2 (service tenant and service user) claims in the JWT token
+
+we don't need to implement this right now, but does this pattern makes sense? am I missing anything?"
+**AI Response**: "Assessed the proposed pattern as directionally strong and aligned with long-term JWT-first architecture. Identified key clarifications to make it production-safe: explicit exceptions for non-secured endpoints (health/discovery/JWKS), bootstrap/onboarding path semantics, registry tenant-domain mapping under current developer-tenant model, strict JWT claim contract and endpoint-level required claim matrix, token lifetime/rotation/revocation strategy, event stream token refresh/re-auth behavior, and authorization scopes/roles separation from tenancy claims."
+**Context**: INCEPTION/CONSTRUCTION cross-cutting architecture review requested by user
+
+---
+
+## Documentation - Future Work PRD Creation and Unit Sequencing Guidance
+**Timestamp**: 2026-04-14T06:58:31Z
+**User Input**: "ok, lets create a PRD document in identity service folder, so that these requirements are captured and can be worked upon in future iteration. mark the document as future work. I'm assuming we'll still need to finish the next unit of work (hardening and removing compatibility mode) before we implement this change? or can next unit of work in current feature plan be omitted, and then all the work be completed when the PRD is implemented?"
+**AI Response**: "Created a future-work PRD at docs/identity_service/FUTURE_PRD_JWT_FIRST_AUTH.md capturing JWT-first target requirements, claim contract, endpoint auth matrix, trusted proxy responsibilities, security controls, open decisions, and migration guidance. Linked it from docs/identity_service/README.md for discoverability. Also clarified sequencing guidance from current plan artifacts: unit-4 cutover-hardening remains the planned and dependency-bound step for removing compatibility and enforcing strict JWT-only posture; omitting it would require explicit plan/state re-baselining and would leave current initiative acceptance criteria incomplete. Recommended finishing current unit closure and cutover/hardening baseline, then applying PRD deltas as follow-up scope."
+**Context**: CONSTRUCTION - Documentation artifact creation and planning guidance requested by user
+
+---
