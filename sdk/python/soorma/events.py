@@ -41,7 +41,6 @@ from uuid import uuid4
 
 from .auth import AuthTokenProvider, resolve_auth_token
 from soorma_common.events import EventEnvelope, EventTopic
-from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -101,10 +100,7 @@ class EventClient:
         self.source = source or self.agent_id
         self.auth_token = auth_token or os.getenv("SOORMA_AUTH_TOKEN")
         self.auth_token_provider = auth_token_provider
-        self.platform_tenant_id = platform_tenant_id or os.getenv(
-            "SOORMA_PLATFORM_TENANT_ID",
-            DEFAULT_PLATFORM_TENANT_ID,
-        )
+        self.platform_tenant_id = platform_tenant_id or os.getenv("SOORMA_PLATFORM_TENANT_ID") or None
         self.tenant_id = tenant_id
         self.session_id = session_id
         

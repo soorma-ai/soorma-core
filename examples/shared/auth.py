@@ -15,7 +15,7 @@ from soorma.identity.client import IdentityServiceClient
 from soorma_common.models import OnboardingRequest, TokenIssueRequest, TokenIssuanceType
 
 
-DEFAULT_PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000000"
+DEFAULT_BOOTSTRAP_SERVICE_TENANT_ID = "00000000-0000-0000-0000-000000000000"
 DEFAULT_SERVICE_USER_ID = "00000000-0000-0000-0000-000000000001"
 TOKEN_REFRESH_WINDOW_SECONDS = 30
 
@@ -111,12 +111,13 @@ class ExampleTokenProvider:
 
         bootstrap_payload = await self._ensure_bootstrap_payload()
         async with IdentityServiceClient() as identity_client:
+            identity_client.set_platform_tenant_id(str(bootstrap_payload["platform_tenant_id"]))
             token_response = await identity_client.issue_token(
                 TokenIssueRequest(
                     principal_id=str(bootstrap_payload["bootstrap_admin_principal_id"]),
                     issuance_type=TokenIssuanceType.PLATFORM,
                 ),
-                service_tenant_id=DEFAULT_PLATFORM_TENANT_ID,
+                service_tenant_id=DEFAULT_BOOTSTRAP_SERVICE_TENANT_ID,
                 service_user_id=DEFAULT_SERVICE_USER_ID,
             )
 
@@ -136,7 +137,7 @@ class ExampleTokenProvider:
                     OnboardingRequest(
                         bootstrap_admin_external_ref=f"{self.example_name}-bootstrap-admin"
                     ),
-                    service_tenant_id=DEFAULT_PLATFORM_TENANT_ID,
+                    service_tenant_id=DEFAULT_BOOTSTRAP_SERVICE_TENANT_ID,
                     service_user_id=DEFAULT_SERVICE_USER_ID,
                 )
             persisted_payload = onboarding_response.model_dump()
@@ -152,6 +153,20 @@ class ExampleTokenProvider:
         os.environ["SOORMA_AUTH_TOKEN"] = token
         os.environ["SOORMA_PLATFORM_TENANT_ID"] = str(self._bootstrap_payload["platform_tenant_id"])
         os.environ["SOORMA_DEVELOPER_TENANT_ID"] = str(self._bootstrap_payload["platform_tenant_id"])
+
+    async def get_bootstrap_payload(self) -> dict[str, Any]:
+        """Return the persisted onboarding payload for this example."""
+        return await self._ensure_bootstrap_payload()
+
+    async def get_platform_tenant_id(self) -> str:
+        """Return the bootstrapped platform tenant ID for this example."""
+        payload = await self._ensure_bootstrap_payload()
+        return str(payload["platform_tenant_id"])
+
+    async def get_bootstrap_admin_principal_id(self) -> str:
+        """Return the bootstrapped admin principal ID for this example."""
+        payload = await self._ensure_bootstrap_payload()
+        return str(payload["bootstrap_admin_principal_id"])
 
 
 def build_example_token_provider(example_name: str, start_path: Path | str) -> ExampleTokenProvider:

@@ -1,11 +1,12 @@
 """TrackerServiceClient - Low-level HTTP client for Tracker Service (Layer 1)."""
 
+import os
+
 from typing import Dict, List, Optional
 
 import httpx
 
 from soorma.auth import AuthTokenProvider, resolve_auth_token
-from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 from soorma_common.tracker import (
     AgentMetrics,
     DelegationGroup,
@@ -30,7 +31,7 @@ class TrackerServiceClient:
         """Initialize the Tracker Service client."""
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
+        self.platform_tenant_id = platform_tenant_id or os.getenv("SOORMA_PLATFORM_TENANT_ID") or None
         self.auth_token = auth_token
         self.auth_token_provider = auth_token_provider
         self._client = httpx.AsyncClient(timeout=timeout)

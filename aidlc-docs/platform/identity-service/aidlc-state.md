@@ -53,7 +53,7 @@
 - **Lifecycle Phase**: CONSTRUCTION
 - **Current Stage**: Code Generation Review - uow-cutover-hardening
 - **Next Stage**: Build and Test (pending explicit approval for uow-cutover-hardening)
-- **Status**: Code Generation execution for uow-cutover-hardening is complete, including the second review-driven correction pass for bearer-only Tier-2 transport, shared example token-provider reuse, and canonical JWT service-identity fallback; the unit is awaiting explicit review-gate approval before Build and Test
+- **Status**: Code Generation execution for uow-cutover-hardening is complete, including the review-driven correction passes for bearer-only Tier-2 transport, shared example token-provider reuse, canonical JWT service-identity fallback, bootstrap-derived platform-tenant propagation, post-onboarding identity-client binding, and removal of low-level identity-client caller-JWT self-generation; the unit is awaiting explicit review-gate approval before Build and Test
 
 ## Units Generation Status
 - [x] Units Planning - Completed

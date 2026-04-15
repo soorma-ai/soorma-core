@@ -26,6 +26,33 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Platform Tenant Binding Correction
+**Timestamp**: 2026-04-15T08:56:58Z
+**User Input**: "ok, so we have some bugs:
+- we CAN NOT be using hard coded platform tenant IDs anywhere (e.g. in EventClient initialization). This is old and incorrect pattern when clients were providing platform tenant id. now, identity service generates platform tenant id during onboarding, and that ID needs to be used.
+- since we are doing bootstrapping in these examples, it should have the platform tenant ID from bootstrap file, and we need that id to be used instead of hard coded tenant ID. so might need to extend the shared bootstrap util in examples to provide method for getting platform tenant ID from bootstrap config
+- the IdentityServiceClient has incorrect initialization / constructor, to provide platform tenant ID. this will NOT work. identity service client CAN NOT know platform tenant ID before bootstrap. it should accept the platform tenant id later, after bootstrap is done, either as a parameter for all other methods, or some kind of binding after bootstrap method."
+**AI Response**: "Implemented the platform-tenant binding correction pass by removing hard-coded platform-tenant usage from the hello-world example, extending examples.shared.auth to expose bootstrapped platform-tenant and bootstrap-admin identifiers, binding the low-level identity client with platform_tenant_id only after onboarding payload is available, and removing hard-coded platform-tenant fallbacks from low-level event/memory/tracker constructors. Verified the focused regression slice with 28 passing tests across shared bootstrap helpers, identity client contracts, and event-client auth behavior."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Identity Client Auth Transport Cleanup
+**Timestamp**: 2026-04-15T09:17:41Z
+**User Input**: "ok, so we cannot be using symmetric shared secret to self generate JWT -- that is wrong as per out current architecture and design. this needs to be removed. for now, all identity methods should just use the platform tenant (from binding) and admin API key. don't need JWT."
+**AI Response**: "Removed low-level identity-client caller-JWT synthesis and related compatibility transport behavior so identity admin requests now carry only `X-Identity-Admin-Key` plus optional bound `X-Tenant-ID`. Updated the focused identity-client tests to match that contract and verified the final regression slice with 27 passing tests across identity-client, shared example auth bootstrap, and event-client registration coverage."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Renewed Approval Prompt
+**Timestamp**: 2026-04-15T09:17:41Z
+**User Input**: "ok, so we cannot be using symmetric shared secret to self generate JWT -- that is wrong as per out current architecture and design. this needs to be removed. for now, all identity methods should just use the platform tenant (from binding) and admin API key. don't need JWT."
+**AI Response**: "Final review-driven correction pass is complete for uow-cutover-hardening. A renewed Code Generation completion gate will be presented next, with the unit remaining blocked from Build and Test until explicit approval is received."
+**Context**: CONSTRUCTION - Code Generation approval gate
+
+---
+
 ## Code Generation - Shim Removal Cleanup
 **Timestamp**: 2026-04-15T08:37:30Z
 **User Input**: "yes, remove the shim"

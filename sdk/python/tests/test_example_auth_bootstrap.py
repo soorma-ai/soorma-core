@@ -48,6 +48,7 @@ async def test_ensure_example_auth_token_bootstraps_once_and_persists(shared_aut
     mock_identity_client.issue_token = AsyncMock(
         return_value=TokenIssueResponse(token="jwt-token", token_type="Bearer")
     )
+    mock_identity_client.set_platform_tenant_id = MagicMock()
     mock_identity_client.__aenter__.return_value = mock_identity_client
     mock_identity_client.__aexit__.return_value = None
 
@@ -63,6 +64,7 @@ async def test_ensure_example_auth_token_bootstraps_once_and_persists(shared_aut
     assert second_token == "jwt-token"
     assert mock_identity_client.onboard_tenant.await_count == 1
     assert mock_identity_client.issue_token.await_count == 2
+    mock_identity_client.set_platform_tenant_id.assert_called_with("pt-1")
 
     bootstrap_file = repo_root / ".soorma" / shared_auth_module.bootstrap_filename(EXAMPLE_NAME)
     payload = json.loads(bootstrap_file.read_text())
@@ -100,6 +102,7 @@ async def test_build_example_token_provider_refreshes_when_cached_token_is_expir
             TokenIssueResponse(token="fresh-token", token_type="Bearer"),
         ]
     )
+    mock_identity_client.set_platform_tenant_id = MagicMock()
     mock_identity_client.__aenter__.return_value = mock_identity_client
     mock_identity_client.__aexit__.return_value = None
 
@@ -118,6 +121,33 @@ async def test_build_example_token_provider_refreshes_when_cached_token_is_expir
     assert refreshed_token == "fresh-token"
     assert mock_identity_client.onboard_tenant.await_count == 1
     assert mock_identity_client.issue_token.await_count == 2
+    mock_identity_client.set_platform_tenant_id.assert_called_with("pt-1")
+
+
+@pytest.mark.asyncio
+async def test_build_example_token_provider_exposes_bootstrapped_ids(shared_auth_module, tmp_path):
+    """Provider should expose bootstrapped tenant and principal identifiers."""
+    repo_root = tmp_path / "repo"
+    examples_dir = repo_root / "examples" / "01-hello-world"
+    sdk_dir = repo_root / "sdk"
+    examples_dir.mkdir(parents=True)
+    sdk_dir.mkdir(parents=True)
+    script_path = examples_dir / "worker.py"
+    script_path.write_text("# placeholder\n")
+
+    provider = shared_auth_module.build_example_token_provider(EXAMPLE_NAME, script_path)
+    shared_auth_module.persist_bootstrap_payload(
+        EXAMPLE_NAME,
+        script_path,
+        {
+            "tenant_domain_id": "td-1",
+            "platform_tenant_id": "pt-1",
+            "bootstrap_admin_principal_id": "pr-1",
+        },
+    )
+
+    assert await provider.get_platform_tenant_id() == "pt-1"
+    assert await provider.get_bootstrap_admin_principal_id() == "pr-1"
 
 
 def test_load_bootstrap_payload_returns_none_for_invalid_json(shared_auth_module, tmp_path):

@@ -72,6 +72,8 @@ from examples.shared.auth import build_example_token_provider
 
 token_provider = build_example_token_provider("01-hello-world", __file__)
 await token_provider.get_token()
+tenant_id = await token_provider.get_platform_tenant_id()
+user_id = await token_provider.get_bootstrap_admin_principal_id()
 
 client = EventClient(
     agent_id="hello-client",
@@ -98,6 +100,7 @@ async def on_response(event: EventEnvelope):
 
 **How it applies the concepts:**
 - `examples.shared.auth.build_example_token_provider()` returns a reusable trusted-proxy style provider that bootstraps once, persists the example principal under `.soorma/01-hello-world-identity.json`, and refreshes JWTs only when needed
+- The shared provider also exposes the bootstrapped `platform_tenant_id` and bootstrap admin principal ID so the example no longer relies on hard-coded tenant values
 - `correlation_id` allows matching responses to requests
 - `response_event` and `response_topic` tell the Worker where/what to send back
 - Handler receives responses on the specified topic

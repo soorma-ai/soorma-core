@@ -1,11 +1,9 @@
 """Identity Service client (Layer 1)."""
 
-from datetime import datetime, timedelta, timezone
 import os
 from typing import Optional, TypeVar
 
 import httpx
-import jwt
 
 from soorma_common.models import (
     BaseDTO,
@@ -20,21 +18,9 @@ from soorma_common.models import (
     TokenIssueRequest,
     TokenIssueResponse,
 )
-from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 
 ResponseT = TypeVar("ResponseT", bound=BaseDTO)
-
-_CALLER_JWT_ENV = "SOORMA_IDENTITY_CALLER_JWT"
-_JWT_SECRET_ENV = "SOORMA_AUTH_JWT_SECRET"
-_JWT_ISSUER_ENV = "SOORMA_AUTH_JWT_ISSUER"
-_JWT_AUDIENCE_ENV = "SOORMA_AUTH_JWT_AUDIENCE"
-_INCLUDE_LEGACY_ALIAS_ENV = "SOORMA_IDENTITY_INCLUDE_LEGACY_ALIAS"
-
-
-def _is_truthy(value: Optional[str]) -> bool:
-    """Return True when env-style flag values are enabled."""
-    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 class IdentityServiceClient:
@@ -44,16 +30,18 @@ class IdentityServiceClient:
         self,
         base_url: str = "http://localhost:8085",
         timeout: float = 30.0,
-        platform_tenant_id: Optional[str] = None,
         admin_api_key: Optional[str] = None,
-        caller_jwt: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
+        self.platform_tenant_id: Optional[str] = None
         self.admin_api_key = admin_api_key or os.getenv("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
-        self.caller_jwt = caller_jwt or os.getenv(_CALLER_JWT_ENV)
         self._client = httpx.AsyncClient(timeout=timeout)
+
+    def set_platform_tenant_id(self, platform_tenant_id: Optional[str]) -> None:
+        """Bind the platform tenant ID once onboarding or discovery has provided it."""
+        value = str(platform_tenant_id or "").strip()
+        self.platform_tenant_id = value or None
 
     async def close(self) -> None:
         """Close underlying HTTP client."""
@@ -69,58 +57,16 @@ class IdentityServiceClient:
         self,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> dict[str, str]:
         """Build required identity headers for identity-service calls."""
-        if not service_tenant_id or not service_user_id:
-            raise ValueError("service_tenant_id and service_user_id are required")
-
-        headers = {
-            "X-Tenant-ID": self.platform_tenant_id,
-            "X-Identity-Admin-Key": self.admin_api_key,
-        }
-
-        caller_jwt = self._resolve_caller_jwt(service_tenant_id, service_user_id)
-        if caller_jwt:
-            headers["Authorization"] = f"Bearer {caller_jwt}"
-            if _is_truthy(os.getenv(_INCLUDE_LEGACY_ALIAS_ENV)):
-                headers["X-Service-Tenant-ID"] = service_tenant_id
-                headers["X-User-ID"] = service_user_id
-            return headers
-
-        headers["X-Service-Tenant-ID"] = service_tenant_id
-        headers["X-User-ID"] = service_user_id
+        resolved_platform_tenant_id = str(
+            platform_tenant_id or self.platform_tenant_id or ""
+        ).strip() or None
+        headers = {"X-Identity-Admin-Key": self.admin_api_key}
+        if resolved_platform_tenant_id is not None:
+            headers["X-Tenant-ID"] = resolved_platform_tenant_id
         return headers
-
-    def _resolve_caller_jwt(self, service_tenant_id: str, service_user_id: str) -> Optional[str]:
-        """Resolve outbound caller JWT from explicit token or local signing config."""
-        explicit_token = str(self.caller_jwt or "").strip()
-        if explicit_token:
-            return explicit_token
-
-        jwt_secret = os.getenv(_JWT_SECRET_ENV)
-        if not jwt_secret:
-            return None
-
-        issued_at = datetime.now(timezone.utc)
-        claims: dict[str, object] = {
-            "platform_tenant_id": self.platform_tenant_id,
-            "service_tenant_id": service_tenant_id,
-            "service_user_id": service_user_id,
-            "principal_id": service_user_id,
-            "principal_type": "service",
-            "roles": ["service"],
-            "iat": int(issued_at.timestamp()),
-            "exp": int((issued_at + timedelta(minutes=5)).timestamp()),
-        }
-
-        jwt_issuer = str(os.getenv(_JWT_ISSUER_ENV) or "").strip()
-        jwt_audience = str(os.getenv(_JWT_AUDIENCE_ENV) or "").strip()
-        if jwt_issuer:
-            claims["iss"] = jwt_issuer
-        if jwt_audience:
-            claims["aud"] = jwt_audience
-
-        return str(jwt.encode(claims, jwt_secret, algorithm="HS256"))
 
     async def _post(
         self,
@@ -129,11 +75,16 @@ class IdentityServiceClient:
         response_model: type[ResponseT],
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> ResponseT:
         """Execute POST request against identity-service endpoint."""
         response = await self._client.post(
             f"{self.base_url}{path}",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=self._build_identity_headers(
+                service_tenant_id,
+                service_user_id,
+                platform_tenant_id=platform_tenant_id,
+            ),
             json=payload.model_dump(by_alias=True),
         )
         response.raise_for_status()
@@ -146,11 +97,16 @@ class IdentityServiceClient:
         response_model: type[ResponseT],
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> ResponseT:
         """Execute PUT request against identity-service endpoint."""
         response = await self._client.put(
             f"{self.base_url}{path}",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=self._build_identity_headers(
+                service_tenant_id,
+                service_user_id,
+                platform_tenant_id=platform_tenant_id,
+            ),
             json=payload.model_dump(by_alias=True),
         )
         response.raise_for_status()
@@ -161,6 +117,7 @@ class IdentityServiceClient:
         payload: OnboardingRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> OnboardingResponse:
         """Create tenant identity domain and bootstrap admin principal."""
         return await self._post(
@@ -169,6 +126,7 @@ class IdentityServiceClient:
             OnboardingResponse,
             service_tenant_id,
             service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
 
     async def create_principal(
@@ -176,6 +134,7 @@ class IdentityServiceClient:
         payload: PrincipalRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> PrincipalResponse:
         """Create principal."""
         return await self._post(
@@ -184,6 +143,7 @@ class IdentityServiceClient:
             PrincipalResponse,
             service_tenant_id,
             service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
 
     async def update_principal(
@@ -192,6 +152,7 @@ class IdentityServiceClient:
         payload: PrincipalRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> PrincipalResponse:
         """Update principal."""
         return await self._put(
@@ -200,6 +161,7 @@ class IdentityServiceClient:
             PrincipalResponse,
             service_tenant_id,
             service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
 
     async def revoke_principal(
@@ -207,11 +169,16 @@ class IdentityServiceClient:
         principal_id: str,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> PrincipalResponse:
         """Revoke principal."""
         response = await self._client.post(
             f"{self.base_url}/v1/identity/principals/{principal_id}/revoke",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=self._build_identity_headers(
+                service_tenant_id,
+                service_user_id,
+                platform_tenant_id=platform_tenant_id,
+            ),
             json={},
         )
         response.raise_for_status()
@@ -222,6 +189,7 @@ class IdentityServiceClient:
         payload: TokenIssueRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> TokenIssueResponse:
         """Issue platform/delegated token based on issuance policy."""
         return await self._post(
@@ -230,6 +198,7 @@ class IdentityServiceClient:
             TokenIssueResponse,
             service_tenant_id=service_tenant_id,
             service_user_id=service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
 
     async def register_delegated_issuer(
@@ -237,6 +206,7 @@ class IdentityServiceClient:
         payload: DelegatedIssuerRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> DelegatedIssuerResponse:
         """Register delegated issuer trust metadata."""
         return await self._post(
@@ -245,6 +215,7 @@ class IdentityServiceClient:
             DelegatedIssuerResponse,
             service_tenant_id,
             service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
 
     async def update_delegated_issuer(
@@ -253,6 +224,7 @@ class IdentityServiceClient:
         payload: DelegatedIssuerRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> DelegatedIssuerResponse:
         """Update delegated issuer trust metadata."""
         return await self._put(
@@ -261,6 +233,7 @@ class IdentityServiceClient:
             DelegatedIssuerResponse,
             service_tenant_id,
             service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
 
     async def evaluate_mapping(
@@ -268,6 +241,7 @@ class IdentityServiceClient:
         payload: MappingEvaluationRequest,
         service_tenant_id: str,
         service_user_id: str,
+        platform_tenant_id: Optional[str] = None,
     ) -> MappingEvaluationResponse:
         """Evaluate identity mapping collision policy."""
         return await self._post(
@@ -276,4 +250,5 @@ class IdentityServiceClient:
             MappingEvaluationResponse,
             service_tenant_id,
             service_user_id,
+            platform_tenant_id=platform_tenant_id,
         )
