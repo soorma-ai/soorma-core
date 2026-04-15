@@ -30,7 +30,7 @@ def tracker_client():
 
 
 def test_build_identity_headers_includes_authorization_when_auth_token_present():
-    """Tracker client should forward injected auth token as bearer header."""
+    """Tracker client should use bearer auth as the active path when auth token is injected."""
     tracker_client = TrackerServiceClient(
         base_url="http://localhost:8084",
         platform_tenant_id="platform-tenant-1",
@@ -40,9 +40,9 @@ def test_build_identity_headers_includes_authorization_when_auth_token_present()
     headers = tracker_client._build_identity_headers("tenant-123", "user-456")
 
     assert headers["Authorization"] == "Bearer jwt-token-value"
-    assert headers["X-Tenant-ID"] == "platform-tenant-1"
-    assert headers["X-Service-Tenant-ID"] == "tenant-123"
-    assert headers["X-User-ID"] == "user-456"
+    assert "X-Tenant-ID" not in headers
+    assert "X-Service-Tenant-ID" not in headers
+    assert "X-User-ID" not in headers
 
 
 @pytest.fixture

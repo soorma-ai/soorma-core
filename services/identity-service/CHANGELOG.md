@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Added canonical `tenant_id` claim issuance alongside compatibility claims for cutover consumers.
+- Documented RS256/JWKS-first local bootstrap defaults and fail-closed verifier expectations for `soorma dev`.
 - Added initial identity-service scaffold for AI-DLC code generation.
 - Expanded service README with API, auth, token-contract, and testing guidance.
 - Added technical docs in `docs/identity_service/` for architecture and use cases.

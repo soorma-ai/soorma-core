@@ -1,26 +1,47 @@
 # Asymmetric JWT Bootstrap Primer (Local Soorma Stack)
 
 **Audience:** Developers running `soorma dev` locally
-**Scope:** Unit 3 compatibility phase (RS256 issuer + JWKS verification)
+**Scope:** Unit 4 cutover hardening (`soorma dev` RS256/JWKS bootstrap defaults)
 
 ## 1. Quick Answer
 
-Today, `soorma dev` does not auto-generate RSA keypairs for you.
+`soorma dev` now bootstraps a persisted local RS256 keypair and inline JWKS verifier config by default.
 
-It can bootstrap a deterministic local stack, but asymmetric mode still requires providing signing/verification material via environment variables.
+You only need manual overrides when you want to test alternate key material or simulate key rotation.
 
-This primer gives a copy-paste workflow so you can run RS256 + JWKS mode reliably.
+This primer explains the default behavior and the override path.
 
 ## 2. What You Will Configure
 
-You need four categories of settings:
+You need four categories of settings when overriding the defaults:
 
 1. Identity-service issuer signing settings (private/public key + active `kid`)
 2. Verifier settings for all services using `soorma-service-common` middleware
 3. Issuer trust and audience settings
 4. `soorma dev` bootstrap/restart workflow to avoid drift failures
 
-## 3. Generate Local RSA Keys
+## 3. Default `soorma dev` Behavior
+
+When you run `soorma dev --start`, the CLI creates `.soorma/identity/` on first use and persists:
+
+1. `.soorma/identity/identity-signing-private.pem`
+2. `.soorma/identity/identity-signing-public.pem`
+3. `.soorma/identity/identity-jwks.json`
+
+The generated `.soorma/.env` then includes:
+
+1. `IDENTITY_SIGNING_ALGORITHM=RS256`
+2. `IDENTITY_ACTIVE_SIGNING_KID=dev-rs256`
+3. `IDENTITY_SIGNING_PRIVATE_KEYRING_JSON` derived from the persisted private key
+4. `IDENTITY_SIGNING_PUBLIC_KEYRING_JSON` derived from the persisted public key
+5. Inline `IDENTITY_JWKS_PUBLICATION_JSON` and `SOORMA_AUTH_JWKS_JSON` derived from the persisted JWKS file
+6. Static `SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON` fallback derived from the persisted public key
+
+That means the local stack starts in RS256/JWKS mode without extra shell setup and reuses the same keypair across runs until you delete it.
+
+To rotate the local keypair, delete the files under `.soorma/identity/` and run `soorma dev` again.
+
+## 4. Generate Alternate Local RSA Keys
 
 Run from repository root (`soorma-core`):
 
@@ -38,48 +59,49 @@ openssl rsa \
   -out .soorma/keys/identity-signing-public.pem
 ```
 
-## 4. Convert PEMs to Environment-Safe Values
+## 5. Convert PEMs to Environment-Safe JSON Keyrings
 
-Docker compose `.env` values are single-line strings. Convert PEM files to escaped-newline strings:
+Docker compose `.env` values are single-line strings. Build JSON keyrings so PEM newlines survive parsing cleanly:
 
 ```bash
-escape_pem() {
-  awk 'NF {sub(/\r/, ""); printf "%s\\n", $0;}' "$1"
-}
+python - <<'PY'
+import json
+from pathlib import Path
 
-export IDENTITY_SIGNING_PRIVATE_KEY_PEM="$(escape_pem .soorma/keys/identity-signing-private.pem)"
-export IDENTITY_SIGNING_PUBLIC_KEY_PEM="$(escape_pem .soorma/keys/identity-signing-public.pem)"
+private_pem = Path('.soorma/keys/identity-signing-private.pem').read_text()
+public_pem = Path('.soorma/keys/identity-signing-public.pem').read_text()
+
+print('export IDENTITY_SIGNING_PRIVATE_KEYRING_JSON=' + json.dumps(json.dumps({'local-rs1': private_pem})))
+print('export IDENTITY_SIGNING_PUBLIC_KEYRING_JSON=' + json.dumps(json.dumps({'local-rs1': public_pem})))
+PY
 ```
 
-## 5. Set RS256/JWKS Environment Variables
+## 6. Set RS256/JWKS Override Variables
 
 Use this exact baseline before `soorma dev --start`:
 
 ```bash
 # Issuer signing mode
 export IDENTITY_SIGNING_ALGORITHM=RS256
-export IDENTITY_SIGNING_KEY_ID=local-rs1
 export IDENTITY_ACTIVE_SIGNING_KID=local-rs1
-export IDENTITY_SIGNING_PRIVATE_KEY_PEM="$IDENTITY_SIGNING_PRIVATE_KEY_PEM"
-export IDENTITY_SIGNING_PUBLIC_KEY_PEM="$IDENTITY_SIGNING_PUBLIC_KEY_PEM"
+export IDENTITY_SIGNING_PRIVATE_KEYRING_JSON="$IDENTITY_SIGNING_PRIVATE_KEYRING_JSON"
+export IDENTITY_SIGNING_PUBLIC_KEYRING_JSON="$IDENTITY_SIGNING_PUBLIC_KEYRING_JSON"
 
 # Keep issuer claim/trust aligned with current token issuance behavior
 export SOORMA_AUTH_JWT_ISSUER=soorma-identity-service
 export SOORMA_AUTH_JWT_AUDIENCE=soorma-services
 
-# Middleware verifier primary source (inside docker network)
-export SOORMA_AUTH_JWKS_URL=http://identity-service:8085/v1/identity/.well-known/jwks.json
-export SOORMA_AUTH_OPENID_CONFIGURATION_URL=http://identity-service:8085/v1/identity/.well-known/openid-configuration
-
-# Optional bounded fallback verifier key (recommended during compatibility)
-export SOORMA_AUTH_JWT_PUBLIC_KEY_ID=local-rs1
-export SOORMA_AUTH_JWT_PUBLIC_KEY_PEM="$IDENTITY_SIGNING_PUBLIC_KEY_PEM"
+# Inline JWKS for issuer publication and verifier startup determinism
+export IDENTITY_JWKS_PUBLICATION_JSON='{"keys":[...]}'
+export IDENTITY_VERIFIER_JWKS_JSON="$IDENTITY_JWKS_PUBLICATION_JSON"
+export SOORMA_AUTH_JWKS_JSON="$IDENTITY_JWKS_PUBLICATION_JSON"
+export SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON="$IDENTITY_SIGNING_PUBLIC_KEYRING_JSON"
 
 # Optional cache tuning
 export SOORMA_AUTH_JWKS_CACHE_TTL_SECONDS=300
 ```
 
-## 6. Start or Recreate the Stack
+## 7. Start or Recreate the Stack
 
 If this is your first run:
 
@@ -94,23 +116,23 @@ soorma dev --stop --clean
 soorma dev --start
 ```
 
-## 7. Variable-by-Variable Mapping
+## 8. Variable-by-Variable Mapping
 
 | Variable | Purpose | Consumed By |
 |---|---|---|
 | `IDENTITY_SIGNING_ALGORITHM` | selects signing algorithm (`RS256`) | identity-service provider facade |
-| `IDENTITY_SIGNING_KEY_ID` | default signing `kid` | identity-service provider facade |
 | `IDENTITY_ACTIVE_SIGNING_KID` | active signing key selector | identity-service provider facade |
-| `IDENTITY_SIGNING_PRIVATE_KEY_PEM` | RS256 private key for issuance | identity-service provider facade |
-| `IDENTITY_SIGNING_PUBLIC_KEY_PEM` | RS256 public key for JWKS/static fallback | identity-service provider facade |
-| `SOORMA_AUTH_JWKS_URL` | JWKS primary verifier source | all services using `soorma-service-common` middleware |
-| `SOORMA_AUTH_OPENID_CONFIGURATION_URL` | discovery metadata (issuer/jwks_uri) | all services using `soorma-service-common` middleware |
+| `IDENTITY_SIGNING_PRIVATE_KEYRING_JSON` | RS256 private signing keyring | identity-service provider facade |
+| `IDENTITY_SIGNING_PUBLIC_KEYRING_JSON` | RS256 public publication keyring | identity-service provider facade |
+| `IDENTITY_JWKS_PUBLICATION_JSON` | published JWKS payload | identity-service provider facade and discovery routes |
+| `IDENTITY_VERIFIER_JWKS_JSON` | delegated verifier JWKS input | identity-service provider facade |
+| `SOORMA_AUTH_JWKS_JSON` | JWKS primary verifier source | all services using `soorma-service-common` middleware |
 | `SOORMA_AUTH_JWT_ISSUER` | explicit trusted issuer | all services using `soorma-service-common` middleware |
 | `SOORMA_AUTH_JWT_AUDIENCE` | JWT audience check | all services using `soorma-service-common` middleware |
-| `SOORMA_AUTH_JWT_PUBLIC_KEY_PEM` + `SOORMA_AUTH_JWT_PUBLIC_KEY_ID` | static fallback verifier key | all services using `soorma-service-common` middleware |
+| `SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON` | static fallback verifier keyring | all services using `soorma-service-common` middleware |
 | `SOORMA_AUTH_JWKS_CACHE_TTL_SECONDS` | discovery/JWKS cache TTL | all services using `soorma-service-common` middleware |
 
-## 8. Verify It Is Actually Running Asymmetric Mode
+## 9. Verify It Is Actually Running Asymmetric Mode
 
 ### 8.1 Verify discovery endpoints
 
@@ -143,15 +165,10 @@ PYTHONPATH=services/identity-service/src:libs/soorma-common/src:libs/soorma-serv
 
 ## 9. Known Local Compatibility Notes
 
-1. This is Unit 3 compatibility phase. Some paths still retain bounded legacy fallback behavior by design.
-2. `soorma dev` currently seeds symmetric defaults unless you override as shown above.
-3. If you change any bootstrap-affecting JWT config, drift protection can trigger `FAILED_DRIFT`; use `--stop --clean` before restart.
+1. Some bounded compatibility seams remain in persistence and migration surfaces; this primer only covers local JWT bootstrap behavior.
+2. If you change any bootstrap-affecting JWT config, drift protection can trigger `FAILED_DRIFT`; use `--stop --clean` before restart.
+3. Deleting `.soorma/identity/` is the intended local rotation path for the generated keypair.
 
 ## 10. Recommended Next CLI Improvement
 
-To fully eliminate manual exports, add a `soorma dev` asymmetric bootstrap mode that:
-
-1. generates local RSA keypair under `.soorma/keys/`
-2. writes escaped PEM vars to `.soorma/.env`
-3. sets RS256 + JWKS/discovery defaults automatically
-4. includes generated key fingerprints in bootstrap-state drift checks
+Manual exports are only needed when you want custom key material or a custom verifier source.

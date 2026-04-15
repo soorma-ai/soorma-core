@@ -94,19 +94,19 @@ class MemoryServiceClient:
         service_user_id: str,
     ) -> Dict[str, str]:
         """Build required identity headers for Memory Service requests."""
+        if self.auth_token:
+            return {"Authorization": f"Bearer {self.auth_token}"}
+
         if not service_tenant_id or not service_user_id:
             raise ValueError(
                 "service_tenant_id and service_user_id are required"
             )
 
-        headers = {
+        return {
             "X-Tenant-ID": self.platform_tenant_id,
             "X-Service-Tenant-ID": service_tenant_id,
             "X-User-ID": service_user_id,
         }
-        if self.auth_token:
-            headers["Authorization"] = f"Bearer {self.auth_token}"
-        return headers
     
     # Semantic Memory Methods
     

@@ -76,6 +76,7 @@ class TokenService:
             "sub": request.principal_id,
             "aud": "soorma-services",
             "jti": str(uuid4()),
+            "tenant_id": str(tenant_domain["platform_tenant_id"]),
             "platform_tenant_id": str(tenant_domain["platform_tenant_id"]),
             "principal_id": request.principal_id,
             "principal_type": str(principal["principal_type"]),

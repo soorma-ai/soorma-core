@@ -326,6 +326,14 @@ end-to-end without my confirmation at each gate."
 
 ---
 
+## Code Generation - Plan Approval
+**Timestamp**: 2026-04-15T05:36:08Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Accepted explicit approval for uow-cutover-hardening code-generation plan, marked Step 7 complete, and transitioned workflow into Code Generation Part 2 execution."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate passed
+
+---
+
 ## Functional Design - Planning Start
 **Timestamp**: 2026-04-04T06:32:01Z
 **User Input**: "approved"
@@ -411,6 +419,38 @@ end-to-end without my confirmation at each gate."
 **User Input**: "units look good"
 **AI Response**: "Accepted units generation approval and initiated end-of-Inception extension steps (QA test cases, JIRA tickets, PR checkpoint)."
 **Context**: INCEPTION - Units Generation approval gate passed
+
+---
+
+## Code Generation - Execution Complete
+**Timestamp**: 2026-04-15T05:55:02Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Completed Code Generation Part 2 for uow-cutover-hardening by enforcing JWT-only secured ingress with trusted admin-key exception, aligning SDK active bearer-auth behavior, adding canonical tenant_id issuance, switching soorma dev bootstrap to deterministic RS256/JWKS defaults, updating docs/changelogs, producing the code-generation summary artifact, and validating focused SDK/shared-auth/identity-service regression suites."
+**Context**: CONSTRUCTION - Code Generation Part 2 execution
+
+---
+
+## Code Generation - Approval Prompt
+**Timestamp**: 2026-04-15T05:55:02Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Prepared and presented the standardized Code Generation completion review gate for uow-cutover-hardening; awaiting explicit user choice to request changes or continue to Build and Test."
+**Context**: CONSTRUCTION - Code Generation approval gate
+
+---
+
+## Code Generation - Request Changes
+**Timestamp**: 2026-04-15T06:13:05Z
+**User Input**: "yes, lets improve this, we should generate on the fly (when does not exist) and persist in .soorma (where all other CLI generated artifacts live) and re-use that persisted value across different runs. also, I'm assuming, to rotate key developer will simply delete old key and soorma dev CLI will re-generate new key pair."
+**AI Response**: "Accepted the review-driven change request for uow-cutover-hardening and replaced the hardcoded dev private key in soorma dev with first-run RSA key generation persisted under .soorma/identity/, reuse across subsequent runs, explicit delete-to-rotate behavior, and updated SDK docs/changelog guidance."
+**Context**: CONSTRUCTION - Code Generation review correction
+
+---
+
+## Code Generation - Correction Review Prompt
+**Timestamp**: 2026-04-15T06:13:05Z
+**User Input**: "yes, lets improve this, we should generate on the fly (when does not exist) and persist in .soorma (where all other CLI generated artifacts live) and re-use that persisted value across different runs. also, I'm assuming, to rotate key developer will simply delete old key and soorma dev CLI will re-generate new key pair."
+**AI Response**: "Re-ran the focused CLI bootstrap regression after the correction pass, confirmed 29 passing tests, and prepared the renewed Code Generation review gate for uow-cutover-hardening."
+**Context**: CONSTRUCTION - Code Generation correction approval gate
 
 ---
 

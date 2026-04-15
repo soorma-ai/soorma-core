@@ -24,9 +24,17 @@ from starlette.responses import Response
 
 from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
-_BYPASS_PATHS = frozenset(["/health", "/docs", "/openapi.json", "/redoc"])
+_BYPASS_PATHS = frozenset([
+    "/health",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/v1/identity/.well-known/openid-configuration",
+    "/v1/identity/.well-known/jwks.json",
+])
 _AUTHORIZATION_HEADER = "authorization"
 _BEARER_PREFIX = "bearer "
+_IDENTITY_ADMIN_HEADER = "x-identity-admin-key"
 _JWT_SECRET_ENV = "SOORMA_AUTH_JWT_SECRET"
 _JWT_ISSUER_ENV = "SOORMA_AUTH_JWT_ISSUER"
 _JWT_AUDIENCE_ENV = "SOORMA_AUTH_JWT_AUDIENCE"
@@ -38,7 +46,9 @@ _JWKS_JSON_ENV = "SOORMA_AUTH_JWKS_JSON"
 _JWKS_CACHE_TTL_ENV = "SOORMA_AUTH_JWKS_CACHE_TTL_SECONDS"
 _OPENID_CONFIGURATION_URL_ENV = "SOORMA_AUTH_OPENID_CONFIGURATION_URL"
 _OPENID_CONFIGURATION_JSON_ENV = "SOORMA_AUTH_OPENID_CONFIGURATION_JSON"
-_ALLOWED_PRINCIPAL_TYPES = frozenset({"admin", "service", "agent", "user"})
+_ALLOWED_PRINCIPAL_TYPES = frozenset(
+    {"admin", "service", "agent", "user", "developer", "planner", "worker", "tool"}
+)
 _JWKS_CACHE_TIMEOUT_SECONDS = 2.0
 _DEFAULT_JWKS_CACHE_TTL_SECONDS = 300
 
@@ -151,6 +161,10 @@ class TenancyMiddleware(BaseHTTPMiddleware):
 
     Does NOT open or interact with a database connection (BR-U2-01).
     """
+
+    def _is_identity_admin_request(self, request: Request) -> bool:
+        """Return True for trusted admin-key identity-service control-plane requests."""
+        return bool(str(request.headers.get(_IDENTITY_ADMIN_HEADER) or "").strip())
 
     def _extract_bearer_token(self, request: Request) -> str | None:
         """Extract bearer token from Authorization header when present."""
@@ -379,7 +393,9 @@ class TenancyMiddleware(BaseHTTPMiddleware):
         else:
             raise HTTPException(status_code=401, detail="Invalid JWT")
 
-        platform_tenant_id = str(claims.get("platform_tenant_id") or "").strip()
+        platform_tenant_id = str(
+            claims.get("tenant_id") or claims.get("platform_tenant_id") or ""
+        ).strip()
         if not platform_tenant_id:
             raise HTTPException(status_code=401, detail="Invalid JWT")
 
@@ -461,7 +477,7 @@ class TenancyMiddleware(BaseHTTPMiddleware):
                 request.state.auth_source = "jwt"
             except HTTPException as exc:
                 return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-        else:
+        elif self._is_identity_admin_request(request):
             request.state.platform_tenant_id = (
                 request.headers.get("x-tenant-id") or DEFAULT_PLATFORM_TENANT_ID
             )
@@ -472,6 +488,8 @@ class TenancyMiddleware(BaseHTTPMiddleware):
             request.state.roles = []
             request.state.auth_issuer = None
             request.state.auth_audience = None
-            request.state.auth_source = "legacy-header"
+            request.state.auth_source = "trusted-admin-header"
+        else:
+            return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
 
         return await call_next(request)

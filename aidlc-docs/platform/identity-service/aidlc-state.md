@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation Plan Approval (uow-cutover-hardening)
+- **Current Stage**: CONSTRUCTION - Code Generation Review (uow-cutover-hardening)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation Plan Approval - uow-cutover-hardening
-- **Next Stage**: Code Generation - uow-cutover-hardening
-- **Status**: Code Generation Part 1 plan for uow-cutover-hardening is complete at construction/plans/uow-cutover-hardening-code-generation-plan.md and is awaiting explicit approval before Part 2 execution
+- **Current Stage**: Code Generation Review - uow-cutover-hardening
+- **Next Stage**: Build and Test (pending explicit approval for uow-cutover-hardening)
+- **Status**: Code Generation execution for uow-cutover-hardening is complete and awaiting explicit review-gate approval before Build and Test
 
 ## Units Generation Status
 - [x] Units Planning - Completed

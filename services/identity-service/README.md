@@ -84,23 +84,30 @@ Delegated issuance failures use typed safe API errors:
 | `SYNC_DATABASE_URL` | No | derived from `DATABASE_URL` | Sync connection used by Alembic/migrations when provided. |
 | `IS_PROD` | No | `false` | Disables docs endpoints when set to `true`. |
 | `IDENTITY_ADMIN_API_KEY` | Yes (for protected admin routes) | `dev-identity-admin` | Header key checked by admin authorization dependency (`X-Identity-Admin-Key`). |
-| `IDENTITY_SIGNING_KEY` | Yes for deterministic token signing | `dev-identity-signing-key` | Signing key used by local provider facade for issuing JWTs. |
-| `SOORMA_AUTH_JWT_SECRET` | Required for bearer JWT validation path | `dev-identity-signing-key` | Secret used by tenancy middleware when validating incoming bearer JWTs. |
+| `IDENTITY_SIGNING_ALGORITHM` | No | `RS256` when `soorma dev` bootstraps the stack | Explicit signing mode for provider facade. |
+| `IDENTITY_ACTIVE_SIGNING_KID` | No | `dev-rs256` | Active RSA signing key ID published in issued token headers. |
+| `IDENTITY_SIGNING_PRIVATE_KEYRING_JSON` | Required for RS256 issuance | derived from persisted `.soorma/identity/identity-signing-private.pem` | JSON keyring used by provider facade for signing. |
+| `IDENTITY_SIGNING_PUBLIC_KEYRING_JSON` | Required for RS256 JWKS publication | derived from persisted `.soorma/identity/identity-signing-public.pem` | JSON keyring used for JWKS publication and static verifier fallback. |
+| `IDENTITY_JWKS_PUBLICATION_JSON` | No | derived from persisted `.soorma/identity/identity-jwks.json` | Published JWKS payload for discovery and verifier alignment. |
+| `SOORMA_AUTH_JWKS_JSON` | Required for inline bearer JWT validation path | derived from persisted `.soorma/identity/identity-jwks.json` | JWKS used by tenancy middleware when validating incoming bearer JWTs. |
+| `SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON` | No | derived from persisted `.soorma/identity/identity-signing-public.pem` | Static RS256 verifier fallback for fail-closed validation. |
 | `SOORMA_AUTH_JWT_ISSUER` | No | `soorma-identity-service` | Optional issuer validation for incoming bearer JWTs. |
 | `SOORMA_AUTH_JWT_AUDIENCE` | No | `soorma-services` | Optional audience validation for incoming bearer JWTs. |
 
 Notes:
-- If a bearer JWT is sent but `SOORMA_AUTH_JWT_SECRET` is not configured, request validation fails closed with `401`.
-- During coexistence mode, legacy headers are used only when bearer JWT is absent.
+- If a bearer JWT is sent but JWKS/public-key verifier material is missing or invalid, request validation fails closed with `401`.
+- Public discovery routes stay bypassed, but secured non-public routes no longer fall back to legacy tenant headers when bearer JWT is absent.
 
 ## soorma dev Local Startup Behavior
 
-`soorma dev --start` generates a local compose stack and injects identity/JWT env vars with local defaults.
+`soorma dev --start` generates a local compose stack, creates RSA signing material under `.soorma/identity/` on first run, and injects RS256 signing keyrings plus inline JWKS/public-key verifier material derived from those persisted files.
 
 - Compose file: `.soorma/docker-compose.yml`
 - Generated env file: `.soorma/.env`
+- Persisted identity files: `.soorma/identity/identity-signing-private.pem`, `.soorma/identity/identity-signing-public.pem`, `.soorma/identity/identity-jwks.json`
 
 To override defaults, export variables before running `soorma dev --start`.
+To rotate the local dev keypair, delete the files under `.soorma/identity/` and run `soorma dev` again.
 
 ## Local Run
 

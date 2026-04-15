@@ -1,5 +1,6 @@
 """Tests for the dev command."""
 
+import json
 import os
 import subprocess
 import tempfile
@@ -15,12 +16,18 @@ from soorma.cli.commands.dev import (
     BOOTSTRAP_OUTCOME_CREATED,
     BOOTSTRAP_OUTCOME_FAILED_DRIFT,
     BOOTSTRAP_OUTCOME_REUSED,
+    DEV_IDENTITY_ACTIVE_SIGNING_KID,
+    DEV_IDENTITY_DIR_NAME,
+    DEV_IDENTITY_JWKS_FILE,
+    DEV_IDENTITY_PRIVATE_KEY_FILE,
+    DEV_IDENTITY_PUBLIC_KEY_FILE,
     SERVICE_DEFINITIONS,
     build_bootstrap_fingerprint,
     check_service_image,
     determine_bootstrap_outcome,
     find_soorma_core_root,
     get_soorma_dir,
+    resolve_dev_identity_bootstrap_config,
     write_bootstrap_state,
 )
 
@@ -248,6 +255,110 @@ class TestBootstrapState:
         assert '"fingerprint": "fp-abc"' in payload
         assert '"registry_port": "8081"' in payload
         assert '"updated_at": ' in payload
+
+
+class TestDevIdentityBootstrapConfig:
+    """Tests for deterministic RS256 local identity bootstrap config."""
+
+    def test_defaults_generate_persisted_rs256_keyrings_and_jwks(self, monkeypatch, tmp_path):
+        """Default bootstrap config should generate and persist RS256 material under .soorma."""
+        for env_var in (
+            "IDENTITY_SIGNING_ALGORITHM",
+            "IDENTITY_ACTIVE_SIGNING_KID",
+            "IDENTITY_SIGNING_PRIVATE_KEYRING_JSON",
+            "IDENTITY_SIGNING_PUBLIC_KEYRING_JSON",
+            "IDENTITY_JWKS_PUBLICATION_JSON",
+            "IDENTITY_VERIFIER_JWKS_JSON",
+            "SOORMA_AUTH_JWKS_JSON",
+            "SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON",
+        ):
+            monkeypatch.delenv(env_var, raising=False)
+
+        soorma_dir = tmp_path / ".soorma"
+        config = resolve_dev_identity_bootstrap_config(soorma_dir)
+
+        assert config["identity_signing_algorithm"] == "RS256"
+        assert config["identity_active_signing_kid"] == DEV_IDENTITY_ACTIVE_SIGNING_KID
+
+        identity_dir = soorma_dir / DEV_IDENTITY_DIR_NAME
+        assert (identity_dir / DEV_IDENTITY_PRIVATE_KEY_FILE).exists()
+        assert (identity_dir / DEV_IDENTITY_PUBLIC_KEY_FILE).exists()
+        assert (identity_dir / DEV_IDENTITY_JWKS_FILE).exists()
+
+        private_ring = json.loads(config["identity_signing_private_keyring_json"])
+        public_ring = json.loads(config["identity_signing_public_keyring_json"])
+        published_jwks = json.loads(config["identity_jwks_publication_json"])
+        verifier_jwks = json.loads(config["identity_verifier_jwks_json"])
+        auth_jwks = json.loads(config["soorma_auth_jwks_json"])
+        auth_public_keys = json.loads(config["soorma_auth_jwt_public_keys_json"])
+
+        assert DEV_IDENTITY_ACTIVE_SIGNING_KID in private_ring
+        assert DEV_IDENTITY_ACTIVE_SIGNING_KID in public_ring
+        assert private_ring[DEV_IDENTITY_ACTIVE_SIGNING_KID].startswith("-----BEGIN PRIVATE KEY-----")
+        assert public_ring[DEV_IDENTITY_ACTIVE_SIGNING_KID].startswith("-----BEGIN PUBLIC KEY-----")
+        assert published_jwks["keys"][0]["kid"] == DEV_IDENTITY_ACTIVE_SIGNING_KID
+        assert published_jwks == verifier_jwks == auth_jwks
+        assert auth_public_keys[DEV_IDENTITY_ACTIVE_SIGNING_KID].startswith("-----BEGIN PUBLIC KEY-----")
+
+        second_config = resolve_dev_identity_bootstrap_config(soorma_dir)
+        assert second_config == config
+
+    def test_missing_persisted_private_key_regenerates_material(self, monkeypatch, tmp_path):
+        """Deleting persisted key files should force regeneration on the next bootstrap."""
+        for env_var in (
+            "IDENTITY_SIGNING_ALGORITHM",
+            "IDENTITY_ACTIVE_SIGNING_KID",
+            "IDENTITY_SIGNING_PRIVATE_KEYRING_JSON",
+            "IDENTITY_SIGNING_PUBLIC_KEYRING_JSON",
+            "IDENTITY_JWKS_PUBLICATION_JSON",
+            "IDENTITY_VERIFIER_JWKS_JSON",
+            "SOORMA_AUTH_JWKS_JSON",
+            "SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON",
+        ):
+            monkeypatch.delenv(env_var, raising=False)
+
+        soorma_dir = tmp_path / ".soorma"
+        first_config = resolve_dev_identity_bootstrap_config(soorma_dir)
+
+        identity_dir = soorma_dir / DEV_IDENTITY_DIR_NAME
+        (identity_dir / DEV_IDENTITY_PRIVATE_KEY_FILE).unlink()
+        (identity_dir / DEV_IDENTITY_PUBLIC_KEY_FILE).unlink()
+        (identity_dir / DEV_IDENTITY_JWKS_FILE).unlink()
+
+        second_config = resolve_dev_identity_bootstrap_config(soorma_dir)
+
+        assert second_config["identity_active_signing_kid"] == DEV_IDENTITY_ACTIVE_SIGNING_KID
+        assert (
+            second_config["identity_signing_private_keyring_json"]
+            != first_config["identity_signing_private_keyring_json"]
+        )
+        assert (
+            second_config["identity_signing_public_keyring_json"]
+            != first_config["identity_signing_public_keyring_json"]
+        )
+
+    def test_explicit_overrides_take_precedence(self, monkeypatch, tmp_path):
+        """Explicit env overrides should win over deterministic defaults."""
+        monkeypatch.setenv("IDENTITY_SIGNING_ALGORITHM", "RS256")
+        monkeypatch.setenv("IDENTITY_ACTIVE_SIGNING_KID", "override-kid")
+        monkeypatch.setenv("IDENTITY_SIGNING_PRIVATE_KEYRING_JSON", '{"override-kid":"private"}')
+        monkeypatch.setenv("IDENTITY_SIGNING_PUBLIC_KEYRING_JSON", '{"override-kid":"public"}')
+        monkeypatch.setenv("IDENTITY_JWKS_PUBLICATION_JSON", '{"keys":[{"kid":"override-kid"}]}')
+        monkeypatch.setenv("IDENTITY_VERIFIER_JWKS_JSON", '{"keys":[{"kid":"verify-kid"}]}')
+        monkeypatch.setenv("SOORMA_AUTH_JWKS_JSON", '{"keys":[{"kid":"auth-kid"}]}')
+        monkeypatch.setenv("SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON", '{"override-kid":"auth-public"}')
+
+        soorma_dir = tmp_path / ".soorma"
+        config = resolve_dev_identity_bootstrap_config(soorma_dir)
+
+        assert config["identity_active_signing_kid"] == "override-kid"
+        assert json.loads(config["identity_signing_private_keyring_json"]) == {"override-kid": "private"}
+        assert json.loads(config["identity_signing_public_keyring_json"]) == {"override-kid": "public"}
+        assert json.loads(config["identity_jwks_publication_json"]) == {"keys": [{"kid": "override-kid"}]}
+        assert json.loads(config["identity_verifier_jwks_json"]) == {"keys": [{"kid": "verify-kid"}]}
+        assert json.loads(config["soorma_auth_jwks_json"]) == {"keys": [{"kid": "auth-kid"}]}
+        assert json.loads(config["soorma_auth_jwt_public_keys_json"]) == {"override-kid": "auth-public"}
+        assert not (soorma_dir / DEV_IDENTITY_DIR_NAME).exists()
 
 
 class TestDevCommand:

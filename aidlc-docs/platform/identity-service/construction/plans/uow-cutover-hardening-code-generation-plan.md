@@ -139,34 +139,34 @@
 - [x] Step 4 - Define implementation slices with STUB -> RED -> GREEN -> REFACTOR and explicit negative security coverage.
 - [x] Step 5 - Create this code-generation plan artifact for Unit 4.
 - [x] Step 6 - Log code-generation approval prompt in audit.md and request explicit plan approval.
-- [ ] Step 7 - Wait for explicit user approval of this plan before executing Part 2.
-- [ ] Step 8 - STUB phase (complete when 8A, 8B, 8C, and 8D are checked).
-- [ ] Step 8A - STUB (shared auth): introduce/adjust seams for JWT-only enforcement, canonical tenant extraction, and legacy denial reason codes.
-- [ ] Step 8B - STUB (SDK): prepare memory/tracker/event/identity client seams for JWT-only active behavior and header-path removal where required.
-- [ ] Step 8C - STUB (identity-service): prepare issuance authorization, delegated-trust finalization, and canonical tenant-contract migration seams.
-- [ ] Step 8D - STUB (docs/migration): prepare migration/doc update surfaces and summary artifact skeleton.
-- [ ] Step 9 - RED phase (complete when 9A, 9B, 9C, and 9D are checked).
-- [ ] Step 9A - RED (shared auth): failing tests for header-only denial, unknown `kid` deny, cache-expiry fail-closed behavior, and canonical tenant extraction.
-- [ ] Step 9B - RED (SDK): failing tests showing legacy header dependence is removed from active request behavior and JWT-only auth is projected correctly.
-- [ ] Step 9C - RED (identity-service): failing tests for self-issue-only baseline, override denial without authority, cross-tenant denial, delegated issuer allowlist/OIDC enforcement, and RS256-only production path.
-- [ ] Step 9D - RED (migration/docs): failing assertions or checks for canonical tenant naming, bootstrap defaults, and documented rollback/cutover expectations.
-- [ ] Step 10 - GREEN phase (complete when 10A, 10B, 10C, and 10D are checked).
-- [ ] Step 10A - GREEN (shared auth): implement JWT-only secured ingress behavior, typed deny reasons, and canonical tenant/user resolution.
-- [ ] Step 10B - GREEN (SDK): implement JWT-only active service-client behavior and align local bootstrap defaults with the approved hard-cutover contract.
-- [ ] Step 10C - GREEN (identity-service): implement caller-auth hardening, canonical tenant convergence, delegated OIDC/JWKS validation finalization, and RS256/JWKS-only production trust path.
-- [ ] Step 10D - GREEN (migration/docs): implement any required schema/data migration and update code-stage summary/docs/changelogs.
-- [ ] Step 11 - REFACTOR phase (complete when 11A, 11B, 11C, and 11D are checked).
-- [ ] Step 11A - REFACTOR (shared auth): simplify middleware/dependency precedence and preserve fail-closed guarantees.
-- [ ] Step 11B - REFACTOR (SDK): remove redundant compatibility code and tighten auth-token propagation boundaries.
-- [ ] Step 11C - REFACTOR (identity-service): simplify issuance and delegated-trust decision paths without weakening policy enforcement.
-- [ ] Step 11D - REFACTOR (migration/docs): remove stale terminology, dead compatibility notes, and redundant config guidance.
-- [ ] Step 12 - Execute focused test suites (complete when 12A, 12B, 12C, and 12D are checked).
-- [ ] Step 12A - Tests (shared auth): middleware, dependencies, and tenant-context suites.
-- [ ] Step 12B - Tests (SDK): memory/tracker/context/CLI suites for outbound auth behavior.
-- [ ] Step 12C - Tests (identity-service): token, delegated issuer, discovery, provider facade, and onboarding suites.
-- [ ] Step 12D - Tests (cross-cutover checks): explicit negative security cases and any migration verification added for this unit.
-- [ ] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/code/code-generation-summary.md.
-- [ ] Step 14 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
+- [x] Step 7 - Wait for explicit user approval of this plan before executing Part 2.
+- [x] Step 8 - STUB phase (complete when 8A, 8B, 8C, and 8D are checked).
+- [x] Step 8A - STUB (shared auth): introduce/adjust seams for JWT-only enforcement, canonical tenant extraction, and legacy denial reason codes.
+- [x] Step 8B - STUB (SDK): prepare memory/tracker/event/identity client seams for JWT-only active behavior and header-path removal where required.
+- [x] Step 8C - STUB (identity-service): prepare issuance authorization, delegated-trust finalization, and canonical tenant-contract migration seams.
+- [x] Step 8D - STUB (docs/migration): prepare migration/doc update surfaces and summary artifact skeleton.
+- [x] Step 9 - RED phase (complete when 9A, 9B, 9C, and 9D are checked).
+- [x] Step 9A - RED (shared auth): failing tests for header-only denial, unknown `kid` deny, cache-expiry fail-closed behavior, and canonical tenant extraction.
+- [x] Step 9B - RED (SDK): failing tests showing legacy header dependence is removed from active request behavior and JWT-only auth is projected correctly.
+- [x] Step 9C - RED (identity-service): failing tests for self-issue-only baseline, override denial without authority, cross-tenant denial, delegated issuer allowlist/OIDC enforcement, and RS256-only production path.
+- [x] Step 9D - RED (migration/docs): failing assertions or checks for canonical tenant naming, bootstrap defaults, and documented rollback/cutover expectations.
+- [x] Step 10 - GREEN phase (complete when 10A, 10B, 10C, and 10D are checked).
+- [x] Step 10A - GREEN (shared auth): implement JWT-only secured ingress behavior, typed deny reasons, and canonical tenant/user resolution.
+- [x] Step 10B - GREEN (SDK): implement JWT-only active service-client behavior and align local bootstrap defaults with the approved hard-cutover contract.
+- [x] Step 10C - GREEN (identity-service): implement caller-auth hardening, canonical tenant convergence, delegated OIDC/JWKS validation finalization, and RS256/JWKS-only production trust path.
+- [x] Step 10D - GREEN (migration/docs): implement any required schema/data migration and update code-stage summary/docs/changelogs.
+- [x] Step 11 - REFACTOR phase (complete when 11A, 11B, 11C, and 11D are checked).
+- [x] Step 11A - REFACTOR (shared auth): simplify middleware/dependency precedence and preserve fail-closed guarantees.
+- [x] Step 11B - REFACTOR (SDK): remove redundant compatibility code and tighten auth-token propagation boundaries.
+- [x] Step 11C - REFACTOR (identity-service): simplify issuance and delegated-trust decision paths without weakening policy enforcement.
+- [x] Step 11D - REFACTOR (migration/docs): remove stale terminology, dead compatibility notes, and redundant config guidance.
+- [x] Step 12 - Execute focused test suites (complete when 12A, 12B, 12C, and 12D are checked).
+- [x] Step 12A - Tests (shared auth): middleware, dependencies, and tenant-context suites.
+- [x] Step 12B - Tests (SDK): memory/tracker/context/CLI suites for outbound auth behavior.
+- [x] Step 12C - Tests (identity-service): token, delegated issuer, discovery, provider facade, and onboarding suites.
+- [x] Step 12D - Tests (cross-cutover checks): explicit negative security cases and any migration verification added for this unit.
+- [x] Step 13 - Produce code-stage summary artifact at aidlc-docs/platform/identity-service/construction/uow-cutover-hardening/code/code-generation-summary.md.
+- [x] Step 14 - Present Code Generation completion gate (Request Changes / Continue to Next Stage).
 - [ ] Step 15 - On approval, update aidlc-state.md and audit.md, then transition to Build and Test.
 
 ## Detailed Generation Sequence
