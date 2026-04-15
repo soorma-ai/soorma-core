@@ -256,6 +256,56 @@ class TestEventClientPublishResponseSchemaName:
             call_json = mock_http.post.call_args[1]["json"]
             assert "response_schema_name" not in call_json["event"]
 
+    @pytest.mark.asyncio
+    async def test_publish_includes_authorization_header_when_auth_token_present(self):
+        """EventClient should send bearer auth on publish when configured."""
+        client = EventClient(agent_id="test-client", auth_token="jwt-token")
+        with patch.object(client, "_ensure_http_client", new_callable=AsyncMock), patch.object(
+            client, "_http_client", create=True
+        ) as mock_http:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"id": "evt-123"}
+            mock_http.post = AsyncMock(return_value=mock_response)
+
+            await client.publish(
+                event_type="research.goal",
+                topic=EventTopic.ACTION_REQUESTS,
+                data={"description": "test"},
+            )
+
+            headers = mock_http.post.call_args.kwargs["headers"]
+            assert headers["Authorization"] == "Bearer jwt-token"
+            assert "X-Tenant-ID" not in headers
+
+
+class TestEventClientAuthHeaders:
+    """Tests for event-service auth header construction."""
+
+    @pytest.mark.asyncio
+    async def test_build_auth_headers_without_token_uses_platform_tenant_only(self, monkeypatch):
+        """Auth headers should be empty when no bearer token is configured."""
+        monkeypatch.delenv("SOORMA_AUTH_TOKEN", raising=False)
+        client = EventClient(agent_id="test-client", platform_tenant_id="tenant-platform")
+
+        headers = await client._build_auth_headers()
+
+        assert headers == {}
+
+    @pytest.mark.asyncio
+    async def test_build_auth_headers_with_token_includes_authorization(self):
+        """Auth headers should include Authorization when auth_token is set."""
+        client = EventClient(
+            agent_id="test-client",
+            platform_tenant_id="tenant-platform",
+            auth_token="jwt-token",
+        )
+
+        headers = await client._build_auth_headers()
+
+        assert "X-Tenant-ID" not in headers
+        assert headers["Authorization"] == "Bearer jwt-token"
+
 
 class TestBusClientResponseSchemaName:
     """BusClient.publish() passes response_schema_name through to EventClient."""

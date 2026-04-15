@@ -4,7 +4,10 @@ Client library for interacting with the Registry Service.
 import logging
 import os
 from typing import List, Optional
+
 import httpx
+
+from soorma.auth import AuthTokenProvider, resolve_auth_token
 from soorma_common import (
     EventDefinition,
     EventRegistrationRequest,
@@ -29,28 +32,20 @@ class RegistryClient:
     Client for interacting with the Registry Service API.
 
     Authentication Model:
-      Registry Service is scoped to the **developer's own tenant** — not to any
-      end-user session. The developer tenant UUID is read from the environment at
-      construction time and sent as X-Tenant-ID on every request.
-
-      Conceptual model (see ARCHITECTURE_PATTERNS.md Section 1):
-        - SOORMA_DEVELOPER_TENANT_ID  → X-Tenant-ID  (this client)
-        - User Tenant / User ID       → from event envelope (Memory, Tracker, Bus)
-
-    TODO: Replace env-var placeholder with API key / machine token once that
-    auth flow is implemented (v0.8.0+).
+        Registry uses bearer-token transport during JWT cutover. Server-side
+        platform tenant resolution comes from validated JWT claims rather than
+        legacy tenant headers projected by the SDK.
     """
 
-    def __init__(self, base_url: str, timeout: float = 30.0):
+    def __init__(
+            self,
+            base_url: str,
+            timeout: float = 30.0,
+            auth_token: Optional[str] = None,
+            auth_token_provider: Optional[AuthTokenProvider] = None,
+    ):
         """
         Initialize the registry client.
-
-        The developer tenant UUID is read from SOORMA_DEVELOPER_TENANT_ID at
-        construction time. This represents the developer's own identity for
-        startup registration — not the identity of any end-user or session.
-
-        Falls back to the sentinel UUID 00000000-... for local development when
-        the env var is not set.
 
         Args:
             base_url: Base URL of the registry service (e.g., "http://localhost:8081")
@@ -58,14 +53,24 @@ class RegistryClient:
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        # Developer deployment identity — placeholder until API key auth is available.
-        # SOORMA_DEVELOPER_TENANT_ID identifies whose agents/events are being registered.
-        _developer_tenant_id = os.getenv(
-            "SOORMA_DEVELOPER_TENANT_ID",
-            "00000000-0000-0000-0000-000000000000"
-        )
-        self._auth_headers = {"X-Tenant-ID": _developer_tenant_id}
+        self._auth_token = auth_token or os.getenv("SOORMA_AUTH_TOKEN")
+        self._auth_token_provider = auth_token_provider
         self._client = httpx.AsyncClient(timeout=timeout)
+
+    def set_auth_token(self, auth_token: Optional[str]) -> None:
+        """Inject or replace bearer token for registry-service requests."""
+        self._auth_token = auth_token
+
+    def set_auth_token_provider(self, auth_token_provider: Optional[AuthTokenProvider]) -> None:
+        """Inject or replace bearer token provider for registry-service requests."""
+        self._auth_token_provider = auth_token_provider
+
+    async def _build_auth_headers(self) -> dict[str, str]:
+        """Build auth headers for registry-service calls."""
+        token = await resolve_auth_token(self._auth_token, self._auth_token_provider)
+        if not token:
+            return {}
+        return {"Authorization": f"Bearer {token}"}
     
     async def close(self):
         """Close the HTTP client."""
@@ -100,7 +105,7 @@ class RegistryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/events",
             json=request_json,
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         logger.info(f"[RegistryClient] Event {event.event_name} registered successfully")
@@ -120,7 +125,7 @@ class RegistryClient:
         response = await self._client.get(
             f"{self.base_url}/v1/events",
             params={"event_name": event_name},
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         result = EventQueryResponse.model_validate(response.json())
@@ -141,7 +146,7 @@ class RegistryClient:
         response = await self._client.get(
             f"{self.base_url}/v1/events",
             params={"topic": topic},
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         result = EventQueryResponse.model_validate(response.json())
@@ -157,7 +162,7 @@ class RegistryClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/events",
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         result = EventQueryResponse.model_validate(response.json())
@@ -179,7 +184,7 @@ class RegistryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/agents",
             json=request.model_dump(by_alias=True),
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         return AgentRegistrationResponse.model_validate(response.json())
@@ -197,7 +202,7 @@ class RegistryClient:
         response = await self._client.get(
             f"{self.base_url}/v1/agents",
             params={"agent_id": agent_id},
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
@@ -231,7 +236,7 @@ class RegistryClient:
         response = await self._client.get(
             f"{self.base_url}/v1/agents",
             params=params,
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
@@ -252,7 +257,7 @@ class RegistryClient:
         """
         response = await self._client.delete(
             f"{self.base_url}/v1/agents/{agent_id}",
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         if response.status_code == 404:
             return False
@@ -274,7 +279,7 @@ class RegistryClient:
         """
         response = await self._client.put(
             f"{self.base_url}/v1/agents/{agent_id}/heartbeat",
-            headers=self._auth_headers
+            headers=await self._build_auth_headers()
         )
         return response.status_code == 200
 
@@ -294,7 +299,7 @@ class RegistryClient:
         response = await self._client.post(
             f"{self.base_url}/v1/schemas",
             json=request.model_dump(by_alias=True),
-            headers=self._auth_headers,
+            headers=await self._build_auth_headers(),
         )
         response.raise_for_status()
         return PayloadSchemaResponse.model_validate(response.json())
@@ -318,7 +323,7 @@ class RegistryClient:
             url = f"{self.base_url}/v1/schemas/{schema_name}/versions/{version}"
         else:
             url = f"{self.base_url}/v1/schemas/{schema_name}"
-        response = await self._client.get(url, headers=self._auth_headers)
+        response = await self._client.get(url, headers=await self._build_auth_headers())
         if response.status_code == 404:
             return None
         response.raise_for_status()
@@ -343,7 +348,7 @@ class RegistryClient:
         response = await self._client.get(
             f"{self.base_url}/v1/schemas",
             params=params,
-            headers=self._auth_headers,
+            headers=await self._build_auth_headers(),
         )
         response.raise_for_status()
         result = PayloadSchemaListResponse.model_validate(response.json())
@@ -398,7 +403,7 @@ class RegistryClient:
         response = await self._client.get(
             f"{self.base_url}/v1/agents/discover",
             params=params,
-            headers=self._auth_headers,
+            headers=await self._build_auth_headers(),
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())
@@ -437,7 +442,7 @@ class RegistryClient:
         # filter, so we apply it client-side below.
         response = await self._client.get(
             f"{self.base_url}/v1/agents/discover",
-            headers=self._auth_headers,
+            headers=await self._build_auth_headers(),
         )
         response.raise_for_status()
         result = AgentQueryResponse.model_validate(response.json())

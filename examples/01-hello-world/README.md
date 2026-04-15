@@ -4,6 +4,8 @@
 **Difficulty:** Beginner  
 **Prerequisites:** None
 
+This example now bootstraps a local identity domain under the shared `.soorma/` directory on first run, then uses a reusable token provider to request, cache, and refresh JWTs for later runs.
+
 ## What You'll Learn
 
 - How to create a Worker agent
@@ -65,6 +67,18 @@ async def handle_greeting(event: EventEnvelope, context: PlatformContext):
 The Client demonstrates how to make requests and receive responses:
 
 ```python
+# Build a reusable local token provider
+from examples.shared.auth import build_example_token_provider
+
+token_provider = build_example_token_provider("01-hello-world", __file__)
+await token_provider.get_token()
+
+client = EventClient(
+    agent_id="hello-client",
+    source="hello-client",
+    auth_token_provider=token_provider,
+)
+
 # Send request with response_event metadata
 await client.publish(
     event_type="greeting.requested",
@@ -83,6 +97,7 @@ async def on_response(event: EventEnvelope):
 ```
 
 **How it applies the concepts:**
+- `examples.shared.auth.build_example_token_provider()` returns a reusable trusted-proxy style provider that bootstraps once, persists the example principal under `.soorma/01-hello-world-identity.json`, and refreshes JWTs only when needed
 - `correlation_id` allows matching responses to requests
 - `response_event` and `response_topic` tell the Worker where/what to send back
 - Handler receives responses on the specified topic
@@ -101,6 +116,8 @@ soorma dev --build
 ```
 
 The `--build` flag builds services from your local code. **Leave this running** for all examples.
+
+The first example run also creates `.soorma/01-hello-world-identity.json` so subsequent runs reuse the same bootstrapped principal instead of onboarding a new tenant every time.
 
 ### Quick Start
 
@@ -132,6 +149,8 @@ cd examples/01-hello-world
 python worker.py
 ```
 
+The worker is configured with the shared example token provider, which injects bearer tokens into its registry, event-bus, memory, and tracker clients on demand.
+
 You should see:
 ```
 🚀 Hello Worker started!
@@ -145,6 +164,8 @@ You should see:
 ```bash
 python client.py Alice
 ```
+
+The client reuses the same persisted example principal, then lets the shared token provider request and cache bearer tokens for Event Service access.
 
 Expected output:
 ```
@@ -171,6 +192,7 @@ Expected output:
 ❌ **Not extracting `response_event` from request** - Let clients specify where responses go  
 ❌ **Not awaiting async calls** - All I/O operations must be `await`ed  
 ❌ **Using wrong topic** - Requests go to `ACTION_REQUESTS`, responses to `ACTION_RESULTS`  
+❌ **Skipping token provider setup** - secured local services now require the example to configure a bearer-token provider before connecting  
 
 ## Next Steps
 

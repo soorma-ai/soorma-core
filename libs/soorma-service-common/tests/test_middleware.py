@@ -179,6 +179,41 @@ class TestTenancyMiddlewareJwtCoexistence:
         assert response.json()["service_tenant_id"] == "tenant_jwt"
         assert response.json()["service_user_id"] == "user_jwt"
 
+    def test_jwt_without_service_aliases_uses_canonical_claim_fallback(self, make_test_app, monkeypatch):
+        """Canonical tenant_id and principal_id claims should populate service identity."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "tenant_id": "tenant_canonical",
+                "platform_tenant_id": "spt_jwt",
+                "principal_id": "principal-123",
+                "sub": "subject-456",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["platform_tenant_id"] == "tenant_canonical"
+        assert response.json()["service_tenant_id"] == "tenant_canonical"
+        assert response.json()["service_user_id"] == "principal-123"
+
     def test_jwt_with_mismatching_alias_headers_fails_closed(self, make_test_app, monkeypatch):
         """When JWT and alias headers disagree, middleware denies fail-closed."""
         import jwt

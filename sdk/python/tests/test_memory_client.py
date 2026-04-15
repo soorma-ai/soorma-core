@@ -59,12 +59,11 @@ async def test_store_knowledge(memory_client):
     assert result.metadata == {"source": "test"}
     memory_client._client.post.assert_called_once()
     call_headers = memory_client._client.post.call_args.kwargs["headers"]
-    assert call_headers["X-Tenant-ID"] == "platform-tenant-1"
-    assert call_headers["X-Service-Tenant-ID"] == "tenant-1"
-    assert call_headers["X-User-ID"] == "user-1"
+    assert call_headers == {}
 
 
-def test_build_identity_headers_includes_authorization_when_auth_token_present():
+@pytest.mark.asyncio
+async def test_build_identity_headers_includes_authorization_when_auth_token_present():
     """Client should use bearer auth as the active path when auth token is injected."""
     memory_client = MemoryServiceClient(
         base_url="http://localhost:8083",
@@ -72,7 +71,7 @@ def test_build_identity_headers_includes_authorization_when_auth_token_present()
         auth_token="jwt-token-value",
     )
 
-    headers = memory_client._build_identity_headers("tenant-1", "user-1")
+    headers = await memory_client._build_identity_headers("tenant-1", "user-1")
 
     assert headers["Authorization"] == "Bearer jwt-token-value"
     assert "X-Tenant-ID" not in headers
@@ -447,9 +446,7 @@ async def test_create_plan(memory_client):
     
     # Verify headers were sent
     call_args = memory_client._client.post.call_args
-    assert call_args.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
-    assert call_args.kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
-    assert call_args.kwargs["headers"]["X-User-ID"] == "user-1"
+    assert call_args.kwargs["headers"] == {}
     memory_client._client.post.assert_called_once()
 
 
@@ -491,9 +488,7 @@ async def test_delete_plan(memory_client):
     # Check second call was to delete plan
     second_call = memory_client._client.delete.call_args_list[1]
     assert "/plans/plan-123" in str(second_call)
-    assert second_call.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
-    assert second_call.kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
-    assert second_call.kwargs["headers"]["X-User-ID"] == "user-1"
+    assert second_call.kwargs["headers"] == {}
 
 
 @pytest.mark.asyncio
@@ -572,9 +567,7 @@ async def test_list_plans_requires_identity(memory_client):
     
     # Verify headers were sent
     call_args = memory_client._client.get.call_args
-    assert call_args.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
-    assert call_args.kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
-    assert call_args.kwargs["headers"]["X-User-ID"] == "user-1"
+    assert call_args.kwargs["headers"] == {}
     assert call_args.kwargs["params"]["status"] == "running"
     assert call_args.kwargs["params"]["limit"] == 10
     memory_client._client.get.assert_called_once()
@@ -604,9 +597,7 @@ async def test_list_plans(memory_client):
     # Verify service identity headers were sent
     call_args = memory_client._client.get.call_args
     headers = call_args.kwargs["headers"]
-    assert headers["X-Tenant-ID"] == "platform-tenant-1"
-    assert headers["X-Service-Tenant-ID"] == "tenant-1"
-    assert headers["X-User-ID"] == "user-1"
+    assert headers == {}
     memory_client._client.get.assert_called_once()
 
 

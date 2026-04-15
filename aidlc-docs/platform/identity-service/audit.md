@@ -26,6 +26,30 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Shim Removal Cleanup
+**Timestamp**: 2026-04-15T08:37:30Z
+**User Input**: "yes, remove the shim"
+**AI Response**: "Removed the example-local auth_bootstrap adapter from 01-hello-world, wired the example scripts directly to examples.shared.auth with explicit example-name binding, added a shared CLI entrypoint for start.sh priming, updated focused tests and docs, and verified the cleanup with 51 focused SDK/example tests passing."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Correction Execution Complete
+**Timestamp**: 2026-04-15T08:15:03Z
+**User Input**: "yes, request changes and implement corrections."
+**AI Response**: "Completed the second review-driven correction pass for uow-cutover-hardening by introducing SDK token-provider/factory support, removing active legacy tenant-header transport from event/registry/memory/tracker bearer-auth flows, propagating providers through PlatformContext and BaseAgent wiring, moving example bootstrap/token logic into examples/shared/auth.py, updating 01-hello-world to use the shared provider, and tightening shared middleware canonical service-identity fallback for bearer-only JWT requests."
+**Context**: CONSTRUCTION - Code Generation review correction
+
+---
+
+## Code Generation - Correction Review Prompt
+**Timestamp**: 2026-04-15T08:15:03Z
+**User Input**: "yes, request changes and implement corrections."
+**AI Response**: "Ran focused validation for the correction pass and confirmed 83 SDK/example tests passed plus 30 shared middleware tests passed. Updated code-generation summary/state artifacts and prepared the renewed standardized Code Generation completion gate for uow-cutover-hardening."
+**Context**: CONSTRUCTION - Code Generation correction approval gate
+
+---
+
 ## Functional Design - Q5 Clarification
 **Timestamp**: 2026-04-04T22:11:41Z
 **User Input**: "help me understand q5 and its options"
@@ -619,6 +643,33 @@ end-to-end without my confirmation at each gate."
 **User Input**: "all questions answered"
 **AI Response**: "Generated finalized requirements document at aidlc-docs/platform/identity-service/inception/requirements/requirements.md, updated extension configuration/status in aidlc-state.md, and presented Requirements Analysis approval gate."
 **Context**: INCEPTION - Requirements Analysis completion prompt
+
+---
+
+## Code Generation - Review Findings
+**Timestamp**: 2026-04-15T07:29:49Z
+**User Input**: "need to think through this change. some initial observations / comments:
+- why are we still using `X-Tenant-ID` in the headers for memory / registry / event clients? they should now only have Authorization header, correct? that's what this unit's hardening scope was, only JWT Auth header, no more legacy tenant headers. only identity service APIs should need api key and x-tenant-id headers.
+- i'm assuming this new #file:auth_bootstrap.py is that \"trusted proxy\" that can request JWT token. BUT, i see that this is ALSO doing bootstrap of a tenant and its principal. this needs to be re-usable for all examples, so maybe move this into a shared folder (or parent example directory) and re-use this for each of the example as needed (passing example name as parameter instead of hardcoding to 01-hello-world)
+- i think we need better design pattern for token management with client libraries. they should take a factory method as parameter (e.g. during initialization) and that factory method should be responsible for requesting / caching / refreshing JWT token from tenant's \"trusted proxy\". in the examples, our auth_bootstrap utility can provide this factory method. in production applications, real trusted proxy implementatin will provide this method as library."
+**AI Response**: "Reviewed the latest hello-world JWT integration against the approved hardening scope and architecture patterns. Confirmed three substantive issues: EventClient still emits legacy X-Tenant-ID alongside Authorization, registry auth was conflated with end-user JWT bootstrap and developer-tenant identity, and the new auth_bootstrap helper is too example-specific and mixes one-time provisioning with runtime token acquisition. Recommended a correction pass that keeps Tier-2 services on bearer-only auth, isolates registry/developer auth from client-user JWT flows, and introduces a reusable token-provider abstraction for examples and production trusted-proxy libraries."
+**Context**: CONSTRUCTION - Code Generation review assessment
+
+---
+
+## Code Generation - Request Changes
+**Timestamp**: 2026-04-15T06:35:10Z
+**User Input**: "ok, now our example agents and driver clients are not able to talk to soorma-core infrastructure services ... which is expected because we require JWT auth in API calls. how do they request JWT token and inject into their clients to use that token? lets start with the very first example 01-hello-world"
+**AI Response**: "Accepted the review-driven change request for uow-cutover-hardening and implemented hello-world JWT bootstrap and propagation by adding bearer-auth support to SDK event and registry clients, propagating SOORMA_AUTH_TOKEN through PlatformContext and BaseAgent wiring, creating a persisted example onboarding/token helper under .soorma, updating the hello-world worker/client/startup/docs, and adding focused regression coverage for the new transport and bootstrap behavior."
+**Context**: CONSTRUCTION - Code Generation review correction
+
+---
+
+## Code Generation - Correction Review Prompt
+**Timestamp**: 2026-04-15T06:35:10Z
+**User Input**: "ok, now our example agents and driver clients are not able to talk to soorma-core infrastructure services ... which is expected because we require JWT auth in API calls. how do they request JWT token and inject into their clients to use that token? lets start with the very first example 01-hello-world"
+**AI Response**: "Re-ran the focused SDK regression suite for JWT propagation and example bootstrap behavior, confirmed 40 passing tests, updated the code-generation summary and state, and prepared the renewed Code Generation review gate for uow-cutover-hardening."
+**Context**: CONSTRUCTION - Code Generation correction approval gate
 
 ---
 

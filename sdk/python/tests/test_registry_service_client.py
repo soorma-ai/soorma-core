@@ -66,3 +66,14 @@ async def test_register_event_structured():
     assert event_payload["topic"] == "action-requests"
     assert event_payload["payloadSchema"]["type"] == "object"
     assert event_payload["responseSchema"]["type"] == "object"
+
+
+@pytest.mark.asyncio
+async def test_registry_client_includes_bearer_auth_when_configured():
+    """RegistryClient should include Authorization header when auth_token is set."""
+    client = RegistryClient(base_url="http://test-registry", auth_token="jwt-token")
+
+    headers = await client._build_auth_headers()
+
+    assert headers["Authorization"] == "Bearer jwt-token"
+    assert "X-Tenant-ID" not in headers

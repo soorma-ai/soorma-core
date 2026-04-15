@@ -399,8 +399,17 @@ class TenancyMiddleware(BaseHTTPMiddleware):
         if not platform_tenant_id:
             raise HTTPException(status_code=401, detail="Invalid JWT")
 
-        service_tenant = claims.get("service_tenant_id")
-        service_user = claims.get("service_user_id")
+        service_tenant = (
+            claims.get("service_tenant_id")
+            or claims.get("tenant_id")
+            or claims.get("platform_tenant_id")
+        )
+        service_user = (
+            claims.get("service_user_id")
+            or claims.get("user_id")
+            or claims.get("principal_id")
+            or claims.get("sub")
+        )
         service_tenant_id = str(service_tenant).strip() if service_tenant is not None else None
         service_user_id = str(service_user).strip() if service_user is not None else None
 
