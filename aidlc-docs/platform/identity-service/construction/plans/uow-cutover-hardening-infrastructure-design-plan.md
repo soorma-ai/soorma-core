@@ -13,9 +13,9 @@
 - [x] Step 1 - Analyze functional and NFR design artifacts for infrastructure mapping needs
 - [x] Step 2 - Draft infrastructure design plan and question set
 - [x] Step 3 - Store this infrastructure design plan file
-- [ ] Step 4 - Collect and validate all answers
-- [ ] Step 5 - Generate infrastructure design artifacts
-- [ ] Step 6 - Present Infrastructure Design completion gate
+- [x] Step 4 - Collect and validate all answers
+- [x] Step 5 - Generate infrastructure design artifacts
+- [x] Step 6 - Present Infrastructure Design completion gate
 
 ## Infrastructure Design Clarifying Questions
 Please answer each question by filling the [Answer]: field.
@@ -33,7 +33,7 @@ D) Single-step in-place deployment for all environments
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: D)
 
 ## Question 2
 For JWKS/key material resilience, where should the last-known-good verifier cache live in production?
@@ -48,7 +48,7 @@ D) Filesystem-based local cache persisted across restarts
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A)
 
 ## Question 3
 For key rotation propagation (<=5 minutes objective), which invalidation transport should infrastructure assume?
@@ -63,7 +63,7 @@ D) External webhook callbacks as primary invalidation source
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A)
 
 ## Question 4
 For delegated issuer OIDC/JWKS trust retrieval, what network boundary policy should be modeled?
@@ -78,7 +78,7 @@ D) No outbound retrieval in runtime; keys are manually synced offline
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A)
 
 ## Question 5
 For security telemetry and alerting signals in this unit, what infrastructure sink should be the baseline?
@@ -93,7 +93,7 @@ D) Local service logs only, no centralized sink
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A)
 
 ## Question 6
 For rollback readiness, where should the deterministic rollback runbook execution controls be anchored?
@@ -108,7 +108,7 @@ D) On-call operator discretion only with no formalized gate
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B)
 
 ## Question 7
 For local `soorma dev` asymmetric bootstrap, what infrastructure artifact boundary should be explicit?
@@ -123,7 +123,7 @@ D) Continue HS256 default locally and defer asymmetric bootstrap
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A)
 
 ## Approval
 After filling all answers, reply in chat:
