@@ -218,6 +218,114 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Session Continuity - Resume Request
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed workflow context from aidlc-state.md, reloaded mandatory common rules, architecture patterns, enabled extension rules, and prior inception and unit-design artifacts required for construction-stage continuity."
+**Context**: Session continuity - construction resume intake
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-cutover-hardening)."
+**Context**: CONSTRUCTION - per-unit initialization (session reload)
+
+---
+
+## PR Checkpoint - Approval Confirmation
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Accepted explicit Construction Design PR approval confirmation for uow-cutover-hardening, updated checkpoint state to APPROVED, and unlocked Code Generation planning."
+**Context**: CONSTRUCTION - Team collaboration review gate passed
+
+---
+
+## Code Generation - Planning Start
+**Timestamp**: 2026-04-15T05:27:06Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Started Code Generation Part 1 planning for uow-cutover-hardening using approved inception artifacts, unit design artifacts, migration checklist, current implementation touchpoints, and extension constraints."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Approval Prompt
+**Timestamp**: 2026-04-15T05:27:06Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Generated the detailed code-generation plan at aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-code-generation-plan.md, updated plan-level checkboxes through Step 6, and prepared the explicit approval gate for Part 1."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate
+
+---
+
 ## Functional Design - Planning Start
 **Timestamp**: 2026-04-04T06:32:01Z
 **User Input**: "approved"
