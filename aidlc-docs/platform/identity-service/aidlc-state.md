@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Code Generation Completion Gate (uow-sdk-jwt-integration)
+- **Current Stage**: CONSTRUCTION - Design PR Gate Branch Confirmation (uow-cutover-hardening)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Code Generation Completion Gate - uow-sdk-jwt-integration
-- **Next Stage**: Build and Test
-- **Status**: Code Generation Part 2 completed for uow-sdk-jwt-integration; awaiting explicit completion-gate decision
+- **Current Stage**: Construction Design PR Gate Pending Approval - uow-cutover-hardening
+- **Next Stage**: Code Generation - uow-cutover-hardening
+- **Status**: Construction design PR checkpoint instructions were generated for uow-cutover-hardening on branch dev; awaiting team review and explicit PR approval confirmation before code generation
 
 ## Units Generation Status
 - [x] Units Planning - Completed
@@ -88,6 +88,13 @@
 - **Instructions**: aidlc-docs/platform/identity-service/construction/plans/uow-sdk-jwt-integration-design-pr-checkpoint-instructions.md
 - **Created**: 2026-04-13T22:00:02Z
 - **Approved**: 2026-04-13T22:05:49Z
+
+### Construction Design PR Gate - uow-cutover-hardening
+- **Status**: PENDING
+- **Branch**: dev
+- **Instructions**: aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-design-pr-checkpoint-instructions.md
+- **Created**: 2026-04-15T05:16:43Z
+- **Approved**: —
 
 ## Reverse Engineering Status
 - [x] Reverse Engineering - Completed on 2026-04-01T00:42:04Z
