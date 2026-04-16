@@ -2,7 +2,6 @@
 Client library for interacting with the Registry Service.
 """
 import logging
-import os
 from typing import List, Optional
 
 import httpx
@@ -32,9 +31,8 @@ class RegistryClient:
     Client for interacting with the Registry Service API.
 
     Authentication Model:
-        Registry is still on the Tier-1 developer-tenant header contract.
-        Bearer auth can be used when explicitly configured, but the default
-        SDK fallback remains `X-Tenant-ID` using the developer tenant.
+        Registry uses explicit bearer-token transport. Callers must provide
+        either an auth token or an auth token provider.
     """
 
     def __init__(
@@ -43,7 +41,6 @@ class RegistryClient:
             timeout: float = 30.0,
             auth_token: Optional[str] = None,
             auth_token_provider: Optional[AuthTokenProvider] = None,
-            developer_tenant_id: Optional[str] = None,
     ):
         """
         Initialize the registry client.
@@ -54,9 +51,8 @@ class RegistryClient:
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self._auth_token = os.getenv("SOORMA_AUTH_TOKEN") if auth_token is None else auth_token
+        self._auth_token = auth_token
         self._auth_token_provider = auth_token_provider
-        self._developer_tenant_id = developer_tenant_id or os.getenv("SOORMA_DEVELOPER_TENANT_ID")
         self._client = httpx.AsyncClient(timeout=timeout)
 
     def set_auth_token(self, auth_token: Optional[str]) -> None:
@@ -72,8 +68,6 @@ class RegistryClient:
         token = await resolve_auth_token(self._auth_token, self._auth_token_provider)
         if token:
             return {"Authorization": f"Bearer {token}"}
-        if self._developer_tenant_id:
-            return {"X-Tenant-ID": self._developer_tenant_id}
         return {}
     
     async def close(self):
@@ -250,8 +244,7 @@ class RegistryClient:
         """
         Deregister (delete) an agent from the registry.
 
-        Must include auth headers (X-Tenant-ID) — the agent belongs to the
-        developer tenant and can only be removed within that tenant scope.
+        Must include explicit auth — registry requests are JWT-authenticated.
 
         Args:
             agent_id: ID of the agent to deregister

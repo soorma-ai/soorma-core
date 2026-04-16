@@ -12,9 +12,11 @@ All tests in this package use:
 
 import asyncio
 import os
+import time
 from typing import Generator
 
 import httpx
+import jwt
 import pytest
 from sqlalchemy import create_engine as _sync_create_engine, text
 
@@ -27,7 +29,7 @@ _TEST_DB = "/tmp/soorma_integration_test.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{_TEST_DB}")
 os.environ.setdefault("SYNC_DATABASE_URL", f"sqlite:///{_TEST_DB}")
 os.environ.setdefault("IS_LOCAL_TESTING", "true")
-os.environ.setdefault("SOORMA_DEVELOPER_TENANT_ID", "00000000-0000-0000-0000-000000000001")
+os.environ.setdefault("SOORMA_AUTH_JWT_SECRET", "sdk-integration-secret")
 
 # ---------------------------------------------------------------------------
 # 2. Service imports — safe now that env vars are in place
@@ -125,24 +127,38 @@ def make_registry_client(tenant_id: str = TENANT_A) -> RegistryClient:
     """Return a RegistryClient that drives the in-process Registry via ASGITransport.
 
     The underlying httpx.AsyncClient is replaced with one that routes all
-    requests directly through the ASGI app (no TCP socket needed).  The
-    auth headers are also overridden so each test can choose its tenant.
+    requests directly through the ASGI app (no TCP socket needed). Requests
+    authenticate using an explicit per-test JWT provider.
 
     Args:
-        tenant_id: X-Tenant-ID header value to use for all requests.
+        tenant_id: Platform tenant ID to encode into the JWT claims.
 
     Returns:
         Configured RegistryClient ready for async use.
     """
+    def auth_token_provider() -> str:
+        now = int(time.time())
+        return jwt.encode(
+            {
+                "tenant_id": tenant_id,
+                "platform_tenant_id": tenant_id,
+                "principal_id": f"principal-{tenant_id}",
+                "principal_type": "developer",
+                "roles": ["developer"],
+                "sub": f"principal-{tenant_id}",
+                "exp": now + 300,
+            },
+            os.environ["SOORMA_AUTH_JWT_SECRET"],
+            algorithm="HS256",
+        )
+
     client = RegistryClient(
         base_url="http://test-registry",
-        auth_token="",
-        developer_tenant_id=tenant_id,
+        auth_token_provider=auth_token_provider,
     )
     # Swap the default HTTP transport for an in-process ASGI transport
     client._client = httpx.AsyncClient(
         transport=httpx.ASGITransport(app=_registry_app),
         base_url="http://test-registry",
-        headers={"X-Identity-Admin-Key": "dev-identity-admin"},
     )
     return client
