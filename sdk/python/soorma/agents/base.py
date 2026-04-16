@@ -39,7 +39,7 @@ from uuid import uuid4
 
 from soorma_common.events import EventEnvelope, EventTopic
 
-from ..auth import AuthTokenProvider
+from ..auth import AuthTokenProvider, build_optional_auth_kwargs
 from ..context import PlatformContext
 from ..events import EventClient
 
@@ -399,8 +399,7 @@ class Agent(ABC):
             event_service_url=self.config.event_service_url,
             agent_id=self.agent_id,
             source=self.name,
-            auth_token=auth_token,
-            auth_token_provider=auth_token_provider,
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
         )
         
         # Register our event handlers with the EventClient
@@ -468,19 +467,16 @@ class Agent(ABC):
         self._context = PlatformContext(
             registry=RegistryClient(
                 base_url=self.config.registry_url,
-                auth_token=auth_token,
-                auth_token_provider=auth_token_provider,
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
             ),
             memory=MemoryClient(
                 base_url=self.config.memory_url,
-                auth_token=auth_token,
-                auth_token_provider=auth_token_provider,
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
             ),
             bus=BusClient(event_client=event_client),
             tracker=TrackerClient(
                 base_url=self.config.tracker_url,
-                auth_token=auth_token,
-                auth_token_provider=auth_token_provider,
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
             ),
             auth_token=auth_token,
             auth_token_provider=auth_token_provider,

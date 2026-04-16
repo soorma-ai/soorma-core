@@ -134,12 +134,15 @@ def make_registry_client(tenant_id: str = TENANT_A) -> RegistryClient:
     Returns:
         Configured RegistryClient ready for async use.
     """
-    client = RegistryClient(base_url="http://test-registry")
+    client = RegistryClient(
+        base_url="http://test-registry",
+        auth_token="",
+        developer_tenant_id=tenant_id,
+    )
     # Swap the default HTTP transport for an in-process ASGI transport
     client._client = httpx.AsyncClient(
         transport=httpx.ASGITransport(app=_registry_app),
         base_url="http://test-registry",
+        headers={"X-Identity-Admin-Key": "dev-identity-admin"},
     )
-    # Ensure the correct tenant header is sent on every request
-    client._auth_headers = {"X-Tenant-ID": tenant_id}
     return client

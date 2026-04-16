@@ -77,3 +77,18 @@ async def test_registry_client_includes_bearer_auth_when_configured():
 
     assert headers["Authorization"] == "Bearer jwt-token"
     assert "X-Tenant-ID" not in headers
+
+
+@pytest.mark.asyncio
+async def test_registry_client_falls_back_to_developer_tenant_header():
+    """RegistryClient should use the developer tenant header when bearer auth is absent."""
+    client = RegistryClient(
+        base_url="http://test-registry",
+        auth_token="",
+        developer_tenant_id="00000000-0000-0000-0000-000000000123",
+    )
+
+    headers = await client._build_auth_headers()
+
+    assert headers["X-Tenant-ID"] == "00000000-0000-0000-0000-000000000123"
+    assert "Authorization" not in headers

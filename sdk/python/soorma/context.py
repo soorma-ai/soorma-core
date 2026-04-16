@@ -43,7 +43,7 @@ from soorma_common.tracker import (
     PlanProgress,
     TaskExecution,
 )
-from .auth import AuthTokenProvider
+from .auth import AuthTokenProvider, build_optional_auth_kwargs
 from .events import EventClient
 from .memory import MemoryServiceClient
 from .registry.client import RegistryClient
@@ -123,8 +123,7 @@ class MemoryClient:
         if self._client is None:
             self._client = MemoryServiceClient(
                 base_url=self.base_url,
-                auth_token=self.auth_token,
-                auth_token_provider=self.auth_token_provider,
+                **build_optional_auth_kwargs(self.auth_token, self.auth_token_provider),
             )
             # Test connection
             try:
@@ -1791,14 +1790,13 @@ class PlatformContext:
         """
         self.registry = registry or RegistryClient(
             base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"),
-            auth_token=auth_token,
-            auth_token_provider=auth_token_provider,
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
         )
-        self.memory = memory or MemoryClient(auth_token=auth_token, auth_token_provider=auth_token_provider)
+        self.memory = memory or MemoryClient(**build_optional_auth_kwargs(auth_token, auth_token_provider))
         self.bus = bus or BusClient(
-            event_client=EventClient(auth_token=auth_token, auth_token_provider=auth_token_provider)
+            event_client=EventClient(**build_optional_auth_kwargs(auth_token, auth_token_provider))
         )
-        self.tracker = tracker or TrackerClient(auth_token=auth_token, auth_token_provider=auth_token_provider)
+        self.tracker = tracker or TrackerClient(**build_optional_auth_kwargs(auth_token, auth_token_provider))
         self.identity = identity or IdentityClient()
         # Toolkit reuses registry client - no async with needed when using context.toolkit!
         self.toolkit = toolkit or EventToolkit(registry_url=self.registry.base_url, registry_client=self.registry)

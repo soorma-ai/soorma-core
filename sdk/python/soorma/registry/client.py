@@ -32,9 +32,9 @@ class RegistryClient:
     Client for interacting with the Registry Service API.
 
     Authentication Model:
-        Registry uses bearer-token transport during JWT cutover. Server-side
-        platform tenant resolution comes from validated JWT claims rather than
-        legacy tenant headers projected by the SDK.
+        Registry is still on the Tier-1 developer-tenant header contract.
+        Bearer auth can be used when explicitly configured, but the default
+        SDK fallback remains `X-Tenant-ID` using the developer tenant.
     """
 
     def __init__(
@@ -43,6 +43,7 @@ class RegistryClient:
             timeout: float = 30.0,
             auth_token: Optional[str] = None,
             auth_token_provider: Optional[AuthTokenProvider] = None,
+            developer_tenant_id: Optional[str] = None,
     ):
         """
         Initialize the registry client.
@@ -53,8 +54,9 @@ class RegistryClient:
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self._auth_token = auth_token or os.getenv("SOORMA_AUTH_TOKEN")
+        self._auth_token = os.getenv("SOORMA_AUTH_TOKEN") if auth_token is None else auth_token
         self._auth_token_provider = auth_token_provider
+        self._developer_tenant_id = developer_tenant_id or os.getenv("SOORMA_DEVELOPER_TENANT_ID")
         self._client = httpx.AsyncClient(timeout=timeout)
 
     def set_auth_token(self, auth_token: Optional[str]) -> None:
@@ -68,9 +70,11 @@ class RegistryClient:
     async def _build_auth_headers(self) -> dict[str, str]:
         """Build auth headers for registry-service calls."""
         token = await resolve_auth_token(self._auth_token, self._auth_token_provider)
-        if not token:
-            return {}
-        return {"Authorization": f"Bearer {token}"}
+        if token:
+            return {"Authorization": f"Bearer {token}"}
+        if self._developer_tenant_id:
+            return {"X-Tenant-ID": self._developer_tenant_id}
+        return {}
     
     async def close(self):
         """Close the HTTP client."""
