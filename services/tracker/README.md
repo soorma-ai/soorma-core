@@ -29,17 +29,21 @@ The Tracker Service provides real-time workflow observability by subscribing to 
 
 All data is isolated by tenant using PostgreSQL Row-Level Security (RLS):
 
-### Required Headers
+### Required Authentication
 
-Every API request **MUST** include authentication headers:
+Every secured API request **MUST** include a bearer token:
 
-- `X-Tenant-ID`: Tenant identifier (UUID format)
-- `X-User-ID`: User identifier (UUID format)
+- `Authorization: Bearer <jwt>`
+
+The validated JWT must carry:
+
+- `platform_tenant_id` or `tenant_id`
+- `service_tenant_id`
+- `service_user_id` or `user_id`
 
 **Example:**
 ```bash
-curl -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
-     -H "X-User-ID: 660e8400-e29b-41d4-a716-446655440001" \
+curl -H "Authorization: Bearer $SOORMA_TOKEN" \
      http://localhost:8084/v1/tracker/plans/plan-123
 ```
 
@@ -57,7 +61,7 @@ USING (
 ```
 
 **How it works:**
-1. Service extracts `X-Tenant-ID` and `X-User-ID` from request headers
+1. Shared middleware validates the bearer token and projects tenant/user identity into request state
 2. Sets PostgreSQL session variables: `SET app.tenant_id = '...'`
 3. All queries automatically filtered by RLS policies
 4. Users can ONLY see their own data within their tenant
@@ -65,18 +69,17 @@ USING (
 **Tenant Isolation Guarantees:**
 - No cross-tenant data leakage (enforced at database level)
 - No cross-user data visibility within same tenant
-- Failed authentication → 403 Forbidden
-- Missing headers → 403 Forbidden
+- Failed authentication → 401 Unauthorized
+- Missing bearer token → 401 Unauthorized
 
 API requests MUST include:
-- `X-Tenant-ID` header
-- `X-User-ID` header
+- `Authorization: Bearer <jwt>`
 
 ## API Endpoints
 
 ### Query APIs (Read-Only)
 
-All endpoints require `X-Tenant-ID` and `X-User-ID` headers.
+All secured endpoints require `Authorization: Bearer <jwt>`.
 
 #### Get Plan Progress
 
@@ -86,8 +89,7 @@ Returns plan execution summary with task completion counts.
 
 **Example Request:**
 ```bash
-curl -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
-     -H "X-User-ID: 660e8400-e29b-41d4-a716-446655440001" \
+curl -H "Authorization: Bearer $SOORMA_TOKEN" \
      http://localhost:8084/v1/tracker/plans/plan-abc123
 ```
 
@@ -106,7 +108,7 @@ curl -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
 ```
 
 **Error Responses:**
-- `403 Forbidden` - Missing or invalid tenant/user headers
+- `401 Unauthorized` - Missing or invalid bearer token
 - `404 Not Found` - Plan does not exist or not accessible to this user
 - `500 Internal Server Error` - Database or service error
 
@@ -118,8 +120,7 @@ Returns execution history for all tasks in the plan.
 
 **Example Request:**
 ```bash
-curl -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
-     -H "X-User-ID: 660e8400-e29b-41d4-a716-446655440001" \
+curl -H "Authorization: Bearer $SOORMA_TOKEN" \
      http://localhost:8084/v1/tracker/plans/plan-abc123/tasks
 ```
 
@@ -157,8 +158,7 @@ Returns chronological event timeline for distributed trace reconstruction.
 
 **Example Request:**
 ```bash
-curl -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
-     -H "X-User-ID: 660e8400-e29b-41d4-a716-446655440001" \
+curl -H "Authorization: Bearer $SOORMA_TOKEN" \
      http://localhost:8084/v1/tracker/plans/plan-abc123/timeline
 ```
 
@@ -413,13 +413,12 @@ If you must call the API directly (e.g., from non-Python clients):
 
 ```bash
 # Get plan progress
-curl -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
-     -H "X-User-ID: 660e8400-e29b-41d4-a716-446655440001" \
+curl -H "Authorization: Bearer $SOORMA_TOKEN" \
      http://localhost:8084/v1/tracker/plans/plan-abc123
 ```
 
 **Important:** You MUST manually manage:
-- Authentication headers on every request
+- Bearer authentication on every secured request
 - Error handling (403, 404, 500)
 - Response parsing and validation
 - Retry logic for transient failures

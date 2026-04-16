@@ -1,8 +1,9 @@
-"""Tenancy middleware with JWT-first coexistence behavior.
+"""Tenancy middleware for bearer-authenticated request identity.
 
 Resolution order:
-1. If bearer JWT exists, validate and use JWT claims for request identity.
-2. If JWT is absent, fall back to legacy tenancy headers.
+1. If bearer JWT exists, validate it and project claims into request state.
+2. If a trusted identity admin header exists, allow the documented admin bypass.
+3. Otherwise fail closed with missing-bearer-token authentication errors.
 
 Middleware never calls set_config; DB session/RLS activation remains in
 dependency utilities.
@@ -71,10 +72,10 @@ def configure_platform_tenant_openapi(
     scheme_name: str = "PlatformTenantHeader",
     header_name: str = "X-Tenant-ID",
 ) -> None:
-    """Expose platform tenant header in Swagger/OpenAPI for all operations.
+    """Expose platform tenant header in Swagger/OpenAPI for compatibility flows.
 
-    This adds an API key security scheme backed by ``X-Tenant-ID`` and applies it
-    globally so Swagger UI can send the header via the Authorize dialog.
+    This helper documents ``X-Tenant-ID`` for trusted-admin or compatibility
+    scenarios. Normal secured service traffic authenticates with bearer tokens.
     """
 
     original_openapi = app.openapi

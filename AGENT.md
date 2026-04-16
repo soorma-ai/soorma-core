@@ -201,9 +201,10 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 
 **Non-Negotiable Rules:**
 
-1. **Service Clients:** MUST include authentication headers (`X-Tenant-ID`, `X-User-ID`) on **every request**
-   - No exceptions. Missing headers = 403 Forbidden by design.
-   - Service client methods validate headers are present
+1. **Service Clients:** MUST authenticate every secured request explicitly
+   - Use `Authorization: Bearer <token>` for Registry, Memory, Tracker, and Event service traffic.
+   - Identity-service admin routes may additionally use explicit admin headers where documented.
+   - Missing bearer auth on secured routes fails closed.
 2. **Wrappers:** MUST extract tenant/user context **automatically** from event envelope
    - Agent handlers NEVER pass tenant_id/user_id manually
    - Wrapper methods have NO tenant_id/user_id parameters
@@ -213,8 +214,8 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
    - Service middleware MUST set PostgreSQL session variables (`app.tenant_id`, `app.user_id`)
    - Queries execute within RLS policy scope—automatic enforcement, no manual filtering
 
-**Current State:** v0.7.x uses custom headers (development-only pattern)  
-**Future State:** v0.8.0+ will use JWT/API Keys (production-ready)  
+**Current State:** v0.8.x uses bearer JWTs for secured service traffic, with explicit admin-header exceptions only where documented.  
+**Future State:** v0.9.0+ may add selective API-key flows, but bearer-authenticated runtime traffic remains the baseline.  
 
 **Implementation Details & Migration Roadmap:** See [docs/ARCHITECTURE_PATTERNS.md Section 1](docs/ARCHITECTURE_PATTERNS.md#1-authentication--authorization-current-implementation)
 
