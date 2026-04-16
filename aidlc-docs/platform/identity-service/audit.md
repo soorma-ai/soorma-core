@@ -72,6 +72,17 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Full Example Auth Provider Migration
+**Timestamp**: 2026-04-16T06:42:28Z
+**User Input**: "awsome, now go through all examples and update eachl examples to also support same auth pattern as 01-hello-world example:
+ - start.sh bootstraps tenant for example
+ - driver client uses auth provider in event client initialization
+ - agents and tool suse auth provider in agent / tool initialization"
+**AI Response**: "Migrated the remaining example suite to the shared auth-provider pattern. Added bootstrap priming to all example start scripts, updated internal driver/event clients to use bootstrap-derived tenant and admin-principal identifiers with auth_token_provider injection, wired workers/planners/tools and direct memory/tracker/context utility paths to the shared provider, updated the A2A gateway's internal Registry/Event/Worker paths while leaving its external HTTP demo client unchanged, corrected stale copied metadata in 08-worker-basic/start.sh, and validated the final migrated research-advisor and 13-a2a-gateway Python files with py_compile."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
 ## Code Generation - Shim Removal Cleanup
 **Timestamp**: 2026-04-15T08:37:30Z
 **User Input**: "yes, remove the shim"

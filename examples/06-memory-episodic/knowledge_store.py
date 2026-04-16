@@ -8,12 +8,25 @@ This agent:
 """
 
 import asyncio
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "06-memory-episodic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Define event types
@@ -36,6 +49,7 @@ knowledge_store = Worker(
     capabilities=["knowledge-storage", "fact-extraction"],
     events_consumed=[KNOWLEDGE_STORE_EVENT],
     events_produced=[CHAT_RESPONSE_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

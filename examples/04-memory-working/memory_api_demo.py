@@ -6,19 +6,31 @@ how WorkflowState simplifies the code.
 """
 
 import asyncio
+import sys
 import uuid
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma.memory.client import MemoryServiceClient
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "04-memory-working"
 
 
 async def demonstrate_raw_memory_api():
     """Show raw Memory API operations for working memory."""
-    # For example purposes - use hardcoded tenant/user IDs
-    # In production, these come from authentication/event context
-    tenant_id = "00000000-0000-0000-0000-000000000000"
-    user_id = "00000000-0000-0000-0000-000000000000"
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     
     # Create Memory client directly (not through PlatformContext)
-    memory = MemoryServiceClient()
+    memory = MemoryServiceClient(auth_token_provider=token_provider)
     plan_id = str(uuid.uuid4())
     
     print(f"📋 Plan ID: {plan_id}\n")

@@ -1,6 +1,13 @@
 import asyncio
 import os
 import json
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
@@ -12,9 +19,10 @@ from events import (
 )
 from capabilities import VALIDATION_CAPABILITY
 from llm_utils import get_llm_model, has_any_llm_key
+from examples.shared.auth import build_example_token_provider
 
-# Constants
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+EXAMPLE_NAME = "research-advisor"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 # Create the Validator Worker
 validator = Worker(
@@ -22,7 +30,8 @@ validator = Worker(
     description="Validates content against source material",
     capabilities=[VALIDATION_CAPABILITY],
     events_consumed=[VALIDATION_REQUEST_EVENT],
-    events_produced=[VALIDATION_RESULT_EVENT]
+    events_produced=[VALIDATION_RESULT_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 @validator.on_startup
@@ -53,7 +62,7 @@ async def handle_validation_request(event: EventEnvelope, context: PlatformConte
     # Log validation request to episodic memory
     await context.memory.log_interaction(
         agent_id="fact-checker",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="user",
         content=f"Validation request - Draft: {draft_text[:100]}... Source: {source_text[:100]}...",
         metadata={"event_id": event.id}
@@ -100,7 +109,7 @@ async def handle_validation_request(event: EventEnvelope, context: PlatformConte
     status = "APPROVED" if is_valid else "REJECTED"
     await context.memory.log_interaction(
         agent_id="fact-checker",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="assistant",
         content=f"Validation {status}: {critique}",
         metadata={"event_id": event.id, "is_valid": is_valid}

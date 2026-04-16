@@ -1,12 +1,20 @@
 import asyncio
 import json
 import os
+import sys
+from pathlib import Path
 from typing import Dict, Any, List
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Planner
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
 from litellm import completion
 from llm_utils import get_llm_model
+from examples.shared.auth import build_example_token_provider
 
 from events import (
     GOAL_EVENT, FULFILLED_EVENT,
@@ -17,8 +25,8 @@ from events import (
     DraftResultPayload, ValidationResultPayload
 )
 
-# Constants
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+EXAMPLE_NAME = "research-advisor"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 """
 Memory Usage Pattern in Planner:
@@ -46,7 +54,8 @@ planner = Planner(
     description="Orchestrates workflows using autonomous LLM reasoning over discovered events",
     capabilities=["orchestration"],
     events_consumed=[GOAL_EVENT],
-    events_produced=[FULFILLED_EVENT]
+    events_produced=[FULFILLED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 @planner.on_startup
@@ -174,6 +183,8 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
     """Execute the LLM's decision - either publish an event or complete the workflow."""
     action = decision.get("action")
     reasoning = decision.get("reasoning", "No reasoning provided")
+    workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
+    current_user_id = workflow_state.get("user_id")
     
     print(f"   🤖 LLM Decision: {action}")
     print(f"   🤖 Reasoning: {reasoning}")
@@ -181,7 +192,7 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
     # Log decision to episodic memory
     await context.memory.log_interaction(
         agent_id="agent-orchestrator",
-        user_id=DEFAULT_USER_ID,
+        user_id=current_user_id,
         role="assistant",
         content=f"Decision: {action}. Reasoning: {reasoning}",
         metadata={"plan_id": plan_id, "action": action}
@@ -196,7 +207,6 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
         payload['plan_id'] = plan_id
         
         # Track action in working memory
-        workflow_state = await context.memory.retrieve("workflow_state", plan_id=plan_id) or {}
         action_history = workflow_state.get('action_history', [])
         action_history.append(event_name)
         workflow_state['action_history'] = action_history
@@ -245,7 +255,7 @@ async def execute_decision(decision: dict, available_events: list, context: Plat
         # Log completion to episodic memory
         await context.memory.log_interaction(
             agent_id="agent-orchestrator",
-            user_id=DEFAULT_USER_ID,
+            user_id=current_user_id,
             role="assistant",
             content=f"Workflow completed. Result: {result[:200]}...",
             metadata={"plan_id": plan_id, "status": "completed"}
@@ -310,7 +320,7 @@ async def handle_goal(event: EventEnvelope, context: PlatformContext):
     # Log goal to episodic memory
     await context.memory.log_interaction(
         agent_id="agent-orchestrator",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="user",
         content=data.get('goal', 'Unknown goal'),
         metadata={"plan_id": plan_id, "event_type": "goal"}
@@ -347,6 +357,7 @@ async def handle_goal(event: EventEnvelope, context: PlatformContext):
     
     # Store the current goal
     workflow_state['current_goal'] = data.get('goal')
+    workflow_state['user_id'] = event.user_id
     await context.memory.store("workflow_state", workflow_state, plan_id=plan_id)
     
     # Build trigger context based on whether this is a continuation
@@ -445,7 +456,7 @@ async def handle_validation_result(event: EventEnvelope, context: PlatformContex
     # Log validation result to episodic memory
     await context.memory.log_interaction(
         agent_id="agent-orchestrator",
-        user_id=DEFAULT_USER_ID,
+        user_id=workflow_state.get("user_id"),
         role="system",
         content=f"Validation {'PASSED' if is_valid else 'FAILED'}. Critique: {critique}",
         metadata={"plan_id": plan_id, "is_valid": is_valid}

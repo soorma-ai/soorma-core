@@ -8,11 +8,24 @@ Demonstrates Stage 4 Phase 1 Planner patterns:
 - GoalContext wrapper for clean goal access
 """
 
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma.agents.planner import Planner, GoalContext
 from soorma.plan_context import PlanContext
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma_common.state import StateConfig, StateAction, StateTransition
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "09-planner-basic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Create Planner agent
@@ -20,6 +33,7 @@ planner = Planner(
     name="basic-planner",
     description="Basic planner demonstrating state machine orchestration",
     capabilities=["planning", "research_orchestration"],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

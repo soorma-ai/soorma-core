@@ -5,6 +5,13 @@ A stateless tool that stores knowledge in semantic memory.
 Uses event-driven choreography pattern.
 """
 
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Tool
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
@@ -14,6 +21,12 @@ from events import (
     KnowledgeStoredPayload,
 )
 
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "05-memory-semantic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
+
 
 # Create a Tool for storing knowledge
 tool = Tool(
@@ -22,6 +35,7 @@ tool = Tool(
     capabilities=["knowledge-storage"],
     events_consumed=[STORE_KNOWLEDGE_EVENT],
     events_produced=[KNOWLEDGE_STORED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

@@ -10,13 +10,32 @@ Usage:
 
 import asyncio
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "04-memory-working"
 
 
 async def start_workflow():
     """Start the demo workflow."""
-    client = EventClient(agent_id="workflow-client", source="workflow-client")
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
+    client = EventClient(
+        agent_id="workflow-client",
+        source="workflow-client",
+        auth_token_provider=token_provider,
+    )
     
     # Event to signal workflow completion
     workflow_completed = asyncio.Event()
@@ -44,8 +63,8 @@ async def start_workflow():
             response_event="workflow.completed",
             topic=EventTopic.ACTION_REQUESTS,
             data={"workflow_name": "blog-post-demo"},
-            tenant_id="00000000-0000-0000-0000-000000000000",
-            user_id="00000000-0000-0000-0000-000000000001",
+            tenant_id=tenant_id,
+            user_id=user_id,
         )
         
         print("   Waiting for workflow completion...")

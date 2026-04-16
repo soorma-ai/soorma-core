@@ -9,15 +9,24 @@ Usage:
 
 import asyncio
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import PlatformContext
 
-# Hardcoded user ID (matches client.py)
-USER_ID = "00000000-0000-0000-0000-000000000001"
+from examples.shared.auth import build_example_token_provider
+
+EXAMPLE_NAME = "06-memory-episodic"
 
 
 async def view_history(user_id: str, limit: int = 20):
     """View recent conversation history for a user."""
-    context = PlatformContext()
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    context = PlatformContext(auth_token_provider=token_provider)
     print(f"📜 Conversation History for {user_id}\n")
     print("=" * 60)
     
@@ -74,6 +83,8 @@ async def view_history(user_id: str, limit: int = 20):
 if __name__ == "__main__":
     # Optional: specify limit as argument
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else 20
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    USER_ID = asyncio.run(token_provider.get_bootstrap_admin_principal_id())
     
     print(f"Viewing history for user: {USER_ID}\n")
     asyncio.run(view_history(USER_ID, limit))

@@ -8,12 +8,18 @@ Each ticket will be analyzed by the LLM to determine the best routing.
 
 import sys
 import asyncio
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma_common.events import EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
-USER_ID = "00000000-0000-0000-0000-000000000001"
+EXAMPLE_NAME = "03-events-structured"
 
 
 SAMPLE_TICKETS = [
@@ -52,11 +58,16 @@ SAMPLE_TICKETS = [
 
 async def create_ticket(description: str, priority: str = "normal", customer: str = "Test User"):
     """Create a support ticket and wait for routing."""
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     
     # Create EventClient
     client = EventClient(
         agent_id="ticket-client",
         source="ticket-client",
+        auth_token_provider=token_provider,
     )
     
     # Generate ticket ID
@@ -87,8 +98,8 @@ async def create_ticket(description: str, priority: str = "normal", customer: st
             "description": description,
             "priority": priority,
         },
-        tenant_id=TENANT_ID,
-        user_id=USER_ID,
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
     print("   ✓ Ticket created!")
     print()

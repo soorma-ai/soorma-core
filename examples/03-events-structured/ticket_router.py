@@ -16,7 +16,14 @@ The generic LLM utilities are in llm_utils.py (future SDK).
 """
 
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
@@ -33,6 +40,12 @@ from llm_utils import (
     validate_and_publish,
 )
 
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "03-events-structured"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
+
 
 # Create worker for ticket routing
 # SDK will automatically register these event definitions
@@ -48,6 +61,7 @@ worker = Worker(
         MANAGEMENT_ESCALATION_EVENT,
         AUTOCLOSE_EVENT,
     ],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

@@ -1,5 +1,12 @@
 import asyncio
 import os
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
@@ -10,9 +17,10 @@ from events import (
 )
 from capabilities import ADVICE_CAPABILITY
 from llm_utils import get_llm_model, has_any_llm_key
+from examples.shared.auth import build_example_token_provider
 
-# Constants
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+EXAMPLE_NAME = "research-advisor"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 # Create the Advisor Worker
 advisor = Worker(
@@ -20,7 +28,8 @@ advisor = Worker(
     description="Drafts responses based on research",
     capabilities=[ADVICE_CAPABILITY],
     events_consumed=[ADVICE_REQUEST_EVENT],
-    events_produced=[ADVICE_RESULT_EVENT]
+    events_produced=[ADVICE_RESULT_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 @advisor.on_startup
@@ -52,7 +61,7 @@ async def handle_advice_request(event: EventEnvelope, context: PlatformContext):
     # Log drafting request to episodic memory
     await context.memory.log_interaction(
         agent_id="content-drafter",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="user",
         content=f"Draft request for: {user_request} (context: {research_context[:100]}...)",
         metadata={"event_id": event.id, "has_critique": bool(critique)}
@@ -95,7 +104,7 @@ async def handle_advice_request(event: EventEnvelope, context: PlatformContext):
     # Log drafted content to episodic memory
     await context.memory.log_interaction(
         agent_id="content-drafter",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="assistant",
         content=f"Draft created: {draft_text[:200]}...",
         metadata={"event_id": event.id, "draft_length": len(draft_text)}

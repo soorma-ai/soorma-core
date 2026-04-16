@@ -10,15 +10,24 @@ Usage:
 
 import asyncio
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import PlatformContext
 
-# Hardcoded user ID (matches client.py)
-USER_ID = "00000000-0000-0000-0000-000000000001"
+from examples.shared.auth import build_example_token_provider
+
+EXAMPLE_NAME = "06-memory-episodic"
 
 
 async def search_memory(query: str, user_id: str, limit: int = 5):
     """Search episodic memory for relevant past interactions."""
-    context = PlatformContext()
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    context = PlatformContext(auth_token_provider=token_provider)
     print(f"🔍 Searching memory for: '{query}' (user: {user_id})\n")
     
     try:
@@ -80,6 +89,8 @@ if __name__ == "__main__":
     
     query = sys.argv[1]
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else 5
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    USER_ID = asyncio.run(token_provider.get_bootstrap_admin_principal_id())
     
     print(f"Searching for user: {USER_ID}\n")
     asyncio.run(search_memory(query, USER_ID, limit))

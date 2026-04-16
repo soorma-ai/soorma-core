@@ -6,6 +6,8 @@ set -e
 trap 'echo; echo "Shutting down..."; kill $(jobs -p) 2>/dev/null; wait 2>/dev/null' EXIT INT TERM
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+EXAMPLE_NAME="13-a2a-gateway"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$SCRIPT_DIR"
 
 # Activate the repo-root venv if present
@@ -13,6 +15,10 @@ if [[ -f "../../.venv/bin/activate" ]]; then
     # shellcheck disable=SC1091
     source "../../.venv/bin/activate"
 fi
+
+echo "🔐 Priming shared example token provider..."
+(cd "$REPO_ROOT" && python -m examples.shared.auth "$EXAMPLE_NAME" "$SCRIPT_DIR") > /dev/null
+echo "✓ Example identity bootstrap and token cache ready"
 
 echo "============================================================"
 echo " Example 13 — A2A Gateway"

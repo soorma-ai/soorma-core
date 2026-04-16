@@ -6,10 +6,23 @@ In a real system, this would call external APIs, databases, etc.
 """
 
 import asyncio
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "09-planner-basic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Define event types
@@ -33,6 +46,7 @@ worker = Worker(
     capabilities=["research"],
     events_consumed=[RESEARCH_TASK_EVENT],
     events_produced=[RESEARCH_COMPLETE_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

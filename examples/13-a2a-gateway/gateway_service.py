@@ -21,8 +21,14 @@ SDK patterns shown:
 import asyncio
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, Dict, Optional
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 import uvicorn
 from dotenv import load_dotenv
@@ -40,6 +46,7 @@ from soorma_common.a2a import (
     A2ATaskStatus,
 )
 from soorma_common.events import EventEnvelope, EventTopic
+from examples.shared.auth import build_example_token_provider
 
 load_dotenv()
 
@@ -54,8 +61,10 @@ GATEWAY_URL: str = os.environ.get("GATEWAY_URL", "http://localhost:9000")
 GATEWAY_PORT: int = int(os.environ.get("GATEWAY_PORT", "9000"))
 EVENT_SERVICE_URL: str = os.environ.get("SOORMA_EVENT_SERVICE_URL", "http://localhost:8082")
 REGISTRY_URL: str = os.environ.get("SOORMA_REGISTRY_URL", "http://localhost:8081")
-TENANT_ID: str = os.environ.get("SOORMA_DEVELOPER_TENANT_ID", "00000000-0000-0000-0000-000000000001")
-USER_ID: str = os.environ.get("SOORMA_USER_ID", "00000000-0000-0000-0000-000000000002")
+EXAMPLE_NAME = "13-a2a-gateway"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
+TENANT_ID: Optional[str] = None
+USER_ID: Optional[str] = None
 
 # The internal event type the research agent consumes
 INTERNAL_EVENT_TYPE: str = "research.requested"
@@ -86,13 +95,17 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     Args:
         app: The FastAPI application instance (unused; required by FastAPI API).
     """
-    global _event_client
+    global _event_client, TENANT_ID, USER_ID
+
+    await EXAMPLE_TOKEN_PROVIDER.get_token()
+    TENANT_ID = await EXAMPLE_TOKEN_PROVIDER.get_platform_tenant_id()
+    USER_ID = await EXAMPLE_TOKEN_PROVIDER.get_bootstrap_admin_principal_id()
 
     _event_client = EventClient(
         event_service_url=EVENT_SERVICE_URL,
         agent_id="a2a-gateway",
         source="a2a-gateway",
-        tenant_id=TENANT_ID,
+        auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
     )
 
     # Catch-all handler: resolve any pending Future whose correlation_id matches
@@ -152,7 +165,10 @@ async def get_agent_card() -> Dict[str, Any]:
     Raises:
         HTTPException: 503 if no agents are registered yet.
     """
-    registry = RegistryClient(base_url=REGISTRY_URL)
+    registry = RegistryClient(
+        base_url=REGISTRY_URL,
+        auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
+    )
     # No filter — discover every agent currently registered in this tenant
     agents = await registry.query_agents()
     if not agents:

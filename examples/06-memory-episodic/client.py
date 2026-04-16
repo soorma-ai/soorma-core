@@ -13,31 +13,43 @@ import asyncio
 import sys
 import uuid
 from datetime import datetime
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma.memory import MemoryServiceClient
 from soorma_common.events import EventEnvelope, EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-# Hardcoded user ID (in production, this comes from authentication)
-USER_ID = "00000000-0000-0000-0000-000000000001"
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
+EXAMPLE_NAME = "06-memory-episodic"
 
 
 class ChatbotClient:
     """Interactive chatbot client."""
     
     def __init__(self):
+        self.token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
         self.client = EventClient(
             agent_id="chatbot-client",
-            source="chatbot-client"
+            source="chatbot-client",
+            auth_token_provider=self.token_provider,
         )
-        self.memory_client = MemoryServiceClient()
+        self.memory_client = MemoryServiceClient(auth_token_provider=self.token_provider)
         self.session_id = None
         self.waiting_for_response = False
         self.response_event = None
+        self.tenant_id = None
+        self.user_id = None
     
     async def connect(self):
         """Connect to the platform."""
+        await self.token_provider.get_token()
+        self.tenant_id = await self.token_provider.get_platform_tenant_id()
+        self.user_id = await self.token_provider.get_bootstrap_admin_principal_id()
         await self.client.connect(topics=[EventTopic.ACTION_RESULTS])
         
         # Register response handler
@@ -73,7 +85,7 @@ class ChatbotClient:
         print("\n" + "=" * 60)
         print("🤖 Intelligent Chatbot with Multi-Memory Architecture")
         print("=" * 60)
-        print(f"User ID: {USER_ID}")
+        print(f"User ID: {self.user_id or 'unknown'}")
         print("\nThis chatbot demonstrates:")
         print("  • Episodic Memory: Remembers all interactions")
         print("  • Semantic Memory: Stores and retrieves knowledge")
@@ -110,8 +122,8 @@ class ChatbotClient:
                 plan_id=plan_id,
                 goal_event="chat.conversation",
                 goal_data={"type": "episodic_memory_demo"},
-                service_tenant_id=TENANT_ID,
-                service_user_id=USER_ID
+                service_tenant_id=self.tenant_id,
+                service_user_id=self.user_id
             )
             return True
         except Exception as e:
@@ -123,8 +135,8 @@ class ChatbotClient:
         try:
             print("\n📋 Fetching plans from working memory...")
             plans = await self.memory_client.list_plans(
-                service_tenant_id=TENANT_ID,
-                service_user_id=USER_ID,
+                service_tenant_id=self.tenant_id,
+                service_user_id=self.user_id,
                 limit=20
             )
             return plans if plans else []
@@ -215,8 +227,8 @@ class ChatbotClient:
                             # Delete plan (includes working memory cleanup)
                             await self.memory_client.delete_plan(
                                 plan_id=plan_id,
-                                service_tenant_id=TENANT_ID,
-                                service_user_id=USER_ID
+                                service_tenant_id=self.tenant_id,
+                                service_user_id=self.user_id
                             )
                             print(f"✅ Plan deleted: {plan_id}\n")
                             # If we deleted the current session, need to switch
@@ -247,8 +259,8 @@ class ChatbotClient:
                 "session_id": self.session_id,
                 "message": message
             },
-            tenant_id=TENANT_ID,
-            user_id=USER_ID,
+            tenant_id=self.tenant_id,
+            user_id=self.user_id,
         )
         
         # Wait for response with timeout

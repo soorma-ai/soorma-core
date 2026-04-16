@@ -5,13 +5,25 @@ Generates a concise report from analysis results.
 """
 
 import logging
+import sys
+from pathlib import Path
 from typing import Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.task_context import TaskContext
 
 from events import REPORT_REQUESTED_EVENT, REPORT_RESPONDED_EVENT
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "10-choreography-basic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 worker = Worker(
@@ -20,6 +32,7 @@ worker = Worker(
     capabilities=["feedback_reporting"],
     events_consumed=[REPORT_REQUESTED_EVENT],
     events_produced=[REPORT_RESPONDED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 
