@@ -1,6 +1,6 @@
 # 01-hello-tool - Calculator Tool Example
 
-**Concepts:** Tool pattern, stateless operations, synchronous request/response, multiple handlers  
+**Concepts:** Tool pattern, stateless operations, synchronous request/response, multiple handlers, auth token provider  
 **Difficulty:** Beginner  
 **Time:** 5 minutes  
 **Prerequisites:** None (first example!)
@@ -17,6 +17,7 @@ This example demonstrates the **Tool pattern** - the simplest agent model in Soo
 - ✅ **InvocationContext** - Lightweight request context
 - ✅ **Caller-specified routing** - Response goes where caller wants
 - ✅ **Error handling** - Graceful handling of edge cases (division by zero)
+- ✅ **Shared auth provider** - Example bootstraps once and injects bearer-token management into both tool and client
 
 ---
 
@@ -44,6 +45,19 @@ This example demonstrates the **Tool pattern** - the simplest agent model in Soo
 - ❌ Long-running operations
 
 *(For those cases, use [Worker pattern](../02-hello-worker) instead)*
+
+---
+
+## Auth Provider Concept
+
+This example talks to secured Soorma infrastructure services, so the calculator tool and the driver client both need bearer tokens.
+
+Rather than hard-coding tenant IDs or building `Authorization` headers manually, the example uses the shared auth-provider pattern:
+
+1. `start.sh` primes `examples.shared.auth` for `01-hello-tool`.
+2. The shared helper bootstraps the example tenant once and persists metadata under `.soorma/01-hello-tool-identity.json`.
+3. The same provider requests, caches, and refreshes JWTs when the client or tool needs them.
+4. The provider is injected through `auth_token_provider=...` so the example code stays focused on Tool behavior rather than auth plumbing.
 
 ---
 
@@ -87,16 +101,22 @@ This example demonstrates the **Tool pattern** - the simplest agent model in Soo
 ### 1. Tool Creation
 
 ```python
+from examples.shared.auth import build_example_token_provider
+
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider("01-hello-tool", __file__)
+
 calculator = Tool(
     name="calculator-tool",
     description="Performs basic arithmetic operations",
     default_response_event="calculator.completed",  # Fallback
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 ```
 
 **Key points:**
 - `default_response_event` is optional - used if caller doesn't specify one
 - Tool has no state - just configuration
+- The auth token provider is injected once at initialization so the tool can connect to secured infrastructure without embedding auth logic into handlers
 
 ### 2. Handler Registration
 
@@ -191,6 +211,39 @@ async def handle_add(request: InvocationContext, context: PlatformContext):
 - `correlation_id` - For distributed tracing
 - `tenant_id`, `user_id` - Auth context
 
+### 6. Client Auth + Event Publish
+
+```python
+from examples.shared.auth import build_example_token_provider
+
+token_provider = build_example_token_provider("01-hello-tool", __file__)
+await token_provider.get_token()
+tenant_id = await token_provider.get_platform_tenant_id()
+user_id = await token_provider.get_bootstrap_admin_principal_id()
+
+client = EventClient(
+    agent_id="calculator-client",
+    source="calculator-client",
+    auth_token_provider=token_provider,
+)
+
+await client.publish(
+    event_type=event_type,
+    topic=EventTopic.ACTION_REQUESTS,
+    data={"a": a, "b": b},
+    correlation_id=correlation_id,
+    response_event="math.result",
+    response_topic="action-results",
+    tenant_id=tenant_id,
+    user_id=user_id,
+)
+```
+
+**Key points:**
+- The client uses the same shared auth-provider abstraction as the tool
+- Tenant and bootstrap-admin identifiers come from the persisted bootstrap payload, not hard-coded constants
+- `EventClient` receives the provider directly and resolves bearer tokens when connecting or publishing
+
 ---
 
 ## Running the Example
@@ -211,6 +264,8 @@ pip install -e sdk/python
 soorma dev --build
 ```
 
+The first example run also creates `.soorma/01-hello-tool-identity.json` so later runs reuse the same bootstrapped principal instead of onboarding a new tenant every time.
+
 ### Step 1: Start the Tool
 
 In terminal 1:
@@ -223,6 +278,7 @@ cd examples/01-hello-tool
 You should see:
 
 ```
+✓ Example identity bootstrap and token cache ready
 Starting Calculator Tool...
 Listening for events: ['math.add.requested', 'math.subtract.requested', 'math.multiply.requested', 'math.divide.requested']
 Publishing to events: ['calculator.completed']
@@ -418,6 +474,7 @@ Now that you understand the **Tool pattern**, explore:
 ✅ **Tools return immediately** - Handler returns result synchronously  
 ✅ **Multiple handlers per tool** - Use `@on_invoke()` for each event type  
 ✅ **Auto-response publishing** - Framework handles publishing for you  
+✅ **Auth is injected, not hand-coded** - The shared provider handles bootstrap, token caching, and refresh for both client and tool  
 ✅ **Caller-specified routing** - Response goes where caller wants  
 ✅ **Simple and fast** - Perfect for pure functions  
 

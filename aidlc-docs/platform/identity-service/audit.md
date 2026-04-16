@@ -53,6 +53,25 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Hello World README Correction
+**Timestamp**: 2026-04-16T06:03:23Z
+**User Input**: "the README of 01-hello-world does not talk about auth provider as concept. also, the minimal psuedo code in README is also out of date."
+**AI Response**: "Updated the hello-world README so the auth-token-provider abstraction is explained as a first-class concept, refreshed the worker and client pseudo-code to match the current example implementation, and aligned the narrative with the current bearer-token bootstrap and injection flow."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Hello Tool Auth Provider Migration
+**Timestamp**: 2026-04-16T06:10:07Z
+**User Input**: "update 01-hello-tool example to also support same auth pattern as 01-hello-world example:
+- start.sh bootstraps tenant for example
+- drive client uses auth provider in event client initialization
+- agent and tool use auth provider in agent / tool initialization"
+**AI Response**: "Updated 01-hello-tool to match the shared example auth-provider pattern by priming bootstrap/token state in start.sh, injecting the shared provider into the driver client's EventClient, wiring the calculator Tool with the same provider at initialization, removing hard-coded tenant/user constants from the client path, and refreshing the example README plus code-generation summary to reflect the current auth flow."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
 ## Code Generation - Shim Removal Cleanup
 **Timestamp**: 2026-04-15T08:37:30Z
 **User Input**: "yes, remove the shim"

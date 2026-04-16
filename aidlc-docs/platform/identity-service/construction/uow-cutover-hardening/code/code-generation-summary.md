@@ -7,6 +7,7 @@
 - Added canonical `tenant_id` issuance in identity-service tokens while preserving compatibility claims for bounded migration.
 - Switched `soorma dev` local bootstrap from HS256-secret defaults to persisted `.soorma/identity/` RSA key material with inline JWKS/public-key verifier material derived from those files.
 - Added a shared example auth helper and persisted local JWT bootstrap flow so `examples/01-hello-world` can onboard once, reuse stored principal metadata, expose a reusable trusted-proxy style token provider, surface the bootstrapped platform tenant and admin principal identifiers, and inject bearer tokens into infrastructure-facing clients without per-example bootstrap shims or hard-coded tenant IDs.
+- Applied the same shared example auth-provider pattern to `examples/01-hello-tool`, including startup bootstrap priming, client-side bearer-token injection, and tool initialization with the shared provider.
 - Updated identity-service low-level client binding so platform tenant context is supplied only after onboarding/discovery instead of being assumed at construction time.
 - Removed low-level identity-client symmetric caller-JWT generation so identity-admin requests now use only the admin API key plus optional bound `X-Tenant-ID` until a future explicit caller-principal injection path is designed.
 
@@ -25,6 +26,10 @@
 - `examples/01-hello-world/worker.py`
 - `examples/01-hello-world/start.sh`
 - `examples/01-hello-world/README.md`
+- `examples/01-hello-tool/client.py`
+- `examples/01-hello-tool/calculator_tool.py`
+- `examples/01-hello-tool/start.sh`
+- `examples/01-hello-tool/README.md`
 - `examples/shared/__init__.py`
 - `examples/shared/auth.py`
 - Focused tests under `libs/soorma-service-common/tests/`, `sdk/python/tests/`, and `services/identity-service/tests/`
@@ -75,6 +80,7 @@
 - Monorepo pytest invocations still need package-local grouping because multiple `tests/conftest.py` files collide when mixed in one command.
 - Local key rotation now follows the documented delete-and-regenerate path: remove `.soorma/identity/` files and rerun `soorma dev`.
 - The hello-world example now depends on locally bootstrapped identity-service availability so it can reuse persisted onboarding metadata and let the shared token provider mint and cache JWTs before connecting to event or registry infrastructure.
+- The hello-tool example now follows the same bootstrap-and-provider path as hello-world, instead of relying on hard-coded tenant/user constants for Event Service access.
 - Hello-world now imports the shared helper directly and no longer carries a local `auth_bootstrap.py` adapter; the shared module also exposes the CLI priming path used by `start.sh`.
 - Hello-world now derives both tenant and bootstrap-admin identifiers from the persisted bootstrap payload instead of embedding platform tenant constants in the example client.
 - Low-level identity client requests no longer assume a platform tenant exists before onboarding; callers may bind it after bootstrap or pass it explicitly per request.
