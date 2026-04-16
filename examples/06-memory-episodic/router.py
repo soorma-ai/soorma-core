@@ -12,13 +12,26 @@ Uses LLM for accurate intent classification.
 
 import asyncio
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 from soorma.workflow import WorkflowState
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "06-memory-episodic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Define event types
@@ -59,6 +72,7 @@ router = Worker(
     capabilities=["intent-classification", "routing"],
     events_consumed=[CHAT_MESSAGE_EVENT],
     events_produced=[KNOWLEDGE_STORE_EVENT, QUESTION_ANSWER_EVENT, CONCIERGE_QUERY_EVENT, CHAT_RESPONSE_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

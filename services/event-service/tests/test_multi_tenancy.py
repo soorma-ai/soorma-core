@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 from src.main import app
+from .conftest import build_auth_headers
 
 
 @pytest.fixture
@@ -41,7 +42,7 @@ async def test_publish_overwrites_payload_platform_tenant_id(async_client):
         response = await async_client.post(
             "/v1/events/publish",
             json=payload,
-            headers={"X-Tenant-ID": "spt_real"},
+            headers=build_auth_headers(platform_tenant_id="spt_real"),
         )
 
     assert response.status_code == 200
@@ -50,12 +51,16 @@ async def test_publish_overwrites_payload_platform_tenant_id(async_client):
 
 
 @pytest.mark.asyncio
-async def test_publish_fallback_to_default_platform_tenant(async_client):
-    """Missing X-Tenant-ID should use DEFAULT_PLATFORM_TENANT_ID fallback."""
+async def test_publish_uses_default_platform_tenant_from_jwt(async_client):
+    """JWT platform tenant claims may use DEFAULT_PLATFORM_TENANT_ID explicitly."""
     payload = _base_event_payload()
 
     with patch("src.api.routes.events.event_manager.publish", new=AsyncMock()) as mock_publish:
-        response = await async_client.post("/v1/events/publish", json=payload)
+        response = await async_client.post(
+            "/v1/events/publish",
+            json=payload,
+            headers=build_auth_headers(platform_tenant_id=DEFAULT_PLATFORM_TENANT_ID),
+        )
 
     assert response.status_code == 200
     publish_message = mock_publish.await_args.args[1]
@@ -100,15 +105,14 @@ async def test_publish_rejects_missing_user_id_after_sanitization(async_client, 
 
 @pytest.mark.asyncio
 async def test_publish_rejects_oversized_platform_tenant_id(async_client):
-    """Oversized platform_tenant_id values must fail closed."""
+    """Oversized platform_tenant_id claims must fail closed."""
     payload = _base_event_payload()
 
-    oversized_header = {"X-Tenant-ID": "a" * 65}
     with patch("src.api.routes.events.event_manager.publish", new=AsyncMock()) as mock_publish:
         response = await async_client.post(
             "/v1/events/publish",
             json=payload,
-            headers=oversized_header,
+            headers=build_auth_headers(platform_tenant_id="a" * 65),
         )
 
     assert response.status_code == 422

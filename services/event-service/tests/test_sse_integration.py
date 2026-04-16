@@ -5,6 +5,7 @@ import uvicorn
 from httpx import AsyncClient
 from src.main import app
 from src.services.event_manager import event_manager
+from .conftest import build_auth_headers
 
 @pytest.fixture
 async def server():
@@ -39,7 +40,11 @@ async def test_sse_stream_integration(server):
 
     # Start the stream request
     async with AsyncClient(base_url="http://127.0.0.1:8001") as client:
-        async with client.stream("GET", f"/v1/events/stream?topics={topics}&agent_id={agent_id}") as response:
+        async with client.stream(
+            "GET",
+            f"/v1/events/stream?topics={topics}&agent_id={agent_id}",
+            headers=build_auth_headers(),
+        ) as response:
             assert response.status_code == 200
             
             lines = response.aiter_lines()

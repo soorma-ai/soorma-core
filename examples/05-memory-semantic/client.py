@@ -20,28 +20,34 @@ Usage:
 """
 
 import asyncio
-import os
 import sys
+from pathlib import Path
 from uuid import uuid4
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-# User ID can be set via environment variable (simulates authentication)
-# Note: Memory service currently expects UUID format
-DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000000"
-TENANT_ID = os.getenv("TENANT_ID", DEFAULT_TENANT_ID)
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
-USER_ID = os.getenv("USER_ID", DEFAULT_USER_ID)
+EXAMPLE_NAME = "05-memory-semantic"
 
 
 async def send_request(request: str):
     """Send a user request to the knowledge management system."""
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     
     # Create EventClient
     client = EventClient(
         agent_id="knowledge-client",
         source="knowledge-client",
+        auth_token_provider=token_provider,
     )
     
     print(f"\n📤 Sending request: {request}")
@@ -72,7 +78,7 @@ async def send_request(request: str):
     # Generate correlation ID
     correlation_id = str(uuid4())
     
-    print(f"   User: {USER_ID}")
+    print(f"   User: {user_id}")
     
     # Publish user request event with user_id in envelope
     await client.publish(
@@ -80,8 +86,8 @@ async def send_request(request: str):
         topic=EventTopic.ACTION_REQUESTS,
         data={"request": request},
         correlation_id=correlation_id,
-        tenant_id=TENANT_ID,
-        user_id=USER_ID,  # User ID propagates through event chain
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
     
     print(f"   Request sent (correlation_id: {correlation_id})")

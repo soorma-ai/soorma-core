@@ -8,21 +8,33 @@ This demonstrates how to interact with Soorma agents using the EventClient.
 
 import sys
 import asyncio
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
-USER_ID = "00000000-0000-0000-0000-000000000001"
+
+EXAMPLE_NAME = "01-hello-world"
 
 
 async def send_greeting_request(name: str = "World"):
     """Send a greeting request and wait for the response."""
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     
     # Create EventClient
     client = EventClient(
         agent_id="hello-client",
         source="hello-client",
+        auth_token_provider=token_provider,
     )
     
     print("=" * 50)
@@ -58,8 +70,8 @@ async def send_greeting_request(name: str = "World"):
         correlation_id=correlation_id,
         response_event="greeting.completed",
         response_topic="action-results",
-        tenant_id=TENANT_ID,
-        user_id=USER_ID,
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
     
     print("📤 Request sent!")

@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Brownfield
 - **Start Date**: 2026-04-01T00:38:43Z
-- **Current Stage**: CONSTRUCTION - Design PR Gate Branch Confirmation (uow-cutover-hardening)
+- **Current Stage**: CONSTRUCTION - Code Generation Review (uow-cutover-hardening)
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -51,9 +51,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: Construction Design PR Gate Pending Approval - uow-cutover-hardening
-- **Next Stage**: Code Generation - uow-cutover-hardening
-- **Status**: Construction design PR checkpoint instructions were generated for uow-cutover-hardening on branch dev; awaiting team review and explicit PR approval confirmation before code generation
+- **Current Stage**: Code Generation Review - uow-cutover-hardening
+- **Next Stage**: Build and Test (pending explicit approval for uow-cutover-hardening)
+- **Status**: Code Generation execution for uow-cutover-hardening is complete, including the review-driven correction passes for bearer-only Tier-2 transport, shared example token-provider reuse, canonical JWT service-identity fallback, bootstrap-derived platform-tenant propagation, post-onboarding identity-client binding, and removal of low-level identity-client caller-JWT self-generation; the unit is awaiting explicit review-gate approval before Build and Test
 
 ## Units Generation Status
 - [x] Units Planning - Completed
@@ -90,11 +90,11 @@
 - **Approved**: 2026-04-13T22:05:49Z
 
 ### Construction Design PR Gate - uow-cutover-hardening
-- **Status**: PENDING
+- **Status**: APPROVED
 - **Branch**: dev
 - **Instructions**: aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-design-pr-checkpoint-instructions.md
 - **Created**: 2026-04-15T05:16:43Z
-- **Approved**: —
+- **Approved**: 2026-04-15T05:24:14Z
 
 ## Reverse Engineering Status
 - [x] Reverse Engineering - Completed on 2026-04-01T00:42:04Z

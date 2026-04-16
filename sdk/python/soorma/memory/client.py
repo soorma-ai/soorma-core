@@ -8,10 +8,10 @@ framework with four types of memory:
 - Procedural Memory: Dynamic prompts, rules, and skills
 - Working Memory: Plan-scoped shared state for multi-agent collaboration
 """
-
 from typing import Any, Dict, List, Optional
 import httpx
 
+from soorma.auth import AuthTokenProvider, resolve_auth_token
 from soorma_common.models import (
     SemanticMemoryCreate,
     SemanticMemoryResponse,
@@ -37,7 +37,6 @@ from soorma_common.models import (
     SessionCreate,
     SessionSummary,
 )
-from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 
 class MemoryServiceClient:
@@ -57,6 +56,7 @@ class MemoryServiceClient:
         timeout: float = 30.0,
         platform_tenant_id: Optional[str] = None,
         auth_token: Optional[str] = None,
+        auth_token_provider: Optional[AuthTokenProvider] = None,
     ):
         """
         Initialize the memory client.
@@ -64,16 +64,18 @@ class MemoryServiceClient:
         Args:
             base_url: Base URL of the memory service (e.g., "http://localhost:8083")
             timeout: HTTP request timeout in seconds
-            platform_tenant_id: Platform tenant identifier for X-Tenant-ID header
+            platform_tenant_id: Optional explicit platform tenant value retained
+                for compatibility only. It is not projected on the active bearer-auth path.
             
         Note:
             service_tenant_id and service_user_id are passed per-request in method
-            calls. platform_tenant_id is fixed for the client lifetime.
+            calls. platform_tenant_id is compatibility-only state.
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
+        self.platform_tenant_id = platform_tenant_id
         self.auth_token = auth_token
+        self.auth_token_provider = auth_token_provider
         self._client = httpx.AsyncClient(timeout=timeout)
     
     async def close(self):
@@ -88,25 +90,16 @@ class MemoryServiceClient:
         """Async context manager exit."""
         await self.close()
 
-    def _build_identity_headers(
+    async def _build_identity_headers(
         self,
         service_tenant_id: str,
         service_user_id: str,
     ) -> Dict[str, str]:
         """Build required identity headers for Memory Service requests."""
-        if not service_tenant_id or not service_user_id:
-            raise ValueError(
-                "service_tenant_id and service_user_id are required"
-            )
-
-        headers = {
-            "X-Tenant-ID": self.platform_tenant_id,
-            "X-Service-Tenant-ID": service_tenant_id,
-            "X-User-ID": service_user_id,
-        }
-        if self.auth_token:
-            headers["Authorization"] = f"Bearer {self.auth_token}"
-        return headers
+        token = await resolve_auth_token(self.auth_token, self.auth_token_provider)
+        if not token:
+            return {}
+        return {"Authorization": f"Bearer {token}"}
     
     # Semantic Memory Methods
     
@@ -181,7 +174,7 @@ class MemoryServiceClient:
         
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             json=data.model_dump(by_alias=True),
         )
         response.raise_for_status()
@@ -212,7 +205,7 @@ class MemoryServiceClient:
         """
         response = await self._client.post(
             f"{self.base_url}/v1/memory/semantic/query",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             params={
                 "query": query,
                 "limit": limit,
@@ -287,7 +280,7 @@ class MemoryServiceClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/episodic",
             json=data.model_dump(by_alias=True),
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return EpisodicMemoryResponse.model_validate(response.json())
@@ -312,7 +305,7 @@ class MemoryServiceClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/episodic/recent",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             params={"agent_id": agent_id, "limit": limit},
         )
         response.raise_for_status()
@@ -340,7 +333,7 @@ class MemoryServiceClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/episodic/search",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             params={"agent_id": agent_id, "q": query, "limit": limit},
         )
         response.raise_for_status()
@@ -372,7 +365,7 @@ class MemoryServiceClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/procedural/context",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             params={"agent_id": agent_id, "q": context, "limit": limit},
         )
         response.raise_for_status()
@@ -406,7 +399,7 @@ class MemoryServiceClient:
         response = await self._client.put(
             f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
             json=data.model_dump(by_alias=True),
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())
@@ -435,7 +428,7 @@ class MemoryServiceClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return WorkingMemoryResponse.model_validate(response.json())
@@ -491,7 +484,7 @@ class MemoryServiceClient:
             # Delete single key
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/working/{plan_id}/{key}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return WorkingMemoryDeleteKeyResponse.model_validate(response.json())
@@ -499,7 +492,7 @@ class MemoryServiceClient:
             # Delete all keys for plan
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/working/{plan_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return WorkingMemoryDeletePlanResponse.model_validate(response.json())
@@ -572,7 +565,7 @@ class MemoryServiceClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/task-context",
             json=request_data.model_dump(by_alias=True),
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return TaskContextResponse.model_validate(response.json())
@@ -602,7 +595,7 @@ class MemoryServiceClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/task-context/{task_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return TaskContextResponse.model_validate(response.json())
@@ -643,7 +636,7 @@ class MemoryServiceClient:
         response = await self._client.put(
             f"{self.base_url}/v1/memory/task-context/{task_id}",
             json=request_data.model_dump(by_alias=True, exclude_none=True),
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return TaskContextResponse.model_validate(response.json())
@@ -673,7 +666,7 @@ class MemoryServiceClient:
         try:
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/task-context/{task_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return True
@@ -707,7 +700,7 @@ class MemoryServiceClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/task-context/by-subtask/{sub_task_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return TaskContextResponse.model_validate(response.json())
@@ -765,7 +758,7 @@ class MemoryServiceClient:
         try:
             response = await self._client.post(
                 f"{self.base_url}/v1/memory/plan-context",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
                 json=request_data.model_dump(by_alias=True),
             )
             response.raise_for_status()
@@ -806,7 +799,7 @@ class MemoryServiceClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/plan-context/{plan_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return PlanContextResponse.model_validate(response.json())
@@ -846,7 +839,7 @@ class MemoryServiceClient:
         
         response = await self._client.put(
             f"{self.base_url}/v1/memory/plan-context/{plan_id}",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             json=request_data.model_dump(by_alias=True, exclude_none=True),
         )
         response.raise_for_status()
@@ -874,7 +867,7 @@ class MemoryServiceClient:
         try:
             response = await self._client.get(
                 f"{self.base_url}/v1/memory/plan-context/by-correlation/{correlation_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return PlanContextResponse.model_validate(response.json())
@@ -923,7 +916,7 @@ class MemoryServiceClient:
         response = await self._client.post(
             f"{self.base_url}/v1/memory/plans",
             json=request_data.model_dump(by_alias=True),
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return PlanSummary.model_validate(response.json())
@@ -967,7 +960,7 @@ class MemoryServiceClient:
             # Then delete the Plan record itself
             response = await self._client.delete(
                 f"{self.base_url}/v1/memory/plans/{plan_id}",
-                headers=self._build_identity_headers(service_tenant_id, service_user_id),
+                headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             )
             response.raise_for_status()
             return True
@@ -1005,7 +998,7 @@ class MemoryServiceClient:
         
         response = await self._client.post(
             f"{self.base_url}/v1/memory/sessions",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             json=request_data.model_dump(by_alias=True),
         )
         response.raise_for_status()
@@ -1041,7 +1034,7 @@ class MemoryServiceClient:
         response = await self._client.get(
             f"{self.base_url}/v1/memory/plans",
             params=params,
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
         )
         response.raise_for_status()
         return [PlanSummary.model_validate(item) for item in response.json()]
@@ -1063,7 +1056,7 @@ class MemoryServiceClient:
         """
         response = await self._client.get(
             f"{self.base_url}/v1/memory/sessions",
-            headers=self._build_identity_headers(service_tenant_id, service_user_id),
+            headers=await self._build_identity_headers(service_tenant_id, service_user_id),
             params={"limit": limit},
         )
         response.raise_for_status()

@@ -17,13 +17,26 @@ No in-memory state - everything is in working memory!
 """
 
 import asyncio
-from typing import Any, Dict
+import sys
 import uuid
+from pathlib import Path
+from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.workflow import WorkflowState
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "04-memory-working"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Define event types
@@ -58,6 +71,7 @@ planner = Worker(
     capabilities=["planning", "orchestration"],
     events_consumed=[WORKFLOW_START_EVENT, TASK_COMPLETED_EVENT],
     events_produced=[TASK_ASSIGNED_EVENT, WORKFLOW_COMPLETED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

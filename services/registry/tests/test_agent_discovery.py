@@ -8,6 +8,11 @@ Expected failures: 500 Internal Server Error (server-side NotImplementedError)
 NOT ImportError / AttributeError — those would mean stubs were not created.
 """
 import pytest
+from fastapi.testclient import TestClient
+
+from registry_service.main import app
+
+from .conftest import build_auth_headers
 
 TEST_TENANT_ID = "spt_00000000-0000-0000-0000-000000000000"
 
@@ -122,12 +127,10 @@ class TestDiscoverAgents:
         assert "all-worker-003" in agent_ids
 
     def test_discover_agents_requires_tenant_header(self):
-        """GET /v1/agents/discover without X-Tenant-ID defaults to DEFAULT_PLATFORM_TENANT_ID (200)."""
-        from fastapi.testclient import TestClient
-        from registry_service.main import app
+        """GET /v1/agents/discover without bearer auth returns 401."""
         no_auth_client = TestClient(app)
         response = no_auth_client.get("/v1/agents/discover")
-        assert response.status_code == 200
+        assert response.status_code == 401
 
     def test_discover_agents_multiple_consumers(self, client):
         """Multiple agents consuming the same event are all returned."""
@@ -141,13 +144,10 @@ class TestDiscoverAgents:
 
     def test_discover_agents_cross_tenant_isolation(self):
         """Agent registered by Tenant A is not discoverable by Tenant B."""
-        from fastapi.testclient import TestClient
-        from registry_service.main import app
-
         tenant_a = "spt_11111111-1111-1111-1111-111111111111"
         tenant_b = "spt_22222222-2222-2222-2222-222222222222"
-        client_a = TestClient(app, headers={"X-Tenant-ID": tenant_a})
-        client_b = TestClient(app, headers={"X-Tenant-ID": tenant_b})
+        client_a = TestClient(app, headers=build_auth_headers(tenant_a))
+        client_b = TestClient(app, headers=build_auth_headers(tenant_b))
 
         # Register agent as Tenant A
         r = client_a.post(

@@ -26,6 +26,87 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Platform Tenant Binding Correction
+**Timestamp**: 2026-04-15T08:56:58Z
+**User Input**: "ok, so we have some bugs:
+- we CAN NOT be using hard coded platform tenant IDs anywhere (e.g. in EventClient initialization). This is old and incorrect pattern when clients were providing platform tenant id. now, identity service generates platform tenant id during onboarding, and that ID needs to be used.
+- since we are doing bootstrapping in these examples, it should have the platform tenant ID from bootstrap file, and we need that id to be used instead of hard coded tenant ID. so might need to extend the shared bootstrap util in examples to provide method for getting platform tenant ID from bootstrap config
+- the IdentityServiceClient has incorrect initialization / constructor, to provide platform tenant ID. this will NOT work. identity service client CAN NOT know platform tenant ID before bootstrap. it should accept the platform tenant id later, after bootstrap is done, either as a parameter for all other methods, or some kind of binding after bootstrap method."
+**AI Response**: "Implemented the platform-tenant binding correction pass by removing hard-coded platform-tenant usage from the hello-world example, extending examples.shared.auth to expose bootstrapped platform-tenant and bootstrap-admin identifiers, binding the low-level identity client with platform_tenant_id only after onboarding payload is available, and removing hard-coded platform-tenant fallbacks from low-level event/memory/tracker constructors. Verified the focused regression slice with 28 passing tests across shared bootstrap helpers, identity client contracts, and event-client auth behavior."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Identity Client Auth Transport Cleanup
+**Timestamp**: 2026-04-15T09:17:41Z
+**User Input**: "ok, so we cannot be using symmetric shared secret to self generate JWT -- that is wrong as per out current architecture and design. this needs to be removed. for now, all identity methods should just use the platform tenant (from binding) and admin API key. don't need JWT."
+**AI Response**: "Removed low-level identity-client caller-JWT synthesis and related compatibility transport behavior so identity admin requests now carry only `X-Identity-Admin-Key` plus optional bound `X-Tenant-ID`. Updated the focused identity-client tests to match that contract and verified the final regression slice with 27 passing tests across identity-client, shared example auth bootstrap, and event-client registration coverage."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Renewed Approval Prompt
+**Timestamp**: 2026-04-15T09:17:41Z
+**User Input**: "ok, so we cannot be using symmetric shared secret to self generate JWT -- that is wrong as per out current architecture and design. this needs to be removed. for now, all identity methods should just use the platform tenant (from binding) and admin API key. don't need JWT."
+**AI Response**: "Final review-driven correction pass is complete for uow-cutover-hardening. A renewed Code Generation completion gate will be presented next, with the unit remaining blocked from Build and Test until explicit approval is received."
+**Context**: CONSTRUCTION - Code Generation approval gate
+
+---
+
+## Code Generation - Hello World README Correction
+**Timestamp**: 2026-04-16T06:03:23Z
+**User Input**: "the README of 01-hello-world does not talk about auth provider as concept. also, the minimal psuedo code in README is also out of date."
+**AI Response**: "Updated the hello-world README so the auth-token-provider abstraction is explained as a first-class concept, refreshed the worker and client pseudo-code to match the current example implementation, and aligned the narrative with the current bearer-token bootstrap and injection flow."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Hello Tool Auth Provider Migration
+**Timestamp**: 2026-04-16T06:10:07Z
+**User Input**: "update 01-hello-tool example to also support same auth pattern as 01-hello-world example:
+- start.sh bootstraps tenant for example
+- drive client uses auth provider in event client initialization
+- agent and tool use auth provider in agent / tool initialization"
+**AI Response**: "Updated 01-hello-tool to match the shared example auth-provider pattern by priming bootstrap/token state in start.sh, injecting the shared provider into the driver client's EventClient, wiring the calculator Tool with the same provider at initialization, removing hard-coded tenant/user constants from the client path, and refreshing the example README plus code-generation summary to reflect the current auth flow."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Full Example Auth Provider Migration
+**Timestamp**: 2026-04-16T06:42:28Z
+**User Input**: "awsome, now go through all examples and update eachl examples to also support same auth pattern as 01-hello-world example:
+ - start.sh bootstraps tenant for example
+ - driver client uses auth provider in event client initialization
+ - agents and tool suse auth provider in agent / tool initialization"
+**AI Response**: "Migrated the remaining example suite to the shared auth-provider pattern. Added bootstrap priming to all example start scripts, updated internal driver/event clients to use bootstrap-derived tenant and admin-principal identifiers with auth_token_provider injection, wired workers/planners/tools and direct memory/tracker/context utility paths to the shared provider, updated the A2A gateway's internal Registry/Event/Worker paths while leaving its external HTTP demo client unchanged, corrected stale copied metadata in 08-worker-basic/start.sh, and validated the final migrated research-advisor and 13-a2a-gateway Python files with py_compile."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Shim Removal Cleanup
+**Timestamp**: 2026-04-15T08:37:30Z
+**User Input**: "yes, remove the shim"
+**AI Response**: "Removed the example-local auth_bootstrap adapter from 01-hello-world, wired the example scripts directly to examples.shared.auth with explicit example-name binding, added a shared CLI entrypoint for start.sh priming, updated focused tests and docs, and verified the cleanup with 51 focused SDK/example tests passing."
+**Context**: CONSTRUCTION - Code Generation review correction refinement
+
+---
+
+## Code Generation - Correction Execution Complete
+**Timestamp**: 2026-04-15T08:15:03Z
+**User Input**: "yes, request changes and implement corrections."
+**AI Response**: "Completed the second review-driven correction pass for uow-cutover-hardening by introducing SDK token-provider/factory support, removing active legacy tenant-header transport from event/registry/memory/tracker bearer-auth flows, propagating providers through PlatformContext and BaseAgent wiring, moving example bootstrap/token logic into examples/shared/auth.py, updating 01-hello-world to use the shared provider, and tightening shared middleware canonical service-identity fallback for bearer-only JWT requests."
+**Context**: CONSTRUCTION - Code Generation review correction
+
+---
+
+## Code Generation - Correction Review Prompt
+**Timestamp**: 2026-04-15T08:15:03Z
+**User Input**: "yes, request changes and implement corrections."
+**AI Response**: "Ran focused validation for the correction pass and confirmed 83 SDK/example tests passed plus 30 shared middleware tests passed. Updated code-generation summary/state artifacts and prepared the renewed standardized Code Generation completion gate for uow-cutover-hardening."
+**Context**: CONSTRUCTION - Code Generation correction approval gate
+
+---
+
 ## Functional Design - Q5 Clarification
 **Timestamp**: 2026-04-04T22:11:41Z
 **User Input**: "help me understand q5 and its options"
@@ -218,6 +299,122 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Session Continuity - Resume Request
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed workflow context from aidlc-state.md, reloaded mandatory common rules, architecture patterns, enabled extension rules, and prior inception and unit-design artifacts required for construction-stage continuity."
+**Context**: Session continuity - construction resume intake
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline]."
+**Context**: CONSTRUCTION - phase initialization (session reload)
+
+---
+
+## Unit Initialization
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Unit Initialization: loaded extension rules for [JIRA Tickets, Team Collaboration Review Gates, QA Test Cases, Security Baseline] (unit: uow-cutover-hardening)."
+**Context**: CONSTRUCTION - per-unit initialization (session reload)
+
+---
+
+## PR Checkpoint - Approval Confirmation
+**Timestamp**: 2026-04-15T05:24:14Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Accepted explicit Construction Design PR approval confirmation for uow-cutover-hardening, updated checkpoint state to APPROVED, and unlocked Code Generation planning."
+**Context**: CONSTRUCTION - Team collaboration review gate passed
+
+---
+
+## Code Generation - Planning Start
+**Timestamp**: 2026-04-15T05:27:06Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Started Code Generation Part 1 planning for uow-cutover-hardening using approved inception artifacts, unit design artifacts, migration checklist, current implementation touchpoints, and extension constraints."
+**Context**: CONSTRUCTION - Code Generation Part 1 planning
+
+---
+
+## Code Generation - Plan Approval Prompt
+**Timestamp**: 2026-04-15T05:27:06Z
+**User Input**: "Using AI-DLC, resume construction for unit \"uow-cutover-hardening\" in the identity-service initiative in the platform area. PR for construction design has been approved.
+
+aidlc-state.md is at: aidlc-docs/platform/identity-service/aidlc-state.md
+Project repo: soorma-core
+
+Intent: resume Construction for unit \"uow-cutover-hardening\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Generated the detailed code-generation plan at aidlc-docs/platform/identity-service/construction/plans/uow-cutover-hardening-code-generation-plan.md, updated plan-level checkboxes through Step 6, and prepared the explicit approval gate for Part 1."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate
+
+---
+
+## Code Generation - Plan Approval
+**Timestamp**: 2026-04-15T05:36:08Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Accepted explicit approval for uow-cutover-hardening code-generation plan, marked Step 7 complete, and transitioned workflow into Code Generation Part 2 execution."
+**Context**: CONSTRUCTION - Code Generation Part 1 approval gate passed
+
+---
+
 ## Functional Design - Planning Start
 **Timestamp**: 2026-04-04T06:32:01Z
 **User Input**: "approved"
@@ -303,6 +500,38 @@ for tenant's identity service's users, following namespace convention is expecte
 **User Input**: "units look good"
 **AI Response**: "Accepted units generation approval and initiated end-of-Inception extension steps (QA test cases, JIRA tickets, PR checkpoint)."
 **Context**: INCEPTION - Units Generation approval gate passed
+
+---
+
+## Code Generation - Execution Complete
+**Timestamp**: 2026-04-15T05:55:02Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Completed Code Generation Part 2 for uow-cutover-hardening by enforcing JWT-only secured ingress with trusted admin-key exception, aligning SDK active bearer-auth behavior, adding canonical tenant_id issuance, switching soorma dev bootstrap to deterministic RS256/JWKS defaults, updating docs/changelogs, producing the code-generation summary artifact, and validating focused SDK/shared-auth/identity-service regression suites."
+**Context**: CONSTRUCTION - Code Generation Part 2 execution
+
+---
+
+## Code Generation - Approval Prompt
+**Timestamp**: 2026-04-15T05:55:02Z
+**User Input**: "ok, plan looks good"
+**AI Response**: "Prepared and presented the standardized Code Generation completion review gate for uow-cutover-hardening; awaiting explicit user choice to request changes or continue to Build and Test."
+**Context**: CONSTRUCTION - Code Generation approval gate
+
+---
+
+## Code Generation - Request Changes
+**Timestamp**: 2026-04-15T06:13:05Z
+**User Input**: "yes, lets improve this, we should generate on the fly (when does not exist) and persist in .soorma (where all other CLI generated artifacts live) and re-use that persisted value across different runs. also, I'm assuming, to rotate key developer will simply delete old key and soorma dev CLI will re-generate new key pair."
+**AI Response**: "Accepted the review-driven change request for uow-cutover-hardening and replaced the hardcoded dev private key in soorma dev with first-run RSA key generation persisted under .soorma/identity/, reuse across subsequent runs, explicit delete-to-rotate behavior, and updated SDK docs/changelog guidance."
+**Context**: CONSTRUCTION - Code Generation review correction
+
+---
+
+## Code Generation - Correction Review Prompt
+**Timestamp**: 2026-04-15T06:13:05Z
+**User Input**: "yes, lets improve this, we should generate on the fly (when does not exist) and persist in .soorma (where all other CLI generated artifacts live) and re-use that persisted value across different runs. also, I'm assuming, to rotate key developer will simply delete old key and soorma dev CLI will re-generate new key pair."
+**AI Response**: "Re-ran the focused CLI bootstrap regression after the correction pass, confirmed 29 passing tests, and prepared the renewed Code Generation review gate for uow-cutover-hardening."
+**Context**: CONSTRUCTION - Code Generation correction approval gate
 
 ---
 
@@ -471,6 +700,33 @@ for tenant's identity service's users, following namespace convention is expecte
 **User Input**: "all questions answered"
 **AI Response**: "Generated finalized requirements document at aidlc-docs/platform/identity-service/inception/requirements/requirements.md, updated extension configuration/status in aidlc-state.md, and presented Requirements Analysis approval gate."
 **Context**: INCEPTION - Requirements Analysis completion prompt
+
+---
+
+## Code Generation - Review Findings
+**Timestamp**: 2026-04-15T07:29:49Z
+**User Input**: "need to think through this change. some initial observations / comments:
+- why are we still using `X-Tenant-ID` in the headers for memory / registry / event clients? they should now only have Authorization header, correct? that's what this unit's hardening scope was, only JWT Auth header, no more legacy tenant headers. only identity service APIs should need api key and x-tenant-id headers.
+- i'm assuming this new #file:auth_bootstrap.py is that \"trusted proxy\" that can request JWT token. BUT, i see that this is ALSO doing bootstrap of a tenant and its principal. this needs to be re-usable for all examples, so maybe move this into a shared folder (or parent example directory) and re-use this for each of the example as needed (passing example name as parameter instead of hardcoding to 01-hello-world)
+- i think we need better design pattern for token management with client libraries. they should take a factory method as parameter (e.g. during initialization) and that factory method should be responsible for requesting / caching / refreshing JWT token from tenant's \"trusted proxy\". in the examples, our auth_bootstrap utility can provide this factory method. in production applications, real trusted proxy implementatin will provide this method as library."
+**AI Response**: "Reviewed the latest hello-world JWT integration against the approved hardening scope and architecture patterns. Confirmed three substantive issues: EventClient still emits legacy X-Tenant-ID alongside Authorization, registry auth was conflated with end-user JWT bootstrap and developer-tenant identity, and the new auth_bootstrap helper is too example-specific and mixes one-time provisioning with runtime token acquisition. Recommended a correction pass that keeps Tier-2 services on bearer-only auth, isolates registry/developer auth from client-user JWT flows, and introduces a reusable token-provider abstraction for examples and production trusted-proxy libraries."
+**Context**: CONSTRUCTION - Code Generation review assessment
+
+---
+
+## Code Generation - Request Changes
+**Timestamp**: 2026-04-15T06:35:10Z
+**User Input**: "ok, now our example agents and driver clients are not able to talk to soorma-core infrastructure services ... which is expected because we require JWT auth in API calls. how do they request JWT token and inject into their clients to use that token? lets start with the very first example 01-hello-world"
+**AI Response**: "Accepted the review-driven change request for uow-cutover-hardening and implemented hello-world JWT bootstrap and propagation by adding bearer-auth support to SDK event and registry clients, propagating SOORMA_AUTH_TOKEN through PlatformContext and BaseAgent wiring, creating a persisted example onboarding/token helper under .soorma, updating the hello-world worker/client/startup/docs, and adding focused regression coverage for the new transport and bootstrap behavior."
+**Context**: CONSTRUCTION - Code Generation review correction
+
+---
+
+## Code Generation - Correction Review Prompt
+**Timestamp**: 2026-04-15T06:35:10Z
+**User Input**: "ok, now our example agents and driver clients are not able to talk to soorma-core infrastructure services ... which is expected because we require JWT auth in API calls. how do they request JWT token and inject into their clients to use that token? lets start with the very first example 01-hello-world"
+**AI Response**: "Re-ran the focused SDK regression suite for JWT propagation and example bootstrap behavior, confirmed 40 passing tests, updated the code-generation summary and state, and prepared the renewed Code Generation review gate for uow-cutover-hardening."
+**Context**: CONSTRUCTION - Code Generation correction approval gate
 
 ---
 

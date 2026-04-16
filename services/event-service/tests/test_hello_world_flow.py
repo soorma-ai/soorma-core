@@ -7,15 +7,16 @@ from httpx import AsyncClient, ASGITransport
 
 from src.main import app
 from src.services.event_manager import event_manager
+from .conftest import build_auth_headers
 
 # We need to import EventClient from the SDK
 # Since SDK is in core/sdk/python, we might need to adjust python path or install it
 # For this test, I'll mock the EventClient's network calls to hit our app directly
 
 @pytest.fixture
-async def async_client():
+async def async_client(tenancy_headers):
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test", headers=tenancy_headers) as ac:
         if not event_manager.adapter or not event_manager.adapter.is_connected:
              await event_manager.initialize()
         yield ac

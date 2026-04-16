@@ -43,6 +43,7 @@ from soorma_common.tracker import (
     PlanProgress,
     TaskExecution,
 )
+from .auth import AuthTokenProvider, build_optional_auth_kwargs
 from .events import EventClient
 from .memory import MemoryServiceClient
 from .registry.client import RegistryClient
@@ -106,6 +107,7 @@ class MemoryClient:
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_MEMORY_SERVICE_URL", "http://localhost:8083"))
     auth_token: Optional[str] = None
+    auth_token_provider: Optional[AuthTokenProvider] = None
     # Note: Local fallback removed - Memory Service required for multi-agent workflows
     _client: Optional[MemoryServiceClient] = field(default=None, repr=False, init=False)
     _bound_event_identity: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
@@ -119,7 +121,10 @@ class MemoryClient:
     
     async def _ensure_client(self) -> MemoryServiceClient:
         if self._client is None:
-            self._client = MemoryServiceClient(base_url=self.base_url, auth_token=self.auth_token)
+            self._client = MemoryServiceClient(
+                base_url=self.base_url,
+                **build_optional_auth_kwargs(self.auth_token, self.auth_token_provider),
+            )
             # Test connection
             try:
                 await self._client.health()
@@ -140,6 +145,12 @@ class MemoryClient:
         self.auth_token = auth_token
         if self._client is not None:
             self._client.auth_token = auth_token
+
+    def set_auth_token_provider(self, auth_token_provider: Optional[AuthTokenProvider]) -> None:
+        """Set optional bearer token provider used for downstream service calls."""
+        self.auth_token_provider = auth_token_provider
+        if self._client is not None:
+            self._client.auth_token_provider = auth_token_provider
 
     def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
         """Bind current event identity for implicit wrapper defaults."""
@@ -1088,6 +1099,14 @@ class BusClient:
             user_id if user_id is not None else metadata.get("user_id"),
             session_id if session_id is not None else metadata.get("session_id"),
         )
+
+    def set_auth_token(self, auth_token: Optional[str]) -> None:
+        """Inject or replace bearer token for event-bus requests."""
+        self.event_client.set_auth_token(auth_token)
+
+    def set_auth_token_provider(self, auth_token_provider: Optional[AuthTokenProvider]) -> None:
+        """Inject or replace bearer token provider for event-bus requests."""
+        self.event_client.set_auth_token_provider(auth_token_provider)
     
     async def publish(
         self,
@@ -1451,6 +1470,7 @@ class TrackerClient:
     """
     base_url: str = field(default_factory=lambda: os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"))
     auth_token: Optional[str] = None
+    auth_token_provider: Optional[AuthTokenProvider] = None
     _client: Optional["TrackerServiceClient"] = field(default=None, repr=False, init=False)
     _bound_event_identity: contextvars.ContextVar[Optional[Dict[str, Any]]] = field(
         default_factory=lambda: contextvars.ContextVar(
@@ -1465,7 +1485,11 @@ class TrackerClient:
         """Lazy initialization of TrackerServiceClient."""
         if self._client is None:
             from .tracker.client import TrackerServiceClient
-            self._client = TrackerServiceClient(base_url=self.base_url, auth_token=self.auth_token)
+            self._client = TrackerServiceClient(
+                base_url=self.base_url,
+                auth_token=self.auth_token,
+                auth_token_provider=self.auth_token_provider,
+            )
         return self._client
 
     def set_auth_token(self, auth_token: Optional[str]) -> None:
@@ -1473,6 +1497,12 @@ class TrackerClient:
         self.auth_token = auth_token
         if self._client is not None:
             self._client.auth_token = auth_token
+
+    def set_auth_token_provider(self, auth_token_provider: Optional[AuthTokenProvider]) -> None:
+        """Set optional bearer token provider used for downstream tracker calls."""
+        self.auth_token_provider = auth_token_provider
+        if self._client is not None:
+            self._client.auth_token_provider = auth_token_provider
 
     def bind_event_metadata(self, event: "EventEnvelope") -> contextvars.Token:
         """Bind current event identity for implicit tracker defaults."""
@@ -1745,6 +1775,7 @@ class PlatformContext:
         identity: IdentityClient = None,
         toolkit: EventToolkit = None,
         auth_token: Optional[str] = None,
+        auth_token_provider: Optional[AuthTokenProvider] = None,
     ):
         """
         Create a PlatformContext with configured clients.
@@ -1757,19 +1788,30 @@ class PlatformContext:
             identity: Identity wrapper client (optional)
             toolkit: EventToolkit for AI-friendly event utilities (optional)
         """
-        self.registry = registry or RegistryClient(base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"))
-        self.memory = memory or MemoryClient(auth_token=auth_token)
-        self.bus = bus or BusClient()
-        self.tracker = tracker or TrackerClient(auth_token=auth_token)
+        self.registry = registry or RegistryClient(
+            base_url=os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081"),
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
+        )
+        self.memory = memory or MemoryClient(**build_optional_auth_kwargs(auth_token, auth_token_provider))
+        self.bus = bus or BusClient(
+            event_client=EventClient(**build_optional_auth_kwargs(auth_token, auth_token_provider))
+        )
+        self.tracker = tracker or TrackerClient(**build_optional_auth_kwargs(auth_token, auth_token_provider))
         self.identity = identity or IdentityClient()
         # Toolkit reuses registry client - no async with needed when using context.toolkit!
         self.toolkit = toolkit or EventToolkit(registry_url=self.registry.base_url, registry_client=self.registry)
 
         if auth_token is not None:
             self.set_auth_token(auth_token)
+        if auth_token_provider is not None:
+            self.set_auth_token_provider(auth_token_provider)
     
     @classmethod
-    def from_env(cls) -> "PlatformContext":
+    def from_env(
+        cls,
+        auth_token: Optional[str] = None,
+        auth_token_provider: Optional[AuthTokenProvider] = None,
+    ) -> "PlatformContext":
         """
         Create a PlatformContext from environment variables (convenience method).
         
@@ -1779,7 +1821,6 @@ class PlatformContext:
             SOORMA_MEMORY_URL: Memory service URL (default: http://localhost:8083)
             SOORMA_TRACKER_URL: Tracker service URL (default: http://localhost:8084)
             SOORMA_IDENTITY_URL: Identity service URL (default: http://localhost:8085)
-            SOORMA_AUTH_TOKEN: Optional injected bearer token for memory/tracker calls
             
         Returns:
             PlatformContext with clients configured from environment
@@ -1790,10 +1831,14 @@ class PlatformContext:
         """
         event_client = EventClient(
             event_service_url=os.getenv("SOORMA_EVENT_SERVICE_URL", "http://localhost:8082"),
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
         )
         
         registry_url = os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081")
-        registry_client = RegistryClient(base_url=registry_url)
+        registry_client = RegistryClient(
+            base_url=registry_url,
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
+        )
         
         return cls(
             registry=registry_client,
@@ -1803,19 +1848,29 @@ class PlatformContext:
             bus=BusClient(event_client=event_client),
             tracker=TrackerClient(
                 base_url=os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"),
-                auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
             ),
             identity=IdentityClient(
                 base_url=os.getenv("SOORMA_IDENTITY_URL", "http://localhost:8085"),
             ),
             toolkit=EventToolkit(registry_url=registry_url, registry_client=registry_client),
-            auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
+            auth_token=auth_token,
+            auth_token_provider=auth_token_provider,
         )
 
     def set_auth_token(self, auth_token: Optional[str]) -> None:
         """Inject or replace bearer token for downstream service wrappers."""
+        self.registry.set_auth_token(auth_token)
+        self.bus.set_auth_token(auth_token)
         self.memory.set_auth_token(auth_token)
         self.tracker.set_auth_token(auth_token)
+
+    def set_auth_token_provider(self, auth_token_provider: Optional[AuthTokenProvider]) -> None:
+        """Inject or replace bearer token provider for downstream service wrappers."""
+        self.registry.set_auth_token_provider(auth_token_provider)
+        self.bus.set_auth_token_provider(auth_token_provider)
+        self.memory.set_auth_token_provider(auth_token_provider)
+        self.tracker.set_auth_token_provider(auth_token_provider)
     
     async def close(self) -> None:
         """Close all clients."""

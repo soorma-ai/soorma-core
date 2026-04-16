@@ -1,6 +1,12 @@
 #!/bin/bash
 # Start script for 06-memory-episodic chatbot example
 
+set -e
+
+EXAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXAMPLE_NAME="06-memory-episodic"
+REPO_ROOT="$(cd "$EXAMPLE_DIR/../.." && pwd)"
+
 echo "🚀 Starting 06-memory-episodic chatbot..."
 echo ""
 echo "This example demonstrates a multi-agent chatbot with:"
@@ -22,6 +28,10 @@ if ! curl -s http://localhost:8083/health > /dev/null 2>&1; then
 fi
 
 echo "✓ Memory Service is running"
+echo ""
+echo "🔐 Priming shared example token provider..."
+(cd "$REPO_ROOT" && python -m examples.shared.auth "$EXAMPLE_NAME" "$EXAMPLE_DIR") > /dev/null
+echo "✓ Example identity bootstrap and token cache ready"
 echo ""
 
 # Check for OpenAI API key
@@ -56,22 +66,22 @@ trap 'kill $(jobs -p) 2>/dev/null' EXIT
 
 # Start agents in background
 echo "Starting router..."
-python3 router.py &
+python3 "$EXAMPLE_DIR/router.py" &
 ROUTER_PID=$!
 sleep 2
 
 echo "Starting RAG agent..."
-python3 rag_agent.py &
+python3 "$EXAMPLE_DIR/rag_agent.py" &
 RAG_PID=$!
 sleep 2
 
 echo "Starting concierge..."
-python3 concierge.py &
+python3 "$EXAMPLE_DIR/concierge.py" &
 CONCIERGE_PID=$!
 sleep 2
 
 echo "Starting knowledge store..."
-python3 knowledge_store.py &
+python3 "$EXAMPLE_DIR/knowledge_store.py" &
 KNOWLEDGE_PID=$!
 sleep 2
 

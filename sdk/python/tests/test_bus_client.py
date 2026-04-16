@@ -225,6 +225,14 @@ class TestBusClientConvenienceMethods:
         assert call_kwargs["topic"] == "business-facts"
         assert call_kwargs["event_type"] == "order.placed"
 
+    def test_set_auth_token_delegates_to_event_client(self, bus_client):
+        """set_auth_token() should forward the token to the underlying EventClient."""
+        bus_client.event_client.set_auth_token = MagicMock()
+
+        bus_client.set_auth_token("jwt-token")
+
+        bus_client.event_client.set_auth_token.assert_called_once_with("jwt-token")
+
 
 class TestBusClientEventCreation:
     """Tests for create_child_request(), create_response() utilities."""

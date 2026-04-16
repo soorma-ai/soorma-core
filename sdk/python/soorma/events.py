@@ -38,8 +38,8 @@ from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
+from .auth import AuthTokenProvider, resolve_auth_token
 from soorma_common.events import EventEnvelope, EventTopic
-from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +68,8 @@ class EventClient:
         event_service_url: str = "http://localhost:8082",
         agent_id: Optional[str] = None,
         source: Optional[str] = None,
+        auth_token: Optional[str] = None,
+        auth_token_provider: Optional[AuthTokenProvider] = None,
         platform_tenant_id: Optional[str] = None,
         tenant_id: Optional[str] = None,
         session_id: Optional[str] = None,
@@ -83,7 +85,8 @@ class EventClient:
             event_service_url: Base URL of the Event Service (e.g., "http://localhost:8082")
             agent_id: Unique identifier for this agent (auto-generated if not provided)
             source: Source identifier for events (defaults to agent_id)
-            platform_tenant_id: Platform tenant ID for X-Tenant-ID header
+            platform_tenant_id: Optional explicit platform tenant value retained
+                only for envelope metadata compatibility.
             tenant_id: Default tenant ID for multi-tenancy
             session_id: Default session ID for correlation
             events_consumed: Optional list of EventDefinition objects to auto-register
@@ -95,7 +98,9 @@ class EventClient:
         self.event_service_url = event_service_url.rstrip("/")
         self.agent_id = agent_id or f"agent-{str(uuid4())[:8]}"
         self.source = source or self.agent_id
-        self.platform_tenant_id = platform_tenant_id or DEFAULT_PLATFORM_TENANT_ID
+        self.auth_token = auth_token
+        self.auth_token_provider = auth_token_provider
+        self.platform_tenant_id = platform_tenant_id
         self.tenant_id = tenant_id
         self.session_id = session_id
         
@@ -125,6 +130,21 @@ class EventClient:
             for e in events_consumed:
                 if hasattr(e, "event_name"):
                     self._pending_event_definitions.append(e)
+
+    def set_auth_token(self, auth_token: Optional[str]) -> None:
+        """Inject or replace bearer token for event-service requests."""
+        self.auth_token = auth_token
+
+    def set_auth_token_provider(self, auth_token_provider: Optional[AuthTokenProvider]) -> None:
+        """Inject or replace bearer token provider for event-service requests."""
+        self.auth_token_provider = auth_token_provider
+
+    async def _build_auth_headers(self) -> dict[str, str]:
+        """Build outbound auth headers for event-service calls."""
+        token = await resolve_auth_token(self.auth_token, self.auth_token_provider)
+        if not token:
+            return {}
+        return {"Authorization": f"Bearer {token}"}
     
     # =========================================================================
     # Decorator for registering handlers
@@ -240,7 +260,11 @@ class EventClient:
         from soorma_common import PayloadSchema
 
         registry_url = _os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081")
-        registry_client = RegistryClient(base_url=registry_url)
+        registry_client = RegistryClient(
+            base_url=registry_url,
+            auth_token=self.auth_token,
+            auth_token_provider=self.auth_token_provider,
+        )
 
         for event_def in self._pending_event_definitions:
             # Register event definition
@@ -407,7 +431,7 @@ class EventClient:
             response = await self._http_client.post(
                 url,
                 json={"event": event},
-                headers={"X-Tenant-ID": self.platform_tenant_id},
+                headers=await self._build_auth_headers(),
                 timeout=30.0,
             )
             
@@ -494,7 +518,7 @@ class EventClient:
         
         logger.info(f"Connecting to SSE stream: {url}")
         
-        async with self._http_client.stream("GET", url) as response:
+        async with self._http_client.stream("GET", url, headers=await self._build_auth_headers()) as response:
             if response.status_code != 200:
                 raise ConnectionError(f"SSE connection failed: {response.status_code}")
             

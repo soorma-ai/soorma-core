@@ -10,8 +10,14 @@ bus.request() for request/response choreography. No manual intervention needed.
 """
 
 import logging
+import sys
+from pathlib import Path
 from typing import Optional
 from uuid import uuid4
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from soorma.ai.choreography import ChoreographyPlanner
 from soorma.agents.planner import GoalContext
@@ -19,6 +25,12 @@ from soorma.context import PlatformContext
 from soorma.plan_context import PlanContext
 from soorma_common.decisions import PlanAction, PlannerDecision
 from soorma_common.events import EventEnvelope
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "10-choreography-basic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 planner = ChoreographyPlanner(
@@ -43,6 +55,7 @@ planner = ChoreographyPlanner(
         "- Use correlation_id to maintain task tracking across the pipeline\n"
         "- Only use events that exist in the available events list"
     ),
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

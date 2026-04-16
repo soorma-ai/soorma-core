@@ -19,9 +19,9 @@ Soorma operates with **two distinct tenancy dimensions**. Understanding this dis
 - **Who:** Agent developers (companies/individuals) who build on the Soorma Core platform
 - **Purpose:** Isolates one developer's registered agents and event schemas from another developer's
 - **Scope:** **Registry Service only** — agents, events, and payload schemas belong to the developer tenant
-- **Identifier:** Developer Tenant UUID (`SOORMA_DEVELOPER_TENANT_ID` env var)
-- **Current header:** `X-Tenant-ID` (developer UUID) — **no `X-User-ID`**
-- **Future auth:** Developer API Key (v0.9.0+) — replaces the manual env-var header
+- **Identifier:** Platform-tenant identity carried in validated bearer-token claims
+- **Current auth:** `Authorization: Bearer <jwt>` for secured runtime traffic
+- **Future auth:** Selected control-plane routes may add API-key flows, but bearer-authenticated machine and developer principals remain the baseline runtime path
 - **Example:** Acme Corp's registered workers are invisible to Contoso's workers in the same Soorma deployment
 
 #### Tier 2: Client Tenant + User (Developer's Application Tenancy)
@@ -29,111 +29,103 @@ Soorma operates with **two distinct tenancy dimensions**. Understanding this dis
 - **Who:** End-users and customer tenants of the **developer's** agentic application
 - **Purpose:** Isolates one developer's customer's data from another customer's (memory, tasks, plans)
 - **Scope:** **Memory Service, Tracker Service, Event Service** — task contexts, plans, episodic memory
-- **Identifiers:** Client Tenant UUID + User UUID (carried in event envelope)
-- **Current headers:** `X-Tenant-ID` (platform tenant UUID) + `X-Service-Tenant-ID` (client tenant UUID) + `X-User-ID` (user UUID)
-- **Future auth:** JWT token issued by the developer's app — Soorma extracts `tenant_id` + `user_id` from claims
+- **Identifiers:** Platform tenant + client tenant + end-user identity carried in validated JWT claims
+- **Current auth:** `Authorization: Bearer <jwt>`
+- **Compatibility aliases:** `X-Service-Tenant-ID` and `X-User-ID` may appear on trusted internal calls, but they must match the JWT when present
+- **Future auth:** Same bearer-token model with progressively stricter issuer validation and delegated-trust controls
 - **Example:** Acme Corp's customer Alice's conversation history is isolated from customer Bob's
 
 #### Service → Tenancy Tier Mapping
 
-| Service | Tenancy Tier | Headers (Current) | Future Auth |
-|---------|-------------|-------------------|-------------|
-| **Registry Service** | Developer Tenant | `X-Tenant-ID` (developer UUID only) | Developer API Key |
-| **Memory Service** | Client Tenant + User | `X-Tenant-ID` (platform) + `X-Service-Tenant-ID` (client) + `X-User-ID` | JWT (client user token) |
-| **Tracker Service** | Client Tenant + User | `X-Tenant-ID` (platform) + `X-Service-Tenant-ID` (client) + `X-User-ID` | JWT (client user token) |
-| **Event Service** | Client Tenant + User | `X-Tenant-ID` (platform) + `X-Service-Tenant-ID` (client) + `X-User-ID` | JWT (client user token) |
+| Service | Tenancy Tier | Current Auth | Notes |
+|---------|-------------|--------------|-------|
+| **Registry Service** | Developer Tenant | Bearer JWT | Platform tenant and principal identity come from JWT claims |
+| **Memory Service** | Client Tenant + User | Bearer JWT | Service tenant and user come from JWT claims |
+| **Tracker Service** | Client Tenant + User | Bearer JWT | Service tenant and user come from JWT claims |
+| **Event Service** | Client Tenant + User | Bearer JWT | Platform tenant claim is authoritative at ingress |
 
-### Current Multi-Tenancy Header Split
+### Current Identity Projection Model
 
-For the current multi-tenancy rollout, SDK and service code must treat identity as a split between a platform tenant and service-scoped caller identity:
+For the current multi-tenancy rollout, SDK and service code must treat identity as validated bearer-token state projected into request context by shared middleware:
 
 | Concern | Current Source | Transport | Notes |
 |---------|----------------|-----------|-------|
-| Platform tenant | `DEFAULT_PLATFORM_TENANT_ID` / `SOORMA_PLATFORM_TENANT_ID` | `X-Tenant-ID` header | Fixed at low-level client construction time for Memory, Tracker, and Event publish paths |
-| Service tenant | Event envelope `tenant_id` or explicit wrapper arg | `X-Service-Tenant-ID` header | Passed per call; represents the developer application's customer tenant |
-| Service user | Event envelope `user_id` or explicit wrapper arg | `X-User-ID` header | Passed per call; represents the end user within the service tenant |
+| Platform tenant | JWT `platform_tenant_id` or `tenant_id` claim | `Authorization: Bearer ...` | Required on secured routes |
+| Service tenant | JWT `service_tenant_id` claim | `Authorization: Bearer ...` | Optional alias header cannot disagree with JWT |
+| Service user | JWT `service_user_id`, `user_id`, `principal_id`, or `sub` claim | `Authorization: Bearer ...` | Optional alias header cannot disagree with JWT |
 
 Current SDK rules:
 
-- `MemoryServiceClient` and `TrackerServiceClient` own the platform tenant and project all three headers on every request.
-- PlatformContext wrappers may default `tenant_id` and `user_id` from the bound event envelope, but explicit arguments always win.
-- `EventClient.publish()` must send `X-Tenant-ID` for the platform tenant while keeping `tenant_id` and `user_id` in the event envelope only.
-- SDK callers must not inject `platform_tenant_id` into outbound event payloads or envelopes. Event Service remains the trust boundary for any platform-tenant enrichment.
+- Low-level SDK clients accept auth explicitly via `auth_token` or `auth_token_provider`; they do not read bearer tokens from environment variables at runtime.
+- PlatformContext wrappers may still default service-tenant and user values from the bound event envelope, but outbound service authentication is bearer-token based.
+- `EventClient.publish()` must not inject `platform_tenant_id` into outbound event payloads. Event Service remains the trust boundary for platform-tenant enrichment.
+- Trusted admin flows are limited to explicit identity-service admin headers; normal service traffic must not fall back to legacy tenancy headers.
 
 ---
 
-### Current Pattern: Custom Headers (v0.7.x)
+### Current Pattern: Bearer Tokens (v0.8.x)
 
-**Status:** ⚠️ Development-only pattern - NOT for production use
+**Status:** Active runtime contract for secured service-to-service traffic
 
-SDK-to-service communication uses **custom HTTP headers** for authentication context. The specific headers differ by service tier (see table above):
+SDK-to-service communication uses **explicit bearer tokens**. Shared middleware validates the token and projects the resulting identity into `request.state`.
 
 **Tier 2 services (Memory, Tracker, Event):**
-- `X-Tenant-ID`: Platform tenant identifier (UUID)
-- `X-Service-Tenant-ID`: Client tenant identifier (UUID)
-- `X-User-ID`: End-user identifier (UUID)
+- `Authorization: Bearer <jwt>` is required
+- JWT claims carry platform tenant, service tenant, and service user identity
+- Optional compatibility headers must match the token when present
 
 **Tier 1 service (Registry):**
-- `X-Tenant-ID`: Developer tenant identifier (UUID) — no `X-User-ID`
+- `Authorization: Bearer <jwt>` is required
+- JWT claims carry the developer platform tenant and the authenticated machine or developer principal
 
 **Implementation (Tier 2 — Memory/Tracker/Event services):**
 
 ```python
-# SDK MemoryServiceClient example (platform tenant + service tenant + user headers)
+# SDK MemoryServiceClient example (explicit bearer auth)
 response = await self._client.post(
     f"{self.base_url}/v1/memory/task-context",
     json=data.model_dump(by_alias=True),
-    headers={
-        "X-Tenant-ID": platform_tenant_id,
-        "X-Service-Tenant-ID": client_tenant_id,
-        "X-User-ID": user_id,
-    },
+    headers={"Authorization": f"Bearer {token}"},
 )
 ```
 
 **Implementation (Tier 1 — Registry Service):**
 
 ```python
-# RegistryClient — developer tenant only, no X-User-ID
+# RegistryClient — explicit bearer auth, developer tenant from claims
 response = await self._client.post(
     f"{self.base_url}/v1/agents",
     json=request.model_dump(by_alias=True),
-    headers={
-        "X-Tenant-ID": developer_tenant_id,  # From SOORMA_DEVELOPER_TENANT_ID
-        # No X-User-ID — registry is scoped to the developer, not an end-user
-    },
+    headers={"Authorization": f"Bearer {token}"},
 )
 ```
 
 **Services Implementation:**
 
-Services extract these headers and use them for:
+Services extract validated request identity and use it for:
 - Row-Level Security (RLS) policies in PostgreSQL
 - Query filtering by tenant/user
 - Audit logging
 
 ```python
-# Memory/Tracker service endpoint example (Tier 2 — platform tenant + client tenant + user)
+# Memory/Tracker service endpoint example (Tier 2 — identity resolved by middleware)
 @router.post("/v1/memory/task-context")
 async def store_task_context(
     data: TaskContextCreate,
-    platform_tenant_id: str = Header(None, alias="X-Tenant-ID"),
-    tenant_id: str = Header(None, alias="X-Service-Tenant-ID"),
-    user_id: str = Header(None, alias="X-User-ID"),
+    ctx: TenantContext = Depends(get_tenant_context),
 ):
     # Set session variables for RLS
-    await db.execute(f"SET app.tenant_id = '{tenant_id}'")
-    await db.execute(f"SET app.user_id = '{user_id}'")
+    await db.execute(f"SET app.tenant_id = '{ctx.service_tenant_id}'")
+    await db.execute(f"SET app.user_id = '{ctx.service_user_id}'")
     result = await db.execute(...)
 
 # Registry service endpoint example (Tier 1 — developer tenant only)
 @router.post("/v1/agents")
 async def register_agent(
     data: AgentRegistrationRequest,
-    tenant_id: str = Header(None, alias="X-Tenant-ID"),  # developer tenant
-    # No X-User-ID header
+    platform_tenant_id: str = Depends(get_platform_tenant_id),
 ):
-    await db.execute(f"SET app.tenant_id = '{tenant_id}'")
+    await db.execute(f"SET app.tenant_id = '{platform_tenant_id}'")
     result = await db.execute(...)
 ```
 
@@ -155,13 +147,13 @@ CREATE POLICY agents_tenant_isolation ON agents
     USING (tenant_id = current_setting('app.tenant_id')::UUID);
 ```
 
-### Future Pattern: JWT & API Keys (v0.9.0+)
+### Future Pattern: Delegated JWT Trust & Selective API Keys (v0.9.0+)
 
-**Status:** 📋 Planned - Not yet implemented
+**Status:** 📋 Planned hardening and expansion work
 
 The production authentication system will support dual modes:
 
-**Mode 1: JWT Authentication (User Context)**
+**Mode 1: JWT Authentication (User and machine context)**
 ```python
 # User-facing applications
 context = PlatformContext(auth_token="jwt-token")
@@ -176,11 +168,11 @@ await context.memory.store_task_context(...)
 # }
 ```
 
-**Mode 2: API Key Authentication (Agent Context)**
+**Mode 2: API Key Authentication (Selected control-plane flows)**
 ```python
-# Agent-to-agent communication
-context = PlatformContext(api_key="agent-api-key-xyz")
-await context.memory.store_task_context(...)
+# Selected control-plane clients
+context = PlatformContext(api_key="control-plane-api-key")
+await context.registry.register_agent(...)
 
 # API Key metadata:
 # {
@@ -194,8 +186,8 @@ await context.memory.store_task_context(...)
 
 | Tier | Current (v0.8.x) | v0.9.0+ | v1.0.0 |
 |------|-----------------|---------|--------|
-| Developer Tenant (Registry) | `X-Tenant-ID` env var | Developer API Key | API Key only |
-| Client Tenant+User (Memory/Tracker/Event) | `X-Tenant-ID` + `X-Service-Tenant-ID` + `X-User-ID` headers | JWT token | JWT only |
+| Developer Tenant (Registry) | Bearer JWT | Bearer JWT + optional control-plane API key | Explicitly documented split by route class |
+| Client Tenant+User (Memory/Tracker/Event) | Bearer JWT | Bearer JWT with delegated trust | JWT only |
 
 ---
 
@@ -252,7 +244,7 @@ Soorma SDK follows a **strict two-layer abstraction** to separate low-level serv
 
 **Characteristics:**
 - Direct HTTP calls with `httpx`
-- Manual header injection (`X-Tenant-ID`, `X-Service-Tenant-ID`, `X-User-ID`)
+- Explicit bearer-auth header injection
 - Pydantic model serialization/deserialization
 - Fine-grained error handling
 - **NOT for agent handler use**

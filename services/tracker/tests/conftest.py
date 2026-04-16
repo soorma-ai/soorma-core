@@ -1,6 +1,10 @@
 """Pytest configuration and fixtures for tracker service tests."""
 
+import os
 import pytest
+from datetime import datetime, timedelta, timezone
+
+import jwt
 from fastapi import Request
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
@@ -12,6 +16,43 @@ from tracker_service.main import app
 
 # Test database URL (in-memory SQLite for fast tests)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+os.environ.setdefault("SOORMA_AUTH_JWT_SECRET", "dev-identity-signing-key")
+
+
+def build_auth_headers(
+    platform_tenant_id: str = "spt_test-tenant",
+    service_tenant_id: str = "st_test-tenant",
+    service_user_id: str = "su_test-user",
+    principal_id: str = "tracker-test-user",
+    include_service_tenant_header: bool = True,
+    include_user_header: bool = True,
+) -> dict[str, str]:
+    """Build JWT bearer headers plus compatibility alias headers for tracker tests."""
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "sub": principal_id,
+            "platform_tenant_id": platform_tenant_id,
+            "service_tenant_id": service_tenant_id,
+            "service_user_id": service_user_id,
+            "principal_id": principal_id,
+            "principal_type": "service",
+            "roles": ["service"],
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(hours=1)).timestamp()),
+        },
+        "dev-identity-signing-key",
+        algorithm="HS256",
+    )
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "X-Tenant-ID": platform_tenant_id,
+    }
+    if include_service_tenant_header:
+        headers["X-Service-Tenant-ID"] = service_tenant_id
+    if include_user_header:
+        headers["X-User-ID"] = service_user_id
+    return headers
 
 
 @pytest.fixture(scope="function")

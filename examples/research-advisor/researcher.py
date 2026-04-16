@@ -1,5 +1,12 @@
 import asyncio
 import os
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common.events import EventEnvelope, EventTopic
@@ -11,9 +18,10 @@ from events import (
 )
 from capabilities import RESEARCH_CAPABILITY
 from llm_utils import get_llm_model, has_any_llm_key
+from examples.shared.auth import build_example_token_provider
 
-# Constants
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"  # Hard-coded user ID for single-tenant mode
+EXAMPLE_NAME = "research-advisor"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 """
 Memory Usage Pattern in Web Researcher:
@@ -48,7 +56,8 @@ researcher = Worker(
     description="Performs web research on any topic",
     capabilities=[RESEARCH_CAPABILITY],
     events_consumed=[RESEARCH_REQUEST_EVENT],
-    events_produced=[RESEARCH_RESULT_EVENT]
+    events_produced=[RESEARCH_RESULT_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 @researcher.on_startup
@@ -79,7 +88,7 @@ async def handle_research_request(event: EventEnvelope, context: PlatformContext
     # Log research request to episodic memory
     await context.memory.log_interaction(
         agent_id="web-researcher",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="user",
         content=f"Research request: {query_topic} (context: {extra_context})",
         metadata={"event_id": event.id}
@@ -192,7 +201,7 @@ async def handle_research_request(event: EventEnvelope, context: PlatformContext
     #    Shows "what did the researcher do" in conversation history
     await context.memory.log_interaction(
         agent_id="web-researcher",
-        user_id=DEFAULT_USER_ID,
+        user_id=event.user_id,
         role="assistant",
         content=f"Research completed for '{query_topic}': {summary[:200]}...",
         metadata={"event_id": event.id, "source_url": source_url}

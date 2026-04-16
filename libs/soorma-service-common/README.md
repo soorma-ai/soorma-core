@@ -4,7 +4,7 @@ Shared FastAPI/Starlette infrastructure library for Soorma backend services.
 
 Provides three cross-cutting concerns for all services (Memory, Tracker, Registry, Event Service):
 
-1. **Identity extraction** — `TenancyMiddleware` reads the three identity dimensions from HTTP headers into `request.state` on every request.
+1. **Identity extraction** — `TenancyMiddleware` validates bearer tokens and projects platform-tenant, service-tenant, and service-user identity into `request.state` on secured requests.
 2. **RLS activation** — `create_get_tenanted_db` factory produces a FastAPI dependency that calls PostgreSQL `set_config` for all three session variables (transaction-scoped) before yielding the DB session, activating Row-Level Security policies.
 3. **GDPR deletion contract** — `PlatformTenantDataDeletion` abstract base class defines the erasure interface; concrete implementations live in each service.
 
@@ -42,4 +42,4 @@ async def create_item(payload: ItemCreate, ctx: TenantContext = Depends(get_tena
 ## Constraints
 
 - **MUST NOT** be imported by `soorma-common` or `sdk/python` — contains FastAPI/Starlette dependencies incompatible with SDK clients.
-- `platform_tenant_id` flows only via HTTP header (`X-Tenant-ID`) or Event Service injection — never as a per-call API parameter.
+- `platform_tenant_id` flows from validated request identity or Event Service injection — never as a per-call API parameter.

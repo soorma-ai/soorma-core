@@ -12,12 +12,25 @@ Key: Worker responds directly to the PLANNER (requester).
 """
 
 import asyncio
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma.workflow import WorkflowState
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "04-memory-working"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Define event types
@@ -40,6 +53,7 @@ worker = Worker(
     capabilities=["task-execution", "research", "drafting", "review"],
     events_consumed=[TASK_ASSIGNED_EVENT],
     events_produced=[TASK_COMPLETED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

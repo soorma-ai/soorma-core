@@ -10,6 +10,7 @@ set -e
 
 EXAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXAMPLE_NAME="10-choreography-basic"
+REPO_ROOT="$(cd "$EXAMPLE_DIR/../.." && pwd)"
 
 echo "======================================================================"
 echo "  Starting Example: $EXAMPLE_NAME"
@@ -31,6 +32,10 @@ if ! curl -s http://localhost:8081/health > /dev/null 2>&1; then
 fi
 
 echo "Platform services detected"
+echo ""
+echo "🔐 Priming shared example token provider..."
+(cd "$REPO_ROOT" && python -m examples.shared.auth "$EXAMPLE_NAME" "$EXAMPLE_DIR") > /dev/null
+echo "✓ Example identity bootstrap and token cache ready"
 echo ""
 
 trap 'echo ""; echo "Stopping all agents..."; kill $(jobs -p) 2>/dev/null; exit 0' EXIT INT TERM

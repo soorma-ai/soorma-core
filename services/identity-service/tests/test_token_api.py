@@ -49,6 +49,7 @@ async def test_platform_token_issuance_returns_bearer_token(db_session):
     assert claims["iss"] == "soorma-identity-service"
     assert claims["sub"] == onboarding.bootstrap_admin_principal_id
     assert claims["aud"] == "soorma-services"
+    assert claims["tenant_id"] == onboarding.platform_tenant_id
     assert claims["platform_tenant_id"] == onboarding.platform_tenant_id
     assert claims["principal_id"] == onboarding.bootstrap_admin_principal_id
     assert claims["principal_type"] == "admin"

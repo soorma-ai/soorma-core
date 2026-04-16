@@ -9,11 +9,24 @@ This example demonstrates the Tool pattern with:
 """
 
 import logging
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Tool, InvocationContext, PlatformContext
+
+from examples.shared.auth import build_example_token_provider
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+EXAMPLE_NAME = "01-hello-tool"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Create the calculator tool
@@ -21,6 +34,7 @@ calculator = Tool(
     name="calculator-tool",
     description="Performs basic arithmetic operations (add, subtract, multiply, divide)",
     default_response_event="calculator.completed",  # Fallback if caller doesn't specify
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

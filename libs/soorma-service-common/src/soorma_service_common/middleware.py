@@ -1,8 +1,9 @@
-"""Tenancy middleware with JWT-first coexistence behavior.
+"""Tenancy middleware for bearer-authenticated request identity.
 
 Resolution order:
-1. If bearer JWT exists, validate and use JWT claims for request identity.
-2. If JWT is absent, fall back to legacy tenancy headers.
+1. If bearer JWT exists, validate it and project claims into request state.
+2. If a trusted identity admin header exists, allow the documented admin bypass.
+3. Otherwise fail closed with missing-bearer-token authentication errors.
 
 Middleware never calls set_config; DB session/RLS activation remains in
 dependency utilities.
@@ -24,9 +25,17 @@ from starlette.responses import Response
 
 from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
-_BYPASS_PATHS = frozenset(["/health", "/docs", "/openapi.json", "/redoc"])
+_BYPASS_PATHS = frozenset([
+    "/health",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/v1/identity/.well-known/openid-configuration",
+    "/v1/identity/.well-known/jwks.json",
+])
 _AUTHORIZATION_HEADER = "authorization"
 _BEARER_PREFIX = "bearer "
+_IDENTITY_ADMIN_HEADER = "x-identity-admin-key"
 _JWT_SECRET_ENV = "SOORMA_AUTH_JWT_SECRET"
 _JWT_ISSUER_ENV = "SOORMA_AUTH_JWT_ISSUER"
 _JWT_AUDIENCE_ENV = "SOORMA_AUTH_JWT_AUDIENCE"
@@ -38,7 +47,9 @@ _JWKS_JSON_ENV = "SOORMA_AUTH_JWKS_JSON"
 _JWKS_CACHE_TTL_ENV = "SOORMA_AUTH_JWKS_CACHE_TTL_SECONDS"
 _OPENID_CONFIGURATION_URL_ENV = "SOORMA_AUTH_OPENID_CONFIGURATION_URL"
 _OPENID_CONFIGURATION_JSON_ENV = "SOORMA_AUTH_OPENID_CONFIGURATION_JSON"
-_ALLOWED_PRINCIPAL_TYPES = frozenset({"admin", "service", "agent", "user"})
+_ALLOWED_PRINCIPAL_TYPES = frozenset(
+    {"admin", "service", "agent", "user", "developer", "planner", "worker", "tool"}
+)
 _JWKS_CACHE_TIMEOUT_SECONDS = 2.0
 _DEFAULT_JWKS_CACHE_TTL_SECONDS = 300
 
@@ -61,10 +72,10 @@ def configure_platform_tenant_openapi(
     scheme_name: str = "PlatformTenantHeader",
     header_name: str = "X-Tenant-ID",
 ) -> None:
-    """Expose platform tenant header in Swagger/OpenAPI for all operations.
+    """Expose platform tenant header in Swagger/OpenAPI for compatibility flows.
 
-    This adds an API key security scheme backed by ``X-Tenant-ID`` and applies it
-    globally so Swagger UI can send the header via the Authorize dialog.
+    This helper documents ``X-Tenant-ID`` for trusted-admin or compatibility
+    scenarios. Normal secured service traffic authenticates with bearer tokens.
     """
 
     original_openapi = app.openapi
@@ -151,6 +162,10 @@ class TenancyMiddleware(BaseHTTPMiddleware):
 
     Does NOT open or interact with a database connection (BR-U2-01).
     """
+
+    def _is_identity_admin_request(self, request: Request) -> bool:
+        """Return True for trusted admin-key identity-service control-plane requests."""
+        return bool(str(request.headers.get(_IDENTITY_ADMIN_HEADER) or "").strip())
 
     def _extract_bearer_token(self, request: Request) -> str | None:
         """Extract bearer token from Authorization header when present."""
@@ -379,12 +394,23 @@ class TenancyMiddleware(BaseHTTPMiddleware):
         else:
             raise HTTPException(status_code=401, detail="Invalid JWT")
 
-        platform_tenant_id = str(claims.get("platform_tenant_id") or "").strip()
+        platform_tenant_id = str(
+            claims.get("tenant_id") or claims.get("platform_tenant_id") or ""
+        ).strip()
         if not platform_tenant_id:
             raise HTTPException(status_code=401, detail="Invalid JWT")
 
-        service_tenant = claims.get("service_tenant_id")
-        service_user = claims.get("service_user_id")
+        service_tenant = (
+            claims.get("service_tenant_id")
+            or claims.get("tenant_id")
+            or claims.get("platform_tenant_id")
+        )
+        service_user = (
+            claims.get("service_user_id")
+            or claims.get("user_id")
+            or claims.get("principal_id")
+            or claims.get("sub")
+        )
         service_tenant_id = str(service_tenant).strip() if service_tenant is not None else None
         service_user_id = str(service_user).strip() if service_user is not None else None
 
@@ -461,7 +487,7 @@ class TenancyMiddleware(BaseHTTPMiddleware):
                 request.state.auth_source = "jwt"
             except HTTPException as exc:
                 return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-        else:
+        elif self._is_identity_admin_request(request):
             request.state.platform_tenant_id = (
                 request.headers.get("x-tenant-id") or DEFAULT_PLATFORM_TENANT_ID
             )
@@ -472,6 +498,8 @@ class TenancyMiddleware(BaseHTTPMiddleware):
             request.state.roles = []
             request.state.auth_issuer = None
             request.state.auth_audience = None
-            request.state.auth_source = "legacy-header"
+            request.state.auth_source = "trusted-admin-header"
+        else:
+            return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
 
         return await call_next(request)

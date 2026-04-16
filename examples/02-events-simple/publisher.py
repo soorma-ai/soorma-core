@@ -7,21 +7,33 @@ This simulates an order service publishing events in an order workflow.
 """
 
 import asyncio
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma_common.events import EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
-USER_ID = "00000000-0000-0000-0000-000000000001"
+EXAMPLE_NAME = "02-events-simple"
 
 
 async def publish_order_workflow():
     """Publish the initial event that triggers the order workflow chain."""
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     
     # Create EventClient for publishing
     client = EventClient(
         agent_id="order-service",
         source="order-service",
+        auth_token_provider=token_provider,
     )
     
     print("=" * 60)
@@ -45,8 +57,8 @@ async def publish_order_workflow():
             "items": ["laptop", "mouse"],
             "total": 1500.00,
         },
-        tenant_id=TENANT_ID,
-        user_id=USER_ID,
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
     print("   ✓ Published to 'business-facts' topic\n")
     

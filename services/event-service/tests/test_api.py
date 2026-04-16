@@ -13,19 +13,20 @@ os.environ["DEBUG"] = "true"
 
 from src.main import app
 from src.services.event_manager import event_manager
+from .conftest import build_auth_headers
 
 
 @pytest.fixture
-def client():
+def client(tenancy_headers):
     """Create a test client."""
-    return TestClient(app)
+    return TestClient(app, headers=tenancy_headers)
 
 
 @pytest.fixture
-async def async_client():
+async def async_client(tenancy_headers):
     """Create an async test client with lifespan."""
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test", headers=tenancy_headers) as ac:
         # Ensure adapter is connected for tests
         # Note: lifespan manager in main.py calls event_manager.initialize()
         # which connects the adapter. But AsyncClient with lifespan should handle it.
@@ -84,7 +85,6 @@ class TestPublishEndpoint:
         response = await async_client.post(
             "/v1/events/publish",
             json=event,
-            headers={"X-Tenant-ID": "spt_test"},
         )
         
         # May be 503 if adapter not connected (acceptable in unit test)
@@ -128,7 +128,6 @@ class TestPublishEndpoint:
         response = await async_client.post(
             "/v1/events/publish",
             json=event,
-            headers={"X-Tenant-ID": "spt_test"},
         )
         
         # May be 503 if adapter not connected (acceptable in unit test)

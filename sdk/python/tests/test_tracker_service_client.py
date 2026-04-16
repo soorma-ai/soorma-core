@@ -29,20 +29,21 @@ def tracker_client():
     )
 
 
-def test_build_identity_headers_includes_authorization_when_auth_token_present():
-    """Tracker client should forward injected auth token as bearer header."""
+@pytest.mark.asyncio
+async def test_build_identity_headers_includes_authorization_when_auth_token_present():
+    """Tracker client should use bearer auth as the active path when auth token is injected."""
     tracker_client = TrackerServiceClient(
         base_url="http://localhost:8084",
         platform_tenant_id="platform-tenant-1",
         auth_token="jwt-token-value",
     )
 
-    headers = tracker_client._build_identity_headers("tenant-123", "user-456")
+    headers = await tracker_client._build_identity_headers("tenant-123", "user-456")
 
     assert headers["Authorization"] == "Bearer jwt-token-value"
-    assert headers["X-Tenant-ID"] == "platform-tenant-1"
-    assert headers["X-Service-Tenant-ID"] == "tenant-123"
-    assert headers["X-User-ID"] == "user-456"
+    assert "X-Tenant-ID" not in headers
+    assert "X-Service-Tenant-ID" not in headers
+    assert "X-User-ID" not in headers
 
 
 @pytest.fixture
@@ -93,9 +94,7 @@ class TestGetPlanProgress:
         # Verify headers were sent
         tracker_client._client.get.assert_called_once()
         call_args = tracker_client._client.get.call_args
-        assert call_args.kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
-        assert call_args.kwargs["headers"]["X-Service-Tenant-ID"] == mock_auth["tenant_id"]
-        assert call_args.kwargs["headers"]["X-User-ID"] == mock_auth["user_id"]
+        assert call_args.kwargs["headers"] == {}
     
     @pytest.mark.asyncio
     async def test_get_plan_progress_not_found(self, tracker_client, mock_auth):

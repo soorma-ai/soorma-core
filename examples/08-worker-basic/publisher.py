@@ -6,16 +6,32 @@ Sends an action request and waits for the worker's async completion.
 """
 
 import asyncio
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from soorma import EventClient
 from soorma_common.events import EventTopic, EventEnvelope
 
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "08-worker-basic"
+
 
 async def publish_order_request() -> None:
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     client = EventClient(
         agent_id="order-service",
         source="order-service",
+        auth_token_provider=token_provider,
     )
 
     print("=" * 60)
@@ -44,8 +60,8 @@ async def publish_order_request() -> None:
             "items": ["laptop", "mouse"],
             "total": 1500.00,
         },
-        tenant_id="00000000-0000-0000-0000-000000000000",
-        user_id="00000000-0000-0000-0000-000000000001",
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
 
     try:

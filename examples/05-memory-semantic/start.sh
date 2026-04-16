@@ -1,6 +1,12 @@
 #!/bin/bash
 # Start script for 04-memory-semantic example
 
+set -e
+
+EXAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXAMPLE_NAME="05-memory-semantic"
+REPO_ROOT="$(cd "$EXAMPLE_DIR/../.." && pwd)"
+
 echo "🚀 Starting 04-memory-semantic example..."
 echo ""
 echo "This example demonstrates LLM-based routing with semantic memory and RAG."
@@ -19,6 +25,10 @@ if ! curl -s http://localhost:8083/health > /dev/null 2>&1; then
 fi
 
 echo "✓ Memory Service is running"
+echo ""
+echo "🔐 Priming shared example token provider..."
+(cd "$REPO_ROOT" && python -m examples.shared.auth "$EXAMPLE_NAME" "$EXAMPLE_DIR") > /dev/null
+echo "✓ Example identity bootstrap and token cache ready"
 echo ""
 
 # Check for OpenAI API key
@@ -43,17 +53,17 @@ echo "Starting agents..."
 echo ""
 
 echo "  1. Knowledge Store (tool for storing facts)..."
-python3 knowledge_store.py &
+python3 "$EXAMPLE_DIR/knowledge_store.py" &
 STORE_PID=$!
 sleep 2
 
 echo "  2. Answer Agent (RAG-powered question answering)..."
-python3 answer_agent.py &
+python3 "$EXAMPLE_DIR/answer_agent.py" &
 ANSWER_PID=$!
 sleep 2
 
 echo "  3. Router (LLM-based intent detection)..."
-python3 router.py &
+python3 "$EXAMPLE_DIR/router.py" &
 ROUTER_PID=$!
 
 # Give agents more time to complete initialization

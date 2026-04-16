@@ -10,12 +10,13 @@ from memory_service.core.config import settings
 from memory_service.core.database import get_db
 from memory_service.core.dependencies import TenantContext, get_tenant_context
 from memory_service.services.data_deletion import MemoryDataDeletion
+from .conftest import build_auth_headers
 
 
 @pytest.fixture
 def client():
     """Create test client."""
-    return TestClient(app)
+    return TestClient(app, headers=build_auth_headers())
 
 
 class TestHealthEndpoint:
@@ -84,7 +85,10 @@ class TestIdentityAndAdminGuards:
             try:
                 response = client.delete(
                     "/v1/memory/admin/platform/spt_test-00000",
-                    headers={"X-Memory-Admin-Key": settings.memory_admin_api_key},
+                    headers={
+                        **build_auth_headers(),
+                        "X-Memory-Admin-Key": settings.memory_admin_api_key,
+                    },
                 )
                 assert response.status_code == 204
             finally:

@@ -187,11 +187,10 @@ class TestMemoryClientWorkingMemoryDeletion:
             call_args = async_mock.call_args
             assert test_ids["plan_id"] in call_args[0][0]
             assert test_ids["key"] in call_args[0][0]
-            # Check headers include tenant_id and user_id
+            # Bearer auth is the active path. Without a token, the SDK should
+            # not project legacy identity headers.
             headers = call_args[1]["headers"]
-            assert headers["X-Tenant-ID"]
-            assert headers["X-Service-Tenant-ID"] == test_ids["tenant_id"]
-            assert headers["X-User-ID"] == test_ids["user_id"]
+            assert headers == {}
 
 
 class TestWorkflowStateDelete:

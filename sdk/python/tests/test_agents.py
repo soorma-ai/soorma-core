@@ -270,6 +270,15 @@ class TestPlatformContext:
             assert context.memory.base_url == "http://memory:8083"
             assert context.tracker.base_url == "http://tracker:8084"
 
+    def test_context_from_env_accepts_explicit_auth(self):
+        """from_env() should use explicitly supplied auth instead of env fallback."""
+        from soorma import PlatformContext
+
+        context = PlatformContext.from_env(auth_token="jwt-token-value")
+
+        assert context.memory.auth_token == "jwt-token-value"
+        assert context.tracker.auth_token == "jwt-token-value"
+
     def test_set_auth_token_propagates_to_wrappers(self):
         """Injected bearer token should be available to memory/tracker wrappers."""
         from soorma import PlatformContext

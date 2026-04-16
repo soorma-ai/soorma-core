@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `soorma dev` now generates a local RSA keypair on first bootstrap, persists it under `.soorma/identity/`, reuses it across runs, and derives inline JWKS/public-key verifier material from those persisted files instead of shipping a hardcoded dev private key.
+- Memory and Tracker low-level clients now project bearer auth without legacy `X-*` identity headers on the active JWT path.
+
 ## [0.8.2] - 2026-03-14
 
 ### Changed

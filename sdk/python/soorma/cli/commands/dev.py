@@ -18,6 +18,23 @@ from pathlib import Path
 from typing import Optional, List
 
 import typer
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+    PublicFormat,
+    load_pem_private_key,
+    load_pem_public_key,
+)
+from jwt.algorithms import RSAAlgorithm
+
+
+DEV_IDENTITY_ACTIVE_SIGNING_KID = "dev-rs256"
+DEV_IDENTITY_DIR_NAME = "identity"
+DEV_IDENTITY_PRIVATE_KEY_FILE = "identity-signing-private.pem"
+DEV_IDENTITY_PUBLIC_KEY_FILE = "identity-signing-public.pem"
+DEV_IDENTITY_JWKS_FILE = "identity-jwks.json"
 
 # Docker Compose template for local development infrastructure
 DOCKER_COMPOSE_TEMPLATE = '''# Soorma Local Development Stack
@@ -70,7 +87,8 @@ services:
             - DATABASE_URL=postgresql+asyncpg://soorma:soorma@postgres:5432/registry
             - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/registry
             - NATS_URL=nats://nats:4222
-            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWKS_JSON=${SOORMA_AUTH_JWKS_JSON:-}
+            - SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON=${SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON:-}
             - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
             - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
@@ -95,7 +113,8 @@ services:
             - EVENT_ADAPTER=nats
             - NATS_URL=nats://nats:4222
             - DEBUG=false
-            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWKS_JSON=${SOORMA_AUTH_JWKS_JSON:-}
+            - SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON=${SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON:-}
             - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
             - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
@@ -122,7 +141,8 @@ services:
             - OPENAI_API_KEY=${OPENAI_API_KEY:-}
             - IS_LOCAL_TESTING=true
             - IS_PROD=false
-            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWKS_JSON=${SOORMA_AUTH_JWKS_JSON:-}
+            - SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON=${SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON:-}
             - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
             - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
@@ -147,7 +167,8 @@ services:
             - NATS_URL=nats://nats:4222
             - IS_LOCAL_TESTING=true
             - IS_PROD=false
-            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - SOORMA_AUTH_JWKS_JSON=${SOORMA_AUTH_JWKS_JSON:-}
+            - SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON=${SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON:-}
             - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
             - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
@@ -173,8 +194,14 @@ services:
             - SYNC_DATABASE_URL=postgresql+psycopg2://soorma:soorma@postgres:5432/identity
             - IS_PROD=false
             - IDENTITY_ADMIN_API_KEY=${IDENTITY_ADMIN_API_KEY:-dev-identity-admin}
-            - IDENTITY_SIGNING_KEY=${IDENTITY_SIGNING_KEY:-dev-identity-signing-key}
-            - SOORMA_AUTH_JWT_SECRET=${SOORMA_AUTH_JWT_SECRET:-dev-identity-signing-key}
+            - IDENTITY_SIGNING_ALGORITHM=${IDENTITY_SIGNING_ALGORITHM:-RS256}
+            - IDENTITY_ACTIVE_SIGNING_KID=${IDENTITY_ACTIVE_SIGNING_KID:-dev-rs256}
+            - IDENTITY_SIGNING_PRIVATE_KEYRING_JSON=${IDENTITY_SIGNING_PRIVATE_KEYRING_JSON:-}
+            - IDENTITY_SIGNING_PUBLIC_KEYRING_JSON=${IDENTITY_SIGNING_PUBLIC_KEYRING_JSON:-}
+            - IDENTITY_JWKS_PUBLICATION_JSON=${IDENTITY_JWKS_PUBLICATION_JSON:-}
+            - IDENTITY_VERIFIER_JWKS_JSON=${IDENTITY_VERIFIER_JWKS_JSON:-}
+            - SOORMA_AUTH_JWKS_JSON=${SOORMA_AUTH_JWKS_JSON:-}
+            - SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON=${SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON:-}
             - SOORMA_AUTH_JWT_ISSUER=${SOORMA_AUTH_JWT_ISSUER:-soorma-identity-service}
             - SOORMA_AUTH_JWT_AUDIENCE=${SOORMA_AUTH_JWT_AUDIENCE:-soorma-services}
         depends_on:
@@ -313,6 +340,134 @@ def build_bootstrap_fingerprint(config: dict[str, str]) -> str:
     """Build deterministic fingerprint for stack bootstrap configuration."""
     canonical = json.dumps(config, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def get_dev_identity_dir(soorma_dir: Path) -> Path:
+    """Return the persisted local identity-material directory under .soorma."""
+    identity_dir = soorma_dir / DEV_IDENTITY_DIR_NAME
+    identity_dir.mkdir(parents=True, exist_ok=True)
+    return identity_dir
+
+
+def _build_dev_identity_jwks_payload(active_signing_kid: str, public_key_pem: str) -> dict[str, list[dict[str, object]]]:
+    """Build JWKS publication payload for the persisted local public key."""
+    public_key = load_pem_public_key(public_key_pem.encode("utf-8"))
+    jwk_payload = json.loads(RSAAlgorithm.to_jwk(public_key))
+    jwk_payload.update({"kid": active_signing_kid, "use": "sig", "alg": "RS256"})
+    return {"keys": [jwk_payload]}
+
+
+def _write_text_if_changed(path: Path, content: str) -> None:
+    """Write text only when the persisted content differs."""
+    if path.exists() and path.read_text() == content:
+        return
+    path.write_text(content)
+
+
+def load_or_create_dev_identity_material(soorma_dir: Path, active_signing_kid: str) -> dict[str, str]:
+    """Load persisted dev identity keys from .soorma or generate them on first use."""
+    identity_dir = get_dev_identity_dir(soorma_dir)
+    private_key_path = identity_dir / DEV_IDENTITY_PRIVATE_KEY_FILE
+    public_key_path = identity_dir / DEV_IDENTITY_PUBLIC_KEY_FILE
+    jwks_path = identity_dir / DEV_IDENTITY_JWKS_FILE
+
+    private_key_pem: str
+    public_key_pem: str
+    should_generate = not (private_key_path.exists() and public_key_path.exists())
+
+    if not should_generate:
+        try:
+            private_key_pem = private_key_path.read_text()
+            public_key_pem = public_key_path.read_text()
+            load_pem_private_key(private_key_pem.encode("utf-8"), password=None)
+            load_pem_public_key(public_key_pem.encode("utf-8"))
+        except (OSError, ValueError, TypeError):
+            should_generate = True
+
+    if should_generate:
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        private_key_pem = private_key.private_bytes(
+            encoding=Encoding.PEM,
+            format=PrivateFormat.PKCS8,
+            encryption_algorithm=NoEncryption(),
+        ).decode("utf-8")
+        public_key_pem = private_key.public_key().public_bytes(
+            encoding=Encoding.PEM,
+            format=PublicFormat.SubjectPublicKeyInfo,
+        ).decode("utf-8")
+        private_key_path.write_text(private_key_pem)
+        public_key_path.write_text(public_key_pem)
+
+    jwks_publication_json = json.dumps(
+        _build_dev_identity_jwks_payload(active_signing_kid, public_key_pem)
+    )
+    _write_text_if_changed(jwks_path, jwks_publication_json)
+
+    return {
+        "identity_signing_private_keyring_json": json.dumps({active_signing_kid: private_key_pem}),
+        "identity_signing_public_keyring_json": json.dumps({active_signing_kid: public_key_pem}),
+        "identity_jwks_publication_json": jwks_publication_json,
+    }
+
+
+def resolve_dev_identity_bootstrap_config(soorma_dir: Path | None = None) -> dict[str, str]:
+    """Resolve deterministic RS256/JWKS bootstrap config for local stacks."""
+    active_signing_kid = os.environ.get(
+        "IDENTITY_ACTIVE_SIGNING_KID",
+        DEV_IDENTITY_ACTIVE_SIGNING_KID,
+    )
+    bootstrap_material_env_vars = (
+        "IDENTITY_SIGNING_PRIVATE_KEYRING_JSON",
+        "IDENTITY_SIGNING_PUBLIC_KEYRING_JSON",
+        "IDENTITY_JWKS_PUBLICATION_JSON",
+        "IDENTITY_VERIFIER_JWKS_JSON",
+        "SOORMA_AUTH_JWKS_JSON",
+        "SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON",
+    )
+    persisted_material = {
+        "identity_signing_private_keyring_json": "",
+        "identity_signing_public_keyring_json": "",
+        "identity_jwks_publication_json": "",
+    }
+    if any(not os.environ.get(env_var) for env_var in bootstrap_material_env_vars):
+        persisted_material = load_or_create_dev_identity_material(
+            soorma_dir or get_soorma_dir(),
+            active_signing_kid,
+        )
+    private_keyring_json = os.environ.get(
+        "IDENTITY_SIGNING_PRIVATE_KEYRING_JSON",
+        persisted_material["identity_signing_private_keyring_json"],
+    )
+    public_keyring_json = os.environ.get(
+        "IDENTITY_SIGNING_PUBLIC_KEYRING_JSON",
+        persisted_material["identity_signing_public_keyring_json"],
+    )
+    jwks_publication_json = os.environ.get(
+        "IDENTITY_JWKS_PUBLICATION_JSON",
+        persisted_material["identity_jwks_publication_json"],
+    )
+    verifier_jwks_json = os.environ.get(
+        "IDENTITY_VERIFIER_JWKS_JSON",
+        jwks_publication_json,
+    )
+    auth_jwks_json = os.environ.get(
+        "SOORMA_AUTH_JWKS_JSON",
+        jwks_publication_json,
+    )
+    auth_public_keys_json = os.environ.get(
+        "SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON",
+        public_keyring_json,
+    )
+    return {
+        "identity_signing_algorithm": os.environ.get("IDENTITY_SIGNING_ALGORITHM", "RS256"),
+        "identity_active_signing_kid": active_signing_kid,
+        "identity_signing_private_keyring_json": private_keyring_json,
+        "identity_signing_public_keyring_json": public_keyring_json,
+        "identity_jwks_publication_json": jwks_publication_json,
+        "identity_verifier_jwks_json": verifier_jwks_json,
+        "soorma_auth_jwks_json": auth_jwks_json,
+        "soorma_auth_jwt_public_keys_json": auth_public_keys_json,
+    }
 
 
 def determine_bootstrap_outcome(state_file: Path, fingerprint: str) -> str:
@@ -754,10 +909,9 @@ def dev_stack(
     # Defaults are intentionally deterministic for local-only stacks.
     openai_api_key = os.environ.get("OPENAI_API_KEY", "")
     identity_admin_api_key = os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
-    identity_signing_key = os.environ.get("IDENTITY_SIGNING_KEY", "dev-identity-signing-key")
-    soorma_auth_jwt_secret = os.environ.get("SOORMA_AUTH_JWT_SECRET", identity_signing_key)
     soorma_auth_jwt_issuer = os.environ.get("SOORMA_AUTH_JWT_ISSUER", "soorma-identity-service")
     soorma_auth_jwt_audience = os.environ.get("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+    identity_bootstrap_config = resolve_dev_identity_bootstrap_config()
     
     # Write .env file with custom ports and service images
     env_content = f"""# Soorma Local Development Environment
@@ -776,8 +930,14 @@ IDENTITY_SERVICE_IMAGE={identity_service_image or 'identity-service:latest'}
 POSTGRES_PORT={postgres_port}
 OPENAI_API_KEY={openai_api_key}
 IDENTITY_ADMIN_API_KEY={identity_admin_api_key}
-IDENTITY_SIGNING_KEY={identity_signing_key}
-SOORMA_AUTH_JWT_SECRET={soorma_auth_jwt_secret}
+IDENTITY_SIGNING_ALGORITHM={identity_bootstrap_config['identity_signing_algorithm']}
+IDENTITY_ACTIVE_SIGNING_KID={identity_bootstrap_config['identity_active_signing_kid']}
+IDENTITY_SIGNING_PRIVATE_KEYRING_JSON={json.dumps(identity_bootstrap_config['identity_signing_private_keyring_json'])}
+IDENTITY_SIGNING_PUBLIC_KEYRING_JSON={json.dumps(identity_bootstrap_config['identity_signing_public_keyring_json'])}
+IDENTITY_JWKS_PUBLICATION_JSON={json.dumps(identity_bootstrap_config['identity_jwks_publication_json'])}
+IDENTITY_VERIFIER_JWKS_JSON={json.dumps(identity_bootstrap_config['identity_verifier_jwks_json'])}
+SOORMA_AUTH_JWKS_JSON={json.dumps(identity_bootstrap_config['soorma_auth_jwks_json'])}
+SOORMA_AUTH_JWT_PUBLIC_KEYS_JSON={json.dumps(identity_bootstrap_config['soorma_auth_jwt_public_keys_json'])}
 SOORMA_AUTH_JWT_ISSUER={soorma_auth_jwt_issuer}
 SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
 """
@@ -828,8 +988,14 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
         "tracker_service_image": tracker_service_image,
         "identity_service_image": identity_service_image,
         "identity_admin_api_key": identity_admin_api_key,
-        "identity_signing_key": identity_signing_key,
-        "soorma_auth_jwt_secret": soorma_auth_jwt_secret,
+        "identity_signing_algorithm": identity_bootstrap_config["identity_signing_algorithm"],
+        "identity_active_signing_kid": identity_bootstrap_config["identity_active_signing_kid"],
+        "identity_signing_private_keyring_json": identity_bootstrap_config["identity_signing_private_keyring_json"],
+        "identity_signing_public_keyring_json": identity_bootstrap_config["identity_signing_public_keyring_json"],
+        "identity_jwks_publication_json": identity_bootstrap_config["identity_jwks_publication_json"],
+        "identity_verifier_jwks_json": identity_bootstrap_config["identity_verifier_jwks_json"],
+        "soorma_auth_jwks_json": identity_bootstrap_config["soorma_auth_jwks_json"],
+        "soorma_auth_jwt_public_keys_json": identity_bootstrap_config["soorma_auth_jwt_public_keys_json"],
         "soorma_auth_jwt_issuer": soorma_auth_jwt_issuer,
         "soorma_auth_jwt_audience": soorma_auth_jwt_audience,
     }
@@ -941,9 +1107,10 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
     typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
     typer.echo("  # Optional local overrides for identity/JWT testing:")
     typer.echo("  export IDENTITY_ADMIN_API_KEY=dev-identity-admin")
-    typer.echo("  export IDENTITY_SIGNING_KEY=dev-identity-signing-key")
-    typer.echo("  export SOORMA_AUTH_JWT_SECRET=dev-identity-signing-key")
+    typer.echo("  export IDENTITY_SIGNING_ALGORITHM=RS256")
+    typer.echo(f"  export IDENTITY_ACTIVE_SIGNING_KID={identity_bootstrap_config['identity_active_signing_kid']}")
     typer.echo("  export SOORMA_AUTH_JWT_ISSUER=soorma-identity-service")
     typer.echo("  export SOORMA_AUTH_JWT_AUDIENCE=soorma-services")
+    typer.echo("  # If host-side code verifies JWTs, source SOORMA_AUTH_JWKS_JSON from .soorma/.env")
     typer.echo("  python agent.py")
     raise typer.Exit(0)

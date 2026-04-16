@@ -1,13 +1,18 @@
 import asyncio
 import sys
 import uuid
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import EventClient
 from soorma_common.events import EventEnvelope, EventTopic
 from events import GOAL_EVENT, FULFILLED_EVENT
+from examples.shared.auth import build_example_token_provider
 
-
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
-USER_ID = "00000000-0000-0000-0000-000000000001"
+EXAMPLE_NAME = "research-advisor"
 
 async def interactive_cli():
     """Run an interactive CLI for the Generic Agent System."""
@@ -20,7 +25,16 @@ async def interactive_cli():
     print("   (All interactions in this session share the same plan for context continuity)")
     print("   (Restart the client to begin a new plan)\n")
     
-    client = EventClient(agent_id="client", source="client")
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
+
+    client = EventClient(
+        agent_id="client",
+        source="client",
+        auth_token_provider=token_provider,
+    )
     
     # Shared event to signal completion of a request
     request_completed = asyncio.Event()
@@ -70,8 +84,8 @@ async def interactive_cli():
                 event_type=GOAL_EVENT.event_name,
                 topic=GOAL_EVENT.topic,
                 data=query,
-                tenant_id=TENANT_ID,
-                user_id=USER_ID,
+                tenant_id=tenant_id,
+                user_id=user_id,
             )
             
             print("   Waiting for result...")

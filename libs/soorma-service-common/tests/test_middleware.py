@@ -43,55 +43,61 @@ def _build_jwks_json(kid: str, public_pem: str) -> str:
 
 
 class TestTenancyMiddlewareHeaderExtraction:
-    """TenancyMiddleware extracts identity headers into request.state."""
+    """TenancyMiddleware extracts identity headers for trusted admin-key requests."""
+
+    @staticmethod
+    def _admin_headers(**extra_headers: str) -> dict[str, str]:
+        headers = {"X-Identity-Admin-Key": "dev-identity-admin"}
+        headers.update(extra_headers)
+        return headers
 
     def test_x_tenant_id_populates_platform_tenant_id(self, make_test_app):
-        """X-Tenant-ID header → request.state.platform_tenant_id."""
+        """Trusted admin request projects X-Tenant-ID into request.state.platform_tenant_id."""
         client = TestClient(make_test_app(), raise_server_exceptions=False)
-        response = client.get("/test", headers={"X-Tenant-ID": "spt_acme"})
+        response = client.get("/test", headers=self._admin_headers(**{"X-Tenant-ID": "spt_acme"}))
         assert response.status_code == 200
         assert response.json()["platform_tenant_id"] == "spt_acme"
 
     def test_missing_x_tenant_id_uses_default(self, make_test_app):
-        """Absent X-Tenant-ID → request.state.platform_tenant_id = DEFAULT_PLATFORM_TENANT_ID."""
+        """Trusted admin request without X-Tenant-ID uses DEFAULT_PLATFORM_TENANT_ID."""
         from soorma_common.tenancy import DEFAULT_PLATFORM_TENANT_ID
 
         client = TestClient(make_test_app(), raise_server_exceptions=False)
-        response = client.get("/test")
+        response = client.get("/test", headers=self._admin_headers())
         assert response.status_code == 200
         assert response.json()["platform_tenant_id"] == DEFAULT_PLATFORM_TENANT_ID
 
     def test_x_service_tenant_id_populates_service_tenant_id(self, make_test_app):
-        """X-Service-Tenant-ID header → request.state.service_tenant_id."""
+        """Trusted admin request projects X-Service-Tenant-ID into request.state.service_tenant_id."""
         client = TestClient(make_test_app(), raise_server_exceptions=False)
         response = client.get(
             "/test",
-            headers={"X-Tenant-ID": "spt_acme", "X-Service-Tenant-ID": "tenant-org-1"},
+            headers=self._admin_headers(**{"X-Tenant-ID": "spt_acme", "X-Service-Tenant-ID": "tenant-org-1"}),
         )
         assert response.status_code == 200
         assert response.json()["service_tenant_id"] == "tenant-org-1"
 
     def test_missing_x_service_tenant_id_is_none(self, make_test_app):
-        """Absent X-Service-Tenant-ID → request.state.service_tenant_id is None."""
+        """Trusted admin request without X-Service-Tenant-ID leaves request.state.service_tenant_id as None."""
         client = TestClient(make_test_app(), raise_server_exceptions=False)
-        response = client.get("/test", headers={"X-Tenant-ID": "spt_acme"})
+        response = client.get("/test", headers=self._admin_headers(**{"X-Tenant-ID": "spt_acme"}))
         assert response.status_code == 200
         assert response.json()["service_tenant_id"] is None
 
     def test_x_user_id_populates_service_user_id(self, make_test_app):
-        """X-User-ID header → request.state.service_user_id."""
+        """Trusted admin request projects X-User-ID into request.state.service_user_id."""
         client = TestClient(make_test_app(), raise_server_exceptions=False)
         response = client.get(
             "/test",
-            headers={"X-Tenant-ID": "spt_acme", "X-User-ID": "user-42"},
+            headers=self._admin_headers(**{"X-Tenant-ID": "spt_acme", "X-User-ID": "user-42"}),
         )
         assert response.status_code == 200
         assert response.json()["service_user_id"] == "user-42"
 
     def test_missing_x_user_id_is_none(self, make_test_app):
-        """Absent X-User-ID → request.state.service_user_id is None."""
+        """Trusted admin request without X-User-ID leaves request.state.service_user_id as None."""
         client = TestClient(make_test_app(), raise_server_exceptions=False)
-        response = client.get("/test", headers={"X-Tenant-ID": "spt_acme"})
+        response = client.get("/test", headers=self._admin_headers(**{"X-Tenant-ID": "spt_acme"}))
         assert response.status_code == 200
         assert response.json()["service_user_id"] is None
 
@@ -173,6 +179,41 @@ class TestTenancyMiddlewareJwtCoexistence:
         assert response.json()["service_tenant_id"] == "tenant_jwt"
         assert response.json()["service_user_id"] == "user_jwt"
 
+    def test_jwt_without_service_aliases_uses_canonical_claim_fallback(self, make_test_app, monkeypatch):
+        """Canonical tenant_id and principal_id claims should populate service identity."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "tenant_id": "tenant_canonical",
+                "platform_tenant_id": "spt_jwt",
+                "principal_id": "principal-123",
+                "sub": "subject-456",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "Authorization": f"Bearer {token}",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["platform_tenant_id"] == "tenant_canonical"
+        assert response.json()["service_tenant_id"] == "tenant_canonical"
+        assert response.json()["service_user_id"] == "principal-123"
+
     def test_jwt_with_mismatching_alias_headers_fails_closed(self, make_test_app, monkeypatch):
         """When JWT and alias headers disagree, middleware denies fail-closed."""
         import jwt
@@ -224,8 +265,8 @@ class TestTenancyMiddlewareJwtCoexistence:
         )
         assert response.status_code == 401
 
-    def test_no_jwt_uses_legacy_headers(self, make_test_app):
-        """If JWT is absent, middleware must continue legacy header path."""
+    def test_no_jwt_without_admin_bypass_is_denied(self, make_test_app):
+        """If JWT is absent and no trusted admin bypass exists, middleware denies access."""
         client = TestClient(make_test_app(), raise_server_exceptions=False)
         response = client.get(
             "/test",
@@ -235,10 +276,55 @@ class TestTenancyMiddlewareJwtCoexistence:
                 "X-User-ID": "user_header",
             },
         )
+        assert response.status_code == 401
+
+    def test_admin_header_bypass_allows_identity_control_plane_request(self, make_test_app):
+        """Trusted admin-key requests may bypass JWT enforcement for identity control-plane routes."""
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={
+                "X-Tenant-ID": "spt_header",
+                "X-Service-Tenant-ID": "tenant_header",
+                "X-User-ID": "user_header",
+                "X-Identity-Admin-Key": "dev-identity-admin",
+            },
+        )
         assert response.status_code == 200
         assert response.json()["platform_tenant_id"] == "spt_header"
         assert response.json()["service_tenant_id"] == "tenant_header"
         assert response.json()["service_user_id"] == "user_header"
+
+    def test_jwt_uses_canonical_tenant_id_claim_when_present(self, make_test_app, monkeypatch):
+        """Middleware should prefer canonical tenant_id claim over legacy platform_tenant_id claim."""
+        import jwt
+
+        monkeypatch.setenv("SOORMA_AUTH_JWT_SECRET", "test-secret")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_ISSUER", "soorma-identity")
+        monkeypatch.setenv("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
+
+        token = jwt.encode(
+            {
+                "tenant_id": "tenant-canonical",
+                "platform_tenant_id": "tenant-legacy",
+                "service_tenant_id": "svc-tenant",
+                "service_user_id": "svc-user",
+                "exp": 4102444800,
+                "aud": "soorma-services",
+                "iss": "soorma-identity",
+            },
+            "test-secret",
+            algorithm="HS256",
+        )
+
+        client = TestClient(make_test_app(), raise_server_exceptions=False)
+        response = client.get(
+            "/test",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["platform_tenant_id"] == "tenant-canonical"
 
     def test_jwt_invalid_principal_type_fails_closed(self, make_test_app, monkeypatch):
         """JWT with unsupported principal_type must fail closed (401)."""

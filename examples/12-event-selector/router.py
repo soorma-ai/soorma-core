@@ -19,7 +19,13 @@ SDK patterns shown:
 
 import logging
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from dotenv import load_dotenv
 
@@ -30,10 +36,15 @@ from soorma.task_context import TaskContext
 from soorma_common import AgentCapability, EventDefinition
 from soorma_common.events import EventTopic
 
+from examples.shared.auth import build_example_token_provider
+
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+EXAMPLE_NAME = "12-event-selector"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 # ---------------------------------------------------------------------------
 # Event definitions
@@ -95,6 +106,7 @@ router = Worker(
             produced_events=[TICKET_ROUTED_EVENT],
         )
     ],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

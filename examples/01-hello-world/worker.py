@@ -6,10 +6,23 @@ The simplest possible Soorma agent - demonstrates the Worker pattern.
 A Worker listens for events and responds to them.
 """
 
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from soorma import Worker
 from soorma.context import PlatformContext
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "01-hello-world"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 # Define event types
@@ -33,6 +46,7 @@ worker = Worker(
     capabilities=["greeting"],
     events_consumed=[GREETING_REQUESTED_EVENT],
     events_produced=[GREETING_COMPLETED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

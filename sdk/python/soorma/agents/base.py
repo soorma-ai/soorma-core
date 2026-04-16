@@ -39,6 +39,7 @@ from uuid import uuid4
 
 from soorma_common.events import EventEnvelope, EventTopic
 
+from ..auth import AuthTokenProvider, build_optional_auth_kwargs
 from ..context import PlatformContext
 from ..events import EventClient
 
@@ -133,6 +134,8 @@ class Agent(ABC):
         events_produced: Optional[List[Any]] = None,
         agent_id: Optional[str] = None,
         auto_register: bool = True,
+        auth_token: Optional[str] = None,
+        auth_token_provider: Optional[AuthTokenProvider] = None,
     ):
         """
         Initialize the agent.
@@ -147,6 +150,8 @@ class Agent(ABC):
             events_produced: Event types this agent publishes (strings or EventDefinition objects)
             agent_id: Unique ID (auto-generated if not provided)
             auto_register: Whether to register with Registry on startup
+            auth_token: Optional bearer token for downstream service calls
+            auth_token_provider: Optional async token provider for downstream service calls
         """
         # Process events to separate strings and definitions
         consumed_strings = []
@@ -207,6 +212,8 @@ class Agent(ABC):
         self.description = description
         self.version = version
         self.capabilities = self.config.capabilities
+        self._auth_token = auth_token
+        self._auth_token_provider = auth_token_provider
         
         # Platform context (initialized on run)
         self._context: Optional[PlatformContext] = None
@@ -384,12 +391,15 @@ class Agent(ABC):
     async def _initialize_context(self) -> None:
         """Initialize the platform context."""
         logger.info(f"Initializing platform context for {self.name}")
+        auth_token = self._auth_token
+        auth_token_provider = self._auth_token_provider
         
         # Create EventClient for bus
         event_client = EventClient(
             event_service_url=self.config.event_service_url,
             agent_id=self.agent_id,
             source=self.name,
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
         )
         
         # Register our event handlers with the EventClient
@@ -457,10 +467,19 @@ class Agent(ABC):
         self._context = PlatformContext(
             registry=RegistryClient(
                 base_url=self.config.registry_url,
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
             ),
-            memory=MemoryClient(base_url=self.config.memory_url),
+            memory=MemoryClient(
+                base_url=self.config.memory_url,
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
+            ),
             bus=BusClient(event_client=event_client),
-            tracker=TrackerClient(base_url=self.config.tracker_url),
+            tracker=TrackerClient(
+                base_url=self.config.tracker_url,
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
+            ),
+            auth_token=auth_token,
+            auth_token_provider=auth_token_provider,
         )
     
     async def _register_with_registry(self) -> bool:

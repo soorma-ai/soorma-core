@@ -61,11 +61,9 @@ class TestSemanticUpsertSDK:
         assert result.user_id == "user-alice"
         assert result.is_public == False
         
-        # Verify API call includes identity headers
+        # Verify the SDK does not emit legacy identity headers without bearer auth
         call_kwargs = memory_client._client.post.call_args.kwargs
-        assert call_kwargs["headers"]["X-Tenant-ID"] == "platform-tenant-1"
-        assert call_kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
-        assert call_kwargs["headers"]["X-User-ID"] == "user-alice"
+        assert call_kwargs["headers"] == {}
         
         # Verify DTO doesn't include user_id in body
         dto_payload = call_kwargs["json"]
@@ -223,10 +221,9 @@ class TestSemanticQuerySDK:
         assert results[0].content == "Search result"
         assert results[0].user_id == "user-alice"
         
-        # Verify service identity passed via headers
+        # Verify the SDK does not emit legacy service identity headers
         call_kwargs = memory_client._client.post.call_args.kwargs
-        assert call_kwargs["headers"]["X-Service-Tenant-ID"] == "tenant-1"
-        assert call_kwargs["headers"]["X-User-ID"] == "user-alice"
+        assert call_kwargs["headers"] == {}
         
         # Verify all params passed as query parameters (not JSON body)
         params = call_kwargs["params"]

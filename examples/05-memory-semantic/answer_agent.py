@@ -10,7 +10,14 @@ Uses event-driven choreography pattern.
 """
 
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from litellm import completion
 from soorma import Worker
 from soorma.context import PlatformContext
@@ -20,6 +27,12 @@ from events import (
     QUESTION_ANSWERED_EVENT,
     QuestionAnsweredPayload,
 )
+
+from examples.shared.auth import build_example_token_provider
+
+
+EXAMPLE_NAME = "05-memory-semantic"
+EXAMPLE_TOKEN_PROVIDER = build_example_token_provider(EXAMPLE_NAME, __file__)
 
 
 def _build_knowledge_context(knowledge_results: list) -> tuple[list[dict], str]:
@@ -102,6 +115,7 @@ worker = Worker(
     capabilities=["question-answering", "rag"],
     events_consumed=[ANSWER_QUESTION_EVENT],
     events_produced=[QUESTION_ANSWERED_EVENT],
+    auth_token_provider=EXAMPLE_TOKEN_PROVIDER,
 )
 
 

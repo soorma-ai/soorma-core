@@ -13,17 +13,23 @@ Also demonstrates Tracker Service observability:
 import asyncio
 from uuid import uuid4
 from typing import Optional
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from soorma import EventClient
 from soorma.tracker.client import TrackerServiceClient
 from soorma_common.events import EventEnvelope, EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
-USER_ID = "00000000-0000-0000-0000-000000000001"
+EXAMPLE_NAME = "10-choreography-basic"
 
 
-async def show_observability(plan_id: str) -> None:
+async def show_observability(plan_id: str, token_provider, tenant_id: str, user_id: str) -> None:
     """
     Query Tracker Service to show workflow observability.
     
@@ -35,7 +41,7 @@ async def show_observability(plan_id: str) -> None:
     Args:
         plan_id: Correlation ID (used as plan_id in choreography)
     """
-    tracker = TrackerServiceClient()
+    tracker = TrackerServiceClient(auth_token_provider=token_provider)
     
     print("\n" + "="*70)
     print("  📊 WORKFLOW OBSERVABILITY (Tracker Service)")
@@ -45,8 +51,8 @@ async def show_observability(plan_id: str) -> None:
         # Get plan progress summary
         progress = await tracker.get_plan_progress(
             plan_id=plan_id,
-            service_tenant_id=TENANT_ID,
-            service_user_id=USER_ID,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
         
         if progress:
@@ -63,8 +69,8 @@ async def show_observability(plan_id: str) -> None:
         # Get task execution history
         tasks = await tracker.get_plan_tasks(
             plan_id=plan_id,
-            service_tenant_id=TENANT_ID,
-            service_user_id=USER_ID,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
         
         if tasks:
@@ -77,8 +83,8 @@ async def show_observability(plan_id: str) -> None:
         # Get event timeline
         timeline = await tracker.get_plan_timeline(
             plan_id=plan_id,
-            service_tenant_id=TENANT_ID,
-            service_user_id=USER_ID,
+            service_tenant_id=tenant_id,
+            service_user_id=user_id,
         )
         
         if timeline and timeline.events:
@@ -101,7 +107,15 @@ async def show_observability(plan_id: str) -> None:
 
 async def main() -> None:
     """Send feedback analysis goal and wait for result."""
-    client = EventClient(agent_id="feedback-client", source="feedback-client")
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
+    client = EventClient(
+        agent_id="feedback-client",
+        source="feedback-client",
+        auth_token_provider=token_provider,
+    )
     
     response_event = asyncio.Event()
     response_payload = {}
@@ -128,8 +142,8 @@ async def main() -> None:
         response_topic=EventTopic.ACTION_RESULTS,
         correlation_id=correlation_id,
         data={"product": "Soorma Hub", "sample_size": 3},
-        tenant_id=TENANT_ID,
-        user_id=USER_ID,
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
 
     print("[client] Waiting for response (timeout: 30s)...")
@@ -141,7 +155,7 @@ async def main() -> None:
         print(response_payload.get("result", response_payload))
         
         # Show observability data on success
-        await show_observability(plan_id)
+        await show_observability(plan_id, token_provider, tenant_id, user_id)
         
     except asyncio.TimeoutError:
         print("\n⚠️  Timeout waiting for response")
@@ -149,7 +163,7 @@ async def main() -> None:
         print("   Run: ./start.sh")
         
         # Show observability data on timeout (helps debug!)
-        await show_observability(plan_id)
+        await show_observability(plan_id, token_provider, tenant_id, user_id)
         
     finally:
         await client.disconnect()

@@ -25,16 +25,20 @@ Usage:
 
 import asyncio
 import sys
+from pathlib import Path
 from uuid import uuid4
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from soorma import EventClient
 from soorma_common import EventDefinition
 from soorma_common.events import EventEnvelope, EventTopic
 
+from examples.shared.auth import build_example_token_provider
 
-# Authentication context — in production this comes from user auth
-TENANT_ID = "00000000-0000-0000-0000-000000000000"
-USER_ID = "00000000-0000-0000-0000-000000000001"
+EXAMPLE_NAME = "11-discovery-llm"
 
 DEFAULT_TOPIC = "Latest advances in quantum computing, 2025"
 TIMEOUT_SECONDS = 30.0
@@ -92,12 +96,17 @@ async def send_research_goal(description: str) -> None:
     Args:
         description: Natural-language research objective sent to the planner.
     """
+    token_provider = build_example_token_provider(EXAMPLE_NAME, __file__)
+    await token_provider.get_token()
+    tenant_id = await token_provider.get_platform_tenant_id()
+    user_id = await token_provider.get_bootstrap_admin_principal_id()
     client = EventClient(
         agent_id="discovery-llm-client",
         source="discovery-llm-client",
         # Register our response schema with the Registry on connect so the
         # planner can look it up when generating its response payload.
         events_consumed=[RESEARCH_COMPLETED_EVENT],
+        auth_token_provider=token_provider,
     )
 
     print("=" * 60)
@@ -142,8 +151,8 @@ async def send_research_goal(description: str) -> None:
         response_event=RESEARCH_COMPLETED_EVENT.event_name,
         response_topic=EventTopic.ACTION_RESULTS,
         response_schema_name=RESEARCH_COMPLETED_EVENT.payload_schema_name,
-        tenant_id=TENANT_ID,
-        user_id=USER_ID,
+        tenant_id=tenant_id,
+        user_id=user_id,
     )
 
     print(f"[client] Goal published — waiting for response (timeout: {TIMEOUT_SECONDS}s)...")
