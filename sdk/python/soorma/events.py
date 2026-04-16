@@ -34,7 +34,6 @@ Usage:
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 from uuid import uuid4
@@ -86,8 +85,8 @@ class EventClient:
             event_service_url: Base URL of the Event Service (e.g., "http://localhost:8082")
             agent_id: Unique identifier for this agent (auto-generated if not provided)
             source: Source identifier for events (defaults to agent_id)
-            platform_tenant_id: Legacy platform tenant default retained only for
-                envelope metadata compatibility
+            platform_tenant_id: Optional explicit platform tenant value retained
+                only for envelope metadata compatibility.
             tenant_id: Default tenant ID for multi-tenancy
             session_id: Default session ID for correlation
             events_consumed: Optional list of EventDefinition objects to auto-register
@@ -101,7 +100,7 @@ class EventClient:
         self.source = source or self.agent_id
         self.auth_token = auth_token
         self.auth_token_provider = auth_token_provider
-        self.platform_tenant_id = platform_tenant_id or os.getenv("SOORMA_PLATFORM_TENANT_ID") or None
+        self.platform_tenant_id = platform_tenant_id
         self.tenant_id = tenant_id
         self.session_id = session_id
         

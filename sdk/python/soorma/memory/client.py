@@ -8,9 +8,6 @@ framework with four types of memory:
 - Procedural Memory: Dynamic prompts, rules, and skills
 - Working Memory: Plan-scoped shared state for multi-agent collaboration
 """
-
-import os
-
 from typing import Any, Dict, List, Optional
 import httpx
 
@@ -67,15 +64,16 @@ class MemoryServiceClient:
         Args:
             base_url: Base URL of the memory service (e.g., "http://localhost:8083")
             timeout: HTTP request timeout in seconds
-            platform_tenant_id: Platform tenant identifier for X-Tenant-ID header
+            platform_tenant_id: Optional explicit platform tenant value retained
+                for compatibility only. It is not projected on the active bearer-auth path.
             
         Note:
             service_tenant_id and service_user_id are passed per-request in method
-            calls. platform_tenant_id is fixed for the client lifetime.
+            calls. platform_tenant_id is compatibility-only state.
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.platform_tenant_id = platform_tenant_id or os.getenv("SOORMA_PLATFORM_TENANT_ID") or None
+        self.platform_tenant_id = platform_tenant_id
         self.auth_token = auth_token
         self.auth_token_provider = auth_token_provider
         self._client = httpx.AsyncClient(timeout=timeout)

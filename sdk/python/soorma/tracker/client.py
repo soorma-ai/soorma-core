@@ -1,7 +1,5 @@
 """TrackerServiceClient - Low-level HTTP client for Tracker Service (Layer 1)."""
 
-import os
-
 from typing import Dict, List, Optional
 
 import httpx
@@ -28,10 +26,14 @@ class TrackerServiceClient:
         auth_token: Optional[str] = None,
         auth_token_provider: Optional[AuthTokenProvider] = None,
     ):
-        """Initialize the Tracker Service client."""
+        """Initialize the Tracker Service client.
+
+        platform_tenant_id is retained as explicit compatibility-only state and
+        is not projected on the active bearer-auth path.
+        """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.platform_tenant_id = platform_tenant_id or os.getenv("SOORMA_PLATFORM_TENANT_ID") or None
+        self.platform_tenant_id = platform_tenant_id
         self.auth_token = auth_token
         self.auth_token_provider = auth_token_provider
         self._client = httpx.AsyncClient(timeout=timeout)
