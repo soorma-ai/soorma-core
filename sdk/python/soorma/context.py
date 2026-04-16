@@ -1807,7 +1807,11 @@ class PlatformContext:
             self.set_auth_token_provider(auth_token_provider)
     
     @classmethod
-    def from_env(cls) -> "PlatformContext":
+    def from_env(
+        cls,
+        auth_token: Optional[str] = None,
+        auth_token_provider: Optional[AuthTokenProvider] = None,
+    ) -> "PlatformContext":
         """
         Create a PlatformContext from environment variables (convenience method).
         
@@ -1817,7 +1821,6 @@ class PlatformContext:
             SOORMA_MEMORY_URL: Memory service URL (default: http://localhost:8083)
             SOORMA_TRACKER_URL: Tracker service URL (default: http://localhost:8084)
             SOORMA_IDENTITY_URL: Identity service URL (default: http://localhost:8085)
-            SOORMA_AUTH_TOKEN: Optional injected bearer token for bearer-auth service calls
             
         Returns:
             PlatformContext with clients configured from environment
@@ -1828,13 +1831,13 @@ class PlatformContext:
         """
         event_client = EventClient(
             event_service_url=os.getenv("SOORMA_EVENT_SERVICE_URL", "http://localhost:8082"),
-            auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
         )
         
         registry_url = os.getenv("SOORMA_REGISTRY_URL", "http://localhost:8081")
         registry_client = RegistryClient(
             base_url=registry_url,
-            auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
+            **build_optional_auth_kwargs(auth_token, auth_token_provider),
         )
         
         return cls(
@@ -1845,13 +1848,14 @@ class PlatformContext:
             bus=BusClient(event_client=event_client),
             tracker=TrackerClient(
                 base_url=os.getenv("SOORMA_TRACKER_URL", "http://localhost:8084"),
-                auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
+                **build_optional_auth_kwargs(auth_token, auth_token_provider),
             ),
             identity=IdentityClient(
                 base_url=os.getenv("SOORMA_IDENTITY_URL", "http://localhost:8085"),
             ),
             toolkit=EventToolkit(registry_url=registry_url, registry_client=registry_client),
-            auth_token=os.getenv("SOORMA_AUTH_TOKEN"),
+            auth_token=auth_token,
+            auth_token_provider=auth_token_provider,
         )
 
     def set_auth_token(self, auth_token: Optional[str]) -> None:

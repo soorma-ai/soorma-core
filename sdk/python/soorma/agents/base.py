@@ -391,7 +391,7 @@ class Agent(ABC):
     async def _initialize_context(self) -> None:
         """Initialize the platform context."""
         logger.info(f"Initializing platform context for {self.name}")
-        auth_token = self._auth_token if self._auth_token is not None else os.getenv("SOORMA_AUTH_TOKEN")
+        auth_token = self._auth_token
         auth_token_provider = self._auth_token_provider
         
         # Create EventClient for bus

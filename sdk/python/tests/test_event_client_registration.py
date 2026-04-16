@@ -283,9 +283,8 @@ class TestEventClientAuthHeaders:
     """Tests for event-service auth header construction."""
 
     @pytest.mark.asyncio
-    async def test_build_auth_headers_without_token_uses_platform_tenant_only(self, monkeypatch):
+    async def test_build_auth_headers_without_token_are_empty(self):
         """Auth headers should be empty when no bearer token is configured."""
-        monkeypatch.delenv("SOORMA_AUTH_TOKEN", raising=False)
         client = EventClient(agent_id="test-client", platform_tenant_id="tenant-platform")
 
         headers = await client._build_auth_headers()

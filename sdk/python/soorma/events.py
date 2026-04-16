@@ -86,7 +86,8 @@ class EventClient:
             event_service_url: Base URL of the Event Service (e.g., "http://localhost:8082")
             agent_id: Unique identifier for this agent (auto-generated if not provided)
             source: Source identifier for events (defaults to agent_id)
-            platform_tenant_id: Platform tenant ID for X-Tenant-ID header
+            platform_tenant_id: Legacy platform tenant default retained only for
+                envelope metadata compatibility
             tenant_id: Default tenant ID for multi-tenancy
             session_id: Default session ID for correlation
             events_consumed: Optional list of EventDefinition objects to auto-register
@@ -98,7 +99,7 @@ class EventClient:
         self.event_service_url = event_service_url.rstrip("/")
         self.agent_id = agent_id or f"agent-{str(uuid4())[:8]}"
         self.source = source or self.agent_id
-        self.auth_token = auth_token or os.getenv("SOORMA_AUTH_TOKEN")
+        self.auth_token = auth_token
         self.auth_token_provider = auth_token_provider
         self.platform_tenant_id = platform_tenant_id or os.getenv("SOORMA_PLATFORM_TENANT_ID") or None
         self.tenant_id = tenant_id
