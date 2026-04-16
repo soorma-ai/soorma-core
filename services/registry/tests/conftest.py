@@ -4,6 +4,9 @@ Test configuration and fixtures.
 import pytest
 import os
 import asyncio
+from datetime import datetime, timedelta, timezone
+
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from fastapi.testclient import TestClient
 
@@ -17,6 +20,7 @@ TEST_DATABASE_URL = f"sqlite+aiosqlite:///./{TEST_DB_FILE}"
 # Set the environment variable BEFORE importing the app
 # This ensures the app uses the test database from the start
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+os.environ.setdefault("SOORMA_AUTH_JWT_SECRET", "dev-identity-signing-key")
 
 # Now import after setting environment variables
 from registry_service.main import app
@@ -73,9 +77,34 @@ def setup_test_db():
 @pytest.fixture
 def client():
     """
-    Create a test client with sentinel X-Tenant-ID header.
-    All API calls automatically include the developer tenant header.
+    Create a test client with authenticated bearer headers.
     """
-    with TestClient(app, headers={"X-Tenant-ID": TEST_TENANT_ID}) as test_client:
+    with TestClient(app, headers=build_auth_headers(TEST_TENANT_ID)) as test_client:
         yield test_client
+
+
+def build_auth_headers(
+    platform_tenant_id: str = TEST_TENANT_ID,
+    service_tenant_id: str = "st_test-tenant",
+    service_user_id: str = "su_test-user",
+    principal_id: str = "registry-test-user",
+) -> dict[str, str]:
+    """Build JWT bearer headers for registry-service tests."""
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "sub": principal_id,
+            "platform_tenant_id": platform_tenant_id,
+            "service_tenant_id": service_tenant_id,
+            "service_user_id": service_user_id,
+            "principal_id": principal_id,
+            "principal_type": "service",
+            "roles": ["service"],
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(hours=1)).timestamp()),
+        },
+        os.environ["SOORMA_AUTH_JWT_SECRET"],
+        algorithm="HS256",
+    )
+    return {"Authorization": f"Bearer {token}"}
 

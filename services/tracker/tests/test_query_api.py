@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tracker_service.main import app
 from tracker_service.models.db import PlanProgress, ActionProgress, ActionStatus, PlanStatus
+from .conftest import build_auth_headers
 
 
 PLATFORM_TENANT = "spt_test-tenant"
@@ -51,11 +52,7 @@ class TestGetPlanProgress:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-Service-Tenant-ID": service_tenant_id,
-                    "X-User-ID": service_user_id,
-                }
+                headers=build_auth_headers(PLATFORM_TENANT, service_tenant_id, service_user_id),
             )
 
         # Assert: Returns 200 with PlanProgress DTO
@@ -79,11 +76,7 @@ class TestGetPlanProgress:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 "/v1/tracker/plans/nonexistent-plan",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-Service-Tenant-ID": SERVICE_TENANT,
-                    "X-User-ID": SERVICE_USER,
-                }
+                headers=build_auth_headers(PLATFORM_TENANT, SERVICE_TENANT, SERVICE_USER),
             )
 
         # Assert: Returns 404
@@ -115,11 +108,7 @@ class TestGetPlanProgress:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-Service-Tenant-ID": "st_other-tenant",
-                    "X-User-ID": SERVICE_USER,
-                }
+                headers=build_auth_headers(PLATFORM_TENANT, "st_other-tenant", SERVICE_USER),
             )
 
         # Assert: Returns 404 (plan exists but tenant filter blocks it)
@@ -133,10 +122,12 @@ class TestGetPlanProgress:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 "/v1/tracker/plans/plan-123",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-User-ID": SERVICE_USER,
-                },
+                headers=build_auth_headers(
+                    PLATFORM_TENANT,
+                    SERVICE_TENANT,
+                    SERVICE_USER,
+                    include_service_tenant_header=False,
+                ),
             )
 
         assert response.status_code == 422, f"Expected 422, got {response.status_code}: {response.text}"
@@ -203,11 +194,7 @@ class TestGetPlanActions:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}/actions",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-Service-Tenant-ID": service_tenant_id,
-                    "X-User-ID": service_user_id,
-                }
+                headers=build_auth_headers(PLATFORM_TENANT, service_tenant_id, service_user_id),
             )
 
         # Assert: Returns 200 with List[TaskExecution]
@@ -251,11 +238,7 @@ class TestGetPlanActions:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}/actions",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-Service-Tenant-ID": service_tenant_id,
-                    "X-User-ID": service_user_id,
-                }
+                headers=build_auth_headers(PLATFORM_TENANT, service_tenant_id, service_user_id),
             )
 
         # Assert: Returns 200 with empty list
@@ -304,11 +287,7 @@ class TestGetPlanActions:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(
                 f"/v1/tracker/plans/{plan_id}/actions",
-                headers={
-                    "X-Tenant-ID": PLATFORM_TENANT,
-                    "X-Service-Tenant-ID": "st_other-tenant",
-                    "X-User-ID": SERVICE_USER,
-                }
+                headers=build_auth_headers(PLATFORM_TENANT, "st_other-tenant", SERVICE_USER),
             )
 
         # Assert: Returns empty list (actions exist but tenant filter blocks)
