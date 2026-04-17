@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-17
+
 ### Changed
+- Version alignment: bumped to 0.9.0 (event service synchronized with monorepo release)
 - Added TenancyMiddleware and DI-based platform tenant resolution for publish ingress.
 - Enforced trust-boundary metadata policy on publish endpoint: authoritative platform_tenant_id overwrite, centralized tenant_id/user_id sanitization, required tenant_id/user_id checks, and max-length validation.
 - Added fail-closed publish validation tests for spoofing overwrite, fallback behavior, mandatory identity fields, and oversized platform tenant IDs.

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-17
+
+- Version alignment: bumped to 0.9.0 (identity service synchronized with monorepo release).
 - Added canonical `tenant_id` claim issuance alongside compatibility claims for cutover consumers.
 - Documented RS256/JWKS-first local bootstrap defaults and fail-closed verifier expectations for `soorma dev`.
 - Added initial identity-service scaffold for AI-DLC code generation.
