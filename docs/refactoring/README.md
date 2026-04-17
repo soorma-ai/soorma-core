@@ -556,7 +556,7 @@ Items intentionally deferred from Stage 4 for future implementation:
 |------|--------|--------------|--------|
 | **RF-SDK-017:** EventSelector utility | Deferred from Stage 4 | ✅ Complete (Stage 5) | N/A |
 | **RF-SDK-018:** EventToolkit.format_for_llm_selection() | Already exists in EventToolkit | ✅ Complete | N/A |
-| **Tracker NATS direct integration** | Architectural tech debt (TECH-DEBT-001) | ✅ Complete (Stage 5, soorma-nats v0.8.1) | N/A |
+| **Tracker NATS direct integration** | Architectural tech debt (TECH-DEBT-001) | ✅ Complete (Stage 5, aligned in v0.9.0) | N/A |
 | **Conditional state transitions** | Simple event-based transitions sufficient for MVP | Stage 6 or post-launch | 2-3 days |
 | **Tracker Service UI** | FDE: Use curl/Postman for now | Post-launch | 1-2 weeks |
 | **Tracker advanced query endpoints** | Core 2 endpoints sufficient for MVP | Post-launch | 8-12 hours |
@@ -568,7 +568,7 @@ Items intentionally deferred from Stage 4 for future implementation:
 
 ## Remaining Work Summary
 
-### Current Status (March 21, 2026 - Release 0.8.2)
+### Current Status (April 16, 2026 - Release 0.9.0)
 
 **Completed Stages:**
 - ✅ Stage 1: Foundation - Event System (January 17, 2026)
@@ -576,20 +576,20 @@ Items intentionally deferred from Stage 4 for future implementation:
 - ✅ Stage 2.1: Memory Enhancements (January 30, 2026 - Release 0.7.5)
 - ✅ Stage 3: Agent Models - Tool & Worker (February 12, 2026)
 - ✅ Stage 4: Agent Models - Planner (February 23, 2026 - Release 0.8.0)
-- ✅ Stage 5: Discovery & A2A (March 14, 2026 - Release 0.8.2)
+- ✅ Stage 5: Discovery & A2A (March 14, 2026 - Release 0.8.2, aligned in 0.9.0)
 
 **Test Coverage:** 957+ tests total (515 SDK, 156 Memory, 81 Registry, 41 Tracker, 21 Event, 103 Common, 40 NATS)  
-**Current Version:** 0.8.2  
+**Current Version:** 0.9.0  
 **Examples:** 13 numbered examples + research-advisor (01-hello-world → 13-a2a-gateway)
 
 ### Stage 5: Discovery & A2A ✅ COMPLETE
 
-**Status:** ✅ **COMPLETE** (March 14, 2026 - Release 0.8.2)  
+**Status:** ✅ **COMPLETE** (March 14, 2026 - Release 0.8.2, aligned in 0.9.0)  
 **Master Plan:** [docs/discovery/plans/MASTER_PLAN_Enhanced_Discovery.md](../discovery/plans/MASTER_PLAN_Enhanced_Discovery.md)
 
 **Completion Summary:**
 
-All 5 phases completed — shipped as v0.8.1 → aligned to v0.8.2 (not v0.9.0 as originally projected):
+All 5 phases completed — shipped in the v0.8.x line and now aligned across the monorepo in v0.9.0:
 
 **Phase 1 & 2: Foundation & Service Implementation** ✅
 - RF-ARCH-005: Schema Registry (`PayloadSchema` model, `POST/GET /v1/schemas`)
@@ -609,7 +609,7 @@ All 5 phases completed — shipped as v0.8.1 → aligned to v0.8.2 (not v0.9.0 a
 
 **Phase 5: Validation & Integration Tests** ✅
 - 11 in-process integration tests (T13–T15)
-- All CI pipelines green; components aligned at v0.8.2
+- All CI pipelines green; components aligned at v0.9.0
 
 **Deliverables shipped:**
 - Enhanced Registry Service with natural language discovery
@@ -741,6 +741,7 @@ All 5 phases completed — shipped as v0.8.1 → aligned to v0.8.2 (not v0.9.0 a
 - ✅ 957+ tests passing (515 SDK, 156 Memory, 81 Registry, 41 Tracker, 21 Event, 103 Common, 40 NATS)
 - ✅ 13 numbered examples + research-advisor (01-hello-world → 13-a2a-gateway)
 - ✅ v0.8.2 released (March 14, 2026)
+- ✅ v0.9.0 monorepo alignment completed (April 16, 2026)
 
 **Remaining for v1.0.0:**
 1. **Stage 6 (Migration & Polish):** 1-2 weeks → v1.0.0
@@ -749,7 +750,7 @@ All 5 phases completed — shipped as v0.8.1 → aligned to v0.8.2 (not v0.9.0 a
 **Total Estimated Time to v1.0.0:** 2-4 weeks
 
 **Key Milestones:**
-- v0.9.0: ✅ Achieved (Discovery & A2A) — shipped as v0.8.2
+- v0.9.0: ✅ Achieved as the aligned monorepo release
 - v1.0.0: Production-ready with migration guide + complete examples
 
 ---

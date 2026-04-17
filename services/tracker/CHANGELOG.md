@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-17
+
 ### Changed — Three-Dimensional Tenancy (multi-tenancy initiative)
+- **Version alignment**: bumped to 0.9.0 (tracker service synchronized with monorepo release)
 - **Identity model**: replaced `tenant_id`/`user_id` columns with `platform_tenant_id`, `service_tenant_id`, `service_user_id` (all VARCHAR(64) NOT NULL) in `plan_progress` and `action_progress`
 - **Scoped uniqueness**: `plan_progress` unique on `(platform_tenant_id, service_tenant_id, plan_id)`; `action_progress` unique on `(platform_tenant_id, service_tenant_id, action_id)`
 - **Composite FK**: `action_progress` references `plan_progress` via `(platform_tenant_id, service_tenant_id, plan_id)`

@@ -43,27 +43,30 @@ The identity domain is a security and tenancy boundary. It centralizes principal
 
 Identity endpoints use shared tenancy middleware and dependencies.
 
-Headers used by request-context dependency:
-- `X-Tenant-ID`
-- `X-Service-Tenant-ID`
-- `X-User-ID`
+Secured non-admin routes use bearer-authenticated request identity:
+- `Authorization: Bearer <jwt>`
+
+The validated JWT is expected to carry:
+- `platform_tenant_id` or `tenant_id`
+- `service_tenant_id`
+- `service_user_id`, `user_id`, `principal_id`, or `sub`
 
 Optional tracing headers:
 - `X-Correlation-ID`
 - `X-Request-ID`
 
 Behavior:
-- non-admin routes fail closed when service-tenant/service-user context is missing
+- non-admin routes fail closed when bearer authentication is missing or when service-tenant/service-user context cannot be derived from validated identity
 - request validation logs preserve correlation IDs when present
 - token issuance deny paths return typed safe error payloads
 
 Admin-route exception:
-- Admin-authorized routes (`/v1/identity/onboarding`, `/v1/identity/principals`, `/v1/identity/delegated-issuers`, `/v1/identity/tokens/issue`) accept platform-tenant context with `X-Identity-Admin-Key` and do not require service-tenant/service-user headers.
+- Admin-authorized routes (`/v1/identity/onboarding`, `/v1/identity/principals`, `/v1/identity/delegated-issuers`, `/v1/identity/tokens/issue`) accept trusted admin authorization with `X-Identity-Admin-Key` and do not require service-tenant/service-user JWT context.
 
 ## Security And Behavior Notes
 
 - JWT path is authoritative when JWT is present.
-- Public discovery routes remain bypassed, but secured non-public routes deny header-only access when bearer JWT is absent.
+- Public discovery routes remain bypassed, but secured non-public routes deny unauthenticated access when bearer JWT is absent.
 - Delegated issuance requires trusted issuer state.
 - Mapping collision default is deny unless explicit override is requested and caller principal qualifies.
 - Platform identity record IDs are service-owned and generated server-side.

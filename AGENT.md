@@ -87,7 +87,7 @@ from soorma.memory.client import MemoryServiceClient  # FORBIDDEN
 **Explicit Checklist (complete ALL items before planning):**
 
 - [ ] **Read** [docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md) **in full.** (No skimming.)
-- [ ] **Understand Section 1:** Authentication model (custom headers v0.7.x, JWT/API Key roadmap v0.8.0+)
+- [ ] **Understand Section 1:** Authentication model (bearer-token runtime model, selective API-key roadmap v0.9.0+)
 - [ ] **Understand Section 2:** Two-layer SDK architecture — agent code uses `context.*` wrappers ONLY, never service clients directly
 - [ ] **Understand Section 3:** Event choreography — explicit `response_event`, no inferred event names
 - [ ] **Understand Section 4:** Multi-tenancy via PostgreSQL RLS and session variables

@@ -14,7 +14,7 @@ def test_imports_work():
     from tracker_service.core.config import settings
     from tracker_service.core.db import get_db, init_db, close_db
     
-    assert __version__ == "0.8.2"
+    assert __version__ == "0.9.0"
     assert app is not None
     assert settings is not None
     assert get_db is not None
@@ -33,7 +33,7 @@ def test_health_check_endpoint():
     data = response.json()
     assert data["status"] == "healthy"
     assert data["service"] == "tracker-service"
-    assert data["version"] == "0.8.2"
+    assert data["version"] == "0.9.0"
 
 
 @pytest.mark.asyncio

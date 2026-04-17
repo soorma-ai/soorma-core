@@ -31,6 +31,7 @@
 > - Stage 2 (Foundation - Memory & Common DTOs) ✅ Complete (v0.7.0)
 > - Stage 3 (Agent Models - Tool & Worker) ✅ Complete (v0.7.7)
 > - Stage 4 (Agent Models - Planner & ChoreographyPlanner) ✅ Complete (v0.8.0)
+> - Stage 5 (Discovery, A2A, and Tracker infrastructure split) ✅ Complete (v0.8.2 → aligned in v0.9.0)
 >
 > **⚠️ Install from source during pre-launch:** Use `pip install -e sdk/python` to stay synchronized with breaking changes.
 
@@ -38,7 +39,7 @@
 
 ## 🛡️ Mission
 
-Soorma is an agentic infrastructure platform based on the **DisCo (Distributed Cognition)** architecture. It solves the fragmentation in the AI agent ecosystem by providing a standardized **Control Plane** (Gateway, Registry, State, Pub/Sub) that allows distinct cognitive entities to discover each other and collaborate.
+Soorma is an agentic infrastructure platform based on the **DisCo (Distributed Cognition)** architecture. It solves fragmentation in the AI agent ecosystem by providing a standardized control plane built around Registry, Event, Memory, Tracker, Identity, and messaging infrastructure so distinct cognitive entities can discover each other and collaborate.
 
 We believe the future of AI infrastructure must be:
 1.  **Distributed:** Agents should be long-lived services, not single-threaded loops.
@@ -57,6 +58,8 @@ graph TB
         Registry[Registry Service]
         EventService[Event Service]
         Memory[Memory Service]
+        Tracker[Tracker Service]
+        Identity[Identity Service]
         NATS[NATS JetStream]
         
         EventService <-->|Internal| NATS
@@ -72,10 +75,12 @@ graph TB
     Planner -->|HTTP API| Registry
     Planner -->|HTTP API + SSE| EventService
     Planner -->|HTTP API| Memory
+    Planner -->|HTTP API| Tracker
     
     Worker -->|HTTP API| Registry
     Worker -->|HTTP API + SSE| EventService
     Worker -->|HTTP API| Memory
+    Worker -->|HTTP API| Tracker
     
     Tool -->|HTTP API| Registry
     Tool -->|HTTP API + SSE| EventService
@@ -120,8 +125,8 @@ soorma dev --build
 The fastest way to see Soorma in action:
 
 ```bash
-# Terminal 1: Start infrastructure (Registry, NATS, Event Service, Memory Service, PostgreSQL)
-soorma dev
+# Terminal 1: Start infrastructure (Registry, Event, Memory, Tracker, Identity, NATS, PostgreSQL)
+soorma dev --build
 
 # Terminal 2: Start the worker
 cd examples/01-hello-world
@@ -203,8 +208,9 @@ For detailed CLI commands (`soorma init`, `soorma dev`, `soorma deploy`), see th
 | **Gateway** | API Gateway & SSE Entrypoint | 🟡 Preview |
 | **Registry** | Service Discovery for Agents | 🟢 Available |
 | **Event Service** | SSE Event Bus for Agent Choreography | 🟢 Available |
-| **Tracker** | Distributed State Machine | ⚪ Planned |
+| **Tracker** | Plan and task observability service | 🟢 Available |
 | **Memory** | Vector & Semantic Memory Store (CoALA) | 🟢 Available |
+| **Identity** | Tenant, principal, and token bootstrap service | 🟢 Available |
 
 ## 🤝 Contributing
 

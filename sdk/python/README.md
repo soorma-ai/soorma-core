@@ -2,7 +2,7 @@
 
 **The Open Source Foundation for AI Agents.**
 
-Soorma is an agentic infrastructure platform based on the **DisCo (Distributed Cognition)** architecture. It provides a standardized **Control Plane** (Registry, Event Bus, Memory Service) for building production-grade multi-agent systems.
+Soorma is an agentic infrastructure platform based on the **DisCo (Distributed Cognition)** architecture. It provides a standardized control plane for building production-grade multi-agent systems, including Registry, Event Bus, Memory, Tracker, and Identity services.
 
 [![PyPI version](https://img.shields.io/pypi/v/soorma-core?color=amber&label=pypi)](https://pypi.org/project/soorma-core/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -14,7 +14,13 @@ We're in active pre-launch refactoring to solidify architecture and APIs before 
 
 **Learn more:** [soorma.ai](https://soorma.ai)
 
-### What's New in v0.8.2
+### What's New in v0.9.0
+
+- **🔐 JWT-First Service Auth** - SDK and service documentation now reflect the current bearer-token runtime model and trusted admin exception paths
+- **🪪 Identity Bootstrap Hardening** - `soorma dev` bootstraps persisted local RS256/JWKS signing material for local stacks by default
+- **🏷️ Unified Release Alignment** - SDK, shared libraries, and backend services are aligned on `0.9.0`
+
+### Highlights from v0.8.2
 
 - **🔍 Agent Discovery** - `context.registry.discover()` finds active agents by consumed event; returns `DiscoveredAgent` list with schema helpers
 - **📋 Schema Registry** - Register and retrieve JSON payload schemas via `context.registry.register_schema()` / `get_schema()` / `list_schemas()`
@@ -23,7 +29,7 @@ We're in active pre-launch refactoring to solidify architecture and APIs before 
 - **📦 soorma-nats** - New shared `NATSClient` library (`libs/soorma-nats/`); Tracker Service no longer depends on SDK
 - **✅ Integration Test Suite** - 11 in-process tests (E2E discovery, multi-tenant isolation, A2A round-trip)
 
-### What's New in v0.8.1
+### Highlights from v0.8.1
 
 - **🤖 ChoreographyPlanner** - LLM-based autonomous orchestration (50+ model providers via LiteLLM)
 - **📊 PlanContext** - State machine for multi-step workflows with pause/resume

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-17
+
+### Changed
+- Version alignment: bumped to 0.9.0 (registry service synchronized with monorepo release)
+
 ## [0.8.2] - 2026-03-14
 
 ### Changed
