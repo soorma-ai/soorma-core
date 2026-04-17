@@ -30,23 +30,26 @@ Base path: `/v1/identity`
 | `/mappings/evaluate` | POST | Evaluate mapping collision policy |
 | `/health` | GET | Service health |
 
-## Auth And Context Headers
+## Auth And Context
 
 Identity routes use shared Soorma request-context dependencies.
 
-For protected endpoints, provide:
-- `X-Tenant-ID`
-- `X-Service-Tenant-ID`
-- `X-User-ID`
+For secured non-admin endpoints, provide:
+- `Authorization: Bearer <jwt>`
+
+The validated JWT is expected to carry:
+- `platform_tenant_id` or `tenant_id`
+- `service_tenant_id`
+- `service_user_id`, `user_id`, `principal_id`, or `sub`
 
 Optional request tracing headers:
 - `X-Correlation-ID`
 - `X-Request-ID`
 
-Non-admin routes fail closed when service-tenant or service-user context is missing.
+Non-admin routes fail closed when bearer authentication is missing or when service-tenant or service-user context cannot be derived from validated identity.
 
 Admin-route exception:
-- Admin-authorized routes (`/onboarding`, `/principals`, `/delegated-issuers`, `/tokens/issue`) accept platform-tenant context with `X-Identity-Admin-Key` and may execute without `X-Service-Tenant-ID` and `X-User-ID`.
+- Admin-authorized routes (`/onboarding`, `/principals`, `/delegated-issuers`, `/tokens/issue`) accept trusted admin authorization via `X-Identity-Admin-Key` and may execute without service-tenant or service-user JWT context.
 
 Sensitive endpoints (`/onboarding`, `/principals`, `/delegated-issuers`, `/tokens/issue`) require admin authorization and platform tenant context.
 
