@@ -132,7 +132,7 @@ All session templates in this guide are **HUMAN PROMPT templates** - text that t
 # MANDATORY READING (Complete ALL before proceeding):
 
 - [ ] Read [docs/ARCHITECTURE_PATTERNS.md](docs/ARCHITECTURE_PATTERNS.md) in full
-- [ ] Understand Section 1: Authentication model (custom headers v0.7.x, JWT/API Key roadmap v0.8.0+)
+- [ ] Understand Section 1: Authentication model (bearer-token runtime model, selective API-key roadmap v0.9.0+)
 - [ ] Understand Section 2: Two-layer SDK architecture (context wrappers vs. service clients)
 - [ ] Understand Section 3: Event choreography (explicit response_event, no inference)
 - [ ] Understand Section 4: Multi-tenancy via PostgreSQL RLS and session variables
@@ -847,7 +847,7 @@ Confirm you will write TESTS FIRST before any implementation, then begin.
 
 ---
 
-**Last Updated:** February 21, 2026  
+**Last Updated:** April 16, 2026  
 **Related:** 
 - [AGENT.md](../AGENT.md) - Core developer constitution (all workflow phases)
 - [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md) - SDK architecture requirements (Gateway prerequisite)

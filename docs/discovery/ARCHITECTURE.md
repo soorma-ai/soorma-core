@@ -1,8 +1,8 @@
 # Discovery: Technical Architecture
 
-**Status:** 🟢 Implementation In Progress (Phases 1–3 ✅, Phase 4 🔄, Phase 5 🟡)  
-**Last Updated:** March 14, 2026  
-**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 ✅ | RF-SDK-017 ✅ | TECH-DEBT-001 🔄
+**Status:** ✅ Released in current SDK and service stack  
+**Last Updated:** April 16, 2026  
+**Stage Progress:** RF-ARCH-005 ✅ | RF-ARCH-006 ✅ | RF-ARCH-007 ✅ | RF-SDK-008 ✅ | RF-SDK-017 ✅ | TECH-DEBT-001 ✅
 
 ### Phase Progress
 
@@ -11,8 +11,8 @@
 | Phase 1 | Foundation — DTOs, DB Schema, RLS, Alembic migrations | ✅ Complete |
 | Phase 2 | Service — Schema endpoints, Discovery endpoint, multi-tenancy middleware | ✅ Complete |
 | Phase 3 | SDK — `discover()`, `EventSelector`, `A2AGatewayHelper` | ✅ Complete — [Plan](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
-| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | 🔄 In Progress — [Plan](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
-| Phase 5 | Examples 11–13, integration tests, documentation | 🟡 In Progress (T13 next) — [Plan](plans/ACTION_PLAN_Phase5_Validation_Documentation.md) |
+| Phase 4 | Tracker NATS integration — `soorma-nats` lib, remove SDK from Tracker | ✅ Complete |
+| Phase 5 | Examples 11–13, integration tests, documentation | ✅ Complete |
 
 ---
 
@@ -28,7 +28,9 @@ The Discovery System provides dynamic agent and capability discovery through the
 - ✅ Basic Registry Service operational (Stages 0-3)
 - ✅ **Phase 1 complete:** `PayloadSchema` DTOs, `payload_schemas` table, RLS policies on `agents`, `events`, and `payload_schemas` tables, Alembic migration 003
 - ✅ **Phase 2 complete:** Schema CRUD endpoints, `GET /v1/agents/discover`, multi-tenancy middleware, `RegistryClient` schema methods
-- 📋 **Phase 3 in planning:** `discover() -> List[DiscoveredAgent]`, `EventSelector`, `A2AGatewayHelper`
+- ✅ **Phase 3 complete:** `discover() -> List[DiscoveredAgent]`, `EventSelector`, `A2AGatewayHelper`
+- ✅ **Phase 4 complete:** Tracker consumes `soorma-nats` directly; SDK infrastructure dependency removed from Tracker
+- ✅ **Phase 5 complete:** discovery examples, integration tests, and documentation shipped
 
 ---
 
@@ -86,7 +88,7 @@ services/registry/
 │   │   ├── event_service.py     # Event business logic
 │   │   └── schema_service.py    # NEW (Phase 2): Schema CRUD business logic
 │   ├── middleware/
-│   │   └── tenant.py            # NEW (Phase 2): X-Tenant-ID extraction + RLS session vars
+│   │   └── tenant.py            # NEW (Phase 2): bearer-token identity projection + RLS session vars
 │   ├── models/
 │   │   ├── agent.py             # Agent DB model (+ developer tenant_id, version columns)
 │   │   ├── event.py             # Event DB model (+ developer tenant_id, owner_agent_id)
@@ -98,7 +100,7 @@ services/registry/
 libs/soorma-common/
 └── models.py                # PayloadSchema, DiscoveredAgent, AgentCapability (EventDefinition)
 
-libs/soorma-nats/            # COMING Phase 4: shared NATS client for infrastructure services
+libs/soorma-nats/            # Phase 4 complete: shared NATS client for infrastructure services
 └── src/soorma_nats/
     ├── client.py            # NATSClient (connect, subscribe, disconnect)
     └── exceptions.py        # NATSConnectionError, NATSSubscriptionError
@@ -139,7 +141,7 @@ CREATE TABLE agents (
 ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
 CREATE POLICY agents_tenant_isolation ON agents
     USING (tenant_id = current_setting('app.tenant_id')::UUID);
--- (app.tenant_id is set from the X-Tenant-ID header, which carries the developer tenant UUID)
+-- (app.tenant_id is set from validated bearer-token claims projected by middleware)
 
 CREATE INDEX agents_agent_id_idx ON agents (agent_id);
 CREATE INDEX agents_last_heartbeat_idx ON agents (last_heartbeat);
@@ -194,24 +196,24 @@ CREATE TABLE payload_schemas (
 ALTER TABLE payload_schemas ENABLE ROW LEVEL SECURITY;
 CREATE POLICY schemas_tenant_isolation ON payload_schemas
     USING (tenant_id = current_setting('app.tenant_id')::UUID);
--- (app.tenant_id is set from X-Tenant-ID header carrying the developer tenant UUID)
+-- (app.tenant_id is set from validated bearer-token claims projected by middleware)
 ```
 
 ---
 
-## SDK Layer Architecture (v0.8.1)
+## SDK Layer Architecture (v0.9.0)
 
 Reference: ARCHITECTURE_PATTERNS.md Section 1 (Two-Tier Tenancy) and Section 2 (Two-Layer SDK).
 
-**Tenancy model:** Registry Service uses **Tier 1 — Developer Tenant** isolation only. It does NOT carry client tenant or user context. The developer tenant UUID (`SOORMA_DEVELOPER_TENANT_ID`) identifies *who built the agents*, not *whose data is being processed*.
+**Tenancy model:** Registry Service uses **Tier 1 — Developer Tenant** isolation only. It does NOT carry client tenant or user context. The developer tenant identity is resolved from validated bearer-token claims and identifies *who built the agents*, not *whose data is being processed*.
 
 ```
 Agent Startup Code
     ↓ context.registry.*
 RegistryClient  (sdk/python/soorma/registry/client.py)
-    ↓ HTTP + X-Tenant-ID: <developer_tenant_uuid>   (NO X-User-ID)
+    ↓ HTTP + Authorization: Bearer <jwt>
 Registry Service (FastAPI)
-    ↓ tenant middleware: SET app.tenant_id = developer_tenant_uuid
+    ↓ tenant middleware: SET app.tenant_id from validated JWT claims
 PostgreSQL + RLS (developer tenant isolation only)
 ```
 
@@ -220,9 +222,9 @@ PostgreSQL + RLS (developer tenant isolation only)
 Agent Handler  (processing an end-user's request)
     ↓ context.memory.*
 MemoryClient wrapper  (context.py)
-    ↓ HTTP + X-Tenant-ID: <client_tenant_uuid> + X-User-ID: <user_uuid>
+    ↓ HTTP + Authorization: Bearer <jwt>
 Memory Service (FastAPI)
-    ↓ middleware: SET app.tenant_id = client_tenant_uuid, SET app.user_id = user_uuid
+    ↓ middleware: SET app.tenant_id / app.user_id from validated JWT claims
 PostgreSQL + RLS (client tenant + user isolation)
 ```
 
@@ -688,7 +690,7 @@ except EventSelectionError as e:
 - ✅ **Phase 1:** RLS policies on `agents`, `events`, `payload_schemas` tables
 - ✅ **Phase 2:** `POST /v1/schemas`, `GET /v1/schemas/{name}`, `GET /v1/schemas/{name}/versions/{ver}` (RF-ARCH-005)
 - ✅ **Phase 2:** `GET /v1/agents/discover` capability-based discovery (RF-ARCH-007)
-- ✅ **Phase 2:** Multi-tenancy middleware (X-Tenant-ID → PostgreSQL session vars)
+- ✅ **Phase 2:** Multi-tenancy middleware (validated bearer-token claims → PostgreSQL session vars)
 - ✅ **Phase 2:** `RegistryClient.register_schema()`, `get_schema()`, `list_schemas()`, `discover_agents()`
 - ✅ **Phase 3:** `RegistryClient.discover()` returning `List[DiscoveredAgent]` (RF-SDK-008)
 - ✅ **Phase 3:** `EventDecision` DTO in `soorma_common.decisions`

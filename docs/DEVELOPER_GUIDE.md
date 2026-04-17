@@ -1,7 +1,7 @@
 # Developer Guide
 
 **Status:** 📝 Draft  
-**Last Updated:** January 6, 2026
+**Last Updated:** April 16, 2026
 
 This guide covers developer experience (DX) patterns, workflows, and testing strategies for building with Soorma.
 
@@ -38,7 +38,12 @@ The `soorma` command is bundled in the SDK:
 
 | Command | Description |
 |---------|-------------|
-| `soorma dev --build` | Builds local infrastructure (Registry + NATS + Memory + Event Service) |
+| `soorma dev --build` | Builds local infrastructure images and starts the full local stack |
+| `soorma dev --start` | Starts the full local stack without rebuilding images |
+| `soorma dev --status` | Shows status for the local stack |
+| `soorma dev --logs` | Streams container logs for the local stack |
+| `soorma dev --stop` | Stops the local stack |
+| `soorma dev --stop --clean` | Stops the stack and removes local data volumes |
 | `soorma init <name>` | Scaffolds a new agent project with boilerplate |
 | `soorma deploy` | Deploys to Soorma Cloud (planned) |
 
@@ -81,9 +86,11 @@ python agent.py
 graph TB
     subgraph DevMachine["Developer's Machine"]
         subgraph Docker["Docker Containers (Infrastructure)"]
-            Registry["Registry Service<br/>:8000"]
-            EventService["Event Service<br/>:8001"]
-            Memory["Memory Service<br/>:8002"]
+            Registry["Registry Service<br/>:8081"]
+            EventService["Event Service<br/>:8082"]
+            Memory["Memory Service<br/>:8083"]
+            Tracker["Tracker Service<br/>:8084"]
+            Identity["Identity Service<br/>:8085"]
             NATS["NATS JetStream<br/>:4222"]
             Postgres["PostgreSQL + pgvector<br/>:5432"]
             
@@ -110,13 +117,13 @@ graph TB
 1. **Fast Iteration:** Change `agent.py`, save, instant effect. No `docker build` cycle.
 2. **Debuggability:** Attach debugger directly to your agent code.
 3. **Production Parity:** Infrastructure is containerized, identical to production.
-4. **No Port Conflicts:** Services use standard ports (8000, 8001, 4222).
+4. **No Port Conflicts:** Services use a predictable local port map (`8081`-`8085`, `4222`, `5432`).
 
 **How it works:**
 
 1. **`soorma dev` starts Docker Compose stack:**
    ```bash
-   docker compose -f ~/.soorma/docker-compose.yml up -d
+    docker compose -f .soorma/docker-compose.yml up -d
    ```
 
 2. **Your agent runs natively with environment variables:**
@@ -124,6 +131,9 @@ graph TB
    export SOORMA_REGISTRY_URL="http://localhost:8081"
    export SOORMA_EVENT_SERVICE_URL="http://localhost:8082"
    export SOORMA_MEMORY_SERVICE_URL="http://localhost:8083"
+    export SOORMA_TRACKER_SERVICE_URL="http://localhost:8084"
+    export SOORMA_IDENTITY_URL="http://localhost:8085"
+    export SOORMA_NATS_URL="nats://localhost:4222"
    python agent.py
    ```
 
@@ -132,6 +142,8 @@ graph TB
    - NATS: JetStream message bus for reliable event delivery
    - Event Service: Proxy to NATS with SSE support
    - Memory Service: PostgreSQL with pgvector for semantic memory
+   - Tracker Service: Workflow observability and progress tracking
+   - Identity Service: Tenant onboarding, principals, and token issuance
    - PostgreSQL: Persistent database for services
 
 ---
@@ -242,9 +254,11 @@ docker compose -f production.yml up -d
 ```
 
 Services:
-- Registry Service: Port 8000
-- Event Service: Port 8001
-- Memory Service: Port 8002
+- Registry Service: Port 8081
+- Event Service: Port 8082
+- Memory Service: Port 8083
+- Tracker Service: Port 8084
+- Identity Service: Port 8085
 - NATS: Port 4222
 - PostgreSQL: Port 5432
 

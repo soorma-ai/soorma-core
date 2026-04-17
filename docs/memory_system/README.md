@@ -1,7 +1,7 @@
 # Memory System: User Guide
 
 **Status:** ✅ Stage 2 Complete (January 30, 2026)  
-**Last Updated:** February 15, 2026  
+**Last Updated:** April 16, 2026  
 **Related Stages:** Stage 2 (RF-ARCH-008, RF-ARCH-009, RF-SDK-006, RF-SDK-007, RF-SDK-008), Stage 2.1 (RF-ARCH-012, RF-ARCH-013, RF-ARCH-014)
 
 ---
@@ -22,7 +22,7 @@ Soorma's Memory Service implements the **CoALA (Cognitive Architectures for Lang
 ```
 Need to store...
 ├─ Knowledge/facts for search?
-│  └─ Use SEMANTIC MEMORY (examples/04-memory-semantic)
+│  └─ Use SEMANTIC MEMORY (examples/05-memory-semantic)
 │
 ├─ Conversation history?
 │  └─ Use EPISODIC MEMORY (examples/06-memory-episodic)
@@ -31,7 +31,7 @@ Need to store...
 │  └─ Use PROCEDURAL MEMORY
 │
 └─ Temporary workflow state?
-   └─ Use WORKING MEMORY (examples/05-memory-working)
+    └─ Use WORKING MEMORY (examples/04-memory-working)
 ```
 
 ---
@@ -125,7 +125,7 @@ prompt = f"Context:\n{context_text}\n\nQuestion: {user_question}"
 response = llm.complete(prompt)
 ```
 
-**Example:** [examples/04-memory-semantic](../../examples/04-memory-semantic/)
+**Example:** [examples/05-memory-semantic](../../examples/05-memory-semantic/)
 
 ---
 
@@ -391,7 +391,7 @@ await context.memory.delete_plan_state(
 - ✅ In long-running systems handling many workflows
 - ❌ During workflow execution (data still needed)
 
-**Example:** [examples/05-memory-working](../../examples/05-memory-working/)
+**Example:** [examples/04-memory-working](../../examples/04-memory-working/)
 
 ---
 
@@ -583,8 +583,8 @@ history = await context.memory.get_recent_history(
 
 ## Examples
 
-- [examples/04-memory-semantic](../../examples/04-memory-semantic/) - Knowledge base and RAG
-- [examples/05-memory-working](../../examples/05-memory-working/) - Workflow state with WorkflowState helper
+- [examples/05-memory-semantic](../../examples/05-memory-semantic/) - Knowledge base and RAG
+- [examples/04-memory-working](../../examples/04-memory-working/) - Workflow state with WorkflowState helper
 - [examples/06-memory-episodic](../../examples/06-memory-episodic/) - Conversation history and context window
 
 ---

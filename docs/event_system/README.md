@@ -1,7 +1,7 @@
 # Event System
 
 **Status:** ✅ Stage 1 Complete  
-**Last Updated:** February 15, 2026  
+**Last Updated:** April 16, 2026  
 **Related Stages:** Stage 1 (Foundation - Event System)
 
 ---
@@ -11,7 +11,7 @@
 Events are the primary communication mechanism in Soorma. They enable:
 - **Loose coupling** between agents
 - **Choreographed workflows** without central orchestration
-- **Scal ability** through asynchronous processing
+- **Scalability** through asynchronous processing
 - **Flexibility** to add/remove capabilities dynamically
 
 ### Key Principles

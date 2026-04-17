@@ -1,8 +1,8 @@
 # Service Discovery: User Guide
 
-**Status:** 🟢 Implementation In Progress (Phase 4 �, Phase 5 🟡)
-**Last Updated:** March 14, 2026  
-**Stage Progress:** Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 🔄 | Phase 5 🟡
+**Status:** ✅ Released in current SDK and service stack
+**Last Updated:** April 16, 2026  
+**Stage Progress:** Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅ | Phase 5 ✅
 
 ### Phase Status
 
@@ -11,8 +11,8 @@
 | Phase 1 | Foundation - DTOs, Database, RLS | ✅ Complete (50 tests passing) |
 | Phase 2 | Service Implementation - Schema & Discovery endpoints | ✅ Complete (80 tests passing) |
 | Phase 3 | SDK Methods, EventSelector, A2A Gateway | ✅ Complete — [ACTION_PLAN_Phase3](plans/ACTION_PLAN_Phase3_SDK_Implementation.md) |
-| Phase 4 | Tracker NATS Integration | � In Progress — [ACTION_PLAN_Phase4](plans/ACTION_PLAN_Phase4_Tracker_NATS_Integration.md) |
-| Phase 5 | Examples & Documentation | 🟡 In Progress (T9–T12 ✅, T13 next) — [ACTION_PLAN_Phase5](plans/ACTION_PLAN_Phase5_Validation_Documentation.md) |
+| Phase 4 | Tracker NATS Integration | ✅ Complete |
+| Phase 5 | Examples & Documentation | ✅ Complete |
 
 ---
 
@@ -33,6 +33,7 @@ The Discovery System enables **dynamic agent discovery** and **capability-based 
 - ✅ `context.registry.discover()` returning `List[DiscoveredAgent]` (Phase 3)
 - ✅ `EventSelector` utility for LLM-based routing (Phase 3 — `soorma.ai.selection`)
 - ✅ `A2AGatewayHelper` for external protocol conversion (Phase 3 — `soorma.gateway`)
+- ✅ Tracker now consumes `soorma-nats` directly as part of the completed infrastructure split
 
 ---
 
@@ -69,7 +70,7 @@ A capability describes:
 
 ---
 
-## Current API (v0.8.1 — Phases 1 & 2 Complete)
+## Current API (v0.9.0)
 
 ### Agent Registration (Breaking Change in v0.8.1)
 
@@ -585,17 +586,10 @@ Environment variables for Registry Service:
 - ✅ **v0.8.1 Phase 5 (T0–T12):** Auto-registration in `_register_with_registry()` with schema inference
 - ✅ **v0.8.1 Phase 5 (T9–T12):** Examples 11 (LLM discovery), 12 (EventSelector), 13 (A2A Gateway)
 
-### In Progress
+### Current Status
 
-- 🔄 **Phase 4:** Tracker Service NATS integration (TECH-DEBT-001)
-- 🟡 **Phase 5 (T13):** Integration test `test_e2e_discovery.py`
-- 🟡 **Phase 5 (T14):** Integration test `test_multi_tenant_isolation.py`
-- 🟡 **Phase 5 (T15):** Integration test `test_a2a_gateway_roundtrip.py`
-- 🟡 **Phase 5 (T16–T17):** Final doc and CHANGELOG updates
-
-### Not Started
-
-- ⬜ Phase 4: Tracker Service NATS integration (TECH-DEBT-001)
+- Discovery schema registration, capability-based lookup, SDK helpers, and example coverage are all part of the current shipped platform.
+- Historical phase labels are retained above for context only; they are no longer rollout gates.
 
 ---
 
