@@ -68,7 +68,10 @@ async def test_principal_admin_routes_allow_missing_service_user_context(db_sess
                     "lifecycleState": "active",
                     "externalRef": "admin-route-create@example.com",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
             assert create_response.status_code == 200
             created_payload = create_response.json()
@@ -81,13 +84,19 @@ async def test_principal_admin_routes_allow_missing_service_user_context(db_sess
                     "lifecycleState": "active",
                     "externalRef": "admin-route-update@example.com",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
             assert update_response.status_code == 200
 
             revoke_response = await async_client.post(
                 f"/v1/identity/principals/{created_payload['principalId']}/revoke",
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
             assert revoke_response.status_code == 200
             revoked_payload = revoke_response.json()
@@ -127,7 +136,10 @@ async def test_principal_update_succeeds_and_updates_external_ref(db_session):
                     "lifecycleState": "active",
                     "externalRef": "principal-before-update@example.com",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
             assert create_response.status_code == 200
             created_payload = create_response.json()
@@ -140,7 +152,10 @@ async def test_principal_update_succeeds_and_updates_external_ref(db_session):
                     "lifecycleState": "active",
                     "externalRef": "principal-after-update@example.com",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
 
         assert update_response.status_code == 200
@@ -201,7 +216,10 @@ async def test_principal_update_rejects_platform_tenant_mismatch(db_session):
                     "lifecycleState": "active",
                     "externalRef": "cross-tenant-principal-updated@example.com",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": tenant_a.tenant_admin_api_key,
+                    "X-Tenant-ID": tenant_a.platform_tenant_id,
+                },
             )
 
         assert response.status_code == 403
@@ -254,7 +272,10 @@ async def test_principal_update_rejects_payload_tenant_domain_mismatch(db_sessio
                     "lifecycleState": "active",
                     "externalRef": "payload-mismatch-updated@example.com",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": tenant_a.tenant_admin_api_key,
+                    "X-Tenant-ID": tenant_a.platform_tenant_id,
+                },
             )
 
         assert response.status_code == 400

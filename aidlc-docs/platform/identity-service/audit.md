@@ -26,6 +26,38 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Scoped Admin API Contract Review Correction
+**Timestamp**: 2026-04-18T05:27:24Z
+**User Input**: "using AI-DLC, I want to address the following issue with identity-service in soorma-core repo:
+```
+I'm not liking the API specs of identity service. there are so many issues:
+- we need different \"super user\" scope API keys for onboarding endpoint, that can add / manage new platform tenant, different from \"admin\" scope API key for each platform tenant, that can manage principals for that platform tenant and request JWT tokens for that platform tenant's actors
+- `soorma dev` CLI should bootstrap with the \"super user\" scope API key (which is already happening)
+- when onboarding a new platform tenant, identity service should generate a new admin scope API key binding to the new platform tenant; the onboarded tenant response should return this admin scope API key to be used for all subsequent admin scoped operations on this platform tenant (manage principal, token request, delegated issues and mappings)
+
+The current identity service API contract requires a X-Tenant-ID header in ALL requests to identity service -- this needs to be cleaned up as following:
+	- onboarding endpoint must ONLY require API key with \"superuser\" scope and this will be configured as part of bootstrap process
+	- tenant's admin endpoints (manage principal, token request, delegated issues and mappings) must require admin scoped API key and x-tenant-id headers
+	- all other endpoints (health, JWKS discovery etc.) will be ungated (as it exists currently)
+
+The SDK client need to be fixed:
+- it MUST NOT require any service tenant ID or service user ID in the parameters
+- for onboarding operation it MUST only require super user scope admin key (or use bootstrapped environment variable)
+- for tenant admin operations it MUST require tenant API key and platform tenant ID in parameter (or use environment variables)
+```")
+**AI Response**: "Resumed the existing AI-DLC identity-service initiative inside the current uow-cutover-hardening code-generation review gate, implemented a scoped admin-key contract correction, and aligned service, SDK, example bootstrap, OpenAPI docs, and focused tests with the new superuser-vs-tenant-admin model."
+**Context**: CONSTRUCTION - Code Generation review correction request logged and executed
+
+---
+
+## Code Generation - Scoped Admin API Contract Review Correction Complete
+**Timestamp**: 2026-04-18T05:27:24Z
+**User Input**: "N/A (AI-DLC code generation review correction execution step)"
+**AI Response**: "Completed the review correction by changing identity-service onboarding to require only the superuser admin key, adding deterministic tenant-bound admin key issuance and validation for tenant admin routes, returning the tenant admin key from onboarding, removing service_tenant_id/service_user_id requirements from the SDK identity client and wrapper, updating example bootstrap/dev defaults, and verifying the change with 20 passing identity-service tests, 8 passing SDK identity tests, and 31 passing shared middleware tests."
+**Context**: CONSTRUCTION - Code Generation review correction completed; unit remains ready for Build and Test transition
+
+---
+
 ## Code Generation - Platform Tenant Binding Correction
 **Timestamp**: 2026-04-15T08:56:58Z
 **User Input**: "ok, so we have some bugs:

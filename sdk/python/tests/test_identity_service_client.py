@@ -26,6 +26,7 @@ class TestIdentityServiceClientContracts:
             "tenant_domain_id": "tenant-domain-1",
             "platform_tenant_id": "platform-tenant-1",
             "bootstrap_admin_principal_id": "principal-1",
+            "tenant_admin_api_key": "idadm_platform-tenant-1_signature",
             "status": "created",
         }
         mock_response.raise_for_status = MagicMock()
@@ -33,14 +34,12 @@ class TestIdentityServiceClientContracts:
         identity_client._client = AsyncMock()
         identity_client._client.post = AsyncMock(return_value=mock_response)
 
-        result = await identity_client.onboard_tenant(
-            payload=OnboardingRequest(),
-            service_tenant_id="svc-tenant",
-            service_user_id="svc-user",
-        )
+        result = await identity_client.onboard_tenant(payload=OnboardingRequest())
 
         assert result.tenant_domain_id == "tenant-domain-1"
         assert result.status == "created"
+        assert identity_client.platform_tenant_id == "platform-tenant-1"
+        assert identity_client.tenant_admin_api_key == "idadm_platform-tenant-1_signature"
         identity_client._client.post.assert_called_once()
 
     @pytest.mark.asyncio
@@ -62,28 +61,28 @@ class TestIdentityServiceClientContracts:
         identity_client._client.post = AsyncMock(return_value=mock_response)
         identity_client.set_platform_tenant_id("platform-tenant-1")
 
+        identity_client.set_tenant_admin_api_key("tenant-admin-key")
+
         await identity_client.issue_token(
             payload=TokenIssueRequest(
                 principal_id="principal-1",
                 issuance_type=TokenIssuanceType.PLATFORM,
             ),
-            service_tenant_id="svc-tenant",
-            service_user_id="svc-user",
         )
 
         headers = identity_client._client.post.call_args.kwargs["headers"]
         assert headers["X-Tenant-ID"] == identity_client.platform_tenant_id
-        assert headers["X-Identity-Admin-Key"] == identity_client.admin_api_key
+        assert headers["X-Identity-Admin-Key"] == "tenant-admin-key"
         assert "Authorization" not in headers
         assert "X-Service-Tenant-ID" not in headers
         assert "X-User-ID" not in headers
 
     @pytest.mark.asyncio
-    async def test_issue_token_uses_admin_key_only_before_platform_tenant_is_bound(
+    async def test_issue_token_requires_tenant_admin_context_before_request(
         self,
         identity_client: IdentityServiceClient,
     ):
-        """Client should use only the admin key before onboarding returns platform tenant."""
+        """Client should fail closed when tenant admin scope is incomplete."""
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -96,21 +95,13 @@ class TestIdentityServiceClientContracts:
         identity_client._client = AsyncMock()
         identity_client._client.post = AsyncMock(return_value=mock_response)
 
-        await identity_client.issue_token(
-            payload=TokenIssueRequest(
-                principal_id="principal-1",
-                issuance_type=TokenIssuanceType.PLATFORM,
-            ),
-            service_tenant_id="svc-tenant",
-            service_user_id="svc-user",
-        )
-
-        headers = identity_client._client.post.call_args.kwargs["headers"]
-        assert headers["X-Identity-Admin-Key"] == identity_client.admin_api_key
-        assert "X-Tenant-ID" not in headers
-        assert "Authorization" not in headers
-        assert "X-Service-Tenant-ID" not in headers
-        assert "X-User-ID" not in headers
+        with pytest.raises(ValueError, match="platform_tenant_id is required"):
+            await identity_client.issue_token(
+                payload=TokenIssueRequest(
+                    principal_id="principal-1",
+                    issuance_type=TokenIssuanceType.PLATFORM,
+                ),
+            )
 
     @pytest.mark.asyncio
     async def test_onboard_tenant_does_not_require_bound_platform_tenant(
@@ -124,6 +115,7 @@ class TestIdentityServiceClientContracts:
             "tenant_domain_id": "tenant-domain-1",
             "platform_tenant_id": "platform-tenant-1",
             "bootstrap_admin_principal_id": "principal-1",
+            "tenant_admin_api_key": "idadm_platform-tenant-1_signature",
             "status": "created",
         }
         mock_response.raise_for_status = MagicMock()
@@ -131,14 +123,10 @@ class TestIdentityServiceClientContracts:
         identity_client._client = AsyncMock()
         identity_client._client.post = AsyncMock(return_value=mock_response)
 
-        await identity_client.onboard_tenant(
-            payload=OnboardingRequest(),
-            service_tenant_id="svc-tenant",
-            service_user_id="svc-user",
-        )
+        await identity_client.onboard_tenant(payload=OnboardingRequest())
 
         headers = identity_client._client.post.call_args.kwargs["headers"]
-        assert headers["X-Identity-Admin-Key"] == identity_client.admin_api_key
+        assert headers["X-Identity-Admin-Key"] == identity_client.superuser_api_key
         assert "X-Tenant-ID" not in headers
         assert "X-Service-Tenant-ID" not in headers
         assert "X-User-ID" not in headers

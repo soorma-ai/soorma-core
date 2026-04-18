@@ -24,8 +24,7 @@ from .client import IdentityServiceClient
 class IdentityContextMetadata(TypedDict):
     """Identity metadata bound from an event envelope."""
 
-    tenant_id: str
-    user_id: str
+    platform_tenant_id: str
 
 
 @dataclass
@@ -50,11 +49,10 @@ class IdentityClient:
         return self._client
 
     def bind_event_metadata(self, event: Any) -> contextvars.Token:
-        """Bind event identity for implicit wrapper defaults."""
+        """Bind event platform identity for optional wrapper defaults."""
         return self._bound_event_identity.set(
             {
-                "tenant_id": event.tenant_id,
-                "user_id": event.user_id,
+                "platform_tenant_id": str(getattr(event, "platform_tenant_id", "") or "").strip(),
             }
         )
 
@@ -62,143 +60,147 @@ class IdentityClient:
         """Reset previously bound identity metadata."""
         self._bound_event_identity.reset(token)
 
-    def _resolve_identity(
+    def _resolve_platform_tenant_id(
         self,
-        tenant_id: Optional[str],
-        user_id: Optional[str],
-    ) -> tuple[str, str]:
-        """Resolve identity from explicit args or bound event metadata."""
+        platform_tenant_id: Optional[str],
+    ) -> Optional[str]:
+        """Resolve platform tenant scope from explicit args or bound event metadata."""
         metadata = self._bound_event_identity.get()
-        raw_tenant_id = tenant_id if tenant_id is not None else (metadata or {}).get("tenant_id")
-        raw_user_id = user_id if user_id is not None else (metadata or {}).get("user_id")
-        resolved_tenant_id = str(raw_tenant_id).strip() if raw_tenant_id is not None else None
-        resolved_user_id = str(raw_user_id).strip() if raw_user_id is not None else None
-        if not resolved_tenant_id or not resolved_user_id:
-            raise ValueError("tenant_id and user_id are required (get from event context)")
-        return resolved_tenant_id, resolved_user_id
+        raw_platform_tenant_id = (
+            platform_tenant_id
+            if platform_tenant_id is not None
+            else (metadata or {}).get("platform_tenant_id")
+        )
+        resolved_platform_tenant_id = (
+            str(raw_platform_tenant_id).strip()
+            if raw_platform_tenant_id is not None
+            else None
+        )
+        return resolved_platform_tenant_id or None
+
+    def _require_platform_tenant_id(self, platform_tenant_id: Optional[str]) -> str:
+        """Require a non-blank platform tenant scope for tenant admin operations."""
+        resolved_platform_tenant_id = self._resolve_platform_tenant_id(platform_tenant_id)
+        if not resolved_platform_tenant_id:
+            raise ValueError("platform_tenant_id is required for tenant admin operations")
+        return resolved_platform_tenant_id
 
     async def onboard_tenant(
         self,
         payload: OnboardingRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        superuser_api_key: Optional[str] = None,
     ) -> OnboardingResponse:
         """Onboard tenant identity domain."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
-        return await client.onboard_tenant(
-            payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
-        )
+        return await client.onboard_tenant(payload, superuser_api_key=superuser_api_key)
 
     async def issue_token(
         self,
         payload: TokenIssueRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> TokenIssueResponse:
         """Issue token under platform/delegated policy."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.issue_token(
             payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def create_principal(
         self,
         payload: PrincipalRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> PrincipalResponse:
         """Create principal via identity-service."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.create_principal(
             payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def update_principal(
         self,
         principal_id: str,
         payload: PrincipalRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> PrincipalResponse:
         """Update principal via identity-service."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.update_principal(
             principal_id,
             payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def revoke_principal(
         self,
         principal_id: str,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> PrincipalResponse:
         """Revoke principal via identity-service."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.revoke_principal(
             principal_id,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def register_delegated_issuer(
         self,
         payload: DelegatedIssuerRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> DelegatedIssuerResponse:
         """Register delegated issuer trust metadata."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.register_delegated_issuer(
             payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def update_delegated_issuer(
         self,
         delegated_issuer_id: str,
         payload: DelegatedIssuerRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> DelegatedIssuerResponse:
         """Update delegated issuer via identity-service."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.update_delegated_issuer(
             delegated_issuer_id,
             payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def evaluate_mapping(
         self,
         payload: MappingEvaluationRequest,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
     ) -> MappingEvaluationResponse:
         """Evaluate identity mapping and collision policy."""
         client = await self._ensure_client()
-        resolved_tenant_id, resolved_user_id = self._resolve_identity(tenant_id, user_id)
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.evaluate_mapping(
             payload,
-            service_tenant_id=resolved_tenant_id,
-            service_user_id=resolved_user_id,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
         )
 
     async def close(self) -> None:

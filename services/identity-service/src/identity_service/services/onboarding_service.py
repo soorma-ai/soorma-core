@@ -7,6 +7,7 @@ from soorma_common.models import OnboardingRequest, OnboardingResponse
 
 from identity_service.crud.principals import principal_repository
 from identity_service.crud.tenant_domains import tenant_domain_repository
+from identity_service.services.admin_api_keys import tenant_admin_api_key_service
 from identity_service.services.audit_service import audit_service
 
 
@@ -29,6 +30,7 @@ class OnboardingService:
         tenant_domain_id = self._new_identity_id("td")
         platform_tenant_id = self._new_identity_id("pt")
         bootstrap_admin_principal_id = self._new_identity_id("pr")
+        tenant_admin_api_key = tenant_admin_api_key_service.issue_api_key(platform_tenant_id)
 
         try:
             domain_result = await tenant_domain_repository.create_domain(
@@ -66,6 +68,7 @@ class OnboardingService:
             tenant_domain_id=tenant_domain_id,
             platform_tenant_id=platform_tenant_id,
             bootstrap_admin_principal_id=bootstrap_admin_principal_id,
+            tenant_admin_api_key=tenant_admin_api_key,
             status="created" if domain_result.get("created") else "existing",
         )
 

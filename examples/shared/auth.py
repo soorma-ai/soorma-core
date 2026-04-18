@@ -13,10 +13,6 @@ import jwt
 
 from soorma.identity.client import IdentityServiceClient
 from soorma_common.models import OnboardingRequest, TokenIssueRequest, TokenIssuanceType
-
-
-DEFAULT_BOOTSTRAP_SERVICE_TENANT_ID = "00000000-0000-0000-0000-000000000000"
-DEFAULT_SERVICE_USER_ID = "00000000-0000-0000-0000-000000000001"
 TOKEN_REFRESH_WINDOW_SECONDS = 30
 
 
@@ -65,6 +61,22 @@ def load_bootstrap_payload(example_name: str, start_path: Path) -> dict[str, Any
     return payload
 
 
+def _resolve_tenant_admin_api_key(payload: dict[str, Any]) -> str:
+    """Resolve tenant admin API key from persisted payload or environment."""
+    payload_tenant_admin_api_key = str(payload.get("tenant_admin_api_key") or "").strip()
+    if payload_tenant_admin_api_key:
+        return payload_tenant_admin_api_key
+
+    env_tenant_admin_api_key = str(os.environ.get("IDENTITY_TENANT_ADMIN_API_KEY") or "").strip()
+    if env_tenant_admin_api_key:
+        payload["tenant_admin_api_key"] = env_tenant_admin_api_key
+        return env_tenant_admin_api_key
+
+    raise RuntimeError(
+        "tenant_admin_api_key missing from bootstrap payload; rerun onboarding or set IDENTITY_TENANT_ADMIN_API_KEY"
+    )
+
+
 def persist_bootstrap_payload(example_name: str, start_path: Path, payload: dict[str, Any]) -> None:
     """Persist example bootstrap payload for reuse across runs."""
     bootstrap_file = bootstrap_file_path(example_name, start_path)
@@ -110,15 +122,17 @@ class ExampleTokenProvider:
             return self._cached_token
 
         bootstrap_payload = await self._ensure_bootstrap_payload()
+        tenant_admin_api_key = _resolve_tenant_admin_api_key(bootstrap_payload)
         async with IdentityServiceClient() as identity_client:
             identity_client.set_platform_tenant_id(str(bootstrap_payload["platform_tenant_id"]))
+            identity_client.set_tenant_admin_api_key(tenant_admin_api_key)
             token_response = await identity_client.issue_token(
                 TokenIssueRequest(
                     principal_id=str(bootstrap_payload["bootstrap_admin_principal_id"]),
                     issuance_type=TokenIssuanceType.PLATFORM,
                 ),
-                service_tenant_id=DEFAULT_BOOTSTRAP_SERVICE_TENANT_ID,
-                service_user_id=DEFAULT_SERVICE_USER_ID,
+                platform_tenant_id=str(bootstrap_payload["platform_tenant_id"]),
+                tenant_admin_api_key=tenant_admin_api_key,
             )
 
         self._cached_token = token_response.token
@@ -136,9 +150,7 @@ class ExampleTokenProvider:
                 onboarding_response = await identity_client.onboard_tenant(
                     OnboardingRequest(
                         bootstrap_admin_external_ref=f"{self.example_name}-bootstrap-admin"
-                    ),
-                    service_tenant_id=DEFAULT_BOOTSTRAP_SERVICE_TENANT_ID,
-                    service_user_id=DEFAULT_SERVICE_USER_ID,
+                    )
                 )
             persisted_payload = onboarding_response.model_dump()
             persist_bootstrap_payload(self.example_name, self.start_path, persisted_payload)
@@ -153,6 +165,9 @@ class ExampleTokenProvider:
         os.environ["SOORMA_AUTH_TOKEN"] = token
         os.environ["SOORMA_PLATFORM_TENANT_ID"] = str(self._bootstrap_payload["platform_tenant_id"])
         os.environ["SOORMA_DEVELOPER_TENANT_ID"] = str(self._bootstrap_payload["platform_tenant_id"])
+        tenant_admin_api_key = str(self._bootstrap_payload.get("tenant_admin_api_key") or "").strip()
+        if tenant_admin_api_key:
+            os.environ["IDENTITY_TENANT_ADMIN_API_KEY"] = tenant_admin_api_key
 
     async def get_bootstrap_payload(self) -> dict[str, Any]:
         """Return the persisted onboarding payload for this example."""

@@ -41,28 +41,21 @@ class TestIdentityWrapper:
                 tenant_domain_id="tenant-domain-1",
                 platform_tenant_id="platform-tenant-1",
                 bootstrap_admin_principal_id="principal-1",
+                tenant_admin_api_key="idadm_platform-tenant-1_signature",
                 status="created",
             )
         )
         identity_wrapper._client = mock_service_client
 
-        result = await identity_wrapper.onboard_tenant(
-            payload,
-            tenant_id="svc-tenant",
-            user_id="svc-user",
-        )
+        result = await identity_wrapper.onboard_tenant(payload)
 
         assert result.tenant_domain_id == "tenant-domain-1"
-        mock_service_client.onboard_tenant.assert_called_once_with(
-            payload,
-            service_tenant_id="svc-tenant",
-            service_user_id="svc-user",
-        )
+        mock_service_client.onboard_tenant.assert_called_once_with(payload, superuser_api_key=None)
 
     @pytest.mark.asyncio
-    async def test_requires_identity_context(self, identity_wrapper: IdentityClient):
-        """Wrapper should fail closed when tenant/user identity is missing."""
-        with pytest.raises(ValueError, match="tenant_id and user_id are required"):
+    async def test_requires_platform_tenant_for_tenant_admin_operations(self, identity_wrapper: IdentityClient):
+        """Wrapper should fail closed when tenant admin scope is missing."""
+        with pytest.raises(ValueError, match="platform_tenant_id is required"):
             await identity_wrapper.issue_token(
                 payload=TokenIssueRequest(
                     principal_id="principal-1",
@@ -84,8 +77,8 @@ class TestIdentityWrapper:
                 principal_id="principal-1",
                 issuance_type=TokenIssuanceType.PLATFORM,
             ),
-            tenant_id="svc-tenant",
-            user_id="svc-user",
+            platform_tenant_id="platform-tenant-1",
+            tenant_admin_api_key="tenant-admin-key",
         )
 
         assert result.token_type == "Bearer"
@@ -96,25 +89,25 @@ class TestIdentityWrapper:
                 principal_id="principal-1",
                 issuance_type=TokenIssuanceType.PLATFORM,
             ),
-            service_tenant_id="svc-tenant",
-            service_user_id="svc-user",
+            platform_tenant_id="platform-tenant-1",
+            tenant_admin_api_key="tenant-admin-key",
         )
 
     @pytest.mark.asyncio
-    async def test_blank_identity_values_fail_closed(self, identity_wrapper: IdentityClient):
-        """Wrapper must reject blank tenant/user values instead of delegating."""
+    async def test_blank_platform_tenant_values_fail_closed(self, identity_wrapper: IdentityClient):
+        """Wrapper must reject blank tenant scope instead of delegating."""
         mock_service_client = AsyncMock(spec=IdentityServiceClient)
         mock_service_client.issue_token = AsyncMock(
             return_value=TokenIssueResponse(token_type="Bearer", token="stub-token")
         )
         identity_wrapper._client = mock_service_client
 
-        with pytest.raises(ValueError, match="tenant_id and user_id are required"):
+        with pytest.raises(ValueError, match="platform_tenant_id is required"):
             await identity_wrapper.issue_token(
                 payload=TokenIssueRequest(
                     principal_id="principal-1",
                     issuance_type=TokenIssuanceType.PLATFORM,
                 ),
-                tenant_id="   ",
-                user_id="\t",
+                platform_tenant_id="   ",
+                tenant_admin_api_key="tenant-admin-key",
             )

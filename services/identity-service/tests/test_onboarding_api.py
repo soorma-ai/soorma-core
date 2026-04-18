@@ -10,6 +10,7 @@ from soorma_common.models import OnboardingRequest
 from identity_service.core.dependencies import TenantContext, get_tenant_context
 from identity_service.main import app
 from identity_service.models.domain import PlatformTenantIdentityDomain, Principal
+from identity_service.services.admin_api_keys import tenant_admin_api_key_service
 from identity_service.services.onboarding_service import onboarding_service
 
 onboarding_service_module = importlib.import_module("identity_service.services.onboarding_service")
@@ -25,6 +26,9 @@ async def test_onboarding_creates_tenant_domain_and_bootstrap_principal(db_sessi
     assert response.tenant_domain_id.startswith("td_")
     assert response.platform_tenant_id.startswith("pt_")
     assert response.bootstrap_admin_principal_id.startswith("pr_")
+    assert response.tenant_admin_api_key == tenant_admin_api_key_service.issue_api_key(
+        response.platform_tenant_id
+    )
     assert response.status == "created"
 
     domain = (await db_session.execute(
@@ -111,5 +115,6 @@ async def test_onboarding_api_allows_admin_bootstrap_without_service_user_contex
         assert payload["tenantDomainId"].startswith("td_")
         assert payload["platformTenantId"].startswith("pt_")
         assert payload["bootstrapAdminPrincipalId"].startswith("pr_")
+        assert payload["tenantAdminApiKey"].startswith("idadm_")
     finally:
         app.dependency_overrides.pop(get_tenant_context, None)

@@ -908,7 +908,14 @@ def dev_stack(
     # Get optional local development secrets from environment.
     # Defaults are intentionally deterministic for local-only stacks.
     openai_api_key = os.environ.get("OPENAI_API_KEY", "")
-    identity_admin_api_key = os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
+    identity_superuser_api_key = os.environ.get(
+        "IDENTITY_SUPERUSER_API_KEY",
+        os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin"),
+    )
+    identity_tenant_admin_api_key_secret = os.environ.get(
+        "IDENTITY_TENANT_ADMIN_API_KEY_SECRET",
+        identity_superuser_api_key,
+    )
     soorma_auth_jwt_issuer = os.environ.get("SOORMA_AUTH_JWT_ISSUER", "soorma-identity-service")
     soorma_auth_jwt_audience = os.environ.get("SOORMA_AUTH_JWT_AUDIENCE", "soorma-services")
     identity_bootstrap_config = resolve_dev_identity_bootstrap_config()
@@ -929,7 +936,9 @@ IDENTITY_SERVICE_PORT={identity_service_port}
 IDENTITY_SERVICE_IMAGE={identity_service_image or 'identity-service:latest'}
 POSTGRES_PORT={postgres_port}
 OPENAI_API_KEY={openai_api_key}
-IDENTITY_ADMIN_API_KEY={identity_admin_api_key}
+IDENTITY_SUPERUSER_API_KEY={identity_superuser_api_key}
+IDENTITY_ADMIN_API_KEY={identity_superuser_api_key}
+IDENTITY_TENANT_ADMIN_API_KEY_SECRET={identity_tenant_admin_api_key_secret}
 IDENTITY_SIGNING_ALGORITHM={identity_bootstrap_config['identity_signing_algorithm']}
 IDENTITY_ACTIVE_SIGNING_KID={identity_bootstrap_config['identity_active_signing_kid']}
 IDENTITY_SIGNING_PRIVATE_KEYRING_JSON={json.dumps(identity_bootstrap_config['identity_signing_private_keyring_json'])}
@@ -987,7 +996,8 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
         "memory_service_image": memory_service_image,
         "tracker_service_image": tracker_service_image,
         "identity_service_image": identity_service_image,
-        "identity_admin_api_key": identity_admin_api_key,
+        "identity_superuser_api_key": identity_superuser_api_key,
+        "identity_tenant_admin_api_key_secret": identity_tenant_admin_api_key_secret,
         "identity_signing_algorithm": identity_bootstrap_config["identity_signing_algorithm"],
         "identity_active_signing_kid": identity_bootstrap_config["identity_active_signing_kid"],
         "identity_signing_private_keyring_json": identity_bootstrap_config["identity_signing_private_keyring_json"],
@@ -1106,7 +1116,8 @@ SOORMA_AUTH_JWT_AUDIENCE={soorma_auth_jwt_audience}
     typer.echo(f"  export SOORMA_IDENTITY_URL=http://localhost:{identity_service_port}")
     typer.echo(f"  export SOORMA_NATS_URL=nats://localhost:{nats_port}")
     typer.echo("  # Optional local overrides for identity/JWT testing:")
-    typer.echo("  export IDENTITY_ADMIN_API_KEY=dev-identity-admin")
+    typer.echo("  export IDENTITY_SUPERUSER_API_KEY=dev-identity-admin")
+    typer.echo("  export IDENTITY_ADMIN_API_KEY=dev-identity-admin  # legacy alias")
     typer.echo("  export IDENTITY_SIGNING_ALGORITHM=RS256")
     typer.echo(f"  export IDENTITY_ACTIVE_SIGNING_KID={identity_bootstrap_config['identity_active_signing_kid']}")
     typer.echo("  export SOORMA_AUTH_JWT_ISSUER=soorma-identity-service")

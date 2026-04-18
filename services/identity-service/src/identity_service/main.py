@@ -42,7 +42,19 @@ app.add_middleware(
 )
 
 app.add_middleware(TenancyMiddleware)
-configure_platform_tenant_openapi(app)
+configure_platform_tenant_openapi(
+    app,
+    include_paths={
+        "/v1/identity/principals",
+        "/v1/identity/principals/{principal_id}",
+        "/v1/identity/principals/{principal_id}/revoke",
+        "/v1/identity/tokens/issue",
+        "/v1/identity/delegated-issuers",
+        "/v1/identity/delegated-issuers/{delegated_issuer_id}",
+        "/v1/identity/mappings/evaluate",
+    },
+    add_global_security=False,
+)
 app.include_router(v1_router)
 
 

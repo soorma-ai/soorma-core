@@ -42,6 +42,7 @@ async def test_ensure_example_auth_token_bootstraps_once_and_persists(shared_aut
             tenant_domain_id="td-1",
             platform_tenant_id="pt-1",
             bootstrap_admin_principal_id="pr-1",
+            tenant_admin_api_key="idadm_pt-1_sig",
             status="created",
         )
     )
@@ -49,6 +50,7 @@ async def test_ensure_example_auth_token_bootstraps_once_and_persists(shared_aut
         return_value=TokenIssueResponse(token="jwt-token", token_type="Bearer")
     )
     mock_identity_client.set_platform_tenant_id = MagicMock()
+    mock_identity_client.set_tenant_admin_api_key = MagicMock()
     mock_identity_client.__aenter__.return_value = mock_identity_client
     mock_identity_client.__aexit__.return_value = None
 
@@ -72,6 +74,7 @@ async def test_ensure_example_auth_token_bootstraps_once_and_persists(shared_aut
     assert payload["bootstrap_admin_principal_id"] == "pr-1"
     assert shared_auth_module.os.environ["SOORMA_AUTH_TOKEN"] == "jwt-token"
     assert shared_auth_module.os.environ["SOORMA_PLATFORM_TENANT_ID"] == "pt-1"
+    assert shared_auth_module.os.environ["IDENTITY_TENANT_ADMIN_API_KEY"] == "idadm_pt-1_sig"
 
 
 @pytest.mark.asyncio
@@ -93,6 +96,7 @@ async def test_build_example_token_provider_refreshes_when_cached_token_is_expir
             tenant_domain_id="td-1",
             platform_tenant_id="pt-1",
             bootstrap_admin_principal_id="pr-1",
+            tenant_admin_api_key="idadm_pt-1_sig",
             status="created",
         )
     )
@@ -103,6 +107,7 @@ async def test_build_example_token_provider_refreshes_when_cached_token_is_expir
         ]
     )
     mock_identity_client.set_platform_tenant_id = MagicMock()
+    mock_identity_client.set_tenant_admin_api_key = MagicMock()
     mock_identity_client.__aenter__.return_value = mock_identity_client
     mock_identity_client.__aexit__.return_value = None
 
@@ -143,6 +148,7 @@ async def test_build_example_token_provider_exposes_bootstrapped_ids(shared_auth
             "tenant_domain_id": "td-1",
             "platform_tenant_id": "pt-1",
             "bootstrap_admin_principal_id": "pr-1",
+            "tenant_admin_api_key": "idadm_pt-1_sig",
         },
     )
 

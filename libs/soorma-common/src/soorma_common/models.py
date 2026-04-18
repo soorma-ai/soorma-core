@@ -299,6 +299,7 @@ class OnboardingResponse(BaseDTO):
     tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
     platform_tenant_id: str = Field(..., description="Platform tenant identifier.")
     bootstrap_admin_principal_id: str = Field(..., description="Bootstrapped admin principal identifier.")
+    tenant_admin_api_key: str = Field(..., description="Tenant-bound admin API key for subsequent tenant admin operations.")
     status: str = Field(..., description="Onboarding status.")
 
 
