@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-04-18
+
+### Changed
+- **Version alignment**: All SDK, library, and service constituents bumped to 0.9.1 for the coordinated monorepo release
+  - `soorma-common`, `soorma-nats`, `soorma-service-common`, `soorma-core` SDK: 0.9.0 -> 0.9.1
+  - Registry, Event, Memory, Tracker, and Identity Service: 0.9.0 -> 0.9.1
+
 ## [0.9.0] - 2026-04-17
 
 ### Changed

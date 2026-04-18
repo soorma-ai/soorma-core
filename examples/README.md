@@ -8,6 +8,8 @@ This directory contains progressively more complex examples demonstrating Soorma
 
 **Looking for something specific?** See the [Pattern Catalog](#pattern-catalog) below.
 
+**Need simple developer auth bootstrapping?** See [shared/README.md](./shared/README.md) for the reusable `examples.shared.auth` helper that bootstraps a trusted principal for examples, tests, and developer-owned backends.
+
 ## 📚 Learning Path
 
 ### Foundations

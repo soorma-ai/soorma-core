@@ -34,6 +34,20 @@ class Principal(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class TenantAdminCredential(Base):
+    __tablename__ = "tenant_admin_credentials"
+
+    credential_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    platform_tenant_id: Mapped[str] = mapped_column(String(64), index=True)
+    secret_hash: Mapped[str] = mapped_column(String(128))
+    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
+    created_by: Mapped[str] = mapped_column(String(128))
+    rotated_from_credential_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class RoleAssignment(Base):
     __tablename__ = "role_assignments"
 

@@ -66,7 +66,10 @@ async def test_delegated_issuer_admin_routes_allow_missing_service_user_context(
                     "audiencePolicyRef": "aud-admin-route",
                     "claimMappingPolicyRef": "cmp-admin-route",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
             assert register_response.status_code == 200
             register_payload = register_response.json()
@@ -80,7 +83,10 @@ async def test_delegated_issuer_admin_routes_allow_missing_service_user_context(
                     "audiencePolicyRef": "aud-admin-route-v2",
                     "claimMappingPolicyRef": "cmp-admin-route-v2",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": onboarding.tenant_admin_api_key,
+                    "X-Tenant-ID": onboarding.platform_tenant_id,
+                },
             )
 
         assert update_response.status_code == 200
@@ -138,7 +144,10 @@ async def test_delegated_issuer_update_rejects_platform_tenant_mismatch(db_sessi
                     "audiencePolicyRef": "aud-cross-tenant-v2",
                     "claimMappingPolicyRef": "cmp-cross-tenant-v2",
                 },
-                headers={"X-Identity-Admin-Key": "dev-identity-admin"},
+                headers={
+                    "X-Identity-Admin-Key": tenant_a.tenant_admin_api_key,
+                    "X-Tenant-ID": tenant_a.platform_tenant_id,
+                },
             )
 
         assert response.status_code == 403

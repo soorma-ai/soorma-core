@@ -6,7 +6,7 @@ from soorma_common.models import PrincipalRequest, PrincipalResponse
 from identity_service.core.dependencies import (
     TenantContext,
     get_tenant_context,
-    require_admin_authorization,
+    require_tenant_admin_authorization,
 )
 from identity_service.crud.principals import principal_repository
 from identity_service.crud.tenant_domains import tenant_domain_repository
@@ -60,7 +60,7 @@ async def _ensure_principal_platform_match(
 @router.post("", response_model=PrincipalResponse)
 async def create_principal(
     request: PrincipalRequest,
-    _admin: None = Depends(require_admin_authorization),
+    _tenant_admin: str = Depends(require_tenant_admin_authorization),
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Create principal."""
@@ -72,7 +72,7 @@ async def create_principal(
 async def update_principal(
     principal_id: str,
     request: PrincipalRequest,
-    _admin: None = Depends(require_admin_authorization),
+    _tenant_admin: str = Depends(require_tenant_admin_authorization),
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Update principal."""
@@ -87,7 +87,7 @@ async def update_principal(
 @router.post("/{principal_id}/revoke", response_model=PrincipalResponse)
 async def revoke_principal(
     principal_id: str,
-    _admin: None = Depends(require_admin_authorization),
+    _tenant_admin: str = Depends(require_tenant_admin_authorization),
     context: TenantContext = Depends(get_tenant_context),
 ):
     """Revoke principal."""

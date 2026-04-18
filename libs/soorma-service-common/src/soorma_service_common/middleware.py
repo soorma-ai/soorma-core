@@ -71,6 +71,8 @@ def configure_platform_tenant_openapi(
     *,
     scheme_name: str = "PlatformTenantHeader",
     header_name: str = "X-Tenant-ID",
+    include_paths: set[str] | None = None,
+    add_global_security: bool = True,
 ) -> None:
     """Expose platform tenant header in Swagger/OpenAPI for compatibility flows.
 
@@ -94,16 +96,19 @@ def configure_platform_tenant_openapi(
             "description": "Required Soorma platform tenant context header.",
         }
 
-        security = schema.setdefault("security", [])
-        tenant_security = {scheme_name: []}
-        if tenant_security not in security:
-            security.append(tenant_security)
+        if add_global_security:
+            security = schema.setdefault("security", [])
+            tenant_security = {scheme_name: []}
+            if tenant_security not in security:
+                security.append(tenant_security)
 
         # Also expose X-Tenant-ID as an operation header parameter so it appears
         # directly in Swagger "Try it out" forms.
         paths = schema.get("paths", {})
         for path, methods in paths.items():
             if path == "/health":
+                continue
+            if include_paths is not None and path not in include_paths:
                 continue
             if not isinstance(methods, dict):
                 continue

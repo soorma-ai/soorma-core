@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
+### Added
+- `TenantAdminCredentialRotateResponse` DTO for identity-service tenant-admin key rotation responses.
+
+### Changed
+- Identity onboarding/admin DTO contracts now support tenant-admin bootstrap and rotation flows used by the stricter persisted credential model.
+
+## [0.9.1] - 2026-04-18
+
+### Changed
+- Version alignment: bumped to 0.9.1 (shared DTO/runtime package synchronized with monorepo release)
+
 ## [0.9.0] - 2026-04-17
 
 ### Changed

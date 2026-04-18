@@ -2,7 +2,7 @@
 Soorma Common - Common models and DTOs for Soorma platform services.
 """
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 from .models import (
     BaseDTO,
@@ -37,6 +37,7 @@ from .models import (
     TokenIssuanceType,
     DelegatedIssuerRequest,
     DelegatedIssuerResponse,
+    TenantAdminCredentialRotateResponse,
     MappingEvaluationRequest,
     MappingEvaluationResponse,
     # Memory Service
@@ -168,6 +169,7 @@ __all__ = [
     "TokenIssuanceType",
     "DelegatedIssuerRequest",
     "DelegatedIssuerResponse",
+    "TenantAdminCredentialRotateResponse",
     "MappingEvaluationRequest",
     "MappingEvaluationResponse",
     # Memory Service

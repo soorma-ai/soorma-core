@@ -17,7 +17,17 @@ class Settings(BaseSettings):
     )
     sync_database_url: str | None = os.environ.get("SYNC_DATABASE_URL")
 
-    identity_admin_api_key: str = os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin")
+    identity_superuser_api_key: str = os.environ.get(
+        "IDENTITY_SUPERUSER_API_KEY",
+        os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin"),
+    )
+    identity_tenant_admin_api_key_secret: str = os.environ.get(
+        "IDENTITY_TENANT_ADMIN_API_KEY_SECRET",
+        os.environ.get(
+            "IDENTITY_SUPERUSER_API_KEY",
+            os.environ.get("IDENTITY_ADMIN_API_KEY", "dev-identity-admin"),
+        ),
+    )
 
     model_config = ConfigDict(env_file=".env", case_sensitive=False)
 

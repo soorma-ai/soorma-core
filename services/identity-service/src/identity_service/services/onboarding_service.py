@@ -7,6 +7,7 @@ from soorma_common.models import OnboardingRequest, OnboardingResponse
 
 from identity_service.crud.principals import principal_repository
 from identity_service.crud.tenant_domains import tenant_domain_repository
+from identity_service.services.admin_api_keys import tenant_admin_api_key_service
 from identity_service.services.audit_service import audit_service
 
 
@@ -52,6 +53,12 @@ class OnboardingService:
                 },
                 commit=False,
             )
+            tenant_admin_credential = await tenant_admin_api_key_service.issue_api_key(
+                db,
+                platform_tenant_id,
+                actor_id=actor_id,
+                commit=False,
+            )
             await db.commit()
         except Exception:
             await db.rollback()
@@ -66,6 +73,7 @@ class OnboardingService:
             tenant_domain_id=tenant_domain_id,
             platform_tenant_id=platform_tenant_id,
             bootstrap_admin_principal_id=bootstrap_admin_principal_id,
+            tenant_admin_api_key=tenant_admin_credential.tenant_admin_api_key,
             status="created" if domain_result.get("created") else "existing",
         )
 

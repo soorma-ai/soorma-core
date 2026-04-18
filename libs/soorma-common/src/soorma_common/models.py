@@ -299,6 +299,7 @@ class OnboardingResponse(BaseDTO):
     tenant_domain_id: str = Field(..., description="Tenant domain identifier.")
     platform_tenant_id: str = Field(..., description="Platform tenant identifier.")
     bootstrap_admin_principal_id: str = Field(..., description="Bootstrapped admin principal identifier.")
+    tenant_admin_api_key: str = Field(..., description="Tenant-bound admin API key for subsequent tenant admin operations.")
     status: str = Field(..., description="Onboarding status.")
 
 
@@ -354,6 +355,13 @@ class DelegatedIssuerResponse(BaseDTO):
     delegated_issuer_id: str = Field(..., description="Delegated issuer identifier.")
     issuer_id: str = Field(..., description="External issuer identifier.")
     status: str = Field(..., description="Trust status.")
+
+
+class TenantAdminCredentialRotateResponse(BaseDTO):
+    """Response returned after rotating a tenant admin API credential."""
+    credential_id: str = Field(..., description="Credential identifier.")
+    tenant_admin_api_key: str = Field(..., description="New tenant-bound admin API key.")
+    status: str = Field(..., description="Credential rotation status.")
 
 
 class MappingEvaluationRequest(BaseDTO):

@@ -674,3 +674,20 @@ class TestOpenApiPlatformTenantHeader:
 
         assert security_entries.count({"PlatformTenantHeader": []}) == 1
         assert len(header_params) == 1
+
+    def test_openapi_can_scope_platform_tenant_header_to_selected_paths(self, make_test_app):
+        """Helper should allow services to expose X-Tenant-ID only on selected operations."""
+        app = make_test_app()
+        configure_platform_tenant_openapi(app, include_paths={"/test"}, add_global_security=False)
+
+        schema = app.openapi()
+
+        assert "security" not in schema
+        parameters = schema["paths"]["/test"]["get"].get("parameters", [])
+        header_params = [
+            p
+            for p in parameters
+            if p.get("in") == "header" and p.get("name") == "X-Tenant-ID"
+        ]
+
+        assert len(header_params) == 1
