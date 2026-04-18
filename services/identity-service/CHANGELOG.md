@@ -2,13 +2,13 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-04-18
+
 - Split identity admin authorization into superuser-only onboarding and tenant-admin scoped management routes, removing tenant-header requirements from onboarding while keeping explicit `X-Tenant-ID` enforcement on tenant-admin operations.
 - Replaced deterministic tenant admin API keys with persisted, rotatable tenant admin credentials backed by a new credential table, hashed secret-at-rest validation, and `POST /v1/identity/tenant-admin-credentials/rotate`.
 - Moved mapping evaluation onto tenant-admin authorization so tenant-scoped admin workflows no longer depend on service-user JWT context.
-
-## [0.9.1] - 2026-04-18
-
-- Version alignment: bumped to 0.9.1 (identity service synchronized with monorepo release).
+- Documented the shared developer bootstrap helper for examples and developer-owned backends, including when to use it and how it relates to identity-service.
+- Documented that onboarding callers such as the shared developer auth helper must use the same `IDENTITY_SUPERUSER_API_KEY` configured on the identity-service deployment.
 
 ## [0.9.0] - 2026-04-17
 

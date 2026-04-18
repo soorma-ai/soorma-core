@@ -74,6 +74,25 @@ Sensitive endpoints require scoped admin authorization:
 - Presented tenant admin API keys use an opaque `idadm.<credential_id>.<secret>` format; the service validates them by looking up the stored credential record for the tenant and comparing a hashed secret.
 - Existing tenants that still rely on the old derived-key format must re-onboard or rotate to obtain a persisted credential.
 
+## Developer Bootstrap Helper
+
+For examples, tests, and single-operator or developer-owned backends, Soorma also ships a lightweight developer-side bootstrap helper in [examples/shared/README.md](../../examples/shared/README.md).
+
+That helper:
+- onboards a tenant through identity-service
+- persists the bootstrap payload under `.soorma/*-identity.json`
+- requests and refreshes bearer tokens for the bootstrap admin principal
+- gives developers an explicit cleanup path when cached onboarding files or admin credentials become stale
+
+This is useful when a developer wants a simple trusted auth proxy for their own backend without first building a full user identity management system.
+
+Use it for local development and developer-owned backend flows. Do not treat it as a replacement for production end-user authentication or multi-user identity management.
+
+Important onboarding detail:
+- the helper can onboard a tenant only if it knows the same `IDENTITY_SUPERUSER_API_KEY` value that the identity-service deployment is configured to accept
+- in local `soorma dev` flows, both sides default to `dev-identity-admin`
+- in custom deployments, developers must distribute that same superuser key to both the identity-service deployment and the developer-side auth proxy or backend using `examples.shared.auth`
+
 ## Token Contract
 
 Token issuance returns a bearer token. Current mandatory claim contract includes:
@@ -116,6 +135,7 @@ Delegated issuance failures use typed safe API errors:
 Notes:
 - If a bearer JWT is sent but JWKS/public-key verifier material is missing or invalid, request validation fails closed with `401`.
 - Public discovery routes stay bypassed, but secured non-public routes no longer fall back to legacy tenant headers when bearer JWT is absent.
+- Any developer-side bootstrap helper that calls `/onboarding` must be configured with the same `IDENTITY_SUPERUSER_API_KEY` value as the identity-service deployment, or onboarding will fail with `403`.
 
 ## soorma dev Local Startup Behavior
 
@@ -150,4 +170,5 @@ python -m pytest services/identity-service/tests --cov=services/identity-service
 - Architecture and design: [docs/identity_service/ARCHITECTURE.md](../../docs/identity_service/ARCHITECTURE.md)
 - Service technical guide: [docs/identity_service/README.md](../../docs/identity_service/README.md)
 - Use cases: [docs/identity_service/USE_CASES.md](../../docs/identity_service/USE_CASES.md)
+- Developer bootstrap helper: [examples/shared/README.md](../../examples/shared/README.md)
 - Unit-1 and Unit-2 QA coverage report: [aidlc-docs/platform/identity-service/construction/test-cases/qa-coverage-unit1-unit2.md](../../aidlc-docs/platform/identity-service/construction/test-cases/qa-coverage-unit1-unit2.md)
