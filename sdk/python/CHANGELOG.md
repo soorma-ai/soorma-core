@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Identity onboarding and tenant-admin SDK calls no longer require `service_tenant_id` or `service_user_id`; onboarding now uses only the superuser admin key and tenant-admin routes bind tenant context through `X-Tenant-ID` plus the tenant admin key.
 - Added tenant-admin credential rotation support to the identity client and wrapper, including automatic rebinding to the newly returned admin key for subsequent calls.
 
+## [0.9.1] - 2026-04-18
+
+### Changed
+- Version alignment: bumped to 0.9.1 (SDK release synchronized with monorepo constituents)
+
 ## [0.9.0] - 2026-04-17
 
 ### Changed

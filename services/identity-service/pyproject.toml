@@ -1,6 +1,6 @@
 [project]
 name = "identity-service"
-version = "0.9.0"
+version = "0.9.1"
 description = "Identity Service for Soorma platform - tenant onboarding, principal lifecycle, and token issuance"
 readme = "README.md"
 license = {text = "MIT"}

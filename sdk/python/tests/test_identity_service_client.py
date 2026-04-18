@@ -81,6 +81,7 @@ class TestIdentityServiceClientContracts:
     async def test_issue_token_requires_tenant_admin_context_before_request(
         self,
         identity_client: IdentityServiceClient,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """Client should fail closed when tenant admin scope is incomplete."""
 
@@ -94,6 +95,10 @@ class TestIdentityServiceClientContracts:
 
         identity_client._client = AsyncMock()
         identity_client._client.post = AsyncMock(return_value=mock_response)
+        monkeypatch.delenv("SOORMA_PLATFORM_TENANT_ID", raising=False)
+        monkeypatch.delenv("IDENTITY_TENANT_ADMIN_API_KEY", raising=False)
+        identity_client.set_platform_tenant_id(None)
+        identity_client.set_tenant_admin_api_key(None)
 
         with pytest.raises(ValueError, match="platform_tenant_id is required"):
             await identity_client.issue_token(

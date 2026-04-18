@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Identity onboarding/admin DTO contracts now support tenant-admin bootstrap and rotation flows used by the stricter persisted credential model.
 
+## [0.9.1] - 2026-04-18
+
+### Changed
+- Version alignment: bumped to 0.9.1 (shared DTO/runtime package synchronized with monorepo release)
+
 ## [0.9.0] - 2026-04-17
 
 ### Changed
