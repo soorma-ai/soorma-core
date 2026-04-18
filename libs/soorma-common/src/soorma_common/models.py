@@ -357,6 +357,13 @@ class DelegatedIssuerResponse(BaseDTO):
     status: str = Field(..., description="Trust status.")
 
 
+class TenantAdminCredentialRotateResponse(BaseDTO):
+    """Response returned after rotating a tenant admin API credential."""
+    credential_id: str = Field(..., description="Credential identifier.")
+    tenant_admin_api_key: str = Field(..., description="New tenant-bound admin API key.")
+    status: str = Field(..., description="Credential rotation status.")
+
+
 class MappingEvaluationRequest(BaseDTO):
     """Request to evaluate external identity mapping collision policy."""
     tenant_domain_id: str = Field(..., description="Tenant domain identifier.")

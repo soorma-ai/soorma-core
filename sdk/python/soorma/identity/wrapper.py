@@ -14,6 +14,7 @@ from soorma_common.models import (
     OnboardingResponse,
     PrincipalRequest,
     PrincipalResponse,
+    TenantAdminCredentialRotateResponse,
     TokenIssueRequest,
     TokenIssueResponse,
 )
@@ -199,6 +200,19 @@ class IdentityClient:
         resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
         return await client.evaluate_mapping(
             payload,
+            platform_tenant_id=resolved_platform_tenant_id,
+            tenant_admin_api_key=tenant_admin_api_key,
+        )
+
+    async def rotate_tenant_admin_key(
+        self,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
+    ) -> TenantAdminCredentialRotateResponse:
+        """Rotate tenant admin API key and return the new credential."""
+        client = await self._ensure_client()
+        resolved_platform_tenant_id = self._require_platform_tenant_id(platform_tenant_id)
+        return await client.rotate_tenant_admin_key(
             platform_tenant_id=resolved_platform_tenant_id,
             tenant_admin_api_key=tenant_admin_api_key,
         )

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from identity_service.api.v1 import (
+    admin_credentials,
     delegated_issuers,
     discovery,
     mappings,
@@ -14,6 +15,7 @@ from identity_service.api.v1 import (
 router = APIRouter(prefix="/v1/identity")
 router.include_router(discovery.router)
 router.include_router(onboarding.router)
+router.include_router(admin_credentials.router)
 router.include_router(principals.router)
 router.include_router(tokens.router)
 router.include_router(delegated_issuers.router)

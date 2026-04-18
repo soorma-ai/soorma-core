@@ -26,7 +26,7 @@ class TestIdentityServiceClientContracts:
             "tenant_domain_id": "tenant-domain-1",
             "platform_tenant_id": "platform-tenant-1",
             "bootstrap_admin_principal_id": "principal-1",
-            "tenant_admin_api_key": "idadm_platform-tenant-1_signature",
+            "tenant_admin_api_key": "idadm.tak_123.secret-value",
             "status": "created",
         }
         mock_response.raise_for_status = MagicMock()
@@ -39,7 +39,7 @@ class TestIdentityServiceClientContracts:
         assert result.tenant_domain_id == "tenant-domain-1"
         assert result.status == "created"
         assert identity_client.platform_tenant_id == "platform-tenant-1"
-        assert identity_client.tenant_admin_api_key == "idadm_platform-tenant-1_signature"
+        assert identity_client.tenant_admin_api_key == "idadm.tak_123.secret-value"
         identity_client._client.post.assert_called_once()
 
     @pytest.mark.asyncio
@@ -115,7 +115,7 @@ class TestIdentityServiceClientContracts:
             "tenant_domain_id": "tenant-domain-1",
             "platform_tenant_id": "platform-tenant-1",
             "bootstrap_admin_principal_id": "principal-1",
-            "tenant_admin_api_key": "idadm_platform-tenant-1_signature",
+            "tenant_admin_api_key": "idadm.tak_123.secret-value",
             "status": "created",
         }
         mock_response.raise_for_status = MagicMock()
@@ -130,3 +130,25 @@ class TestIdentityServiceClientContracts:
         assert "X-Tenant-ID" not in headers
         assert "X-Service-Tenant-ID" not in headers
         assert "X-User-ID" not in headers
+
+    @pytest.mark.asyncio
+    async def test_rotate_tenant_admin_key_rebinds_new_key(self, identity_client: IdentityServiceClient):
+        """Rotation should bind the returned tenant admin key for subsequent operations."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "credential_id": "tak_rotated",
+            "tenant_admin_api_key": "idadm.tak_rotated.rotated-secret",
+            "status": "rotated",
+        }
+        mock_response.raise_for_status = MagicMock()
+
+        identity_client._client = AsyncMock()
+        identity_client._client.post = AsyncMock(return_value=mock_response)
+        identity_client.set_platform_tenant_id("platform-tenant-1")
+        identity_client.set_tenant_admin_api_key("idadm.tak_old.old-secret")
+
+        result = await identity_client.rotate_tenant_admin_key()
+
+        assert result.status == "rotated"
+        assert identity_client.tenant_admin_api_key == "idadm.tak_rotated.rotated-secret"

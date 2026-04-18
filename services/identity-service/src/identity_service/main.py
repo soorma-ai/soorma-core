@@ -45,6 +45,7 @@ app.add_middleware(TenancyMiddleware)
 configure_platform_tenant_openapi(
     app,
     include_paths={
+        "/v1/identity/tenant-admin-credentials/rotate",
         "/v1/identity/principals",
         "/v1/identity/principals/{principal_id}",
         "/v1/identity/principals/{principal_id}/revoke",

@@ -15,6 +15,7 @@ from soorma_common.models import (
     OnboardingResponse,
     PrincipalRequest,
     PrincipalResponse,
+    TenantAdminCredentialRotateResponse,
     TokenIssueRequest,
     TokenIssueResponse,
 )
@@ -234,6 +235,25 @@ class IdentityServiceClient:
             platform_tenant_id=platform_tenant_id,
             tenant_admin_api_key=tenant_admin_api_key,
         )
+
+    async def rotate_tenant_admin_key(
+        self,
+        platform_tenant_id: Optional[str] = None,
+        tenant_admin_api_key: Optional[str] = None,
+    ) -> TenantAdminCredentialRotateResponse:
+        """Rotate tenant admin API key and bind the new credential for subsequent requests."""
+        response = await self._client.post(
+            f"{self.base_url}/v1/identity/tenant-admin-credentials/rotate",
+            headers=self._build_tenant_admin_headers(
+                platform_tenant_id=platform_tenant_id,
+                tenant_admin_api_key=tenant_admin_api_key,
+            ),
+            json={},
+        )
+        response.raise_for_status()
+        result = TenantAdminCredentialRotateResponse.model_validate(response.json())
+        self.set_tenant_admin_api_key(result.tenant_admin_api_key)
+        return result
 
     async def register_delegated_issuer(
         self,

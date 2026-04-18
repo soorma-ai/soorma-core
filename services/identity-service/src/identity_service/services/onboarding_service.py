@@ -30,7 +30,6 @@ class OnboardingService:
         tenant_domain_id = self._new_identity_id("td")
         platform_tenant_id = self._new_identity_id("pt")
         bootstrap_admin_principal_id = self._new_identity_id("pr")
-        tenant_admin_api_key = tenant_admin_api_key_service.issue_api_key(platform_tenant_id)
 
         try:
             domain_result = await tenant_domain_repository.create_domain(
@@ -54,6 +53,12 @@ class OnboardingService:
                 },
                 commit=False,
             )
+            tenant_admin_credential = await tenant_admin_api_key_service.issue_api_key(
+                db,
+                platform_tenant_id,
+                actor_id=actor_id,
+                commit=False,
+            )
             await db.commit()
         except Exception:
             await db.rollback()
@@ -68,7 +73,7 @@ class OnboardingService:
             tenant_domain_id=tenant_domain_id,
             platform_tenant_id=platform_tenant_id,
             bootstrap_admin_principal_id=bootstrap_admin_principal_id,
-            tenant_admin_api_key=tenant_admin_api_key,
+            tenant_admin_api_key=tenant_admin_credential.tenant_admin_api_key,
             status="created" if domain_result.get("created") else "existing",
         )
 

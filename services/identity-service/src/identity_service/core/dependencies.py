@@ -1,6 +1,6 @@
 """FastAPI dependencies for identity service request context."""
 
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 
 from soorma_service_common import (
     RouteAuthPolicy,
@@ -14,7 +14,7 @@ from soorma_service_common import (
 
 from identity_service.core.config import settings
 from identity_service.core.db import get_db
-from identity_service.services.admin_api_keys import TenantAdminApiKeyService
+from identity_service.services.admin_api_keys import tenant_admin_api_key_service
 
 get_tenanted_db = create_get_tenanted_db(get_db)
 get_tenant_context = create_get_tenant_context(get_tenanted_db)
@@ -23,10 +23,6 @@ require_user_tenant_context = create_require_user_context_dependency(
     get_tenant_context,
     correlation_header_name="X-Correlation-ID",
     request_header_name="X-Request-ID",
-)
-
-tenant_admin_api_key_service = TenantAdminApiKeyService(
-    settings.identity_tenant_admin_api_key_secret,
 )
 
 identity_default_route_policy = RouteAuthPolicy(
@@ -47,21 +43,22 @@ require_superuser_admin_authorization = create_require_admin_authorization(
 )
 
 
-def require_tenant_admin_authorization(
-    provided_api_key: str | None = Header(default=None, alias="X-Identity-Admin-Key"),
-    platform_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
+async def require_tenant_admin_authorization(
+    request: Request,
+    context: TenantContext = Depends(get_tenant_context),
 ) -> str:
     """Validate tenant-bound admin authorization and require explicit tenant scope."""
-    resolved_platform_tenant_id = str(platform_tenant_id or "").strip()
+    resolved_platform_tenant_id = str(request.headers.get("X-Tenant-ID") or "").strip()
     if not resolved_platform_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="X-Tenant-ID header is required for tenant admin authorization.",
         )
 
-    if not tenant_admin_api_key_service.validate_api_key(
+    if not await tenant_admin_api_key_service.validate_api_key(
+        context.db,
         resolved_platform_tenant_id,
-        provided_api_key,
+        request.headers.get("X-Identity-Admin-Key"),
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

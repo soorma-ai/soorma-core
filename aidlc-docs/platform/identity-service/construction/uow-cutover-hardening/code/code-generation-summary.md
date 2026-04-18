@@ -12,6 +12,7 @@
 - Updated identity-service low-level client binding so platform tenant context is supplied only after onboarding/discovery instead of being assumed at construction time.
 - Removed low-level identity-client symmetric caller-JWT generation so identity-admin requests now use only the admin API key plus optional bound `X-Tenant-ID` until a future explicit caller-principal injection path is designed.
 - Refined the identity-service admin contract so onboarding is superuser-key only, tenant-admin endpoints require tenant-bound admin keys plus `X-Tenant-ID`, onboarding returns the generated tenant admin key, and SDK/example call sites no longer pass service tenant or service user IDs into identity operations.
+- Replaced the deterministic derived tenant admin key scheme with persisted, rotatable tenant admin credentials backed by a new identity-service table, hashed secret-at-rest validation, and a tenant-admin rotation endpoint exposed through the SDK wrapper/client.
 
 ## Brownfield Files Changed
 - `libs/soorma-service-common/src/soorma_service_common/middleware.py`
@@ -90,6 +91,7 @@
 - Bootstrap-derived platform-tenant correction pass: 28 focused SDK/example tests passed
 - Identity-client transport cleanup after review feedback: 27 focused SDK/example tests passed
 - Scoped admin-key review correction: 20 focused identity-service tests, 8 focused SDK identity tests, and 31 shared middleware tests passed
+- Persisted tenant-admin credential redesign: 23 focused identity-service tests and 14 focused SDK/example tests passed
 - Final example migration syntax validation: `py_compile` passed for the remaining migrated `research-advisor` and `13-a2a-gateway` Python files
 
 ## Residual Notes
@@ -104,3 +106,4 @@
 - Low-level identity client requests no longer assume a platform tenant exists before onboarding; callers may bind it after bootstrap or pass it explicitly per request.
 - Low-level identity client no longer self-mints caller JWTs from local symmetric secrets; current transport is superuser admin API key only for onboarding and tenant-admin API key plus bound `X-Tenant-ID` for tenant-scoped identity administration.
 - Shared middleware now derives service identity from canonical JWT claims (`tenant_id`, `principal_id`, `sub`) when explicit service-claim aliases are absent, preserving bearer-only Tier-2 access after cutover.
+- Existing tenants carrying the older deterministic tenant admin key format must re-onboard or rotate to obtain a persisted credential record; old derived keys are no longer accepted by the stricter validation path.

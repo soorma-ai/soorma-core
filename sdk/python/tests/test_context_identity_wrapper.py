@@ -6,6 +6,7 @@ import pytest
 from soorma_common.models import (
     OnboardingRequest,
     OnboardingResponse,
+    TenantAdminCredentialRotateResponse,
     TokenIssueRequest,
     TokenIssueResponse,
     TokenIssuanceType,
@@ -41,7 +42,7 @@ class TestIdentityWrapper:
                 tenant_domain_id="tenant-domain-1",
                 platform_tenant_id="platform-tenant-1",
                 bootstrap_admin_principal_id="principal-1",
-                tenant_admin_api_key="idadm_platform-tenant-1_signature",
+                tenant_admin_api_key="idadm.tak_123.secret-value",
                 status="created",
             )
         )
@@ -111,3 +112,27 @@ class TestIdentityWrapper:
                 platform_tenant_id="   ",
                 tenant_admin_api_key="tenant-admin-key",
             )
+
+    @pytest.mark.asyncio
+    async def test_rotate_tenant_admin_key_delegates(self, identity_wrapper: IdentityClient):
+        """Wrapper should forward tenant admin key rotation to the low-level client."""
+        mock_service_client = AsyncMock(spec=IdentityServiceClient)
+        mock_service_client.rotate_tenant_admin_key = AsyncMock(
+            return_value=TenantAdminCredentialRotateResponse(
+                credential_id="tak_rotated",
+                tenant_admin_api_key="idadm.tak_rotated.rotated-secret",
+                status="rotated",
+            )
+        )
+        identity_wrapper._client = mock_service_client
+
+        result = await identity_wrapper.rotate_tenant_admin_key(
+            platform_tenant_id="platform-tenant-1",
+            tenant_admin_api_key="idadm.tak_old.old-secret",
+        )
+
+        assert result.status == "rotated"
+        mock_service_client.rotate_tenant_admin_key.assert_called_once_with(
+            platform_tenant_id="platform-tenant-1",
+            tenant_admin_api_key="idadm.tak_old.old-secret",
+        )

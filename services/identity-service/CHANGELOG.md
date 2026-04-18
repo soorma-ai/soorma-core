@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Split identity admin authorization into superuser-only onboarding and tenant-admin scoped management routes, removing tenant-header requirements from onboarding while keeping explicit `X-Tenant-ID` enforcement on tenant-admin operations.
+- Replaced deterministic tenant admin API keys with persisted, rotatable tenant admin credentials backed by a new credential table, hashed secret-at-rest validation, and `POST /v1/identity/tenant-admin-credentials/rotate`.
+- Moved mapping evaluation onto tenant-admin authorization so tenant-scoped admin workflows no longer depend on service-user JWT context.
+
 ## [0.9.0] - 2026-04-17
 
 - Version alignment: bumped to 0.9.0 (identity service synchronized with monorepo release).

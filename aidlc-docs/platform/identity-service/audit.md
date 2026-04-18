@@ -26,6 +26,14 @@ for tenant's identity service's users, following namespace convention is expecte
 
 ---
 
+## Code Generation - Persisted Tenant Admin Credential Follow-Up
+**Timestamp**: 2026-04-18T07:19:52Z
+**User Input**: "ok, we need stricter tenant admin key design, moving the derived key scheme to persisted, rotatable tenant admin credentials"
+**AI Response**: "Implemented a stricter persisted tenant-admin credential model by adding a stored credential table and migration, issuing high-entropy opaque tenant admin keys with hashed secret-at-rest validation, adding a tenant-admin rotation endpoint and SDK methods, moving mappings to tenant-admin auth, and verifying the redesign with 23 passing identity-service tests plus 14 passing SDK/example tests."
+**Context**: CONSTRUCTION - Code Generation review correction follow-up executed within uow-cutover-hardening
+
+---
+
 ## Code Generation - Scoped Admin API Contract Review Correction
 **Timestamp**: 2026-04-18T05:27:24Z
 **User Input**: "using AI-DLC, I want to address the following issue with identity-service in soorma-core repo:

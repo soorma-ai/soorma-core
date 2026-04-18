@@ -37,6 +37,7 @@ from .models import (
     TokenIssuanceType,
     DelegatedIssuerRequest,
     DelegatedIssuerResponse,
+    TenantAdminCredentialRotateResponse,
     MappingEvaluationRequest,
     MappingEvaluationResponse,
     # Memory Service
@@ -168,6 +169,7 @@ __all__ = [
     "TokenIssuanceType",
     "DelegatedIssuerRequest",
     "DelegatedIssuerResponse",
+    "TenantAdminCredentialRotateResponse",
     "MappingEvaluationRequest",
     "MappingEvaluationResponse",
     # Memory Service
