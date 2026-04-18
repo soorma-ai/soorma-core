@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
 from soorma_common.models import OnboardingResponse, TokenIssueResponse
@@ -170,3 +171,83 @@ def test_load_bootstrap_payload_returns_none_for_invalid_json(shared_auth_module
     bootstrap_file.write_text("{invalid-json")
 
     assert shared_auth_module.load_bootstrap_payload(EXAMPLE_NAME, script_path) is None
+
+
+@pytest.mark.asyncio
+async def test_example_auth_token_error_instructs_deleting_stale_bootstrap_files(
+    shared_auth_module, tmp_path, monkeypatch
+):
+    """Missing tenant admin key should tell developers how to recover from stale bootstrap files."""
+    repo_root = tmp_path / "repo"
+    examples_dir = repo_root / "examples" / "01-hello-world"
+    sdk_dir = repo_root / "sdk"
+    examples_dir.mkdir(parents=True)
+    sdk_dir.mkdir(parents=True)
+    script_path = examples_dir / "worker.py"
+    script_path.write_text("# placeholder\n")
+
+    shared_auth_module.persist_bootstrap_payload(
+        EXAMPLE_NAME,
+        script_path,
+        {
+            "tenant_domain_id": "td-1",
+            "platform_tenant_id": "pt-1",
+            "bootstrap_admin_principal_id": "pr-1",
+        },
+    )
+    monkeypatch.delenv("IDENTITY_TENANT_ADMIN_API_KEY", raising=False)
+
+    provider = shared_auth_module.build_example_token_provider(EXAMPLE_NAME, script_path)
+
+    with pytest.raises(RuntimeError, match=r"rm .*/\.soorma/\*-identity\.json") as exc_info:
+        await provider.get_token()
+
+    assert "Delete stale onboarding files and rerun" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_example_auth_403_instructs_deleting_stale_bootstrap_files(
+    shared_auth_module, tmp_path
+):
+    """403 token issuance failures should tell developers to clear stale bootstrap files."""
+    repo_root = tmp_path / "repo"
+    examples_dir = repo_root / "examples" / "01-hello-world"
+    sdk_dir = repo_root / "sdk"
+    examples_dir.mkdir(parents=True)
+    sdk_dir.mkdir(parents=True)
+    script_path = examples_dir / "worker.py"
+    script_path.write_text("# placeholder\n")
+
+    shared_auth_module.persist_bootstrap_payload(
+        EXAMPLE_NAME,
+        script_path,
+        {
+            "tenant_domain_id": "td-1",
+            "platform_tenant_id": "pt-1",
+            "bootstrap_admin_principal_id": "pr-1",
+            "tenant_admin_api_key": "idadm.stale.invalid",
+        },
+    )
+
+    mock_identity_client = AsyncMock()
+    mock_identity_client.set_platform_tenant_id = MagicMock()
+    mock_identity_client.set_tenant_admin_api_key = MagicMock()
+    mock_identity_client.issue_token = AsyncMock(
+        side_effect=httpx.HTTPStatusError(
+            "forbidden",
+            request=httpx.Request("POST", "http://localhost:8085/v1/identity/tokens/issue"),
+            response=httpx.Response(403),
+        )
+    )
+    mock_identity_client.__aenter__.return_value = mock_identity_client
+    mock_identity_client.__aexit__.return_value = None
+
+    provider = shared_auth_module.build_example_token_provider(EXAMPLE_NAME, script_path)
+
+    with patch.object(shared_auth_module, "IdentityServiceClient", return_value=mock_identity_client), pytest.raises(
+        RuntimeError,
+        match=r"identity bootstrap authorization failed with 403|rm .*/\.soorma/\*-identity\.json",
+    ) as exc_info:
+        await provider.get_token()
+
+    assert "Delete stale onboarding files and rerun" in str(exc_info.value)
