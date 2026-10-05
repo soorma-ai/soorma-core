@@ -164,22 +164,23 @@ not gaps and need no classification. They are recorded so the reasoning is visib
 
 ### Summary
 
-| Ref | Question | Brief's watch item | Outcome | Owner | Blocks (done-when) |
-|---|---|---|---|---|---|
-| A-1 | Who is the human sponsor? | Q1 (Identity) | **Answered by PRD**: the registering Developer (§12 core single-actor form) | — | — |
-| T-1 | What is the sponsor's "grantable set"? | Q1 (Identity) | **Technology (interpretation)**: the sponsor's held permission set in the environment | AI-DLC | — |
-| GAP-INT-001 | How does a human principal exist and authenticate to the control plane? | Q1 (Identity) | **Specification** | Identity plane PRD (OB-4) | 1, then 2 to 7 transitively |
-| GAP-INT-002 | How does the sponsor come to hold `agent:register`? (the first Admin grant) | Q1 (Identity) | **Specification** | Identity plane PRD (OB-3, R-2) | 1, then 2 to 7 transitively |
-| A-2 | Who creates topics? | Q2 (Event) | **Answered by PRD for M1**: publish and subscribe target *the environment's* namespace, which exists with the environment. No topics and no topic administration in M1 | — | — |
-| T-2 | How does a subscription respect credential expiry and revocation? | Q2 (Event) | **Technology, constrained**: delivery to a subscriber must stop within the propagation bound once its credential expires or is revoked (O2, O3, FR-012) | AI-DLC | — |
-| GAP-INT-003 | What delivery guarantees does a subscriber get? | Q2 (Event) | **Specification** | Event plane PRD (OB-6 context; §2 *What This Is Not*) | 3 |
-| T-3 | What does a trace span mean beyond the envelope field? | Q3 (Observability) | **Technology for soorma-core**: validate well-formedness against an open standard (proposed: W3C Trace Context), carry the value as asserted, emit no spans. Span semantics stay Observability's (OB-8) and are not needed by any item this repository proves | AI-DLC | — |
-| A-3 | Does B need discovery, or only a subscription? | Q4 (Registry & Schema) | **Answered by PRD**: only a subscription. §8a has no discovery operation; what B listens for is the tenant's design (I9). OB-5 concerns the envelope's compatibility policy, which M1 does not engage | — | — |
-| GAP-INT-004 | When is re-broadening exercised, and how does it compose with the intersection? | **Not on the brief's list** | **Specification** | platform-foundations itself (FR-017, I5) | None directly; FR-017 is in scope |
-| E-1 | §17 says "Five are platform-stamped" but lists six; §4 says "Thirteen" operations where §8a and §12 count sixteen | Not on the brief's list | **Erratum, no build impact**: the normative tables (§7b, §8a) are unambiguous | soorma-prd | — |
+| Ref | Question | Brief's watch item | Outcome | Owner | Blocks (done-when) | Routing |
+|---|---|---|---|---|---|---|
+| A-1 | Who is the human sponsor? | Q1 (Identity) | **Answered by PRD**: the registering Developer (§12 core single-actor form) | — | — | — |
+| GAP-INT-005 (was T-1) | What is the sponsor's "grantable set"? | Q1 (Identity) | **Specification**: reclassified by the user at RA from technology (interpretation) | platform-foundations (FR-016) | Registration's ceiling check (already blocked by 001 and 002) | Pending clarification |
+| GAP-INT-001 | How does a human principal exist and authenticate to the control plane? | Q1 (Identity) | **Specification** | Identity plane PRD (OB-4) | 1, then 2 to 7 transitively | Raised: soorma-prd#12. Blocking |
+| GAP-INT-002 | How does the sponsor come to hold `agent:register`? (the first Admin grant) | Q1 (Identity) | **Specification** | Identity plane PRD (OB-3, R-2) | 1, then 2 to 7 transitively | Raised: soorma-prd#12 (with 001). Blocking |
+| A-2 | Who creates topics? | Q2 (Event) | **Answered by PRD for M1**: publish and subscribe target *the environment's* namespace, which exists with the environment. No topics and no topic administration in M1 | — | — | Confirmed at RA |
+| T-2 | How does a subscription respect credential expiry and revocation? | Q2 (Event) | **Technology, constrained**: delivery to a subscriber must stop within the propagation bound once its credential expires or is revoked (O2, O3, FR-012) | AI-DLC | — | Confirmed at RA |
+| GAP-INT-003 | What delivery guarantees does a subscriber get? | Q2 (Event) | **Specification** | Event plane PRD (OB-6 context; §2 *What This Is Not*) | 3 | Raised: soorma-prd#13, **and worked around in M1** |
+| T-3 | What does a trace span mean beyond the envelope field? | Q3 (Observability) | **Technology for soorma-core**: validate well-formedness against an open standard (proposed: W3C Trace Context), carry the value as asserted, emit no spans. Span semantics stay Observability's (OB-8) and are not needed by any item this repository proves | AI-DLC | — | Confirmed at RA |
+| A-3 | Does B need discovery, or only a subscription? | Q4 (Registry & Schema) | **Answered by PRD**: only a subscription. §8a has no discovery operation; what B listens for is the tenant's design (I9). OB-5 concerns the envelope's compatibility policy, which M1 does not engage | — | — | Confirmed at RA |
+| GAP-INT-004 | When is re-broadening exercised, and how does it compose with the intersection? | **Not on the brief's list** | **Specification** | platform-foundations itself (FR-017, I5) | None directly; FR-017 is in scope | Raised: soorma-prd#14, **and worked around in M1** |
+| E-1 | §17 says "Five are platform-stamped" but lists six; §4 says "Thirteen" operations where §8a and §12 count sixteen | Not on the brief's list | **Erratum, no build impact**: the normative tables (§7b, §8a) are unambiguous | soorma-prd | — | Raised: soorma-prd#15 (non-blocking) |
 
 **Bottom line for the §19 claim** ("M1's builders need invent no architectural
-decision"): it **does not hold**. Four specification gaps were found. Two of them
+decision"): it **does not hold**. Five specification gaps were found (four at intake,
+plus T-1, which the user reclassified at RA). Two of them
 (GAP-INT-001, GAP-INT-002) sit at the root of the outcome. Every *done when* item needs a
 registered agent, registration needs an authenticated human holding `agent:register`,
 and the PRD assigns both of those to a PRD that does not exist yet. The PRD declares
@@ -188,7 +189,12 @@ did not anticipate is that it blocks M1, not just the sufficiency bar.
 
 ---
 
-### A-1 and T-1: the sponsor, and the sponsor's grantable set
+### A-1 and T-1 (now GAP-INT-005): the sponsor, and the sponsor's grantable set
+
+> **Reclassified at Requirements Analysis.** The user reclassified T-1 as
+> **specification** (RA Q6). It is now **GAP-INT-005**: owned by platform-foundations
+> (FR-016), status `Open`, with routing pending clarification. The intake reasoning is
+> kept below so the change of classification is visible.
 
 **A-1**: in core's single-actor form, "the registering Developer is the sponsor; the
 ceiling snapshot is taken and the check passes trivially" (§12 *Core Single-Actor
@@ -251,7 +257,7 @@ Two engineers would answer differently, and the difference is a product decision
 Done-when 1 directly; 2 to 7 transitively, because they all need a registered agent
 with an issued secret. Units: control-face registration and secret issuance.
 
-**Status**: `Open`
+**Status**: `Open`. Raised as [soorma-prd#12](https://github.com/soorma-ai/soorma-prd/issues/12) (routing A, RA Q2). **Blocking.**
 
 ---
 
@@ -292,7 +298,7 @@ bar fails, which makes it a packaging decision (I8) as well as an identity one.
 #### Blocked
 Same as GAP-INT-001.
 
-**Status**: `Open`
+**Status**: `Open`. Raised with GAP-INT-001 as [soorma-prd#12](https://github.com/soorma-ai/soorma-prd/issues/12) (routing A, RA Q3). **Blocking.**
 
 ---
 
@@ -352,7 +358,7 @@ would choose differently, and the choice binds tenants.
 #### Blocked
 Done-when 3 (and the delivery half of 4). Units: event transport (data face).
 
-**Status**: `Open`
+**Status**: `Open`. Raised as [soorma-prd#13](https://github.com/soorma-ai/soorma-prd/issues/13), **and worked around in M1** with option 3 (routing E, RA Q4): live subscribers only, delivery semantics stated as unspecified, and the M1 wire contract published as pre-release.
 
 ---
 
@@ -413,7 +419,7 @@ request proceed?", which is I5's core question.
 #### Blocked
 No *done when* item. FR-017's evaluation half is unbuildable as specified.
 
-**Status**: `Open`
+**Status**: `Open`. Raised as [soorma-prd#14](https://github.com/soorma-ai/soorma-prd/issues/14), **and worked around in M1** with option 3 (routing E, RA Q5): only a declaration of *none* is accepted.
 
 ---
 

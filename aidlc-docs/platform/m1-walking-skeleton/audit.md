@@ -47,3 +47,50 @@
 **Context**: Requirements Analysis Step 6 gate. Awaiting user answers.
 
 ---
+## Requirements Analysis: Answers Received
+**Timestamp**: 2026-10-05T03:13:21Z
+**User Input**: "all questions have been answered"
+**AI Response**: "Read requirement-verification-questions.md and set all 14 questions to Answered."
+
+**Answers Recorded** (requirement-verification-questions.md):
+- Q1 — PRD intake approval: A — Approve the coverage map as written
+- Q2 — Route GAP-INT-001 (human principal and control-plane authentication): A — Raise against soorma-prd, open a `Specification gap from build` issue citing `prd-platform-foundations-v1.1`, and block registration on it
+- Q3 — Route GAP-INT-002 (the first human grant, R-2): A — Raise against soorma-prd, in the same issue as GAP-INT-001
+- Q4 — Route GAP-INT-003 (event delivery guarantees): E — Both A and D: raise it, and work around it in M1 (live subscribers only; no durability, ordering, or redelivery; the wire contract states delivery semantics are unspecified; the M1 wire contract is published as pre-release) so done-when 3 can be proven
+- Q5 — Route GAP-INT-004 (re-broadening evaluation): E — Both A and D: raise it, and build the work-around in M1 (accept only a declaration of none; reject registrations declaring re-broadening; still reject an agent-set re-broadening record)
+- Q6 — Confirm the non-gap classifications: C — "C, reclassify T-1, and also ask for the errata issue"
+- Q7 — FR-011 revocation initiation: B — Defer initiation. O3 reads revocation state on every request, and tests seed revocation state through a test-only path not compiled into the product
+- Q8 — FR-026 seams: B — Internal boundary only: shape the code at both seam lines and honour containment, but publish no interface and offer no configuration selection until a second implementation exists
+- Q9 — Implementation language: X — "i'm thinking of starting with typescript using nest.js backend framework, so that end to end implementation can be fullstack in same language. but confirm that this will not have significant drawback for soorma-core itself, when compared to Go, which is considered highly performant for backend and platform services."
+- Q10 — Security Extensions: A — Yes, enforce all SECURITY rules as blocking constraints
+- Q11 — soorma Platform Invariants: A — Yes, enforce the platform invariants
+- Q12 — Team Collaboration Review Gates: A — Enable team review gates
+- Q13 — QA Test Cases Extension: A3 — Yes, comprehensive scope (happy path, negative, edge cases, boundary conditions)
+- Q14 — JIRA Tickets Extension: X — "X, actually use GitHub issues not jira"
+
+**Context**: Requirements Analysis Step 6. Answers analyzed for contradictions and ambiguities (next entry).
+
+---
+
+## Requirements Analysis: Answer Analysis
+**Timestamp**: 2026-10-05T03:13:21Z
+**User Input**: (none)
+**AI Response**: "No contradictions. Three points need clarification before requirements.md is generated. (1) Q6: T-1 (grantable set) is reclassified as specification and becomes GAP-INT-005, but no routing was given for it. (2) Q9: the user asked for confirmation of TypeScript and NestJS against Go before committing to it. (3) Q14: the JIRA extension is to target GitHub issues instead; the mechanism (create real issues versus generate content only) and the target repository are unstated. Actions taken on the unambiguous answers: PRD intake recorded as Approved; extension configuration recorded; full rule files loaded for security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, and jira-tickets (adapted to GitHub issues); issues opened on soorma-prd for GAP-INT-001+002 (one issue), GAP-INT-003, GAP-INT-004, and the E-1 errata. GAP-INT-005 has no issue yet, pending routing. Invariant scope recorded: inherited from PRD §15, all eleven Addressed, none N/A."
+**Context**: Requirements Analysis. Extension rules loaded (Deferred Rule Loading).
+
+---
+## Requirements Analysis: Gaps Raised Against soorma-prd
+**Timestamp**: 2026-10-05T03:15:47Z
+**User Input**: (routing from RA Q2 to Q6, recorded above)
+**AI Response**: "Checked soorma-prd for existing 'Specification gap from build' issues: none. Opened: soorma-prd#12 (GAP-INT-001 and GAP-INT-002, routing A, blocking); soorma-prd#13 (GAP-INT-003, routing E: raised and worked around); soorma-prd#14 (GAP-INT-004, routing E: raised and worked around); soorma-prd#15 (E-1 errata, label documentation, non-blocking). Each gap issue body carries the gap entry verbatim and the tag prd-platform-foundations-v1.1. Updated prd-coverage-map.md (statuses, issue links, T-1 reclassified as GAP-INT-005) and the aidlc-state.md gap register."
+**Context**: prd-gap-classification.md Step 3, option A, for each routed gap
+
+---
+
+## Requirements Analysis: Clarification Questions Issued
+**Timestamp**: 2026-10-05T03:15:47Z
+**User Input**: (none)
+**AI Response**: "Created inception/requirements/requirement-clarification-questions.md (git-ignored) with 3 questions: (1) routing for GAP-INT-005; (2) the implementation-language decision, with the requested TypeScript/NestJS-against-Go assessment (no significant drawback for M1; moderate, contained costs at scale in per-instance throughput, self-host distribution, and supply-chain surface; reversible if the wire contract is language-neutral, perimeter components are stateless, and dependencies are disciplined); (3) the mechanism and target repository for GitHub issues in place of JIRA. requirements.md is held until these are answered (RA Step 6 gate)."
+**Context**: Requirements Analysis Step 6, clarification round
+
+---

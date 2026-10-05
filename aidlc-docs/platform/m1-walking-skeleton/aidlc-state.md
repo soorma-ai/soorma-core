@@ -4,7 +4,7 @@
 - **Project**: soorma-core: M1 walking skeleton (server side)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
-- **Current Stage**: INCEPTION - Requirements Analysis (awaiting answers to `requirement-verification-questions.md`)
+- **Current Stage**: INCEPTION - Requirements Analysis (answers received; awaiting `requirement-clarification-questions.md`)
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -33,16 +33,16 @@
 - **Coverage map**: inception/prd-intake/prd-coverage-map.md
 - **L1 sources**: §7a, §7b, §6, §8a, §8b, §9, §10, §11, §17, FR-025
 - **Stages satisfied**: None fully. Requirements Analysis, User Stories, Application Design, and Units Generation are all Partial
-- **Intake approval**: Pending (requirement-verification-questions.md, Q1)
+- **Intake approval**: Approved (RA Q1, 2026-10-05T03:13:21Z)
 
 ## Extension Configuration
 | Extension | Enabled | Decided At |
 |---|---|---|
-| Security Baseline | Pending | Requirements Analysis (Q10) |
-| soorma Platform Invariants | Pending | Requirements Analysis (Q11) |
-| PR Checkpoint | Pending | Requirements Analysis (Q12) |
-| QA Test Cases | Pending | Requirements Analysis (Q13) |
-| JIRA Tickets | Pending | Requirements Analysis (Q14) |
+| Security Baseline | Yes | Requirements Analysis (Q10) |
+| soorma Platform Invariants | Yes | Requirements Analysis (Q11). Scope inherited from PRD §15: I1 to I11 all Addressed, none N/A; invariants read at `prd-platform-foundations-v1.1` |
+| PR Checkpoint | Yes | Requirements Analysis (Q12) |
+| QA Test Cases | Yes | Requirements Analysis (Q13). Opted in — scope: comprehensive |
+| JIRA Tickets | Yes, adapted: **GitHub issues instead of JIRA** | Requirements Analysis (Q14). Mechanism pending clarification |
 
 ## PRD Specification Gaps
 
@@ -51,10 +51,13 @@ Raised at intake, before any unit exists, so the full entries live in
 
 | ID | Unit | Summary | Status | Raised Against | Issue |
 |---|---|---|---|---|---|
-| GAP-INT-001 | (pre-unit) control-face registration | Human principal identity and control-plane authentication (OB-4) | Open: routing pending (RA Q2) | `prd-platform-foundations-v1.1` | — |
-| GAP-INT-002 | (pre-unit) control-face registration | First human grant; how a sponsor obtains `agent:register` (OB-3, R-2) | Open: routing pending (RA Q3) | `prd-platform-foundations-v1.1` | — |
-| GAP-INT-003 | (pre-unit) event transport | Event delivery guarantees (Event plane, §2) | Open: routing pending (RA Q4) | `prd-platform-foundations-v1.1` | — |
-| GAP-INT-004 | (pre-unit) perimeter authority | Re-broadening evaluation rule (FR-017, I5) | Open: routing pending (RA Q5) | `prd-platform-foundations-v1.1` | — |
+| GAP-INT-001 | (pre-unit) control-face registration | Human principal identity and control-plane authentication (OB-4) | Open: raised, **blocking** | `prd-platform-foundations-v1.1` | soorma-prd#12 |
+| GAP-INT-002 | (pre-unit) control-face registration | First human grant; how a sponsor obtains `agent:register` (OB-3, R-2) | Open: raised, **blocking** | `prd-platform-foundations-v1.1` | soorma-prd#12 |
+| GAP-INT-003 | (pre-unit) event transport | Event delivery guarantees (Event plane, §2) | Open: raised; worked around in M1 (live subscribers only, pre-release contract) | `prd-platform-foundations-v1.1` | soorma-prd#13 |
+| GAP-INT-004 | (pre-unit) perimeter authority | Re-broadening evaluation rule (FR-017, I5) | Open: raised; worked around in M1 (declaration *none* only) | `prd-platform-foundations-v1.1` | soorma-prd#14 |
+| GAP-INT-005 | (pre-unit) control-face registration | Meaning of the sponsor's "grantable set" (FR-016); reclassified from T-1 at RA Q6 | Open: routing pending clarification | `prd-platform-foundations-v1.1` | — |
+
+**Errata (not a gap)**: E-1, §17 and §4 counts. soorma-prd#15, non-blocking.
 
 ## Deferred Questions
 
@@ -66,9 +69,9 @@ Raised at intake, before any unit exists, so the full entries live in
 ## Stage Progress
 ### 🔵 INCEPTION PHASE
 - [x] Workspace Detection (greenfield)
-- [x] PRD Intake (artifacts complete; approval pending in RA Q1)
+- [x] PRD Intake (approved at RA Q1)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
-- [ ] Requirements Analysis: IN PROGRESS (questions issued; awaiting answers)
+- [ ] Requirements Analysis: IN PROGRESS (answers received; 3 clarifications pending)
 - [ ] User Stories
 - [ ] Workflow Planning
 - [ ] Application Design
