@@ -117,3 +117,10 @@ q3: i think option A is better ... in fact i'd like to not have markdown (if the
 **Context**: Requirements Analysis Step 9. Awaiting approval.
 
 ---
+## Requirements Analysis: GAP-INT-005 Routing Confirmed
+**Timestamp**: 2026-10-06T23:07:00Z
+**User Input**: "ok to use recommendation #14 instead of #12"
+**AI Response**: "Answer change logged: C1 — routing for GAP-INT-005 is now soorma-prd#14, not #12. Added the full GAP-INT-005 entry to prd-coverage-map.md (options: grantable = held; a separate grantable set via a grant-option; held minus administrative permissions). Posted it verbatim as a comment on soorma-prd#14 (issuecomment-6027080269). Retitled #14 to 'Specification gaps from build: re-broadening evaluation rule and meaning of \"grantable set\" (GAP-INT-004, GAP-INT-005)'. Updated the aidlc-state.md register and requirements.md section 6. requirements.md is still awaiting approval."
+**Context**: Requirements Analysis, prd-gap-classification.md Step 3, option A
+
+---

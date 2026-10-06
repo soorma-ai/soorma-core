@@ -167,7 +167,7 @@ not gaps and need no classification. They are recorded so the reasoning is visib
 | Ref | Question | Brief's watch item | Outcome | Owner | Blocks (done-when) | Routing |
 |---|---|---|---|---|---|---|
 | A-1 | Who is the human sponsor? | Q1 (Identity) | **Answered by PRD**: the registering Developer (§12 core single-actor form) | — | — | — |
-| GAP-INT-005 (was T-1) | What is the sponsor's "grantable set"? | Q1 (Identity) | **Specification**: reclassified by the user at RA from technology (interpretation) | platform-foundations (FR-016) | Registration's ceiling check (already blocked by 001 and 002) | Pending clarification |
+| GAP-INT-005 (was T-1) | What is the sponsor's "grantable set"? | Q1 (Identity) | **Specification**: reclassified by the user at RA from technology (interpretation) | platform-foundations (FR-016) | Registration's ceiling check (already blocked by 001 and 002) | Raised: soorma-prd#14 (with 004). Blocking |
 | GAP-INT-001 | How does a human principal exist and authenticate to the control plane? | Q1 (Identity) | **Specification** | Identity plane PRD (OB-4) | 1, then 2 to 7 transitively | Raised: soorma-prd#12. Blocking |
 | GAP-INT-002 | How does the sponsor come to hold `agent:register`? (the first Admin grant) | Q1 (Identity) | **Specification** | Identity plane PRD (OB-3, R-2) | 1, then 2 to 7 transitively | Raised: soorma-prd#12 (with 001). Blocking |
 | A-2 | Who creates topics? | Q2 (Event) | **Answered by PRD for M1**: publish and subscribe target *the environment's* namespace, which exists with the environment. No topics and no topic administration in M1 | — | — | Confirmed at RA |
@@ -193,7 +193,7 @@ did not anticipate is that it blocks M1, not just the sufficiency bar.
 
 > **Reclassified at Requirements Analysis.** The user reclassified T-1 as
 > **specification** (RA Q6). It is now **GAP-INT-005**: owned by platform-foundations
-> (FR-016), status `Open`, with routing pending clarification. The intake reasoning is
+> (FR-016), status `Open`, raised on soorma-prd#14. Its full entry follows this section. The intake reasoning is
 > kept below so the change of classification is visible.
 
 **A-1**: in core's single-actor form, "the registering Developer is the sponsor; the
@@ -211,6 +211,56 @@ The only answer constructible from the specified records is **the sponsor's held
 permission set in that environment**, so this is an interpretation rather than an
 invention. It is classified as technology, but flagged: if the product team intends a
 separate grantable set, it is specification.
+
+---
+
+### GAP-INT-005: Meaning of the sponsor's "grantable set" (reclassified from T-1)
+
+**Raised**: 2026-10-06T23:06:23Z
+**Stage**: Requirements Analysis (reclassified by the user at RA Q6, from technology to specification)
+**PRD**: soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md
+**Built against**: `prd-platform-foundations-v1.1`
+**PRD section**: FR-016; §8a (*Grant standing permissions at registration*; *Grant permissions to a human principal*); §10 *Failure Modes*; §12 *Core Single-Actor Form*; FR-018
+
+#### What the build needs
+The registration ceiling check: the granted standing set must be a subset of "the
+sponsor's grantable set at the moment of granting", and that set is snapshotted on the
+registration record. The build needs to know what a principal's *grantable* set is.
+The same term bounds an Admin's `grant:human` (§8a).
+
+#### What the PRD says
+"Grantable set" is used in FR-016, §8a, §10, and §11, but never defined, and never
+distinguished from the principal's *held* permission set. The minimal model's grant
+record (FR-018, §7a) carries principal, environment, permission set, granted-at, and
+granted-by, with no grant-option or delegable attribute. §12 says that under
+self-sponsorship "the check passes trivially".
+
+#### Why this is specification, not technology
+At intake, AI-DLC read it as *grantable = held*, the only reading constructible from
+the specified records. The user reclassified it, and the reading is open to question:
+- "passes trivially" under self-sponsorship fits *grantable* being something broader
+  than *held*
+- A separate grantable set would add an attribute to a core record, which is a
+  packaging decision (I8)
+
+It is an authority rule with an unspecified case. It bounds escalation by sponsorship
+(I5), and it decides what the ceiling snapshot contains, which I4 makes auditable.
+
+#### Options considered
+1. **Grantable = held**: the sponsor's held permission set in the environment. No
+   record change. A Developer must hold `event:publish` to grant it to an agent
+2. **A separate grantable set**: grants carry a grant-option (or a distinct
+   grantable permission set). This changes the FR-018 grant record and the §7a
+   snapshot's meaning
+3. **Grantable = held, minus administrative permissions** (for example, `grant:human`
+   can never be granted onward to an agent). This is a narrower rule layered on
+   option 1
+
+#### Blocked
+Registration's ceiling check (M1-FR-03), which is already blocked by GAP-INT-001 and 002
+(soorma-prd#12). It raises nothing new for the *done when* items.
+
+**Status**: `Open`. Raised on [soorma-prd#14](https://github.com/soorma-ai/soorma-prd/issues/14) alongside GAP-INT-004, the other platform-foundations authority-rule gap (routing confirmed by the user). **Blocking** the ceiling check.
 
 ---
 

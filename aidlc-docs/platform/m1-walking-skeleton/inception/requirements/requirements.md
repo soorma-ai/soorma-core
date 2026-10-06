@@ -218,7 +218,7 @@ The full entries are in the coverage map. The register is in `aidlc-state.md`.
 | GAP-INT-002 | First human grant (R-2) | Raised, soorma-prd#12 | **Blocking** |
 | GAP-INT-003 | Event delivery guarantees | Raised, soorma-prd#13 | Worked around (M1-FR-11) |
 | GAP-INT-004 | Re-broadening evaluation rule | Raised, soorma-prd#14 | Worked around (M1-FR-03, 08) |
-| GAP-INT-005 | Meaning of "grantable set" (FR-016) | To be raised. **Issue placement awaiting confirmation** (#12 or #14) | Blocking the ceiling check, which is already blocked by #12 |
+| GAP-INT-005 | Meaning of "grantable set" (FR-016) | Raised, soorma-prd#14 (with GAP-INT-004) | Blocking the ceiling check, which is already blocked by #12 |
 
 ---
 

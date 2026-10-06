@@ -55,7 +55,7 @@ Raised at intake, before any unit exists, so the full entries live in
 | GAP-INT-002 | (pre-unit) control-face registration | First human grant; how a sponsor obtains `agent:register` (OB-3, R-2) | Open: raised, **blocking** | `prd-platform-foundations-v1.1` | soorma-prd#12 |
 | GAP-INT-003 | (pre-unit) event transport | Event delivery guarantees (Event plane, §2) | Open: raised; worked around in M1 (live subscribers only, pre-release contract) | `prd-platform-foundations-v1.1` | soorma-prd#13 |
 | GAP-INT-004 | (pre-unit) perimeter authority | Re-broadening evaluation rule (FR-017, I5) | Open: raised; worked around in M1 (declaration *none* only) | `prd-platform-foundations-v1.1` | soorma-prd#14 |
-| GAP-INT-005 | (pre-unit) control-face registration | Meaning of the sponsor's "grantable set" (FR-016); reclassified from T-1 at RA Q6 | Open: to be raised; issue placement (#12 or #14) awaiting the user's confirmation | `prd-platform-foundations-v1.1` | — |
+| GAP-INT-005 | (pre-unit) control-face registration | Meaning of the sponsor's "grantable set" (FR-016); reclassified from T-1 at RA Q6 | Open: raised, blocking the ceiling check (already blocked by #12) | `prd-platform-foundations-v1.1` | soorma-prd#14 (with GAP-INT-004) |
 
 **Errata (not a gap)**: E-1, §17 and §4 counts. soorma-prd#15, non-blocking.
 
