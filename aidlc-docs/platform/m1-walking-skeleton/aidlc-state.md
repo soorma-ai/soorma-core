@@ -4,7 +4,7 @@
 - **Project**: soorma-core: M1 walking skeleton (server side)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
-- **Current Stage**: INCEPTION - Requirements Analysis (answers received; awaiting `requirement-clarification-questions.md`)
+- **Current Stage**: INCEPTION - Requirements Analysis (requirements.md written; awaiting approval)
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -42,7 +42,7 @@
 | soorma Platform Invariants | Yes | Requirements Analysis (Q11). Scope inherited from PRD §15: I1 to I11 all Addressed, none N/A; invariants read at `prd-platform-foundations-v1.1` |
 | PR Checkpoint | Yes | Requirements Analysis (Q12) |
 | QA Test Cases | Yes | Requirements Analysis (Q13). Opted in — scope: comprehensive |
-| JIRA Tickets | Yes, adapted: **GitHub issues instead of JIRA** | Requirements Analysis (Q14). Mechanism pending clarification |
+| JIRA Tickets | Yes, adapted: **GitHub issues on soorma-core instead of JIRA** | Requirements Analysis (Q14; clarification Q3). At the end of Inception, before the PR checkpoint: one tracking issue plus one sub-issue per unit. **No markdown ticket file**; issue numbers are recorded under `## Tickets` below |
 
 ## PRD Specification Gaps
 
@@ -55,9 +55,13 @@ Raised at intake, before any unit exists, so the full entries live in
 | GAP-INT-002 | (pre-unit) control-face registration | First human grant; how a sponsor obtains `agent:register` (OB-3, R-2) | Open: raised, **blocking** | `prd-platform-foundations-v1.1` | soorma-prd#12 |
 | GAP-INT-003 | (pre-unit) event transport | Event delivery guarantees (Event plane, §2) | Open: raised; worked around in M1 (live subscribers only, pre-release contract) | `prd-platform-foundations-v1.1` | soorma-prd#13 |
 | GAP-INT-004 | (pre-unit) perimeter authority | Re-broadening evaluation rule (FR-017, I5) | Open: raised; worked around in M1 (declaration *none* only) | `prd-platform-foundations-v1.1` | soorma-prd#14 |
-| GAP-INT-005 | (pre-unit) control-face registration | Meaning of the sponsor's "grantable set" (FR-016); reclassified from T-1 at RA Q6 | Open: routing pending clarification | `prd-platform-foundations-v1.1` | — |
+| GAP-INT-005 | (pre-unit) control-face registration | Meaning of the sponsor's "grantable set" (FR-016); reclassified from T-1 at RA Q6 | Open: to be raised; issue placement (#12 or #14) awaiting the user's confirmation | `prd-platform-foundations-v1.1` | — |
 
 **Errata (not a gap)**: E-1, §17 and §4 counts. soorma-prd#15, non-blocking.
+
+## Tickets
+
+*Created at the end of Inception.*
 
 ## Deferred Questions
 
@@ -71,7 +75,7 @@ Raised at intake, before any unit exists, so the full entries live in
 - [x] Workspace Detection (greenfield)
 - [x] PRD Intake (approved at RA Q1)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
-- [ ] Requirements Analysis: IN PROGRESS (answers received; 3 clarifications pending)
+- [ ] Requirements Analysis: requirements.md written; **awaiting approval**
 - [ ] User Stories
 - [ ] Workflow Planning
 - [ ] Application Design

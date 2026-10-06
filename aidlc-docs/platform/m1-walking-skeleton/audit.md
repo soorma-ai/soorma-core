@@ -94,3 +94,26 @@
 **Context**: Requirements Analysis Step 6, clarification round
 
 ---
+## Requirements Analysis: Clarification Answers
+**Timestamp**: 2026-10-06T23:04:21Z
+**User Input**: "q1: yes add this to soorma-prd issue #12, just like for other identity plane specification gaps -- confirm if this is right choice and better then choosing #14 or a new issue
+q2: lets go with option A, making sure that the 3 conditions are part of the requirements
+q3: i think option A is better ... in fact i'd like to not have markdown (if they are not considered durable artifact that will matter 1 year from now) to reduce the amount of files we need to review"
+**AI Response**: "Recorded the answers in requirement-clarification-questions.md (all Answered). On Q1 the AI disagrees and has not yet posted. 'Grantable set' (FR-016) is a property of the permission model, which platform-foundations owns (FR-018, minimal model) and Access Policy extends; it is not human principal lifecycle (Identity, OB-3/OB-4). It therefore belongs with GAP-INT-004 in soorma-prd#14, the other platform-foundations authority-algebra gap. Adding a comment to an issue the user did not choose needs the user's confirmation first. On Q2, M1-TECH-01 to 04 are recorded in requirements.md with the three conditions as binding requirements. On Q3, tickets are real GitHub issues on soorma-core with no markdown file. The issues themselves are the durable artifact, and their numbers are recorded in the committed aidlc-state.md, so a separate markdown copy would add review surface without a decision."
+
+**Answers Recorded** (requirement-clarification-questions.md):
+- C1 — Routing for GAP-INT-005: C — add to soorma-prd#12 (user asked for confirmation that this beats #14 or a new issue; AI recommends #14; awaiting confirmation)
+- C2 — Implementation language: A — TypeScript with NestJS, under the three conditions, which are to be part of the requirements
+- C3 — GitHub issues mechanism: A — create real issues on soorma-core (tracking issue plus one sub-issue per unit), with no markdown record
+
+**Context**: Requirements Analysis, clarification round complete
+
+---
+
+## Requirements Analysis: Requirements Generated, Approval Requested
+**Timestamp**: 2026-10-06T23:04:21Z
+**User Input**: (none)
+**AI Response**: "Created inception/requirements/requirements.md: intent analysis; outcome status (M1 blocked on soorma-prd#12; construction may proceed on unblocked units, using test-only fixtures, to be confirmed at Workflow Planning); M1-FR-01 to 13; M1-NFR-01 to 07; M1-TECH-01 to 05; open gaps; RA-stage security and invariant compliance (no non-compliant rows). Next stage proposed: User Stories at minimal depth (personas carried from PRD §3). Approval requested."
+**Context**: Requirements Analysis Step 9. Awaiting approval.
+
+---
