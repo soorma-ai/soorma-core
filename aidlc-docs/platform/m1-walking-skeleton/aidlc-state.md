@@ -4,7 +4,7 @@
 - **Project**: soorma-core: M1 walking skeleton (server side)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
-- **Current Stage**: INCEPTION - Requirements Analysis (requirements.md written; awaiting approval)
+- **Current Stage**: INCEPTION - Requirements Analysis complete. **Paused** by the user's instruction before User Stories
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -75,11 +75,12 @@ Raised at intake, before any unit exists, so the full entries live in
 - [x] Workspace Detection (greenfield)
 - [x] PRD Intake (approved at RA Q1)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
-- [ ] Requirements Analysis: requirements.md written; **awaiting approval**
+- [x] Requirements Analysis (approved 2026-10-06)
 - [ ] User Stories
 - [ ] Workflow Planning
 - [ ] Application Design
 - [ ] Units Generation
 
-**Session stop point**: by the user's instruction, this session stops after Requirements
-Analysis for review of the gap classification.
+**Session stop point**: by the user's instruction, the initiative pauses after Requirements
+Analysis. Next: User Stories at minimal depth, when the user resumes. M1 completion in
+this repository is blocked on soorma-prd#12.
