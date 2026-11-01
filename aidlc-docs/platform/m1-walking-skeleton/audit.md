@@ -174,3 +174,19 @@ Then re-run Requirements Analysis, scoped to Stages Re-opened (a) to (e). Stop a
 **Context**: PRD Intake Step 9.7 gate: run 2 approved. Requirements Analysis re-run follows, scoped to Stages Re-opened (a) to (e).
 
 ---
+
+## PRD Intake: Re-Intake Answers Carried Out
+**Timestamp**: 2026-11-01T21:46:57Z
+**User Input**: (the instruction logged at 2026-11-01T21:45:19Z)
+**AI Response**: "(1) Recorded routing E and the M1 work-around in the GAP-INT-006 entry: only plane-declared permission identifiers are accepted (PF agent:register, credential:revoke, agent:retire, grant:human, event:publish, event:subscribe, attribution:read; ID human:manage, agent:delegate), with tenant-defined and per-environment identifiers unbuilt; carried as M1-FR-15. Committed as 4693138 and pushed dev, which updates soorma-core#2. (2) Posted the drafted comment on soorma-prd#13 (issuecomment-6564346022), with a permalink to GAP-INT-003's new location pinned to 8699524, the commit that moved it. (3) Checked soorma-prd for open spec-gap issues: only #13 (event delivery), which does not cover GAP-INT-006. Opened soorma-prd#24, 'Specification gap from build: which permissions are valid in an environment (GAP-INT-006)', label spec-gap, raised against ID @ prd-identity-v1.0, with the gap entry verbatim and a permalink pinned to 4693138. Recorded #24 in specification-gaps.md, the aidlc-state.md register, and the coverage map. GAP-INT-006 status: Open, worked around."
+**Context**: prd-gap-classification.md Step 3, routing E; prd-intake.md Steps 9.4.4 and 9.5
+
+---
+
+## Requirements Analysis (Re-run, Intake Run 2): Context and Questions Issued
+**Timestamp**: 2026-11-01T21:48:45Z
+**User Input**: (the instruction logged at 2026-11-01T21:45:19Z: "re-run Requirements Analysis, scoped to Stages Re-opened (a) to (e). Stop at the Requirements Analysis approval gate.")
+**AI Response**: "Loaded requirements-analysis.md. Step 0: loaded the run-2 coverage map, with PF @ prd-platform-foundations-v1.3 and ID @ prd-identity-v1.0 read at their tags; scope is the soorma-core column; depth stays Comprehensive. Loaded the security-baseline and soorma-platform-invariants rules for the (e) compliance check. Intent is unchanged from run 1 (new project, greenfield; system-wide in soorma-core; complex). Finding: SECURITY-12 (blocking) requires MFA support for administrative accounts and session invalidation on logout, so it constrains the two decide-at-intake items. ID FR-006 'K only' and ID FR-011 'defer all self-service' would each produce a blocking finding; both options are offered and marked as such. Created inception/requirements/requirements-run2-questions.md (git-ignored) with 4 questions: Q1 ID FR-006 (A K+P with an organization-configured requirement, recommended / B K+P with no requirement / C K only, blocking); Q2 ID FR-011 (A all self-service, recommended / B logout only / C none, blocking); Q3 re-confirm PF FR-026 decision B for the widened identity-resolution seam (A confirm, extended, recommended / B publish the seams); Q4 confirm A-4, A-5, A-6, T-4. Areas (a), (b), (d) and most of (e) are carried from the PRDs and need no question. Stopped at the RA Step 6 gate: requirements.md cannot be generated until these are answered, so the RA approval gate follows the answers."
+**Context**: Requirements Analysis re-run, Steps 0 to 6. Awaiting user answers.
+
+---

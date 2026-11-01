@@ -301,7 +301,7 @@ test, from `prd-gap-classification.md`:
 | **A-5** | With delegation absent, what origin does an M1 chain start with? | Not on the list (new, run 2) | **Answered by a PRD** | — | — | — |
 | **A-6** | Is bootstrap still the only unauthenticated surface? | Not on the list (new, run 2) | **Answered by a PRD** | — | — | — |
 | **T-4** | How is the configured first Admin's enrollment material delivered? | Not on the list (new, run 2) | **Technology, constrained** | AI-DLC | — | To confirm at RA |
-| **GAP-INT-006** | Which permissions are **valid in E** (ID FR-015's ceiling), and are tenant-defined identifiers grantable in core? | Not on the list (new, run 2) | **Specification** | Identity (term); PF FR-018 bears | **None**; worked around (plane-declared identifiers only) | Raised (re-intake Q2, routing E) |
+| **GAP-INT-006** | Which permissions are **valid in E** (ID FR-015's ceiling), and are tenant-defined identifiers grantable in core? | Not on the list (new, run 2) | **Specification** | Identity (term); PF FR-018 bears | **None**; worked around (plane-declared identifiers only) | Raised: soorma-prd#24 (re-intake Q2, routing E) |
 
 **Bottom line for both PRDs' success claims.** ID §1 claims M1's registration path has
 no architectural decision left to invent. PF §19 at v1.3 claims the same, apart from

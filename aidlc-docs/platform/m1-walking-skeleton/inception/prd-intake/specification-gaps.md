@@ -22,7 +22,7 @@ ID for `identity`.
 | [GAP-INT-003](#gap-int-003-event-delivery-guarantees) | **Awaiting PRD: Event**; worked around in M1 | PF @ `prd-platform-foundations-v1.1` | — | soorma-prd#13 (open) |
 | [GAP-INT-004](#gap-int-004-re-broadening-evaluation-not-on-the-briefs-watch-list) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b, §8b *Re-broadening* (introduced at v1.2, §23) | soorma-prd#14 (closed) |
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
-| [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | (issue pending) |
+| [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
 
 ---
 
@@ -373,7 +373,7 @@ holding any permission in the human-only class (`grant:human`, `human:manage`,
 **PRD section**: ID FR-015; ID §8a *Grant to a human in E*; ID §17 *Policy Grammar and Authority Evaluation*; ID §18 *Grantable set*. It bears on PF FR-016 and FR-018, PF §8a's preamble, and PF P4 *Supplied by the tenant*
 **Owner**: Identity, for the term in FR-015. PF FR-018 bears on it, through the minimal model. Access Policy, which may extend the model (OB-2), has no PRD
 **Unit**: (pre-unit), until Units Generation assigns it
-**Issue**: (pending; opened after this entry is committed)
+**Issue**: [soorma-prd#24](https://github.com/soorma-ai/soorma-prd/issues/24), opened 2026-11-01 with this entry verbatim, pinned to `4693138`
 **Resolved by**: —
 
 #### What the build needs
@@ -460,4 +460,4 @@ additive, while narrowing a published set would break tenants."
   M1's contract
 - Carried into requirements as M1-FR-15 and into the Build and Test summary
 
-**Status**: `Open`. Raised against ID @ `prd-identity-v1.0`, and worked around in M1 (see above)
+**Status**: `Open`. Raised as [soorma-prd#24](https://github.com/soorma-ai/soorma-prd/issues/24) against ID @ `prd-identity-v1.0`, and worked around in M1 (see above)
