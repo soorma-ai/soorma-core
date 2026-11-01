@@ -22,7 +22,7 @@ ID for `identity`.
 | [GAP-INT-003](#gap-int-003-event-delivery-guarantees) | **Awaiting PRD: Event**; worked around in M1 | PF @ `prd-platform-foundations-v1.1` | — | soorma-prd#13 (open) |
 | [GAP-INT-004](#gap-int-004-re-broadening-evaluation-not-on-the-briefs-watch-list) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b, §8b *Re-broadening* (introduced at v1.2, §23) | soorma-prd#14 (closed) |
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
-| [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Classified; routing pending** (re-intake gate) | ID @ `prd-identity-v1.0` | — | not yet raised |
+| [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | (issue pending) |
 
 ---
 
@@ -373,7 +373,7 @@ holding any permission in the human-only class (`grant:human`, `human:manage`,
 **PRD section**: ID FR-015; ID §8a *Grant to a human in E*; ID §17 *Policy Grammar and Authority Evaluation*; ID §18 *Grantable set*. It bears on PF FR-016 and FR-018, PF §8a's preamble, and PF P4 *Supplied by the tenant*
 **Owner**: Identity, for the term in FR-015. PF FR-018 bears on it, through the minimal model. Access Policy, which may extend the model (OB-2), has no PRD
 **Unit**: (pre-unit), until Units Generation assigns it
-**Issue**: — (routing pending)
+**Issue**: (pending; opened after this entry is committed)
 **Resolved by**: —
 
 #### What the build needs
@@ -437,4 +437,27 @@ PF FR-018, never presented as the specified behaviour.
 the general input rule of grant-to-human (ID FR-015) and of the standing set
 (PF FR-016, FR-018): the accepted set of identifiers in M1's wire contract.
 
-**Status**: Classified as specification. **Routing pending**: re-intake gate, question 2. Not yet raised
+#### Routing
+**Chosen**: E, which combines A and D (re-intake Q2, 2026-11-01). Raise it against
+soorma-prd, and build the work-around in M1. In the user's words: "accepting only the
+identifiers the PRDs declare is the narrowest reading. Widening the accepted set later is
+additive, while narrowing a published set would break tenants."
+
+#### M1 work-around (what is left unbuilt)
+- Grant to a human (ID FR-015) and the standing set at registration (PF FR-016,
+  FR-018) accept **only plane-declared permission identifiers**. At these tags they are
+  PF's `agent:register`, `credential:revoke`, `agent:retire`, `grant:human`,
+  `event:publish`, `event:subscribe`, and `attribution:read`, and ID's `human:manage`
+  and `agent:delegate`. Any other identifier is rejected
+- The human-only class is still enforced against standing sets, whatever the sponsor
+  holds (PF FR-016)
+- **Unbuilt**: any tenant-defined identifier (option 2), and any per-environment
+  declaration of one (option 3). This is a delivery limit of M1, recorded under the
+  slice rule "absent, not simplified". It is not the specified behaviour, and the
+  wire contract must not present it as the specified behaviour
+- The wire contract states that the accepted set may widen in a compatible version.
+  Widening is additive, so whichever option the PRD side picks lands without breaking
+  M1's contract
+- Carried into requirements as M1-FR-15 and into the Build and Test summary
+
+**Status**: `Open`. Raised against ID @ `prd-identity-v1.0`, and worked around in M1 (see above)

@@ -155,3 +155,22 @@ q3: i think option A is better ... in fact i'd like to not have markdown (if the
 **Context**: PRD Intake Step 9.7 gate. Awaiting user answers.
 
 ---
+
+## PRD Intake: Re-Intake Run 2 Answers
+**Timestamp**: 2026-11-01T21:45:19Z
+**User Input**: "I've answered the re-intake questions in re-intake-questions.md. Log the answers in audit.md, then carry them out:
+
+push dev;
+post the drafted comment on soorma-prd#13 with the permalink;
+for GAP-INT-006, open a spec-gap issue against ID @ prd-identity-v1.0, after checking for an existing one, and record the M1 work-around.
+Then re-run Requirements Analysis, scoped to Stages Re-opened (a) to (e). Stop at the Requirements Analysis approval gate."
+**AI Response**: "Read re-intake-questions.md and set all 3 questions to Answered (header: All Answered). No contradictions or ambiguities: Q2 E and Q3 A are consistent (Q3 A covers the push that the GAP-INT-006 issue permalink needs)."
+
+**Answers Recorded** (re-intake-questions.md):
+- Q1 — Re-intake run 2 approval: B — Continue to Next Stage; "B: approve run 2."
+- Q2 — Routing for GAP-INT-006 (permissions valid in E): E — Both A and D, raise and work around; "E: raise it and work around it. Nothing in `done when` is blocked, and accepting only the identifiers the PRDs declare is the narrowest reading. Widening the accepted set later is additive, while narrowing a published set would break tenants."
+- Q3 — Outward-facing steps on soorma-prd#13: A — Push dev and post the comment as drafted, and open the GAP-INT-006 issue; "A: push dev and post. Pushing updates soorma-core#2, which is fine, because #2 is the inception PR and stays open until Requirements Analysis is re-approved. The #13 comment and the new GAP-INT-006 issue both need the pushed commit for their permalinks to work."
+
+**Context**: PRD Intake Step 9.7 gate: run 2 approved. Requirements Analysis re-run follows, scoped to Stages Re-opened (a) to (e).
+
+---
