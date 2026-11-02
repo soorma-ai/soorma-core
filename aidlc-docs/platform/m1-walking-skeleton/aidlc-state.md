@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Re-intake run 2 approved (2026-11-01T21:45:19Z). Requirements Analysis re-running, scoped to *Stages Re-opened* (a) to (e)
+- **Current Stage**: INCEPTION. Requirements Analysis re-run (run 2) complete, **awaiting approval**. Re-intake run 2 approved 2026-11-01T21:45:19Z
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -104,12 +104,11 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] Workspace Detection (greenfield)
 - [x] PRD Intake (run 1 approved at RA Q1; run 2 approved at re-intake Q1, 2026-11-01)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
-- [ ] Requirements Analysis: approved 2026-10-06 (run 1). **Re-opened by re-intake (run 2)**, scoped per the coverage map's *Stages Re-opened*; re-running
+- [ ] Requirements Analysis: approved 2026-10-06 (run 1). **Re-opened by re-intake (run 2)**, scoped per the coverage map's *Stages Re-opened*; re-run complete 2026-11-02, **awaiting approval**
 - [ ] User Stories
 - [ ] Workflow Planning
 - [ ] Application Design
 - [ ] Units Generation
 
-**Session stop point**: by the user's instruction (2026-11-01), the session stops at the
-re-intake approval gate. No approved stage is re-run. Next, once the gate is approved: the
-scoped Requirements Analysis re-run, then User Stories at minimal depth.
+**Session stop point**: by the user's instruction, the session stops at the Requirements
+Analysis approval gate (re-run, run 2). Next, once approved: User Stories at minimal depth.

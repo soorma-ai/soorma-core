@@ -190,3 +190,26 @@ Then re-run Requirements Analysis, scoped to Stages Re-opened (a) to (e). Stop a
 **Context**: Requirements Analysis re-run, Steps 0 to 6. Awaiting user answers.
 
 ---
+
+## Requirements Analysis (Re-run): Answers Received
+**Timestamp**: 2026-11-02T00:13:48Z
+**User Input**: "all questions anwered"
+**AI Response**: "Read requirements-run2-questions.md and set all 4 questions to Answered (header: All Answered). No contradictions or ambiguities. Q1 A and Q2 A satisfy SECURITY-12 (MFA for administrative accounts; sign-in invalidated on logout), so no blocking security finding arises from the decide-at-intake items."
+
+**Answers Recorded** (requirements-run2-questions.md):
+- Q1 — ID FR-006, ship P and the organization's second-factor requirement: A — K + P, with the requirement set by the organization's configuration; "A (password plus a second factor, which the organization can require)."
+- Q2 — ID FR-011, self-service now or later: A — all self-service now; "A (all self-service now). Ending one's own sign-in is the logout SECURITY-12 needs. The rest is small once that exists: renewing, and changing one's own material by presenting the current material. B would make users sign in again when the sign-in expires, to save very little work."
+- Q3 — PF FR-026, re-confirm decision B for the widened identity-resolution seam: A — confirm B, extended to human material; "A (re-confirm the run-1 decision, extended to human sign-in material). Run 1's reasoning still holds for the wider seam: M1 builds no external material types, and keeping the boundary internal means publishing it later is additive."
+- Q4 — Confirm the run-2 classifications A-4, A-5, A-6, T-4: A — confirm all four as written; "A (confirm all four)."
+
+**Context**: Requirements Analysis re-run, Step 6 gate passed. Generating requirements.md (Step 7).
+
+---
+
+## Requirements Analysis (Re-run): Requirements Generated, Approval Requested
+**Timestamp**: 2026-11-02T00:17:08Z
+**User Input**: (none)
+**AI Response**: "Revised inception/requirements/requirements.md for run 2, scoped to Stages Re-opened (a) to (e). It is built against PF @ prd-platform-foundations-v1.3 and ID @ prd-identity-v1.0, and every PRD ID is qualified by key. (a) Revised M1-FR-01 (no envelope on direct human operations; re-broadening record load-bearing only and travels with the chain), 03, 04 (issuer), 05 (one of three unauthenticated surfaces, correcting run 1), 08 (v1.3 origin table; every M1 chain starts autonomous; the §8b re-broadening rule), 09 (human credentials; the presenter × entry-point matrix), 10 (verify-only material), 12 (human actors; granted-by configuration; self-grants), 13 (seam widened, per RA run-2 Q3 A). (b) §2: no done-when item is blocked; the GAP-INT-004 work-around is removed. (c) New M1-FR-14 to 21 for ID FR-004/007, FR-015/013, FR-001, FR-006/007 (K + P, Q1 A), FR-008, FR-009, FR-010, FR-011 (all self-service, Q2 A); new M1-NFR-08 (organization level) and M1-NFR-09 (SECURITY-12); new M1-TECH-06 (T-4, confirmed Q4 A) and M1-TECH-07 (where P is enrolled, classified at this re-run as technology and decided at Functional Design). (d) M1-FR-15 records the GAP-INT-006 work-around (plane-declared identifiers only; soorma-prd#24). (e) Security baseline: SECURITY-12 Compliant, no blocking findings. Invariants: scope from both PRDs' §15 (all eleven Addressed), no blocking findings; PR checkpoint, QA test cases and tickets N/A at RA. Next stage proposed: User Stories at minimal depth. Approval requested."
+**Context**: Requirements Analysis Step 9, re-run. Awaiting approval.
+
+---
