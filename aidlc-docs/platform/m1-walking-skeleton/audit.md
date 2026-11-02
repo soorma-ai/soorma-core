@@ -415,3 +415,21 @@ Then proceed to Application Design."
 **Context**: Application Design Steps 10 to 12. Awaiting approval and the GAP-INT-008 routing answer.
 
 ---
+
+## Application Design: GAP-INT-008 Routing and Design Changes Requested
+**Timestamp**: 2026-11-02T07:19:54Z
+**User Input**: "GAP-INT-008: answered E. Add to the entry and the issue: under options 2 and 3, O12 would deny bootstrap or renewal to every agent without declared autonomy, because those calls never have forwarded context. That leaves option 1 as the only coherent reading, and it shows the PF fix: scope FR-001 to calls made with a credential, other than renewing it.
+
+Design changes:
+
+Remove S3's and S4's dependency on the organization level. Neither accepts a human credential, refusal by kind needs no verification, and M1-NFR-08 requires agent data-plane traffic to be unaffected by an organization-level outage. Only S2 fetches verify-only material.
+Add Delivery (stamped envelope and payload) to contract/ as a named JSON Schema that the SSE subscribe operation references, so soorma-sdk can generate a type for each delivered event; OpenAPI 3.1 types the stream only as text/event-stream.
+Then present the Application Design gate again."
+**AI Response**: "Read gap-int-008-questions.md: Q1 answered E in the file, matching chat. Verified the O12 argument: bootstrap and renewal carry no forwarded context, so an envelope would be stamped autonomous, and O12 denies agents without declared autonomy, including ID §17's front-door agents. Added the argument, routing E, and the work-around (option 1) to the GAP-INT-008 entry. Status is now Open, worked around."
+
+**Answers Recorded** (gap-int-008-questions.md):
+- Q1 — Routing for GAP-INT-008: E — both A and D: raise against soorma-prd citing PF @ prd-platform-foundations-v1.3, and build option 1 in M1 (neither bootstrap nor renewal carries an envelope)
+
+**Context**: prd-gap-classification.md Step 3, routing E; Application Design change request
+
+---
