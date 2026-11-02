@@ -544,3 +544,11 @@ Then present the Application Design gate again."
 **Context**: pr-checkpoint Inception PR gate, Sections 4.1 to 4.5
 
 ---
+
+## PR Checkpoint: soorma-core#2 Description Updated; Gate Blocking Message Presented
+**Timestamp**: 2026-11-02T09:01:46Z
+**User Input**: (none)
+**AI Response**: "Pushed dev at ac87747 (soorma-core#2 now has 29 commits). Replaced #2's description with the Section 4.2 content, as authorized by the user's instruction of 2026-11-02 ('At that gate, use #2 instead of opening a new PR: update its description per the extension's template'). The PR title was left as is; the suggested title is in the instructions file. Presented the Section 4.6 blocking message. Construction is blocked until the user confirms the PR is approved."
+**Context**: pr-checkpoint Inception PR gate, Section 4.6. Awaiting confirmation.
+
+---
