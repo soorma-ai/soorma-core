@@ -257,3 +257,27 @@ Then present the Requirements Analysis approval gate again."
 **Context**: User Stories Part 1, Planning. Awaiting user answers.
 
 ---
+
+## User Stories: Plan Answers Received
+**Timestamp**: 2026-11-02T05:33:46Z
+**User Input**: "Answered in story-generation-plan.md. Also fix plan step 1c: the single-actor form comes from ID §3 (Roles compose; they do not nest) and step 5 of ID §1's trace, not ID §12."
+**AI Response**: "Read story-generation-plan.md and set all 5 questions to Answered (header: All Answered). Step 9 analysis: no vague, contradictory or combined answers; Q4's note (include O12) is consistent with Q4 A. Fixed step 1c: it now cites ID §3 and ID §1 trace step 5. Checked ID §12: its Core Single-Actor Form also covers delegation and offboarding through configuration, which M1 does not build, so it is not cited. Updated steps 1b (deployer only) and 2b (O12 among the negative criteria)."
+
+**Answers Recorded** (story-generation-plan.md):
+- Q1 — Non-principal actors: B — add the deployer only; "B, the deployer only. The \"raw-call client\" isn't a separate actor."
+- Q2 — Breakdown approach: A — user journey, ordered by the done-when items and ID §1's trace
+- Q3 — Story size: A — one story per journey step, about 8 to 12 stories
+- Q4 — Boundary and refusal coverage: A — items 6 and 7 as their own stories, other refusals as negative acceptance criteria; "A — note: \"include O12 (an agent without declared autonomy is denied) among the negative criteria\""
+- Q5 — Acceptance criteria format: A — a short checklist per story, each item citing its M1-FR
+
+**Context**: User Stories Part 1, Steps 8 to 10. No follow-up questions needed.
+
+---
+
+## User Stories: Plan Approval Prompt
+**Timestamp**: 2026-11-02T05:33:46Z
+**User Input**: (none)
+**AI Response**: "Asked for explicit approval of the story generation plan (user-stories.md Step 13) before Part 2 generation: personas.md (PRD principals carried verbatim, plus the deployer marked not a principal) and stories.md (user journey, about 8 to 12 stories, items 6 and 7 as their own stories, negative criteria including O12, checklist acceptance criteria citing M1-FRs, persona-to-story and story-to-M1-FR tables)."
+**Context**: User Stories Part 1, Step 13 gate
+
+---
