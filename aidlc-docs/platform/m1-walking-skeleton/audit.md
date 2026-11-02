@@ -281,3 +281,19 @@ Then present the Requirements Analysis approval gate again."
 **Context**: User Stories Part 1, Step 13 gate
 
 ---
+
+## User Stories: Plan Approved
+**Timestamp**: 2026-11-02T05:39:36Z
+**User Input**: "Approved, with one adjustment to 1c: my correction was wrong. Restore the ID §12 Core Single-Actor Form citation, alongside ID §3 and ID §1 trace step 5, and state that M1 builds the first four steps of that form. Delegating to an agent is absent (ID FR-019 to FR-021), and offboarding and recovery are absent (ID FR-003, FR-012; see Absent from M1). Then generate the stories."
+**AI Response**: "Story plan approved. Step 1c updated: it cites ID §12 Core Single-Actor Form together with ID §3 and ID §1 trace step 5. M1 builds the form's first four steps (configured as first Admin; sets K and P; self-grants Developer permissions; registers and sponsors agents). Delegating to an agent is absent (ID FR-019 to FR-021), and so are offboarding and recovery (ID FR-003, FR-012). Starting Part 2, generation."
+**Context**: User Stories Part 1, Step 14: plan approved
+
+---
+
+## User Stories: Generated, Approval Requested
+**Timestamp**: 2026-11-02T05:41:41Z
+**User Input**: (none)
+**AI Response**: "Executed the approved plan, Part 2, with every step marked [x]. Wrote inception/user-stories/personas.md: the PF §3 and ID §3 principals carried verbatim, with an In-M1 column; the deployer marked not a principal; the M1 single-actor form citing ID §12, ID §3 and ID §1 trace step 5, with M1 building the form's first four steps and delegation, offboarding and recovery absent. Wrote inception/user-stories/stories.md: a user journey of 12 stories, US-01 to US-12, ordered by the done-when items and ID §1's trace. Items 6 (US-10) and 7 (US-11) are separate stories; the other refusals, O12 among them (US-08), are negative criteria; acceptance criteria are checklists citing M1-FRs. Also: a persona-to-story map, a story-to-requirement table, work-around locations, and an INVEST check. Coverage: every M1-FR is exercised except M1-FR-13 (internal seams), which is verified at Code Generation. Self-review corrections: US-10 separates the Event ingest denial from a Gateway synchronous-call denial, since publish is enforced at Event ingest (PF §8a); the INVEST note no longer implies seeded registrations. Table structure validated. Presented the User Stories completion message (Step 20)."
+**Context**: User Stories Part 2, Steps 19 and 20. Awaiting approval.
+
+---

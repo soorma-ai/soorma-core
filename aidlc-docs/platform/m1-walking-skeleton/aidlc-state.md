@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. User Stories (minimal depth), Part 1 Planning: awaiting answers to the story plan
+- **Current Stage**: INCEPTION. User Stories (minimal depth) generated, **awaiting approval**
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -114,10 +114,9 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] PRD Intake (run 1 approved at RA Q1; run 2 approved at re-intake Q1, 2026-11-01)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
 - [x] Requirements Analysis (run 1 approved 2026-10-06; re-opened by re-intake run 2; run 2 approved 2026-11-02)
-- [ ] User Stories: in progress (minimal depth), Part 1 Planning
+- [ ] User Stories: generated (minimal depth; plan approved 2026-11-02), **awaiting approval**
 - [ ] Workflow Planning
 - [ ] Application Design
 - [ ] Units Generation
 
-**Session stop point**: User Stories Part 1, awaiting answers in
-`inception/working/story-generation-plan.md` (git-ignored).
+**Session stop point**: User Stories approval gate. Next, once approved: Workflow Planning.
