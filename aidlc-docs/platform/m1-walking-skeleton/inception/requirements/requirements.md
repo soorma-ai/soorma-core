@@ -314,7 +314,8 @@ state, because agent revocation initiation is deferred (PF FR-011, RA run-1 Q7).
   Core accepts K, or K + P. Once a human enrolls P, sign-in needs both
 - **The organization's configuration may require P for every human.** It is set by
   configuration only; no API is offered (ID FR-005 out). Where it is required and P is
-  not enrolled, sign-in is refused until P is enrolled (ID §10)
+  not enrolled, sign-in is refused until P is enrolled (ID §10). That human can still
+  enroll P without a sign-in, by presenting their current K (M1-TECH-07, constraint 2)
 - Material is held and verified **at the organization level only**, and K only in a
   form that can verify (M1-NFR-09)
 - Enrollment material is single-use and is replaced by the human on first
@@ -352,7 +353,8 @@ state, because agent revocation initiation is deferred (PF FR-011, RA run-1 Q7).
 - Without a grant, a human may:
   - renew and **end** their own sign-in
   - end their own environment credential
-  - change their own K and P, by presenting the current material
+  - change their own K and P, by presenting the current material. That includes
+    enrolling P with no sign-in when the organization requires P (M1-TECH-07)
 - Ending a sign-in or a credential is the **logout** (SECURITY-12). An ended credential
   is refused thereafter (O3; M1-FR-07)
 - Acting on another human's credentials or material (ID FR-012) is absent
@@ -368,6 +370,15 @@ These are absent, not simplified:
 - **Behaviour**: delegated origin paths; topics and topic administration;
   tenant-defined permission identifiers (GAP-INT-006 work-around); everything
   commercial
+
+**Consequence of ID FR-012 (reset) being absent**: **lost K or P is unrecoverable in
+M1.** Enrollment material is issued only at registration, at a reset, and for a configured
+first Admin (ID FR-007). Configuration creates the first Admin only if that principal does
+not already exist (ID FR-004). With further registration (ID FR-002) and reset both
+absent, nothing can issue new material to an existing principal. A human who loses K or P
+is locked out, and the remedy is to re-create the local stack. That is acceptable for a
+walking skeleton run locally. It is a delivery limit, not specified behaviour, and reset
+lands additively with ID FR-012.
 
 See the coverage map, *Slice Scope*.
 
@@ -399,7 +410,7 @@ See the coverage map, *Slice Scope*.
 | **M1-TECH-04** | **Condition 3: dependency discipline from the first commit.** A committed lockfile; a minimal dependency set, each dependency justified; vulnerability scanning in CI; an SBOM; pinned toolchain and base images | Contains the npm supply-chain surface on a security perimeter. Matches SECURITY-10 |
 | M1-TECH-05 | W3C Trace Context (`traceparent` required, `tracestate` optional), validated for well-formedness only | T-3; PF Decision 8 left the standard to AI-DLC (I11) |
 | **M1-TECH-06** | The first Admin's enrollment material is delivered through the **configuration mechanism**, decided at Infrastructure Design | T-4, confirmed at RA run-2 Q4. Constraints: single-use; never a working credential in the deployer's hands; configured, never inferred; held only at the organization level once consumed; never in source or IaC (M1-NFR-09) |
-| **M1-TECH-07** | **Where P is enrolled**: at first authentication, or by self-service presenting the current material. Decided at Functional Design | Classified at this re-run as technology: both readings satisfy ID FR-006, FR-007, and FR-011, and neither engineer would be wrong. Constraint: where the organization requires P, sign-in is refused until P is enrolled (ID §10). **The authenticator that implements class P** is chosen at NFR Requirements (ID names material by class only) |
+| **M1-TECH-07** | **Where P is enrolled**: at first authentication, or by self-service presenting the current material. Decided at Functional Design | Classified at this re-run as technology: both readings satisfy ID FR-006, FR-007, and FR-011, and neither engineer would be wrong. Constraints: (1) where the organization requires P, sign-in is refused until P is enrolled (ID §10). (2) **Whichever enrollment point is chosen, a human for whom P is required but not enrolled must be able to enroll P without a sign-in, by presenting their current K** (ID FR-011, "by presenting the current material"). Reset (ID FR-012) is absent in M1, so without this, turning the requirement on locks out every human, including the only Admin. **The authenticator that implements class P** is chosen at NFR Requirements (ID names material by class only) |
 
 Every other handed-over item stays with the stage named in the coverage map's *Handed to
 AI-DLC*. That includes: the propagation bound, the agent credential lifetime,

@@ -213,3 +213,23 @@ Then re-run Requirements Analysis, scoped to Stages Re-opened (a) to (e). Stop a
 **Context**: Requirements Analysis Step 9, re-run. Awaiting approval.
 
 ---
+
+## Requirements Analysis (Re-run): Changes Requested
+**Timestamp**: 2026-11-02T00:26:37Z
+**User Input**: "Request changes, two small ones; then I'll approve:
+
+M1-TECH-07: add the constraint. Whichever enrollment point is chosen, a human for whom P is required but not enrolled must be able to enroll P without a sign-in, by presenting their current K (ID FR-011, by presenting the current material; ID §10, refused until enrolled). Reset (ID FR-012) is absent in M1, so otherwise turning the requirement on locks out every human, including the only Admin.
+Absent from M1: state the consequence of ID FR-012 being absent. Lost K or P is unrecoverable in M1, because configuration only creates a first Admin that does not exist (ID FR-004), so the local stack is re-created.
+Then present the Requirements Analysis approval gate again."
+**AI Response**: "Verified both against ID @ prd-identity-v1.0. ID FR-004 registers the first Admin with enrollment material only 'if it does not exist'; ID FR-007 issues enrollment material only at registration, reset, and for a configured first Admin; ID FR-012 (reset) is out of M1. So without self-service enrollment, a P requirement would lock out every human, and lost K or P cannot be recovered. Edited requirements.md: added the constraint to M1-TECH-07, cross-referenced it from M1-FR-17 and M1-FR-21, and added the consequence of ID FR-012's absence to Absent from M1. Re-presenting the approval gate."
+**Context**: Requirements Analysis Step 9, change request
+
+---
+
+## Requirements Analysis (Re-run): Approval Requested Again
+**Timestamp**: 2026-11-02T00:26:56Z
+**User Input**: (none)
+**AI Response**: "Presented the Requirements Analysis approval gate again after the two requested changes. No new security or invariant findings: the M1-TECH-07 constraint keeps SECURITY-12's MFA requirement from locking out the administrative account, and the recovery limit is recorded as a delivery limit."
+**Context**: Requirements Analysis Step 9, re-run. Awaiting approval.
+
+---
