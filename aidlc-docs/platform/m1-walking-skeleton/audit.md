@@ -569,3 +569,11 @@ Gate remains PENDING; waiting for the user to confirm #2 is approved."
 **Context**: Inception PR gate (pr-checkpoint.md Section 4), Request Changes. Outward-facing edits authorized by the user in this message.
 
 ---
+
+## Inception PR Gate: GAP-INT-003 Wording on #4 and #10
+**Timestamp**: 2026-11-02T16:15:25Z
+**User Input**: "Yes, reword the GAP-INT-003 entries on #4 and #10 to \"may change when the Event PRD is written\". Then wait. I'm merging #2 now."
+**AI Response**: "Reworded the Inherited specification gaps line on #4 and #10. Each now ends 'Both are M1 work-arounds: GAP-INT-003 may change when the Event PRD is written, and GAP-INT-008 (#4) / GAP-INT-007 (#10) may change when the PRD is amended'. The other issues are unchanged. Committed this entry locally on dev without pushing, so nothing lands on #2 while it is being merged. Gate status stays PENDING until the user confirms."
+**Context**: Inception PR gate (pr-checkpoint.md Section 4). The user is merging soorma-core#2.
+
+---
