@@ -520,3 +520,11 @@ Then present the Application Design gate again."
 **Context**: Units Generation approved
 
 ---
+
+## Tickets: GitHub Issues Created (jira-tickets extension, adapted)
+**Timestamp**: 2026-11-02T08:53:28Z
+**User Input**: "Yes, create the tickets: one tracking issue and seven unit sub-issues, as the adapted extension describes. Record the numbers under ## Tickets. Then the QA inception test specs, then stop at the Inception PR gate on soorma-core#2."
+**AI Response**: "Loaded jira-tickets.md. Trigger conditions met: all Inception stages complete, and requirements.md, unit-of-work.md, unit-of-work-dependency.md and aidlc-state.md all present. Adapted per the RA clarification: Epic becomes a tracking issue, Stories become sub-issues, and no markdown file is written. soorma-core had no prior issues. Created #3, the tracking issue 'platform — m1-walking-skeleton', with Epic fields: description, 5 acceptance criteria with no FR IDs, initiative artifacts. Created #4 to #10, one per unit in topological order (U1 has no dependencies, then U2 to U7). Each carries the Story fields: description, sub-tasks for U7 only, 4 or 5 acceptance criteria, Linked Epic #3, Dependencies by story title and issue number from unit-of-work-dependency.md, and a resolved How to Start Development prompt. All seven are attached as sub-issues of #3 and verified via the API. Prohibited fields enforced: no labels, priority, estimates, sprint, assignee or due date. No cycle. Numbers recorded under ## Tickets."
+**Context**: End of Inception, jira-tickets extension (adapted to GitHub issues)
+
+---

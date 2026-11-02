@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Units Generation approved. Next: tickets as GitHub issues (end-of-Inception extension step)
+- **Current Stage**: INCEPTION. Tickets created (#3 to #10). Next: QA inception test specs
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -102,7 +102,18 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 
 ## Tickets
 
-*Created at the end of Inception.*
+GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026-11-02. No markdown ticket file.
+
+| Ticket | Issue | Dependencies |
+|---|---|---|
+| Tracking issue: platform — m1-walking-skeleton | soorma-core#3 | — |
+| U1 wire-contract | soorma-core#4 (sub-issue of #3) | None |
+| U2 org-identity | soorma-core#5 | #4 |
+| U3 authority-evaluation | soorma-core#6 | #4 |
+| U4 env-human-access | soorma-core#7 | #4, #5, #6 |
+| U5 agent-registration | soorma-core#8 | #4, #6, #7 |
+| U6 agent-credentials | soorma-core#9 | #4, #7, #8 |
+| U7 event-transport | soorma-core#10 | #4, #6, #7, #8, #9 |
 
 ## Deferred Questions
 
@@ -129,7 +140,9 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] Workflow Planning (approved 2026-11-02)
 - [x] Application Design (approved 2026-11-02)
 - [x] Units Generation (7 units; approved 2026-11-02, once soorma-prd#28 was open)
-- [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
+- [x] Tickets as GitHub issues (soorma-core#3, with sub-issues #4 to #10)
+- [ ] QA inception test specs: EXECUTE
+- [ ] Inception PR gate (#2): EXECUTE
 
 ### 🟢 CONSTRUCTION PHASE
 - [ ] Construction Phase Initialization: EXECUTE
