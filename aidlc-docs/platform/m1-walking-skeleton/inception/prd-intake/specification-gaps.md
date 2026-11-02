@@ -24,6 +24,7 @@ ID for `identity`.
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
 | [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 (open) |
+| [GAP-INT-008](#gap-int-008-do-the-bootstrap-exchange-and-credential-renewal-carry-an-envelope) | **Classified; routing pending** (found at Application Design) | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
 
 ---
 
@@ -535,3 +536,64 @@ interim, and it is recorded as a work-around, not as the specified behaviour.
 US-08) and the origin-mode case of *done when* 7 (US-11).
 
 **Status**: `Open`. Raised as [soorma-prd#25](https://github.com/soorma-ai/soorma-prd/issues/25) against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (reject and stamp)
+
+---
+
+### GAP-INT-008: Do the bootstrap exchange and credential renewal carry an envelope?
+
+**Raised**: 2026-11-02T06:47:34Z
+**Stage**: Application Design (pre-unit, hence `GAP-INT`), found while writing interface signatures
+**Raised against**: PF, soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md @ `prd-platform-foundations-v1.3`
+**PRD section**: PF FR-001; PF §7b *Envelope Fields* (requiredness); PF §8a *Exchange bootstrap material for a credential*; PF §11 *Harness Surface* (*Acquire credential*, *Renew credential*)
+**Owner**: platform-foundations
+**Unit**: (pre-unit), until Units Generation assigns it
+**Issue**: (pending; routing question asked)
+**Resolved by**: —
+
+#### What the build needs
+The wire signature of two data-face operations, the bootstrap exchange (PF FR-009) and
+credential renewal (PF FR-010). Does each request carry a draft envelope, with the
+perimeter applying O5 to O7 to it, or does neither carry one? *Done when* 2 exercises
+both.
+
+#### What the PRD says
+- PF FR-001: "Every event and every **agent-originated** synchronous platform call
+  carries an envelope with seven fields"
+- PF §7b: origin mode is **required** ("Yes"), and so is an actor chain of at least one
+  instance
+- PF §8a, *Exchange bootstrap material for a credential*: delegated origin "**n/a —
+  precedes delegation**"; autonomous origin "The normal path". There is no row for
+  renewal
+- PF §11 *Harness Surface*: *Acquire credential* validates "Material is recognised, bound
+  to a live registration … The instance identifier is recorded, not verified".
+  *Renew credential* validates "O1–O3 on the presented credential". **Neither row lists
+  O5 to O7**, which *Draft envelope* lists separately
+
+#### Why this is specification, not technology
+The text points two ways. FR-001's "every agent-originated synchronous platform call"
+includes both operations. A bootstrap envelope, though, cannot carry the required origin
+that §8a marks "n/a" there, and §11 applies no envelope obligation to either. Which
+operations carry an envelope is part of the contract shape every caller builds against
+(PF FR-023: raw callers included). Two competent engineers would answer differently.
+Unsure means specification.
+
+#### Options considered
+1. **Neither carries an envelope.** Credential lifecycle calls sit outside the envelope.
+   §11's rows and §8a's "n/a" hold; FR-001 needs scoping to "calls made with a
+   credential, other than renewing it"
+2. **Bootstrap carries none; renewal carries one.** Renewal is a credentialed,
+   agent-originated call, so the FR-001 literal holds for it; bootstrap precedes any
+   credential. Renewal then gets O5 to O7, and an origin, which §8a does not state
+3. **Both carry one**, with bootstrap's origin stamped `autonomous` as §8a's "normal
+   path". That conflicts with "n/a — precedes delegation", and gives an envelope to a
+   call made with no credential
+
+**If worked around**: M1 takes option 1, which is what PF §11 validates. The M1 contract
+is already pre-release (GAP-INT-003), so a later change to require an envelope is
+contained by that status. It is still a contract change soorma-sdk would track.
+
+#### Blocked
+**No *done when* item.** The interface of the bootstrap and renewal operations, in the
+data-face Gateway, is marked pending.
+
+**Status**: Classified as specification. **Routing pending**: question in `inception/working/gap-int-008-questions.md`

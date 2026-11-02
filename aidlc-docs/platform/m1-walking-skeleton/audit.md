@@ -383,3 +383,35 @@ Then proceed to Application Design."
 **Context**: Application Design Steps 1 to 6. Awaiting user answers.
 
 ---
+
+## Application Design: Plan Answers Received
+**Timestamp**: 2026-11-02T06:47:34Z
+**User Input**: "answered"
+**AI Response**: "Read application-design-plan.md and set all 5 questions to Answered. Step 8 analysis: no contradictions or ambiguities. Q4 B (SSE) leaves the event surface's schema language unstated, since AsyncAPI belonged to option A; decided as technology: OpenAPI 3.1 for the event surface, which keeps one schema language. Recorded in the plan and flagged for the gate. Q5 X layout: contract/ (Apache 2.0, published), seams/ (Apache 2.0, interface types only, unpublished), packages/ and services/ (FSL)."
+
+**Answers Recorded** (application-design-plan.md):
+- Q1 — Environment topology: A — one deployment per environment, plus one organization-level deployment; "A (one deployment per environment)."
+- Q2 — Process split: A — separate deployables (control-face Gateway, data-face Gateway, Event ingest; organization level separate); "A (separate deployables)."
+- Q3 — Gateway protocol and schema language: A — HTTP and JSON, OpenAPI 3.1 with JSON Schema 2020-12, and a shared envelope schema; "A (HTTP/JSON, OpenAPI 3.1)."
+- Q4 — Event ingest transport: B — own ingest; publish over HTTP, subscribe over Server-Sent Events; "B — note: \"smaller one-way surface; in-band renewal can be added later; reconnect overlap is Functional Design's\""
+- Q5 — Repository and licence layout: X — "A, except the two seam interfaces (type definitions only) are their own Apache 2.0 package (PF §22: Apache 2.0 permanently), unpublished in M1 (M1-FR-13); implementations stay FSL in packages/"
+
+**Context**: Application Design Steps 7 and 8
+
+---
+
+## Application Design: GAP-INT-008 Classified
+**Timestamp**: 2026-11-02T06:53:10Z
+**User Input**: (none; found while writing interface signatures)
+**AI Response**: "Classified GAP-INT-008 as specification, using prd-gap-classification.md Step 1 (unsure means specification): do the bootstrap exchange and credential renewal carry an envelope? Raised against PF @ prd-platform-foundations-v1.3. The sources disagree: FR-001 ('every agent-originated synchronous platform call'), §7b (origin required), §8a (bootstrap origin 'n/a, precedes delegation'), and §11 (Acquire and Renew rows list no O5 to O7). Owner platform-foundations; pre-unit. Entry appended to specification-gaps.md with three options; the candidate work-around is option 1 (neither carries one), under the pre-release contract. Registered in aidlc-state.md. Routing question written to inception/working/gap-int-008-questions.md. No done-when item is blocked; the design marks S3's two signatures as pending."
+**Context**: prd-gap-classification.md Steps 1 and 2, at Application Design
+
+---
+
+## Application Design: Generated, Approval Requested
+**Timestamp**: 2026-11-02T06:53:10Z
+**User Input**: (none)
+**AI Response**: "Generated inception/application-design/: components.md (4 deployables S1 to S4, 11 modules P1 to P11, seams/, contract/, logical stores, ASCII deployment diagram with 65-character box lines), component-methods.md (15 edge operations, internal signatures), services.md (orchestration for US-01 to US-12, cross-service interactions), component-dependency.md (dependency matrix, layering rules, communication patterns, validated Mermaid data flow with a text alternative, boundary checks), and application-design.md (consolidated: decisions, components, interfaces, FR-to-component traceability with every M1-FR homed, open items, compliance). Self-review corrections: P9 no longer has environments ensure the first Admin, since only S1 links P10; the SECURITY-13 note now matches the rule text. Security baseline: no blocking findings. Invariants: no blocking findings. Presented the Step 12 completion message."
+**Context**: Application Design Steps 10 to 12. Awaiting approval and the GAP-INT-008 routing answer.
+
+---

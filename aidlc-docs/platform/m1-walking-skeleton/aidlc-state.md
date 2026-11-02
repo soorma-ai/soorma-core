@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Application Design: plan issued, awaiting answers
+- **Current Stage**: INCEPTION. Application Design generated, **awaiting approval**; GAP-INT-008 routing pending
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -93,8 +93,9 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 | GAP-INT-005 | (pre-unit) | Meaning of the sponsor's "grantable set" (PF FR-016) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2); ID @ `prd-identity-v1.0` FR-015 for `grant:human` | soorma-prd#14 (re-routed half: #12) |
 | GAP-INT-006 | (pre-unit) | Which permissions are *valid in E* (ID FR-015's ceiling); tenant-defined identifiers in core | Open: raised; worked around in M1 (plane-declared identifiers only; re-intake Q2, routing E) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 |
 | GAP-INT-007 | (pre-unit) | Origin at an autonomous first hop: agent-asserted (PF §8b) or platform-stamped (PF §11, FR-015, §7b); found at User Stories | Open: raised; worked around in M1 (reject and stamp, M1-FR-01; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 |
+| GAP-INT-008 | (pre-unit) | Do bootstrap and renewal carry an envelope (PF FR-001 vs §8a, §11); found at Application Design | Classified as specification; **routing pending** | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
 
-**Counts**: Open 2 (GAP-INT-006, GAP-INT-007; both worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4.
+**Counts**: Open 2 (GAP-INT-006, GAP-INT-007; both worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4 · Routing pending 1 (GAP-INT-008).
 
 **Errata (not a gap)**: E-1, PF §17 and §4 counts. soorma-prd#15, closed. Corrected at PF v1.2.
 
@@ -125,7 +126,7 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] Requirements Analysis (run 1 approved 2026-10-06; re-opened by re-intake run 2; run 2 approved 2026-11-02)
 - [x] User Stories (minimal depth; approved 2026-11-02)
 - [x] Workflow Planning (approved 2026-11-02)
-- [ ] Application Design: in progress (plan issued, awaiting answers)
+- [ ] Application Design: generated, **awaiting approval** (GAP-INT-008 routing pending)
 - [ ] Units Generation: EXECUTE
 - [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
 
@@ -137,5 +138,5 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: Application Design plan questions, in
-`inception/working/application-design-plan.md` (git-ignored).
+**Session stop point**: Application Design approval gate, plus GAP-INT-008 routing
+(`inception/working/gap-int-008-questions.md`). Next: Units Generation.
