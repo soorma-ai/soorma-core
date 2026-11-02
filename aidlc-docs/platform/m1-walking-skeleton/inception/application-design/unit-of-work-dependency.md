@@ -58,4 +58,4 @@ U2 and U3 are independent of each other; the plan keeps U2 first to follow the j
 | GAP-INT-006 | **U4, U5** | Open, soorma-prd#24; worked around |
 | GAP-INT-007 | **U3, U7** | Open, soorma-prd#25; worked around |
 | GAP-INT-008 | **U6, U1** | Open, soorma-prd#27; worked around |
-| *Unclassified*: attribution for the revocation read | U6 | Classification question pending |
+| GAP-INT-009 | **U6** | Open; worked around (no record for the internal read) |

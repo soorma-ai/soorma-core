@@ -499,3 +499,15 @@ Then present the Application Design gate again."
 **Context**: Units Generation Part 2, Steps 12 to 16. Awaiting approval.
 
 ---
+
+## Units Generation: GAP-INT-009 Classified and Routed
+**Timestamp**: 2026-11-02T08:45:23Z
+**User Input**: "Answer A. Add to the GAP-INT-009 entry and the issue: FR-025's record must name an actor, and §8a gives the revocation read \"No principal\", so the literal reading cannot produce a valid record. As with GAP-INT-008, that leaves one coherent reading. Units Generation approved once the issue is open."
+**AI Response**: "Recorded the answer to attribution-revocation-read-questions.md Q1: A (classify as GAP-INT-009, route E). Verified that PF FR-025's record names an actor and that §8a gives Read revocation state 'No principal'. Wrote the GAP-INT-009 entry with the user's argument, two options, routing E, and the work-around: U6's internal read writes no record, while bootstrap and renewal do. Owner platform-foundations; unit U6. Registered it, and replaced the open-classification notes in unit-of-work.md and unit-of-work-dependency.md. The issue is opened next; Units Generation approval takes effect once it is open."
+
+**Answers Recorded** (attribution-revocation-read-questions.md):
+- Q1 — Attribution for the revocation read: A — classify as GAP-INT-009 and route E (raise against PF @ prd-platform-foundations-v1.3; build no record for the internal read)
+
+**Context**: prd-gap-classification.md Steps 1 to 3 (GAP-INT-009)
+
+---

@@ -25,6 +25,7 @@ ID for `identity`.
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
 | [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 (open) |
 | [GAP-INT-008](#gap-int-008-do-the-bootstrap-exchange-and-credential-renewal-carry-an-envelope) | **Open** (found at Application Design); worked around (neither carries an envelope) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 (open) |
+| [GAP-INT-009](#gap-int-009-does-the-internal-revocation-read-produce-an-attribution-record) | **Open** (found at Units Generation); worked around (no record for the internal read) | PF @ `prd-platform-foundations-v1.3` | — | (issue pending) |
 
 ---
 
@@ -616,3 +617,60 @@ contract change soorma-sdk tracks.
 data-face Gateway, is marked pending.
 
 **Status**: `Open`. Raised as [soorma-prd#27](https://github.com/soorma-ai/soorma-prd/issues/27) against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (option 1)
+
+---
+
+### GAP-INT-009: Does the internal revocation read produce an attribution record?
+
+**Raised**: 2026-11-02T08:45:23Z
+**Stage**: Units Generation (Inception, before any unit's design; recorded with the intake gaps)
+**Raised against**: PF, soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md @ `prd-platform-foundations-v1.3`
+**PRD section**: PF FR-025; PF §8a (*Read revocation state*); PF §11 *Gateway Exposure* (the revocation read is internal); PF §7a *Revocation State* (readable by no principal)
+**Owner**: platform-foundations
+**Unit**: U6 (assigned at Units Generation, 2026-11-02)
+**Issue**: (pending; opened after this entry is committed)
+**Resolved by**: —
+
+#### What the build needs
+U6 builds the revocation read that the perimeter performs on every request (PF FR-012,
+O3). The build needs to know whether each read writes an attribution record, as it does
+for the bootstrap exchange and renewal (M1-FR-12, which is in U6).
+
+#### What the PRD says
+- PF FR-025: "**Every** platform-resource operation produces an attribution record". Its
+  read returns "scope, actor, chain, origin, and resolved sponsor"
+- PF §8a lists sixteen platform-resource operations, one of which is *Read revocation
+  state*: required authority "**No principal** — internal to the perimeter";
+  enforcement point "Internal"
+
+#### Why this is specification, not technology
+Read literally, FR-025 covers the revocation read, so the perimeter would write a record on
+every request. Exempting it reads FR-025 more narrowly than its text. The two sections do
+not settle the case together, and an unsure case is specification.
+
+**The literal reading cannot produce a valid record.** FR-025's record must name an
+**actor**, and §8a gives the revocation read "**No principal**". There is nobody to name.
+As with GAP-INT-008, that leaves **one coherent reading**: the internal read produces no
+attribution record. The PF fix is to scope FR-025 to operations a principal performs, or
+to name the internal read as excepted.
+
+#### Options considered
+1. **No record for the internal read.** FR-025 applies to operations a principal performs.
+   This is the only reading under which every record names an actor
+2. **A record per read, with the perimeter as actor.** That needs an actor kind FR-025
+   does not define, and a write on the per-request hot path (PF §9: the read "must not
+   dominate request latency")
+
+#### Routing
+**Chosen**: E, combining A and D (classification question, answer A, 2026-11-02). Raise it,
+and build option 1 in M1.
+
+#### M1 work-around
+U6's revocation read writes **no** attribution record. Bootstrap and renewal do
+(M1-FR-12). If PF later requires a record, adding one is an internal change with no
+contract impact.
+
+#### Blocked
+**No *done when* item.**
+
+**Status**: `Open`. Raised against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (option 1)
