@@ -318,3 +318,15 @@ Then present the User Stories gate again."
 **Context**: User Stories Step 20 gate. Awaiting approval and the GAP-INT-007 routing answer.
 
 ---
+
+## User Stories: GAP-INT-007 Routing and the M1-FR-03 Decision
+**Timestamp**: 2026-11-02T06:02:32Z
+**User Input**: "GAP-INT-007 answered (E); open the issue. On M1-FR-03: the human-only wording is deliberate. Record it as a delivery decision in requirements Absent from M1: registration and secret issuance by an agent (PF §8a, autonomous-origin column) are absent from M1. No done when item needs them, and building them raises an unsettled question (who the sponsor reference names when the registrant is an agent; PF FR-007's principal is Developer), to be classified when a later slice builds it. Cite that entry from M1-FR-03, and simplify US-09's wording accordingly. Then present the User Stories gate again."
+**AI Response**: "The [Answer]: tag in gap-int-007-questions.md was empty; recorded the user's chat answer in the file and here."
+
+**Answers Recorded** (gap-int-007-questions.md):
+- Q1 — Routing for GAP-INT-007: E — both A and D: raise against soorma-prd citing PF @ prd-platform-foundations-v1.3, and keep reject-and-stamp in M1; given in chat: "GAP-INT-007 answered (E); open the issue."
+
+**Context**: prd-gap-classification.md Step 3, routing E. M1-FR-03 scope: recorded as a delivery decision (next entry)
+
+---

@@ -23,7 +23,7 @@ ID for `identity`.
 | [GAP-INT-004](#gap-int-004-re-broadening-evaluation-not-on-the-briefs-watch-list) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b, §8b *Re-broadening* (introduced at v1.2, §23) | soorma-prd#14 (closed) |
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
-| [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Classified; routing pending** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
+| [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | (issue pending) |
 
 ---
 
@@ -473,7 +473,7 @@ additive, while narrowing a published set would break tenants."
 **PRD section**: PF §8b *Origin stamping*; PF §11 *What the SDK may not populate*; PF FR-015; PF §7b *Envelope Fields* (origin mode setter). Present verbatim since `prd-platform-foundations-v1.0`
 **Owner**: platform-foundations
 **Unit**: (pre-unit), until Units Generation assigns it
-**Issue**: (pending; routing question asked)
+**Issue**: (pending; opened after this entry is committed)
 **Resolved by**: —
 
 #### What the build needs
@@ -520,7 +520,10 @@ engineers would choose differently.
    accepts an asserted `autonomous` that equals what it derives, and rejects any other
    value. §11 needs amending, and the contract carries an optional field
 
-#### M1 work-around (recorded; routing pending)
+#### Routing
+**Chosen**: E, combining A and D (2026-11-02). Raise it against soorma-prd, and keep the reject-and-stamp work-around in M1. Accepting an asserted value later is additive.
+
+#### M1 work-around
 M1-FR-01 already takes **option 1**: the perimeter stamps origin on every first hop, and
 a draft setting origin mode is rejected (M1-FR-01, M1-FR-08). Moving to option 2 or 3
 later means **accepting** an asserted value the perimeter now rejects, which is additive.
@@ -531,4 +534,4 @@ interim, and it is recorded as a work-around, not as the specified behaviour.
 **No *done when* item**, given the work-around. It governs every M1 first hop (A-5;
 US-08) and the origin-mode case of *done when* 7 (US-11).
 
-**Status**: Classified as specification. **Routing pending**: question in `inception/working/gap-int-007-questions.md`
+**Status**: `Open`. Raised against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (reject and stamp)
