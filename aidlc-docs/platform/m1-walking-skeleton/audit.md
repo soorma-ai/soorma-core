@@ -481,3 +481,21 @@ Then present the Application Design gate again."
 **Context**: Units Generation Part 1, Steps 6 to 9. Awaiting plan approval.
 
 ---
+
+## Units Generation: Plan Approved
+**Timestamp**: 2026-11-02T08:39:23Z
+**AI Prompt**: "Unit of work plan complete. Review the plan in inception/working/unit-of-work-plan.md. Ready to proceed to generation?"
+**User Response**: "Plan approved, with one addition: M1-FR-12 also goes in U6. PF FR-025 says every platform-resource operation produces an attribution record, and PF §8a lists the bootstrap exchange and renewal among them. The internal revocation read needs none. Then generate."
+**Status**: Approved, with M1-FR-12 added to U6
+**AI Response**: "Verified at PF @ prd-platform-foundations-v1.3 §8a: Exchange bootstrap material and Renew credential are listed. Added M1-FR-12 to U6. Flagged that §8a also lists Read revocation state (No principal, internal to the perimeter) among its sixteen operations, so PF FR-025 read literally covers it and conflicts with the user's 'needs none'. Wrote the classification question to inception/working/attribution-revocation-read-questions.md, with option A recommended (classify as GAP-INT-009, route E). Generation builds the user's reading: the read writes no record. Starting Part 2."
+**Context**: Units Generation Part 1, Steps 9 and 10
+
+---
+
+## Units Generation: Generated, Approval Requested
+**Timestamp**: 2026-11-02T08:42:18Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Executed the unit-of-work plan, with all steps marked [x]. Wrote three files in inception/application-design/. unit-of-work.md: 7 units with the Step 2.5 fields; U4's single NFR profile clarified (ID §10, with the grant record's PF §10 constraints agreeing with it); requirement coverage, where every M1-FR is covered; the code organization strategy, which follows the approved Application Design layout rather than the default unit-name/src pattern, because units and deployables do not map one to one. unit-of-work-dependency.md: the dependency matrix (no cycles; no data-face unit depends on U2 at runtime); the contracts shared between faces; integration checkpoints (done-when 1 after U5, 2 after U6, 3, 4, 6, 7 after U7, then the schema tag); the gap assignment. unit-of-work-story-map.md: every story assigned. Step 2.4: GAP-INT-001 to 008 assigned to units in specification-gaps.md (a Unit line in each entry) and in the register. Tables validated. The revocation-read attribution classification stays open (U6 builds the user's reading). Presented the Step 16 completion message."
+**Context**: Units Generation Part 2, Steps 12 to 16. Awaiting approval.
+
+---

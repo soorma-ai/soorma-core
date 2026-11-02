@@ -76,6 +76,7 @@ with an issued secret. Units: control-face registration and secret issuance.
 #### Re-intake run 2 (2026-11-01)
 
 **Raised against**: PF, soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md @ `prd-platform-foundations-v1.1` (unchanged)
+**Unit**: U2, U4 (assigned at Units Generation, 2026-11-02)
 **Owner**: Identity plane PRD (OB-4)
 **Issue**: [soorma-prd#12](https://github.com/soorma-ai/soorma-prd/issues/12), closed 2026-10-26 by soorma-prd PR #21
 **Resolved by**: ID @ `prd-identity-v1.0`. FR-001 (the human principal), FR-006 (material: K, or K + P), FR-009 (organization sign-in), FR-010 (environment credential), FR-022 (human credentials at the perimeter). PF @ `prd-platform-foundations-v1.3` FR-001 (a direct human operation carries no envelope)
@@ -138,6 +139,7 @@ Same as GAP-INT-001.
 #### Re-intake run 2 (2026-11-01)
 
 **Raised against**: PF @ `prd-platform-foundations-v1.1` (unchanged)
+**Unit**: U4 (assigned at Units Generation, 2026-11-02)
 **Owner**: Identity plane PRD (OB-3, PF R-2)
 **Issue**: [soorma-prd#12](https://github.com/soorma-ai/soorma-prd/issues/12), closed 2026-10-26 by soorma-prd PR #21
 **Resolved by**: ID @ `prd-identity-v1.0` FR-004 (an environment's configuration names its first Admin and grants `grant:human` and `human:manage`), FR-007 (single-use enrollment material for the configured first Admin), FR-015 (the `grant:human` ceiling, through which the first Admin self-grants `agent:register`). PF @ `prd-platform-foundations-v1.3` §19 R-2 `Discharged`; §12 *Sufficiency Bar* step 1, discharged
@@ -196,6 +198,7 @@ Done-when 3 (and the delivery half of 4). Units: event transport (data face).
 #### Re-intake run 2 (2026-11-01)
 
 **Raised against**: PF @ `prd-platform-foundations-v1.1` (unchanged)
+**Unit**: U7, U1 (assigned at Units Generation, 2026-11-02)
 **Owner**: Event plane PRD (OB-6), which has no approved PRD
 **Issue**: [soorma-prd#13](https://github.com/soorma-ai/soorma-prd/issues/13), **open**
 **Resolved by**: —
@@ -265,6 +268,7 @@ No *done when* item. FR-017's evaluation half is unbuildable as specified.
 #### Re-intake run 2 (2026-11-01)
 
 **Raised against**: PF @ `prd-platform-foundations-v1.1` (unchanged)
+**Unit**: U3, U5 (assigned at Units Generation, 2026-11-02)
 **Owner**: platform-foundations
 **Issue**: [soorma-prd#14](https://github.com/soorma-ai/soorma-prd/issues/14), closed 2026-10-07 by soorma-prd PR #19
 **Resolved by**: PF @ `prd-platform-foundations-v1.3` FR-017; §7a *Re-broadening declaration*; §7b *Re-broadening record*; §8b *Re-broadening*, with its case table; §20 Decision 16. Introduced at v1.2 (§23) and unchanged at v1.3
@@ -346,6 +350,7 @@ Registration's ceiling check (M1-FR-03), which is already blocked by GAP-INT-001
 #### Re-intake run 2 (2026-11-01)
 
 **Raised against**: PF @ `prd-platform-foundations-v1.1` (unchanged)
+**Unit**: U5, U4 (assigned at Units Generation, 2026-11-02)
 **Owner**: platform-foundations for sponsorship. The `grant:human` ceiling was
 **re-routed** by PF v1.2 (§23) to the Identity plane PRD (OB-13, soorma-prd#12)
 **Issue**: [soorma-prd#14](https://github.com/soorma-ai/soorma-prd/issues/14), closed 2026-10-07 by PR #19. The re-routed half is on [soorma-prd#12](https://github.com/soorma-ai/soorma-prd/issues/12), closed 2026-10-26 by PR #21
@@ -374,7 +379,7 @@ holding any permission in the human-only class (`grant:human`, `human:manage`,
 **Raised against**: ID, soorma-prd/aiprd-docs/identity/requirements/prd.md @ `prd-identity-v1.0`
 **PRD section**: ID FR-015; ID §8a *Grant to a human in E*; ID §17 *Policy Grammar and Authority Evaluation*; ID §18 *Grantable set*. It bears on PF FR-016 and FR-018, PF §8a's preamble, and PF P4 *Supplied by the tenant*
 **Owner**: Identity, for the term in FR-015. PF FR-018 bears on it, through the minimal model. Access Policy, which may extend the model (OB-2), has no PRD
-**Unit**: (pre-unit), until Units Generation assigns it
+**Unit**: U4, U5 (assigned at Units Generation, 2026-11-02)
 **Issue**: [soorma-prd#24](https://github.com/soorma-ai/soorma-prd/issues/24), opened 2026-11-01 with this entry verbatim, pinned to `4693138`
 **Resolved by**: —
 
@@ -473,7 +478,7 @@ additive, while narrowing a published set would break tenants."
 **Raised against**: PF, soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md @ `prd-platform-foundations-v1.3`
 **PRD section**: PF §8b *Origin stamping*; PF §11 *What the SDK may not populate*; PF FR-015; PF §7b *Envelope Fields* (origin mode setter). Present verbatim since `prd-platform-foundations-v1.0`
 **Owner**: platform-foundations
-**Unit**: (pre-unit), until Units Generation assigns it
+**Unit**: U3, U7 (assigned at Units Generation, 2026-11-02)
 **Issue**: [soorma-prd#25](https://github.com/soorma-ai/soorma-prd/issues/25), opened 2026-11-02 with this entry verbatim, pinned to `14e7096`
 **Resolved by**: —
 
@@ -546,7 +551,7 @@ US-08) and the origin-mode case of *done when* 7 (US-11).
 **Raised against**: PF, soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md @ `prd-platform-foundations-v1.3`
 **PRD section**: PF FR-001; PF §7b *Envelope Fields* (requiredness); PF §8a *Exchange bootstrap material for a credential*; PF §11 *Harness Surface* (*Acquire credential*, *Renew credential*)
 **Owner**: platform-foundations
-**Unit**: (pre-unit), until Units Generation assigns it
+**Unit**: U6, U1 (assigned at Units Generation, 2026-11-02)
 **Issue**: [soorma-prd#27](https://github.com/soorma-ai/soorma-prd/issues/27), opened 2026-11-02 with this entry verbatim, pinned to `be0b2f7`
 **Resolved by**: —
 

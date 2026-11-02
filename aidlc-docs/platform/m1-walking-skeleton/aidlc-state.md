@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Units Generation, Part 1 Planning: awaiting answers
+- **Current Stage**: INCEPTION. Units Generation generated (7 units), **awaiting approval**
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -86,14 +86,14 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 
 | ID | Unit | Summary | Status | Raised Against | Resolved By | Issue |
 |---|---|---|---|---|---|---|
-| GAP-INT-001 | (pre-unit) | Human principal identity and control-plane authentication (OB-4) | Resolved — answered elsewhere | PF @ `prd-platform-foundations-v1.1` | ID @ `prd-identity-v1.0` FR-001, FR-006, FR-009, FR-010, FR-022 | soorma-prd#12 |
-| GAP-INT-002 | (pre-unit) | First human grant; how a sponsor obtains `agent:register` (OB-3, PF R-2) | Resolved — answered elsewhere | PF @ `prd-platform-foundations-v1.1` | ID @ `prd-identity-v1.0` FR-004, FR-007, FR-015 | soorma-prd#12 |
-| GAP-INT-003 | (pre-unit) | Event delivery guarantees (Event plane) | **Awaiting PRD: Event**. Worked around in M1 (live subscribers only; semantics stated as unspecified; pre-release contract) | PF @ `prd-platform-foundations-v1.1` | — | soorma-prd#13 |
-| GAP-INT-004 | (pre-unit) | Re-broadening evaluation rule (PF FR-017, I5) | Resolved — PRD amended. **Work-around comes out** | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §8b *Re-broadening* (v1.2) | soorma-prd#14 |
-| GAP-INT-005 | (pre-unit) | Meaning of the sponsor's "grantable set" (PF FR-016) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2); ID @ `prd-identity-v1.0` FR-015 for `grant:human` | soorma-prd#14 (re-routed half: #12) |
-| GAP-INT-006 | (pre-unit) | Which permissions are *valid in E* (ID FR-015's ceiling); tenant-defined identifiers in core | Open: raised; worked around in M1 (plane-declared identifiers only; re-intake Q2, routing E) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 |
-| GAP-INT-007 | (pre-unit) | Origin at an autonomous first hop: agent-asserted (PF §8b) or platform-stamped (PF §11, FR-015, §7b); found at User Stories | Open: raised; worked around in M1 (reject and stamp, M1-FR-01; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 |
-| GAP-INT-008 | (pre-unit) | Do bootstrap and renewal carry an envelope (PF FR-001 vs §8a, §11); found at Application Design | Open: raised; worked around in M1 (neither carries an envelope; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 |
+| GAP-INT-001 | U2, U4 | Human principal identity and control-plane authentication (OB-4) | Resolved — answered elsewhere | PF @ `prd-platform-foundations-v1.1` | ID @ `prd-identity-v1.0` FR-001, FR-006, FR-009, FR-010, FR-022 | soorma-prd#12 |
+| GAP-INT-002 | U4 | First human grant; how a sponsor obtains `agent:register` (OB-3, PF R-2) | Resolved — answered elsewhere | PF @ `prd-platform-foundations-v1.1` | ID @ `prd-identity-v1.0` FR-004, FR-007, FR-015 | soorma-prd#12 |
+| GAP-INT-003 | U7, U1 | Event delivery guarantees (Event plane) | **Awaiting PRD: Event**. Worked around in M1 (live subscribers only; semantics stated as unspecified; pre-release contract) | PF @ `prd-platform-foundations-v1.1` | — | soorma-prd#13 |
+| GAP-INT-004 | U3, U5 | Re-broadening evaluation rule (PF FR-017, I5) | Resolved — PRD amended. **Work-around comes out** | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §8b *Re-broadening* (v1.2) | soorma-prd#14 |
+| GAP-INT-005 | U5, U4 | Meaning of the sponsor's "grantable set" (PF FR-016) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2); ID @ `prd-identity-v1.0` FR-015 for `grant:human` | soorma-prd#14 (re-routed half: #12) |
+| GAP-INT-006 | U4, U5 | Which permissions are *valid in E* (ID FR-015's ceiling); tenant-defined identifiers in core | Open: raised; worked around in M1 (plane-declared identifiers only; re-intake Q2, routing E) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 |
+| GAP-INT-007 | U3, U7 | Origin at an autonomous first hop: agent-asserted (PF §8b) or platform-stamped (PF §11, FR-015, §7b); found at User Stories | Open: raised; worked around in M1 (reject and stamp, M1-FR-01; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 |
+| GAP-INT-008 | U6, U1 | Do bootstrap and renewal carry an envelope (PF FR-001 vs §8a, §11); found at Application Design | Open: raised; worked around in M1 (neither carries an envelope; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 |
 
 **Counts**: Open 3 (GAP-INT-006, 007, 008; all worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4.
 
@@ -116,7 +116,7 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - **Stages to execute**: Application Design (comprehensive); Units Generation (plane-face units); tickets as GitHub issues; QA inception test specs; Inception PR gate on soorma-core#2; Construction Initialization; per unit, Functional Design, NFR Requirements, NFR Design, and Infrastructure Design (each may skip for a unit), then Code Generation; Build and Test
 - **Stages skipped**: Reverse Engineering (greenfield)
 - **soorma-sdk coordination**, in two steps: (a) the contract **design** is published when soorma-core#2 merges, and soorma-sdk's Inception can run against it; (b) the **schema** (M1-TECH-02) is published once Code Generation produces it, at a pinnable tag on `main`, and soorma-sdk's Construction pins that tag
-- **Units Generation must decide** where the schema is produced: its own first unit, or the first step of the first unit (it spans both faces)
+- **Schema production (decided at Units Generation, Q1 B)**: U1 `wire-contract` produces the cross-surface parts; each surface unit adds its own operations; the schema is tagged after U7's Code Generation
 
 ## Stage Progress
 ### 🔵 INCEPTION PHASE
@@ -127,7 +127,7 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] User Stories (minimal depth; approved 2026-11-02)
 - [x] Workflow Planning (approved 2026-11-02)
 - [x] Application Design (approved 2026-11-02)
-- [ ] Units Generation: Part 1 Planning, awaiting answers
+- [ ] Units Generation: 7 units generated (plan approved 2026-11-02), **awaiting approval**
 - [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
 
 ### 🟢 CONSTRUCTION PHASE
@@ -138,5 +138,6 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: Units Generation plan questions, in
-`inception/working/unit-of-work-plan.md` (git-ignored).
+**Session stop point**: Units Generation approval gate, plus the revocation-read attribution
+classification (`inception/working/attribution-revocation-read-questions.md`). Next: tickets as
+GitHub issues, then the QA inception test specs, then the Inception PR gate on soorma-core#2.
