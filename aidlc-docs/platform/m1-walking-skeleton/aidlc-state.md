@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. **Inception PR gate PENDING** on soorma-core#2; Construction blocked until approved
+- **Current Stage**: INCEPTION complete. **Inception PR gate APPROVED** (soorma-core#2 merged 2026-11-02, `d348c34`); Construction unlocked, awaiting the user's choice of first unit
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -74,12 +74,12 @@
 ## PR Checkpoint State
 
 ### Inception PR Gate
-- **Status**: PENDING
+- **Status**: APPROVED
 - **PR**: **soorma-core#2** (`dev` → `main`), by the user's instruction (2026-11-02): the existing PR is used, and its description updated per `pr-checkpoint.md` Section 4.2. No new PR or `aidlc/.../inception` branch
 - **Branch**: `dev` (confirmed by that instruction)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/inception/working/pr-checkpoint-instructions.md
 - **Created**: 2026-11-02T09:01:28Z
-- **Approved**: —
+- **Approved**: 2026-11-02T16:37:12Z (user confirmed; #2 merged to `main` at 2026-11-02T16:36:27Z, merge commit `d348c34`)
 
 ## PRD Specification Gaps
 
@@ -143,7 +143,7 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
 - [x] Units Generation (7 units; approved 2026-11-02, once soorma-prd#28 was open)
 - [x] Tickets as GitHub issues (soorma-core#3, with sub-issues #4 to #10)
 - [x] QA inception test specs (150 test cases, 7 units, comprehensive; `inception/test-cases/`)
-- [ ] Inception PR gate (#2): **PENDING** team review
+- [x] Inception PR gate (#2): **APPROVED** 2026-11-02T16:37:12Z; merged as `d348c34`. Step (a) of contract publication is done: the contract design is on `main`
 
 ### 🟢 CONSTRUCTION PHASE
 - [ ] Construction Phase Initialization: EXECUTE
@@ -153,5 +153,5 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: the Inception PR gate (soorma-core#2), PENDING. On approval, ask which unit
-to start (pr-checkpoint.md Section 4.7); do not start Construction automatically.
+**Session stop point**: Inception PR gate APPROVED. Waiting for the user to name the first unit
+(pr-checkpoint.md Section 4.7); then Construction Phase Initialization and Unit Initialization.
