@@ -552,3 +552,20 @@ Then present the Application Design gate again."
 **Context**: pr-checkpoint Inception PR gate, Section 4.6. Awaiting confirmation.
 
 ---
+
+## Inception PR Gate: Edits Before Approval
+**Timestamp**: 2026-11-02T10:27:31Z
+**User Input**: "Before I approve #2, three edits. I'm authorizing all three.
+
+Add an Inherited specification gaps line to each unit sub-issue (#4 to #10) that inherits one. Give the GAP-INT ID, the soorma-ai/soorma-prd issue, and a phrase saying the behaviour is an M1 work-around that may change when the PRD is amended. Take the assignments from unit-of-work.md. For #9, also add an acceptance criterion: the internal revocation read writes no attribution record (GAP-INT-009, soorma-ai/soorma-prd#28).
+Retitle #2 to the suggested title in pr-checkpoint-instructions.md.
+In #2's description, add \"(except the internal revocation read, soorma-ai/soorma-prd#28)\" to M1-FR-12. Add \"no envelope (soorma-ai/soorma-prd#27)\" to M1-FR-05 and M1-FR-06.
+Log the edits in audit.md, then wait at the gate."
+**AI Response**: "Carried out all three edits on GitHub.
+1. Sub-issues: added an **Inherited specification gaps** line, before **Linked Epic**, to #4 (U1: GAP-INT-003 soorma-prd#13, GAP-INT-008 #27), #6 (U3: GAP-INT-007 #25), #7 (U4: GAP-INT-006 #24), #8 (U5: GAP-INT-006 #24), #9 (U6: GAP-INT-008 #27, GAP-INT-009 #28) and #10 (U7: GAP-INT-003 #13, GAP-INT-007 #25), each ending 'Each is an M1 work-around and may change when the PRD is amended'. Assignments taken from unit-of-work.md 'Inherited gaps'; only gaps that are worked around are listed. #5 (U2) inherits only GAP-INT-001, which is Resolved, so it got no line. #9 also got the acceptance criterion 'The internal revocation read writes no attribution record (GAP-INT-009, soorma-ai/soorma-prd#28)'.
+2. #2 retitled to 'feat(inception): platform/m1-walking-skeleton — inception phase complete'.
+3. #2's description: M1-FR-05 and M1-FR-06 end '; no envelope (soorma-ai/soorma-prd#27)'; M1-FR-12 reads 'recorded for every platform-resource operation (except the internal revocation read, soorma-ai/soorma-prd#28); ...'. The same three edits were applied to the PR Description in inception/working/pr-checkpoint-instructions.md (git-ignored) to keep it in step.
+Gate remains PENDING; waiting for the user to confirm #2 is approved."
+**Context**: Inception PR gate (pr-checkpoint.md Section 4), Request Changes. Outward-facing edits authorized by the user in this message.
+
+---
