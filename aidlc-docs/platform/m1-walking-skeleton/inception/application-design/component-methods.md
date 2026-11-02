@@ -42,15 +42,15 @@ absent). None carries an envelope (PF FR-001 v1.3).
 
 | Operation | Inputs | Output | Purpose | M1-FR |
 |---|---|---|---|---|
-| `exchangeBootstrap` | registration reference; registration secret; asserted instance id; **draft envelope: pending GAP-INT-008** | `AgentCredential` (registration, E, instance, expiry) | PF FR-009; unauthenticated surface (P8, per registration) | 05 |
-| `renewAgentCredential` | presents `AgentCredential`; **draft envelope: pending GAP-INT-008** | `AgentCredential` | PF FR-010; never weaker than issuance | 06 |
+| `exchangeBootstrap` | registration reference; registration secret; asserted instance id. **No envelope** (GAP-INT-008, option 1) | `AgentCredential` (registration, E, instance, expiry) | PF FR-009; unauthenticated surface (P8, per registration) | 05 |
+| `renewAgentCredential` | presents `AgentCredential`. **No envelope** (GAP-INT-008, option 1) | `AgentCredential` | PF FR-010; never weaker than issuance | 06 |
 
 ### S4 `event-ingest` (environment E, data face)
 
 | Operation | Inputs | Output | Purpose | M1-FR |
 |---|---|---|---|---|
 | `publish` | presents `AgentCredential`; draft envelope (client contract version, trace context, forwarded inbound context if any; **no platform-stamped field**); payload (opaque, I9) | accepted | Publish to E's namespace | 11, 01, 08 |
-| `subscribe` | presents `AgentCredential`; draft envelope, as for `publish` | **SSE stream** of `Delivery` (stamped envelope, payload) | Subscribe to E's namespace; live delivery only. The stream ends within the propagation bound on expiry or revocation | 11, 01, 08 |
+| `subscribe` | presents `AgentCredential`; draft envelope, as for `publish` | **SSE stream** (`text/event-stream`); each event's data is a **`Delivery`** (`contract/delivery.schema.json`: stamped envelope and payload) | Subscribe to E's namespace; live delivery only. The stream ends within the propagation bound on expiry or revocation | 11, 01, 08 |
 
 `subscribe` opens the stream with a request that can carry a draft (for example, a POST
 answered with `text/event-stream`). The exact method and path are Functional Design's.
@@ -64,7 +64,7 @@ Design's (plan Q4 note).
 ### P1 `perimeter`
 | Method | Inputs | Output | Purpose |
 |---|---|---|---|
-| `classifyPresenter` | the credentials on a request; the surface | presenter kind, or Refusal | ID §8b's matrix: which presenter reaches which surface (ID FR-023; A-4) |
+| `classifyPresenter` | the credentials on a request; the surface | presenter kind, or Refusal | ID §8b's matrix: which presenter reaches which surface (ID FR-023; A-4). **Refusal by kind needs no verification**, so S3 and S4 refuse human credentials without organization-level material |
 | `checkAgentRequest` | agent credential; E; the surface's obligation set | checked context, or Refusal | O1 to O4, O9 to O11 for agent traffic; O5 to O8 and O12 through P2 and P3 |
 | `checkHumanRequest` | human credential (sign-in or environment credential); E or the organization | checked context, or Refusal | ID §8b's human-credential table: O1 to O4, O8 to O11 |
 
@@ -126,7 +126,7 @@ Design's (plan Q4 note).
 |---|---|---|---|
 | `ensureFirstAdmin` | principal id; enrollment material reference | `pending` principal, or exists | ID FR-004: registers only if absent |
 | `principalExists` | principal id | yes or no | Internal lookup for `grantToHuman` targets; not ID FR-017's directory read |
-| `verifyOnlyMaterial` | — | verify-only sign-in material | Distributed to environments; can verify, never mint |
+| `verifyOnlyMaterial` | — | verify-only sign-in material | Distributed to each environment's S2 only; can verify, never mint |
 | `issueSignIn`, `renewSignIn`, `endSignIn` | as S1 | `SignIn` | Behind S1 |
 | `setMaterial` | principal; class; current material; new material | changed | Behind S1 |
 

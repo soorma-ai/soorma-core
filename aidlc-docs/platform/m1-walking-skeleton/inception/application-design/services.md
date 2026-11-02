@@ -23,7 +23,7 @@ Design's.
    material only if absent
 2. Each environment's S2 starts: `config.loadEnvironment` → `registry.createGrant(H,
    {grant:human, human:manage}, granted-by = configuration)` → `attribution.record`
-3. Each environment fetches `org-identity.verifyOnlyMaterial` (internal, cached)
+3. Each environment's **S2** fetches `org-identity.verifyOnlyMaterial` (internal, cached). S3 and S4 do not
 
 **US-02: Activate and sign in** (S1)
 1. `perimeter.classifyPresenter` (none: an unauthenticated surface) → `abuse-bound.admit`
@@ -61,7 +61,7 @@ Design's.
    `registry.getRegistration` (live, not retired) → `credentials.mint(agent, …)`.
    Failures go to `abuse-bound.recordFailure`
 2. Renew: `perimeter.checkAgentRequest` (O1 to O3) → `credentials.isRevoked` → `mint`
-3. Envelope handling on both: **pending GAP-INT-008**
+3. Neither call carries an envelope (GAP-INT-008 work-around, option 1)
 
 **US-08: Publish and subscribe** (S4)
 1. `perimeter.classifyPresenter`: agent credential alone. Human credentials and
@@ -73,7 +73,7 @@ Design's.
 5. `authority.evaluateAgent(event:publish | event:subscribe)` →
    `policy-decision.contains`
 6. `envelope.stamp` → publish: hand to the **env fan-out channel**; subscribe: open the
-   SSE stream for live delivery
+   SSE stream, whose events each carry a `Delivery`
 7. `attribution.record`
 8. A delivery timer and revocation checks end the stream within the propagation bound
    (T-2)
@@ -91,7 +91,7 @@ Design's.
    minting material and has no means to accept E2's
 2. Nothing on E's fan-out channel reaches E2: one channel per environment deployment
 
-**US-11: Stamped field in a draft** (S4; S3 per GAP-INT-008)
+**US-11: Stamped field in a draft** (S4. S3 takes no draft, per GAP-INT-008)
 1. `envelope.validateDraft` → Reject(field). It is never overwritten
 
 **US-12: Logout and material change** (S1, S2)
@@ -104,11 +104,11 @@ Design's.
 
 | From | To | What | Pattern | On a per-request path? |
 |---|---|---|---|---|
-| S2, S3, S4 (each environment) | S1, organization level | Verify-only sign-in material | Internal pull, cached; refreshed on rotation | **No** (ID FR-009) |
+| S2 (each environment) | S1, organization level | Verify-only sign-in material | Internal pull, cached; refreshed on rotation | **No** (ID FR-009) |
 | S2 | Organization level | `principalExists` for a grant target | Internal synchronous call, control face only | No; control operations only |
 | S4 instance | S4 instances in the same E | Live events | Env fan-out channel | Yes, within E only |
 | Any S | Env store, org store | Records | Datastore access; technology at NFR Requirements | As the operation requires |
 
-**No service calls another environment's service.** The organization level is the only
+**S3 and S4 never call the organization level**, so agent data-plane traffic is unaffected by an organization-level outage (M1-NFR-08). They refuse human credentials by kind, which needs no verification. **No service calls another environment's service.** The organization level is the only
 cross-environment component. It holds human records and material only, never grants or
 credentials (ID §6).

@@ -35,11 +35,11 @@ Generation, which soorma-sdk's Construction pins.
 |---|---|---|---|
 | S1 | `org-gateway` | Deployable, organization, control | Authenticate, first authentication, sign-in, self-service on one's own sign-in and material; serves verify-only material |
 | S2 | `control-gateway` | Deployable, environment, control | Environment credential issuance, renewal, and end; grant to a human; register an agent; issue a secret. Human credentials only |
-| S3 | `data-gateway` | Deployable, environment, data | Bootstrap and renewal. The envelope question is pending GAP-INT-008 |
-| S4 | `event-ingest` | Deployable, environment, data | Publish, and subscribe over SSE; O1 to O12; live fan-out within E |
+| S3 | `data-gateway` | Deployable, environment, data | Bootstrap and renewal; no envelope (GAP-INT-008, option 1); no organization-level dependency |
+| S4 | `event-ingest` | Deployable, environment, data | Publish, and subscribe over SSE (each event a `Delivery`); O1 to O12; live fan-out within E; no organization-level dependency |
 | P1 to P11 | Internal modules | Libraries, FSL | perimeter, envelope, authority, registry, credentials, identity-resolution, attribution, abuse-bound, config, org-identity, policy-decision |
 | — | `seams/` | Apache 2.0, unpublished | Policy-decision and identity-resolution interface types |
-| — | `contract/` | Apache 2.0, published | `envelope.schema.json` and four OpenAPI documents; generated types |
+| — | `contract/` | Apache 2.0, published | `envelope.schema.json`, `delivery.schema.json` (named `Delivery`, referenced by the SSE subscribe operation), and four OpenAPI documents; generated types |
 | — | Stores | Logical | Org store and minting material; per environment: env store, minting material, fan-out channel |
 
 ---
@@ -71,8 +71,10 @@ Each journey step US-01 to US-12 is traced through services and modules in
 [services.md](services.md). The dependency matrix and the data flow are in
 [component-dependency.md](component-dependency.md). In summary:
 - each deployable runs its own perimeter checks; shared code, no shared trust (O10)
-- environments reach the organization level only for cached verify-only material and,
-  from S2, a principal lookup; neither is on a per-request path (ID FR-009)
+- **only S2** reaches the organization level, for cached verify-only material and a
+  principal lookup; neither is on a per-request path (ID FR-009). **S3 and S4 have no
+  organization-level dependency**: they refuse human credentials by kind, so agent
+  data-plane traffic survives an organization-level outage (M1-NFR-08)
 - **nothing flows between environments**
 
 ---
@@ -81,7 +83,7 @@ Each journey step US-01 to US-12 is traced through services and modules in
 
 | M1-FR | Home | Also |
 |---|---|---|
-| 01 Envelope | P2 | S4, S3 (GAP-INT-008), `contract/` |
+| 01 Envelope | P2 | S4, `contract/` (`envelope`, `Delivery`) |
 | 02 Wire contract | `contract/` | S1 to S4 |
 | 03 Registration | P4, P3 | S2 |
 | 04 Secret issuance | P4 | S2 |
@@ -99,7 +101,7 @@ Each journey step US-01 to US-12 is traced through services and modules in
 | 16 Human principal | P10 | S1 |
 | 17 Material and first authentication | P10, P6 | S1 |
 | 18 Sign-in abuse resistance | P8 | S1 |
-| 19 Organization sign-in | P10 | S1; verify-only material to S2 |
+| 19 Organization sign-in | P10 | S1; verify-only material to S2 only |
 | 20 Environment credential | P5 | S2 |
 | 21 Self-service | S1, S2 | P5, P10 |
 
@@ -111,8 +113,7 @@ Every M1-FR has a home.
 
 | Item | Effect on this design | Where it is resolved |
 |---|---|---|
-| **GAP-INT-008**: do bootstrap and renewal carry an envelope? | S3's two signatures, and P2's use in S3, are marked pending | Routing: `inception/working/gap-int-008-questions.md` |
-| GAP-INT-003, 006, 007 | Worked around in S4, P4, and P2 respectively | soorma-prd#13, #24, #25 |
+| GAP-INT-003, 006, 007, 008 | Worked around in S4, P4, P2, and S3 respectively. For 008, neither bootstrap nor renewal carries an envelope | soorma-prd#13, #24, #25, #27 |
 | Where the schema is produced | `contract/` must exist before any unit generates types | Units Generation (execution plan) |
 | Datastores, internal broker, minting algorithm, P authenticator, bounds | Logical here | NFR Requirements and NFR Design, per unit |
 | Paths, field encodings, error shapes, `maxChainDepth`, SSE reconnect overlap, where P is enrolled | Not designed here | Functional Design, per unit |

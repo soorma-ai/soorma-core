@@ -24,7 +24,7 @@ ID for `identity`.
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
 | [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 (open) |
-| [GAP-INT-008](#gap-int-008-do-the-bootstrap-exchange-and-credential-renewal-carry-an-envelope) | **Open** (found at Application Design); worked around (neither carries an envelope) | PF @ `prd-platform-foundations-v1.3` | — | (issue pending) |
+| [GAP-INT-008](#gap-int-008-do-the-bootstrap-exchange-and-credential-renewal-carry-an-envelope) | **Open** (found at Application Design); worked around (neither carries an envelope) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 (open) |
 
 ---
 
@@ -547,7 +547,7 @@ US-08) and the origin-mode case of *done when* 7 (US-11).
 **PRD section**: PF FR-001; PF §7b *Envelope Fields* (requiredness); PF §8a *Exchange bootstrap material for a credential*; PF §11 *Harness Surface* (*Acquire credential*, *Renew credential*)
 **Owner**: platform-foundations
 **Unit**: (pre-unit), until Units Generation assigns it
-**Issue**: (pending; opened after this entry is committed)
+**Issue**: [soorma-prd#27](https://github.com/soorma-ai/soorma-prd/issues/27), opened 2026-11-02 with this entry verbatim, pinned to `be0b2f7`
 **Resolved by**: —
 
 #### What the build needs
@@ -610,4 +610,4 @@ contract change soorma-sdk tracks.
 **No *done when* item.** The interface of the bootstrap and renewal operations, in the
 data-face Gateway, is marked pending.
 
-**Status**: `Open`. Raised against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (option 1)
+**Status**: `Open`. Raised as [soorma-prd#27](https://github.com/soorma-ai/soorma-prd/issues/27) against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (option 1)

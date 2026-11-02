@@ -433,3 +433,19 @@ Then present the Application Design gate again."
 **Context**: prd-gap-classification.md Step 3, routing E; Application Design change request
 
 ---
+
+## Application Design: Changes Applied, GAP-INT-008 Raised
+**Timestamp**: 2026-11-02T07:21:44Z
+**User Input**: (the instruction logged at 2026-11-02T07:19:54Z)
+**AI Response**: "GAP-INT-008: committed the entry with the O12 argument as be0b2f7 and pushed dev. Checked the open spec-gap issues (#13, #24, #25): #25 is related but asks a different question. Opened soorma-prd#27, 'Specification gap from build: do the bootstrap exchange and renewal carry an envelope (GAP-INT-008)', label spec-gap, against PF @ prd-platform-foundations-v1.3. It carries the suggested fix (scope FR-001 to calls made with a credential, other than renewing it) and the entry verbatim, pinned to be0b2f7. Recorded #27 in specification-gaps.md, the register, and the application design's open items. The design now builds option 1: S3's two operations carry no envelope, and P2 is used by S4 only. Design change 1: S3 and S4 have no organization-level dependency. Only S2 fetches verify-only material and calls principalExists; S3 and S4 refuse human credentials by kind, which needs no verification. Updated components.md, component-methods.md, services.md, component-dependency.md (matrix, patterns, Mermaid edges, text alternative, boundary checks) and application-design.md, adding an M1-NFR-08 boundary row. Design change 2: added contract/delivery.schema.json, the named Delivery schema (stamped envelope and opaque payload), which the SSE subscribe operation references by name because OpenAPI 3.1 types the stream only as text/event-stream. Revalidated: ASCII box lines are 65 characters; tables are consistent; the Mermaid diagram has three edges removed."
+**Context**: Application Design change request; prd-gap-classification.md Step 3, option A (GAP-INT-008)
+
+---
+
+## Application Design: Approval Prompt (Re-presented)
+**Timestamp**: 2026-11-02T07:21:44Z
+**User Input**: (none)
+**AI Response**: "Re-presented the Application Design completion message."
+**Context**: Application Design Step 12 gate. Awaiting approval.
+
+---

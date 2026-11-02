@@ -25,8 +25,8 @@ Datastores, the internal broker, and libraries are chosen at NFR Requirements.
 |   org store     (principals, material, sign-ins, attempts)    |
 |   org minting material for sign-ins (never leaves this level) |
 +---------------------------------------------------------------+
-        | verify-only material, principal lookup (internal,
-        | cached, never per request)
+        | verify-only material, principal lookup: to S2 only
+        | (internal, cached, never per request)
         v
 +---------------------------------------------------------------+
 | Environment E (one deployment per environment; E2 the same)   |
@@ -53,7 +53,7 @@ The local stack (M1-NFR-05) runs one organization level, plus environments **E**
 |---|---|
 | **Level and face** | Organization; control |
 | **Purpose** | The organization-level surface: authenticate, first authentication, sign-in, and self-service on one's own sign-in and material (ID FR-006 to FR-009, FR-011) |
-| **Responsibilities** | Validates presented material by class (K, P), enrollment single use, and the sign-in abuse bound; issues, renews, and ends sign-ins; changes one's own K and P, including enrolling P by presenting K (M1-TECH-07); serves verify-only sign-in material to environments (internal interface) |
+| **Responsibilities** | Validates presented material by class (K, P), enrollment single use, and the sign-in abuse bound; issues, renews, and ends sign-ins; changes one's own K and P, including enrolling P by presenting K (M1-TECH-07); serves verify-only sign-in material to each environment's S2 (internal interface; S3 and S4 never call it) |
 | **Holds** | Nothing in memory beyond request scope (M1-TECH-03). State lives in the org store |
 | **Never** | Mints environment credentials. Reachable from any environment's per-request path |
 | **M1-FRs** | 16, 17, 18, 19, 21 (sign-in half) |
@@ -73,7 +73,8 @@ The local stack (M1-NFR-05) runs one organization level, plus environments **E**
 |---|---|
 | **Level and face** | Environment; data |
 | **Purpose** | The bootstrap exchange and agent credential renewal |
-| **Responsibilities** | Bootstrap: verifies the registration secret through identity resolution, enforces the per-registration attempt bound, and mints a short-lived agent credential bound to the registration and E. Renewal: O1 to O3 on the presented credential, never weaker than issuance. **Whether these calls carry an envelope is pending GAP-INT-008** |
+| **Responsibilities** | Bootstrap: verifies the registration secret through identity resolution, enforces the per-registration attempt bound, and mints a short-lived agent credential bound to the registration and E. Renewal: O1 to O3 on the presented credential, never weaker than issuance. **Neither call carries an envelope** (GAP-INT-008 work-around, option 1; soorma-prd#27). Refuses human credentials **by kind**, without verifying them |
+| **No organization-level dependency** | S3 never calls the organization level, so an organization-level outage leaves bootstrap and renewal unaffected (M1-NFR-08) |
 | **M1-FRs** | 05, 06, 07, 09 |
 
 ### S4 `event-ingest`: environment E's asynchronous data face
@@ -82,8 +83,9 @@ The local stack (M1-NFR-05) runs one organization level, plus environments **E**
 |---|---|
 | **Level and face** | Environment; data |
 | **Purpose** | Publish to and subscribe on E's namespace, and deliver to live subscribers |
-| **Responsibilities** | Discharges O1 to O12 itself (O10) on every publish and subscribe: credential, revocation, environment match, envelope validation and stamping, origin, chain, and authority. Refuses every human credential. Fans out within E only, to live SSE streams. Ends a subscriber's stream within the propagation bound once its credential expires or is revoked (T-2). No durability, ordering, or redelivery (GAP-INT-003) |
+| **Responsibilities** | Discharges O1 to O12 itself (O10) on every publish and subscribe: credential, revocation, environment match, envelope validation and stamping, origin, chain, and authority. Refuses every human credential **by kind**, without verifying it. Fans out within E only, to live SSE streams. Ends a subscriber's stream within the propagation bound once its credential expires or is revoked (T-2). No durability, ordering, or redelivery (GAP-INT-003) |
 | **Holds** | Open SSE connections are per instance. Fan-out across instances uses the internal environment channel |
+| **No organization-level dependency** | S4 never calls the organization level, so an organization-level outage leaves publish, subscribe, and delivery unaffected (M1-NFR-08) |
 | **M1-FRs** | 01, 08, 09, 11 |
 
 **One process per deployable, each stateless and independently scaled** (Q2 A;
@@ -100,7 +102,7 @@ internal per PF §11.
 | # | Module | Used by | Responsibility | M1-FRs |
 |---|---|---|---|---|
 | P1 | `perimeter` | S1 to S4 | Obligation checks as guards, applied **per deployable**: O1 to O12 for agent traffic, and the human-credential table (ID §8b), together with the presenter × entry-point matrix (ID FR-023). Each deployable selects the checks for its surface | 09 |
-| P2 | `envelope` | S4; S3 pending GAP-INT-008 | Validates drafts (client contract version; trace context well-formed, W3C); **rejects** any platform-stamped field, origin mode included (GAP-INT-007); stamps scope, origin, chain, and the re-broadening record; enforces `maxChainDepth`; preserves unknown fields. S3's use is pending GAP-INT-008 | 01 |
+| P2 | `envelope` | S4 | Validates drafts (client contract version; trace context well-formed, W3C); **rejects** any platform-stamped field, origin mode included (GAP-INT-007); stamps scope, origin, chain, and the re-broadening record; enforces `maxChainDepth`; preserves unknown fields. S3's use is pending GAP-INT-008 | 01 |
 | P3 | `authority` | S2, S4 | **Effective authority, computed in exactly one place**: the intersection; origin stamping (autonomous from the registration, propagated from inbound, O12); re-broadening (the PF §8b composition; load-bearing only; local to its hop); direct human operations evaluated against the human's grants in E. It calls the policy-decision boundary for **containment only** | 03, 08 |
 | P4 | `registry` | S2, S3, S4 | Logical agent registrations (all eight attributes), standing sets, ceiling snapshots (the held set), grants (*granted-by*: principal or configuration), registration secrets (issuer), and the **accepted-identifier set** (GAP-INT-006) | 03, 04, 15 |
 | P5 | `credentials` | S2, S3, S4 | Mints and verifies agent credentials and human environment credentials **with E's own material** (never shared); reads revocation state on every request through a cache bounded by the propagation bound, **failing closed** past it; records ends (self-service) | 05, 06, 07, 20, 21 |
@@ -144,10 +146,11 @@ All of these stay in P2 to P5, P10, and P4, outside both seams.
 | Artifact | Content |
 |---|---|
 | `envelope.schema.json` | JSON Schema 2020-12 for the envelope and the draft: seven fields, the stamped/asserted partition, client contract version, and unknown-field preservation (PF §7b) |
+| `delivery.schema.json` | **`Delivery`**: the stamped envelope (referencing `envelope.schema.json`) and the opaque payload. It is the named schema of each event on the subscribe stream. OpenAPI 3.1 types an SSE response only as `text/event-stream`, so the subscribe operation **references `Delivery` by name**, and soorma-sdk generates a type for each delivered event |
 | `org-gateway.openapi.yaml` | Organization-level operations (S1) |
 | `control-gateway.openapi.yaml` | Environment control operations (S2) |
-| `data-gateway.openapi.yaml` | Bootstrap and renewal (S3). The envelope shape is pending GAP-INT-008 |
-| `event-ingest.openapi.yaml` | Publish (HTTP) and subscribe (an SSE stream of delivered envelopes and payloads) (S4) |
+| `data-gateway.openapi.yaml` | Bootstrap and renewal (S3). No envelope on either (GAP-INT-008 work-around) |
+| `event-ingest.openapi.yaml` | Publish (HTTP) and subscribe (S4). The SSE response is `text/event-stream`, and each event's data is a `Delivery` (referenced by name) |
 | Generated TypeScript types | Generated from the above; never hand-written, and never shared by hand with soorma-sdk (M1-TECH-02) |
 
 **Status**: **pre-release** (GAP-INT-003). It states that delivery semantics are

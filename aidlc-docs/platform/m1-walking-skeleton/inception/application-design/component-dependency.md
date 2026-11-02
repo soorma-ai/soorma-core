@@ -9,15 +9,18 @@ deployable, and **S** store access.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **S1 org-gateway** | L | — | — | — | — | L | — | L | L | L | — | — |
 | **S2 control-gateway** | L | — | L | L | L | — | L | — | L | — | — | C |
-| **S3 data-gateway** | L | L (GAP-INT-008) | — | L | L | L | — | L | L | — | — | C |
-| **S4 event-ingest** | L | L | L | L | L | — | L | — | L | — | — | C |
+| **S3 data-gateway** | L | — | — | L | L | L | — | L | L | — | — | — |
+| **S4 event-ingest** | L | L | L | L | L | — | L | — | L | — | — | — |
 | **P3 authority** | — | — | — | L | — | — | — | — | — | — | L | — |
 | **P4 registry** | — | — | — | S | — | — | — | — | — | — | — | — |
 | **P5 credentials** | — | — | — | — | S | — | — | — | — | — | — | — |
 | **P10 org-identity** | — | — | — | — | — | — | — | — | — | S | — | — |
 
-S2, S3, and S4 call the organization level only to fetch verify-only material and, from
-S2 alone, `principalExists`. Neither is on a per-request path.
+**Only S2 calls the organization level**: to fetch verify-only material, and for
+`principalExists`. Neither is on a per-request path. **S3 and S4 have no
+organization-level dependency**. They accept no human credential, and refusing one by kind
+needs no verification. So an organization-level outage leaves agent data-plane traffic
+unaffected (M1-NFR-08).
 
 **Layering rules**:
 - the edge (S1 to S4) depends on modules, and modules never depend on the edge
@@ -34,8 +37,8 @@ S2 alone, `principalExists`. Neither is on a per-request path.
 | Pattern | Where | Notes |
 |---|---|---|
 | HTTP with JSON (OpenAPI 3.1) | Callers → S1, S2, S3; publish → S4 | Raw calls need only an HTTP client (PF FR-023) |
-| SSE stream (OpenAPI 3.1) | S4 → subscriber | Live only; ends within the propagation bound |
-| Internal HTTP, cached | S2, S3, S4 → organization level | Verify-only material; `principalExists` (S2) |
+| SSE stream (OpenAPI 3.1) | S4 → subscriber | `text/event-stream`; each event is a named `Delivery` schema; live only; ends within the propagation bound |
+| Internal HTTP, cached | **S2 only** → organization level | Verify-only material; `principalExists` |
 | In-process library calls | S → P modules | Shared code; **no shared trust** (O10) |
 | Env fan-out channel | S4 ↔ S4, within E | Internal; no durability (GAP-INT-003) |
 
@@ -73,8 +76,6 @@ flowchart LR
     S4 --> EnvStore
     S4 <--> Fan
     S2 -.->|"verify-only material, principal lookup"| S1
-    S3 -.->|"verify-only material"| S1
-    S4 -.->|"verify-only material"| S1
 ```
 
 ### Text alternative
@@ -85,7 +86,8 @@ Human client  --(env credential, grants, register, secrets)->  S2 control-gatewa
 Agent (raw)   --(bootstrap, renew)------------------------->  S3 data-gateway --> Env store
 Agent (raw)   --(publish; subscribe as SSE)----------------->  S4 event-ingest --> Env store
 S4 instances  <-- env fan-out channel (within E only) -->      S4 instances
-S2, S3, S4    ..(verify-only material; S2 also principal lookup; cached)..>  S1
+S2 only      ..(verify-only material; principal lookup; cached)..>  S1
+S3, S4       never call S1 (unaffected by an organization-level outage)
 Each environment (E, E2) has its own S2, S3, S4, store, minting material, and channel.
 Nothing flows between environments.
 ```
@@ -99,6 +101,7 @@ Nothing flows between environments.
 | Revocation store, snapshot resolution, secret verification material, and effective authority are internal | PF §11 | All of them live in P3 to P5 and the env store; no S operation exposes them |
 | No entry point trusts another's traffic | O10 | S2, S3, and S4 each link P1 and run their own checks; no service calls another environment service on a request path |
 | No credential or minting material crosses environments | PF §6, ID §6, I1 | One deployment, store, and minting material per environment (Q1 A); only verify-only sign-in material is distributed |
-| The organization level is on no per-request path | ID FR-009 | Only cached pulls and a control-face lookup |
+| The organization level is on no per-request path | ID FR-009 | Only S2's cached pull and control-face lookup |
+| Agent data-plane traffic is unaffected by an organization-level outage | M1-NFR-08 | S3 and S4 have no organization-level dependency |
 | Intersection computed in one place | M1-FR-08, I5 | P3 only; P11 answers containment and nothing else |
 | The seams decide identity and containment, never authority or composition | PF §12, ID §12 | P6 returns references; P11 returns contained or not; both sit behind `seams/` types |
