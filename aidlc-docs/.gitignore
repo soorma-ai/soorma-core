@@ -1,0 +1,17 @@
+# AI-DLC session artifacts — scaffolding consumed into durable artifacts.
+# See soorma-aidlc .aidlc-rule-details/common/artifact-durability.md
+# Decisions recorded in these files survive in the committed audit.md.
+
+# All planning scaffolding: execution plans, per-stage and per-unit design
+# plans, PR checkpoint instructions.
+working/
+
+# Question files — answers are preserved verbatim in audit.md.
+*-questions.md
+requirement-verification-questions.md
+
+# Per-pass change log, consumed into test-specs-narrative.md.
+enrichment-delta.md
+
+# Marker file only.
+reverse-engineering-timestamp.md
