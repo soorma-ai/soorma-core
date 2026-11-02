@@ -125,7 +125,8 @@ state, because agent revocation initiation is deferred (PF FR-011, RA run-1 Q7).
   retire **operations** are not in M1 scope (brief)
 - Invoked by a **human** who presents an environment credential for E at the Gateway
   and holds `agent:register` in E (ID FR-022; ID §1 trace, step 6). The sponsor
-  reference names that human (ID FR-001)
+  reference names that human (ID FR-001). **Registration by an agent is absent from M1**
+  (see *Absent from M1*, *Registration and secret issuance by an agent*)
 - **Sponsorship ceiling**: the standing set must lie within the sponsor's **held** set
   in E at the moment of granting. The snapshot records that held set. A standing set
   containing a **human-only** permission is rejected whatever the sponsor holds. At
@@ -143,7 +144,7 @@ state, because agent revocation initiation is deferred (PF FR-011, RA run-1 Q7).
 - *Verifies*: done-when 1
 
 **M1-FR-04: Registration secret issuance**, per PF FR-008 (issuance only), as stated
-- Required authority `agent:register`, held by an Admin or the sponsoring Developer (PF §8a)
+- Required authority `agent:register`, held by an Admin or the sponsoring Developer (PF §8a). Issuance by an agent is absent from M1 (*Absent from M1*)
 - The secret records its **issuer**: the human who issued it, a lower bound on who knows
   it (PF §7a v1.3)
 - Rotation and retirement are absent
@@ -376,6 +377,15 @@ These are absent, not simplified:
   tenant-defined permission identifiers (GAP-INT-006 work-around); everything
   commercial
 
+**Registration and secret issuance by an agent** (delivery decision, 2026-11-02): PF §8a's
+*autonomous origin* column permits an agent whose standing set includes `agent:register`
+to register a logical agent and issue a registration secret. **Both are absent from M1.**
+No *done when* item needs them, and building them raises an unsettled question: who the
+sponsor reference names when the registrant is an agent, given that PF FR-007's principal
+is Developer. That question is **to be classified, via prd-gap-classification.md, when a
+later slice builds it**. It is not classified now. In M1 only a human registers and
+issues (M1-FR-03, M1-FR-04).
+
 **Consequence of ID FR-012 (reset) being absent**: **lost K or P is unrecoverable in
 M1.** Enrollment material is issued only at registration, at a reset, and for a configured
 first Admin (ID FR-007). Configuration creates the first Admin only if that principal does
@@ -439,9 +449,9 @@ register is in `aidlc-state.md`.
 | GAP-INT-004 | Re-broadening evaluation rule | Resolved — PRD amended (PF @ v1.3 §8b) | Built as stated: M1-FR-03, 08. Work-around removed |
 | GAP-INT-005 | Meaning of "grantable set" | Resolved — PRD amended (PF @ v1.3 FR-016; ID FR-015) | Built as stated: M1-FR-03, 15 |
 | GAP-INT-006 | Which permissions are valid in E | **Open** (soorma-prd#24) | Worked around: M1-FR-15, M1-FR-03, M1-FR-02 |
-| GAP-INT-007 | Origin at an autonomous first hop: agent-asserted or platform-stamped (found at User Stories) | Classified; **routing pending** | Worked around (reject and stamp): M1-FR-01, M1-FR-08 |
+| GAP-INT-007 | Origin at an autonomous first hop: agent-asserted or platform-stamped (found at User Stories) | **Open** (soorma-prd#25) | Worked around (reject and stamp): M1-FR-01, M1-FR-08 |
 
-**Counts**: Open 1 · Awaiting PRD 1 · Resolved 4 · Routing pending 1 (GAP-INT-007). All three unresolved gaps record
+**Counts**: Open 2 (GAP-INT-006, GAP-INT-007) · Awaiting PRD 1 · Resolved 4. All three unresolved gaps record
 precisely what is left unbuilt, and all three are carried into the Build and Test summary.
 
 ---

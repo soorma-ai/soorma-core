@@ -258,11 +258,11 @@ under what authority, without trusting A's claims.
       declared it. The request is allowed by re-broadening; the perimeter stamps the record
       naming B's hop; the record travels with the chain; a later hop does not inherit it
       (M1-FR-08, M1-FR-01)
-- [ ] A triggered **publish** cannot make re-broadening load-bearing, because every
-      upstream publisher holds `event:publish`. The only other M1 operations an agent can
-      reach with forwarded context are gated by `agent:register` (registration, secret
-      issuance), and only if an agent's standing set holds it. The full PF §8b case table is
-      verified at the authority-evaluation level, with constructed chains (M1-FR-08)
+- [ ] This is the **only** M1 scenario that makes re-broadening load-bearing. A triggered
+      publish cannot, because every upstream publisher holds `event:publish`. Registration
+      and secret issuance by an agent are absent (requirements, *Absent from M1*). The full
+      PF §8b case table is verified at the authority-evaluation level, with constructed
+      chains (M1-FR-08)
 - [ ] ✗ A chain exceeding `maxChainDepth` is rejected (M1-FR-01)
 - [ ] ✗ Without re-broadening load-bearing, no re-broadening record is stamped (M1-FR-01,
       M1-FR-08)

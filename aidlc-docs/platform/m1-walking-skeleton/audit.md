@@ -330,3 +330,19 @@ Then present the User Stories gate again."
 **Context**: prd-gap-classification.md Step 3, routing E. M1-FR-03 scope: recorded as a delivery decision (next entry)
 
 ---
+
+## User Stories: GAP-INT-007 Raised; M1-FR-03 Delivery Decision Recorded
+**Timestamp**: 2026-11-02T06:03:55Z
+**User Input**: (the instruction logged at 2026-11-02T06:02:32Z)
+**AI Response**: "GAP-INT-007: routing E recorded in the entry and committed as 14e7096; dev pushed. Checked soorma-prd: the open spec-gap issues are #13 and #24, neither covering it. Opened soorma-prd#25, 'Specification gap from build: origin at an autonomous first hop, agent-asserted or platform-stamped (GAP-INT-007)', label spec-gap, against PF @ prd-platform-foundations-v1.3, with the entry verbatim pinned to 14e7096. Recorded #25 in specification-gaps.md, the aidlc-state.md register, and requirements §6; status Open, worked around. M1-FR-03: confirmed at the tag that PF FR-007's principal is Developer. Added a delivery decision to requirements Absent from M1: registration and secret issuance by an agent (PF §8a autonomous-origin column) are absent; no done-when item needs them; the sponsor-reference question is left for classification when a later slice builds them. Cited it from M1-FR-03 and M1-FR-04. US-09 now states that this is the only M1 scenario that makes re-broadening load-bearing, citing the delivery decision. Requirements were edited after approval, at the user's direction."
+**Context**: prd-gap-classification.md Step 3, option A (GAP-INT-007); delivery decision recorded at the user's direction
+
+---
+
+## User Stories: Approval Prompt (Re-presented)
+**Timestamp**: 2026-11-02T06:03:55Z
+**User Input**: (none)
+**AI Response**: "Re-presented the User Stories completion message."
+**Context**: User Stories Step 20 gate. Awaiting approval.
+
+---

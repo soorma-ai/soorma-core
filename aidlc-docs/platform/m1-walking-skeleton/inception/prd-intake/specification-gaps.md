@@ -23,7 +23,7 @@ ID for `identity`.
 | [GAP-INT-004](#gap-int-004-re-broadening-evaluation-not-on-the-briefs-watch-list) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b, §8b *Re-broadening* (introduced at v1.2, §23) | soorma-prd#14 (closed) |
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
-| [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | (issue pending) |
+| [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 (open) |
 
 ---
 
@@ -473,7 +473,7 @@ additive, while narrowing a published set would break tenants."
 **PRD section**: PF §8b *Origin stamping*; PF §11 *What the SDK may not populate*; PF FR-015; PF §7b *Envelope Fields* (origin mode setter). Present verbatim since `prd-platform-foundations-v1.0`
 **Owner**: platform-foundations
 **Unit**: (pre-unit), until Units Generation assigns it
-**Issue**: (pending; opened after this entry is committed)
+**Issue**: [soorma-prd#25](https://github.com/soorma-ai/soorma-prd/issues/25), opened 2026-11-02 with this entry verbatim, pinned to `14e7096`
 **Resolved by**: —
 
 #### What the build needs
@@ -534,4 +534,4 @@ interim, and it is recorded as a work-around, not as the specified behaviour.
 **No *done when* item**, given the work-around. It governs every M1 first hop (A-5;
 US-08) and the origin-mode case of *done when* 7 (US-11).
 
-**Status**: `Open`. Raised against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (reject and stamp)
+**Status**: `Open`. Raised as [soorma-prd#25](https://github.com/soorma-ai/soorma-prd/issues/25) against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (reject and stamp)
