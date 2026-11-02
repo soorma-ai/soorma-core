@@ -465,3 +465,19 @@ Then present the Application Design gate again."
 **Context**: Units Generation Part 1, Steps 1 to 5. Awaiting user answers.
 
 ---
+
+## Units Generation: Plan Answers and Plan Fix
+**Timestamp**: 2026-11-02T07:48:17Z
+**User Input**: "Answered. One plan fix: list the cross-cutting requirements in every unit that touches them, so each unit's Functional Design and L1 matrix trace them. M1-FR-09 also goes in U6 (O1–O3 on renewal, refusing human credentials by kind). M1-FR-10 also goes in U4 (verify-only material) and U6 (per-environment minting). M1-FR-12 also goes in U5 (registration and issuance) and U7 (publish)."
+**AI Response**: "Read unit-of-work-plan.md and set all 5 questions to Answered. Step 7 analysis: no contradictions; Q3 X is consistent (P3 stays one module; U4 builds evaluateHuman as its control-face extension; U5 consumes it). Applied the fix: the user's three additions, plus the touches implied by Q1 B (M1-FR-02 in every surface unit) and Q3 X (M1-FR-08 in U4 and U5), plus further touches found by the same rule, listed in a table in the plan (FR-01 in U7; FR-07 in U4 and U7; FR-08 in U7; FR-09, 10, 12, 13, 14 in U2; FR-15 in U5). Every M1-FR from 01 to 21 is in at least one unit. AI prompt: 'Unit of work plan complete. Review the plan in inception/working/unit-of-work-plan.md. Ready to proceed to generation?'"
+
+**Answers Recorded** (unit-of-work-plan.md):
+- Q1 — Schema placement: B — own first unit (U1) for the cross-surface parts; each surface unit adds its operations; tagged after the last unit's Code Generation; "B."
+- Q2 — Split S2 into two units: A — U4 env-human-access (ID) and U5 agent-registration (PF); "A."
+- Q3 — Authority evaluation as its own unit: X — "A, except evaluateHuman is designed and built in U4 as P3's control-face extension. U3 introduces P3 with agent evaluation (data face); P3 stays the one module computing authority (I5), and each unit keeps one face (Step 2.5 rule 1)"
+- Q4 — No human data-face unit in M1: A — confirmed (out of scope, not single-face); "A."
+- Q5 — Sequence U1 to U7: A — confirmed; "A."
+
+**Context**: Units Generation Part 1, Steps 6 to 9. Awaiting plan approval.
+
+---
