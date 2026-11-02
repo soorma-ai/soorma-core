@@ -449,3 +449,19 @@ Then present the Application Design gate again."
 **Context**: Application Design Step 12 gate. Awaiting approval.
 
 ---
+
+## Application Design: Approval
+**Timestamp**: 2026-11-02T07:35:31Z
+**User Input**: "Approved. One leftover first: components.md, P2 envelope row, still ends \"S3's use is pending GAP-INT-008\". Replace it with \"S3 carries no envelope (GAP-INT-008 work-around, option 1)\". Then proceed to Units Generation."
+**AI Response**: "Replaced the leftover in components.md's P2 row as specified; no other 'pending GAP-INT-008' remains in application-design/. Application Design marked complete in aidlc-state.md. Proceeding to Units Generation."
+**Context**: Application Design approved
+
+---
+
+## Units Generation: Plan Issued
+**Timestamp**: 2026-11-02T07:37:33Z
+**User Input**: (the Application Design approval: "Then proceed to Units Generation.")
+**AI Response**: "Loaded units-generation.md, including Step 2.4 (assign intake gaps) and Step 2.5 (plane-face units, since both PRDs are kind plane). Wrote inception/working/unit-of-work-plan.md (git-ignored). It proposes 7 units seeded from the PF §9 and §10 and ID §9 and §10 operation tables: U1 wire-contract (no face); U2 org-identity (control, ID §10); U3 authority-evaluation (data, PF §9; the evaluation half of PF FR-018); U4 env-human-access (control, ID §10 and PF §10); U5 agent-registration (control, PF §10); U6 agent-credentials (data, PF §9); U7 event-transport (data, PF §9). It splits each capability that spans both faces, and introduces shared libraries in their first consumer. It proposes gap assignments and asks 5 questions: Q1 schema placement (B recommended: cross-surface parts in U1, operations added by each surface unit, tagged after the last unit's Code Generation; option A would front-load every surface's Functional Design, and option C conflicts with rule 1); Q2 split S2 into two units; Q3 authority as its own unit; Q4 confirm the human data face is out of scope, which is not a single-face claim; Q5 sequence U1 to U7. Stopped at the Step 5 and 6 gate: awaiting answers."
+**Context**: Units Generation Part 1, Steps 1 to 5. Awaiting user answers.
+
+---

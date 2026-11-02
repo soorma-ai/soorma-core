@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Application Design revised, **awaiting approval**
+- **Current Stage**: INCEPTION. Units Generation, Part 1 Planning: awaiting answers
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -126,8 +126,8 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] Requirements Analysis (run 1 approved 2026-10-06; re-opened by re-intake run 2; run 2 approved 2026-11-02)
 - [x] User Stories (minimal depth; approved 2026-11-02)
 - [x] Workflow Planning (approved 2026-11-02)
-- [ ] Application Design: revised, **awaiting approval**
-- [ ] Units Generation: EXECUTE
+- [x] Application Design (approved 2026-11-02)
+- [ ] Units Generation: Part 1 Planning, awaiting answers
 - [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
 
 ### 🟢 CONSTRUCTION PHASE
@@ -138,5 +138,5 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: Application Design approval gate, plus GAP-INT-008 routing
-(`inception/working/gap-int-008-questions.md`). Next: Units Generation.
+**Session stop point**: Units Generation plan questions, in
+`inception/working/unit-of-work-plan.md` (git-ignored).
