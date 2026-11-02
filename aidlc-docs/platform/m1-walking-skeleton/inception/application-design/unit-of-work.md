@@ -101,7 +101,7 @@ Components (S, P) refer to [components.md](components.md).
 | Builds | S3 `data-gateway`; P5's agent credentials and the **fail-closed revocation cache**; P6's agent half (the registration secret); P8 per registration; P1's agent-credential checks at S3, including refusing human credentials by kind; attribution for bootstrap and renewal. It adds S3's operations to `contract/data-gateway.openapi.yaml` |
 | Operations (from PRD) | PF §9: exchange bootstrap material; renew a credential; read revocation state |
 | M1-FRs | 05, 06, 07, 13 (identity: registration secret); also 02, 09, 10, 12 (bootstrap, renewal) |
-| Inherited gaps | **GAP-INT-008** (neither bootstrap nor renewal carries an envelope, soorma-prd#27). **GAP-INT-009** (the internal revocation read writes no attribution record) |
+| Inherited gaps | **GAP-INT-008** (neither bootstrap nor renewal carries an envelope, soorma-prd#27). **GAP-INT-009** (the internal revocation read writes no attribution record, soorma-prd#28) |
 | Proves | ***Done when* 2**, by raw calls |
 
 ## U7 `event-transport`

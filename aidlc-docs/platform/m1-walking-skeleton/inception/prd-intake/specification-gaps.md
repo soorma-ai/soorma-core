@@ -25,7 +25,7 @@ ID for `identity`.
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
 | [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Open** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 (open) |
 | [GAP-INT-008](#gap-int-008-do-the-bootstrap-exchange-and-credential-renewal-carry-an-envelope) | **Open** (found at Application Design); worked around (neither carries an envelope) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 (open) |
-| [GAP-INT-009](#gap-int-009-does-the-internal-revocation-read-produce-an-attribution-record) | **Open** (found at Units Generation); worked around (no record for the internal read) | PF @ `prd-platform-foundations-v1.3` | — | (issue pending) |
+| [GAP-INT-009](#gap-int-009-does-the-internal-revocation-read-produce-an-attribution-record) | **Open** (found at Units Generation); worked around (no record for the internal read) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#28 (open) |
 
 ---
 
@@ -628,7 +628,7 @@ data-face Gateway, is marked pending.
 **PRD section**: PF FR-025; PF §8a (*Read revocation state*); PF §11 *Gateway Exposure* (the revocation read is internal); PF §7a *Revocation State* (readable by no principal)
 **Owner**: platform-foundations
 **Unit**: U6 (assigned at Units Generation, 2026-11-02)
-**Issue**: (pending; opened after this entry is committed)
+**Issue**: [soorma-prd#28](https://github.com/soorma-ai/soorma-prd/issues/28), opened 2026-11-02 with this entry verbatim, pinned to `0c2484f`
 **Resolved by**: —
 
 #### What the build needs
@@ -673,4 +673,4 @@ contract impact.
 #### Blocked
 **No *done when* item.**
 
-**Status**: `Open`. Raised against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (option 1)
+**Status**: `Open`. Raised as [soorma-prd#28](https://github.com/soorma-ai/soorma-prd/issues/28) against PF @ `prd-platform-foundations-v1.3`, and worked around in M1 (option 1)

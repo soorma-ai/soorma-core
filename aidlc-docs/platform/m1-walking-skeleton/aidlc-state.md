@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Units Generation generated (7 units), **awaiting approval**
+- **Current Stage**: INCEPTION. Units Generation approved. Next: tickets as GitHub issues (end-of-Inception extension step)
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -94,7 +94,7 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 | GAP-INT-006 | U4, U5 | Which permissions are *valid in E* (ID FR-015's ceiling); tenant-defined identifiers in core | Open: raised; worked around in M1 (plane-declared identifiers only; re-intake Q2, routing E) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 |
 | GAP-INT-007 | U3, U7 | Origin at an autonomous first hop: agent-asserted (PF §8b) or platform-stamped (PF §11, FR-015, §7b); found at User Stories | Open: raised; worked around in M1 (reject and stamp, M1-FR-01; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 |
 | GAP-INT-008 | U6, U1 | Do bootstrap and renewal carry an envelope (PF FR-001 vs §8a, §11); found at Application Design | Open: raised; worked around in M1 (neither carries an envelope; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 |
-| GAP-INT-009 | U6 | Does the internal revocation read produce an attribution record (PF FR-025 vs §8a); found at Units Generation | Open: raised; worked around (no record; routing E) | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
+| GAP-INT-009 | U6 | Does the internal revocation read produce an attribution record (PF FR-025 vs §8a); found at Units Generation | Open: raised; worked around (no record; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#28 |
 
 **Counts**: Open 4 (GAP-INT-006, 007, 008, 009; all worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4.
 
@@ -128,7 +128,7 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] User Stories (minimal depth; approved 2026-11-02)
 - [x] Workflow Planning (approved 2026-11-02)
 - [x] Application Design (approved 2026-11-02)
-- [ ] Units Generation: 7 units generated (plan approved 2026-11-02), **awaiting approval**
+- [x] Units Generation (7 units; approved 2026-11-02, once soorma-prd#28 was open)
 - [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
 
 ### 🟢 CONSTRUCTION PHASE
@@ -139,6 +139,6 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: Units Generation approval gate, plus the revocation-read attribution
-classification (`inception/working/attribution-revocation-read-questions.md`). Next: tickets as
-GitHub issues, then the QA inception test specs, then the Inception PR gate on soorma-core#2.
+**Session stop point**: Units Generation approved. Next: tickets as GitHub issues on soorma-core
+(one tracking issue plus one sub-issue per unit), then the QA inception test specs, then the
+Inception PR gate on soorma-core#2.

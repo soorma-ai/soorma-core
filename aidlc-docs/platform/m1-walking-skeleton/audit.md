@@ -511,3 +511,12 @@ Then present the Application Design gate again."
 **Context**: prd-gap-classification.md Steps 1 to 3 (GAP-INT-009)
 
 ---
+
+## Units Generation: Approval
+**Timestamp**: 2026-11-02T08:45:59Z
+**User Input**: "Units Generation approved once the issue is open." (from the message logged at 2026-11-02T08:45:23Z)
+**AI Response**: "Checked the open spec-gap issues (#13, #24, #25, #27); none covers attribution. Opened soorma-prd#28, 'Specification gap from build: does the internal revocation read produce an attribution record (GAP-INT-009)', label spec-gap, against PF @ prd-platform-foundations-v1.3. It carries the user's actor argument, the suggested fix, and the entry verbatim, pinned to 0c2484f. Recorded #28 in specification-gaps.md, the register, unit-of-work.md and unit-of-work-dependency.md. With the issue open, the approval condition is met: Units Generation is marked complete (7 units). Next is the end-of-Inception tickets step (GitHub issues on soorma-core); not started in this turn."
+**Status**: Approved
+**Context**: Units Generation approved
+
+---
