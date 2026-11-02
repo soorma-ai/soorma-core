@@ -241,3 +241,19 @@ Then present the Requirements Analysis approval gate again."
 **Context**: Requirements Analysis approved (run 2)
 
 ---
+
+## PR Checkpoint: Inception PR Routing (User Instruction)
+**Timestamp**: 2026-11-02T00:32:24Z
+**User Input**: "Leave soorma-core#2 open. It's the Inception PR, so it closes at the PR Checkpoint extension's Inception PR gate, after Units Generation and the GitHub tickets. That supersedes the earlier \"merge after RA\" note. At that gate, use #2 instead of opening a new PR: update its description per the extension's template. Start User Stories at minimal depth."
+**AI Response**: "soorma-core#2 left open. Recorded in aidlc-state.md under ## PR Checkpoint State: the Inception PR gate (pr-checkpoint.md Section 4) uses the existing soorma-core#2 (dev to main) instead of a new aidlc/platform/m1-walking-skeleton/inception branch and PR, and the gate updates #2's description per the Section 4.2 template. Gate order unchanged: after Units Generation, the GitHub-issue tickets, and the QA inception test specs; before Construction. This supersedes the earlier note that #2 merges after RA. Starting User Stories at minimal depth."
+**Context**: PR Checkpoint extension configuration (user override of the default branch and PR); User Stories start
+
+---
+
+## User Stories: Assessment and Plan Issued
+**Timestamp**: 2026-11-02T00:33:16Z
+**User Input**: (the instruction logged at 2026-11-02T00:32:24Z: "Start User Stories at minimal depth.")
+**AI Response**: "Loaded user-stories.md. Step 1 assessment (inception/working/user-stories-assessment.md): Execute, at minimal depth. High-priority criteria met: a customer-facing API (the wire contract), a multi-persona system, complex authority logic. The coverage map marks the stage Partial: personas are settled by PF §3 and ID §3, and acceptance by the brief's done-when items and ID §1's trace. Noted that the QA Test Cases extension never uses stories as input (qa-test-cases.md §1.4). Created inception/working/story-generation-plan.md (git-ignored) with the Part 2 checklist, the breakdown trade-offs, and 5 questions: Q1 non-principal actors (deployer, raw-call client); Q2 breakdown approach; Q3 story size; Q4 boundary and refusal coverage; Q5 acceptance-criteria format. Each question carries a recommendation. Stopped at the Part 1 gate (Steps 7 and 8): awaiting answers."
+**Context**: User Stories Part 1, Planning. Awaiting user answers.
+
+---

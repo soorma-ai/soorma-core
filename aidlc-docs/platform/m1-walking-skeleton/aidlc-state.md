@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Requirements Analysis approved (run 2, 2026-11-02T00:29:07Z). Next: User Stories at minimal depth
+- **Current Stage**: INCEPTION. User Stories (minimal depth), Part 1 Planning: awaiting answers to the story plan
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -67,9 +67,18 @@
 |---|---|---|
 | Security Baseline | Yes | Requirements Analysis (Q10) |
 | soorma Platform Invariants | Yes | Requirements Analysis (Q11). Scope inherited from PF §15 and ID §15: I1 to I11 all Addressed in both, none N/A. Invariants read at `prd-platform-foundations-v1.3` and `prd-identity-v1.0`; text identical at both tags (and at v1.1) |
-| PR Checkpoint | Yes | Requirements Analysis (Q12) |
+| PR Checkpoint | Yes | Requirements Analysis (Q12). **Inception PR gate uses soorma-core#2** (dev → main); see `## PR Checkpoint State` |
 | QA Test Cases | Yes | Requirements Analysis (Q13). Opted in — scope: comprehensive |
 | JIRA Tickets | Yes, adapted: **GitHub issues on soorma-core instead of JIRA** | Requirements Analysis (Q14; clarification Q3). At the end of Inception, before the PR checkpoint: one tracking issue plus one sub-issue per unit. **No markdown ticket file**; issue numbers are recorded under `## Tickets` below |
+
+## PR Checkpoint State
+
+### Inception PR Gate
+- **Status**: NOT YET FIRED (fires after Units Generation, the GitHub-issue tickets, and the QA inception test specs; before Construction)
+- **PR**: **soorma-core#2** (`dev` → `main`), by the user's instruction (2026-11-02). Use it instead of opening a new PR or creating an `aidlc/.../inception` branch. At the gate, **update #2's description** per `pr-checkpoint.md` Section 4.2. #2 stays open until the gate is approved; this supersedes the earlier "merge after RA" note
+- **Branch**: `dev`
+- **Instructions**: — (written at the gate)
+- **Approved**: —
 
 ## PRD Specification Gaps
 
@@ -105,10 +114,10 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [x] PRD Intake (run 1 approved at RA Q1; run 2 approved at re-intake Q1, 2026-11-01)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
 - [x] Requirements Analysis (run 1 approved 2026-10-06; re-opened by re-intake run 2; run 2 approved 2026-11-02)
-- [ ] User Stories
+- [ ] User Stories: in progress (minimal depth), Part 1 Planning
 - [ ] Workflow Planning
 - [ ] Application Design
 - [ ] Units Generation
 
-**Session stop point**: Requirements Analysis approved (run 2). Next: User Stories at minimal
-depth, when the user resumes.
+**Session stop point**: User Stories Part 1, awaiting answers in
+`inception/working/story-generation-plan.md` (git-ignored).
