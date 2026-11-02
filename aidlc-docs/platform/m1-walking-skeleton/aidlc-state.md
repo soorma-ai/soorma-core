@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. User Stories (minimal depth) revised, **awaiting approval**
+- **Current Stage**: INCEPTION. Workflow Planning: plan proposed, awaiting approval
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -109,15 +109,31 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 
 *None. PF OQ-1 to OQ-14 and ID OQ-1 to OQ-6 and P1-OQ-1 to P7-OQ-2 are all Answered at their tags, so none were imported.*
 
+## Execution Plan Summary
+*Proposed at Workflow Planning (2026-11-02), awaiting approval. Full plan: `inception/working/execution-plan.md` (git-ignored).*
+- **Risk**: High (security perimeter; irreversible core assignments; one-way contract, pre-release in M1)
+- **Stages to execute**: Application Design (comprehensive); Units Generation (plane-face units); tickets as GitHub issues; QA inception test specs; Inception PR gate on soorma-core#2; Construction Initialization; per unit, Functional Design, NFR Requirements, NFR Design, and Infrastructure Design (each may skip for a unit), then Code Generation; Build and Test
+- **Stages skipped**: Reverse Engineering (greenfield)
+- **soorma-sdk coordination**: the wire contract is designed at Application Design; recommended publication point is the Inception PR gate (#2 merged to `main`, pinned commit)
+
 ## Stage Progress
 ### 🔵 INCEPTION PHASE
 - [x] Workspace Detection (greenfield)
 - [x] PRD Intake (run 1 approved at RA Q1; run 2 approved at re-intake Q1, 2026-11-01)
 - [ ] Reverse Engineering: SKIPPED (greenfield)
 - [x] Requirements Analysis (run 1 approved 2026-10-06; re-opened by re-intake run 2; run 2 approved 2026-11-02)
-- [ ] User Stories: generated (minimal depth; plan approved 2026-11-02), **awaiting approval**
-- [ ] Workflow Planning
-- [ ] Application Design
-- [ ] Units Generation
+- [x] User Stories (minimal depth; approved 2026-11-02)
+- [ ] Workflow Planning: plan proposed, **awaiting approval**
+- [ ] Application Design: EXECUTE
+- [ ] Units Generation: EXECUTE
+- [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
 
-**Session stop point**: User Stories approval gate. Next, once approved: Workflow Planning.
+### 🟢 CONSTRUCTION PHASE
+- [ ] Construction Phase Initialization: EXECUTE
+- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
+- [ ] Build and Test: EXECUTE
+
+### 🟡 OPERATIONS PHASE
+- [ ] Operations: PLACEHOLDER
+
+**Session stop point**: Workflow Planning approval gate. Next, once approved: Application Design.
