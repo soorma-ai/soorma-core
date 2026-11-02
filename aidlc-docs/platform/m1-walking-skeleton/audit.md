@@ -362,3 +362,24 @@ Then present the User Stories gate again."
 **Context**: Workflow Planning Step 9. Awaiting approval.
 
 ---
+
+## Workflow Planning - Approval
+**Timestamp**: 2026-11-02T06:17:08Z
+**AI Prompt**: "Ready to proceed with this plan?"
+**User Response**: "Approve, with two edits to the execution plan:
+
+Contract publication in two steps. (a) The design is published when #2 merges; soorma-sdk can then run its own Inception against it. (b) The schema (M1-TECH-02) is published once Code Generation has produced it, at a pinnable tag on main; soorma-sdk's Construction pins that. Add to Units Generation's rationale: decide where the schema is produced, as its own first unit or the first step of the first unit, given that a schema spans both faces and plane-face units carry one face each.
+Functional Design's handed items: remove \"the trace-context standard\". It was decided at RA (M1-TECH-05).
+Then proceed to Application Design."
+**Status**: Approved with edits
+**Context**: Workflow plan approved. Edits applied: two-step contract publication (design when #2 merges; schema at a pinnable tag on main after Code Generation), recorded in the execution plan and in aidlc-state.md; the Units Generation rationale now requires deciding where the schema is produced; the trace-context standard removed from Functional Design's handed items. The coverage map's Handed to AI-DLC row for it is corrected to 'Decided at Requirements Analysis (M1-TECH-05)'. Proceeding to Application Design.
+
+---
+
+## Application Design: Plan Issued
+**Timestamp**: 2026-11-02T06:18:42Z
+**User Input**: (the Workflow Planning approval: "Then proceed to Application Design.")
+**AI Response**: "Loaded application-design.md. Read the placement constraints at PF @ v1.3: §6 Deployment Note (one instance per environment is typical; identity is configured), §11 Gateway Exposure, §9 and §10 operations, plus ID FR-009 for the organization level. Wrote inception/working/application-design-plan.md (git-ignored). It holds the plan checklist (components, component-methods, services, component-dependency, application-design, validation), the PRD constraints treated as binding, and a preliminary inventory of 12 components (C1 to C12). It asks 5 questions, each with a recommendation: Q1 environment topology (one deployment per environment, recommended); Q2 process split (separate deployables per surface, recommended); Q3 Gateway protocol and schema language (HTTP+JSON with OpenAPI 3.1 and JSON Schema 2020-12, recommended); Q4 Event ingest transport (own ingest, HTTP publish and WebSocket subscribe, AsyncAPI 3.0, recommended; exposing a broker directly is marked not recommended because it cannot discharge O5 to O12, I2); Q5 repository and licence layout (monorepo with contract/ under Apache 2.0, packages/ and services/ under FSL, recommended). Stopped at the Step 6 and 7 gate: awaiting answers."
+**Context**: Application Design Steps 1 to 6. Awaiting user answers.
+
+---

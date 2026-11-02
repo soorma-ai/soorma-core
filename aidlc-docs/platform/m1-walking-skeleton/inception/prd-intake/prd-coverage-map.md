@@ -208,7 +208,7 @@ place on it.
 | **Sign-in attempt bound: value and shape** | ID FR-008 | Per principal, for sign-in and first authentication; failures recorded against the principal. "The bound's value and shape are technical design." Same lock-out trade-off as bootstrap | NFR Requirements (control face) |
 | **Organization sign-in lifetime** | ID FR-009 | Short-lived; asserts subject, organization, time, and classes used | NFR Requirements (control face) |
 | **Human environment credential lifetime** | ID FR-010 | Short-lived, renewable; never outlives revocation, its sign-in, or the principal's `active` state | NFR Requirements |
-| Trace-context standard | PF FR-001, PF §7b, PF Decision 8 | An open standard; the perimeter validates well-formedness only. Run 1: W3C Trace Context (M1-TECH-05) | Functional Design |
+| Trace-context standard | PF FR-001, PF §7b, PF Decision 8 | An open standard; the perimeter validates well-formedness only | **Decided at Requirements Analysis**: W3C Trace Context (M1-TECH-05) |
 | Credential formats and per-environment verification material | PF §6; ID FR-009 | No material that can mint is shared across environments. **Environments hold verify-only material for the organization sign-in** | NFR Design |
 | **K storage and verification** | ID FR-006 | At the organization level only, in a form that can verify, never recover. SECURITY-12 applies | NFR Design |
 | Registration secret storage and verification | PF §7a, FR-008 | Locally verified; verification material internal to the substrate; issuer recorded | NFR Design |

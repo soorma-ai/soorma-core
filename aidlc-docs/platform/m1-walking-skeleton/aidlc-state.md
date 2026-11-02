@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. Workflow Planning: plan proposed, awaiting approval
+- **Current Stage**: INCEPTION. Application Design: plan issued, awaiting answers
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -110,11 +110,12 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 *None. PF OQ-1 to OQ-14 and ID OQ-1 to OQ-6 and P1-OQ-1 to P7-OQ-2 are all Answered at their tags, so none were imported.*
 
 ## Execution Plan Summary
-*Proposed at Workflow Planning (2026-11-02), awaiting approval. Full plan: `inception/working/execution-plan.md` (git-ignored).*
+*Approved at Workflow Planning (2026-11-02), with the user's edits. Full plan: `inception/working/execution-plan.md` (git-ignored).*
 - **Risk**: High (security perimeter; irreversible core assignments; one-way contract, pre-release in M1)
 - **Stages to execute**: Application Design (comprehensive); Units Generation (plane-face units); tickets as GitHub issues; QA inception test specs; Inception PR gate on soorma-core#2; Construction Initialization; per unit, Functional Design, NFR Requirements, NFR Design, and Infrastructure Design (each may skip for a unit), then Code Generation; Build and Test
 - **Stages skipped**: Reverse Engineering (greenfield)
-- **soorma-sdk coordination**: the wire contract is designed at Application Design; recommended publication point is the Inception PR gate (#2 merged to `main`, pinned commit)
+- **soorma-sdk coordination**, in two steps: (a) the contract **design** is published when soorma-core#2 merges, and soorma-sdk's Inception can run against it; (b) the **schema** (M1-TECH-02) is published once Code Generation produces it, at a pinnable tag on `main`, and soorma-sdk's Construction pins that tag
+- **Units Generation must decide** where the schema is produced: its own first unit, or the first step of the first unit (it spans both faces)
 
 ## Stage Progress
 ### 🔵 INCEPTION PHASE
@@ -123,8 +124,8 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 - [ ] Reverse Engineering: SKIPPED (greenfield)
 - [x] Requirements Analysis (run 1 approved 2026-10-06; re-opened by re-intake run 2; run 2 approved 2026-11-02)
 - [x] User Stories (minimal depth; approved 2026-11-02)
-- [ ] Workflow Planning: plan proposed, **awaiting approval**
-- [ ] Application Design: EXECUTE
+- [x] Workflow Planning (approved 2026-11-02)
+- [ ] Application Design: in progress (plan issued, awaiting answers)
 - [ ] Units Generation: EXECUTE
 - [ ] Tickets (GitHub issues), QA inception test specs, Inception PR gate (#2): EXECUTE
 
@@ -136,4 +137,5 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: Workflow Planning approval gate. Next, once approved: Application Design.
+**Session stop point**: Application Design plan questions, in
+`inception/working/application-design-plan.md` (git-ignored).
