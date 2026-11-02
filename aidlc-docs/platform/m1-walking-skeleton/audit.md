@@ -297,3 +297,24 @@ Then present the Requirements Analysis approval gate again."
 **Context**: User Stories Part 2, Steps 19 and 20. Awaiting approval.
 
 ---
+
+## User Stories: Changes Requested; GAP-INT-007 Classified
+**Timestamp**: 2026-11-02T05:58:40Z
+**User Input**: "Request changes; a new gap first:
+
+Classify a PF contradiction as GAP-INT-007, at User Stories via prd-gap-classification.md. PF §8b Origin stamping says first-hop autonomous with autonomy declared is \"Agent-asserted, accepted\". PF §11 What the SDK may not populate rejects a draft that sets origin mode. FR-015 says the platform stamps origin wherever derivable. The contradiction has been present since v1.0, and it governs every M1 first hop (A-5) and done-when 7. M1-FR-01 already takes the reject-and-stamp reading, so record that as the work-around and cite the gap in M1-FR-01, requirements §6, US-08 and US-11. I'll answer routing E (raise against PF @ prd-platform-foundations-v1.3 and work around: accepting an asserted value later is additive). Put the routing question in a file as usual, then open the issue once I've answered.
+
+US-09 re-broadening: name the only M1 scenario that makes it load-bearing. B, triggered by A's event, calls event:subscribe forwarding A's context; A lacks event:subscribe; B declared it. A triggered publish can't exercise it, because every upstream publisher holds event:publish. Alternatively, state that re-broadening is verified at the authority-evaluation level, with constructed chains.
+Then present the User Stories gate again."
+**AI Response**: "Verified at the tags: the PF §8b row ('Agent-asserted, accepted'), the PF §11 origin-mode rejection, and PF FR-015 'wherever it is derivable' are present verbatim at v1.3 and at v1.0. Two further passages bear on it: PF §7b's setter 'Platform where derivable', and FR-015's own 'agent-asserted autonomous where inbound context exists is rejected', which implies assertion elsewhere. Classified GAP-INT-007 as specification (two PRD sections cannot both be satisfied; a one-way contract shape), raised against PF @ prd-platform-foundations-v1.3, owner platform-foundations, pre-unit. Entry appended to specification-gaps.md with three options (reject and stamp; assert and accept; accept a matching assertion); the work-around is option 1, already taken by M1-FR-01. Registered in aidlc-state.md. Routing question written to inception/working/gap-int-007-questions.md; the issue opens after the answer. Cited the gap in M1-FR-01 (origin stamped on every hop; asserted origin rejected), requirements §6 (row and counts), US-08 and US-11, and the work-around table in stories.md. US-09: named the scenario, B triggered by A's event calling event:subscribe while forwarding A's context, with A lacking event:subscribe and B having declared it; stated that a triggered publish cannot exercise it. Also stated that the full case table is verified at the authority-evaluation level with constructed chains. Finding raised to the user: the claim that this is the only M1 scenario holds only if agents cannot invoke agent:register-gated operations. PF §8a permits an agent holding agent:register to register agents and issue secrets, but M1-FR-03 says registration is invoked by a human, which may narrow PF FR-007. Requirements were edited after approval, at the user's direction (GAP-INT-007 citations only)."
+**Context**: User Stories change request; prd-gap-classification.md Steps 1 and 2 (GAP-INT-007); Step 3 routing pending
+
+---
+
+## User Stories: Approval Prompt (Re-presented)
+**Timestamp**: 2026-11-02T05:58:40Z
+**User Input**: (none)
+**AI Response**: "Re-presented the User Stories completion message with the changes. Routing for GAP-INT-007 is pending in gap-int-007-questions.md. Raised the M1-FR-03 scope question (agent-initiated registration) for the user's decision."
+**Context**: User Stories Step 20 gate. Awaiting approval and the GAP-INT-007 routing answer.
+
+---

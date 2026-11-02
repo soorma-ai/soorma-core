@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION. User Stories (minimal depth) generated, **awaiting approval**
+- **Current Stage**: INCEPTION. User Stories (minimal depth): changes requested; GAP-INT-007 classified, routing pending
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -92,8 +92,9 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 | GAP-INT-004 | (pre-unit) | Re-broadening evaluation rule (PF FR-017, I5) | Resolved — PRD amended. **Work-around comes out** | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §8b *Re-broadening* (v1.2) | soorma-prd#14 |
 | GAP-INT-005 | (pre-unit) | Meaning of the sponsor's "grantable set" (PF FR-016) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2); ID @ `prd-identity-v1.0` FR-015 for `grant:human` | soorma-prd#14 (re-routed half: #12) |
 | GAP-INT-006 | (pre-unit) | Which permissions are *valid in E* (ID FR-015's ceiling); tenant-defined identifiers in core | Open: raised; worked around in M1 (plane-declared identifiers only; re-intake Q2, routing E) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 |
+| GAP-INT-007 | (pre-unit) | Origin at an autonomous first hop: agent-asserted (PF §8b) or platform-stamped (PF §11, FR-015, §7b); found at User Stories | Classified as specification; **routing pending**; worked around in M1 (reject and stamp, M1-FR-01) | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
 
-**Counts (run 2)**: Open 1 (GAP-INT-006, worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4.
+**Counts**: Open 1 (GAP-INT-006, worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4 · Routing pending 1 (GAP-INT-007, worked around).
 
 **Errata (not a gap)**: E-1, PF §17 and §4 counts. soorma-prd#15, closed. Corrected at PF v1.2.
 

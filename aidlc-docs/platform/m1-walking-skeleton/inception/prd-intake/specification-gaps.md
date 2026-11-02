@@ -23,6 +23,7 @@ ID for `identity`.
 | [GAP-INT-004](#gap-int-004-re-broadening-evaluation-not-on-the-briefs-watch-list) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b, §8b *Re-broadening* (introduced at v1.2, §23) | soorma-prd#14 (closed) |
 | [GAP-INT-005](#gap-int-005-meaning-of-the-sponsors-grantable-set-reclassified-from-t-1) | Resolved — PRD amended | PF @ `prd-platform-foundations-v1.1` | PF @ `prd-platform-foundations-v1.3` FR-016, §8b *Sponsorship* (v1.2, §23); the `grant:human` half by ID @ `prd-identity-v1.0` FR-015 | soorma-prd#14 (closed); re-routed half on #12 |
 | [GAP-INT-006](#gap-int-006-which-permissions-are-valid-in-an-environment) | **Open**; worked around in M1 (plane-declared identifiers only) | ID @ `prd-identity-v1.0` | — | soorma-prd#24 (open) |
+| [GAP-INT-007](#gap-int-007-origin-at-an-autonomous-first-hop-agent-asserted-or-platform-stamped) | **Classified; routing pending** (found at User Stories); worked around (reject and stamp) | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
 
 ---
 
@@ -461,3 +462,73 @@ additive, while narrowing a published set would break tenants."
 - Carried into requirements as M1-FR-15 and into the Build and Test summary
 
 **Status**: `Open`. Raised as [soorma-prd#24](https://github.com/soorma-ai/soorma-prd/issues/24) against ID @ `prd-identity-v1.0`, and worked around in M1 (see above)
+
+---
+
+### GAP-INT-007: Origin at an autonomous first hop: agent-asserted, or platform-stamped?
+
+**Raised**: 2026-11-02T05:56:46Z
+**Stage**: User Stories (classified with prd-gap-classification.md before any unit exists, hence `GAP-INT`)
+**Raised against**: PF, soorma-prd/aiprd-docs/platform-foundations/requirements/prd.md @ `prd-platform-foundations-v1.3`
+**PRD section**: PF §8b *Origin stamping*; PF §11 *What the SDK may not populate*; PF FR-015; PF §7b *Envelope Fields* (origin mode setter). Present verbatim since `prd-platform-foundations-v1.0`
+**Owner**: platform-foundations
+**Unit**: (pre-unit), until Units Generation assigns it
+**Issue**: (pending; routing question asked)
+**Resolved by**: —
+
+#### What the build needs
+The build needs to know who sets origin mode at a first hop with no inbound context,
+where the agent has declared autonomy. Under A-5 that is **every M1 first hop**: A's
+publish and B's subscribe. It also needs to know what happens to a draft that carries an
+origin mode. *Done when* 7 rejects a draft that sets a platform-stamped field, so whether
+origin mode is platform-stamped in this case decides what item 7 must reject.
+
+#### What the PRD says
+- PF §8b *Origin stamping*, row *No inbound context, autonomy declared*: origin
+  `autonomous`, set by "**Agent-asserted, accepted** because the agent's own set is the
+  ceiling regardless"
+- PF §11 *What the SDK may not populate*: "Scope, **origin mode**, delegating principal,
+  actor chain, re-broadening record | **Rejected** — never silently overwritten". It has
+  no carve-out for an autonomous first hop
+- PF FR-015: "Origin is stamped by the platform **wherever it is derivable**", and "An
+  agent-asserted `autonomous` where inbound context exists is rejected". The second
+  clause implies an asserted `autonomous` is acceptable where no context exists
+- PF §7b: origin mode is set by "**Platform** where derivable". With autonomy declared on
+  the registration, `autonomous` is derivable without any assertion
+
+#### Why this is specification, not technology
+These are two PRD sections that cannot both be satisfied, which is a listed
+specification case. If the agent asserts `autonomous` and the platform accepts it
+(§8b), the draft sets origin mode, and §11 rejects that draft. If the platform rejects
+the draft and stamps origin (§11, §7b), the §8b row's "agent-asserted, accepted" is
+false. The choice is part of the wire contract: what a draft may carry, and what a raw
+caller must send. That makes it one-way once tenants build against it, and two competent
+engineers would choose differently.
+
+#### Options considered
+1. **Reject and stamp.** Origin is platform-stamped at every hop. At an autonomous first
+   hop the perimeter derives `autonomous` from the registration's autonomy declaration;
+   any draft setting origin mode is rejected. Read this way, §8b's "agent-asserted" means
+   *declared at registration*, not *asserted on the wire*. §11, §7b, and FR-015's first
+   sentence hold as written; §8b's setter cell, and FR-015's "agent-asserted `autonomous`"
+   phrasing, need correcting
+2. **Assert and accept.** At an autonomous first hop the agent asserts `autonomous` on the
+   draft, and the perimeter accepts it if the registration declares autonomy. §8b and
+   FR-015's second sentence hold; §11's origin-mode row needs a carve-out. It leaves open
+   what happens to a draft with no context that omits origin: stamped, or denied?
+3. **Accept a matching assertion.** The perimeter stamps origin when the draft omits it,
+   accepts an asserted `autonomous` that equals what it derives, and rejects any other
+   value. §11 needs amending, and the contract carries an optional field
+
+#### M1 work-around (recorded; routing pending)
+M1-FR-01 already takes **option 1**: the perimeter stamps origin on every first hop, and
+a draft setting origin mode is rejected (M1-FR-01, M1-FR-08). Moving to option 2 or 3
+later means **accepting** an asserted value the perimeter now rejects, which is additive.
+Moving from option 2 or 3 to option 1 would be breaking. So option 1 is the safe
+interim, and it is recorded as a work-around, not as the specified behaviour.
+
+#### Blocked
+**No *done when* item**, given the work-around. It governs every M1 first hop (A-5;
+US-08) and the origin-mode case of *done when* 7 (US-11).
+
+**Status**: Classified as specification. **Routing pending**: question in `inception/working/gap-int-007-questions.md`

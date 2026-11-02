@@ -84,6 +84,11 @@ state, because agent revocation initiation is deferred (PF FR-011, RA run-1 Q7).
   envelope. **A direct human operation carries none** (PF FR-001 v1.3; ID FR-022)
 - The seven fields. The perimeter writes the six platform-stamped fields and **rejects**
   a draft that sets any of them; it never overwrites
+- **Origin mode is stamped by the perimeter on every hop, including an autonomous first
+  hop**, where it is derived from the registration's autonomy declaration. A draft
+  setting origin mode is rejected. This is the **GAP-INT-007 work-around** (PF §8b
+  "agent-asserted, accepted" contradicts PF §11, FR-015, and §7b). Accepting an asserted
+  value later is additive
 - The re-broadening record is stamped only when re-broadening was **load-bearing**. It
   names the hop and travels with the chain (PF §7b, §8b)
 - Trace context is required and is validated for well-formedness only, against **W3C
@@ -434,9 +439,10 @@ register is in `aidlc-state.md`.
 | GAP-INT-004 | Re-broadening evaluation rule | Resolved — PRD amended (PF @ v1.3 §8b) | Built as stated: M1-FR-03, 08. Work-around removed |
 | GAP-INT-005 | Meaning of "grantable set" | Resolved — PRD amended (PF @ v1.3 FR-016; ID FR-015) | Built as stated: M1-FR-03, 15 |
 | GAP-INT-006 | Which permissions are valid in E | **Open** (soorma-prd#24) | Worked around: M1-FR-15, M1-FR-03, M1-FR-02 |
+| GAP-INT-007 | Origin at an autonomous first hop: agent-asserted or platform-stamped (found at User Stories) | Classified; **routing pending** | Worked around (reject and stamp): M1-FR-01, M1-FR-08 |
 
-**Counts**: Open 1 · Awaiting PRD 1 · Resolved 4. Both unresolved gaps record precisely
-what is left unbuilt, and both are carried into the Build and Test summary.
+**Counts**: Open 1 · Awaiting PRD 1 · Resolved 4 · Routing pending 1 (GAP-INT-007). All three unresolved gaps record
+precisely what is left unbuilt, and all three are carried into the Build and Test summary.
 
 ---
 

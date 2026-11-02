@@ -214,8 +214,11 @@ receives, with raw calls, **so that** two agents communicate within one environm
 **Acceptance criteria**
 - [ ] B subscribes to E's namespace, and A publishes to it. B, a live subscriber, receives
       the event (M1-FR-11)
-- [ ] A's publish and B's subscribe each carry an envelope stamped `autonomous`, because
-      both declared autonomy. Effective authority is each agent's standing set (M1-FR-08)
+- [ ] A's publish and B's subscribe each carry an envelope stamped `autonomous` **by the
+      perimeter**, derived from each registration's autonomy declaration. Effective
+      authority is each agent's standing set (M1-FR-08, M1-FR-01)
+- [ ] ✗ **GAP-INT-007 work-around**: a draft that asserts an origin mode is rejected,
+      `autonomous` included. Accepting an asserted value later is additive (M1-FR-01)
 - [ ] O1 to O12 are discharged independently at Event ingest. Neither entry point trusts
       the other (M1-FR-09)
 - [ ] **GAP-INT-003 work-around**: delivery reaches live subscribers only, with no
@@ -250,10 +253,16 @@ under what authority, without trusting A's claims.
       (M1-FR-01)
 - [ ] Unknown fields are preserved and forwarded. Unknown enum values are non-fatal
       (M1-FR-01)
-- [ ] **Re-broadening**: when B, triggered by A's event, makes a request needing a
-      permission that B declared and A lacks, the request is allowed by re-broadening. The
-      perimeter stamps the record naming B's hop, and the record travels with the chain. A
-      later hop does not inherit it (M1-FR-08, M1-FR-01)
+- [ ] **Re-broadening, the scenario M1's journey exercises**: B, triggered by A's event,
+      calls `event:subscribe` **forwarding A's context**. A lacks `event:subscribe`, and B
+      declared it. The request is allowed by re-broadening; the perimeter stamps the record
+      naming B's hop; the record travels with the chain; a later hop does not inherit it
+      (M1-FR-08, M1-FR-01)
+- [ ] A triggered **publish** cannot make re-broadening load-bearing, because every
+      upstream publisher holds `event:publish`. The only other M1 operations an agent can
+      reach with forwarded context are gated by `agent:register` (registration, secret
+      issuance), and only if an agent's standing set holds it. The full PF §8b case table is
+      verified at the authority-evaluation level, with constructed chains (M1-FR-08)
 - [ ] ✗ A chain exceeding `maxChainDepth` is rejected (M1-FR-01)
 - [ ] ✗ Without re-broadening load-bearing, no re-broadening record is stamped (M1-FR-01,
       M1-FR-08)
@@ -291,6 +300,9 @@ rejected, never overwritten, **so that** no tenant believes an asserted value to
 - [ ] ✗ A draft setting any one of envelope version, scope, origin mode, delegating
       principal, actor chain, or re-broadening record is **rejected**, at the Gateway and
       at Event ingest, each independently (M1-FR-01, M1-FR-09)
+- [ ] ✗ **Origin mode included at an autonomous first hop**: a draft asserting
+      `autonomous` is rejected even though the registration declares autonomy. This is the
+      GAP-INT-007 work-around, which takes PF §11 over the PF §8b row (M1-FR-01)
 - [ ] ✗ The rejected value is never overwritten and forwarded (M1-FR-01)
 - [ ] ✗ A malformed trace context is rejected (M1-FR-01)
 - [ ] A draft declaring its client contract version and setting only trace context is
@@ -343,7 +355,7 @@ material current without an Admin.
 | US-05 | M1-FR-01, 03, 08, 09, 11, 12, 15 |
 | US-06 | M1-FR-04, 08, 12 |
 | US-07 | M1-FR-02, 05, 06, 07, 09 |
-| US-08 | M1-FR-02, 08, 09, 11 |
+| US-08 | M1-FR-01, 02, 08, 09, 11 |
 | US-09 | M1-FR-01, 08; M1-TECH-05 |
 | US-10 | M1-FR-09, 10, 11, 20 |
 | US-11 | M1-FR-01, 09 |
@@ -360,6 +372,7 @@ invariants extension's seam-containment checks (I5, I8).
 |---|---|
 | GAP-INT-003 (live subscribers only; pre-release contract) | US-08 |
 | GAP-INT-006 (plane-declared identifiers only) | US-04, US-05 |
+| GAP-INT-007 (origin stamped, never asserted, at every first hop) | US-08, US-11 |
 | No recovery of a lost K or P (ID FR-012 absent) | US-01 |
 | No delegation (ID FR-019 to FR-021 absent) | US-08 (refusal), US-09 (no delegating principal) |
 | No agent revocation initiation (PF FR-011 deferred) | US-07 |
