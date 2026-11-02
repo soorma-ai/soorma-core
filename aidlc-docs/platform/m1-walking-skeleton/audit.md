@@ -528,3 +528,19 @@ Then present the Application Design gate again."
 **Context**: End of Inception, jira-tickets extension (adapted to GitHub issues)
 
 ---
+
+## QA Test Cases: Inception Test Specs Generated
+**Timestamp**: 2026-11-02T09:00:22Z
+**User Input**: (the instruction logged with the tickets: "Then the QA inception test specs")
+**AI Response**: "Loaded qa-test-cases.md Section 1. Trigger conditions: (1) enabled; (2) requirements.md present; (3) unit-of-work.md has 7 units; (5) no prior test-cases output. Condition (4), that jira-tickets.md exists, is met by the adaptation: tickets are GitHub issues #3 to #10, recorded under ## Tickets, and by the user's RA decision no markdown file is written. Scope comprehensive, applied uniformly. Sources: unit-of-work.md and requirements.md only, never stories or tickets. Generated two files per unit in inception/test-cases/{unit}/ (test-specs-narrative.md first, then test-case-index.md). Abbreviations: WC wire-contract, OI org-identity, AE authority-evaluation, EHA env-human-access, AR agent-registration, AC agent-credentials, ET event-transport (unique). Counts: 11, 25, 22, 24, 22, 22, 24, total 150. Each narrative entry carries context, scenario, preconditions, numbered steps, expected outcome, scope tag, priority, backward traceability (unit and M1-FR), forward traceability (construction/{unit}/), and technical references. A common-fixtures section makes each file executable on its own. Before announcing, a coverage check found 8 gaps between unit and requirement (FR-02 for each surface unit; FR-09 and FR-13 in U2; FR-13 in U6). Added cases for them and regenerated within the same pass, so IDs are final. Index tables validated; no prohibited outputs (no Gherkin, tabular projections or code)."
+**Context**: End of Inception, qa-test-cases extension (inception pass)
+
+---
+
+## PR Checkpoint: Inception PR Gate Prepared
+**Timestamp**: 2026-11-02T09:01:28Z
+**User Input**: (the instruction logged with the tickets: "then stop at the Inception PR gate on soorma-core#2")
+**AI Response**: "Loaded pr-checkpoint.md Sections 1 to 4. Trigger met: Inception stages are complete; tickets were created (adapted: GitHub issues #3 to #10, with no jira-tickets.md, by the RA decision); the gate is not yet approved. Git repository present. Branch: dev, confirmed by the user's instruction to use the existing soorma-core#2 (dev to main). Validated the always-expected artifacts (requirements.md, unit-of-work.md, unit-of-work-story-map.md). Built the Section 4.2 description: Initiative Summary, Key Requirements (M1-FR-01 to 21, M1-NFR-01 to 09, M1-TECH), Scrum Master / EM Review (unit of work, story map, tickets #3 to #10 in place of JIRA), Engineering Team Review (requirements, the 8 application-design files), and an 'Also in this PR' list. Paths are backtick-quoted and repo-root-relative. Wrote inception/working/pr-checkpoint-instructions.md (git-ignored), with steps adapted to #2 (no new PR), the PR title, the description, and the loop-back note. Persisted ## PR Checkpoint State as PENDING. Next: commit and push dev, then replace #2's description, as the user authorized."
+**Context**: pr-checkpoint Inception PR gate, Sections 4.1 to 4.5
+
+---
