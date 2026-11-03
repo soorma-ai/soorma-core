@@ -585,3 +585,11 @@ Gate remains PENDING; waiting for the user to confirm #2 is approved."
 **Context**: Inception PR gate (pr-checkpoint.md Section 4.7), approval confirmed by the user.
 
 ---
+
+## Construction: First Unit Chosen
+**Timestamp**: 2026-11-03T04:47:01Z
+**User Input**: "we'll start with U1, but i'll use new session for its construction, so just get the aidlc state ready for that"
+**AI Response**: "Recorded the choice in aidlc-state.md: Current Stage points to Construction, unit U1 wire-contract (#4), in a new session; the Construction section records the unit order and that U1 is not started; the session stop point lists what the next session runs in order (Construction Phase Initialization with the enabled extension rules and prd-gap-classification.md, Unit Initialization for U1, the L1 Domain Coverage Gate, then U1 Functional Design) and U1's inherited gaps (GAP-INT-003, GAP-INT-008). Construction Phase Initialization is deliberately not run in this session: its rule loading has to happen in the session that does the construction work."
+**Context**: pr-checkpoint.md Section 4.7, step 3: the user named the first unit. Construction deferred to a new session.
+
+---

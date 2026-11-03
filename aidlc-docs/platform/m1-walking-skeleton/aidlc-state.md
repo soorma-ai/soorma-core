@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: INCEPTION complete. **Inception PR gate APPROVED** (soorma-core#2 merged 2026-11-02, `d348c34`); Construction unlocked, awaiting the user's choice of first unit
+- **Current Stage**: INCEPTION complete. **Inception PR gate APPROVED** (soorma-core#2 merged 2026-11-02, `d348c34`); Construction unlocked. **Next: CONSTRUCTION, unit U1 `wire-contract` (#4)**, chosen by the user, to run in a new session
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -146,12 +146,19 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
 - [x] Inception PR gate (#2): **APPROVED** 2026-11-02T16:37:12Z; merged as `d348c34`. Step (a) of contract publication is done: the contract design is on `main`
 
 ### 🟢 CONSTRUCTION PHASE
-- [ ] Construction Phase Initialization: EXECUTE
+- [ ] Construction Phase Initialization: EXECUTE, at the start of the U1 session
+- **Unit order**: U1 `wire-contract` (#4) first, chosen by the user 2026-11-03T04:47:01Z (pr-checkpoint.md Section 4.7). The planned sequence U1 → U7 follows
+- **Current unit**: U1 `wire-contract`, not started. No `construction/` artifacts exist yet
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: Inception PR gate APPROVED. Waiting for the user to name the first unit
-(pr-checkpoint.md Section 4.7); then Construction Phase Initialization and Unit Initialization.
+**Session stop point**: Inception PR gate APPROVED; the user chose U1 `wire-contract` to start, in a new
+session. The next session, after session continuity, runs in order: Construction Phase Initialization
+(load the security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases and jira-tickets
+rules; load prd-gap-classification.md, since `## PRD Intake` exists); Unit Initialization for U1; the L1
+Domain Coverage Gate for U1 (PF @ `prd-platform-foundations-v1.3`, ID @ `prd-identity-v1.0`); then U1's
+Functional Design. U1's inherited gaps: GAP-INT-003 and GAP-INT-008 (work-arounds). The start prompt is in
+soorma-core#4, *How to Start Development*.
