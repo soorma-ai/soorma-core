@@ -593,3 +593,11 @@ Gate remains PENDING; waiting for the user to confirm #2 is approved."
 **Context**: pr-checkpoint.md Section 4.7, step 3: the user named the first unit. Construction deferred to a new session.
 
 ---
+
+## Tickets: User Stories on Sub-issues and Completion Table on #3
+**Timestamp**: 2026-11-03T05:06:37Z
+**User Input**: "Add a User stories line to each unit sub-issue (#4 to #10), from unit-of-work-story-map.md. It lists the stories this unit is primary for, the ones it contributes to, and the ones that become complete when it closes (a story is complete once the last of its units, in build order, is done). Add a table of stories that become complete after each unit to tracking issue #3. Change no other content, and log the edits in audit.md."
+**AI Response**: "Added a '**User stories**: Primary: …. Contributes to: …. Complete when this unit closes: …' line above **Linked Epic** on #4 to #10, from unit-of-work-story-map.md (stories separated by semicolons, since some titles contain commas). Completion is the latest unit, in build order U1 → U7, among each story's primary and contributing units: U1 none (contributes to all); U2 US-02; U3 none; U4 US-01, US-03, US-04, US-12; U5 US-05, US-06; U6 US-07; U7 US-08, US-09, US-10, US-11. Added a 'Stories complete after each unit' table (After | Issue | Stories that become complete) to #3, above the attribution footer. Checked each body before and after: lines added only, none removed or changed."
+**Context**: Tickets (jira-tickets extension, adapted to GitHub issues). Outward-facing edits requested by the user.
+
+---
