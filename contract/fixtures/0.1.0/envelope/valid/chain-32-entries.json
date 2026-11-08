@@ -1,0 +1,142 @@
+{
+  "envelopeVersion": 1,
+  "scope": {
+    "organization": "o1",
+    "project": "p1",
+    "environment": "e1"
+  },
+  "originMode": "autonomous",
+  "actorChain": [
+    {
+      "agent": "agent-0",
+      "instance": "host-0"
+    },
+    {
+      "agent": "agent-1",
+      "instance": "host-1"
+    },
+    {
+      "agent": "agent-2",
+      "instance": "host-2"
+    },
+    {
+      "agent": "agent-3",
+      "instance": "host-3"
+    },
+    {
+      "agent": "agent-4",
+      "instance": "host-4"
+    },
+    {
+      "agent": "agent-5",
+      "instance": "host-5"
+    },
+    {
+      "agent": "agent-6",
+      "instance": "host-6"
+    },
+    {
+      "agent": "agent-7",
+      "instance": "host-7"
+    },
+    {
+      "agent": "agent-8",
+      "instance": "host-8"
+    },
+    {
+      "agent": "agent-9",
+      "instance": "host-9"
+    },
+    {
+      "agent": "agent-10",
+      "instance": "host-10"
+    },
+    {
+      "agent": "agent-11",
+      "instance": "host-11"
+    },
+    {
+      "agent": "agent-12",
+      "instance": "host-12"
+    },
+    {
+      "agent": "agent-13",
+      "instance": "host-13"
+    },
+    {
+      "agent": "agent-14",
+      "instance": "host-14"
+    },
+    {
+      "agent": "agent-15",
+      "instance": "host-15"
+    },
+    {
+      "agent": "agent-16",
+      "instance": "host-16"
+    },
+    {
+      "agent": "agent-17",
+      "instance": "host-17"
+    },
+    {
+      "agent": "agent-18",
+      "instance": "host-18"
+    },
+    {
+      "agent": "agent-19",
+      "instance": "host-19"
+    },
+    {
+      "agent": "agent-20",
+      "instance": "host-20"
+    },
+    {
+      "agent": "agent-21",
+      "instance": "host-21"
+    },
+    {
+      "agent": "agent-22",
+      "instance": "host-22"
+    },
+    {
+      "agent": "agent-23",
+      "instance": "host-23"
+    },
+    {
+      "agent": "agent-24",
+      "instance": "host-24"
+    },
+    {
+      "agent": "agent-25",
+      "instance": "host-25"
+    },
+    {
+      "agent": "agent-26",
+      "instance": "host-26"
+    },
+    {
+      "agent": "agent-27",
+      "instance": "host-27"
+    },
+    {
+      "agent": "agent-28",
+      "instance": "host-28"
+    },
+    {
+      "agent": "agent-29",
+      "instance": "host-29"
+    },
+    {
+      "agent": "agent-30",
+      "instance": "host-30"
+    },
+    {
+      "agent": "agent-31",
+      "instance": "host-31"
+    }
+  ],
+  "traceContext": {
+    "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+  }
+}

@@ -7,11 +7,13 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "generate": "node scripts/generate-types.ts",
-    "check:generated": "node scripts/generate-types.ts --check"
+    "check:generated": "node scripts/generate-types.ts --check",
+    "check": "node scripts/checks/run.ts"
   },
   "devDependencies": {
     "ajv": "8.20.0",
     "openapi-typescript": "7.13.0",
+    "typescript": "6.0.3",
     "yaml": "2.9.1"
   }
 }

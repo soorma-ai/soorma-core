@@ -15,6 +15,7 @@
     "test": "vitest run",
     "generate": "pnpm --filter @soorma/contract run generate",
     "check:generated": "pnpm --filter @soorma/contract run check:generated",
+    "check:contract": "pnpm --filter @soorma/contract run check",
     "check:deps": "node tools/checks/run.ts register licence configuration",
     "check:workflows": "node tools/checks/run.ts workflows",
     "check:github": "node tools/checks/run.ts github-settings"

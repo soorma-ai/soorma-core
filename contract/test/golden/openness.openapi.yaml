@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# A fixed test schema holding every shape BR-LG-06 requires the generated types
+# to keep open (NFR-WC-05; D-CG-04). The golden-output test generates types from
+# it and compares them with openness.ts, byte for byte.
+openapi: 3.1.1
+info:
+  title: openness golden fixture
+  version: 0.0.0
+paths: {}
+components:
+  schemas:
+    OpenEnum:
+      description: (a) An open enumeration.
+      anyOf:
+        - enum: [first, second]
+        - type: string
+    OpenObject:
+      description: (b) An open object.
+      type: object
+      additionalProperties: true
+      required: [id]
+      properties:
+        id:
+          $ref: '#/components/schemas/ReceivedIdentifier'
+        mode:
+          $ref: '#/components/schemas/OpenEnum'
+    ReceivedIdentifier:
+      description: (c) A received identifier.
+      type: string
+      minLength: 1
+    ClosedDraft:
+      description: (d) A closed draft with a platform-stamped field forbidden by name.
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: string
+          maxLength: 32
+        stamped: false
+    ReceivedProblem:
+      description: A received object that requires nothing.
+      type: object
+      additionalProperties: true
+      properties:
+        code:
+          $ref: '#/components/schemas/OpenEnum'
+        status:
+          type: integer
