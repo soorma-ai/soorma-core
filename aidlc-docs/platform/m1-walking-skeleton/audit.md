@@ -1319,3 +1319,11 @@ Use Refs #5, #3. Give me the PR link and don't mark the gate approved."
 **Context**: CONSTRUCTION, U2 org-identity: amendment A5 revised; Construction Design PR gate PENDING on soorma-core#13.
 
 ---
+
+## PR Checkpoint: Construction Design PR Gate Approved (org-identity)
+**Timestamp**: 2026-11-08T22:27:46Z
+**User Input**: "Confirm PR Approved. soorma-core#13 is merged. Mark the Construction Design PR gate for org-identity approved, log it, merge origin/main back into dev, and start U2 Code Generation, Part 1 (the plan). Check the toolchain first, and keep the U1 plan's commit cadence: a commit per step group, and an unmerged PR to main at the end."
+**AI Response**: "Verified with gh: soorma-core#13 MERGED at 2026-11-08T22:26:42Z by gnulib, merge commit 27619c4; its checks passed (Build, check, and test; Dependency review; cla-assistant). Set ## PR Checkpoint State 'Construction Design PR Gate — org-identity' to APPROVED. Toolchain checked: Node v26.13.0, pnpm 12.18.0, matching the pins. Next: merge origin/main into dev and push; Code Generation Part 1 for U2, keeping U1's cadence (a commit per step group; an unmerged PR to main at the end)."
+**Context**: pr-checkpoint Construction Design PR gate, U2 org-identity: APPROVED (Section 5.8).
+
+---
