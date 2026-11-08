@@ -2,9 +2,10 @@
 
 The open-core substrate for governed agentic systems.
 
-> **Nothing is built yet.** This repository was reset on 10 September 2026 and
-> starts from an empty tree. Design precedes code here — see
-> [Background](#background).
+> **Early construction.** This repository was reset on 10 September 2026 and
+> started from an empty tree. Design precedes code here — see
+> [Background](#background). The first thing built is the wire contract; the
+> substrate's services follow.
 
 ## What this is
 
@@ -18,11 +19,41 @@ agentic systems. It has two parts:
   Identity, Access Policy, Observability, Eval, and Workflow.
 
 `soorma-core` is meant to be sufficient on its own for a developer or a small
-team working in a single environment. Governing *many people* doing that —
+team working in a single environment. Governing _many people_ doing that —
 approval routing, separation of duties, retention policy, multi-tenant
 operation — belongs to the commercial platform above it.
 [`CONTRIBUTING.md`](CONTRIBUTING.md) sets out where the line falls and the rules
 that decide it.
+
+## What is here
+
+| Path                                 | What it is                                                                                                                                                                                            | Licence      |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| [`contract/`](contract/)             | The wire contract: the envelope and `Delivery` schemas, the shared OpenAPI components, the written conventions, generated TypeScript types, and the compatibility fixtures. **Pre-release** (`0.y.z`) | Apache 2.0   |
+| [`tools/`](tools/)                   | Repository checks: the dependency register, licences, workspace configuration, and workflow integrity                                                                                                 | FSL-1.1-ALv2 |
+| [`DEPENDENCIES.md`](DEPENDENCIES.md) | Every dependency, and every exception to the dependency policy                                                                                                                                        | FSL-1.1-ALv2 |
+
+## Working on it
+
+The toolchain is pinned: **Node 26.13.0** (`.node-version`) and **pnpm 12.18.0**
+(`packageManager` in `package.json`). Install pnpm without Corepack.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm run build             # generate the contract types, then typecheck
+pnpm run lint
+pnpm run format:check
+pnpm test
+pnpm run check:generated   # the committed types match the schemas
+pnpm run check:contract    # contract rules, licences, meta-schema, compatibility
+pnpm run check:deps        # register, licences, workspace configuration, pnpm version
+pnpm run check:workflows   # SHA-pinned actions, read-only default permissions
+pnpm audit --audit-level moderate
+```
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of these
+on every push and pull request, keeps a CycloneDX SBOM of each build, and
+reviews dependency changes on pull requests.
 
 ## Licence
 
