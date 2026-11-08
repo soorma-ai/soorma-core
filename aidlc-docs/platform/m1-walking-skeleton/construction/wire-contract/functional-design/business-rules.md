@@ -6,6 +6,20 @@
 verbatim in `audit.md`)
 **Entities**: [domain-entities.md](domain-entities.md)
 
+**Amendments after approval** (recorded in `audit.md`, 2026-11-08, before the Construction
+Design PR gate):
+- **A1, `traceContext` openness.** The envelope's `traceContext` is **open**, and the
+  draft's is **closed**: two definitions (BR-TC-05; BR-ENV-05; BR-DR-06). Closing the
+  envelope's copy made every optional addition breaking, against PF FR-005 (a), BR-VER-05,
+  and I7
+- **A2, Problem is a received schema.** Its `type` and `instance` carry no pattern. The
+  `urn:soorma:` forms stay published conventions, and that soorma-core emits them is
+  verified by U3's perimeter tests (BR-ERR-08)
+- **A3, Problem requiredness.** Following RFC 9457, the received Problem schema **requires
+  no field**: a gateway's or proxy's problem usually carries `about:blank` with no `code` or
+  `instance`. soorma-core **always emits** `type`, `title`, `status`, `code`, and `instance`,
+  with the `urn:soorma:` forms: a published convention, verified by U3 (BR-ERR-08)
+
 U1 states these rules **in the contract**: in the schemas, and in `contract/conventions/`.
 The perimeter rules (who rejects what, and when) are **implemented** by the surface and
 mechanism units named in each rule. U1's own verification is that the schemas and
@@ -89,7 +103,7 @@ specification gap, and none is raised. **How** it verifies is the technology dec
 | BR-ENV-02 | `delegatingPrincipal` is required when `originMode` is `delegated`. It is absent when `originMode` is `autonomous` | PF §7b | U1 schema (conditional) |
 | BR-ENV-03 | `reBroadening`, when present, has at least one record. Each `hop` is a valid index into `actorChain`, and no `hop` appears twice | PF §7b, §8b | U1 schema (form); U3 (index validity) |
 | BR-ENV-04 | `actorChain` has 1 to **32** entries, most recent last. A chain that would exceed 32 is rejected, never truncated | PF FR-006; D-WC-05 | U1 schema; U3 `stamp` |
-| BR-ENV-05 | **Open to unknown fields at every level**: the envelope, `scope`, actor references, re-broadening records, and the delegating principal reference. A consumer preserves and forwards them | PF FR-005 a; PF §14 | U1 schema |
+| BR-ENV-05 | **Open to unknown fields at every level**: the envelope, `scope`, actor references, re-broadening records, the delegating principal reference, and `traceContext` (the envelope's definition; the draft's is closed, BR-DR-06; amendment A1). A consumer preserves and forwards them | PF FR-005 a; PF §14 | U1 schema |
 | BR-ENV-06 | **Enumerated values are open strings**. `originMode`'s known values are `autonomous` and `delegated`. An unknown value is not a schema error. Generated types carry the known values plus "any other string" | PF FR-005 b | U1 schema; type generation |
 | BR-ENV-07 | `envelopeVersion` is `1` throughout M1. A breaking envelope change requires a new envelope version and a supported transition (PF FR-004), which M1 does not build. So M1 makes no breaking envelope change | PF FR-004; D-WC-03 | U1 conventions |
 | BR-ENV-08 | Every envelope the perimeter stamps is sealed, and the seal is delivered beside it | D-WC-06 | U3 `stamp`; U7 delivery |
@@ -105,7 +119,7 @@ specification gap, and none is raised. **How** it verifies is the technology dec
 | BR-DR-03 | **Origin mode is never accepted from a draft**, including at an autonomous first hop. It is stamped from the registration's autonomy declaration (GAP-INT-007 work-around, soorma-prd#25). Accepting an asserted value later is additive | GAP-INT-007; M1-FR-01 | U1 schema; U3 |
 | BR-DR-04 | A draft that sets `envelopeVersion` is rejected with `stamped_field_set`. `clientContractVersion` is expected instead | PF §11 | U1 schema; U3 |
 | BR-DR-05 | `clientContractVersion` is required, and must be in the accepted set (BR-VER-03) | PF §7b, §14 | U1 schema; U3 |
-| BR-DR-06 | `traceContext` is required and must be well-formed (BR-TC) | PF §7b; M1-TECH-05 | U1 schema; U3 |
+| BR-DR-06 | `traceContext` is required and must be well-formed (BR-TC). **The draft's `traceContext` is closed**: `traceparent` and `tracestate` only. Any other field in it is rejected with `unknown_field` and a pointer (input strictness; BR-TC-05) | PF §7b; M1-TECH-05 | U1 schema; U3 |
 | BR-DR-07 | `inbound`, when present, holds exactly `envelope` and `seal`, both required. The wrapper is closed | D-WC-06, D-WC-11 | U1 schema |
 | BR-DR-08 | `inbound.envelope` is **open and carried as received**. Its unknown fields are preserved into the envelope the perimeter stamps for this hop | PF FR-005 a; PF §14 *Inbound context forwarding*; Q11 | U1 schema; U3 `stamp` |
 | BR-DR-09 | `inbound.envelope` is at most **16 KiB**, measured on its RFC 8785 (JCS) serialization, the form the seal covers. This is **the envelope bound**; BR-ENV-10 applies the same bound when stamping | SECURITY-05 | U1 conventions; U3 |
@@ -130,6 +144,7 @@ specification gap, and none is raised. **How** it verifies is the technology dec
 | BR-TC-02 | For version `00`, `traceparent` is exactly 55 characters. A higher version may carry further `-`-separated fields after the flags, as W3C allows | W3C forward compatibility |
 | BR-TC-03 | `tracestate` is optional: at most 512 characters, at most 32 list members, in W3C list-member syntax | W3C; SECURITY-05 |
 | BR-TC-04 | The platform validates form only. It never interprets the values, and emits no spans | PF §7b; T-3 |
+| BR-TC-05 | **Two definitions** (amendment A1), on BR-ID-11's principle: strict on what the platform accepts, tolerant of what it delivers. **In a draft**, `traceContext` is closed. **In an envelope**, it is open, like every other envelope object. W3C defines the `traceparent` and `tracestate` header strings, not this object, so the object is the contract's own and may gain optional fields compatibly (BR-VER-05). The stamped envelope takes `traceContext` from the draft (BR-FC-04), so in M1 it holds exactly what the draft's closed definition admits | PF FR-005 a; BR-VER-05; I7 |
 
 ## 6. Delivery Rules (BR-DL)
 
@@ -213,6 +228,7 @@ tolerates codes it does not know, and surface units may add codes.
 | BR-ERR-05 | No response carries a stack trace, internal path, framework or version detail, or datastore detail | SECURITY-09, 15 |
 | BR-ERR-06 | A 401 carries `WWW-Authenticate: Bearer`. A 429 and a 503 carry `Retry-After` | RFC 9110 |
 | BR-ERR-07 | **Check order**, so a refusal is deterministic: (1) body size; (2) credential presentation and kind; (3) verification and expiry; (4) environment (O4) and revocation (O3); (5) contract version; (6) draft schema, with stamped fields before unknown fields (O5; BR-DR-10); (7) forwarded context (O5, O6); (8) chain depth (O7); (9) origin (O12) and authority (O8, O9); (10) the size of the envelope to be stamped (BR-ENV-10). The size check comes last because the envelope's final form, including any re-broadening record, is known only after authority is evaluated. An unauthenticated surface starts at (5), with its abuse bound before verifying material. A request is refused with the first check it fails. *U3, U6, and U7 implement it; U2 and U4 for human credentials* | Defense in depth; no oracle before authentication |
+| BR-ERR-08 | **The Problem schema is a received schema** (amendments A2, A3). A client also receives problems a gateway or proxy emits, usually `about:blank` with no `code` or `instance`. So the schema **requires no field** (RFC 9457), `type` and `instance` are plain strings with no pattern, and a client accepts any value. **Emission requirements, published in the conventions**: every Problem soorma-core emits carries `type`, `title`, `status`, `code`, and `instance`; `type` is `urn:soorma:problem:{code}`; `instance` is `urn:soorma:request:{request id}`, equal to the response's `Soorma-Request-Id`. *Forward obligation, carried to U3* (soorma-core#6): the perimeter's tests verify each of these on every Problem soorma-core emits | BR-ID-11; RFC 9457 §3, §4.2.1 |
 
 ## 11. Identifier and Time Rules (BR-ID)
 

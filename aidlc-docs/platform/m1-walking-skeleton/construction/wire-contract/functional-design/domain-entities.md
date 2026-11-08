@@ -6,6 +6,10 @@
 D-WC-16), [business-logic-model.md](business-logic-model.md), [l1-coverage-matrix.md](l1-coverage-matrix.md),
 [invariant-coverage-matrix.md](invariant-coverage-matrix.md)
 
+**Amendments after approval** (2026-11-08; see business-rules.md): **A1**, the envelope's
+`traceContext` is open and the draft's closed; **A2**, the Problem's `type` and `instance`
+carry no pattern; **A3**, the received Problem schema requires no field.
+
 These are the entities of the **wire contract**: what travels between a client and the
 platform. They are not stored records. The platform's records (registrations, grants,
 credentials) belong to the surface units. Field names are camelCase (D-WC-01).
@@ -25,7 +29,8 @@ credentials) belong to the surface units. Field names are camelCase (D-WC-01).
 | Actor Reference | `envelope.schema.json` | Yes | The perimeter, per hop | Everyone |
 | Re-broadening Record | `envelope.schema.json` | Yes | The perimeter, when load-bearing | Everyone |
 | Delegating Principal Reference | `envelope.schema.json` | Yes | The perimeter. **Never in M1** | Everyone |
-| Trace Context | `envelope.schema.json` | No (fixed by W3C) | The client (asserted) | Observability; the trace |
+| Trace Context, in a draft | `envelope.schema.json` (the draft's definition) | **No**: input strictness | The client (asserted) | The perimeter |
+| Trace Context, in an envelope | `envelope.schema.json` (the envelope's definition) | **Yes** | The perimeter, from the draft | Observability; the trace |
 | Contract Version | `conventions/` | — | soorma-core, at a tag | Clients (pinned) |
 | Client Contract Version | Draft, or the `Soorma-Contract-Version` header | — | The client | The perimeter |
 | Problem | `conventions/` | Yes | The perimeter | Clients |
@@ -47,7 +52,7 @@ platform stamped, **not proof**, and it is never usable to act (PF §17).
 | `delegatingPrincipal` | Delegating Principal Reference | When `originMode` is `delegated` | Platform | PF §7b; ID §7b. Never stamped in M1 (A-5) |
 | `actorChain` | list of Actor Reference, 1 to 32, most recent last | Yes | Platform, appended per hop | PF FR-006; D-WC-05 |
 | `reBroadening` | list of Re-broadening Record, at least 1 | When re-broadening was load-bearing at some hop | Platform | PF §7b, §8b |
-| `traceContext` | Trace Context | Yes | Agent-asserted; validated for well-formedness only | PF §7b; M1-TECH-05 |
+| `traceContext` | Trace Context, the envelope's definition (open) | Yes | Agent-asserted; validated for well-formedness only | PF §7b; M1-TECH-05 |
 
 **Seven fields, exactly as PF states them.** No eighth field is added. The seal travels
 **beside** the envelope, never inside it (D-WC-06).
@@ -116,6 +121,13 @@ Distributed trace correlation, conforming to W3C Trace Context (M1-TECH-05).
 It is carried in the request **body**, as part of the draft. soorma-core validates its form
 only, and emits no spans (T-3).
 
+**Two definitions** (amendment A1; BR-TC-05). W3C defines the two header strings, not this
+object, so its openness is the contract's choice:
+- **In a draft**, it is **closed**: exactly `traceparent` and `tracestate`. An unknown field
+  is `unknown_field` (BR-DR-06)
+- **In an envelope**, it is **open**, like every other envelope object (BR-ENV-05), so an
+  optional field added later is compatible
+
 ## Draft
 
 What a client sends on an envelope-bearing call: publish and subscribe (D-WC-14). Its top
@@ -124,7 +136,7 @@ level is **closed** (D-WC-11).
 | Field | Type | Required |
 |---|---|---|
 | `clientContractVersion` | Contract Version string | Yes |
-| `traceContext` | Trace Context | Yes |
+| `traceContext` | Trace Context, the draft's definition (closed) | Yes |
 | `inbound` | Forwarded Context | No: present when the call is triggered by an inbound event |
 
 No platform-stamped field is admitted, `envelopeVersion` included (PF §11).
@@ -180,15 +192,21 @@ optional field, which is compatible.
 
 An error response, as RFC 9457 Problem Details (`application/problem+json`) (D-WC-09).
 
-| Field | Type | Required | Note |
-|---|---|---|---|
-| `type` | URI `urn:soorma:problem:{code}` | Yes | |
-| `title` | string | Yes | Generic. Never internal detail |
-| `status` | integer | Yes | The HTTP status |
-| `code` | open string | Yes | Stable and machine-readable. Clients tolerate codes they do not know |
-| `instance` | URI `urn:soorma:request:{request id}` | Yes | Correlates with `Soorma-Request-Id` |
-| `errors` | list of `{ pointer, detail }` | Validation errors only | `pointer` is a JSON Pointer into the request body |
-| `supportedVersions` | list of Contract Version | `unsupported_contract_version` only | |
+| Field | Type | Required in the schema | soorma-core always emits | Note |
+|---|---|---|---|---|
+| `type` | string, no pattern | No | Yes, as `urn:soorma:problem:{code}` | A client accepts any value, `about:blank` included. RFC 9457: absent means `about:blank` |
+| `title` | string | No | Yes | Generic. Never internal detail |
+| `status` | integer | No | Yes | The HTTP status |
+| `code` | open string | No | Yes | Stable and machine-readable. Clients tolerate codes they do not know, and problems with none |
+| `instance` | string, no pattern | No | Yes, as `urn:soorma:request:{request id}` | Equals the response's `Soorma-Request-Id` |
+| `errors` | list of `{ pointer, detail }` | No | On validation errors | `pointer` is a JSON Pointer into the request body |
+| `supportedVersions` | list of Contract Version | No | On `unsupported_contract_version` | |
+
+**A received schema** (amendments A2 and A3; BR-ERR-08). A client also receives problems that
+a gateway or proxy emits, usually `about:blank` with no `code` or `instance`. So, following
+RFC 9457, the schema **requires no field** and constrains no value's form, and the generated
+type makes every member optional. **What soorma-core emits is a published convention**: the
+five fields above, always, with the `urn:soorma:` forms. U3's perimeter tests verify it.
 
 ## Credential Presentation
 
