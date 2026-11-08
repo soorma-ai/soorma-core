@@ -1153,3 +1153,51 @@ Mark the derived breached-list file binary in .gitattributes at Code Generation.
 **Context**: CONSTRUCTION, U2 org-identity: NFR Requirements approved.
 
 ---
+
+## NFR Requirements Committed; NFR Design Plan Created (org-identity)
+**Timestamp**: 2026-11-08T20:32:12Z
+**User Input**: (the approval instruction above: "Commit the NFR artifacts on dev, push, and start NFR Design.")
+**AI Response**: "Committed 95b3d53 on dev (nfr-requirements/, aidlc-state.md, audit.md) and pushed. NFR Design started: loaded construction/nfr-design.md. Created construction/working/org-identity-nfr-design-plan.md: 6 plan steps; 4 questions, all technology, asked only where a real choice remains: Q1 the sign-in token's payload (JWT with explicit typing and RFC 8176 amr, or an in-house JWS payload); Q2 where the signing key, seed-encryption key, and counter secret come from and how they rotate (configuration, or generated and stored); Q3 how an environment's S2 authenticates to the internal interface (a signed short-lived JWS bound to method and path, mutual TLS, or a static secret); Q4 how admission stays atomic without a lock across hashing (reserve then settle, or lock across verification). Proposed without a question: D-ND-OI-01 to 13 (two listeners in one process; AES-256-GCM seed encryption bound to its row; server-generated request ids; one exception filter per listener; an injected Clock; the decoy verifier; the per-process hashing semaphore; the batched Failed Attempt writer; TOTP replay by conditional update; the pruning job under an advisory lock; pool limits; token verification at S1; a 30-second leeway obligation to U4). Awaiting answers."
+**Context**: CONSTRUCTION, U2 org-identity: NFR Design plan (Steps 1 to 4 of nfr-design.md).
+
+---
+
+## NFR Design: Answers Received (org-identity)
+**Timestamp**: 2026-11-08T20:51:26Z
+**User Input**: "here are the answers ...
+
+Q1: A
+Q2: A, plus three records:
+(1) a U4 obligation: environments refetch the verify keys on an unknown kid (rate-limited) and refresh on a schedule shorter than the rotation's restart interval, so no valid sign-in is refused during rotation;
+(2) rotating the counter secret remaps every slot, so all counters reset. Record that this briefly loosens the bound, so it is rotated only deliberately;
+(3) an old seed-encryption key stays in configuration while any ciphertext uses it. In M1, old keys are kept, and re-encryption is carried as a later obligation.
+Q3: A, with the token covering the request's content: the claims include the full target, query included, and a SHA-256 of the body, and the organization level checks both. Binding only method and path lets a captured principalExists token be replayed with other identifiers for 60 seconds.
+Q4: A. Each slot keeps its window as individual timestamped entries, so a success removes exactly its own reservation and never decrements another attempt's.
+
+Also, D-ND-OI-07: make the permit count configurable, defaulting to the lower of 2 × os.availableParallelism() and a configured memory budget divided by 64 MiB (default budget 512 MiB). 2 × CPUs alone is 32 permits (2 GiB) on a 16-thread host, and a container may report the host's CPU count."
+**Answers Recorded** (org-identity-nfr-design-plan.md):
+- Q1 — The sign-in token's payload: A (JWT with explicit typing soorma-si+jwt; iss, sub, sid, jti, iat, exp, auth_time, amr with RFC 8176 values; no aud; verifiers require all)
+- Q2 — Key sources and rotation: A (all from organization-level configuration; one signing key and a set of verify keys by RFC 7638 kid; JWKS to environments; rotation by configuration change and restart; seed keys by key id) — plus, verbatim: "(1) a U4 obligation: environments refetch the verify keys on an unknown kid (rate-limited) and refresh on a schedule shorter than the rotation's restart interval, so no valid sign-in is refused during rotation; (2) rotating the counter secret remaps every slot, so all counters reset. Record that this briefly loosens the bound, so it is rotated only deliberately; (3) an old seed-encryption key stays in configuration while any ciphertext uses it. In M1, old keys are kept, and re-encryption is carried as a later obligation."
+- Q3 — Internal caller authentication: A (signed short-lived JWS per request, Ed25519, per-environment caller key) — plus, verbatim: "with the token covering the request's content: the claims include the full target, query included, and a SHA-256 of the body, and the organization level checks both. Binding only method and path lets a captured principalExists token be replayed with other identifiers for 60 seconds."
+- Q4 — Atomic admission: A (reserve, then settle) — plus, verbatim: "Each slot keeps its window as individual timestamped entries, so a success removes exactly its own reservation and never decrements another attempt's."
+- D-ND-OI-07 revised, verbatim: "make the permit count configurable, defaulting to the lower of 2 × os.availableParallelism() and a configured memory budget divided by 64 MiB (default budget 512 MiB). 2 × CPUs alone is 32 permits (2 GiB) on a 16-thread host, and a container may report the host's CPU count."
+**AI Response**: "All four answered; none deferred. No contradiction: Q3's content binding and Q4's per-entry reservations each tighten the chosen option. D-ND-OI-07 revised in the plan (default 8 permits at a 512 MiB budget). Q2's record (1) becomes a U4 forward obligation, posted on soorma-core#7 when this stage is approved; (2) and (3) go into the patterns document. All technology. Generating nfr-design-patterns.md and logical-components.md."
+**Context**: CONSTRUCTION, U2 org-identity, NFR Design: answers recorded (Step 5 of nfr-design.md).
+
+---
+
+## NFR Design: Artifacts Generated; Approval Prompt (org-identity)
+**Timestamp**: 2026-11-08T20:53:07Z
+**User Input**: (none; continues from the answers)
+**AI Response**: "Generated construction/org-identity/nfr-design/: nfr-design-patterns.md (P-01 the sign-in token: soorma_si_ + JWS compact, typ soorma-si+jwt, alg Ed25519 only, kid, iss urn:soorma:org:{o}, sub, sid, jti, iat, exp, auth_time, amr with RFC 8176 pwd and otp, no aud, every claim required; P-02 key material from configuration with the three-step signing-key rotation and the user's records R-1 (U4 refetch on unknown kid, rate-limited, and a refresh schedule shorter than the rotation's restart interval), R-2 (rotating the counter secret resets every counter and briefly loosens the bound, so it is rotated only deliberately), R-3 (old seed keys kept while any ciphertext uses them; re-encryption a later obligation); P-03 AES-256-GCM seeds with associated data binding each ciphertext to its row; P-04 reserve then settle, with the window as individual timestamped entries so a success removes exactly its own reservation; P-05 Retry-After; P-06 signed internal requests binding htm, tgt (full target, query included) and bsh (SHA-256 of the body), 60-second lifetime, no replay cache because every internal operation is read-only and a captured token is good only for the identical call; P-07 two listeners in one process; P-08 request ids and errors; P-09 the hashing semaphore, permits configurable, default the lower of 2 x availableParallelism and a 512 MiB budget / 64 MiB (8 permits); P-10 the decoy; P-11 the Failed Attempt writer; P-12 single-use TOTP codes; P-13 atomic state changes; P-14 time; P-15 store access; P-16 retention; P-17 logging; U4 obligations F-1 to F-3) and logical-components.md (the S1 process, components by package, the org store's seven logical tables, configuration items, the internal interface's targets). Invariant matrix I3 implementation target updated to name P-06. Security: SECURITY-01 (at this stage), 03, 05, 08 to 13, 15 compliant; 14 not applicable in M1 by the user's decision; 02, 04, 06, 07 N/A at this stage. Invariants I1 to I10 covered, I11 N/A. No blocking finding. Next stage after approval: Infrastructure Design. Approval prompt presented."
+**Context**: CONSTRUCTION, U2 org-identity, NFR Design: Steps 6 and 7 of nfr-design.md; awaiting approval.
+
+---
+
+## NFR Design Approved (org-identity)
+**Timestamp**: 2026-11-08T21:00:25Z
+**User Input**: "Continue to Next Stage. NFR Design approved. Commit the NFR Design artifacts and the I3 matrix update on dev, push, post the U4 obligations F-1 to F-3 on #7, and start Infrastructure Design."
+**AI Response**: "NFR Design for U2 org-identity APPROVED. aidlc-state.md updated. Next: commit nfr-design/ and the invariant matrix's I3 update on dev, push, post F-1 to F-3 on soorma-core#7, start Infrastructure Design."
+**Context**: CONSTRUCTION, U2 org-identity: NFR Design approved.
+
+---
