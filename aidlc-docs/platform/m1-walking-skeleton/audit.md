@@ -836,3 +836,11 @@ Then commit, push dev, and open the PR to main. Give me the PR link, and don't m
 **Context**: Functional Design amendment A3 (U1 wire-contract), beside A1 and A2, at the Construction Design PR gate (PENDING).
 
 ---
+
+## PR Checkpoint: Construction Design PR Opened (wire-contract)
+**Timestamp**: 2026-11-08T05:15:14Z
+**User Input**: (the instruction logged with amendment A3: "Then commit, push dev, and open the PR to main. Give me the PR link, and don't mark the gate approved yet.")
+**AI Response**: "Committed the initiative root on dev as e913c9f ('feat: construction design complete for wire-contract (platform/m1-walking-skeleton)', Refs #4, #3) and pushed. Commented on soorma-core#6 (U3) with the BR-ERR-08 forward obligation: every Problem soorma-core emits carries type, title, status, code and instance; type is urn:soorma:problem:{code} with {code} equal to code; instance is urn:soorma:request:{request id}, equal to Soorma-Request-Id; permalinks pinned to e913c9f (https://github.com/soorma-ai/soorma-core/issues/6#issuecomment-6717621632). Opened soorma-core#11, dev to main, with the title and description from the instructions file (A1 to A3 in the 'everything received is open' bullet; Refs #4, #3): https://github.com/soorma-ai/soorma-core/pull/11. Recorded #11 in ## PR Checkpoint State. The gate stays PENDING, as the user instructed."
+**Context**: pr-checkpoint Construction Design PR gate, U1 wire-contract. PENDING on soorma-core#11.
+
+---

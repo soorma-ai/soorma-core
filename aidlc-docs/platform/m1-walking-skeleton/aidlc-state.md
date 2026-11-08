@@ -83,6 +83,7 @@
 
 ### Construction Design PR Gate — wire-contract
 - **Status**: PENDING
+- **PR**: **soorma-core#11** (`dev` → `main`), opened 2026-11-08 at the user's request
 - **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-08)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/wire-contract-design-pr-checkpoint-instructions.md
 - **Created**: 2026-11-08T05:02:21Z
@@ -160,8 +161,8 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] NFR Requirements: **APPROVED** 2026-11-08T04:34:32Z (`construction/wire-contract/nfr-requirements/`: nfr-requirements, tech-stack-decisions)
   - [x] NFR Design: **SKIPPED** (no runtime patterns in U1); Infrastructure Design: **SKIPPED** (nothing deployed; CI designed at NFR Requirements T-14). Per NFR plan Q11 A, recorded 2026-11-08T04:34:32Z
   - [x] QA construction enrichment: **COMPLETE** 2026-11-08 (`inception/test-cases/wire-contract/`: TC-WC-001 to 011 enriched in place, TC-WC-012 to 041 added; 41 cases). L1 and invariant matrices now cite TC IDs for every former *enrichment* placeholder
-  - [x] Functional Design amendments A1 (`traceContext` open in the envelope, closed in the draft), A2 (Problem `type` and `instance` carry no pattern) and A3 (the received Problem schema requires no field; soorma-core always emits five fields with the `urn:soorma:` forms), 2026-11-08. Forward obligation to U3 (soorma-core#6): BR-ERR-08
-  - [ ] Construction Design PR gate: **PENDING** (branch `dev`, PR to `main`); see `## PR Checkpoint State`
+  - [x] Functional Design amendments A1 (`traceContext` open in the envelope, closed in the draft), A2 (Problem `type` and `instance` carry no pattern) and A3 (the received Problem schema requires no field; soorma-core always emits five fields with the `urn:soorma:` forms), 2026-11-08. Forward obligation to U3 (soorma-core#6): BR-ERR-08, recorded on #6 (issuecomment-6717621632)
+  - [ ] Construction Design PR gate: **PENDING** on soorma-core#11 (`dev` → `main`); see `## PR Checkpoint State`
   - [ ] Code Generation
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
 - [ ] Build and Test: EXECUTE
@@ -170,7 +171,7 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
 - [ ] Operations: PLACEHOLDER
 
 **Session stop point**: U1 `wire-contract` Construction Design PR gate, PENDING: instructions
-written, waiting for the user to confirm the PR (`dev` to `main`) is approved. Then Code
+written, waiting for the user to confirm soorma-core#11 (`dev` to `main`) is approved. Then Code
 Generation for U1. A session resuming here re-runs Unit Initialization first. U1's inherited
 gaps: GAP-INT-003 and GAP-INT-008 (work-arounds). Forward obligation carried to U3: BR-ERR-08
 (the perimeter's tests verify the Problem `urn:soorma:` forms it emits).
