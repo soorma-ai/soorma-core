@@ -963,3 +963,126 @@ Record the answer under Q-CG-2 in the plan, log it in audit.md, finish Step 2, a
 **Context**: CONSTRUCTION, U1 wire-contract complete; tickets updated; dev synced with main.
 
 ---
+
+## Session Resumption: Start Construction for U2 org-identity
+**Timestamp**: 2026-11-08T18:39:49Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"org-identity\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed from aidlc-state.md (U1 wire-contract complete; next U2 org-identity, soorma-core#5). The user's intent selects 'continue where you left off', so the welcome-back choice was not asked. Re-intake check (session-continuity.md step 3): state is in the multi-PRD format; the brief pin is recorded; soorma-prd fetched, and backlog/m1-walking-skeleton.md is unchanged between the pin 0aad84a and origin/main; no PRD tag newer than prd-platform-foundations-v1.3 or prd-identity-v1.0 exists; every gap issue in the register is still open (soorma-prd#13, #24, #25, #27, #28). Re-intake not offered. PR Checkpoint State: no PENDING entry. Toolchain re-checked: Node v26.13.0, pnpm 12.18.0. soorma-core: branch dev, one commit ahead of origin/main (the U1 state commit 92238df). Loaded the Inception artifacts: requirements.md, personas.md, stories.md, the application-design set (application-design, components, component-methods, services, component-dependency, unit-of-work, unit-of-work-dependency, unit-of-work-story-map), the PRD coverage map, the U2 inception test specs (TC-OI-001 to 025), and U1's functional design and contract conventions. ID PRD read at prd-identity-v1.0 (sections 1 to 12, 15)."
+**Context**: CONSTRUCTION, session resumption; U2 org-identity requested.
+
+---
+
+## Construction Phase Initialization (session reload)
+**Timestamp**: 2026-11-08T18:39:49Z
+**User Input**: (none; required on resuming into Construction, session-continuity.md step 4)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted: GitHub issues on soorma-core)]. ## PRD Intake exists, so inception/prd-gap-classification.md is loaded and active for every construction stage. Invariants read from soorma-prd references/platform/invariants.md at prd-platform-foundations-v1.3 and prd-identity-v1.0: the text is identical at both tags, as recorded in Extension Configuration."
+**Context**: CONSTRUCTION, Construction Phase Initialization.
+
+---
+
+## Unit Initialization and L1 Gate: org-identity
+**Timestamp**: 2026-11-08T18:39:49Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted)] (unit: org-identity). L1 Domain Coverage Gate, initial assessment for U2: L1 sources are ID @ prd-identity-v1.0 (most authoritative for this unit) and PF @ prd-platform-foundations-v1.3. Applicable: ID §7a Human Principal, Human Authentication Material, Organization Sign-In; ID §6 (organization-keyed records, the composed identifier, verify-only material, authentication material never in an environment); ID FR-001, FR-004 (the organization half: ensureFirstAdmin), FR-006, FR-007, FR-008, FR-009, FR-011 (the sign-in and material half); ID §8a (authenticate; self-service); ID §8b (the organization sign-in column: O1 to O3, O9, O10); ID §10 failure modes and NFR profile; ID §7b compatibility policy and Recoverability (human actor); PF §6 (verify-only material); PF §12 and ID FR-027 (the identity-resolution seam, K and P half; external types absent). Non-applicable to U2, with reasons recorded in the matrix: Human Environment Credential (U4), grants and the first grant (U4), Delegation Credential (ID FR-019 out), Organization-Level Attribution (ID FR-018 out), Configured Identity Source and Grant Mapping (ID FR-024, FR-025 out). Result: covered 0, non-applicable 6, missing 0 at this point; every applicable row awaits Functional Design. No row is a PRD-sourced Missing, so no gap is raised."
+**Context**: CONSTRUCTION, U2 org-identity: Unit Initialization; L1 gate initial assessment.
+
+---
+
+## Functional Design: Plan Created (org-identity)
+**Timestamp**: 2026-11-08T18:41:38Z
+**User Input**: (none; continues the session-start instruction)
+**AI Response**: "Created construction/working/org-identity-functional-design-plan.md (git-ignored session artifact): 11 plan steps; proposed record and operation shapes; 12 questions, each classified technology under prd-gap-classification.md Step 1, with the classification stated in the file: Q1 where enrollment material sits in configuration (ID §6 keeps authentication material out of every environment); Q2 where P is enrolled (M1-TECH-07); Q3 what changeMaterial requires; Q4 the reach of the per-principal abuse bound; Q5 what a refusal discloses when P is required and not enrolled; Q6 whether the P authenticator is chosen now or at NFR Requirements; Q7 sign-in renewal; Q8 whether a material change ends live sign-ins; Q9 enrollment material expiry; Q10 the K policy beyond M1-NFR-09; Q11 how the principal is named in a request; Q12 how environments authenticate to the organization level's internal interface (I3). Proposed without a question: D-OI-01 to D-OI-11. Forward obligations proposed for U4 (#7): classifying whether ending a sign-in refuses environment credentials issued from it (ID FR-010, 'never outlives its sign-in'); building the internal-interface caller, the first grant, and O3 for the sign-in at issuance. Awaiting the user's answers."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: plan and questions (Steps 2 to 4 of functional-design.md).
+
+---
+
+## Functional Design: Answers Received (org-identity)
+**Timestamp**: 2026-11-08T18:51:04Z
+**User Input**: "here are the answers...
+
+Q1: A. Also: enrollment material in configuration applies only when the principal does not exist. For an existing principal, pending or active, it is ignored and never re-enrolls, so a redeploy can't act as a reset (ID FR-004, FR-007). Start-up logs that it was ignored, without the material.
+Q2: A
+Q3: A
+Q4: A. Also: the bound limits attempt rate and recovers with time (for example, a window or backoff). It never permanently locks a principal: M1 has one first Admin and no reset, so a lockout would let anyone who knows the identifier deny that Admin forever. State the counter store's size bound against unknown-identifier spraying as an NFR Requirements obligation. Value and shape are still NFR Requirements'.
+Q5: A. Also: list the contract changes in the design. authentication_failed and second_factor_enrollment_required are added to contract/conventions/errors.md with their status and disclosure, too_many_attempts's \"When\" includes changeMaterial, and contract/CHANGELOG.md classifies all three as compatible (open code set). Decide the status code for authentication_failed, given that U1's 401 implies WWW-Authenticate: Bearer.
+Q6: A
+Q7: A
+Q8: A
+Q9: A
+Q10: A. Also: carry a constraint to NFR Requirements. The K hashing algorithm must take the full normalized input (no silent truncation, as bcrypt does at 72 bytes), and the upper bound is checked on the NFKC-normalized value.
+Q11: A
+Q12: A"
+**Answers Recorded** (org-identity-functional-design-plan.md):
+- Q1 — Where enrollment material sits in configuration: A (one configuration describes the tenancy tree; each deployable reads its own part; enrollment material supplied to the organization level only, keyed by principal identifier; environments never receive it; start-up refused if a named first Admin is absent with no material) — plus, verbatim: "enrollment material in configuration applies only when the principal does not exist. For an existing principal, pending or active, it is ignored and never re-enrolls, so a redeploy can't act as a reset (ID FR-004, FR-007). Start-up logs that it was ignored, without the material."
+- Q2 — Where P is enrolled: A (only through changeMaterial, two steps, presenting K; never inside firstAuthenticate; where P is required, firstAuthenticate activates H and returns no sign-in)
+- Q3 — What changeMaterial requires: A (the current material only, K plus a P proof once P is enrolled; no sign-in; same abuse bound and non-disclosing refusal as sign-in)
+- Q4 — Reach of the abuse bound: A (one counter per principal shared by authenticate, firstAuthenticate, changeMaterial; unknown identifiers counted and refused the same way, without Failed Attempt records) — plus, verbatim: "the bound limits attempt rate and recovers with time (for example, a window or backoff). It never permanently locks a principal: M1 has one first Admin and no reset, so a lockout would let anyone who knows the identifier deny that Admin forever. State the counter store's size bound against unknown-identifier spraying as an NFR Requirements obligation. Value and shape are still NFR Requirements'."
+- Q5 — Disclosure when P is required and not enrolled: A (second_factor_enrollment_required only once K has verified; every other failure is authentication_failed) — plus, verbatim: "list the contract changes in the design. authentication_failed and second_factor_enrollment_required are added to contract/conventions/errors.md with their status and disclosure, too_many_attempts's \"When\" includes changeMaterial, and contract/CHANGELOG.md classifies all three as compatible (open code set). Decide the status code for authentication_failed, given that U1's 401 implies WWW-Authenticate: Bearer."
+- Q6 — P authenticator now or at NFR Requirements: A (Functional Design class-neutral; two-step enrollment; P proof discriminated by type; the one M1 type chosen at NFR Requirements)
+- Q7 — Sign-in renewal: A (same sign-in, later expiry, capped by an absolute maximum from authenticated-at; earlier tokens valid until their own expiry; ending refuses all; renewal refuses a sign-in whose classes no longer satisfy the P requirement)
+- Q8 — Does a material change end live sign-ins: A (yes; every live sign-in of that human ends; the change returns no sign-in)
+- Q9 — Enrollment material expiry: A (no expiry in M1; single use is the only limit)
+- Q10 — K policy: A (8 to 256 Unicode code points; no control characters; NFKC-normalized before the length check, hashing, and verification; no composition rules; breached-list check on every new K) — plus, verbatim: "carry a constraint to NFR Requirements. The K hashing algorithm must take the full normalized input (no silent truncation, as bcrypt does at 72 bytes), and the upper bound is checked on the NFKC-normalized value."
+- Q11 — How the principal is named in a request: A (always composed, {organization, principal}; another organization refused with the generic authentication_failed)
+- Q12 — Internal interface authentication: A (separate internal listener; every caller presents a configured per-environment credential, verify-only material included; mechanism at NFR Design)
+**AI Response**: "All 12 answered; none deferred. Contradiction and ambiguity check: none found. The additions to Q1, Q4, Q5, and Q10 each narrow the chosen option and conflict with no other answer. Q4's 'never permanently locks' is consistent with TC-OI-011, whose refusal 'even with the correct K' holds while the bound applies. Gap classification (prd-gap-classification.md Step 1): every answer stays technology; none narrows or widens ID @ prd-identity-v1.0. The status code Q5 asks for is decided in business-rules.md (D-OI-13). Plan steps 1 to 3 checked. Generating the Functional Design artifacts."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: answers recorded (Step 5 of functional-design.md).
+
+---
+
+## Functional Design: Artifacts Generated; Approval Prompt (org-identity)
+**Timestamp**: 2026-11-08T18:56:51Z
+**User Input**: (none; continues from the answers)
+**AI Response**: "Generated construction/org-identity/functional-design/: domain-entities.md (Human Principal, Human Authentication Material, Pending P Enrollment, Organization Sign-In, Failed Attempt, Attempt Counter, key material, Tenancy Configuration, Human Principal Reference; the wire shapes of the five S1 operations; the internal interface); business-rules.md (D-OI-01 to D-OI-25; BR-HP, BR-CFG, BR-FA, BR-K, BR-P, BR-SI, BR-MC, BR-AB, BR-RF, BR-INT, BR-SEAM, BR-REC; the contract changes; obligations carried to NFR Requirements, NFR Design, Infrastructure Design, and U4; misuse cases); business-logic-model.md (check order at S1; flows; state machines in Mermaid with text alternatives); l1-coverage-matrix.md (32 applicable rows Covered, 11 N/A with reasons, 0 Missing; the initial assessment's six N/A groups split into 11 rows); invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; the I8 packaging table against ID §12). Decided at generation: D-OI-13, the status code Q5 asked for: 403 for authentication_failed, second_factor_enrollment_required, and second_factor_not_confirmed, because RFC 9110 §15.5.2 requires a 401 to carry a challenge that applies to the target, U1's BR-ERR-06 makes it Bearer, and these operations accept no bearer credential. Two codes beyond Q5's two were needed and are listed with the contract changes: secret_rejected (400, a validation error with pointer and reason, after the presented material verified) and second_factor_not_confirmed (403). Also D-OI-23 (firstAuthenticate under the P requirement returns 200 with secondFactorEnrollmentRequired and no sign-in), D-OI-24 (no P removal in M1; replacement supported), D-OI-25 (a Pending P Enrollment is not a material record). Gap classification: none is specification. Mermaid checked: stateDiagram-v2 only, plain-text labels, text alternatives present. Security baseline at Functional Design: SECURITY-03, 05, 08, 09, 11, 12, 13, 15 compliant; SECURITY-01, 02, 04, 06, 07, 10, 14 N/A at this stage. Invariants: I1 to I10 compliant, I11 N/A. No blocking finding. Approval prompt presented: Request Changes, or Continue to Next Stage."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: Steps 6 and 7 of functional-design.md; awaiting approval.
+
+---
+
+## Functional Design: Changes Requested (org-identity)
+**Timestamp**: 2026-11-08T19:02:19Z
+**User Input**: "Request Changes to the Functional Design.
+
+Check order step 2 for firstAuthenticate, authenticate and changeMaterial: credential_refused is a 401 with WWW-Authenticate: Bearer, which D-OI-13 rules out on these operations. Refuse a presented Authorization or Soorma-Delegation header there with a 400 (malformed_request, naming the header in detail, since U1's pointer is body-only), and update the rules and the contract-change table if that changes U1's codes.
+Accepted residual: record that compromise of K, or K + P, is unrecoverable in M1 except by re-creating the deployment. Someone who has the material can replace K or enrol their own P, and reset (ID FR-007, FR-012) is out of M1. Add it to the misuse table and to the compliance summary as accepted, not blocking.
+Timing: writing a Failed Attempt only for an existing principal must not change response timing. Keep the write off the response path, or make the response time independent of it (BR-RF-03).
+Check order step 7: scope it to authenticate only. firstAuthenticate returns 200 (D-OI-23), and changeMaterial must stay usable for enrolling P (BR-P-03).
+U4 obligation: add that a signInStatus of unknown refuses issuance, and an unreachable internal interface refuses with unavailable (fail closed).
+Then show me the changes. Commit the Functional Design artifacts with the approval."
+**AI Response**: "Applying the five changes to the U2 Functional Design artifacts; the change to U1's credential conventions is recorded as U1 amendment A4. Will show the changes and commit the artifacts when the stage is approved."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: change request (review round 1).
+
+---
+
+## Functional Design: Changes Applied; Approval Prompt (org-identity, review round 1)
+**Timestamp**: 2026-11-08T19:04:18Z
+**User Input**: (the change request above)
+**AI Response**: "Applied the five changes. (1) Check order step 2 on firstAuthenticate, authenticate, changeMaterial: a presented Authorization or Soorma-Delegation header is malformed_request (400), with an errors[] entry naming the header (new optional ProblemFieldError.header), never its value; D-OI-26 and BR-RF-06; stated for every operation naming no security scheme, so U6's bootstrap inherits it. It narrows U1's BR-CR-02, BR-CR-06, the credential_refused and malformed_request rows, and BR-ERR-07's unauthenticated-surface sentence: recorded in U1's business-rules.md as amendment A4, within unreleased 0.1.0 (contract-v0.1.0 untagged; released, moving a case between codes would be breaking). Contract-change table gains three rows: malformed_request's When and detail widened (compatible), ProblemFieldError.header (compatible: optional field on an open object), and A4 (change within unreleased 0.1.0). D-OI-05 and L1-26 aligned. (2) Accepted residual recorded in business-rules.md §15 (misuse row and an Accepted Residual subsection): compromise of K, or K + P, is unrecoverable in M1 except by re-creating the deployment; whoever holds the material can replace K or enrol their own P; reset (ID FR-007, FR-012) is out of M1; BR-CFG-04 deliberately blocks redeploy-as-reset. Accepted, not blocking; carried to the Build and Test summary. (3) Timing: BR-RF-03 now has three parts: decoy verification with the same algorithm and parameters; the counter updated on the response path for every presented reference; the Failed Attempt record written off the response path (D-OI-27; BR-REC-03; business-logic-model step 6 and flow 2.2). Its durability and holding bound carried to NFR Requirements. (4) Check order step 7 scoped to authenticate only; BR-P-10: second_factor_enrollment_required only from authenticate and renewSignIn; firstAuthenticate reports it in its 200; changeMaterial never refuses on the requirement. (5) U4 obligation added: a signInStatus of unknown refuses issuance as ended does; an unreachable internal interface refuses with unavailable (503, Retry-After); fail closed. Security: SECURITY-03, 05, 08, 09, 11, 12, 13, 15 compliant (SECURITY-12 with the accepted residual, not blocking); 01, 02, 04, 06, 07, 10, 14 N/A at this stage. Invariants: I1 to I10 compliant, I11 N/A. No blocking finding. Approval prompt presented again. On approval: commit the Functional Design artifacts."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: review round 1 applied; awaiting approval.
+
+---
+
+## Functional Design Approved; U1 Amendment A4 Completed (org-identity)
+**Timestamp**: 2026-11-08T19:37:29Z
+**User Input**: "Continue to Next Stage. Functional Design approved, with one addition first: record in U2's business rules (Obligations Carried Forward) that U2's Code Generation applies amendment A4 to U1's published contract. That covers:
+
+contract/conventions/errors.md: the credential_refused and malformed_request rows and the check order
+ProblemFieldError.header in components.openapi.yaml, and the regenerated types
+U1's tests for TC-WC-024 and 025
+contract/CHANGELOG.md
+These go alongside the four new codes and org-gateway.openapi.yaml. Update the expected outcomes of TC-WC-024 and 025 in inception/test-cases/wire-contract/ to match A4, and log it as part of the amendment.
+
+Then commit the Functional Design artifacts, the U1 amendment and the test-spec update on dev, push, post the U4 obligations on #7, and start NFR Requirements."
+**AI Response**: "Functional Design for U2 org-identity APPROVED. Before committing: business-rules.md §14 gains 'To Code Generation (U2): the contract changes, including U1 amendment A4', listing errors.md (the credential_refused and malformed_request rows; the check order), credentials.md (Presentation; Reserved: delegation), components.openapi.yaml (ProblemFieldError.header, the errors description) with the regenerated types, U1's tests for TC-WC-024 (problem.test.ts) and TC-WC-025 (conventions.test.ts), and CHANGELOG.md, alongside the four new codes, the widened too_many_attempts, org-gateway.openapi.yaml, and the two principal-reference definitions. credentials.md is added because A4 changes its Presentation and Reserved: delegation sections; the TC-WC-026 test in conventions.test.ts is named as possibly affected, while TC-WC-026's expected outcome ('refused', with no code) is unchanged by A4. Amendment A4, test-spec part: inception/test-cases/wire-contract/test-specs-narrative.md TC-WC-024 gains step 10 (a problem with errors[{ header }] validates; ProblemFieldError has an optional header beside the optional pointer) and its expected outcome; TC-WC-025 gains step 7 (a header presented to an operation naming no security scheme) and its expected outcome (credential_refused scoped to operations naming a scheme; malformed_request widened, naming the header and never its value; the unauthenticated check order). Technical references cite A4. enrichment-delta.md (git-ignored) rows for TC-WC-024 and 025 note A4. test-case-index.md unchanged: titles, sources, scope, and priority are the same. aidlc-state.md: Functional Design checked APPROVED; NFR Requirements in progress. Next: commit on dev, push, post the U4 obligations on soorma-core#7, start NFR Requirements."
+**Context**: CONSTRUCTION, U2 org-identity: Functional Design approved; U1 amendment A4 (test specs) logged.
+
+---

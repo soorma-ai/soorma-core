@@ -634,13 +634,14 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 7. Validate a copy whose `instance` is a 200-character string containing a space, and inspect the Problem definition for any `pattern`
 8. Validate a gateway-style problem `{ "type": "about:blank", "title": "Bad Gateway", "status": 502 }`, and an empty object `{}`
 9. Validate copies of the first problem with `status: "400"` (a string), and with `code: 7` (a number)
+10. Validate a problem with `code: "malformed_request"`, `status: 400`, and `errors: [{ header: "Authorization", detail: "..." }]`, and inspect `ProblemFieldError` (amendment A4)
 
-**Expected outcome**: Steps 1 to 8 pass: no field is required, the code set is open, the object is open, and no Problem property carries a pattern. Both copies in step 9 fail: the schema still checks the type of each field present.
+**Expected outcome**: Steps 1 to 8 pass: no field is required, the code set is open, the object is open, and no Problem property carries a pattern. Both copies in step 9 fail: the schema still checks the type of each field present. Step 10 passes: `ProblemFieldError` has an optional `header` (a string naming a request header) beside the optional `pointer`, and neither is required.
 
 **Scope**: happy-path · **Priority**: Medium  
 **Source**: wire-contract / M1-FR-02 (D-WC-09)  
 **Construction artifacts**: `aidlc-docs/platform/m1-walking-skeleton/construction/wire-contract/code/`  
-**Technical references**: `construction/wire-contract/functional-design/domain-entities.md` (*Problem*), `construction/wire-contract/functional-design/business-rules.md` (D-WC-09, D-WC-16, BR-ERR-08; amendments A2, A3)
+**Technical references**: `construction/wire-contract/functional-design/domain-entities.md` (*Problem*), `construction/wire-contract/functional-design/business-rules.md` (D-WC-09, D-WC-16, BR-ERR-08; amendments A2, A3, A4)
 
 ---
 
@@ -660,13 +661,14 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 4. Find the check order
 5. Find the response headers on a 401, a 429, and a 503
 6. Find the forms of a Problem's `type` and `instance`
+7. Find what an operation that names no security scheme does with a presented `Authorization` or `Soorma-Delegation` header (amendment A4)
 
-**Expected outcome**: Every code is present with its status. Only validation codes carry a pointer; `invalid_inbound_context`, `credential_refused`, and `forbidden` carry no detail. `credential_expired` is returned only after the credential verifies with this environment's material. `too_many_attempts` does not reveal whether its subject exists. The check order is the ten steps of BR-ERR-07, with stamped fields before unknown fields, and the envelope size last. A 401 carries `WWW-Authenticate: Bearer`, and a 429 and a 503 carry `Retry-After`. The code set is stated to be open. No response carries a stack trace or internal detail. The conventions state that every Problem soorma-core emits carries `type`, `title`, `status`, `code`, and `instance`, with `type` as `urn:soorma:problem:{code}` and `instance` as `urn:soorma:request:{request id}` equal to `Soorma-Request-Id`; and that a client accepts any problem, `about:blank` with no `code` included (BR-ERR-08).
+**Expected outcome**: Every code is present with its status. Only validation codes carry a detail entry, a pointer or (for `malformed_request`) a header name; `invalid_inbound_context`, `credential_refused`, and `forbidden` carry no detail. `credential_refused` applies on operations that name a security scheme. `malformed_request` covers a body that is not JSON or fails the schema, **and** an `Authorization` or `Soorma-Delegation` header presented to an operation naming no security scheme, with an `errors[]` entry naming the header and never its value (A4). `credential_expired` is returned only after the credential verifies with this environment's material. `too_many_attempts` does not reveal whether its subject exists. The check order is the ten steps of BR-ERR-07, with stamped fields before unknown fields, and the envelope size last; an unauthenticated surface runs step 1, refuses either header with `malformed_request`, then continues from step 5. A 401 carries `WWW-Authenticate: Bearer`, and a 429 and a 503 carry `Retry-After`. The code set is stated to be open. No response carries a stack trace or internal detail. The conventions state that every Problem soorma-core emits carries `type`, `title`, `status`, `code`, and `instance`, with `type` as `urn:soorma:problem:{code}` and `instance` as `urn:soorma:request:{request id}` equal to `Soorma-Request-Id`; and that a client accepts any problem, `about:blank` with no `code` included (BR-ERR-08).
 
 **Scope**: happy-path · **Priority**: Medium  
 **Source**: wire-contract / M1-FR-02 (D-WC-10; BR-ERR)  
 **Construction artifacts**: `aidlc-docs/platform/m1-walking-skeleton/construction/wire-contract/code/`  
-**Technical references**: `construction/wire-contract/functional-design/business-rules.md` (Section 10), `construction/wire-contract/functional-design/business-logic-model.md` (§2)
+**Technical references**: `construction/wire-contract/functional-design/business-rules.md` (Section 10; amendment A4), `construction/wire-contract/functional-design/business-logic-model.md` (§2)
 
 ---
 
