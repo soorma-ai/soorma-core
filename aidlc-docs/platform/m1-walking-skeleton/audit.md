@@ -939,3 +939,11 @@ Record the answer under Q-CG-2 in the plan, log it in audit.md, finish Step 2, a
 **Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 2 complete (Steps 1 to 21).
 
 ---
+
+## Code Generation: Code Review PR Opened; First CI Run (wire-contract)
+**Timestamp**: 2026-11-08T07:30:25Z
+**User Input**: (the commit cadence in the plan request: "At completion, push dev and open a PR from dev to main for code review. Don't merge it; Build and Test uses it for the first CI run.")
+**AI Response**: "Pushed dev (275c7d6) and opened soorma-core#12, dev to main, for code review, not merged: https://github.com/soorma-ai/soorma-core/pull/12 (Refs #4, #3; D-CG-16, cla.yml, the meta-schema workaround, and the lightningcss exception called out for review). First CI run: every step up to the audit passed on Linux (frozen install, check:deps including the Linux licence tree, check:workflows, build, lint, format, check:generated, check:contract, tests, pnpm audit). Two failures: (1) the SBOM step: anchore/sbom-action does not create the output directory; fixed by a 'mkdir -p sbom' step, committed and pushed. (2) Dependency review: 'Dependency review is not supported on this repository. Please ensure that Dependency graph is enabled'. pnpm run check:github confirms: the dependency graph is not enabled (vulnerability alerts are). A repository setting, not code: left for the user to enable at https://github.com/soorma-ai/soorma-core/settings/security_analysis; not changed by the AI."
+**Context**: CONSTRUCTION, U1 wire-contract, Code Generation: PR #12 and its first CI run.
+
+---
