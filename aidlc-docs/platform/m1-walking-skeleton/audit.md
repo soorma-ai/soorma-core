@@ -732,3 +732,63 @@ Then commit the Functional Design on dev and present the completion message agai
 **Context**: Functional Design, U1 wire-contract, Step 9. Approved; next stage NFR Requirements.
 
 ---
+
+## NFR Requirements: Plan and Questions Created (wire-contract)
+**Timestamp**: 2026-11-08T02:39:07Z
+**User Input**: (none; continuing from the approval at 2026-11-08T02:35:51Z)
+**AI Response**: "Pushed dev (bd9355d). Loaded construction/nfr-requirements.md. Step 1.5 does not apply: U1 has no face and cites no PRD NFR profile. Checked current versions on the npm registry and nodejs.org (Node 26.13.0 LTS active; pnpm 12.18.0; TypeScript 7.0.2 native and 6.0.3; NestJS 12.4.0, published as ESM; Ajv 8.20.0; openapi-typescript 7.13.0; Vitest 5.1.0; ESLint 10.14.0; typescript-eslint 8.72.1). Recorded ESM as settled by fact, since NestJS 12 is ESM. Created construction/working/wire-contract-nfr-requirements-plan.md (git-ignored) with 13 questions: Node line, package manager, TypeScript compiler (TS 7 has no JavaScript API for typescript-eslint), test framework, schema validator, type generator, contract-rule checks, lint and format, scanning and SBOM, release cooldown, CI placement and which design stages run, compatibility testing, and dependency admission."
+**Context**: NFR Requirements, U1 wire-contract, Steps 1 to 4. Awaiting answers.
+
+---
+
+## NFR Requirements: Answers Received (wire-contract)
+**Timestamp**: 2026-11-08T02:45:34Z
+**User Input**: "here are the answers...
+
+Q1: A
+Q2: A, except Corepack: Node 25+ no longer bundles it. Pin pnpm with the packageManager field, enforced by pnpm itself locally, and install it in CI with pnpm/action-setup pinned by SHA.
+Q3: A
+Q4: A
+Q5: A. Also decide how date-time and any other format is checked under strict mode: ajv-formats (in the register) or in-schema patterns.
+Q6: A, on condition that the generated types satisfy BR-LG-06: open enums as known values plus any string (e.g. (string & {})), open objects with an index signature, and received identifiers as plain strings. Prove it with a golden-output test. If openapi-typescript can't do it, record the post-processing step, or fall back to C for the shared schemas.
+Q7: A, validating against a copy of the official OpenAPI 3.1 schema committed to the repository at a pinned version (no remote fetch, SECURITY-13).
+Q8: A
+Q9: A
+Q10: A
+Q11: A
+Q12: A
+Q13: A, with the scope stated: direct and runtime dependencies are checked against the strict allowlist. Development-only transitive dependencies may also use BlueOak-1.0.0, Python-2.0, CC0-1.0 and CC-BY-4.0. Anything else needs a recorded exception."
+**Answers Recorded** (wire-contract-nfr-requirements-plan.md; answered in chat and copied into the file):
+- Q1 — Node.js line: A — Node 26 LTS
+- Q2 — Package manager: A — pnpm 12 workspaces, except Corepack: X-qualified — "Node 25+ no longer bundles it. Pin pnpm with the packageManager field, enforced by pnpm itself locally, and install it in CI with pnpm/action-setup pinned by SHA."
+- Q3 — TypeScript compiler: A — TypeScript 6.0.x
+- Q4 — Test framework: A — Vitest 5
+- Q5 — Schema validator: A — Ajv 8 (2020-12, compiled, strict), plus "decide how date-time and any other format is checked under strict mode: ajv-formats (in the register) or in-schema patterns."
+- Q6 — Type generation: A — openapi-typescript alone, conditional: "open enums as known values plus any string (e.g. (string & {})), open objects with an index signature, and received identifiers as plain strings. Prove it with a golden-output test. If openapi-typescript can't do it, record the post-processing step, or fall back to C for the shared schemas."
+- Q7 — Contract-rule checks: A — in-house tests, "validating against a copy of the official OpenAPI 3.1 schema committed to the repository at a pinned version (no remote fetch, SECURITY-13)."
+- Q8 — Lint and format: A — ESLint 10, typescript-eslint 8, Prettier
+- Q9 — Scanning and SBOM: A — pnpm audit (moderate+), dependency-review action, Dependabot alerts, CycloneDX SBOM by Syft (pinned)
+- Q10 — Release cooldown: A — 7 days, exceptions recorded
+- Q11 — CI and stages: A — CI designed here, generated at U1 Code Generation; NFR Design and Infrastructure Design skipped for U1
+- Q12 — Compatibility testing: A — versioned fixture corpus, CHANGELOG classification; automated diff once a second version exists
+- Q13 — Dependency admission: A, scoped — "direct and runtime dependencies are checked against the strict allowlist. Development-only transitive dependencies may also use BlueOak-1.0.0, Python-2.0, CC0-1.0 and CC-BY-4.0. Anything else needs a recorded exception."
+**AI Response**: "No contradictions. Two items need AI-DLC to act before writing the artifacts: Q5's format decision, and Q6's condition. Checking openapi-typescript's behaviour on the open-enum, open-object, and identifier cases in an isolated scratchpad before deciding."
+**Context**: NFR Requirements, U1 wire-contract, Step 5.
+
+---
+
+## NFR Requirements: Probe, Artifacts Generated, Approval Prompt (wire-contract)
+**Timestamp**: 2026-11-08T02:48:42Z
+**User Input**: (none)
+**AI Response**: "Correction: the previous entry's timestamp was first written as 2026-11-08T03:05:00Z, which was not taken from the date command; it was corrected in place to 2026-11-08T02:45:34Z, the real time read just after it was written. Probe (isolated scratchpad, install scripts disabled): openapi-typescript 7.13.0 declares peer typescript ^5.x, and npm refused to resolve it with TypeScript 6.0.3 without an override. With the override, generation worked and its output typechecked. Default output met three BR-LG-06 properties (index signatures, plain-string identifiers, stamped draft fields as ?: never) but collapsed the open enum to string. A transform hook in the generator script emitted known values plus (string & {}), and a strict type-level fixture passed. typescript-eslint 8.72.1 accepts typescript <6.1.0, so no other peer conflict. Decided Q5's open point: in-schema patterns, no format keyword, no ajv-formats (format is annotation-only by default in 2020-12). Added: patterns restricted to the RE2-compatible linear-time subset, with rules a pattern cannot express (traceparent ff, all-zero ids, calendar validity) checked in code by the receiving unit. Generated construction/wire-contract/nfr-requirements/nfr-requirements.md (NFR-WC-01 to 23; security and invariant compliance) and tech-stack-decisions.md (T-01 to T-16; the two recorded T-07 conditions: transform hook with golden test and fallback to C, and the peer-range exception; deferred selections; local environment note; NFR Design and Infrastructure Design to be skipped). Security: no blocking findings. Invariants: no blocking findings. Presented the NFR Requirements completion message with the 2-option prompt."
+**Context**: NFR Requirements, U1 wire-contract, Steps 5 to 7. Awaiting explicit approval.
+
+---
+
+## NFR Requirements: Approval (wire-contract)
+**Timestamp**: 2026-11-08T04:34:32Z
+**User Input**: "Continue to Next Stage. NFR Requirements approved. Commit and push the NFR artifacts on dev, then run the QA construction enrichment for U1."
+**AI Response**: "NFR Requirements for U1 wire-contract approved. Recorded NFR Design and Infrastructure Design as SKIPPED for U1 (NFR plan Q11 A: no runtime patterns; nothing deployed; CI designed at T-14). Committing the NFR artifacts, aidlc-state.md and audit.md on dev and pushing, then starting QA construction enrichment for U1."
+**Context**: NFR Requirements, U1 wire-contract, Step 9. Approved. NFR Design: SKIP. Infrastructure Design: SKIP.
+
+---
