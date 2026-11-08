@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION, unit U1 `wire-contract` (#4): **Construction Design PR gate**, PENDING the user's confirmation that the PR is approved (2026-11-08). Functional Design amended (A1, A2, A3) before the gate. QA construction enrichment complete. NFR Requirements approved 2026-11-08T04:34:32Z; NFR Design and Infrastructure Design skipped. Functional Design approved 2026-11-08T02:35:51Z. Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
+- **Current Stage**: CONSTRUCTION, unit U1 `wire-contract` (#4): **Code Generation, Part 1 (planning)**: plan written, AWAITING APPROVAL (`construction/working/wire-contract-code-generation-plan.md`, 21 steps). Toolchain verified 2026-11-08T06:24:45Z (Node v26.13.0, pnpm 12.18.0); the earlier block was a stale session PATH. Construction Design PR gate APPROVED 2026-11-08T06:18:09Z (soorma-core#11 merged 2026-11-08T05:17:11Z, `15c475d`). Functional Design amended (A1, A2, A3) before the gate. QA construction enrichment complete. NFR Requirements approved 2026-11-08T04:34:32Z; NFR Design and Infrastructure Design skipped. Functional Design approved 2026-11-08T02:35:51Z. Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -82,12 +82,12 @@
 - **Approved**: 2026-11-02T16:37:12Z (user confirmed; #2 merged to `main` at 2026-11-02T16:36:27Z, merge commit `d348c34`)
 
 ### Construction Design PR Gate — wire-contract
-- **Status**: PENDING
+- **Status**: APPROVED
 - **PR**: **soorma-core#11** (`dev` → `main`), opened 2026-11-08 at the user's request
 - **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-08)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/wire-contract-design-pr-checkpoint-instructions.md
 - **Created**: 2026-11-08T05:02:21Z
-- **Approved**: —
+- **Approved**: 2026-11-08T06:18:09Z (user confirmed; #11 merged to `main` at 2026-11-08T05:17:11Z, merge commit `15c475d`)
 
 ## PRD Specification Gaps
 
@@ -162,16 +162,17 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] NFR Design: **SKIPPED** (no runtime patterns in U1); Infrastructure Design: **SKIPPED** (nothing deployed; CI designed at NFR Requirements T-14). Per NFR plan Q11 A, recorded 2026-11-08T04:34:32Z
   - [x] QA construction enrichment: **COMPLETE** 2026-11-08 (`inception/test-cases/wire-contract/`: TC-WC-001 to 011 enriched in place, TC-WC-012 to 041 added; 41 cases). L1 and invariant matrices now cite TC IDs for every former *enrichment* placeholder
   - [x] Functional Design amendments A1 (`traceContext` open in the envelope, closed in the draft), A2 (Problem `type` and `instance` carry no pattern) and A3 (the received Problem schema requires no field; soorma-core always emits five fields with the `urn:soorma:` forms), 2026-11-08. Forward obligation to U3 (soorma-core#6): BR-ERR-08, recorded on #6 (issuecomment-6717621632)
-  - [ ] Construction Design PR gate: **PENDING** on soorma-core#11 (`dev` → `main`); see `## PR Checkpoint State`
-  - [ ] Code Generation
+  - [x] Construction Design PR gate: **APPROVED** 2026-11-08T06:18:09Z; soorma-core#11 merged as `15c475d`, and `origin/main` merged back into `dev`
+  - [ ] Code Generation: Part 1 (plan) written, **AWAITING APPROVAL** (`construction/working/wire-contract-code-generation-plan.md`: 21 steps, decisions D-CG-01 to 12). Unit Initialization and the L1 gate re-run 2026-11-08 (0 Missing). The earlier toolchain block (06:18:09Z) was a stale session PATH; verified Node v26.13.0 and pnpm 12.18.0 at 06:24:45Z
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: U1 `wire-contract` Construction Design PR gate, PENDING: instructions
-written, waiting for the user to confirm soorma-core#11 (`dev` to `main`) is approved. Then Code
-Generation for U1. A session resuming here re-runs Unit Initialization first. U1's inherited
-gaps: GAP-INT-003 and GAP-INT-008 (work-arounds). Forward obligation carried to U3: BR-ERR-08
-(the perimeter's tests verify the Problem `urn:soorma:` forms it emits).
+**Session stop point**: U1 `wire-contract` Code Generation, Part 1: the plan
+(`construction/working/wire-contract-code-generation-plan.md`, git-ignored) is waiting for the
+user's approval. Part 2 starts only after it. A session resuming here re-runs Unit
+Initialization and the L1 gate, and re-checks `node --version` (26.13.0) and `pnpm --version`
+(12.18.0). U1's inherited gaps: GAP-INT-003 and GAP-INT-008 (work-arounds). Forward obligation
+carried to U3: BR-ERR-08 (the perimeter's tests verify the Problem `urn:soorma:` forms it emits).

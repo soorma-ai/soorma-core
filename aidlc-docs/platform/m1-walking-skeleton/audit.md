@@ -844,3 +844,52 @@ Then commit, push dev, and open the PR to main. Give me the PR link, and don't m
 **Context**: pr-checkpoint Construction Design PR gate, U1 wire-contract. PENDING on soorma-core#11.
 
 ---
+
+## PR Checkpoint: Construction Design PR Gate Approved (wire-contract)
+**Timestamp**: 2026-11-08T06:18:09Z
+**User Input**: "Confirm PR Approved. soorma-core#11 is merged. Mark the Construction Design PR gate for wire-contract approved, log it, merge origin/main back into dev as after #2, then start U1 Code Generation, Part 1 (the plan). Before writing the plan, check the local toolchain (node --version, pnpm --version) against Node 26 LTS and pnpm 12, and stop if either doesn't match."
+**AI Response**: "Verified with gh: soorma-core#11 MERGED at 2026-11-08T05:17:11Z by gnulib, merge commit 15c475d. Set ## PR Checkpoint State 'Construction Design PR Gate — wire-contract' to APPROVED (Approved: 2026-11-08T06:18:09Z) and checked the gate in the U1 checklist. Code Generation for U1 is unblocked by the gate."
+**Context**: pr-checkpoint Construction Design PR gate, U1 wire-contract: APPROVED.
+
+---
+
+## Merge-back and Code Generation Toolchain Check (wire-contract)
+**Timestamp**: 2026-11-08T06:18:38Z
+**User Input**: (the instruction in the entry above)
+**AI Response**: "Fetched origin and merged origin/main into dev. It fast-forwarded dev from b12b472 to 15c475d (the #11 merge commit), so no merge commit was created; after #2 one was, because main then carried a commit dev lacked (82b4b33). Code Generation, Part 1: checked the toolchain before writing the plan. node --version: v24.0.1 (required: Node 26 LTS, NFR-WC-19, T-01). pnpm --version: command not found (required: pnpm 12, T-02). Both mismatch, so I stopped as instructed: no plan written, and Unit Initialization for Code Generation not re-run. Observed, not acted on: nvm has v26.13.0 installed but it is not the active version; corepack 0.32.0 is present (T-02 installs pnpm without Corepack). State: Code Generation BLOCKED on the toolchain; the session stop point updated."
+**Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 1: blocked before planning on the local toolchain.
+
+---
+
+## Session Resumption: Toolchain Correction, Unit Initialization, and L1 Gate (wire-contract)
+**Timestamp**: 2026-11-08T06:28:41Z
+**User Input**: "hmm, i have both installed. most likely current session needs to be refreshed to pick latest path etc. should i just restart vscode?" (answered: yes, quit fully; a fresh login shell found both), then "lets resume"
+**AI Response**: "Correction to the entry 'Merge-back and Code Generation Toolchain Check': the block was caused by the session's stale PATH (inherited when VS Code started), not by the machine. A fresh login shell resolved node v26.13.0 (nvm default) and pnpm 12.18.0 (~/Library/pnpm/bin). After the VS Code restart, this session reports node --version v26.13.0 and pnpm --version 12.18.0: both match T-01 (Node 26 LTS) and T-02 (pnpm 12). Code Generation is unblocked. Re-intake check (session-continuity.md item 3): the slice brief is unchanged since its pin 0aad84a (no diff to origin/main); no new PRD tags beyond prd-platform-foundations-v1.3 and prd-identity-v1.0; the gap issues closed (soorma-prd#12, #14, #15) all closed before run 2; #13, #24, #25, #27, #28 remain open. No re-intake trigger. Construction Phase Initialization and Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted: GitHub issues)] (unit: wire-contract); prd-gap-classification.md loaded and active. L1 Domain Coverage Gate (wire-contract): l1-coverage-matrix.md has 32 applicable rows, all Covered with implementation and verification targets, 6 source groups N/A with reasons, 0 Missing; invariant-coverage-matrix.md: I1 to I10 Covered, I11 N/A, 0 Missing. Result: covered; nothing blocks Code Generation planning."
+**Context**: CONSTRUCTION, U1 wire-contract: session resumed; Unit Initialization; L1 gate passed; Code Generation Part 1 starts.
+
+---
+
+## Code Generation Part 1: Plan Approval Prompt (wire-contract)
+**Timestamp**: 2026-11-08T06:30:32Z
+**User Input**: (none; prompt logged before asking, code-generation.md Step 6)
+**AI Response**: "Wrote the U1 code generation plan at construction/working/wire-contract-code-generation-plan.md (git-ignored; this entry is the durable record). 21 steps: (1) workspace and toolchain setup; (2) development dependencies, exact, under the 7-day cooldown; (3) TypeScript, ESLint, Prettier configuration; (4) contract/ skeleton and licensing (contract/LICENSE Apache 2.0, REUSE.toml); (5) envelope.schema.json (Envelope, Draft, Inbound, two traceContext definitions); (6) delivery.schema.json; (7) conventions/components.openapi.yaml (Problem with no required field, identifier definitions, headers, three security schemes); (8) written conventions; (9) type generation with the transform hook and the drift check; (10) contract checks as pure functions; (11) the pinned OpenAPI 3.1 schema with SHA-256; (12) fixture corpus 0.1.0, compatibility test, CHANGELOG.md; (13) Vitest tests mapped to TC-WC-001 to 037; (14) golden output and the type-level fixture; (15) repository checks in tools/ (register, licence, configuration, workflows); (16) DEPENDENCIES.md; (17) CI workflow ci.yml, and cla.yml pinned by SHA; (18) contract and root README; (19) local smoke run; (20) code summary and L1 and invariant matrix updates; (21) progress. Decisions taken in the plan, approved with it: D-CG-01 request-side bounds (traceparent 512, clientContractVersion 32 with a SemVer core pattern, inbound.seal 1024); D-CG-02 delegatingPrincipal required when delegated, forbidden when autonomous, unconstrained for an unknown mode; D-CG-03 SPDX via $comment in JSON and REUSE.toml for fixtures and the meta-schema; D-CG-04 golden test on a fixed test schema, drift check on contract/generated; D-CG-05 a quantifier rule added to the pattern check so linearity holds in V8's backtracking engine, noted for U3; D-CG-06 tracestate's 32-member limit and member syntax checked in code; D-CG-07 cla.yml action pinned by SHA, write permissions kept with a reason; D-CG-08 repository checks in tools/ under the root FSL licence; D-CG-09 TypeScript run directly on Node 26, no tsx; D-CG-10 build in U1 is generation plus typecheck; D-CG-11 no packages/ in U1, TC-WC-011 step 2 reads the root LICENSE; D-CG-12 Dependabot alerts and the dependency graph are repository settings, checked at Build and Test. Stop conditions: a dependency needing a lifecycle script, a licence outside the allowlist, a pnpm 12 setting name that does not exist, the transform hook failing. L1: no applicable row Missing. Asked the user to approve the plan."
+**Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 1, Step 6: approval prompt.
+
+---
+
+## Code Generation Part 1: Request Changes to the Plan (wire-contract)
+**Timestamp**: 2026-11-08T06:39:22Z
+**User Input**: "Request Changes to the Code Generation plan. First commit the state and audit changes and push dev. Then revise the plan:
+
+Step 12, compatibility rule. An old valid fixture that now fails is a breaking change and must be recorded as breaking. An old invalid fixture that now passes is a widening (compatible under BR-VER-05) and must be recorded as a compatible change. The test fails on either outcome unless CHANGELOG.md classifies it. Update TC-WC-030/031's expected outcomes to match.
+TC-WC-041: add an automated test: a fixture file with a floating promise, linted through ESLint's Node API, expecting @typescript-eslint/no-floating-promises. Exclude the fixture from the normal lint run.
+Step 11: state that the Ajv instance validating OpenAPI documents against the pinned third-party meta-schema runs non-strict (strict: false, validateFormats: false), with the reason recorded. The contract's own instance stays strict.
+Stop conditions: add one. If the generated types fail the type-level fixture or the golden test for any reason (for example, false schemas not becoming never), stop and ask me. Never hand-edit the generated output or add post-processing beyond the recorded transform hook.
+D-CG-12: the reason is wrong, because dependabot.yml supports cooldown. Check whether Dependabot supports pnpm 12 lockfiles and decide on that basis. Make the Build and Test settings check automated with gh api (vulnerability alerts, dependency graph), not manual.
+Engines: keep .node-version at exactly 26.13.0, and set engines.node to ^26.13.0. The configuration check verifies they agree.
+Commit cadence: commit on dev at the end of each step group (1–3, 4–8, 9–14, 15–17, 18–21). At completion, push dev and open a PR from dev to main for code review. Don't merge it; Build and Test uses it for the first CI run.
+Show me the revised plan."
+**AI Response**: "Committing the state and audit changes on dev and pushing; then revising the plan (Step 12, TC-WC-041, Step 11, stop conditions, D-CG-12 after checking Dependabot's pnpm support, engines, commit cadence) and updating TC-WC-030, 031, and 041."
+**Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 1: changes requested to the plan.
+
+---
