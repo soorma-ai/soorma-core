@@ -71,8 +71,11 @@ Design's (plan Q4 note).
 ### P2 `envelope`
 | Method | Inputs | Output | Purpose |
 |---|---|---|---|
-| `validateDraft` | draft | valid draft, or Reject(field) | Rejects any platform-stamped field, **origin mode included** (GAP-INT-007); trace context well-formed (W3C); client contract version present; unknown fields kept |
-| `stamp` | valid draft; checked context; origin; chain; re-broadening hop (if any) | `Envelope` | Writes the six stamped fields; appends the instance to the chain; enforces `maxChainDepth` |
+| `validateDraft` | draft | valid draft, or Reject(field) | **The draft's top level is closed**: any field the contract does not define is rejected, and so is every platform-stamped field, **origin mode included** (GAP-INT-007). Trace context must be well-formed (W3C), and the client contract version must be present and accepted. **`inbound` stays open**: the forwarded envelope is carried as received, its seal is verified for this environment (a failure is rejected under O5), and its unknown fields are preserved into the stamped envelope (PF FR-005(a)) |
+| `stamp` | valid draft; checked context; origin; chain; re-broadening hop (if any) | `Envelope` and its seal | Writes the six stamped fields; appends the instance to the chain; enforces `maxChainDepth`; seals the envelope with this environment's material |
+
+*Corrected at U1 Functional Design (2026-11-08, plan Q6 and Q11): the draft is closed only at its
+top level, and envelopes are sealed. See `construction/wire-contract/functional-design/business-rules.md`.*
 
 ### P3 `authority`
 | Method | Inputs | Output | Purpose |
