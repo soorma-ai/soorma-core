@@ -911,3 +911,23 @@ Plan approved (revision 2, with A applied). Commit the state, audit, NFR and tes
 **Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 1, Step 8: approval recorded; NFR-WC-19 amended; Part 2 starts.
 
 ---
+
+## Code Generation Part 2: Step 1 Done; Stopped in Step 2 on Stop Condition 2 (wire-contract)
+**Timestamp**: 2026-11-08T06:52:24Z
+**User Input**: (none; stop condition reached during generation)
+**AI Response**: "Step 1 complete (not yet committed; Group 1 commits after Step 3): .node-version 26.13.0; root package.json (private, type module, engines.node ^26.13.0, packageManager pnpm@12.18.0, scripts); pnpm-workspace.yaml (packages contract and tools; pmOnFail ignore; minimumReleaseAge 10080; saveExact; engineStrict; strictDepBuilds true with allowBuilds {} empty; peerDependencyRules openapi-typescript>typescript '6'); .gitignore; minimal contract/ and tools/ package.json. Setting names confirmed against pnpm 12.18.0, which rejects unknown settings: all recognized; the build allowlist's current name is allowBuilds (onlyBuiltDependencies is still read but allowBuilds is what --allow-build appends to), so allowBuilds is used. pnpm-lock.yaml is a single YAML document. Step 2: installed exact, under the 7-day cooldown: root typescript 6.0.3, @types/node 26.6.6, eslint 10.14.0, typescript-eslint 8.72.1, @eslint/js 10.0.1, prettier 3.9.10, vitest 5.0.5 (5.1.0 is inside the cooldown); contract ajv 8.20.0, yaml 2.9.1, openapi-typescript 7.13.0 (peer exception applied: typescript 6.0.3); tools yaml 2.9.1. pnpm kept the explicit ranges given on the command line, so each package.json entry was rewritten to the exact resolved version and re-installed. No dependency has a build script (strictDepBuilds passed). Licence check over 130 resolved packages: MIT 98, Apache-2.0 14, BSD-2-Clause 6, BSD-3-Clause 2, ISC 7; BlueOak-1.0.0 1 (minimatch 10.2.6, development-only transitive through eslint: allowed by NFR-WC-14's development-transitive scope); MPL-2.0 2 (lightningcss 1.33.0 and its platform package lightningcss-darwin-x64, development-only transitive through vite 8.3.5, a dependency of vitest 5.0.5): outside both allowlists. Stop condition 2 reached: generation stopped; asked the user."
+**Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 2: stopped in Step 2 (licence outside the allowlist).
+
+---
+
+## Code Generation Part 2: Q-CG-2 Answered; Step 2 Complete (wire-contract)
+**Timestamp**: 2026-11-08T06:58:26Z
+**User Input**: "Q-CG-2: A. Record one licence exception in DEPENDENCIES.md for lightningcss and all its platform packages (lightningcss-*, the 11 listed in the lockfile). The reason: MPL-2.0, development-only through vitest → vite, unmodified and never distributed.
+
+Scope the exception by package name and licence, not version. It applies only while the licence is MPL-2.0, so a version bump needs no edit, but a licence change fails the check. The licence check accepts these packages only through that row. Add a test where a platform package not on the local machine (for example lightningcss-linux-x64-gnu) is accepted through the row, and one where the same package under a different licence is refused.
+
+Record the answer under Q-CG-2 in the plan, log it in audit.md, finish Step 2, and continue."
+**AI Response**: "Q-CG-2 answered A (technology decision; no specification gap). Confirmed the lockfile lists lightningcss and 11 platform packages (android-arm64, darwin-arm64, darwin-x64, freebsd-x64, linux-arm-gnueabihf, linux-arm64-gnu, linux-arm64-musl, linux-x64-gnu, linux-x64-musl, win32-arm64-msvc, win32-x64-msvc). Recorded the answer under Q-CG-2 in the plan. Step 15's licence check now states: an exception row names packages (an exact name or a name prefix such as lightningcss-) and one licence, never a version; a named package is accepted only while its licence equals the row's. Its tests: lightningcss-linux-x64-gnu (not installed on macOS) under MPL-2.0 accepted through the row; the same package under another licence refused; and, added for completeness, an MPL-2.0 package the row does not name refused. Step 16's register row records the exception. Step 2 complete: no build scripts; licences checked, with lightningcss covered by the exception. Continuing with Step 3."
+**Context**: CONSTRUCTION, U1 wire-contract, Code Generation Part 2: Step 2 complete; Q-CG-2 A.
+
+---

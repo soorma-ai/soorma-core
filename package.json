@@ -1,0 +1,31 @@
+{
+  "name": "soorma-core",
+  "private": true,
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "engines": {
+    "node": "^26.13.0"
+  },
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "build": "pnpm run generate && pnpm run typecheck",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "generate": "pnpm --filter @soorma/contract run generate",
+    "check:generated": "pnpm --filter @soorma/contract run check:generated",
+    "check:deps": "node tools/checks/run.ts register licence configuration",
+    "check:workflows": "node tools/checks/run.ts workflows",
+    "check:github": "node tools/checks/run.ts github-settings"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.6",
+    "eslint": "10.14.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  }
+}

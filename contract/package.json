@@ -1,0 +1,14 @@
+{
+  "name": "@soorma/contract",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "openapi-typescript": "7.13.0",
+    "yaml": "2.9.1"
+  }
+}

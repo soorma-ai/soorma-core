@@ -1,0 +1,11 @@
+pnpm-lock.yaml
+contract/generated/
+contract/meta/
+contract/test/golden/*.ts
+aidlc-docs/
+# Legal texts and the CLA bot's signature store are kept exactly as published.
+LICENSE
+CLA.md
+CCLA.md
+CONTRIBUTING.md
+signatures/
