@@ -947,3 +947,375 @@ Record the answer under Q-CG-2 in the plan, log it in audit.md, finish Step 2, a
 **Context**: CONSTRUCTION, U1 wire-contract, Code Generation: PR #12 and its first CI run.
 
 ---
+
+## Code Generation Approved; PR Merged (wire-contract)
+**Timestamp**: 2026-11-08T07:53:50Z
+**User Input**: "Continue to Next Stage. Code Generation for U1 is approved. soorma-core#12 is merged after its CI passed, including dependency review once the dependency graph was enabled. Record the approval and the merge in aidlc-state.md and audit.md. Close soorma-core#4 with a comment linking #12 that says verification across units comes at Build and Test, and update the completion table on #3. Merge origin/main back into dev and push. Do not start U2 org-identity, will use new session for that."
+**AI Response**: "Code Generation for U1 wire-contract APPROVED (with it, D-CG-16, the minimatch override flagged for review). Verified with gh: soorma-core#12 MERGED at 2026-11-08T07:52:11Z by gnulib, merge commit 2b3a64d; its checks passed: Build, check, and test; Dependency review; cla-assistant. pnpm run check:github now passes: vulnerability alerts enabled, and the dependency graph enabled and listing every direct dependency from pnpm-lock.yaml on main (the single-document lockfile, Q-CG-1 A, is readable). aidlc-state.md: U1 Code Generation checked and approved; U1 complete; stop point set to U2 org-identity (#5) in a new session. Next: close #4 with a comment linking #12, update the completion table on #3, merge origin/main into dev, push. U2 not started, as the user instructed."
+**Context**: CONSTRUCTION, U1 wire-contract: Code Generation approved; unit complete.
+
+---
+
+## Tickets Updated; origin/main Merged into dev (wire-contract)
+**Timestamp**: 2026-11-08T07:54:23Z
+**User Input**: (the instruction in the entry above)
+**AI Response**: "Closed soorma-core#4 (U1 wire-contract) with a comment linking #12 (merge commit 2b3a64d), stating that U1's own test cases are automated and pass in CI and that verification across units comes at Build and Test, after U7, when contract-v0.1.0 is also tagged: https://github.com/soorma-ai/soorma-core/issues/4#issuecomment-6718965583. Updated the completion table on soorma-core#3: added a Status column (U1 Done, code merged in #12, 2026-11-08; U2 Next; U3 to U7 Not started) and a line that cross-unit verification comes at Build and Test. Merged origin/main into dev: a fast-forward to 2b3a64d (the #12 merge commit), as after #11. U2 org-identity not started: the user will use a new session."
+**Context**: CONSTRUCTION, U1 wire-contract complete; tickets updated; dev synced with main.
+
+---
+
+## Session Resumption: Start Construction for U2 org-identity
+**Timestamp**: 2026-11-08T18:39:49Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"org-identity\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed from aidlc-state.md (U1 wire-contract complete; next U2 org-identity, soorma-core#5). The user's intent selects 'continue where you left off', so the welcome-back choice was not asked. Re-intake check (session-continuity.md step 3): state is in the multi-PRD format; the brief pin is recorded; soorma-prd fetched, and backlog/m1-walking-skeleton.md is unchanged between the pin 0aad84a and origin/main; no PRD tag newer than prd-platform-foundations-v1.3 or prd-identity-v1.0 exists; every gap issue in the register is still open (soorma-prd#13, #24, #25, #27, #28). Re-intake not offered. PR Checkpoint State: no PENDING entry. Toolchain re-checked: Node v26.13.0, pnpm 12.18.0. soorma-core: branch dev, one commit ahead of origin/main (the U1 state commit 92238df). Loaded the Inception artifacts: requirements.md, personas.md, stories.md, the application-design set (application-design, components, component-methods, services, component-dependency, unit-of-work, unit-of-work-dependency, unit-of-work-story-map), the PRD coverage map, the U2 inception test specs (TC-OI-001 to 025), and U1's functional design and contract conventions. ID PRD read at prd-identity-v1.0 (sections 1 to 12, 15)."
+**Context**: CONSTRUCTION, session resumption; U2 org-identity requested.
+
+---
+
+## Construction Phase Initialization (session reload)
+**Timestamp**: 2026-11-08T18:39:49Z
+**User Input**: (none; required on resuming into Construction, session-continuity.md step 4)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted: GitHub issues on soorma-core)]. ## PRD Intake exists, so inception/prd-gap-classification.md is loaded and active for every construction stage. Invariants read from soorma-prd references/platform/invariants.md at prd-platform-foundations-v1.3 and prd-identity-v1.0: the text is identical at both tags, as recorded in Extension Configuration."
+**Context**: CONSTRUCTION, Construction Phase Initialization.
+
+---
+
+## Unit Initialization and L1 Gate: org-identity
+**Timestamp**: 2026-11-08T18:39:49Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted)] (unit: org-identity). L1 Domain Coverage Gate, initial assessment for U2: L1 sources are ID @ prd-identity-v1.0 (most authoritative for this unit) and PF @ prd-platform-foundations-v1.3. Applicable: ID §7a Human Principal, Human Authentication Material, Organization Sign-In; ID §6 (organization-keyed records, the composed identifier, verify-only material, authentication material never in an environment); ID FR-001, FR-004 (the organization half: ensureFirstAdmin), FR-006, FR-007, FR-008, FR-009, FR-011 (the sign-in and material half); ID §8a (authenticate; self-service); ID §8b (the organization sign-in column: O1 to O3, O9, O10); ID §10 failure modes and NFR profile; ID §7b compatibility policy and Recoverability (human actor); PF §6 (verify-only material); PF §12 and ID FR-027 (the identity-resolution seam, K and P half; external types absent). Non-applicable to U2, with reasons recorded in the matrix: Human Environment Credential (U4), grants and the first grant (U4), Delegation Credential (ID FR-019 out), Organization-Level Attribution (ID FR-018 out), Configured Identity Source and Grant Mapping (ID FR-024, FR-025 out). Result: covered 0, non-applicable 6, missing 0 at this point; every applicable row awaits Functional Design. No row is a PRD-sourced Missing, so no gap is raised."
+**Context**: CONSTRUCTION, U2 org-identity: Unit Initialization; L1 gate initial assessment.
+
+---
+
+## Functional Design: Plan Created (org-identity)
+**Timestamp**: 2026-11-08T18:41:38Z
+**User Input**: (none; continues the session-start instruction)
+**AI Response**: "Created construction/working/org-identity-functional-design-plan.md (git-ignored session artifact): 11 plan steps; proposed record and operation shapes; 12 questions, each classified technology under prd-gap-classification.md Step 1, with the classification stated in the file: Q1 where enrollment material sits in configuration (ID §6 keeps authentication material out of every environment); Q2 where P is enrolled (M1-TECH-07); Q3 what changeMaterial requires; Q4 the reach of the per-principal abuse bound; Q5 what a refusal discloses when P is required and not enrolled; Q6 whether the P authenticator is chosen now or at NFR Requirements; Q7 sign-in renewal; Q8 whether a material change ends live sign-ins; Q9 enrollment material expiry; Q10 the K policy beyond M1-NFR-09; Q11 how the principal is named in a request; Q12 how environments authenticate to the organization level's internal interface (I3). Proposed without a question: D-OI-01 to D-OI-11. Forward obligations proposed for U4 (#7): classifying whether ending a sign-in refuses environment credentials issued from it (ID FR-010, 'never outlives its sign-in'); building the internal-interface caller, the first grant, and O3 for the sign-in at issuance. Awaiting the user's answers."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: plan and questions (Steps 2 to 4 of functional-design.md).
+
+---
+
+## Functional Design: Answers Received (org-identity)
+**Timestamp**: 2026-11-08T18:51:04Z
+**User Input**: "here are the answers...
+
+Q1: A. Also: enrollment material in configuration applies only when the principal does not exist. For an existing principal, pending or active, it is ignored and never re-enrolls, so a redeploy can't act as a reset (ID FR-004, FR-007). Start-up logs that it was ignored, without the material.
+Q2: A
+Q3: A
+Q4: A. Also: the bound limits attempt rate and recovers with time (for example, a window or backoff). It never permanently locks a principal: M1 has one first Admin and no reset, so a lockout would let anyone who knows the identifier deny that Admin forever. State the counter store's size bound against unknown-identifier spraying as an NFR Requirements obligation. Value and shape are still NFR Requirements'.
+Q5: A. Also: list the contract changes in the design. authentication_failed and second_factor_enrollment_required are added to contract/conventions/errors.md with their status and disclosure, too_many_attempts's \"When\" includes changeMaterial, and contract/CHANGELOG.md classifies all three as compatible (open code set). Decide the status code for authentication_failed, given that U1's 401 implies WWW-Authenticate: Bearer.
+Q6: A
+Q7: A
+Q8: A
+Q9: A
+Q10: A. Also: carry a constraint to NFR Requirements. The K hashing algorithm must take the full normalized input (no silent truncation, as bcrypt does at 72 bytes), and the upper bound is checked on the NFKC-normalized value.
+Q11: A
+Q12: A"
+**Answers Recorded** (org-identity-functional-design-plan.md):
+- Q1 — Where enrollment material sits in configuration: A (one configuration describes the tenancy tree; each deployable reads its own part; enrollment material supplied to the organization level only, keyed by principal identifier; environments never receive it; start-up refused if a named first Admin is absent with no material) — plus, verbatim: "enrollment material in configuration applies only when the principal does not exist. For an existing principal, pending or active, it is ignored and never re-enrolls, so a redeploy can't act as a reset (ID FR-004, FR-007). Start-up logs that it was ignored, without the material."
+- Q2 — Where P is enrolled: A (only through changeMaterial, two steps, presenting K; never inside firstAuthenticate; where P is required, firstAuthenticate activates H and returns no sign-in)
+- Q3 — What changeMaterial requires: A (the current material only, K plus a P proof once P is enrolled; no sign-in; same abuse bound and non-disclosing refusal as sign-in)
+- Q4 — Reach of the abuse bound: A (one counter per principal shared by authenticate, firstAuthenticate, changeMaterial; unknown identifiers counted and refused the same way, without Failed Attempt records) — plus, verbatim: "the bound limits attempt rate and recovers with time (for example, a window or backoff). It never permanently locks a principal: M1 has one first Admin and no reset, so a lockout would let anyone who knows the identifier deny that Admin forever. State the counter store's size bound against unknown-identifier spraying as an NFR Requirements obligation. Value and shape are still NFR Requirements'."
+- Q5 — Disclosure when P is required and not enrolled: A (second_factor_enrollment_required only once K has verified; every other failure is authentication_failed) — plus, verbatim: "list the contract changes in the design. authentication_failed and second_factor_enrollment_required are added to contract/conventions/errors.md with their status and disclosure, too_many_attempts's \"When\" includes changeMaterial, and contract/CHANGELOG.md classifies all three as compatible (open code set). Decide the status code for authentication_failed, given that U1's 401 implies WWW-Authenticate: Bearer."
+- Q6 — P authenticator now or at NFR Requirements: A (Functional Design class-neutral; two-step enrollment; P proof discriminated by type; the one M1 type chosen at NFR Requirements)
+- Q7 — Sign-in renewal: A (same sign-in, later expiry, capped by an absolute maximum from authenticated-at; earlier tokens valid until their own expiry; ending refuses all; renewal refuses a sign-in whose classes no longer satisfy the P requirement)
+- Q8 — Does a material change end live sign-ins: A (yes; every live sign-in of that human ends; the change returns no sign-in)
+- Q9 — Enrollment material expiry: A (no expiry in M1; single use is the only limit)
+- Q10 — K policy: A (8 to 256 Unicode code points; no control characters; NFKC-normalized before the length check, hashing, and verification; no composition rules; breached-list check on every new K) — plus, verbatim: "carry a constraint to NFR Requirements. The K hashing algorithm must take the full normalized input (no silent truncation, as bcrypt does at 72 bytes), and the upper bound is checked on the NFKC-normalized value."
+- Q11 — How the principal is named in a request: A (always composed, {organization, principal}; another organization refused with the generic authentication_failed)
+- Q12 — Internal interface authentication: A (separate internal listener; every caller presents a configured per-environment credential, verify-only material included; mechanism at NFR Design)
+**AI Response**: "All 12 answered; none deferred. Contradiction and ambiguity check: none found. The additions to Q1, Q4, Q5, and Q10 each narrow the chosen option and conflict with no other answer. Q4's 'never permanently locks' is consistent with TC-OI-011, whose refusal 'even with the correct K' holds while the bound applies. Gap classification (prd-gap-classification.md Step 1): every answer stays technology; none narrows or widens ID @ prd-identity-v1.0. The status code Q5 asks for is decided in business-rules.md (D-OI-13). Plan steps 1 to 3 checked. Generating the Functional Design artifacts."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: answers recorded (Step 5 of functional-design.md).
+
+---
+
+## Functional Design: Artifacts Generated; Approval Prompt (org-identity)
+**Timestamp**: 2026-11-08T18:56:51Z
+**User Input**: (none; continues from the answers)
+**AI Response**: "Generated construction/org-identity/functional-design/: domain-entities.md (Human Principal, Human Authentication Material, Pending P Enrollment, Organization Sign-In, Failed Attempt, Attempt Counter, key material, Tenancy Configuration, Human Principal Reference; the wire shapes of the five S1 operations; the internal interface); business-rules.md (D-OI-01 to D-OI-25; BR-HP, BR-CFG, BR-FA, BR-K, BR-P, BR-SI, BR-MC, BR-AB, BR-RF, BR-INT, BR-SEAM, BR-REC; the contract changes; obligations carried to NFR Requirements, NFR Design, Infrastructure Design, and U4; misuse cases); business-logic-model.md (check order at S1; flows; state machines in Mermaid with text alternatives); l1-coverage-matrix.md (32 applicable rows Covered, 11 N/A with reasons, 0 Missing; the initial assessment's six N/A groups split into 11 rows); invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; the I8 packaging table against ID §12). Decided at generation: D-OI-13, the status code Q5 asked for: 403 for authentication_failed, second_factor_enrollment_required, and second_factor_not_confirmed, because RFC 9110 §15.5.2 requires a 401 to carry a challenge that applies to the target, U1's BR-ERR-06 makes it Bearer, and these operations accept no bearer credential. Two codes beyond Q5's two were needed and are listed with the contract changes: secret_rejected (400, a validation error with pointer and reason, after the presented material verified) and second_factor_not_confirmed (403). Also D-OI-23 (firstAuthenticate under the P requirement returns 200 with secondFactorEnrollmentRequired and no sign-in), D-OI-24 (no P removal in M1; replacement supported), D-OI-25 (a Pending P Enrollment is not a material record). Gap classification: none is specification. Mermaid checked: stateDiagram-v2 only, plain-text labels, text alternatives present. Security baseline at Functional Design: SECURITY-03, 05, 08, 09, 11, 12, 13, 15 compliant; SECURITY-01, 02, 04, 06, 07, 10, 14 N/A at this stage. Invariants: I1 to I10 compliant, I11 N/A. No blocking finding. Approval prompt presented: Request Changes, or Continue to Next Stage."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: Steps 6 and 7 of functional-design.md; awaiting approval.
+
+---
+
+## Functional Design: Changes Requested (org-identity)
+**Timestamp**: 2026-11-08T19:02:19Z
+**User Input**: "Request Changes to the Functional Design.
+
+Check order step 2 for firstAuthenticate, authenticate and changeMaterial: credential_refused is a 401 with WWW-Authenticate: Bearer, which D-OI-13 rules out on these operations. Refuse a presented Authorization or Soorma-Delegation header there with a 400 (malformed_request, naming the header in detail, since U1's pointer is body-only), and update the rules and the contract-change table if that changes U1's codes.
+Accepted residual: record that compromise of K, or K + P, is unrecoverable in M1 except by re-creating the deployment. Someone who has the material can replace K or enrol their own P, and reset (ID FR-007, FR-012) is out of M1. Add it to the misuse table and to the compliance summary as accepted, not blocking.
+Timing: writing a Failed Attempt only for an existing principal must not change response timing. Keep the write off the response path, or make the response time independent of it (BR-RF-03).
+Check order step 7: scope it to authenticate only. firstAuthenticate returns 200 (D-OI-23), and changeMaterial must stay usable for enrolling P (BR-P-03).
+U4 obligation: add that a signInStatus of unknown refuses issuance, and an unreachable internal interface refuses with unavailable (fail closed).
+Then show me the changes. Commit the Functional Design artifacts with the approval."
+**AI Response**: "Applying the five changes to the U2 Functional Design artifacts; the change to U1's credential conventions is recorded as U1 amendment A4. Will show the changes and commit the artifacts when the stage is approved."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: change request (review round 1).
+
+---
+
+## Functional Design: Changes Applied; Approval Prompt (org-identity, review round 1)
+**Timestamp**: 2026-11-08T19:04:18Z
+**User Input**: (the change request above)
+**AI Response**: "Applied the five changes. (1) Check order step 2 on firstAuthenticate, authenticate, changeMaterial: a presented Authorization or Soorma-Delegation header is malformed_request (400), with an errors[] entry naming the header (new optional ProblemFieldError.header), never its value; D-OI-26 and BR-RF-06; stated for every operation naming no security scheme, so U6's bootstrap inherits it. It narrows U1's BR-CR-02, BR-CR-06, the credential_refused and malformed_request rows, and BR-ERR-07's unauthenticated-surface sentence: recorded in U1's business-rules.md as amendment A4, within unreleased 0.1.0 (contract-v0.1.0 untagged; released, moving a case between codes would be breaking). Contract-change table gains three rows: malformed_request's When and detail widened (compatible), ProblemFieldError.header (compatible: optional field on an open object), and A4 (change within unreleased 0.1.0). D-OI-05 and L1-26 aligned. (2) Accepted residual recorded in business-rules.md §15 (misuse row and an Accepted Residual subsection): compromise of K, or K + P, is unrecoverable in M1 except by re-creating the deployment; whoever holds the material can replace K or enrol their own P; reset (ID FR-007, FR-012) is out of M1; BR-CFG-04 deliberately blocks redeploy-as-reset. Accepted, not blocking; carried to the Build and Test summary. (3) Timing: BR-RF-03 now has three parts: decoy verification with the same algorithm and parameters; the counter updated on the response path for every presented reference; the Failed Attempt record written off the response path (D-OI-27; BR-REC-03; business-logic-model step 6 and flow 2.2). Its durability and holding bound carried to NFR Requirements. (4) Check order step 7 scoped to authenticate only; BR-P-10: second_factor_enrollment_required only from authenticate and renewSignIn; firstAuthenticate reports it in its 200; changeMaterial never refuses on the requirement. (5) U4 obligation added: a signInStatus of unknown refuses issuance as ended does; an unreachable internal interface refuses with unavailable (503, Retry-After); fail closed. Security: SECURITY-03, 05, 08, 09, 11, 12, 13, 15 compliant (SECURITY-12 with the accepted residual, not blocking); 01, 02, 04, 06, 07, 10, 14 N/A at this stage. Invariants: I1 to I10 compliant, I11 N/A. No blocking finding. Approval prompt presented again. On approval: commit the Functional Design artifacts."
+**Context**: CONSTRUCTION, U2 org-identity, Functional Design: review round 1 applied; awaiting approval.
+
+---
+
+## Functional Design Approved; U1 Amendment A4 Completed (org-identity)
+**Timestamp**: 2026-11-08T19:37:29Z
+**User Input**: "Continue to Next Stage. Functional Design approved, with one addition first: record in U2's business rules (Obligations Carried Forward) that U2's Code Generation applies amendment A4 to U1's published contract. That covers:
+
+contract/conventions/errors.md: the credential_refused and malformed_request rows and the check order
+ProblemFieldError.header in components.openapi.yaml, and the regenerated types
+U1's tests for TC-WC-024 and 025
+contract/CHANGELOG.md
+These go alongside the four new codes and org-gateway.openapi.yaml. Update the expected outcomes of TC-WC-024 and 025 in inception/test-cases/wire-contract/ to match A4, and log it as part of the amendment.
+
+Then commit the Functional Design artifacts, the U1 amendment and the test-spec update on dev, push, post the U4 obligations on #7, and start NFR Requirements."
+**AI Response**: "Functional Design for U2 org-identity APPROVED. Before committing: business-rules.md §14 gains 'To Code Generation (U2): the contract changes, including U1 amendment A4', listing errors.md (the credential_refused and malformed_request rows; the check order), credentials.md (Presentation; Reserved: delegation), components.openapi.yaml (ProblemFieldError.header, the errors description) with the regenerated types, U1's tests for TC-WC-024 (problem.test.ts) and TC-WC-025 (conventions.test.ts), and CHANGELOG.md, alongside the four new codes, the widened too_many_attempts, org-gateway.openapi.yaml, and the two principal-reference definitions. credentials.md is added because A4 changes its Presentation and Reserved: delegation sections; the TC-WC-026 test in conventions.test.ts is named as possibly affected, while TC-WC-026's expected outcome ('refused', with no code) is unchanged by A4. Amendment A4, test-spec part: inception/test-cases/wire-contract/test-specs-narrative.md TC-WC-024 gains step 10 (a problem with errors[{ header }] validates; ProblemFieldError has an optional header beside the optional pointer) and its expected outcome; TC-WC-025 gains step 7 (a header presented to an operation naming no security scheme) and its expected outcome (credential_refused scoped to operations naming a scheme; malformed_request widened, naming the header and never its value; the unauthenticated check order). Technical references cite A4. enrichment-delta.md (git-ignored) rows for TC-WC-024 and 025 note A4. test-case-index.md unchanged: titles, sources, scope, and priority are the same. aidlc-state.md: Functional Design checked APPROVED; NFR Requirements in progress. Next: commit on dev, push, post the U4 obligations on soorma-core#7, start NFR Requirements."
+**Context**: CONSTRUCTION, U2 org-identity: Functional Design approved; U1 amendment A4 (test specs) logged.
+
+---
+
+## Functional Design Committed; U4 Obligations Posted; NFR Requirements Plan Created (org-identity)
+**Timestamp**: 2026-11-08T19:40:48Z
+**User Input**: (the approval instruction logged at 2026-11-08T19:37:29Z: "Then commit the Functional Design artifacts, the U1 amendment and the test-spec update on dev, push, post the U4 obligations on #7, and start NFR Requirements.")
+**AI Response**: "Committed 5f50704 on dev (U2 functional-design/, U1 business-rules.md amendment A4, TC-WC-024 and 025 in the wire-contract test specs, aidlc-state.md, audit.md; aidlc-docs/ is outside Prettier's scope) and pushed. Posted the U4 forward obligations on soorma-core#7: https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6726146898 (classify whether ending a sign-in refuses environment credentials issued from it; build the internal-interface caller with E's configured credential; apply the first grant from the identifier only; O3 at issuance through signInStatus, failing closed on unknown and with unavailable when unreachable; principalExists only after the authority check; reuse the principal-reference definitions; A4's effect on S2). NFR Requirements started: loaded construction/nfr-requirements.md; Step 1.5 applies (U2 is a control-face unit citing ID §10 NFR Profile @ prd-identity-v1.0), so its properties are carried forward as stated and only open values are asked; no data-face property added. Probed Node 26.13.0: crypto.argon2 present (Argon2id, 64 MiB, 3 passes: 169 ms; no experimental warning), Ed25519 signing present. Checked versions on npm: @nestjs/core 12.4.0, fastify 5.12.8, pg 8.23.1 (MIT), jose 6.2.16 (MIT). Created construction/working/org-identity-nfr-requirements-plan.md: 6 plan steps; 12 questions, all technology: Q1 sign-in lifetime and absolute maximum; Q2 the bound's shape and value; Q3 the counter store and its size bound; Q4 the P authenticator; Q5 latency, hashing concurrency, availability; Q6 the K hash; Q7 the breached list; Q8 the org store; Q9 NestJS adapter and decorator handling in tests; Q10 the token signing library; Q11 the Failed Attempt write's durability; Q12 logging, retention, alerting (SECURITY-14). Proposed without a question: D-NFR-OI-01 to 06. Awaiting answers."
+**Context**: CONSTRUCTION, U2 org-identity: Functional Design committed; NFR Requirements plan (Steps 1 to 4 of nfr-requirements.md).
+
+---
+
+## NFR Requirements: Answers Received (org-identity)
+**Timestamp**: 2026-11-08T20:07:08Z
+**User Input**: "here are the answers ...
+
+Q1: A
+Q2: C, with the window at 10 failures per 15 minutes, and backoff from the 5th consecutive failure doubling from 1 second to a 15-minute cap. A success resets the backoff only. Window counts only decay, and are never reset. Correct the plan's NIST statement: 960 a day does not fit inside SP 800-63B's 100 consecutive failures. Without lockout no option meets that figure; C gets closest (about 96 a day at the cap). Record an accepted residual: an attacker who knows the identifier can keep using up the allowance, so a principal's correct attempts are refused too. Detection is Q12's alert. Counting attempts per source as well as per principal is carried to the first hosted deployment.
+Q3: A, with the table in the org store (fixed-size slot rows), not process memory, per M1-TECH-03. The keyed-hash secret comes from organization-level configuration.
+Q4: A
+Q5: A
+Q6: A, on condition that crypto.argon2 is marked Stable in Node 26. Confirm at Code Generation; if it is still Experimental, stop and ask (fallback: B).
+Q7: A, with the list shipped as a pinned artifact: source, version, licence and SHA-256 recorded in the register and checked at build, like U1's meta-schema.
+Q8: A, with start-up migrations run under a PostgreSQL advisory lock, so that concurrent start-ups are safe.
+Q9: A, on condition of a probe before the decision is recorded. A NestJS module using @Inject(TOKEN) constructor-parameter decorators must run under Vitest 5's default transform, and the NestJS packages must get their own tsconfig that compiles to JavaScript, because decorators can't run under Node type stripping and U1's base sets erasableSyntaxOnly and noEmit. If the probe fails, B.
+Q10: A, using RFC 9864's fully specified Ed25519 algorithm name if jose 6 supports it. Otherwise EdDSA with the key type fixed to Ed25519 in code.
+Q11: A
+Q12: A. SECURITY-14 is a MUST, so don't record it as \"deferred\". Record my decision: alert rules and the dashboard are defined as files and the security events are named. Log integrity and 90-day retention are not applicable in M1, because M1 is a local stack with no hosted deployment. Log that decision in audit.md as mine, show it in the compliance summary, and carry it to Build and Test and to the first hosted deployment as an obligation."
+**Answers Recorded** (org-identity-nfr-requirements-plan.md):
+- Q1 — Sign-in lifetime and absolute maximum: A (15 minutes; 12 hours)
+- Q2 — The abuse bound's shape and value: C (window and backoff) — verbatim: "C, with the window at 10 failures per 15 minutes, and backoff from the 5th consecutive failure doubling from 1 second to a 15-minute cap. A success resets the backoff only. Window counts only decay, and are never reset. Correct the plan's NIST statement: 960 a day does not fit inside SP 800-63B's 100 consecutive failures. Without lockout no option meets that figure; C gets closest (about 96 a day at the cap). Record an accepted residual: an attacker who knows the identifier can keep using up the allowance, so a principal's correct attempts are refused too. Detection is Q12's alert. Counting attempts per source as well as per principal is carried to the first hosted deployment."
+- Q3 — The counter store: A (fixed-size table of keyed-hash slots) — verbatim: "A, with the table in the org store (fixed-size slot rows), not process memory, per M1-TECH-03. The keyed-hash secret comes from organization-level configuration."
+- Q4 — The P authenticator: A (TOTP, RFC 6238; each code once; seed encrypted at rest; pending enrollment 10 minutes)
+- Q5 — Latency, hashing concurrency, availability: A (p95 500 ms for authenticate and firstAuthenticate, 200 ms otherwise; 2 hash operations per CPU, wait up to 2 s, then unavailable; no availability target in M1)
+- Q6 — The K hash: A (Argon2id via Node's crypto.argon2; 64 MiB, 3 passes, parallelism 1) — verbatim: "A, on condition that crypto.argon2 is marked Stable in Node 26. Confirm at Code Generation; if it is still Experimental, stop and ask (fallback: B)."
+- Q7 — The breached list: A (SecLists top 1,000,000, MIT, SHA-256 digests; context words) — verbatim: "A, with the list shipped as a pinned artifact: source, version, licence and SHA-256 recorded in the register and checked at build, like U1's meta-schema."
+- Q8 — The org store: A (PostgreSQL 18, pg, plain parameterized SQL, in-house migrations) — verbatim: "A, with start-up migrations run under a PostgreSQL advisory lock, so that concurrent start-ups are safe."
+- Q9 — NestJS adapter and decorators in tests: A (Fastify; explicit injection tokens; no SWC), conditional — verbatim: "A, on condition of a probe before the decision is recorded. A NestJS module using @Inject(TOKEN) constructor-parameter decorators must run under Vitest 5's default transform, and the NestJS packages must get their own tsconfig that compiles to JavaScript, because decorators can't run under Node type stripping and U1's base sets erasableSyntaxOnly and noEmit. If the probe fails, B."
+- Q10 — Token signing: A (jose 6, EdDSA/Ed25519 only) — verbatim: "A, using RFC 9864's fully specified Ed25519 algorithm name if jose 6 supports it. Otherwise EdDSA with the key type fixed to Ed25519 in code."
+- Q11 — The Failed Attempt write: A (in-process bounded queue of 10,000; drops counted and logged; loss on crash accepted)
+- Q12 — Logging, retention, alerting: A — verbatim: "A. SECURITY-14 is a MUST, so don't record it as \"deferred\". Record my decision: alert rules and the dashboard are defined as files and the security events are named. Log integrity and 90-day retention are not applicable in M1, because M1 is a local stack with no hosted deployment. Log that decision in audit.md as mine, show it in the compliance summary, and carry it to Build and Test and to the first hosted deployment as an obligation."
+
+**User decision recorded (SECURITY-14, Q12)**: the user's decision, not the AI's: in M1, SECURITY-14's alert rules and monitoring dashboard are defined as files, and the security events are named; SECURITY-14's log integrity (tamper-evident storage) and 90-day log retention are **not applicable in M1**, because M1 is a local stack with no hosted deployment. Carried as an obligation to Build and Test and to the first hosted deployment. Shown in the compliance summary.
+
+**AI Response**: "All 12 answered; none deferred. Corrected the plan's Q2 option A text: 960 guesses a day does not fit inside NIST SP 800-63B's 100 consecutive failures; without lockout no option meets that figure, and C comes closest (about 96 a day at the 15-minute backoff cap). Contradiction check: none. Q3's 'in the org store, not process memory' agrees with M1-TECH-03 and Q11 A (the Failed Attempt queue is in-process, but it is a best-effort record, not state the bound depends on). Q2 C with Q3 A: window counts live in the fixed slot table and only decay; backoff state per slot resets on success. Q9 and Q10 have conditions to check before their decisions are recorded: running the Q9 probe and checking jose 6 for RFC 9864's Ed25519 algorithm name now. Q6's condition is checked at Code Generation, as the user set it."
+**Context**: CONSTRUCTION, U2 org-identity, NFR Requirements: answers recorded (Step 5 of nfr-requirements.md).
+
+---
+
+## NFR Requirements: Probes Run; Artifacts Generated; Approval Prompt (org-identity)
+**Timestamp**: 2026-11-08T20:12:23Z
+**User Input**: (none; continues from the answers)
+**AI Response**: "Q9 condition, probe in an isolated scratchpad (installed with --ignore-scripts): a NestJS module with @Inject(TOKEN) constructor parameters (a Symbol token) and a Fastify controller ran under Vitest 5.0.5's default transform with no config file, experimentalDecorators on and emitDecoratorMetadata off: pass (200 through Fastify inject). tsc --noEmit: pass. A separate tsconfig.build.json emitting to dist/, run with node: pass. Controls: the decorated source under Node type stripping fails (ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX); type-based injection without @Inject under the default transform fails (500). Q9 A recorded. Q10: jose signs and verifies with RFC 9864's fully specified alg 'Ed25519'; algorithms ['Ed25519'] refuses an EdDSA token (ERR_JOSE_ALG_NOT_ALLOWED); a P-256 key is refused. Q10 A recorded with 'Ed25519'. Found while probing: @nestjs/* 12.4.0 (published 2026-11-06) and jose 6.2.15 and 6.2.16 (6.2.16 published 2026-11-08) are inside U1's 7-day cooldown, so the decisions use @nestjs/* 12.3.2 (Fastify 5.12.7) and jose 6.2.14; both probes re-run and passed at those versions. Generated construction/org-identity/nfr-requirements/nfr-requirements.md (ID §10 carried forward; NFR-OI-01 to 31: lifetimes; window, backoff, Retry-After, the fixed 2^20-slot HMAC-SHA-256 table in the org store, atomic admission; TOTP with single use per code, encrypted seed, 10-minute pending enrollment; Argon2id over the full normalized input with the Stable condition and scrypt fallback; the pinned SecLists artifact with manifest and build digest check, and context words; PostgreSQL durability, read-your-writes, parameterized SQL, migrations under an advisory lock; latency and hashing concurrency; the Failed Attempt queue; logging, named events, alert files, the user's SECURITY-14 decision, retention; carried decisions) and tech-stack-decisions.md (T-OI-01 to 12, the probe records). The Q2 correction is stated in nfr-requirements §3: about 96 guesses a day at the backoff cap, 960 through the window alone, neither within NIST SP 800-63B's 100 consecutive failures, which assumes lockout. Accepted residual recorded: allowance exhaustion; detection by the bound-refusal alert; per-source counting carried to the first hosted deployment. Security: SECURITY-03, 05, 08 to 13, 15 compliant; SECURITY-14 compliant by the user's decision (log integrity and 90-day retention N/A in M1); 01, 02, 04, 06, 07 N/A at this stage. Invariants: no change; I11 N/A. Recommended next: NFR Design and Infrastructure Design both run. Approval prompt presented."
+**Context**: CONSTRUCTION, U2 org-identity, NFR Requirements: Steps 6 and 7 of nfr-requirements.md; awaiting approval.
+
+---
+
+## NFR Requirements Approved (org-identity)
+**Timestamp**: 2026-11-08T20:30:39Z
+**User Input**: "Continue to Next Stage. NFR Requirements approved, with two edits first:
+
+SECURITY-14 status: change \"Compliant, by the user's decision\" to \"Not applicable in M1, by the user's decision\". Alert rules and the dashboard are defined as files, but nothing evaluates them in M1. Log integrity and 90-day retention are N/A for the same reason. Keep NFR-OI-24's obligations to Build and Test and the first hosted deployment unchanged.
+
+Availability residual: add to the accepted residual for the allowance exhaustion that a flood of distinct unknown identifiers is admitted per counter and forces one decoy hash each. The hashing concurrency bound keeps memory safe, but the result is 503s for all callers, the real Admin included. Same class, accepted for the local M1, and carried with per-source counting to the first hosted deployment.
+
+Mark the derived breached-list file binary in .gitattributes at Code Generation. Commit the NFR artifacts on dev, push, and start NFR Design."
+**AI Response**: "NFR Requirements for U2 org-identity APPROVED, with the two edits applied before committing. (1) nfr-requirements.md §5 SECURITY-14: 'Not applicable in M1, by the user's decision': alert rules and the dashboard are defined as files and the events named, but nothing evaluates them in M1; log integrity and 90-day retention N/A for the same reason; NFR-OI-24's obligations to Build and Test and the first hosted deployment unchanged. tech-stack-decisions.md T-OI-12 aligned. (2) The accepted residual in §3 gains the unknown-identifier flood: each distinct unknown identifier is admitted on its own counter slot and forces one decoy hash; the hashing concurrency bound (NFR-OI-20) keeps memory safe, but every caller, the real Admin included, gets 503 while it lasts; same class, accepted for the local M1, carried with per-source counting to the first hosted deployment. SECURITY-11 row, the Build and Test row, and the first-hosted-deployment row in §4 aligned. (3) §4 Code Generation row: mark the derived breached-list file binary in .gitattributes (NFR-OI-13). Next: commit on dev, push, start NFR Design."
+**Context**: CONSTRUCTION, U2 org-identity: NFR Requirements approved.
+
+---
+
+## NFR Requirements Committed; NFR Design Plan Created (org-identity)
+**Timestamp**: 2026-11-08T20:32:12Z
+**User Input**: (the approval instruction above: "Commit the NFR artifacts on dev, push, and start NFR Design.")
+**AI Response**: "Committed 95b3d53 on dev (nfr-requirements/, aidlc-state.md, audit.md) and pushed. NFR Design started: loaded construction/nfr-design.md. Created construction/working/org-identity-nfr-design-plan.md: 6 plan steps; 4 questions, all technology, asked only where a real choice remains: Q1 the sign-in token's payload (JWT with explicit typing and RFC 8176 amr, or an in-house JWS payload); Q2 where the signing key, seed-encryption key, and counter secret come from and how they rotate (configuration, or generated and stored); Q3 how an environment's S2 authenticates to the internal interface (a signed short-lived JWS bound to method and path, mutual TLS, or a static secret); Q4 how admission stays atomic without a lock across hashing (reserve then settle, or lock across verification). Proposed without a question: D-ND-OI-01 to 13 (two listeners in one process; AES-256-GCM seed encryption bound to its row; server-generated request ids; one exception filter per listener; an injected Clock; the decoy verifier; the per-process hashing semaphore; the batched Failed Attempt writer; TOTP replay by conditional update; the pruning job under an advisory lock; pool limits; token verification at S1; a 30-second leeway obligation to U4). Awaiting answers."
+**Context**: CONSTRUCTION, U2 org-identity: NFR Design plan (Steps 1 to 4 of nfr-design.md).
+
+---
+
+## NFR Design: Answers Received (org-identity)
+**Timestamp**: 2026-11-08T20:51:26Z
+**User Input**: "here are the answers ...
+
+Q1: A
+Q2: A, plus three records:
+(1) a U4 obligation: environments refetch the verify keys on an unknown kid (rate-limited) and refresh on a schedule shorter than the rotation's restart interval, so no valid sign-in is refused during rotation;
+(2) rotating the counter secret remaps every slot, so all counters reset. Record that this briefly loosens the bound, so it is rotated only deliberately;
+(3) an old seed-encryption key stays in configuration while any ciphertext uses it. In M1, old keys are kept, and re-encryption is carried as a later obligation.
+Q3: A, with the token covering the request's content: the claims include the full target, query included, and a SHA-256 of the body, and the organization level checks both. Binding only method and path lets a captured principalExists token be replayed with other identifiers for 60 seconds.
+Q4: A. Each slot keeps its window as individual timestamped entries, so a success removes exactly its own reservation and never decrements another attempt's.
+
+Also, D-ND-OI-07: make the permit count configurable, defaulting to the lower of 2 × os.availableParallelism() and a configured memory budget divided by 64 MiB (default budget 512 MiB). 2 × CPUs alone is 32 permits (2 GiB) on a 16-thread host, and a container may report the host's CPU count."
+**Answers Recorded** (org-identity-nfr-design-plan.md):
+- Q1 — The sign-in token's payload: A (JWT with explicit typing soorma-si+jwt; iss, sub, sid, jti, iat, exp, auth_time, amr with RFC 8176 values; no aud; verifiers require all)
+- Q2 — Key sources and rotation: A (all from organization-level configuration; one signing key and a set of verify keys by RFC 7638 kid; JWKS to environments; rotation by configuration change and restart; seed keys by key id) — plus, verbatim: "(1) a U4 obligation: environments refetch the verify keys on an unknown kid (rate-limited) and refresh on a schedule shorter than the rotation's restart interval, so no valid sign-in is refused during rotation; (2) rotating the counter secret remaps every slot, so all counters reset. Record that this briefly loosens the bound, so it is rotated only deliberately; (3) an old seed-encryption key stays in configuration while any ciphertext uses it. In M1, old keys are kept, and re-encryption is carried as a later obligation."
+- Q3 — Internal caller authentication: A (signed short-lived JWS per request, Ed25519, per-environment caller key) — plus, verbatim: "with the token covering the request's content: the claims include the full target, query included, and a SHA-256 of the body, and the organization level checks both. Binding only method and path lets a captured principalExists token be replayed with other identifiers for 60 seconds."
+- Q4 — Atomic admission: A (reserve, then settle) — plus, verbatim: "Each slot keeps its window as individual timestamped entries, so a success removes exactly its own reservation and never decrements another attempt's."
+- D-ND-OI-07 revised, verbatim: "make the permit count configurable, defaulting to the lower of 2 × os.availableParallelism() and a configured memory budget divided by 64 MiB (default budget 512 MiB). 2 × CPUs alone is 32 permits (2 GiB) on a 16-thread host, and a container may report the host's CPU count."
+**AI Response**: "All four answered; none deferred. No contradiction: Q3's content binding and Q4's per-entry reservations each tighten the chosen option. D-ND-OI-07 revised in the plan (default 8 permits at a 512 MiB budget). Q2's record (1) becomes a U4 forward obligation, posted on soorma-core#7 when this stage is approved; (2) and (3) go into the patterns document. All technology. Generating nfr-design-patterns.md and logical-components.md."
+**Context**: CONSTRUCTION, U2 org-identity, NFR Design: answers recorded (Step 5 of nfr-design.md).
+
+---
+
+## NFR Design: Artifacts Generated; Approval Prompt (org-identity)
+**Timestamp**: 2026-11-08T20:53:07Z
+**User Input**: (none; continues from the answers)
+**AI Response**: "Generated construction/org-identity/nfr-design/: nfr-design-patterns.md (P-01 the sign-in token: soorma_si_ + JWS compact, typ soorma-si+jwt, alg Ed25519 only, kid, iss urn:soorma:org:{o}, sub, sid, jti, iat, exp, auth_time, amr with RFC 8176 pwd and otp, no aud, every claim required; P-02 key material from configuration with the three-step signing-key rotation and the user's records R-1 (U4 refetch on unknown kid, rate-limited, and a refresh schedule shorter than the rotation's restart interval), R-2 (rotating the counter secret resets every counter and briefly loosens the bound, so it is rotated only deliberately), R-3 (old seed keys kept while any ciphertext uses them; re-encryption a later obligation); P-03 AES-256-GCM seeds with associated data binding each ciphertext to its row; P-04 reserve then settle, with the window as individual timestamped entries so a success removes exactly its own reservation; P-05 Retry-After; P-06 signed internal requests binding htm, tgt (full target, query included) and bsh (SHA-256 of the body), 60-second lifetime, no replay cache because every internal operation is read-only and a captured token is good only for the identical call; P-07 two listeners in one process; P-08 request ids and errors; P-09 the hashing semaphore, permits configurable, default the lower of 2 x availableParallelism and a 512 MiB budget / 64 MiB (8 permits); P-10 the decoy; P-11 the Failed Attempt writer; P-12 single-use TOTP codes; P-13 atomic state changes; P-14 time; P-15 store access; P-16 retention; P-17 logging; U4 obligations F-1 to F-3) and logical-components.md (the S1 process, components by package, the org store's seven logical tables, configuration items, the internal interface's targets). Invariant matrix I3 implementation target updated to name P-06. Security: SECURITY-01 (at this stage), 03, 05, 08 to 13, 15 compliant; 14 not applicable in M1 by the user's decision; 02, 04, 06, 07 N/A at this stage. Invariants I1 to I10 covered, I11 N/A. No blocking finding. Next stage after approval: Infrastructure Design. Approval prompt presented."
+**Context**: CONSTRUCTION, U2 org-identity, NFR Design: Steps 6 and 7 of nfr-design.md; awaiting approval.
+
+---
+
+## NFR Design Approved (org-identity)
+**Timestamp**: 2026-11-08T21:00:25Z
+**User Input**: "Continue to Next Stage. NFR Design approved. Commit the NFR Design artifacts and the I3 matrix update on dev, push, post the U4 obligations F-1 to F-3 on #7, and start Infrastructure Design."
+**AI Response**: "NFR Design for U2 org-identity APPROVED. aidlc-state.md updated. Next: commit nfr-design/ and the invariant matrix's I3 update on dev, push, post F-1 to F-3 on soorma-core#7, start Infrastructure Design."
+**Context**: CONSTRUCTION, U2 org-identity: NFR Design approved.
+
+---
+
+## NFR Design Committed; F-1 to F-3 Posted; Infrastructure Design Plan Created (org-identity)
+**Timestamp**: 2026-11-08T21:02:08Z
+**User Input**: (the approval instruction logged above)
+**AI Response**: "Committed 5882ef8 on dev (nfr-design/, the invariant matrix's I3 update, aidlc-state.md, audit.md) and pushed. Posted F-1 to F-3 on soorma-core#7: https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6727058030 (verify-key freshness and rotation; verifying a sign-in at E's issuance; signing each internal call with htm, tgt, bsh). Infrastructure Design started: loaded construction/infrastructure-design.md. Checked the workstation: Docker 29.5.3, Docker Compose v5.1.4, OpenSSL 4.1.0; gcr.io/distroless/nodejs26-debian13 exists. Created construction/working/org-identity-infrastructure-design-plan.md: 6 plan steps; 6 questions, all technology: Q1 how the local stack runs (Compose with pinned images, or host processes); Q2 the base image (distroless Node 26 nonroot, or node slim); Q3 TLS (everywhere from a local CA, or PostgreSQL only); Q4 encryption at rest locally (host full-disk encryption plus application-level protection, or not applicable in M1 by the user's decision); Q5 configuration and secret delivery (a YAML file plus Compose secret files generated by pnpm stack:init, or environment variables); Q6 the monitoring files' format (neutral with a schema, or Loki and Grafana). Proposed without a question: D-ID-OI-01 to 08 (PostgreSQL unpublished with scram-sha-256; two roles, with no DELETE on principals or materials for the app role; networks, with the edge on loopback and the internal port unpublished; container hardening; health and start-up order; CI with a PostgreSQL service container and an image build; git hygiene with a secret-pattern check and .gitattributes; licences). Awaiting answers."
+**Context**: CONSTRUCTION, U2 org-identity: Infrastructure Design plan (Steps 1 to 4 of infrastructure-design.md).
+
+---
+
+## Infrastructure Design: Answers Received (org-identity)
+**Timestamp**: 2026-11-08T21:08:24Z
+**User Input**: "here are the answers ...
+
+Q1: A
+Q2: A. The Compose healthcheck runs a small Node script, since distroless has no shell or curl.
+Q3: A, except keep the CA private key in deploy/local/.secrets/ (0600) so that U4 to U7 can issue their own service certificates without re-creating the CA. Give the CA X.509 name constraints limited to localhost and the stack's service names, so a leaked key can't impersonate anything else, and document using it with --cacert, not the system trust store.
+Q4: B. Record SECURITY-01 at rest as not applicable in M1, by my decision. Keep host full-disk encryption as a documented recommendation, and the application-level protection (Argon2id verifiers, AES-256-GCM seeds) as stated. Carry managed-key encryption to the first hosted deployment.
+Q5: A
+Q6: A
+
+Changes to the proposed decisions:
+
+D-ID-OI-02: S1 never holds the migrator password. Migrations run in a one-shot Compose service (org-migrate) under the advisory lock, and S1 starts only after it completes successfully, holding only soorma_org_app. Update NFR-OI's start-up migration wording to match.
+D-ID-OI-05: no endpoint on the internal listener is unauthenticated (BR-INT-02 is absolute). Health is a third listener bound to 127.0.0.1 inside the container, on no network, returning no detail. The Compose healthcheck calls it through the Node script.
+New: a .dockerignore excludes deploy/local/.secrets/ (and .git, node_modules). The Dockerfile copies explicit paths only, and the D-ID-OI-07 secret check also runs over the built image's filesystem in CI.
+U4 obligation: one internal network per environment (org-internal-{env}), with S1 attached to each, so that environments' S2s share no network."
+**Answers Recorded** (org-identity-infrastructure-design-plan.md):
+- Q1 — How the local stack runs: A (Docker Compose, a container per deployable, every image pinned by digest; pnpm stack:up and stack:down)
+- Q2 — The base image: A (distroless Node 26 nonroot, pinned by digest; two-stage build) — plus, verbatim: "The Compose healthcheck runs a small Node script, since distroless has no shell or curl."
+- Q3 — TLS: A (everywhere, from a local CA created by the init script with the OpenSSL CLI; ECDSA P-256) — verbatim: "A, except keep the CA private key in deploy/local/.secrets/ (0600) so that U4 to U7 can issue their own service certificates without re-creating the CA. Give the CA X.509 name constraints limited to localhost and the stack's service names, so a leaked key can't impersonate anything else, and document using it with --cacert, not the system trust store."
+- Q4 — Encryption at rest locally: B — verbatim: "B. Record SECURITY-01 at rest as not applicable in M1, by my decision. Keep host full-disk encryption as a documented recommendation, and the application-level protection (Argon2id verifiers, AES-256-GCM seeds) as stated. Carry managed-key encryption to the first hosted deployment."
+- Q5 — Configuration and secrets: A (a committed YAML tenancy file validated against a JSON Schema; every secret its own file, mounted as a Compose secret; pnpm stack:init generates them into git-ignored deploy/local/.secrets/ and never overwrites; enrollment material to its secret file and a one-time handover file)
+- Q6 — Monitoring file format: A (neutral YAML with JSON Schemas and a test)
+- Changes to D-ID-OI-02, D-ID-OI-05, a new .dockerignore and image secret-scan decision, and a U4 obligation: as quoted above.
+
+**User decision recorded (SECURITY-01 at rest, Q4)**: the user's decision, not the AI's: SECURITY-01's encryption at rest for the org store is **not applicable in M1**; host full-disk encryption stays a documented recommendation; the application-level protection (Argon2id verifiers, AES-256-GCM seeds) stands as stated; managed-key encryption is carried to the first hosted deployment.
+
+**AI Response**: "All six answered; none deferred. No contradiction. The D-ID-OI-02 change moves migrations out of S1, which changes approved text: NFR-OI-18 (NFR Requirements) and P-15 and the logical components (NFR Design) are updated to match, as the user asked for NFR-OI. The D-ID-OI-05 change adds a third listener, so NFR Design P-07 (two listeners) is updated to name it. The CA's name constraints need one naming scheme for every service in U2 to U7: service hostnames under soorma.internal, decided in the infrastructure design. The U4 obligation is posted on soorma-core#7 when this stage is approved. Generating the artifacts."
+**Context**: CONSTRUCTION, U2 org-identity, Infrastructure Design: answers recorded (Step 5 of infrastructure-design.md).
+
+---
+
+## Infrastructure Design: Artifacts Generated; Blocking Security Finding SECURITY-03 (org-identity)
+**Timestamp**: 2026-11-08T21:10:47Z
+**User Input**: (none; continues from the answers)
+**AI Response**: "Generated construction/org-identity/infrastructure-design/infrastructure-design.md (component mapping; distroless images with a Node healthcheck script, .dockerignore and explicit copies; tenancy.yaml and Compose secret files generated by pnpm stack:init, never overwriting, enrollment material to its secret and a one-time handover file named by index; the local CA, ECDSA P-256, pathlen 0, critical name constraints permitting only DNS localhost, DNS soorma.internal and its subdomains, IP 127.0.0.1/32 and ::1/128, its key kept in .secrets/ for U4 to U7 and never mounted, callers documented to use --cacert; TLS 1.3 everywhere, PostgreSQL hostssl and scram-sha-256 only with verify-full clients; two database roles, the app role with no DELETE on principals or materials, migrations in the one-shot org-migrate as the migrator, S1 never holding that password; networks org and one org-internal-{env} per environment; ports: edge on 127.0.0.1:8441 only, internal and database unpublished, health loopback-only inside the container on no network; hardening; CI: PostgreSQL service container, image build, the secret check over the repository and the built image, a stack smoke test, .gitattributes; items carried to the first hosted deployment), deployment-architecture.md (the decisions index D-ID-OI-01 to 10, the stack diagram in Mermaid with a text alternative, start-up order, mounts, how U4 to U7 extend it), and construction/shared-infrastructure.md (the rules U4 to U7 inherit). Amended approved text to match the user's changes: NFR-OI-18 (migrations in org-migrate; S1 never holds the migrator password), NFR-OI-31 (TLS everywhere; store encryption at rest not applicable in M1 by the user's decision), NFR Design P-07 (a third, loopback-only health listener; no unauthenticated internal endpoint), P-15 and the logical components (app role only in S1). Security: SECURITY-01 in transit compliant, at rest not applicable in M1 by the user's decision; 02 N/A in M1; 06, 07, 09, 10, 12, 13, 15 compliant; 14 not applicable in M1 by the user's decision. **BLOCKING SECURITY FINDING, SECURITY-03 (Application-Level Logging)**: the rule requires log output directed to a centralized log service; the local stack sends JSON logs to stdout collected by Docker's logging driver, and has no log service. Stage: Infrastructure Design, U2 org-identity. It was marked compliant at NFR Requirements without checking that clause, an error in that stage's compliance summary. Options put to the user: (a) add a local log collector container; (b) record it as not applicable in M1, by the user's decision, and carry it to the first hosted deployment. Per the blocking-finding rule, only Request Changes is offered until it is resolved. Invariants: I1, I3, I6, I8, I10 covered; others unchanged; I11 N/A."
+**Context**: CONSTRUCTION, U2 org-identity, Infrastructure Design: Step 6 and the compliance check; blocked on SECURITY-03.
+
+---
+
+## Infrastructure Design: SECURITY-03 Resolved; Log-Pseudonym Amendment (org-identity)
+**Timestamp**: 2026-11-08T21:41:45Z
+**User Input**: "SECURITY-03: (b), plus a second fix.
+
+Centralized log service: record it as not applicable in M1, by my decision, on the same grounds as SECURITY-14 and SECURITY-01 at rest. M1 is a local stack with no hosted deployment, and a local collector would prove nothing about the hosted service. Carry it to Build and Test and to the first hosted deployment, together with NFR-OI-24's obligations.
+PII in logs (SECURITY-03's fourth clause): human identifiers are typically email addresses (BR-ID-05), and NFR-OI-23 groups auth.failed per principal, so logs would carry PII, including identifiers an attacker submits. Logs must instead carry a keyed pseudonym: HMAC-SHA-256 of the presented reference under a dedicated log-pseudonym key from organization-level configuration, separate from the counter secret. Alert rules group by the pseudonym. Database records (Failed Attempt, sign-in) keep the identifier. Extend NFR-OI-22's log test to assert that no presented identifier appears in captured logs. Update NFR-OI-22 and 23, the configuration items, stack:init (generate the key), and the compliance row, and log it as an amendment.
+Then show me the result."
+**User decision recorded (SECURITY-03, centralized log service)**: the user's decision, not the AI's: SECURITY-03's centralized log service is **not applicable in M1**, on the same grounds as SECURITY-14 and SECURITY-01 at rest (a local stack with no hosted deployment; a local collector would prove nothing about the hosted service). Carried to Build and Test and to the first hosted deployment, with NFR-OI-24's obligations.
+**AI Response**: "Finding SECURITY-03 resolved. Amendment, the log pseudonym (SECURITY-03's PII clause), applied to approved and current artifacts: NFR-OI-22 (no human principal identifier, known or presented, in any log; logs name a human by hp_ + the first 128 bits, base64url, of HMAC-SHA-256 under a dedicated log-pseudonym key from organization-level configuration, separate from the counter secret, over the reference's RFC 8785 form; database records keep the identifier; the log test now also runs with known presented identifiers, existing and unknown, and asserts none appears and that each event naming a human carries its pseudonym); NFR-OI-23 (auth.failed grouped per log pseudonym, never per identifier); the NFR Requirements SECURITY-03 row (compliant except the centralized log service, not applicable in M1 by the user's decision, with the correction that the earlier 'Compliant' did not check that clause) and its Build and Test and first-hosted-deployment rows; Functional Design BR-CFG-04 (the ignored-enrollment log names the principal by pseudonym) and BR-RF-05 (no log carries a human identifier), and business-logic-model flow 2.1; NFR Design P-02 (the log-pseudonym key), P-17 (the log helper takes a HumanPseudonym type, which only the pseudonym function produces, and no principal reference), its SECURITY-03 row, and the logical components (key ring, logger, configuration item); Infrastructure Design (the org-log-pseudonym-key secret, generated by stack:init with 256 random bits; the SECURITY-03 row; the finding section rewritten as resolved; the carried list), deployment-architecture.md (mounts), and shared-infrastructure.md (a Logs rule for U4 to U7; the carried list). Security: SECURITY-03 compliant except the centralized log service, not applicable in M1 by the user's decision; the rest as before; no blocking finding. Approval prompt presented."
+**Context**: CONSTRUCTION, U2 org-identity, Infrastructure Design: blocking finding resolved; amendment applied; awaiting approval.
+
+---
+
+## Infrastructure Design Approved (org-identity)
+**Timestamp**: 2026-11-08T21:51:00Z
+**User Input**: "Continue to Next Stage. Infrastructure Design approved, with one correction first:
+
+shared-infrastructure.md, Logs: an environment unit must not use the organization's log-pseudonym key. Each environment has its own log-pseudonym key, generated by stack:init and mounted only into that environment's services. So a human's pseudonym differs per environment, and no key is shared across environments (ID §6). Record that as the rule for U4 to U7, and add it to the #7 obligations alongside the per-environment network.
+Then commit all of U2's design artifacts and shared-infrastructure.md on dev, push, and post the U4 obligations on #7.
+
+The next stage is the QA construction enrichment for U2, not Code Generation. Use functional-design/, nfr-requirements/, nfr-design/ and infrastructure-design/ as sources (as U1's enrichment did with nfr-requirements/; tooling finding F38 is not yet applied to the rule). After the enrichment comes the Construction Design PR gate: branch dev, PR to main."
+**AI Response**: "Infrastructure Design for U2 org-identity APPROVED. Correction applied before committing: shared-infrastructure.md Logs rule: each level has its own log-pseudonym key; the organization level has org-log-pseudonym-key, and each environment its own ({env}-log-pseudonym-key), generated by pnpm stack:init and mounted only into that environment's services; an environment unit never uses the organization's key, so a human's pseudonym differs per environment and no key is shared across environments (ID §6). Construction Design PR gate branch confirmed by the user: dev, PR to main (pr-checkpoint.md Section 3, Step 3). Recorded: the QA construction enrichment's sources for U2 are functional-design/, nfr-requirements/, nfr-design/, and infrastructure-design/, by the user's instruction, as U1's used nfr-requirements/; qa-test-cases.md §2.5 lists functional-design, nfr-design, and infrastructure-design only, and tooling finding F38 (adding nfr-requirements) is not yet applied to the rule. Next: commit on dev, push, post the U4 obligations on #7, run the enrichment."
+**Context**: CONSTRUCTION, U2 org-identity: Infrastructure Design approved.
+
+---
+
+## Infrastructure Design Committed; U4 Obligations Posted; QA Construction Enrichment (org-identity)
+**Timestamp**: 2026-11-08T21:56:07Z
+**User Input**: (the approval instruction logged above)
+**AI Response**: "Committed b35c823 on dev (infrastructure-design/, construction/shared-infrastructure.md with the per-environment log-pseudonym key correction, the amended functional-design, nfr-requirements and nfr-design files, aidlc-state.md, audit.md) and pushed. Posted the U4 obligations on soorma-core#7: https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6727611544 (one org-internal-{env} network per environment, joined only by that environment's control-gateway; one log-pseudonym key per environment, never the organization's; shared-infrastructure.md for the rest). Ran the QA construction enrichment for U2 org-identity (qa-test-cases.md Section 2). Gates: extension enabled; both inception spec files present; no enrichment-delta.md for U2 (not idempotent-skipped). Sources: functional-design/ (required), nfr-requirements/ (by the user's instruction; §2.5 does not list it, and tooling finding F38 is not yet applied to the rule), nfr-design/, infrastructure-design/. test-specs-narrative.md: a construction-pass Common Fixtures subsection; TC-OI-001 to 025 updated in place (steps where needed, expected outcomes, construction-pass technical references), IDs and forward traceability unchanged; TC-OI-026 to 061 added (36), forward traceability to construction/org-identity/code/. test-case-index.md: 36 rows added; count 61. enrichment-delta.md (git-ignored): 25 modified, 36 added, none removed. Matrices: 14 L1 rows and 6 invariant rows had their QA enrichment markers replaced with TC IDs. Clarification noted for Code Generation: BR-K-07 lists no reason for a context-word refusal (NFR-OI-14); TC-OI-042 expects breached. Next: the Construction Design PR gate, branch dev, PR to main (confirmed by the user)."
+**Context**: CONSTRUCTION, U2 org-identity: QA construction enrichment complete.
+
+---
+
+## Functional Design Amendment A5; TC-OI-029 Split; Construction Design PR Gate Prepared (org-identity)
+**Timestamp**: 2026-11-08T22:11:06Z
+**User Input**: "Two changes to the enrichment, then the PR gate.
+
+BR-K-07: add the reason context_word (K contains the principal identifier, the organization identifier, or soorma). Confirm reason is an open enumeration in the contract. Add it to the contract-change table as compatible, and update TC-OI-042 to expect context_word. Log it as a Functional Design amendment.
+TC-OI-029: split it. The CI case is structural: the unknown-principal path performs exactly one Argon2id verification with the real parameters (checked with a test double), and the Failed Attempt write is enqueued, never awaited. The statistical timing comparison moves to Build and Test as a reported measurement, not a pass/fail gate, because a p < 0.01 test fails about 1 run in 100 by chance.
+Then run the Construction Design PR gate: branch dev, PR to main. Write the instructions, set the gate to PENDING, commit the enrichment, push, and open the PR. The description must flag for reviewers:
+
+Amendment A4 to U1's published contract (the header refusal, ProblemFieldError.header), which U2's Code Generation applies
+the new error codes
+the accepted residuals: compromise of K or K + P unrecoverable in M1; allowance exhaustion and the unknown-identifier flood
+my \"not applicable in M1\" decisions: SECURITY-01 at rest, SECURITY-03's centralized log service, SECURITY-14
+shared-infrastructure.md as the rules U4 to U7 inherit
+Use Refs #5, #3. Give me the PR link and don't mark the gate approved."
+**AI Response**: "Functional Design amendment A5 (technology; no specification gap): BR-K-07 gains the reason context_word (K contains the principal identifier, the organization identifier, or soorma); reason is an open enumeration in the contract, in U1's shape (anyOf enum plus string, NFR-WC-06). It is not yet in the contract: U2's Code Generation adds it as an optional member of the open Problem object (a new SecretRejectedReason definition), recorded in the contract-change table as compatible (an optional member of an open object; an open value set). NFR-OI-14 cites it. business-rules.md header records A5. TC-OI-042 step 4 now expects context_word. TC-OI-029 split: TC-OI-029 is structural and deterministic for CI (exactly one Argon2id verification with the real parameters, checked by a recording test double; the decoy for unknown principals; the Failed Attempt record enqueued and never awaited; priority High); TC-OI-062 added: the timing comparison as a reported Build and Test measurement, not a pass/fail gate. Index: 62 cases; enrichment-delta.md records both changes and resolves the TC-OI-042 clarification. Construction Design PR gate (pr-checkpoint.md Section 5): git repository present; branch dev, PR to main, confirmed by the user; validated functional-design/ (5 files) and the conditional nfr-requirements/, nfr-design/, infrastructure-design/ (all present); wrote construction/working/org-identity-design-pr-checkpoint-instructions.md (steps, title, description flagging A4, the new error codes, the accepted residuals, the user's not-applicable-in-M1 decisions for SECURITY-01 at rest, SECURITY-03's centralized log service, and SECURITY-14, and shared-infrastructure.md; Refs #5, #3); set ## PR Checkpoint State 'Construction Design PR Gate — org-identity' to PENDING. Next: commit, push, open the PR. The gate stays PENDING until the user confirms approval."
+**Context**: CONSTRUCTION, U2 org-identity: amendment A5; enrichment review; pr-checkpoint Construction Design PR gate, Sections 5.1 to 5.6.
+
+---
+
+## PR Checkpoint: Construction Design PR Opened (org-identity)
+**Timestamp**: 2026-11-08T22:11:32Z
+**User Input**: (the instruction logged above: "commit the enrichment, push, and open the PR ... Give me the PR link and don't mark the gate approved.")
+**AI Response**: "Committed 7df3362 on dev ('feat: construction design complete for org-identity (platform/m1-walking-skeleton)') and pushed. Opened soorma-core#13, dev to main: https://github.com/soorma-ai/soorma-core/pull/13, title 'feat(construction): platform/m1-walking-skeleton — org-identity design complete', with the description from construction/working/org-identity-design-pr-checkpoint-instructions.md (Refs #5, #3). Recorded the PR in ## PR Checkpoint State. The gate stays PENDING; not marked approved, as the user instructed. Code Generation for U2 does not start until the user confirms approval."
+**Context**: pr-checkpoint Construction Design PR gate, U2 org-identity, Section 5.7. PENDING on soorma-core#13.
+
+---
+
+## Amendment A5 Revised: reason on the errors[] Entry (org-identity), at the Construction Design PR Gate
+**Timestamp**: 2026-11-08T22:19:49Z
+**User Input**: "One change before I approve #13: move reason from the top level of Problem to the errors[] entry (ProblemFieldError.reason, optional, the open enumeration SecretRejectedReason), next to the pointer it qualifies. A secret_rejected Problem carries one errors[] entry with pointer to the K field and its reason. Update BR-K-07, the contract-change table row, A5's note, and TC-OI-042, then commit and push to dev so it joins #13. Don't mark the gate approved."
+**AI Response**: "Amendment A5 revised (technology; no specification gap). BR-K-07: a secret_rejected Problem carries exactly one errors[] entry with pointer to the K field (/newSecret in firstAuthenticate, /change/newSecret in replaceSecret) and reason beside it; reason is the optional ProblemFieldError.reason, typed as the open enumeration SecretRejectedReason (U1's open-enum shape); no top-level reason. Contract-change table: the row now adds ProblemFieldError.reason and SecretRejectedReason in components.openapi.yaml (beside A4's header), compatible; the secret_rejected row's disclosure reads 'one errors[] entry with pointer and reason'. A5's note in the business-rules header updated. §14's Code Generation list now names ProblemFieldError.reason and SecretRejectedReason. NFR-OI-14 wording aligned. TC-OI-042: every refusal asserts exactly one errors[] entry with pointer /change/newSecret and the named reason, no top-level reason, and that an unknown reason validates (open enumeration). For consistency, also aligned: the Common Fixtures refusal-codes row, TC-OI-012 (pointer /newSecret, reason too_short on the errors[] entry) and TC-OI-013 (pointer /change/newSecret, reason breached); enrichment-delta.md records the change. The PR instructions file's description and soorma-core#13's description updated to match. Gate left PENDING, as the user instructed."
+**Context**: CONSTRUCTION, U2 org-identity: amendment A5 revised; Construction Design PR gate PENDING on soorma-core#13.
+
+---

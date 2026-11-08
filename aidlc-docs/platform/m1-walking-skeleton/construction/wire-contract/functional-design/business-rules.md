@@ -20,6 +20,16 @@ Design PR gate):
   `instance`. soorma-core **always emits** `type`, `title`, `status`, `code`, and `instance`,
   with the `urn:soorma:` forms: a published convention, verified by U3 (BR-ERR-08)
 
+**Amendment from U2 `org-identity`'s Functional Design** (2026-11-08, review round 1; U2
+D-OI-26; within unreleased 0.1.0):
+- **A4, `credential_refused` is scoped to operations that name a security scheme.** On an
+  operation naming none (sign-in, first authentication, material change, bootstrap), a
+  presented `Authorization` or `Soorma-Delegation` header is `malformed_request` (400),
+  with an `errors[]` entry naming the header (`ProblemFieldError.header`, new and
+  optional). A 401 must carry `WWW-Authenticate: Bearer` (BR-ERR-06), which would be false
+  where no bearer credential can succeed. BR-CR-02, BR-CR-06, and the `credential_refused`
+  and `malformed_request` rows below are narrowed to match
+
 U1 states these rules **in the contract**: in the schemas, and in `contract/conventions/`.
 The perimeter rules (who rejects what, and when) are **implemented** by the surface and
 mechanism units named in each rule. U1's own verification is that the schemas and
@@ -188,11 +198,11 @@ specification gap, and none is raised. **How** it verifies is the technology dec
 | ID | Rule | Source |
 |---|---|---|
 | BR-CR-01 | A credential is presented only as `Authorization: Bearer {credential}`. One per request | D-WC-07 |
-| BR-CR-02 | A credential presented anywhere else is refused with `credential_refused`: another header, a cookie, or a query parameter. **No cookies in M1** | D-WC-07; SECURITY-12 |
+| BR-CR-02 | A credential presented anywhere else is refused with `credential_refused`: another header, a cookie, or a query parameter. **No cookies in M1**. *A4*: on an operation that names no security scheme, a presented `Authorization` header is `malformed_request` naming the header | D-WC-07; SECURITY-12; A4 |
 | BR-CR-03 | **The kind is readable from the typed prefix without verification**: `soorma_ac_` agent credential, `soorma_ec_` human environment credential, `soorma_si_` organization sign-in, `soorma_dc_` delegation credential (reserved). So S3 and S4 refuse human credentials by kind, with no organization-level material (P1 `classifyPresenter`) | D-WC-07; ID FR-023; M1-NFR-08 |
 | BR-CR-04 | The prefix only selects how a credential is checked. **It never admits one.** A credential is accepted only after it verifies, and its verified kind must match its prefix; otherwise it is `credential_refused` | I2; D-WC-07 |
 | BR-CR-05 | A credential is opaque to clients. **The whole credential, prefix included, is an RFC 6750 `b64token`**: letters, digits, `-`, `.`, `_`, `~`, `+`, `/`, then optional trailing `=`. It is at most 4096 characters. The syntax deliberately admits `.`, so NFR Design is free to choose the format (a JWT, for example). Every response that issues a credential states its expiry as an RFC 3339 time | D-WC-07; RFC 6750 §2.1 |
-| BR-CR-06 | The `Soorma-Delegation` header is **reserved** for a delegation credential presented beside an agent credential. In M1 any request carrying it is refused with `credential_refused` | A-4; ID §14 |
+| BR-CR-06 | The `Soorma-Delegation` header is **reserved** for a delegation credential presented beside an agent credential. In M1 any request carrying it is refused: with `credential_refused` on an operation that names a security scheme, and with `malformed_request` naming the header on one that names none (*A4*) | A-4; ID §14; A4 |
 | BR-CR-07 | The registration secret (`soorma_rs_`) and enrollment material (`soorma_em_`) are **material, not credentials**. They go in a request body, never in `Authorization`. Their typed prefixes let secret scanners find them, and keep them from being taken for credentials. At most 256 characters | PF §8b; ID FR-007; SECURITY-12 |
 | BR-CR-08 | Each surface document names, per operation, exactly which security scheme it accepts: `agentCredential`, `environmentCredential`, or `signIn`. Bootstrap, sign-in, and first authentication name none | ID §8b matrix |
 | BR-CR-09 | **No CORS in M1**: no browser origin is allowed. Allowing one later is an explicit list, never `*` | SECURITY-08 |
@@ -204,14 +214,14 @@ tolerates codes it does not know, and surface units may add codes.
 
 | Code | Status | When | Detail returned |
 |---|---|---|---|
-| `malformed_request` | 400 | The body is not JSON, or fails the schema | `errors[]` with JSON Pointers |
+| `malformed_request` | 400 | The body is not JSON, or fails the schema; or (*A4*) the operation names no security scheme and an `Authorization` or `Soorma-Delegation` header is present | `errors[]`, each with a JSON Pointer (`pointer`) or a header name (`header`) |
 | `unknown_field` | 400 | A field the closed draft does not define, **other than a platform-stamped field** | Pointer |
 | `stamped_field_set` | 400 | A draft sets a platform-stamped field, `envelopeVersion` included (O5). **Takes precedence over `unknown_field`** (BR-DR-10) | Pointer to the field |
 | `invalid_inbound_context` | 400 | The seal fails, is from another environment, the scope differs, or the envelope version is not accepted (O5) | **None**: one code for every cause |
 | `chain_too_deep` | 400 | The chain would exceed 32 (O7) | None |
 | `envelope_too_large` | 400 | The envelope to be stamped would exceed the envelope bound, 16 KiB in JCS form (BR-ENV-10) | None |
 | `unsupported_contract_version` | 400 | The declared version is not accepted | `supportedVersions` |
-| `credential_refused` | 401 | **Every credential failure except a verified expiry**: missing, malformed, unverifiable, revoked, ended, wrong environment, wrong kind for this surface, an extra credential, or the `Soorma-Delegation` header | **None** |
+| `credential_refused` | 401 | On an operation that names a security scheme (*A4*): **every credential failure except a verified expiry**: missing, malformed, unverifiable, revoked, ended, wrong environment, wrong kind for this surface, an extra credential, or the `Soorma-Delegation` header | **None** |
 | `credential_expired` | 401 | The credential **verifies with this environment's material** and has expired | None. The caller renews or re-bootstraps |
 | `forbidden` | 403 | Authority denied: O8, O9, and O12 | **None** |
 | `payload_too_large` | 413 | The body exceeds the published size bound | None |
@@ -227,7 +237,7 @@ tolerates codes it does not know, and surface units may add codes.
 | BR-ERR-04 | **On an abuse-bounded surface, `too_many_attempts` must not reveal whether its subject exists**: an unknown registration or principal is bounded and refused like a known one. *Carried to U2 and U6* | SECURITY-11; P8 |
 | BR-ERR-05 | No response carries a stack trace, internal path, framework or version detail, or datastore detail | SECURITY-09, 15 |
 | BR-ERR-06 | A 401 carries `WWW-Authenticate: Bearer`. A 429 and a 503 carry `Retry-After` | RFC 9110 |
-| BR-ERR-07 | **Check order**, so a refusal is deterministic: (1) body size; (2) credential presentation and kind; (3) verification and expiry; (4) environment (O4) and revocation (O3); (5) contract version; (6) draft schema, with stamped fields before unknown fields (O5; BR-DR-10); (7) forwarded context (O5, O6); (8) chain depth (O7); (9) origin (O12) and authority (O8, O9); (10) the size of the envelope to be stamped (BR-ENV-10). The size check comes last because the envelope's final form, including any re-broadening record, is known only after authority is evaluated. An unauthenticated surface starts at (5), with its abuse bound before verifying material. A request is refused with the first check it fails. *U3, U6, and U7 implement it; U2 and U4 for human credentials* | Defense in depth; no oracle before authentication |
+| BR-ERR-07 | **Check order**, so a refusal is deterministic: (1) body size; (2) credential presentation and kind; (3) verification and expiry; (4) environment (O4) and revocation (O3); (5) contract version; (6) draft schema, with stamped fields before unknown fields (O5; BR-DR-10); (7) forwarded context (O5, O6); (8) chain depth (O7); (9) origin (O12) and authority (O8, O9); (10) the size of the envelope to be stamped (BR-ENV-10). The size check comes last because the envelope's final form, including any re-broadening record, is known only after authority is evaluated. An unauthenticated surface runs (1), then refuses any presented `Authorization` or `Soorma-Delegation` header with `malformed_request` (*A4*), then continues from (5), with its abuse bound before verifying material. A request is refused with the first check it fails. *U3, U6, and U7 implement it; U2 and U4 for human credentials* | Defense in depth; no oracle before authentication |
 | BR-ERR-08 | **The Problem schema is a received schema** (amendments A2, A3). A client also receives problems a gateway or proxy emits, usually `about:blank` with no `code` or `instance`. So the schema **requires no field** (RFC 9457), `type` and `instance` are plain strings with no pattern, and a client accepts any value. **Emission requirements, published in the conventions**: every Problem soorma-core emits carries `type`, `title`, `status`, `code`, and `instance`; `type` is `urn:soorma:problem:{code}`; `instance` is `urn:soorma:request:{request id}`, equal to the response's `Soorma-Request-Id`. *Forward obligation, carried to U3* (soorma-core#6): the perimeter's tests verify each of these on every Problem soorma-core emits | BR-ID-11; RFC 9457 §3, §4.2.1 |
 
 ## 11. Identifier and Time Rules (BR-ID)
