@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION, unit U1 `wire-contract` (#4): **Code Generation**, COMPLETE and AWAITING APPROVAL (2026-11-08): all 21 plan steps done in five commits on `dev`; code review PR **soorma-core#12** (`dev` → `main`) opened, unmerged. CI on #12: build, checks, tests, audit, and SBOM pass; **dependency review fails until the repository's dependency graph is enabled** (a setting for the user; `pnpm run check:github` reports it). Summary: `construction/wire-contract/code/code-summary.md`. D-CG-16 (a `minimatch` override for GHSA-g3hv-75wg-m249) flagged for the user's review. Toolchain verified 2026-11-08T06:24:45Z (Node v26.13.0, pnpm 12.18.0); the earlier block was a stale session PATH. Construction Design PR gate APPROVED 2026-11-08T06:18:09Z (soorma-core#11 merged 2026-11-08T05:17:11Z, `15c475d`). Functional Design amended (A1, A2, A3) before the gate. QA construction enrichment complete. NFR Requirements approved 2026-11-08T04:34:32Z; NFR Design and Infrastructure Design skipped. Functional Design approved 2026-11-08T02:35:51Z. Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
+- **Current Stage**: CONSTRUCTION, unit U1 `wire-contract` (#4): **U1 `wire-contract` complete**: Code Generation APPROVED 2026-11-08T07:53:50Z; soorma-core#12 merged to `main` 2026-11-08T07:52:11Z as `2b3a64d`, after its CI passed (dependency review included, once the user enabled the dependency graph); soorma-core#4 closed. **Next unit: U2 `org-identity` (#5), to be started in a new session.** Summary: `construction/wire-contract/code/code-summary.md`. Toolchain verified 2026-11-08T06:24:45Z (Node v26.13.0, pnpm 12.18.0); the earlier block was a stale session PATH. Construction Design PR gate APPROVED 2026-11-08T06:18:09Z (soorma-core#11 merged 2026-11-08T05:17:11Z, `15c475d`). Functional Design amended (A1, A2, A3) before the gate. QA construction enrichment complete. NFR Requirements approved 2026-11-08T04:34:32Z; NFR Design and Infrastructure Design skipped. Functional Design approved 2026-11-08T02:35:51Z. Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -163,18 +163,17 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] QA construction enrichment: **COMPLETE** 2026-11-08 (`inception/test-cases/wire-contract/`: TC-WC-001 to 011 enriched in place, TC-WC-012 to 041 added; 41 cases). L1 and invariant matrices now cite TC IDs for every former *enrichment* placeholder
   - [x] Functional Design amendments A1 (`traceContext` open in the envelope, closed in the draft), A2 (Problem `type` and `instance` carry no pattern) and A3 (the received Problem schema requires no field; soorma-core always emits five fields with the `urn:soorma:` forms), 2026-11-08. Forward obligation to U3 (soorma-core#6): BR-ERR-08, recorded on #6 (issuecomment-6717621632)
   - [x] Construction Design PR gate: **APPROVED** 2026-11-08T06:18:09Z; soorma-core#11 merged as `15c475d`, and `origin/main` merged back into `dev`
-  - [ ] Code Generation: Part 1 **APPROVED** (revision 2, Q-CG-1 A); Part 2 **COMPLETE**, AWAITING APPROVAL. Q-CG-2 answered A. Commits `2cdea76`, `b0c3411`, `d87bac6`, `882b0fe`, and Group 5. Local run: every command passes, 222 tests, audit clean. L1 matrix: 32 rows Implemented, 0 Missing; invariant matrix: I1 to I10 Implemented, I11 N/A. Decisions taken at generation: D-CG-15 (schema layout), D-CG-16 (`minimatch` override, flagged for review) (`construction/working/wire-contract-code-generation-plan.md`: 21 steps, decisions D-CG-01 to 14). Revision 1 changes requested 2026-11-08; NFR-WC-19's engines half amended (`^26.13.0`); TC-WC-030, 031, 039, 041 updated. Unit Initialization and the L1 gate re-run 2026-11-08 (0 Missing). The earlier toolchain block (06:18:09Z) was a stale session PATH; verified Node v26.13.0 and pnpm 12.18.0 at 06:24:45Z
+  - [x] Code Generation: **APPROVED** 2026-11-08T07:53:50Z. Part 1 approved (revision 2, Q-CG-1 A); Part 2 complete. PR soorma-core#12 merged as `2b3a64d` (2026-11-08T07:52:11Z); CI green; `pnpm run check:github` passes. soorma-core#4 closed. D-CG-16 accepted with the approval. Q-CG-2 answered A. Commits `2cdea76`, `b0c3411`, `d87bac6`, `882b0fe`, and Group 5. Local run: every command passes, 222 tests, audit clean. L1 matrix: 32 rows Implemented, 0 Missing; invariant matrix: I1 to I10 Implemented, I11 N/A. Decisions taken at generation: D-CG-15 (schema layout), D-CG-16 (`minimatch` override, flagged for review) (`construction/working/wire-contract-code-generation-plan.md`: 21 steps, decisions D-CG-01 to 14). Revision 1 changes requested 2026-11-08; NFR-WC-19's engines half amended (`^26.13.0`); TC-WC-030, 031, 039, 041 updated. Unit Initialization and the L1 gate re-run 2026-11-08 (0 Missing). The earlier toolchain block (06:18:09Z) was a stale session PATH; verified Node v26.13.0 and pnpm 12.18.0 at 06:24:45Z
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: U1 `wire-contract` Code Generation complete, waiting for the user's
-approval (2-option completion message) and their review of the code review PR from `dev` to
-`main`, which stays unmerged until Build and Test uses it for the first CI run. Next: Build and
-Test is after all units (U2 next), but U1's own CI run on that PR and `pnpm run check:github` are
-recorded for it. A session resuming here re-runs Unit Initialization, and re-checks
-`node --version` (26.13.0) and `pnpm --version` (12.18.0). U1's inherited gaps: GAP-INT-003 and
-GAP-INT-008 (work-arounds). Forward obligations: BR-ERR-08 to U3 (soorma-core#6); D-CG-05 to U3's
-NFR Requirements (the runtime regex engine for Ajv).
+**Session stop point**: U1 `wire-contract` COMPLETE (Code Generation approved; #12 merged as
+`2b3a64d`; #4 closed; `origin/main` merged back into `dev`). Next: U2 `org-identity` (#5), in a
+new session, starting with Unit Initialization (extension rules, the L1 gate) and re-checking
+`node --version` (26.13.0) and `pnpm --version` (12.18.0). Build and Test comes after all units
+and uses U1's verification (CI on #12, `pnpm run check:github`). U1's inherited gaps: GAP-INT-003
+and GAP-INT-008 (work-arounds). Forward obligations: BR-ERR-08 to U3 (soorma-core#6); D-CG-05 to
+U3's NFR Requirements (the runtime regex engine for Ajv).

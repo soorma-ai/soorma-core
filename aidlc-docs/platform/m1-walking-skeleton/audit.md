@@ -947,3 +947,19 @@ Record the answer under Q-CG-2 in the plan, log it in audit.md, finish Step 2, a
 **Context**: CONSTRUCTION, U1 wire-contract, Code Generation: PR #12 and its first CI run.
 
 ---
+
+## Code Generation Approved; PR Merged (wire-contract)
+**Timestamp**: 2026-11-08T07:53:50Z
+**User Input**: "Continue to Next Stage. Code Generation for U1 is approved. soorma-core#12 is merged after its CI passed, including dependency review once the dependency graph was enabled. Record the approval and the merge in aidlc-state.md and audit.md. Close soorma-core#4 with a comment linking #12 that says verification across units comes at Build and Test, and update the completion table on #3. Merge origin/main back into dev and push. Do not start U2 org-identity, will use new session for that."
+**AI Response**: "Code Generation for U1 wire-contract APPROVED (with it, D-CG-16, the minimatch override flagged for review). Verified with gh: soorma-core#12 MERGED at 2026-11-08T07:52:11Z by gnulib, merge commit 2b3a64d; its checks passed: Build, check, and test; Dependency review; cla-assistant. pnpm run check:github now passes: vulnerability alerts enabled, and the dependency graph enabled and listing every direct dependency from pnpm-lock.yaml on main (the single-document lockfile, Q-CG-1 A, is readable). aidlc-state.md: U1 Code Generation checked and approved; U1 complete; stop point set to U2 org-identity (#5) in a new session. Next: close #4 with a comment linking #12, update the completion table on #3, merge origin/main into dev, push. U2 not started, as the user instructed."
+**Context**: CONSTRUCTION, U1 wire-contract: Code Generation approved; unit complete.
+
+---
+
+## Tickets Updated; origin/main Merged into dev (wire-contract)
+**Timestamp**: 2026-11-08T07:54:23Z
+**User Input**: (the instruction in the entry above)
+**AI Response**: "Closed soorma-core#4 (U1 wire-contract) with a comment linking #12 (merge commit 2b3a64d), stating that U1's own test cases are automated and pass in CI and that verification across units comes at Build and Test, after U7, when contract-v0.1.0 is also tagged: https://github.com/soorma-ai/soorma-core/issues/4#issuecomment-6718965583. Updated the completion table on soorma-core#3: added a Status column (U1 Done, code merged in #12, 2026-11-08; U2 Next; U3 to U7 Not started) and a line that cross-unit verification comes at Build and Test. Merged origin/main into dev: a fast-forward to 2b3a64d (the #12 merge commit), as after #11. U2 org-identity not started: the user will use a new session."
+**Context**: CONSTRUCTION, U1 wire-contract complete; tickets updated; dev synced with main.
+
+---
