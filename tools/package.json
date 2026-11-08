@@ -1,0 +1,12 @@
+{
+  "name": "@soorma/tools",
+  "private": true,
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "yaml": "2.9.1"
+  }
+}

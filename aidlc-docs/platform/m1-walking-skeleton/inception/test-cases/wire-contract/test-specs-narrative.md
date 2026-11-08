@@ -773,7 +773,7 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 
 ### TC-WC-030 — The fixture corpus and changelog establish the 0.1.0 baseline
 
-**Context**: Compatibility (I7) is tested against a versioned fixture corpus: valid and invalid samples per schema, which every later version must still accept and reject, unless a breaking change is recorded (NFR-WC-01, 02). In M1, `0.1.0` is the baseline.
+**Context**: Compatibility (I7) is tested against a versioned fixture corpus: valid and invalid samples per schema (NFR-WC-01, 02). Every later version is checked against every earlier version's fixtures. **An earlier valid fixture that now fails is a breaking change; an earlier invalid fixture that now passes is a widening, compatible under BR-VER-05.** Either outcome fails the test unless `contract/CHANGELOG.md` classifies that fixture's change, as breaking or as compatible respectively. In M1, `0.1.0` is the baseline.
 
 **Scenario**: The compatibility test runs over the corpus.
 
@@ -786,7 +786,7 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 2. Run the compatibility test
 3. Open `contract/CHANGELOG.md`
 
-**Expected outcome**: Every schema is represented. Every valid fixture passes, and every invalid fixture fails. The changelog has a `0.1.0` entry recording the baseline, with each change classified under BR-VER-05, and records that an automated OpenAPI diff is added once a second version exists (NFR-WC-03).
+**Expected outcome**: Every schema is represented. Every valid fixture passes, and every invalid fixture fails, so no fixture needs a classification. The changelog has a `0.1.0` entry recording the baseline, with each change classified under BR-VER-05; states the classification rule (a valid fixture that now fails is breaking, an invalid fixture that now passes is compatible) and the form in which a fixture's classification is recorded; and records that an automated OpenAPI diff is added once a second version exists (NFR-WC-03).
 
 **Scope**: happy-path · **Priority**: High  
 **Source**: wire-contract / M1-NFR-04 (NFR-WC-01, 02, 03)  
@@ -797,9 +797,9 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 
 ### TC-WC-031 — The compatibility test detects a breaking change
 
-**Context**: The compatibility test is only worth having if it fails when a change breaks an earlier version's fixtures (I7; NFR-WC-01).
+**Context**: The compatibility test is only worth having if it fails on every change in an earlier version's fixture outcomes that the changelog does not classify: a valid fixture that now fails (breaking), and an invalid fixture that now passes (a widening, compatible under BR-VER-05) (I7; NFR-WC-01).
 
-**Scenario**: A developer makes breaking changes to a working copy of the schemas, and runs the compatibility test after each.
+**Scenario**: A developer makes breaking and widening changes to a working copy of the schemas, and runs the compatibility test after each, with and without a changelog classification.
 
 **Preconditions**:
 - The corpus from TC-WC-030; a scratch working copy of the repository
@@ -809,8 +809,11 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 2. Rename `actorChain` to `chain`, and run it; revert
 3. Lower `actorChain`'s `maxItems` to 16, and run it; revert
 4. Close the envelope to unknown fields, and run it; revert
+5. Raise `actorChain`'s `maxItems` to 64 (the 33-entry invalid fixture now passes), and run it; revert
+6. Repeat step 5 with a changelog entry classifying that fixture's change as **compatible**, and run it; then classify it as **breaking** instead, and run it; revert
+7. Repeat step 1 with a changelog entry classifying the affected fixtures as **breaking**, and run it; then classify them as **compatible** instead, and run it; revert
 
-**Expected outcome**: The test fails after every change, naming the fixture that broke. After each revert, it passes.
+**Expected outcome**: Steps 1 to 5 fail, each naming the fixture whose outcome changed and whether the change is breaking or a widening. In step 6, the test passes with the compatible classification and fails with the breaking one. In step 7, it passes with the breaking classification and fails with the compatible one: a classification must match the outcome. After each revert, the test passes.
 
 **Scope**: negative · **Priority**: High  
 **Source**: wire-contract / M1-NFR-04 (NFR-WC-01)  
@@ -996,7 +999,7 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 
 ### TC-WC-039 — Installs are reproducible, and the toolchain is pinned
 
-**Context**: One committed lockfile, installed frozen; exact versions; a 7-day release cooldown; dependency lifecycle scripts blocked, with an allowlist that is empty in U1; Node pinned exactly; pnpm pinned with `packageManager` and enforced by pnpm, with no Corepack (NFR-WC-12, 15, 16, 19; M1-TECH-04).
+**Context**: One committed lockfile, installed frozen; exact versions; a 7-day release cooldown; dependency lifecycle scripts blocked, with an allowlist that is empty in U1; Node pinned exactly; pnpm pinned with `packageManager`, installed exactly in CI, and a mismatched version caught by the configuration check, with no Corepack (NFR-WC-12, 15, 16, 19; M1-TECH-04). pnpm's own refusal is off (`pmOnFail: ignore`), so the lockfile stays readable by GitHub's dependency graph (Q-CG-1).
 
 **Scenario**: A reviewer inspects the workspace configuration, then breaks each rule on a scratch branch.
 
@@ -1004,12 +1007,12 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 - The workspace from U1; a scratch branch
 
 **Steps**:
-1. Check that `pnpm-lock.yaml` is committed; every version in `package.json` files is exact; `minimumReleaseAge` is 7 days; the lifecycle-script allowlist is empty; `.node-version` and `engines` pin Node 26 exactly; `packageManager` pins pnpm 12 exactly; and no step enables Corepack
+1. Check that `pnpm-lock.yaml` is committed; every version in `package.json` files is exact; `minimumReleaseAge` is 7 days; the lifecycle-script allowlist is empty; `.node-version` pins Node `26.13.0` exactly, `engines.node` is `^26.13.0`, and the configuration check verifies they agree; `packageManager` pins pnpm 12 exactly; `pmOnFail` is `ignore`; `pnpm-lock.yaml` is a single YAML document; and no step enables Corepack
 2. Change a dependency's version in `package.json` without updating the lockfile, and run a frozen install; revert
-3. Run an install with a different pnpm major than `packageManager` names
+3. Run the configuration check with a different pnpm version than `packageManager` names
 4. Add a dependency whose version is a range (`^x.y.z`), and run the configuration check; revert
 
-**Expected outcome**: Every item in step 1 holds. Steps 2 to 4 are refused: the frozen install fails, pnpm refuses the mismatched version, and the configuration check rejects the range.
+**Expected outcome**: Every item in step 1 holds. Steps 2 to 4 are refused: the frozen install fails, the configuration check reports the mismatched pnpm version, and it rejects the range.
 
 **Scope**: negative · **Priority**: Medium  
 **Source**: wire-contract / M1-TECH-04 (NFR-WC-12, 15, 16, 19)  
@@ -1051,15 +1054,16 @@ The fixture values are labelled test data. None is a tenant identifier (I9).
 **Scenario**: A developer adds code that leaves a promise unhandled, and runs lint.
 
 **Preconditions**:
-- A scratch branch with any TypeScript file in the workspace (for example a contract check)
+- A lint fixture file containing a floating promise, excluded from the normal lint run; a scratch branch with any TypeScript file in the workspace (for example a contract check)
 
 **Steps**:
 1. Run lint, typecheck, and the format check on the unchanged workspace
-2. Add a call to an async function without `await`, `void`, or a handler, and run lint; revert
-3. Pass an async function where a void callback is expected, and run lint; revert
-4. Misformat a file, and run the format check; revert
+2. Run the automated lint test: it lints the floating-promise fixture through ESLint's Node API, with the workspace's configuration
+3. Add a call to an async function without `await`, `void`, or a handler, and run lint; revert
+4. Pass an async function where a void callback is expected, and run lint; revert
+5. Misformat a file, and run the format check; revert
 
-**Expected outcome**: Step 1 passes. Steps 2 and 3 fail with the named rule. Step 4 fails.
+**Expected outcome**: Step 1 passes: the fixture is not reported, because the normal lint run excludes it. In step 2, the test finds exactly the expected `@typescript-eslint/no-floating-promises` error in the fixture, and passes. Steps 3 and 4 fail with the named rule. Step 5 fails.
 
 **Scope**: negative · **Priority**: Low  
 **Source**: wire-contract / M1-NFR-06 (SECURITY-15; NFR-WC-23)  

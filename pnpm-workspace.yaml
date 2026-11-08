@@ -1,0 +1,43 @@
+# pnpm settings for the soorma-core workspace (NFR-WC-12 to 16, 19; T-02, T-15).
+# Each setting is checked by tools/checks (configuration).
+
+packages:
+  - contract
+  - tools
+
+# pnpm's own refusal of a mismatched pnpm version is off. With it on, pnpm 12
+# writes pnpm-lock.yaml as two YAML documents, and GitHub's dependency graph
+# reads only the first, so Dependabot alerts and dependency review see no
+# dependencies. CI installs exactly the packageManager version, and the
+# configuration check (pnpm run check:deps) fails on a mismatch (Q-CG-1 A).
+pmOnFail: ignore
+
+# Release cooldown: 7 days, in minutes (NFR-WC-15).
+minimumReleaseAge: 10080
+
+# Exact versions only (NFR-WC-12).
+saveExact: true
+
+# Refuse a Node version outside engines.node.
+engineStrict: true
+
+# Dependency lifecycle scripts: none allowed in U1 (NFR-WC-16). An install
+# fails if a dependency has a build script that is not listed here. Adding an
+# entry is recorded in DEPENDENCIES.md.
+strictDepBuilds: true
+allowBuilds: {}
+
+# openapi-typescript 7 declares typescript ^5; the workspace uses
+# TypeScript 6.0. Recorded in DEPENDENCIES.md, and re-proved by the
+# golden-output test (T-07 condition 2).
+peerDependencyRules:
+  allowedVersions:
+    openapi-typescript>typescript: '6'
+
+# Overrides: each forces a version outside a dependent's declared range, and is
+# recorded under "Overrides" in DEPENDENCIES.md (the register check requires it).
+# minimatch: GHSA-g3hv-75wg-m249 (moderate, denial of service), fixed only in
+# 11.0.1+, while eslint 10.14.0 and typescript-estree 8.72.1 still declare ^10.
+# Lint and its tests pass on 11.0.3 (D-CG-16).
+overrides:
+  minimatch@>=7 <11.0.1: 11.0.3

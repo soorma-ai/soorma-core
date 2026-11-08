@@ -1,0 +1,8 @@
+{
+  "type": "urn:soorma:problem:unsupported_contract_version",
+  "title": "Unsupported contract version",
+  "status": 400,
+  "code": "unsupported_contract_version",
+  "instance": "urn:soorma:request:01J9Z4",
+  "supportedVersions": ["0.1.0"]
+}

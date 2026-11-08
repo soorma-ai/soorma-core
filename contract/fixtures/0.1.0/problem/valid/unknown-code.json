@@ -1,0 +1,7 @@
+{
+  "type": "urn:soorma:problem:some_future_code",
+  "title": "Future",
+  "status": 400,
+  "code": "some_future_code",
+  "instance": "urn:soorma:request:01J9Z5"
+}

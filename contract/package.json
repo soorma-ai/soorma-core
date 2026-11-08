@@ -1,0 +1,19 @@
+{
+  "name": "@soorma/contract",
+  "private": true,
+  "description": "The soorma wire contract: envelope and Delivery schemas, shared OpenAPI components, conventions, and generated types",
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "generate": "node scripts/generate-types.ts",
+    "check:generated": "node scripts/generate-types.ts --check",
+    "check": "node scripts/checks/run.ts"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "openapi-typescript": "7.13.0",
+    "typescript": "6.0.3",
+    "yaml": "2.9.1"
+  }
+}

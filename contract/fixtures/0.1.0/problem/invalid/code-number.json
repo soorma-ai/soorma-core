@@ -1,0 +1,13 @@
+{
+  "type": "urn:soorma:problem:unknown_field",
+  "title": "Unknown field",
+  "status": 400,
+  "code": 7,
+  "instance": "urn:soorma:request:01J9Z3",
+  "errors": [
+    {
+      "pointer": "/x-future",
+      "detail": "not defined by the draft"
+    }
+  ]
+}

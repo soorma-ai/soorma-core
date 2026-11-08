@@ -1,0 +1,22 @@
+{
+  "envelope": {
+    "envelopeVersion": 1,
+    "scope": {
+      "organization": "o1",
+      "project": "p1",
+      "environment": "e1"
+    },
+    "originMode": "autonomous",
+    "actorChain": [
+      {
+        "agent": "agent-a",
+        "instance": "host-1:4100"
+      }
+    ],
+    "traceContext": {
+      "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+    }
+  },
+  "seal": "s1",
+  "payload": null
+}
