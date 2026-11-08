@@ -1303,3 +1303,11 @@ Use Refs #5, #3. Give me the PR link and don't mark the gate approved."
 **Context**: CONSTRUCTION, U2 org-identity: amendment A5; enrichment review; pr-checkpoint Construction Design PR gate, Sections 5.1 to 5.6.
 
 ---
+
+## PR Checkpoint: Construction Design PR Opened (org-identity)
+**Timestamp**: 2026-11-08T22:11:32Z
+**User Input**: (the instruction logged above: "commit the enrichment, push, and open the PR ... Give me the PR link and don't mark the gate approved.")
+**AI Response**: "Committed 7df3362 on dev ('feat: construction design complete for org-identity (platform/m1-walking-skeleton)') and pushed. Opened soorma-core#13, dev to main: https://github.com/soorma-ai/soorma-core/pull/13, title 'feat(construction): platform/m1-walking-skeleton — org-identity design complete', with the description from construction/working/org-identity-design-pr-checkpoint-instructions.md (Refs #5, #3). Recorded the PR in ## PR Checkpoint State. The gate stays PENDING; not marked approved, as the user instructed. Code Generation for U2 does not start until the user confirms approval."
+**Context**: pr-checkpoint Construction Design PR gate, U2 org-identity, Section 5.7. PENDING on soorma-core#13.
+
+---
