@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION, unit U1 `wire-contract` (#4): **Functional Design**, artifacts generated, awaiting the user's approval (2026-11-08). Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
+- **Current Stage**: CONSTRUCTION, unit U1 `wire-contract` (#4): **NFR Requirements**, in progress (2026-11-08). Functional Design approved 2026-11-08T02:35:51Z. Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -148,15 +148,18 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
 ### 🟢 CONSTRUCTION PHASE
 - [x] Construction Phase Initialization (2026-11-08): rules loaded for all five enabled extensions; prd-gap-classification.md active
 - **Unit order**: U1 `wire-contract` (#4) first, chosen by the user 2026-11-03T04:47:01Z (pr-checkpoint.md Section 4.7). The planned sequence U1 → U7 follows
-- **Current unit**: U1 `wire-contract`. Unit Initialization and the L1 gate's initial assessment done (2026-11-08). **Functional Design: artifacts generated 2026-11-08; revised for five requested changes; committed on dev; AWAITING APPROVAL** (`construction/wire-contract/functional-design/`: domain-entities, business-rules, business-logic-model, l1-coverage-matrix, invariant-coverage-matrix). Q1 to Q12 answered; Q6 answered as technology (the perimeter must verify forwarded context; the seal is the mechanism), so no U1 specification gap. `component-methods.md` `validateDraft` and `stamp` corrected (Q11, Q6)
+- **Current unit**: U1 `wire-contract`. Unit Initialization and the L1 gate's initial assessment done (2026-11-08)
+  - [x] Functional Design: **APPROVED** 2026-11-08T02:35:51Z (`construction/wire-contract/functional-design/`: domain-entities, business-rules, business-logic-model, l1-coverage-matrix, invariant-coverage-matrix; committed `7f5249a`). Q6 answered as technology, so no U1 specification gap. `component-methods.md` `validateDraft` and `stamp` corrected
+  - [ ] NFR Requirements: IN PROGRESS
+  - [ ] NFR Design, Infrastructure Design: assessed at the end of NFR Requirements
+  - [ ] QA construction enrichment; Construction Design PR gate; Code Generation
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: U1 `wire-contract` Functional Design, Step 8: completion message presented,
-waiting for the user to approve or request changes. Next if approved: NFR Requirements for U1 (the
-workspace toolchain, lockfile, schema validator, and type generator, under M1-TECH-01 to 04). A
-session resuming here re-runs Unit Initialization (extension rules and prd-gap-classification.md)
-first. U1's inherited gaps: GAP-INT-003 and GAP-INT-008 (work-arounds).
+**Session stop point**: U1 `wire-contract` NFR Requirements, Step 5: waiting for the user to answer
+the questions in `construction/working/wire-contract-nfr-requirements-plan.md`. A session resuming here
+re-runs Unit Initialization (extension rules and prd-gap-classification.md) first. U1's inherited gaps:
+GAP-INT-003 and GAP-INT-008 (work-arounds).

@@ -716,3 +716,19 @@ Then commit the Functional Design on dev and present the completion message agai
 **Context**: Functional Design, U1 wire-contract, Step 8: Request Changes. Changes applied; commit authorized by the user.
 
 ---
+
+## Functional Design: Committed; Approval Prompt Re-presented (wire-contract)
+**Timestamp**: 2026-11-08T02:32:41Z
+**User Input**: (none)
+**AI Response**: "Committed the Functional Design on dev as 7f5249a (not pushed): the five functional-design artifacts, aidlc-state.md, audit.md, and the component-methods.md correction. The git-ignored plan in construction/working/ was not staged. Re-presented the Functional Design completion message with the 2-option prompt."
+**Context**: Functional Design, U1 wire-contract, Step 7 (re-presented). Awaiting explicit approval.
+
+---
+
+## Functional Design: Approved (wire-contract)
+**Timestamp**: 2026-11-08T02:35:51Z
+**User Input**: "Continue to Next Stage. Functional Design approved. Push dev, then start NFR Requirements for U1."
+**AI Response**: "Recorded Functional Design approval for U1 wire-contract. Marked it complete in aidlc-state.md, with per-unit progress lines for U1. Committing this record and pushing dev, then starting NFR Requirements (rules loaded from construction/nfr-requirements.md)."
+**Context**: Functional Design, U1 wire-contract, Step 9. Approved; next stage NFR Requirements.
+
+---
