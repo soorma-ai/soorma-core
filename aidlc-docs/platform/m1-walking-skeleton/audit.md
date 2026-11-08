@@ -1311,3 +1311,11 @@ Use Refs #5, #3. Give me the PR link and don't mark the gate approved."
 **Context**: pr-checkpoint Construction Design PR gate, U2 org-identity, Section 5.7. PENDING on soorma-core#13.
 
 ---
+
+## Amendment A5 Revised: reason on the errors[] Entry (org-identity), at the Construction Design PR Gate
+**Timestamp**: 2026-11-08T22:19:49Z
+**User Input**: "One change before I approve #13: move reason from the top level of Problem to the errors[] entry (ProblemFieldError.reason, optional, the open enumeration SecretRejectedReason), next to the pointer it qualifies. A secret_rejected Problem carries one errors[] entry with pointer to the K field and its reason. Update BR-K-07, the contract-change table row, A5's note, and TC-OI-042, then commit and push to dev so it joins #13. Don't mark the gate approved."
+**AI Response**: "Amendment A5 revised (technology; no specification gap). BR-K-07: a secret_rejected Problem carries exactly one errors[] entry with pointer to the K field (/newSecret in firstAuthenticate, /change/newSecret in replaceSecret) and reason beside it; reason is the optional ProblemFieldError.reason, typed as the open enumeration SecretRejectedReason (U1's open-enum shape); no top-level reason. Contract-change table: the row now adds ProblemFieldError.reason and SecretRejectedReason in components.openapi.yaml (beside A4's header), compatible; the secret_rejected row's disclosure reads 'one errors[] entry with pointer and reason'. A5's note in the business-rules header updated. §14's Code Generation list now names ProblemFieldError.reason and SecretRejectedReason. NFR-OI-14 wording aligned. TC-OI-042: every refusal asserts exactly one errors[] entry with pointer /change/newSecret and the named reason, no top-level reason, and that an unknown reason validates (open enumeration). For consistency, also aligned: the Common Fixtures refusal-codes row, TC-OI-012 (pointer /newSecret, reason too_short on the errors[] entry) and TC-OI-013 (pointer /change/newSecret, reason breached); enrichment-delta.md records the change. The PR instructions file's description and soorma-core#13's description updated to match. Gate left PENDING, as the user instructed."
+**Context**: CONSTRUCTION, U2 org-identity: amendment A5 revised; Construction Design PR gate PENDING on soorma-core#13.
+
+---

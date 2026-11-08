@@ -44,7 +44,7 @@ time-based case runs with the **injected clock** (NFR Design P-14), never by wai
 | **the bound** (sign-in abuse) | **10 failures per sliding 15 minutes** per principal reference, and **backoff** from the 5th consecutive failure (1 s doubling, capped at 15 min); shared by `authenticate`, `firstAuthenticate`, `changeMaterial` |
 | **K policy** | 8 to 256 code points after NFKC; no control characters; not on the pinned breached list; no context word; not the material it replaces |
 | **P** | TOTP (RFC 6238): HMAC-SHA-1, 6 digits, 30 s, ±1 step; each code once; a pending enrollment lives 10 minutes |
-| **Refusal codes** (U2) | `authentication_failed` 403; `second_factor_enrollment_required` 403; `second_factor_not_confirmed` 403; `secret_rejected` 400 (with `reason`); `too_many_attempts` 429; `malformed_request` 400; `credential_refused` and `credential_expired` 401 (sign-in operations only) |
+| **Refusal codes** (U2) | `authentication_failed` 403; `second_factor_enrollment_required` 403; `second_factor_not_confirmed` 403; `secret_rejected` 400 (one `errors[]` entry: `pointer` to the K field, and `reason`); `too_many_attempts` 429; `malformed_request` 400; `credential_refused` and `credential_expired` 401 (sign-in operations only) |
 | **internal interface** | S1's internal listener (port 9443), reachable only on `org-internal-{env}` networks; every call a signed request (NFR Design P-06) |
 | **log pseudonym** | `hp_` + 128 bits of HMAC-SHA-256 under the organization's log-pseudonym key. No log carries a human identifier |
 
@@ -325,7 +325,7 @@ this file (the revocation propagation bound) does not apply to U2.
 **Steps**:
 1. Call `firstAuthenticate` with the enrollment material and a 7-character K
 
-**Expected outcome**: `secret_rejected` (400), pointer `/newSecret`, reason `too_short`. H stays `pending`. The enrollment material is not consumed and still verifies. The attempt is not counted against the bound.
+**Expected outcome**: `secret_rejected` (400), with one `errors[]` entry: `pointer` `/newSecret`, `reason` `too_short`. H stays `pending`. The enrollment material is not consumed and still verifies. The attempt is not counted against the bound.
 
 **Scope**: negative · **Priority**: Medium  
 **Source**: org-identity / M1-FR-17 (M1-NFR-09)  
@@ -347,7 +347,7 @@ this file (the revocation propagation bound) does not apply to U2.
 **Steps**:
 1. Call `changeMaterial` with the current K and `replaceSecret`, giving a new K taken from the pinned breached list
 
-**Expected outcome**: `secret_rejected` (400), reason `breached`. K is unchanged, live sign-ins are unaffected, and the attempt is not counted.
+**Expected outcome**: `secret_rejected` (400), with one `errors[]` entry: `pointer` `/change/newSecret`, `reason` `breached`. K is unchanged, live sign-ins are unaffected, and the attempt is not counted.
 
 **Scope**: negative · **Priority**: Medium  
 **Source**: org-identity / M1-FR-17 (M1-NFR-09)  
@@ -1029,7 +1029,7 @@ this file (the revocation propagation bound) does not apply to U2.
 4. Try a K that contains H's identifier in another case (`xH@EXAMPLE.COMx`), one that contains `SOORMA`, and one that contains only the 2-character organization identifier `o1` (`o1-garden-lantern`)
 5. Try the current K as the new K
 
-**Expected outcome**: Step 1: 256 accepted; 257 is `secret_rejected` `too_long`. Step 2: `too_short`. Step 3: `disallowed_character`. Step 4: the identifier and `soorma` Ks are `secret_rejected`, with reason **`context_word`** (BR-K-07, amendment A5); the K containing only `o1` is accepted, because identifiers shorter than 4 characters are not matched. Step 5: `reused`.
+**Expected outcome**: Every refusal below is `secret_rejected` (400) whose Problem carries **exactly one `errors[]` entry**, with `pointer` `/change/newSecret` and the `reason` named; the Problem has no top-level `reason`. Step 1: 256 accepted; 257 refused, `too_long`. Step 2: `too_short`. Step 3: `disallowed_character`. Step 4: the identifier and `soorma` Ks are refused with `reason` **`context_word`** (BR-K-07, amendment A5); the K containing only `o1` is accepted, because identifiers shorter than 4 characters are not matched. Step 5: `reused`. An unknown `reason` value is valid against the schema (`SecretRejectedReason` is open).
 
 **Scope**: edge-boundary · **Priority**: Medium  
 **Source**: org-identity / M1-FR-17 (BR-K-01 to 07; NFR-OI-14)  

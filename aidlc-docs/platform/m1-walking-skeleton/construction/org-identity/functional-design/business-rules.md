@@ -2,7 +2,7 @@
 
 **Unit**: U2 `org-identity` (soorma-core#5). Control face, organization level
 **Built against**: ID @ `prd-identity-v1.0`, PF @ `prd-platform-foundations-v1.3`
-**Amendment A5** (2026-11-08, at the QA construction enrichment, the user's): BR-K-07 gains the reason `context_word`; `reason` is an open enumeration (contract-change table, §10).
+**Amendment A5** (2026-11-08, at the QA construction enrichment, the user's): BR-K-07 gains the reason `context_word`. `reason` is an open enumeration, `SecretRejectedReason`, carried on the `errors[]` entry as `ProblemFieldError.reason`, next to the pointer it qualifies (revised before the Construction Design PR gate's approval; contract-change table, §10).
 **Plan**: Q1 to Q12 answered 2026-11-08 (audit.md, *Functional Design: Answers Received*).
 Every answer is classified technology (prd-gap-classification.md Step 1). **No
 specification gap was found in U2.**
@@ -88,7 +88,7 @@ BR-ID, BR-VER), which apply unchanged unless a rule below says otherwise
 | BR-K-04 | **No composition rules.** No forced digits, symbols, or cases | NIST SP 800-63B |
 | BR-K-05 | Every new K is checked against a **breached-secret list held locally**. Neither K nor any hash of it is sent outside the organization level | M1-NFR-09 |
 | BR-K-06 | A new K may not equal the material it replaces: the enrollment material at first authentication, or the current K at `replaceSecret` | Defence in depth |
-| BR-K-07 | A refused K is `secret_rejected` (400), with a pointer to the field and a `reason`: `too_short`, `too_long`, `disallowed_character`, `breached`, `reused`, or **`context_word`** (K contains the principal identifier, the organization identifier, or `soorma`; NFR-OI-14). *Amendment A5 (the user's, 2026-11-08, at the QA enrichment)*: `context_word` added. **`reason` is an open enumeration** in the contract (U1's shape, `anyOf: [{ enum: [...] }, { type: string }]`, NFR-WC-06): a client tolerates a reason it does not know. It is a validation error, returned only after the presented material verified | BR-ERR-01 |
+| BR-K-07 | A refused K is `secret_rejected` (400). **The Problem carries exactly one `errors[]` entry**, with `pointer` to the K field (`/newSecret` in `firstAuthenticate`, `/change/newSecret` in `replaceSecret`) and **`reason`, next to the pointer it qualifies**: `too_short`, `too_long`, `disallowed_character`, `breached`, `reused`, or **`context_word`** (K contains the principal identifier, the organization identifier, or `soorma`; NFR-OI-14). `reason` is an optional member of `ProblemFieldError`, typed as the **open enumeration `SecretRejectedReason`** (U1's shape, `anyOf: [{ enum: [...] }, { type: string }]`, NFR-WC-06): a client tolerates a reason it does not know. *Amendment A5 (the user's, 2026-11-08)*: `context_word` added; *revised before the gate's approval*: `reason` moved from the Problem's top level to the `errors[]` entry. It is a validation error, returned only after the presented material verified | BR-ERR-01; A5 |
 | BR-K-08 | K is stored only in an adaptive one-way form that **takes the full normalized input**: no silent truncation, as bcrypt does at 72 bytes (carried to NFR Requirements) | M1-NFR-09; Q10 |
 
 ## 6. Second Factor (BR-P)
@@ -159,8 +159,8 @@ BR-ID, BR-VER), which apply unchanged unless a rule below says otherwise
 |---|---|---|
 | Add `authentication_failed`, 403: every failure to authenticate on `firstAuthenticate`, `authenticate`, `changeMaterial`. Disclosure: none | `conventions/errors.md`; `ProblemCode` | **Compatible**: the code set is open |
 | Add `second_factor_enrollment_required`, 403: P required and not enrolled, after K verified (sign-in, renewal). Disclosure: that P must be enrolled | same | **Compatible** |
-| Add `secret_rejected`, 400: a new K fails the policy, after the presented material verified. Disclosure: pointer and `reason` | same | **Compatible** |
-| Add the optional Problem member **`reason`** (on `secret_rejected`), an **open enumeration**: `too_short`, `too_long`, `disallowed_character`, `breached`, `reused`, `context_word` (amendment A5). A later reason is compatible | `components.openapi.yaml` (`Problem`, a new `SecretRejectedReason`); `conventions/errors.md` | **Compatible**: an optional member of an open object; an open value set (BR-ENV-06's rule) |
+| Add `secret_rejected`, 400: a new K fails the policy, after the presented material verified. Disclosure: one `errors[]` entry with `pointer` and `reason` | same | **Compatible** |
+| Add the optional **`ProblemFieldError.reason`**, typed as the new **open enumeration `SecretRejectedReason`**: `too_short`, `too_long`, `disallowed_character`, `breached`, `reused`, `context_word` (amendment A5). Used on `secret_rejected`, whose Problem carries one `errors[]` entry with `pointer` and `reason`. A later reason is compatible | `components.openapi.yaml` (`ProblemFieldError`, beside A4's `header`; `SecretRejectedReason`); `conventions/errors.md` | **Compatible**: an optional member of an open object; an open value set (BR-ENV-06's rule) |
 | Add `second_factor_not_confirmed`, 403: a P confirmation fails after the current material verified. Disclosure: none | same | **Compatible** |
 | `too_many_attempts`: *When* becomes "The abuse bound on bootstrap, sign-in, first authentication, or material change" | `conventions/errors.md` | **Compatible**: a wider *When* for an existing code |
 | Disclosure section: the 403 refusals carry no `WWW-Authenticate` (D-OI-13) | `conventions/errors.md` | Compatible |
@@ -236,8 +236,8 @@ business-rules.md, *Amendment from U2*), alongside U2's own additions. The A4 pa
 U2's own additions go with it: the four new codes (`authentication_failed`,
 `second_factor_enrollment_required`, `secret_rejected`, `second_factor_not_confirmed`) and
 the widened `too_many_attempts`; `org-gateway.openapi.yaml`; and
-`HumanPrincipalReferenceInput` and `HumanPrincipalReference` (§10, *Contract changes U2
-makes*).
+`HumanPrincipalReferenceInput` and `HumanPrincipalReference`; and `ProblemFieldError.reason`
+with the open enumeration `SecretRejectedReason` (A5) (§10, *Contract changes U2 makes*).
 
 ### To NFR Design and Infrastructure Design (U2)
 
