@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+#
+# Dependabot version updates, held to the workspace's 7-day release cooldown
+# (NFR-WC-15; D-CG-12; Q-CG-1 A). Each update PR still has to pass CI: the
+# register, licence, and configuration checks, and the frozen-lockfile install.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    versioning-strategy: increase
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
