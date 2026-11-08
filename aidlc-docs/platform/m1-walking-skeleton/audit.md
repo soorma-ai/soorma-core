@@ -1276,3 +1276,30 @@ The next stage is the QA construction enrichment for U2, not Code Generation. Us
 **Context**: CONSTRUCTION, U2 org-identity: Infrastructure Design approved.
 
 ---
+
+## Infrastructure Design Committed; U4 Obligations Posted; QA Construction Enrichment (org-identity)
+**Timestamp**: 2026-11-08T21:56:07Z
+**User Input**: (the approval instruction logged above)
+**AI Response**: "Committed b35c823 on dev (infrastructure-design/, construction/shared-infrastructure.md with the per-environment log-pseudonym key correction, the amended functional-design, nfr-requirements and nfr-design files, aidlc-state.md, audit.md) and pushed. Posted the U4 obligations on soorma-core#7: https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6727611544 (one org-internal-{env} network per environment, joined only by that environment's control-gateway; one log-pseudonym key per environment, never the organization's; shared-infrastructure.md for the rest). Ran the QA construction enrichment for U2 org-identity (qa-test-cases.md Section 2). Gates: extension enabled; both inception spec files present; no enrichment-delta.md for U2 (not idempotent-skipped). Sources: functional-design/ (required), nfr-requirements/ (by the user's instruction; §2.5 does not list it, and tooling finding F38 is not yet applied to the rule), nfr-design/, infrastructure-design/. test-specs-narrative.md: a construction-pass Common Fixtures subsection; TC-OI-001 to 025 updated in place (steps where needed, expected outcomes, construction-pass technical references), IDs and forward traceability unchanged; TC-OI-026 to 061 added (36), forward traceability to construction/org-identity/code/. test-case-index.md: 36 rows added; count 61. enrichment-delta.md (git-ignored): 25 modified, 36 added, none removed. Matrices: 14 L1 rows and 6 invariant rows had their QA enrichment markers replaced with TC IDs. Clarification noted for Code Generation: BR-K-07 lists no reason for a context-word refusal (NFR-OI-14); TC-OI-042 expects breached. Next: the Construction Design PR gate, branch dev, PR to main (confirmed by the user)."
+**Context**: CONSTRUCTION, U2 org-identity: QA construction enrichment complete.
+
+---
+
+## Functional Design Amendment A5; TC-OI-029 Split; Construction Design PR Gate Prepared (org-identity)
+**Timestamp**: 2026-11-08T22:11:06Z
+**User Input**: "Two changes to the enrichment, then the PR gate.
+
+BR-K-07: add the reason context_word (K contains the principal identifier, the organization identifier, or soorma). Confirm reason is an open enumeration in the contract. Add it to the contract-change table as compatible, and update TC-OI-042 to expect context_word. Log it as a Functional Design amendment.
+TC-OI-029: split it. The CI case is structural: the unknown-principal path performs exactly one Argon2id verification with the real parameters (checked with a test double), and the Failed Attempt write is enqueued, never awaited. The statistical timing comparison moves to Build and Test as a reported measurement, not a pass/fail gate, because a p < 0.01 test fails about 1 run in 100 by chance.
+Then run the Construction Design PR gate: branch dev, PR to main. Write the instructions, set the gate to PENDING, commit the enrichment, push, and open the PR. The description must flag for reviewers:
+
+Amendment A4 to U1's published contract (the header refusal, ProblemFieldError.header), which U2's Code Generation applies
+the new error codes
+the accepted residuals: compromise of K or K + P unrecoverable in M1; allowance exhaustion and the unknown-identifier flood
+my \"not applicable in M1\" decisions: SECURITY-01 at rest, SECURITY-03's centralized log service, SECURITY-14
+shared-infrastructure.md as the rules U4 to U7 inherit
+Use Refs #5, #3. Give me the PR link and don't mark the gate approved."
+**AI Response**: "Functional Design amendment A5 (technology; no specification gap): BR-K-07 gains the reason context_word (K contains the principal identifier, the organization identifier, or soorma); reason is an open enumeration in the contract, in U1's shape (anyOf enum plus string, NFR-WC-06). It is not yet in the contract: U2's Code Generation adds it as an optional member of the open Problem object (a new SecretRejectedReason definition), recorded in the contract-change table as compatible (an optional member of an open object; an open value set). NFR-OI-14 cites it. business-rules.md header records A5. TC-OI-042 step 4 now expects context_word. TC-OI-029 split: TC-OI-029 is structural and deterministic for CI (exactly one Argon2id verification with the real parameters, checked by a recording test double; the decoy for unknown principals; the Failed Attempt record enqueued and never awaited; priority High); TC-OI-062 added: the timing comparison as a reported Build and Test measurement, not a pass/fail gate. Index: 62 cases; enrichment-delta.md records both changes and resolves the TC-OI-042 clarification. Construction Design PR gate (pr-checkpoint.md Section 5): git repository present; branch dev, PR to main, confirmed by the user; validated functional-design/ (5 files) and the conditional nfr-requirements/, nfr-design/, infrastructure-design/ (all present); wrote construction/working/org-identity-design-pr-checkpoint-instructions.md (steps, title, description flagging A4, the new error codes, the accepted residuals, the user's not-applicable-in-M1 decisions for SECURITY-01 at rest, SECURITY-03's centralized log service, and SECURITY-14, and shared-infrastructure.md; Refs #5, #3); set ## PR Checkpoint State 'Construction Design PR Gate — org-identity' to PENDING. Next: commit, push, open the PR. The gate stays PENDING until the user confirms approval."
+**Context**: CONSTRUCTION, U2 org-identity: amendment A5; enrichment review; pr-checkpoint Construction Design PR gate, Sections 5.1 to 5.6.
+
+---
