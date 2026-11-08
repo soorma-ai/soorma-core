@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soorma.ai/contract/envelope.schema.json",
+  "$comment": "SPDX-License-Identifier: Apache-2.0",
+  "title": "Envelope",
+  "description": "Envelope v1: the identity context of an event or an agent-originated call (PF FR-001, PF §7b). This document also defines the draft a client sends and the forwarded context it carries. Validating against the document itself validates an Envelope. The envelope carries assertions the platform stamped, not proof, and is never usable to act (PF §17).",
+  "$ref": "#/$defs/Envelope",
+  "$defs": {
+    "Envelope": {
+      "description": "The stamped envelope: exactly the seven fields of PF §7b. Six are platform-stamped; traceContext is agent-asserted. Open to unknown fields at every level: a consumer preserves and forwards them (PF FR-005 a). The seal travels beside the envelope, never inside it. Received identifiers are opaque strings: never validate their syntax (BR-ID-11).",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["envelopeVersion", "scope", "originMode", "actorChain", "traceContext"],
+      "properties": {
+        "envelopeVersion": {
+          "description": "The envelope's own version. Always 1 in this contract version. Distinct from the client contract version.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "originMode": {
+          "$ref": "#/$defs/OriginMode"
+        },
+        "delegatingPrincipal": {
+          "$ref": "#/$defs/DelegatingPrincipalReference"
+        },
+        "actorChain": {
+          "description": "Every hop, most recent last. At least 1 entry and at most maxChainDepth (32) entries. Appended by the platform; never truncated.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActorReference"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "reBroadening": {
+          "description": "Present when re-broadening was load-bearing at some hop: one record per such hop. That each hop is an index into actorChain, and that no hop appears twice, is checked in code by the receiving unit.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ReBroadeningRecord"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "traceContext": {
+          "$ref": "#/$defs/EnvelopeTraceContext"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "originMode": {
+                "const": "delegated"
+              }
+            },
+            "required": ["originMode"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "delegatingPrincipal": true
+            },
+            "required": ["delegatingPrincipal"]
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "originMode": {
+                "const": "autonomous"
+              }
+            },
+            "required": ["originMode"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "delegatingPrincipal": false
+            }
+          }
+        }
+      ]
+    },
+    "Scope": {
+      "description": "The environment the envelope belongs to: its identity composed with its organization and project. Two scopes are equal only when all three parts are equal. Every part is configured, never inferred.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["organization", "project", "environment"],
+      "properties": {
+        "organization": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        },
+        "project": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        },
+        "environment": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        }
+      }
+    },
+    "ActorReference": {
+      "description": "One hop of the actor chain: the logical agent whose credential was presented at that hop, and its asserted instance.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["agent", "instance"],
+      "properties": {
+        "agent": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        },
+        "instance": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        }
+      }
+    },
+    "ReBroadeningRecord": {
+      "description": "Re-broadening was load-bearing at the named hop. A later hop does not inherit re-broadening; the record only says where it happened.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["hop"],
+      "properties": {
+        "hop": {
+          "description": "The zero-based index of the actorChain entry that re-broadened.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "DelegatingPrincipalReference": {
+      "description": "Present exactly when originMode is delegated. Opaque, organization-scoped, and never proof. No path in this contract version stamps it.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["organization", "principal"],
+      "properties": {
+        "organization": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        },
+        "principal": {
+          "$ref": "#/$defs/ReceivedIdentifier"
+        }
+      }
+    },
+    "OriginMode": {
+      "description": "An open enumeration. Known values: autonomous, delegated. An unknown value is not an error: a consumer tolerates it (PF FR-005 b).",
+      "anyOf": [
+        {
+          "enum": ["autonomous", "delegated"]
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "ReceivedIdentifier": {
+      "description": "An identifier as received: an opaque string, compared exactly. Never validate its syntax: identifier patterns and lengths constrain only what the platform accepts (BR-ID-11).",
+      "type": "string",
+      "minLength": 1
+    },
+    "EnvelopeTraceContext": {
+      "description": "W3C Trace Context, as carried in an envelope. Open, like every envelope object, so an optional field added later is compatible. The platform stamps it from the draft, so it holds what the draft's closed definition admits (BR-TC-05).",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["traceparent"],
+      "properties": {
+        "traceparent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tracestate": {
+          "type": "string"
+        }
+      }
+    },
+    "DraftTraceContext": {
+      "description": "W3C Trace Context, as a client asserts it in a draft. Closed: exactly traceparent and tracestate (BR-TC-05). The platform validates form only, never interprets the values, and emits no spans. Checked in code by the receiving unit: traceparent version ff, an all-zero trace id or parent id, at most 32 tracestate list members, and tracestate key syntax.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traceparent"],
+      "properties": {
+        "traceparent": {
+          "description": "{version}-{trace-id}-{parent-id}-{flags} in lowercase hex. Version 00 is exactly 55 characters; a higher version may carry further dash-separated fields.",
+          "type": "string",
+          "maxLength": 512,
+          "pattern": "^(00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}|(0[1-9a-f]|[1-9a-f][0-9a-f])-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}(-[!-~]*)?)$"
+        },
+        "tracestate": {
+          "description": "W3C tracestate list form, at most 512 characters.",
+          "type": "string",
+          "maxLength": 512,
+          "pattern": "^[ \\t]*([!-+\\--<>-~]+=[ -+\\--<>-~]*[!-+\\--<>-~][ \\t]*)?(,[ \\t]*([!-+\\--<>-~]+=[ -+\\--<>-~]*[!-+\\--<>-~][ \\t]*)?)*$"
+        }
+      }
+    },
+    "ContractVersion": {
+      "description": "A contract version: SemVer major.minor.patch, with major version 0 while the contract is pre-release. The first published version is 0.1.0.",
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "Draft": {
+      "description": "What a client sends on an envelope-bearing call (publish, subscribe). Closed at its top level. A platform-stamped field is forbidden by name, so a draft setting one is refused with stamped_field_set and a pointer to that field, never unknown_field, even when the draft also carries an unknown field (BR-DR-10).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clientContractVersion", "traceContext"],
+      "properties": {
+        "clientContractVersion": {
+          "$ref": "#/$defs/ContractVersion"
+        },
+        "traceContext": {
+          "$ref": "#/$defs/DraftTraceContext"
+        },
+        "inbound": {
+          "$ref": "#/$defs/Inbound"
+        },
+        "envelopeVersion": false,
+        "scope": false,
+        "originMode": false,
+        "delegatingPrincipal": false,
+        "actorChain": false,
+        "reBroadening": false
+      }
+    },
+    "Inbound": {
+      "description": "Forwarded context: a received envelope and its seal, copied from a Delivery. The wrapper is closed. The envelope is open and carried as received; its unknown fields are preserved into the envelope stamped for this hop. At most 16 KiB on its RFC 8785 (JCS) serialization, checked in code by the receiving unit.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelope", "seal"],
+      "properties": {
+        "envelope": {
+          "$ref": "#/$defs/Envelope"
+        },
+        "seal": {
+          "description": "Exactly as received in the Delivery. Opaque: forward it unchanged.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soorma.ai/contract/delivery.schema.json",
+  "$comment": "SPDX-License-Identifier: Apache-2.0",
+  "title": "Delivery",
+  "description": "One event on a subscriber's stream. Validating against the document itself validates a Delivery.",
+  "$ref": "#/$defs/Delivery",
+  "$defs": {
+    "Delivery": {
+      "description": "One event on a subscriber's stream: the stamped envelope, the seal over it, and the payload. Open to unknown fields. Delivery semantics are unspecified at this contract version: live subscribers only, with no durability, ordering, redelivery, or acknowledgement promised.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["envelope", "seal", "payload"],
+      "properties": {
+        "envelope": {
+          "$ref": "envelope.schema.json#/$defs/Envelope"
+        },
+        "seal": {
+          "description": "The seal over the envelope. Opaque: forward it unchanged in inbound, and never treat it as proof you can check.",
+          "type": "string"
+        },
+        "payload": {
+          "description": "Any JSON value, opaque to the platform. The platform never inspects or classifies it."
+        }
+      }
+    }
+  }
+}
