@@ -569,3 +569,278 @@ Gate remains PENDING; waiting for the user to confirm #2 is approved."
 **Context**: Inception PR gate (pr-checkpoint.md Section 4), Request Changes. Outward-facing edits authorized by the user in this message.
 
 ---
+
+## Inception PR Gate: GAP-INT-003 Wording on #4 and #10
+**Timestamp**: 2026-11-02T16:15:25Z
+**User Input**: "Yes, reword the GAP-INT-003 entries on #4 and #10 to \"may change when the Event PRD is written\". Then wait. I'm merging #2 now."
+**AI Response**: "Reworded the Inherited specification gaps line on #4 and #10. Each now ends 'Both are M1 work-arounds: GAP-INT-003 may change when the Event PRD is written, and GAP-INT-008 (#4) / GAP-INT-007 (#10) may change when the PRD is amended'. The other issues are unchanged. Committed this entry locally on dev without pushing, so nothing lands on #2 while it is being merged. Gate status stays PENDING until the user confirms."
+**Context**: Inception PR gate (pr-checkpoint.md Section 4). The user is merging soorma-core#2.
+
+---
+
+## Inception PR Gate: Approved
+**Timestamp**: 2026-11-02T16:37:12Z
+**User Input**: "merged"
+**AI Response**: "Verified soorma-core#2 is MERGED (2026-11-02T16:36:27Z, merge commit d348c34 on main). Set the Inception PR Gate to APPROVED with timestamp 2026-11-02T16:37:12Z in aidlc-state.md, checked the stage, and updated Current Stage and the session stop point. Step (a) of the two-step contract publication is done: the contract design is on main, so soorma-sdk's Inception can run against it. Per pr-checkpoint.md Section 4.7, asked the user which unit to start; Construction not started."
+**Context**: Inception PR gate (pr-checkpoint.md Section 4.7), approval confirmed by the user.
+
+---
+
+## Construction: First Unit Chosen
+**Timestamp**: 2026-11-03T04:47:01Z
+**User Input**: "we'll start with U1, but i'll use new session for its construction, so just get the aidlc state ready for that"
+**AI Response**: "Recorded the choice in aidlc-state.md: Current Stage points to Construction, unit U1 wire-contract (#4), in a new session; the Construction section records the unit order and that U1 is not started; the session stop point lists what the next session runs in order (Construction Phase Initialization with the enabled extension rules and prd-gap-classification.md, Unit Initialization for U1, the L1 Domain Coverage Gate, then U1 Functional Design) and U1's inherited gaps (GAP-INT-003, GAP-INT-008). Construction Phase Initialization is deliberately not run in this session: its rule loading has to happen in the session that does the construction work."
+**Context**: pr-checkpoint.md Section 4.7, step 3: the user named the first unit. Construction deferred to a new session.
+
+---
+
+## Tickets: User Stories on Sub-issues and Completion Table on #3
+**Timestamp**: 2026-11-03T05:06:37Z
+**User Input**: "Add a User stories line to each unit sub-issue (#4 to #10), from unit-of-work-story-map.md. It lists the stories this unit is primary for, the ones it contributes to, and the ones that become complete when it closes (a story is complete once the last of its units, in build order, is done). Add a table of stories that become complete after each unit to tracking issue #3. Change no other content, and log the edits in audit.md."
+**AI Response**: "Added a '**User stories**: Primary: …. Contributes to: …. Complete when this unit closes: …' line above **Linked Epic** on #4 to #10, from unit-of-work-story-map.md (stories separated by semicolons, since some titles contain commas). Completion is the latest unit, in build order U1 → U7, among each story's primary and contributing units: U1 none (contributes to all); U2 US-02; U3 none; U4 US-01, US-03, US-04, US-12; U5 US-05, US-06; U6 US-07; U7 US-08, US-09, US-10, US-11. Added a 'Stories complete after each unit' table (After | Issue | Stories that become complete) to #3, above the attribution footer. Checked each body before and after: lines added only, none removed or changed."
+**Context**: Tickets (jira-tickets extension, adapted to GitHub issues). Outward-facing edits requested by the user.
+
+---
+
+## Session Resumption: Construction for U1 wire-contract
+**Timestamp**: 2026-11-08T01:11:34Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"wire-contract\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Read aidlc-state.md. Phase: CONSTRUCTION, not started; current unit U1 wire-contract (#4). The user's intent answers the welcome-back choice (continue where left off), so no continuity question file was created. Loaded the common rules (process-overview, session-continuity, content-validation, question-format-guide, artifact-durability). Loaded the Inception artifacts: requirements.md, unit-of-work.md, unit-of-work-dependency.md, unit-of-work-story-map.md, application-design.md, components.md, component-methods.md, services.md, component-dependency.md, stories.md (US-09), prd-coverage-map.md, specification-gaps.md (GAP-INT-003, 007, 008, 009), the U1 inception test specs, and the execution plan. Read PF @ prd-platform-foundations-v1.3 (§5 FR-001 to FR-006 and FR-023, §7b, §8b, §11, §14, §17, §22) and ID @ prd-identity-v1.0 (§7b, §14, §15, §17) from the tags, not HEAD. No PENDING entry under PR Checkpoint State."
+**Context**: Session continuity (session-continuity.md). Resuming into Construction.
+
+---
+
+## Session Continuity: Re-Intake Check
+**Timestamp**: 2026-11-08T01:11:34Z
+**User Input**: (none)
+**AI Response**: "Re-intake check (session-continuity.md item 3): no trigger holds. (1) Legacy format: no; ## PRD Intake has one ### PRD: subsection per PRD. (2) No brief pin: no; pinned at 0aad84a. (3) Brief changed: fetched soorma-prd; origin/main is 6275cbd; git diff 0aad84a..origin/main -- backlog/m1-walking-skeleton.md is empty. No new PRD tags (latest: prd-platform-foundations-v1.3, prd-identity-v1.0). (4) Gap answered: soorma-prd#13, #24, #25, #27, #28 are all OPEN. Re-intake not offered."
+**Context**: Session continuity, re-intake check.
+
+---
+
+## Construction Phase Initialization
+**Timestamp**: 2026-11-08T01:11:34Z
+**User Input**: (none)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline (security-baseline.md), soorma Platform Invariants (soorma-platform-invariants.md), PR Checkpoint (pr-checkpoint.md), QA Test Cases (qa-test-cases.md), JIRA Tickets adapted to GitHub issues (jira-tickets.md)]. ## PRD Intake exists, so inception/prd-gap-classification.md is loaded and active for every construction stage. Platform invariants read from soorma-prd references/platform/invariants.md at prd-platform-foundations-v1.3 and prd-identity-v1.0: identical text, no halt."
+**Context**: Construction Phase Initialization.
+
+---
+
+## Unit Initialization: wire-contract
+**Timestamp**: 2026-11-08T01:11:34Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (GitHub issues)] (unit: wire-contract). No Deferred Questions rows target this unit. Inherited gaps: GAP-INT-003 (Awaiting PRD: Event; pre-release and delivery-unspecified statement) and GAP-INT-008 (Open, soorma-prd#27; bootstrap and renewal carry no envelope). GAP-INT-006 and GAP-INT-007 also shape U1's statements and draft schema."
+**Context**: Unit Initialization, U1 wire-contract (#4).
+
+---
+
+## L1 Domain Coverage Gate: wire-contract (initial assessment)
+**Timestamp**: 2026-11-08T01:11:34Z
+**User Input**: (none)
+**AI Response**: "Applicable L1 sources for U1, read at their tags: PF FR-001 to FR-006; PF §7b Envelope Fields, Compatibility Policy, Recoverability; PF §11 Harness Surface and What the SDK may not populate; PF §14 Harness Surface Register; PF §17 Envelope, Namespacing, Compatibility Rules; PF §22 licence; PF FR-023 (raw callers); ID §7b; ID §14; ID §17 Credentials and Namespacing; ID FR-022. Not applicable to U1 (owned by surface or mechanism units): PF §6, §7a, §8a, §8b evaluation, §9, §10; ID §6, §7a, §8, §9, §10. Result: covered 0, non-applicable listed above, missing 0 at this point. Coverage is traced in construction/wire-contract/functional-design/l1-coverage-matrix.md at Functional Design."
+**Context**: L1 Domain Coverage Gate, U1, before Functional Design.
+
+---
+
+## Functional Design: Plan and Questions Created (wire-contract)
+**Timestamp**: 2026-11-08T01:13:17Z
+**User Input**: (none)
+**AI Response**: "Created construction/working/wire-contract-functional-design-plan.md (git-ignored): a 10-step plan, proposed shapes for the envelope, draft, and Delivery, the shared syntax, the table of which operations carry an envelope, and 12 questions. Q1 wire field naming; Q2 contract version format; Q3 what pre-release covers (envelope v1 held to PF §7 or not); Q4 scope field shape; Q5 maxChainDepth; Q6 integrity of forwarded inbound context, classified as specification (unsure, so specification) under prd-gap-classification.md, with routing options, candidate GAP-WC-001 against PF @ prd-platform-foundations-v1.3; Q7 credential presentation; Q8 client contract version on calls without an envelope; Q9 error format; Q10 refusal specificity; Q11 draft closed or open; Q12 the remaining shapes and the payload. Updated aidlc-state.md: Construction Phase Initialization checked; current stage U1 Functional Design awaiting answers; session stop point."
+**Context**: Functional Design, U1 wire-contract, Steps 2 to 4 (plan created, questions embedded). Awaiting answers.
+
+---
+
+## Functional Design: Answers Received (wire-contract)
+**Timestamp**: 2026-11-08T01:38:39Z
+**User Input**: "here are the answers to open questions...
+
+Q1: A
+Q2: A
+Q3: A
+Q4: A. Record it as a technology decision: PF §7b's \"environment identifier\" read as the environment's identity composed with its organization and project (PF §17 and ID Namespacing Rules: composed, never allocated).
+Q5: B
+Q6: C. Verification is not open in the PRDs. FR-002 and O5 make the chain and origin platform-stamped, and copying an unverified forwarded chain would let the agent set them. §8b gives the propagated origin's setter as \"Platform, from the inbound envelope\", §17 says the envelope is not self-authenticating, and O10 applies. So the perimeter must verify, and the seal is the technology decision (I11). Record that derivation in the decision. The seal is computed over a canonical form (RFC 8785) or the envelope is forwarded as received, it is bound to the environment (a seal from another environment is refused, I1), and a failed seal is a rejection under O5.
+Q7: A, plus: the credential's kind must be determinable without verifying it (for example a typed prefix), so S3 and S4 can refuse human credentials by kind without organization-level material (P1 classifyPresenter).
+Q8: A
+Q9: A
+Q10: A, plus: credential_expired is returned only after the credential verifies with this environment's material, and anything that fails verification is credential_refused. Add an abuse-bound refusal to the shared model: 429 too_many_attempts with Retry-After, on the bootstrap and sign-in surfaces (P8).
+Q11: A for the draft's top level only. inbound stays open: the forwarded envelope is carried as received, and its unknown fields are preserved into the stamped envelope (PF FR-005(a); PF compatibility table, Inbound context forwarding). Correct validateDraft in component-methods.md to match.
+Q12: C. Approve as proposed with JSON-only payloads, except identifier syntax, which is set per kind. The strict pattern stays for configured and platform-allocated identifiers. Human principal identifiers allow at least @, +, : and | (email addresses and external-subject forms). Propose the instance-identifier syntax, and propose length bounds per kind."
+**Answers Recorded** (wire-contract-functional-design-plan.md; answered in chat and copied into the file, every question set to Answered):
+- Q1 — Wire field naming: A — camelCase
+- Q2 — Contract version format: A — SemVer major 0 (`0.1.0`), tagged `contract-v0.1.0`
+- Q3 — What pre-release covers: A — operations, delivery semantics, error codes, and credential presentation are pre-release; envelope v1 held to PF §7 from the first commit; envelope version stays 1
+- Q4 — Scope shape: A — `{ organization, project, environment }`; recorded as a technology decision, with the user's text verbatim above
+- Q5 — maxChainDepth: B — 32
+- Q6 — Integrity of forwarded inbound context: C — reclassified as technology; verification is required by the PRDs, so it is not a specification gap and no GAP-WC-001 is raised; the seal is the technology decision; derivation and constraints verbatim above
+- Q7 — Credential presentation: A — one credential in `Authorization: Bearer`, plus a kind determinable without verification (for example a typed prefix); verbatim above
+- Q8 — Version on calls without an envelope: A — required `Soorma-Contract-Version` header; server version on every response
+- Q9 — Error format: A — RFC 9457 Problem Details with a stable open `code`
+- Q10 — Refusal specificity: A, plus `credential_expired` only after verification with this environment's material, and `429 too_many_attempts` with `Retry-After` on the bootstrap and sign-in surfaces; verbatim above
+- Q11 — Draft closed or open: A for the draft's top level only; `inbound` stays open and its unknown fields are preserved; correct `validateDraft` in component-methods.md; verbatim above
+- Q12 — Remaining shapes and payload: C — approved with JSON-only payloads, except identifier syntax set per kind; verbatim above
+**AI Response**: "Recorded every answer in the plan file. Contradiction and ambiguity check: none found that needs a clarification file. Q3 A and Q6 C agree, because the seal travels beside the envelope, so envelope v1 keeps its seven fields. Q7's typed kind and Q10's refusal rules agree: a refusal by kind, made without verification, is credential_refused. Two choices the answers leave to AI-DLC are decided as technology and recorded in the design: (1) the seal is computed over the RFC 8785 (JCS) canonical form of the envelope, so verification does not depend on a client re-serializing it byte for byte; (2) the `inbound` wrapper `{ envelope, seal }` is closed, and the envelope inside it is open, carried as received. Per Q12, the per-kind identifier syntax and length bounds are proposed in business-rules.md for review at the stage gate. Q6: no specification gap raised; the derivation is recorded as a design decision."
+**Context**: Functional Design, U1 wire-contract, Step 5 (collect and analyse answers).
+
+---
+
+## Functional Design: Artifacts Generated; Approval Prompt (wire-contract)
+**Timestamp**: 2026-11-08T01:45:13Z
+**User Input**: (none)
+**AI Response**: "Generated construction/wire-contract/functional-design/: domain-entities.md, business-rules.md (decisions D-WC-01 to D-WC-16, including the Q6 derivation; rules BR-ENV, BR-DR, BR-FC, BR-TC, BR-DL, BR-OP, BR-VER, BR-CR, BR-ERR, BR-ID, BR-PR, BR-LG; misuse cases), business-logic-model.md (Mermaid validated, apostrophes removed from labels; text alternative included), l1-coverage-matrix.md (32 Covered, 6 N/A source groups, 0 Missing), invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; I8 packaging table). Corrected inception/application-design/component-methods.md: validateDraft (top level closed; inbound open, sealed, unknown fields preserved) and stamp (produces the seal), as Q11 directed, with a dated note. Specification gaps: none new (Q6 answered as technology). Decisions not asked and flagged for review: D-WC-16 (Soorma-Request-Id), BR-ERR-04 (abuse bound does not reveal existence, carried to U2 and U6), BR-ERR-07 (check order), BR-DR-09 (16 KiB inbound bound), BR-CR-05 and BR-CR-07 (credential and material length bounds), BR-CR-09 (no CORS), and the typed prefixes. Security baseline: no blocking findings. Invariants: no blocking findings. Presented the Functional Design completion message with the 2-option prompt."
+**Context**: Functional Design, U1 wire-contract, Steps 6 and 7. Awaiting explicit approval.
+
+---
+
+## Functional Design: Request Changes (wire-contract)
+**Timestamp**: 2026-11-08T02:32:31Z
+**User Input**: "Request Changes, five items. Everything you flagged for review is approved: D-WC-16, BR-ERR-04, BR-ERR-07, the size bounds, BR-CR-09, and the prefix strings.
+
+A stamped field takes precedence over unknown_field. The draft schema forbids each stamped field by name (envelopeVersion included), so the code is stamped_field_set (BR-DR-02, done when 7, TC-WC-007). State the precedence in BR-DR.
+BR-CR-05: credential syntax after the prefix is RFC 6750 b64token, not base64url only, so NFR Design isn't constrained (JWT uses .).
+The perimeter refuses to stamp an envelope whose serialized size would exceed the forwarded-envelope bound, as with chain_too_deep. Add a code (for example envelope_too_large) and a rule, and put it in the check order.
+Add a BR-ID rule: identifier patterns constrain what the platform accepts. Consumers treat received identifiers as opaque strings and never validate their syntax, and generated response types are plain strings. Widening a pattern is then compatible under BR-VER-05. Record that human principal identifiers are ASCII-only in M1, so internationalized email addresses are excluded, and that widening this later is compatible.
+Add an accepted residual to the misuse table: an agent forwards a genuine, correctly sealed envelope from the same environment that it was not delivered, or an old one. The seal proves the platform stamped it, not that it was delivered to the forwarder or is recent. The chain prefix is still true and authority only narrows. Make sure I4's row in the invariant matrix doesn't claim more than that.
+Then commit the Functional Design on dev and present the completion message again."
+**AI Response**: "Applied all five. (1) BR-DR-10: the draft schema forbids each stamped field by name, envelopeVersion included; stamped_field_set takes precedence over unknown_field, also when both occur; BR-DR-01, the error table, BR-ERR-07 step 6, and the logic model updated. (2) BR-CR-05: the whole credential, prefix included, is an RFC 6750 b64token (admits '.', so a JWT fits), at most 4096 characters. (3) BR-ENV-10 and code envelope_too_large (400): the perimeter refuses to stamp an envelope whose JCS serialization would exceed the 16 KiB envelope bound, never truncating; BR-DR-09 now measures the bound on JCS; BR-ERR-07 gains step 10 (last, since a re-broadening record is known only after authority); BR-PR-08 states the bound. (4) BR-ID-11: patterns and lengths constrain acceptance only and appear on request inputs only; received identifiers are plain strings in the envelope, Delivery, and responses, and consumers never validate them; widening is compatible under BR-VER-05 (amended). BR-ID-12: human principal identifiers ASCII-only in M1, internationalized email addresses excluded, widening later compatible. BR-LG-06 and domain-entities updated. (5) Accepted residual added under the misuse cases (business-rules Section 14), with a D-WC-06 bullet, the Seal entity, the logic model's failures table, L1-10, and the I4 row narrowed: the seal guarantees the forwarded prefix was stamped by this environment and is unaltered, not that it was delivered to the forwarder or is recent. The flagged items (D-WC-16, BR-ERR-04, BR-ERR-07, size bounds, BR-CR-09, prefixes) are recorded as approved. Committing on dev next."
+**Context**: Functional Design, U1 wire-contract, Step 8: Request Changes. Changes applied; commit authorized by the user.
+
+---
+
+## Functional Design: Committed; Approval Prompt Re-presented (wire-contract)
+**Timestamp**: 2026-11-08T02:32:41Z
+**User Input**: (none)
+**AI Response**: "Committed the Functional Design on dev as 7f5249a (not pushed): the five functional-design artifacts, aidlc-state.md, audit.md, and the component-methods.md correction. The git-ignored plan in construction/working/ was not staged. Re-presented the Functional Design completion message with the 2-option prompt."
+**Context**: Functional Design, U1 wire-contract, Step 7 (re-presented). Awaiting explicit approval.
+
+---
+
+## Functional Design: Approved (wire-contract)
+**Timestamp**: 2026-11-08T02:35:51Z
+**User Input**: "Continue to Next Stage. Functional Design approved. Push dev, then start NFR Requirements for U1."
+**AI Response**: "Recorded Functional Design approval for U1 wire-contract. Marked it complete in aidlc-state.md, with per-unit progress lines for U1. Committing this record and pushing dev, then starting NFR Requirements (rules loaded from construction/nfr-requirements.md)."
+**Context**: Functional Design, U1 wire-contract, Step 9. Approved; next stage NFR Requirements.
+
+---
+
+## NFR Requirements: Plan and Questions Created (wire-contract)
+**Timestamp**: 2026-11-08T02:39:07Z
+**User Input**: (none; continuing from the approval at 2026-11-08T02:35:51Z)
+**AI Response**: "Pushed dev (bd9355d). Loaded construction/nfr-requirements.md. Step 1.5 does not apply: U1 has no face and cites no PRD NFR profile. Checked current versions on the npm registry and nodejs.org (Node 26.13.0 LTS active; pnpm 12.18.0; TypeScript 7.0.2 native and 6.0.3; NestJS 12.4.0, published as ESM; Ajv 8.20.0; openapi-typescript 7.13.0; Vitest 5.1.0; ESLint 10.14.0; typescript-eslint 8.72.1). Recorded ESM as settled by fact, since NestJS 12 is ESM. Created construction/working/wire-contract-nfr-requirements-plan.md (git-ignored) with 13 questions: Node line, package manager, TypeScript compiler (TS 7 has no JavaScript API for typescript-eslint), test framework, schema validator, type generator, contract-rule checks, lint and format, scanning and SBOM, release cooldown, CI placement and which design stages run, compatibility testing, and dependency admission."
+**Context**: NFR Requirements, U1 wire-contract, Steps 1 to 4. Awaiting answers.
+
+---
+
+## NFR Requirements: Answers Received (wire-contract)
+**Timestamp**: 2026-11-08T02:45:34Z
+**User Input**: "here are the answers...
+
+Q1: A
+Q2: A, except Corepack: Node 25+ no longer bundles it. Pin pnpm with the packageManager field, enforced by pnpm itself locally, and install it in CI with pnpm/action-setup pinned by SHA.
+Q3: A
+Q4: A
+Q5: A. Also decide how date-time and any other format is checked under strict mode: ajv-formats (in the register) or in-schema patterns.
+Q6: A, on condition that the generated types satisfy BR-LG-06: open enums as known values plus any string (e.g. (string & {})), open objects with an index signature, and received identifiers as plain strings. Prove it with a golden-output test. If openapi-typescript can't do it, record the post-processing step, or fall back to C for the shared schemas.
+Q7: A, validating against a copy of the official OpenAPI 3.1 schema committed to the repository at a pinned version (no remote fetch, SECURITY-13).
+Q8: A
+Q9: A
+Q10: A
+Q11: A
+Q12: A
+Q13: A, with the scope stated: direct and runtime dependencies are checked against the strict allowlist. Development-only transitive dependencies may also use BlueOak-1.0.0, Python-2.0, CC0-1.0 and CC-BY-4.0. Anything else needs a recorded exception."
+**Answers Recorded** (wire-contract-nfr-requirements-plan.md; answered in chat and copied into the file):
+- Q1 — Node.js line: A — Node 26 LTS
+- Q2 — Package manager: A — pnpm 12 workspaces, except Corepack: X-qualified — "Node 25+ no longer bundles it. Pin pnpm with the packageManager field, enforced by pnpm itself locally, and install it in CI with pnpm/action-setup pinned by SHA."
+- Q3 — TypeScript compiler: A — TypeScript 6.0.x
+- Q4 — Test framework: A — Vitest 5
+- Q5 — Schema validator: A — Ajv 8 (2020-12, compiled, strict), plus "decide how date-time and any other format is checked under strict mode: ajv-formats (in the register) or in-schema patterns."
+- Q6 — Type generation: A — openapi-typescript alone, conditional: "open enums as known values plus any string (e.g. (string & {})), open objects with an index signature, and received identifiers as plain strings. Prove it with a golden-output test. If openapi-typescript can't do it, record the post-processing step, or fall back to C for the shared schemas."
+- Q7 — Contract-rule checks: A — in-house tests, "validating against a copy of the official OpenAPI 3.1 schema committed to the repository at a pinned version (no remote fetch, SECURITY-13)."
+- Q8 — Lint and format: A — ESLint 10, typescript-eslint 8, Prettier
+- Q9 — Scanning and SBOM: A — pnpm audit (moderate+), dependency-review action, Dependabot alerts, CycloneDX SBOM by Syft (pinned)
+- Q10 — Release cooldown: A — 7 days, exceptions recorded
+- Q11 — CI and stages: A — CI designed here, generated at U1 Code Generation; NFR Design and Infrastructure Design skipped for U1
+- Q12 — Compatibility testing: A — versioned fixture corpus, CHANGELOG classification; automated diff once a second version exists
+- Q13 — Dependency admission: A, scoped — "direct and runtime dependencies are checked against the strict allowlist. Development-only transitive dependencies may also use BlueOak-1.0.0, Python-2.0, CC0-1.0 and CC-BY-4.0. Anything else needs a recorded exception."
+**AI Response**: "No contradictions. Two items need AI-DLC to act before writing the artifacts: Q5's format decision, and Q6's condition. Checking openapi-typescript's behaviour on the open-enum, open-object, and identifier cases in an isolated scratchpad before deciding."
+**Context**: NFR Requirements, U1 wire-contract, Step 5.
+
+---
+
+## NFR Requirements: Probe, Artifacts Generated, Approval Prompt (wire-contract)
+**Timestamp**: 2026-11-08T02:48:42Z
+**User Input**: (none)
+**AI Response**: "Correction: the previous entry's timestamp was first written as 2026-11-08T03:05:00Z, which was not taken from the date command; it was corrected in place to 2026-11-08T02:45:34Z, the real time read just after it was written. Probe (isolated scratchpad, install scripts disabled): openapi-typescript 7.13.0 declares peer typescript ^5.x, and npm refused to resolve it with TypeScript 6.0.3 without an override. With the override, generation worked and its output typechecked. Default output met three BR-LG-06 properties (index signatures, plain-string identifiers, stamped draft fields as ?: never) but collapsed the open enum to string. A transform hook in the generator script emitted known values plus (string & {}), and a strict type-level fixture passed. typescript-eslint 8.72.1 accepts typescript <6.1.0, so no other peer conflict. Decided Q5's open point: in-schema patterns, no format keyword, no ajv-formats (format is annotation-only by default in 2020-12). Added: patterns restricted to the RE2-compatible linear-time subset, with rules a pattern cannot express (traceparent ff, all-zero ids, calendar validity) checked in code by the receiving unit. Generated construction/wire-contract/nfr-requirements/nfr-requirements.md (NFR-WC-01 to 23; security and invariant compliance) and tech-stack-decisions.md (T-01 to T-16; the two recorded T-07 conditions: transform hook with golden test and fallback to C, and the peer-range exception; deferred selections; local environment note; NFR Design and Infrastructure Design to be skipped). Security: no blocking findings. Invariants: no blocking findings. Presented the NFR Requirements completion message with the 2-option prompt."
+**Context**: NFR Requirements, U1 wire-contract, Steps 5 to 7. Awaiting explicit approval.
+
+---
+
+## NFR Requirements: Approval (wire-contract)
+**Timestamp**: 2026-11-08T04:34:32Z
+**User Input**: "Continue to Next Stage. NFR Requirements approved. Commit and push the NFR artifacts on dev, then run the QA construction enrichment for U1."
+**AI Response**: "NFR Requirements for U1 wire-contract approved. Recorded NFR Design and Infrastructure Design as SKIPPED for U1 (NFR plan Q11 A: no runtime patterns; nothing deployed; CI designed at T-14). Committing the NFR artifacts, aidlc-state.md and audit.md on dev and pushing, then starting QA construction enrichment for U1."
+**Context**: NFR Requirements, U1 wire-contract, Step 9. Approved. NFR Design: SKIP. Infrastructure Design: SKIP.
+
+---
+
+## QA Construction Enrichment (wire-contract)
+**Timestamp**: 2026-11-08T04:42:18Z
+**User Input**: (none; started by the approval logged above)
+**AI Response**: "Ran QA construction enrichment for U1 wire-contract (qa-test-cases.md Section 2). Gates: extension enabled; both inception spec files present; no enrichment-delta.md, so not yet run. Sources: construction/wire-contract/functional-design/ and construction/wire-contract/nfr-requirements/ (read as one of the unit's construction artifact directories; NFR Design and Infrastructure Design absent, skipped). Not used: user stories, tickets, requirements.md, unit-of-work.md. Modified TC-WC-001 to 011 in place (IDs and forward links unchanged): camelCase names, the seal beside the envelope, exactly seven envelope properties, Delivery with seal, stamped-field failures through each field's own prohibition, openness at every level with traceContext closed, the shared components document, SPDX check. Added TC-WC-012 to 041 (30 cases): draft precedence, closure and requiredness; inbound wrapper; conditional delegatingPrincipal; open originMode; chain bounds 1 to 32; reBroadening form; trace context; received identifiers unconstrained; request-side identifier patterns per kind; Delivery negatives; Problem; error codes and check order; credential presentation; shared headers; versioning; remaining pre-release statements; fixture corpus and changelog; compatibility mutation test; golden-output types; generation drift; open-enum shape; bounded validation; RE2-subset patterns and no format; strict compilation, local refs and pinned meta-schema; dependency register and licences; reproducible installs and pinned toolchain; CI integrity, audit and SBOM; type-aware lint. Common Fixtures gained a construction-pass subsection with U1's fixed values and sample documents. Index updated to 41 rows. enrichment-delta.md written (git-ignored session artifact). Outside the test-cases directory: l1-coverage-matrix.md and invariant-coverage-matrix.md had their *enrichment* placeholders replaced with the new TC IDs (construction artifacts, not inception files)."
+**Context**: QA construction enrichment, U1 wire-contract. Complete. Next: Construction Design PR gate (pr-checkpoint.md Sections 3 and 5); branch confirmation requested.
+
+---
+
+## Functional Design Amendment A1 and A2 (wire-contract), Before the Construction Design PR Gate
+**Timestamp**: 2026-11-08T05:01:33Z
+**User Input**: "Request Changes before the PR gate. Two corrections to the approved Functional Design, recorded as an amendment in audit.md, with TC-WC-008 and TC-WC-024 updated to match:
+
+traceContext openness. The Entity Map and BR-ENV-05 close traceContext. PF FR-005(a) requires unknown envelope fields to be preserved and forwarded, and W3C defines header strings, not this object. Closing it makes any optional addition breaking, against BR-VER-05 and I7. Apply BR-ID-11's principle: inside a draft, traceContext is closed (input strictness); inside an envelope it is open. Use two definitions. Update the Entity Map, BR-ENV-05 and the L1 row if needed. TC-WC-008 step 5 now passes on the envelope, plus a new step: an unknown field in a draft's traceContext fails.
+Problem is a received schema. Under BR-ID-11, response schemas carry no patterns. Drop the urn:soorma:request: prefix constraint on instance, and do not reject type: \"about:blank\" (a gateway or proxy can emit it). Both forms stay published conventions. Verification of what soorma-core emits moves to the perimeter's tests (U3), recorded as a forward obligation. Update TC-WC-024 steps 5 and 7 and the Problem entity.
+Then confirm the branch: use dev, PR to main."
+**AI Response**: "Amended the approved U1 Functional Design (both amendments are technology decisions; no specification gap). A1, traceContext openness: two definitions. In a draft, traceContext is closed (traceparent, tracestate only; an unknown field is unknown_field with a pointer); in an envelope, it is open like every other envelope object. business-rules.md: amendments note under the header; BR-ENV-05 lists traceContext (the envelope's definition) among the open levels; BR-DR-06 states the draft's is closed; new BR-TC-05 gives the two definitions and the rationale (W3C defines the header strings, not the object; BR-VER-05; I7), and notes that the stamped envelope takes traceContext from the draft (BR-FC-04). domain-entities.md: Entity Map row split into 'Trace Context, in a draft' (closed) and 'Trace Context, in an envelope' (open); the Envelope and Draft tables name which definition; Trace Context section gains the two-definitions note. l1-coverage-matrix.md: L1-05 cites BR-TC-05 and the open envelope traceContext; L1-29 cites BR-TC-01 to 05, the two definitions, and TC-WC-008. A2, Problem is a received schema: domain-entities.md Problem type and instance are strings with no pattern, the urn:soorma: forms kept as published conventions, and a client accepts any type, about:blank included; new BR-ERR-08 records this and the forward obligation carried to U3: the perimeter's tests verify that every Problem soorma-core emits uses both forms and that instance matches Soorma-Request-Id. Test specs: TC-WC-008 step 5 now passes on the envelope, new step 6 (unknown field in a draft's traceContext) fails. TC-WC-024 step 5 now passes (about:blank, and instance req-42), step 7 checks a 200-character instance with a space passes and that no Problem property has a pattern; context rewritten. TC-WC-025 gained step 6: the conventions publish the urn forms and say a client accepts any type. enrichment-delta.md rows for 008, 024, 025 updated. Branch confirmed by the user: dev, PR to main."
+**Context**: Functional Design amendment after approval (U1 wire-contract), before the Construction Design PR gate. Branch for the gate: dev (confirmed).
+
+---
+
+## PR Checkpoint: Construction Design PR Gate Prepared (wire-contract)
+**Timestamp**: 2026-11-08T05:02:21Z
+**User Input**: (the branch confirmation in the entry above: "Then confirm the branch: use dev, PR to main.")
+**AI Response**: "Loaded pr-checkpoint.md Sections 1, 3 and 5. Trigger met: Functional Design approved (amended A1, A2); NFR Requirements approved; NFR Design and Infrastructure Design skipped; QA enrichment done; Code Generation not begun; gate not yet approved. Git repository present. Branch: dev, PR to main, confirmed by the user. Validated always-expected artifacts (functional-design/, five files). Conditional: NFR Requirements present (two files); NFR Design and Infrastructure Design N/A. Wrote construction/working/wire-contract-design-pr-checkpoint-instructions.md (git-ignored): steps (stage the initiative root, commit, push dev, open a PR dev to main), PR title, PR description (unit summary, key decisions, design artifacts with N/A entries, also-in-this-PR list, inherited gaps), loop-back note. Persisted ## PR Checkpoint State: Construction Design PR Gate — wire-contract, PENDING. Presented the Section 5.7 blocking message. Code Generation is blocked until the user confirms the PR is approved."
+**Context**: pr-checkpoint Construction Design PR gate, U1 wire-contract, Sections 5.1 to 5.7. Awaiting confirmation.
+
+---
+
+## Functional Design Amendment A3 (wire-contract), at the Construction Design PR Gate
+**Timestamp**: 2026-11-08T05:14:41Z
+**User Input**: "Yes to A3, then do steps 1–4.
+
+A3, Problem requiredness. A2's reason is that gateways and proxies emit problems, and theirs usually carry about:blank with no code or instance. With those required, our schema still rejects them, and the generated type promises code: string. Following RFC 9457, the received Problem schema requires no field. Add the emission requirements to the published conventions and to BR-ERR-08's U3 obligation: soorma-core always emits type, title, status, code and instance, with the urn:soorma: forms. Update the Problem entity, BR-ERR-08 and TC-WC-024 (step 4 now passes), and log A3 in audit.md beside A1 and A2. Add A3 to the PR description's \"everything received is open\" bullet.
+
+Also:
+
+Add a comment to soorma-core#6 recording the forward obligation from BR-ERR-08 (the Problem emission requirements and forms, and instance matching Soorma-Request-Id), so U3 sees it in its ticket.
+Add Refs #4, #3 to the PR description.
+Then commit, push dev, and open the PR to main. Give me the PR link, and don't mark the gate approved yet."
+**AI Response**: "Amendment A3 (technology decision; no specification gap): following RFC 9457, the received Problem schema requires no field. business-rules.md: A3 added to the amendments note; BR-ERR-08 rewritten: the schema requires no field and has no pattern on type or instance; emission requirements published in the conventions (every Problem soorma-core emits carries type, title, status, code and instance; type is urn:soorma:problem:{code}; instance is urn:soorma:request:{request id}, equal to the response's Soorma-Request-Id); forward obligation carried to U3 (soorma-core#6). domain-entities.md: A3 in the amendments note; the Problem table now has 'Required in the schema' (No for every field) and 'soorma-core always emits' columns; the received-schema note covers A2 and A3. TC-WC-024: context rewritten; step 4 now passes; new step 8 (a gateway-style about:blank problem with no code or instance, and an empty object, pass) and step 9 (status as a string, code as a number, fail). TC-WC-025: expected outcome states the five emitted fields and forms, and that a client accepts any problem. TC-WC-032: expected outcome adds that every member of the generated Problem type is optional (the generated-type point A3 raises); not asked for, noted to the user. enrichment-delta.md rows for 024, 025, 032 updated. PR description: the 'everything received is open' bullet now covers A1, A2 and A3; 'Refs #4, #3' added. Next: commit, push dev, comment on soorma-core#6, open the PR dev to main. The gate stays PENDING."
+**Context**: Functional Design amendment A3 (U1 wire-contract), beside A1 and A2, at the Construction Design PR gate (PENDING).
+
+---
+
+## PR Checkpoint: Construction Design PR Opened (wire-contract)
+**Timestamp**: 2026-11-08T05:15:14Z
+**User Input**: (the instruction logged with amendment A3: "Then commit, push dev, and open the PR to main. Give me the PR link, and don't mark the gate approved yet.")
+**AI Response**: "Committed the initiative root on dev as e913c9f ('feat: construction design complete for wire-contract (platform/m1-walking-skeleton)', Refs #4, #3) and pushed. Commented on soorma-core#6 (U3) with the BR-ERR-08 forward obligation: every Problem soorma-core emits carries type, title, status, code and instance; type is urn:soorma:problem:{code} with {code} equal to code; instance is urn:soorma:request:{request id}, equal to Soorma-Request-Id; permalinks pinned to e913c9f (https://github.com/soorma-ai/soorma-core/issues/6#issuecomment-6717621632). Opened soorma-core#11, dev to main, with the title and description from the instructions file (A1 to A3 in the 'everything received is open' bullet; Refs #4, #3): https://github.com/soorma-ai/soorma-core/pull/11. Recorded #11 in ## PR Checkpoint State. The gate stays PENDING, as the user instructed."
+**Context**: pr-checkpoint Construction Design PR gate, U1 wire-contract. PENDING on soorma-core#11.
+
+---
