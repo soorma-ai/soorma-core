@@ -31,7 +31,9 @@ names P1 to P11 are Application Design's
 ```
 
 The edge and internal listeners are **two NestJS applications in one process** (P-07). They
-share module instances, never routes.
+share module instances, never routes. A **third, health listener** is bound to `127.0.0.1`
+inside the container only (P-07, amended at Infrastructure Design). **Migrations run in a
+separate one-shot service, `org-migrate`**, before S1 starts (NFR-OI-18, amended).
 
 ## 2. Components
 
@@ -45,16 +47,16 @@ share module instances, never routes.
 | **Identity resolution, human half** (P6) | `packages/identity-resolution`, behind `seams/identity-resolution` | Verifies K, P, and enrollment material against a principal; returns a reference or a rejection; decoy when absent | P-09, P-10; BR-SEAM |
 | **Abuse bound** (P8) | `packages/abuse-bound` | `admit`, `settleFailure`, `settleSuccess` over the slot table; `Retry-After` | P-04, P-05 |
 | **Config** (P9, organization half) | `packages/config` | Loads and validates the organization's part; refuses to start on any error | P-02; BR-CFG |
-| **Key ring** | `packages/org-identity` | Holds the signing key, verify keys (JWKS), seed keys, counter secret, environment caller keys, from config | P-02 |
+| **Key ring** | `packages/org-identity` | Holds the signing key, verify keys (JWKS), seed keys, counter secret, log-pseudonym key, environment caller keys, from config | P-02 |
 | **Token service** | `packages/org-identity` | Mints and verifies sign-in tokens (`jose`, `Ed25519`) | P-01 |
 | **TOTP** | `packages/org-identity` | RFC 6238 generation and checking; the seed cipher | P-03, P-12 |
 | **Secret policy** | `packages/org-identity` | NFKC, length, control characters, the breached list (loaded once and digest-checked), context words, `reused` | BR-K |
 | **Hash semaphore** | `packages/org-identity` | Bounds concurrent Argon2id work | P-09 |
 | **Clock** | `packages/org-identity` (a token other packages can use) | Time | P-14 |
-| **Logger** | `services/org-gateway` | JSON lines; the fixed event list; no parameter for secrets | P-17 |
+| **Logger** | `services/org-gateway` | JSON lines; the fixed event list; no parameter for secrets or identifiers; humans named by log pseudonym only | P-17 |
 | **Failed Attempt writer** | `packages/abuse-bound` | The bounded queue and batched inserts | P-11 |
 | **Pruner** | `packages/org-identity` | Daily retention, under an advisory lock | P-16 |
-| **Store access** | `packages/org-identity`, `packages/abuse-bound` | `pg` Pool, parameterized SQL, migrations under an advisory lock | P-15 |
+| **Store access** | `packages/org-identity`, `packages/abuse-bound` | `pg` Pool as the app role, parameterized SQL. Migrations: the one-shot `org-migrate` runner, as the migrator role, under an advisory lock | P-15 |
 
 Every injected dependency uses an **explicit token** (T-OI-08). Each NestJS package compiles
 to JavaScript through its own `tsconfig.build.json` (T-OI-09).
@@ -90,8 +92,9 @@ Logical items. Their format and delivery are Infrastructure Design's (M1-TECH-06
 | Signing key; verify keys | **secret**; public | P-02 |
 | Seed-encryption keys (current, and older ones still in use) | **secret** | P-02, R-3 |
 | Counter secret | **secret** | Rotated only deliberately (R-2) |
+| Log-pseudonym key | **secret** | Separate from the counter secret (NFR-OI-22, amended) |
 | Environment caller public keys, per environment | public | P-06 |
-| Store connection | **secret** | P-15 |
+| Store connection (app role only; the migrator credential goes to `org-migrate`, never to S1) | **secret** | P-15; D-ID-OI-02 |
 | Edge and internal listener addresses and TLS material | value; **secret** | Infrastructure Design |
 | Hash memory budget (default 512 MiB); permit override | value | P-09 |
 

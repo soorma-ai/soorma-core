@@ -65,6 +65,7 @@ missing or altered is refused; `EdDSA` and other algorithms refused; a token wit
 | **Verify keys** | A set of Ed25519 public keys, each with its `kid` (RFC 7638 thumbprint), the signing key's public half included | As a **JWKS** through `verifyOnlyMaterial` (BR-INT-03): the verify-only material environments hold |
 | **Seed-encryption keys** | AES-256 keys, each with a key id; one is *current* | Never |
 | **Counter secret** | At least 256 bits; the HMAC-SHA-256 key for slots (NFR-OI-05) | Never |
+| **Log-pseudonym key** | At least 256 bits; the HMAC-SHA-256 key for log pseudonyms (NFR-OI-22, amended). **Separate from the counter secret.** Rotating it changes every pseudonym, which only breaks correlation across the rotation | Never |
 | **Environment caller keys** | Per configured environment, its Ed25519 **public** key (P-06) | Never; used to verify |
 
 **Rotating the signing key** is a configuration change in three steps:
@@ -172,15 +173,21 @@ there is no replay cache.
 environment's key under this `iss`, an expired token, another `aud`, and a token reused with
 a different query or body: each refused, from any address.
 
-## P-07: Two Listeners, One Process (D-ND-OI-01)
+## P-07: Listeners, One Process (D-ND-OI-01)
 
 S1 runs **two NestJS applications** in one process: the **edge** (the five contract
 operations) and the **internal** listener (the three internal operations), each with its own
 Fastify instance, port, module graph, and exception filter. **No route of one is registered
 in the other.**
 
+*Amended at Infrastructure Design (D-ID-OI-05, the user's change)*: a **third listener,
+for health**, bound to `127.0.0.1` inside the container, on no network, returning no
+detail. **No endpoint on the internal listener is unauthenticated** (BR-INT-02). The
+Compose healthcheck calls the health listener through a small Node script.
+
 **Meets**: BR-INT-01; I6; L1-20. **Verified by**: each internal path is 404 on the edge
-port; each edge path is 404 on the internal port.
+port; each edge path is 404 on the internal port; the health listener is bound to loopback
+only and serves nothing else.
 
 ## P-08: Request Ids and Errors (D-ND-OI-03, 04)
 
@@ -243,7 +250,9 @@ pending enrollment, retention (D-ND-OI-05). Tests control it.
 
 `pg` Pool: at most 10 connections per process, a 5-second statement timeout, and a
 2-second connection timeout. **A store error fails closed** with `unavailable`.
-Parameterized SQL only (NFR-OI-17). Migrations under an advisory lock (NFR-OI-18).
+Parameterized SQL only (NFR-OI-17). S1 connects as the app role only. Migrations run under an
+advisory lock in the one-shot `org-migrate` service, as the migrator role (NFR-OI-18,
+amended).
 
 ## P-16: Retention (D-ND-OI-10)
 
@@ -254,10 +263,14 @@ records older than 90 days. Principals and material are never touched (NFR-OI-25
 ## P-17: Logging (NFR-OI-22, 23)
 
 NestJS's `ConsoleLogger` in JSON mode, to stdout. A log helper takes **only** the request
-id, an event name from the fixed list, and non-secret fields (a principal reference, a
-count, a code). It has no parameter for material or tokens, so a secret cannot be passed
-to it by mistake. The no-secret test (NFR-OI-22) runs every flow with known secrets and
-searches the captured output.
+id, an event name from the fixed list, and non-secret fields (a count, a code, an
+environment). It has no parameter for material or tokens, so a secret cannot be passed
+to it by mistake. *Amended at Infrastructure Design (the user's SECURITY-03 decision, 2026-11-08)*: **it has no parameter for a principal
+reference either; it takes a `HumanPseudonym`**, a type only the pseudonym function
+produces (`hp_` + 128 bits of HMAC-SHA-256 under the log-pseudonym key, over the
+reference's RFC 8785 form), so an identifier cannot reach a log by mistake. The no-secret
+test (NFR-OI-22) runs every flow with known secrets and known presented identifiers, and
+searches the captured output for both.
 
 ---
 
@@ -275,7 +288,7 @@ searches the captured output.
 |---|---|---|
 | SECURITY-01 | Compliant at this stage | Seed encryption (P-03); TLS on both listeners and at rest for the store are Infrastructure Design's |
 | SECURITY-02, 06, 07 | N/A at this stage | Infrastructure Design |
-| SECURITY-03 | Compliant | P-08, P-17 |
+| SECURITY-03 | Compliant, except the centralized log service: not applicable in M1, by the user's decision | P-08, P-17 (log pseudonyms, amended at Infrastructure Design) |
 | SECURITY-04 | N/A | No HTML served |
 | SECURITY-05 | Compliant | Validators compiled once; parameterized SQL (P-15); body bound |
 | SECURITY-08 | Compliant | Internal calls authenticated per request and bound to their content (P-06) |

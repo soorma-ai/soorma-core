@@ -60,7 +60,7 @@ P9.loadOrganization(configuration)
 for each environment E in the organization's part:
   H := E's first Admin identifier
   if P10.principal(O, H) exists (pending or active):
-      if material configured for H: log "ignored for existing principal O/H" (no material)
+      if material configured for H: log config.enrollment_ignored with pseudonym(O/H) (no material, no identifier)
       continue                                           (BR-CFG-04)
   if no material configured for H ...................... stop start-up (BR-CFG-03)
   P10.ensureFirstAdmin(O, H, material, registeredBy = E)  atomic, at most once (BR-CFG-05)
