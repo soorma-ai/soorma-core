@@ -1454,3 +1454,11 @@ Amend the Secrets row of shared-infrastructure.md, Infrastructure Design §3, an
 **Context**: CONSTRUCTION, U2 org-identity, Code Generation (changes requested): Q-CG-4 answered B; the secrets rule amended and implemented; the gate stays open until #14's stack job passes on Linux.
 
 ---
+
+## Code Generation: #14 Passes on Linux; Probe Branch Deleted; Approval Prompt (org-identity)
+**Timestamp**: 2026-11-09T13:18:14Z
+**User Input**: (none since the Q-CG-4 answer)
+**AI Response**: "Pushed 8e75f2b to dev. #14's CI passes on Linux on both the push run (42623774419) and the pull_request run (42623783952): 'Build, check, and test', 'Image, image secret scan, and stack smoke test' (the stack job), and 'Dependency review'. The throwaway branch probe/compose-env-secrets is deleted locally and on GitHub (GitHub reports 'Branch not found'), and its worktree removed. Code Generation completion message presented again; awaiting the user's approval."
+**Context**: CONSTRUCTION, U2 org-identity, Code Generation: changes applied; the stack job passes on Linux; awaiting approval.
+
+---
