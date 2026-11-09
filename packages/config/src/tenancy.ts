@@ -324,3 +324,44 @@ export function loadMigrator(options: LoadOptions): {
   if (read.problems.length > 0) throw new ConfigurationError(read.problems);
   return { settings, secrets };
 }
+
+/** The secret names a configuration references, by who reads them; for stack:init. */
+export interface SecretNames {
+  /** S1's secrets (never the migrator password). */
+  gateway: string[];
+  /** org-migrate's: the migrator password and the CA. */
+  migrator: string[];
+  /** Enrollment material, in configuration order, with its principal. */
+  enrollment: { principal: string; secret: string }[];
+  /** TLS secrets (a PEM holding a key and its certificate chain). */
+  tls: string[];
+  /** The CA certificate the clients verify against. */
+  ca: string;
+  /** The Ed25519 signing key. */
+  signing: string;
+}
+
+export function listSecrets(options: LoadOptions): SecretNames {
+  const level = readTenancy(options.configPath).raw.organizationLevel;
+  const unique = (names: string[]): string[] => [...new Set(names)];
+  const tls = unique([level.edge.tls, level.internal.tls]);
+  return {
+    gateway: unique([
+      ...tls,
+      level.database.password,
+      level.database.ca,
+      level.keys.signing,
+      ...(level.keys.verify ?? []),
+      ...level.keys.seed.keys.map((k) => k.secret),
+      level.keys.counter,
+      level.keys.logPseudonym,
+      ...level.enrollment.map((e) => e.secret),
+      ...(level.internalCallers ?? []).map((c) => c.publicKey),
+    ]),
+    migrator: unique([level.migrator.password, level.database.ca]),
+    enrollment: level.enrollment.map((e) => ({ principal: e.principal, secret: e.secret })),
+    tls,
+    ca: level.database.ca,
+    signing: level.keys.signing,
+  };
+}

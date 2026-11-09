@@ -1,0 +1,180 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+#
+# The local stack's organization level (Infrastructure Design §1 to §7).
+#   pnpm stack:init      generate every secret into deploy/local/.secrets/
+#   pnpm stack:up        build and start
+#   pnpm stack:down      stop
+#
+# - Secrets are Compose secret files, mounted read-only into only the
+#   containers that need them, owned by that container's user, mode 0400.
+#   None passes through an environment variable
+# - S1's edge is published on the host's loopback only (127.0.0.1:8441); the
+#   internal port and the store are published nowhere; health is on no network
+# - org-migrate runs first, as the migrator; S1 starts only once it has
+#   completed, and never holds the migrator password
+# - Every container: a non-root user, a read-only root file system, all
+#   capabilities dropped, no new privileges
+name: soorma-local
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+
+services:
+  org-db:
+    <<: *hardening
+    image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+    user: '999:999'
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_min_protocol_version=TLSv1.3
+      - -c
+      - ssl_cert_file=/run/secrets/org-db-tls
+      - -c
+      - ssl_key_file=/run/secrets/org-db-tls
+      - -c
+      - hba_file=/soorma/db/pg_hba.conf
+      - -c
+      - synchronous_commit=on
+    environment:
+      POSTGRES_DB: soorma_org
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/org-db-superuser-password
+    secrets:
+      - { source: org-db-tls, target: org-db-tls, uid: '999', gid: '999', mode: 0400 }
+      - source: org-db-superuser-password
+        target: org-db-superuser-password
+        uid: '999'
+        gid: '999'
+        mode: 0400
+      - source: org-db-app-password
+        target: org-db-app-password
+        uid: '999'
+        gid: '999'
+        mode: 0400
+      - source: org-db-migrator-password
+        target: org-db-migrator-password
+        uid: '999'
+        gid: '999'
+        mode: 0400
+    volumes:
+      - org-db-data:/var/lib/postgresql
+      - ./db/roles.sql:/soorma/db/roles.sql:ro
+      - ./db/pg_hba.conf:/soorma/db/pg_hba.conf:ro
+      - ./db/init/10-soorma-roles.sh:/docker-entrypoint-initdb.d/10-soorma-roles.sh:ro
+    tmpfs:
+      - /var/run/postgresql
+      - /tmp
+    networks:
+      org:
+        aliases: [org-db.soorma.internal]
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-q', '-h', '/var/run/postgresql', '-d', 'soorma_org']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: unless-stopped
+
+  org-migrate:
+    <<: *hardening
+    image: soorma/org-gateway:local
+    build:
+      context: ../..
+      dockerfile: services/org-gateway/Dockerfile
+    command: ['dist/migrate.js']
+    secrets:
+      - source: org-db-migrator-password
+        target: org-db-migrator-password
+        uid: '65532'
+        gid: '65532'
+        mode: 0400
+      - { source: stack-ca-cert, target: stack-ca-cert, uid: '65532', gid: '65532', mode: 0400 }
+    configs:
+      - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+    networks: [org]
+    depends_on:
+      org-db: { condition: service_healthy }
+    restart: 'no'
+
+  org-gateway:
+    <<: *hardening
+    image: soorma/org-gateway:local
+    command: ['dist/main.js']
+    environment:
+      SOORMA_HEALTH_PORT: '8080'
+    secrets:
+      - { source: org-gateway-tls, target: org-gateway-tls, uid: '65532', gid: '65532', mode: 0400 }
+      - { source: stack-ca-cert, target: stack-ca-cert, uid: '65532', gid: '65532', mode: 0400 }
+      - source: org-db-app-password
+        target: org-db-app-password
+        uid: '65532'
+        gid: '65532'
+        mode: 0400
+      - { source: org-signing-key, target: org-signing-key, uid: '65532', gid: '65532', mode: 0400 }
+      - { source: org-seed-key, target: org-seed-key, uid: '65532', gid: '65532', mode: 0400 }
+      - source: org-counter-secret
+        target: org-counter-secret
+        uid: '65532'
+        gid: '65532'
+        mode: 0400
+      - source: org-log-pseudonym-key
+        target: org-log-pseudonym-key
+        uid: '65532'
+        gid: '65532'
+        mode: 0400
+      - source: org-enrollment-1
+        target: org-enrollment-1
+        uid: '65532'
+        gid: '65532'
+        mode: 0400
+    configs:
+      - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+    tmpfs:
+      - /tmp
+    mem_limit: 768m
+    ports:
+      - '127.0.0.1:8441:8443'
+    networks:
+      org: {}
+      org-internal-e:
+        aliases: [org-gateway.soorma.internal]
+      org-internal-e2:
+        aliases: [org-gateway.soorma.internal]
+    healthcheck:
+      test: ['CMD', '/nodejs/bin/node', 'dist/healthcheck.js']
+      interval: 5s
+      timeout: 3s
+      retries: 24
+    depends_on:
+      org-migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+networks:
+  org: {}
+  # One internal network per environment: environments share no network.
+  org-internal-e: {}
+  org-internal-e2: {}
+
+volumes:
+  org-db-data: {}
+
+configs:
+  tenancy:
+    file: ./config/tenancy.yaml
+
+secrets:
+  stack-ca-cert: { file: ./.secrets/stack-ca-cert }
+  org-gateway-tls: { file: ./.secrets/org-gateway-tls }
+  org-db-tls: { file: ./.secrets/org-db-tls }
+  org-db-superuser-password: { file: ./.secrets/org-db-superuser-password }
+  org-db-app-password: { file: ./.secrets/org-db-app-password }
+  org-db-migrator-password: { file: ./.secrets/org-db-migrator-password }
+  org-signing-key: { file: ./.secrets/org-signing-key }
+  org-seed-key: { file: ./.secrets/org-seed-key }
+  org-counter-secret: { file: ./.secrets/org-counter-secret }
+  org-log-pseudonym-key: { file: ./.secrets/org-log-pseudonym-key }
+  org-enrollment-1: { file: ./.secrets/org-enrollment-1 }

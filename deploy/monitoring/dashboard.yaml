@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+#
+# The organization level's security dashboard (NFR-OI-23; SECURITY-14), as a
+# file. Validated by dashboard.schema.json and its test; nothing renders it in
+# M1 (not applicable in M1, by the user's decision). Each panel counts one
+# named event over a window, optionally grouped.
+version: 1
+title: Organization level security
+panels:
+  - id: sign-ins
+    title: Sign-ins issued and ended
+    events: [signin.issued, signin.ended]
+    windowMinutes: 60
+  - id: failures
+    title: Failures to authenticate, by pseudonym
+    events: [auth.failed]
+    groupBy: pseudonym
+    windowMinutes: 15
+  - id: bound
+    title: Refusals by the abuse bound, by pseudonym
+    events: [auth.bound_refused]
+    groupBy: pseudonym
+    windowMinutes: 15
+  - id: second-factor
+    title: Second factor required, and material changes
+    events: [auth.second_factor_required, material.changed]
+    windowMinutes: 60
+  - id: internal
+    title: Refused internal calls
+    events: [internal.call_refused]
+    windowMinutes: 60
+  - id: dropped
+    title: Dropped Failed Attempt records
+    events: [failed_attempt.dropped]
+    windowMinutes: 60

@@ -7,6 +7,7 @@ export {
   DEFAULT_SECRETS_DIR,
   loadMigrator,
   loadOrganization,
+  listSecrets,
   loadSettings,
   type Environment,
   type FirstAdmin,
@@ -15,4 +16,5 @@ export {
   type MigratorSecrets,
   type OrganizationSettings,
   type Project,
+  type SecretNames,
 } from './tenancy.ts';

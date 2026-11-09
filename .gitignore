@@ -3,3 +3,4 @@ coverage/
 sbom/
 *.tsbuildinfo
 dist/
+deploy/local/.secrets/
