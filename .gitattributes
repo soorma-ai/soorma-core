@@ -1,0 +1,2 @@
+# The derived breached-secret list (NFR-OI-13): binary, never diffed or normalized.
+data/breached/*.bin binary

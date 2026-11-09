@@ -5,9 +5,11 @@
 //   node tools/checks/run.ts register licence configuration
 //   node tools/checks/run.ts workflows
 //   node tools/checks/run.ts github-settings
+//   node tools/checks/run.ts breached
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { breachedFindings, BREACHED_PATH, MANIFEST_PATH } from './breached.ts';
 import { configurationFindings } from './configuration.ts';
 import { githubSettingsFindings, REPOSITORY, sbomPackageNames } from './github-settings.ts';
 import { fromPnpmLicences, licenceFindings, parseLicenceExceptions } from './licence.ts';
@@ -69,6 +71,12 @@ const checks: Record<string, (ws: Workspace) => Finding[]> = {
     }),
 
   workflows: () => workflowFindings(loadWorkflows()),
+
+  breached: () =>
+    breachedFindings(
+      readFileSync(join(repoRoot, BREACHED_PATH)),
+      readFileSync(join(repoRoot, MANIFEST_PATH), 'utf8'),
+    ),
 
   'github-settings': (ws) => {
     const alerts = spawnSync('gh', ['api', '-i', `repos/${REPOSITORY}/vulnerability-alerts`], {

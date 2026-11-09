@@ -19,7 +19,7 @@
     "check:deps": "node tools/checks/run.ts register licence configuration",
     "check:workflows": "node tools/checks/run.ts workflows",
     "check:github": "node tools/checks/run.ts github-settings",
-    "check:breached": "node data/breached/check.ts",
+    "check:breached": "node tools/checks/run.ts breached",
     "check:secrets": "node tools/checks/run.ts secrets",
     "stack:init": "node deploy/local/scripts/stack-init.ts",
     "stack:certs": "node deploy/local/scripts/stack-certs.ts",

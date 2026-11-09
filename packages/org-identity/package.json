@@ -12,13 +12,15 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations"
   ],
   "scripts": {
     "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@nestjs/common": "12.3.2",
+    "@soorma/identity-resolution-seam": "workspace:*",
     "jose": "6.2.14",
     "pg": "8.23.1",
     "reflect-metadata": "0.2.2",
