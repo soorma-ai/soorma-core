@@ -1,4 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 //
-// @soorma/perimeter: P1, sign-in checks: classifies and verifies the presenter at S1.
-export {};
+// @soorma/perimeter (P1, sign-in checks): classifies and verifies the
+// presenter at S1.
+export {
+  CREDENTIAL_HEADERS,
+  presentedCredentialHeaders,
+  presentedSignIn,
+  rawHeaderValues,
+  SignInPerimeter,
+  type CredentialHeader,
+  type SignInCheck,
+} from './presenter.ts';

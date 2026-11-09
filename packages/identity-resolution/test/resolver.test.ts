@@ -11,7 +11,6 @@ import {
   HashSemaphore,
   KeyRing,
   newSeed,
-  nodeArgon2id,
   SecretHasher,
   stepAt,
   type Argon2Call,
@@ -19,6 +18,7 @@ import {
 } from '@soorma/org-identity';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { testDatabase, type TestDatabase } from '../../org-identity/test/harness/database.ts';
+import { recordingArgon2id } from '../../org-identity/test/harness/domain.ts';
 import { StoreIdentityResolver } from '../src/index.ts';
 
 const H = { organization: 'o1', principal: 'h@example.com' };
@@ -29,10 +29,7 @@ const NOW = new Date('2026-11-08T12:00:10Z');
 const clock: Clock = { now: () => NOW };
 
 const calls: Argon2Call[] = [];
-const recording = (p: Argon2Call) => {
-  calls.push(p);
-  return nodeArgon2id(p);
-};
+const recording = recordingArgon2id(calls);
 
 const keys = KeyRing.fromConfiguration({
   signingKey: Buffer.from(

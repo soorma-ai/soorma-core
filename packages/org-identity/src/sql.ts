@@ -43,6 +43,9 @@ export const SQL = {
   appliedMigrations: sql('SELECT version, checksum FROM schema_migrations ORDER BY version'),
   recordMigration: sql('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)'),
 
+  /** Infrastructure Design §5: asserted at start-up. */
+  synchronousCommit: sql('SHOW synchronous_commit'),
+
   // Principals.
   principalState: sql('SELECT state FROM principals WHERE organization = $1 AND principal = $2'),
   /** Registers a first Admin unless present (BR-CFG-05). $1 org, $2 principal, $3 at, $4 environment. */

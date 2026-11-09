@@ -34,14 +34,24 @@ export type Argon2id = (parameters: Argon2Call) => Promise<Buffer>;
 
 export const nodeArgon2id: Argon2id = (parameters) => argon2Async('argon2id', parameters);
 
-export const ARGON2_PARAMETERS = {
+export interface Argon2Parameters {
+  /** KiB. */
+  memory: number;
+  passes: number;
+  parallelism: number;
+  tagLength: number;
+  saltLength: number;
+}
+
+/** NFR-OI-11: the parameters of every verifier the organization level writes. */
+export const ARGON2_PARAMETERS: Readonly<Argon2Parameters> = {
   /** KiB: 64 MiB. */
   memory: 65536,
   passes: 3,
   parallelism: 1,
   tagLength: 32,
   saltLength: 16,
-} as const;
+};
 
 interface Parsed {
   memory: number;
@@ -77,17 +87,27 @@ export function secretInput(secret: SecretText): Buffer {
 export class SecretHasher {
   private readonly semaphore: HashSemaphore;
   private readonly argon2id: Argon2id;
+  readonly parameters: Readonly<Argon2Parameters>;
   private decoy: Verifier | undefined;
 
-  constructor(semaphore: HashSemaphore, argon2id: Argon2id = nodeArgon2id) {
+  /**
+   * `parameters` defaults to NFR-OI-11's, which production never overrides.
+   * Only tests that do not measure hashing pass a cheaper profile.
+   */
+  constructor(
+    semaphore: HashSemaphore,
+    argon2id: Argon2id = nodeArgon2id,
+    parameters: Readonly<Argon2Parameters> = ARGON2_PARAMETERS,
+  ) {
     this.semaphore = semaphore;
     this.argon2id = argon2id;
+    this.parameters = parameters;
   }
 
   /** Hashes a secret into a new verifier, with a fresh 16-byte salt. */
   async hash(secret: SecretText): Promise<Verifier> {
-    const salt = randomBytes(ARGON2_PARAMETERS.saltLength);
-    const { memory, passes, parallelism, tagLength } = ARGON2_PARAMETERS;
+    const salt = randomBytes(this.parameters.saltLength);
+    const { memory, passes, parallelism, tagLength } = this.parameters;
     const tag = await this.semaphore.run(() =>
       this.argon2id({
         message: secretInput(secret),

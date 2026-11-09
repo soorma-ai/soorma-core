@@ -17,11 +17,40 @@ import {
   OrgIdentity,
   SecretHasher,
   SecretPolicy,
+  nodeArgon2id,
+  type Argon2Call,
   type Argon2id,
   type Clock,
   type FailureRecorder,
 } from '../../src/index.ts';
 import type { TestDatabase } from './database.ts';
+
+/**
+ * A cheap hashing profile for flow tests that do not measure hashing: same
+ * algorithm and code path, 1 MiB and one pass. Tests of NFR-OI-11 itself, and
+ * of TC-OI-029 and 062, pass `realHashing: true`.
+ */
+export const FAST_ARGON2 = {
+  memory: 1024,
+  passes: 1,
+  parallelism: 1,
+  tagLength: 32,
+  saltLength: 16,
+};
+
+/**
+ * TC-OI-029's recording test double for the Argon2id primitive: it records
+ * each call's parameters exactly as the hasher passed them (the real ones,
+ * which the test asserts), then computes with FAST_ARGON2, so hashing and
+ * verification through it agree, cheaply.
+ */
+export function recordingArgon2id(calls: Argon2Call[]): Argon2id {
+  return (parameters) => {
+    calls.push({ ...parameters });
+    const { memory, passes, parallelism } = FAST_ARGON2;
+    return nodeArgon2id({ ...parameters, memory, passes, parallelism });
+  };
+}
 
 export class TestClock implements Clock {
   ms: number;
@@ -52,7 +81,9 @@ export function breachedList(): BreachedList {
   return breached;
 }
 
-export function testKeys(): KeyRing {
+export function testKeys(
+  internalCallers: { environment: string; publicKey: Buffer }[] = [],
+): KeyRing {
   return KeyRing.fromConfiguration({
     signingKey: Buffer.from(
       generateKeyPairSync('ed25519').privateKey.export({ format: 'pem', type: 'pkcs8' }),
@@ -61,7 +92,7 @@ export function testKeys(): KeyRing {
     seedKeys: { current: 's1', keys: [{ id: 's1', key: randomBytes(32) }] },
     counterSecret: randomBytes(32),
     logPseudonymKey: randomBytes(32),
-    internalCallers: [],
+    internalCallers,
   });
 }
 
@@ -82,21 +113,30 @@ export async function testDomain(
     clock?: TestClock;
     keys?: KeyRing;
     argon2id?: Argon2id;
+    semaphore?: HashSemaphore;
+    store?: TestDatabase['store'];
+    failures?: CapturingRecorder;
+    realHashing?: boolean;
   } = {},
 ): Promise<Domain> {
   const clock = options.clock ?? new TestClock();
   const keys = options.keys ?? testKeys();
-  const failures = new CapturingRecorder();
-  const hasher = new SecretHasher(new HashSemaphore(8), options.argon2id);
+  const failures = options.failures ?? new CapturingRecorder();
+  const hasher = new SecretHasher(
+    options.semaphore ?? new HashSemaphore(8),
+    options.argon2id,
+    options.realHashing ? undefined : FAST_ARGON2,
+  );
   await hasher.prepareDecoy();
-  const bound = new AbuseBound(db.store, keys.counterSecret, clock);
+  const store = options.store ?? db.store;
+  const bound = new AbuseBound(store, keys.counterSecret, clock);
   const identity = new OrgIdentity({
     organization: options.organization ?? 'o1',
     secondFactorRequired: options.secondFactorRequired ?? false,
-    store: db.store,
+    store,
     bound,
     failures,
-    resolver: new StoreIdentityResolver(db.store, hasher, keys, clock),
+    resolver: new StoreIdentityResolver(store, hasher, keys, clock),
     hasher,
     policy: new SecretPolicy(breachedList()),
     keys,

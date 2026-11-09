@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { migrationStatement, SQL } from '../sql.ts';
+import { poolConfig, type ConnectionSettings } from './store.ts';
 
 /** The migrations shipped with this package. */
 export const MIGRATIONS_DIR = fileURLToPath(new URL('../../migrations/', import.meta.url));
@@ -88,5 +89,21 @@ export async function migrate(
     return done;
   } finally {
     await client.query(SQL.migrationUnlock, [MIGRATION_LOCK_KEY]).catch(() => undefined);
+  }
+}
+
+/** org-migrate: connects as the migrator (TLS, verify-full), migrates, and disconnects. */
+export async function runMigrations(
+  settings: ConnectionSettings,
+  dir: string = MIGRATIONS_DIR,
+): Promise<string[]> {
+  const { max: _max, ...config } = poolConfig(settings);
+  void _max;
+  const client = new pg.Client(config);
+  await client.connect();
+  try {
+    return await migrate(client, dir);
+  } finally {
+    await client.end();
   }
 }

@@ -1,0 +1,96 @@
+// SPDX-License-Identifier: FSL-1.1-ALv2
+//
+// The Fastify instance under each NestJS listener (P-07, P-08):
+// - TLS 1.3 only, from the configured key and certificate (one PEM file)
+// - request bodies at most 16 KiB (NFR-OI-27); larger is payload_too_large
+// - every body kept as raw bytes: S1 parses JSON itself, after the earlier
+//   checks of the check order, and the internal listener hashes the exact
+//   bytes (P-06)
+// - a request id generated for every request, never taken from the client,
+//   returned as Soorma-Request-Id on every response, with the server's
+//   Soorma-Contract-Version
+import { randomUUID } from 'node:crypto';
+import {
+  Catch,
+  HttpException,
+  NotFoundException,
+  type ArgumentsHost,
+  type ExceptionFilter,
+} from '@nestjs/common';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { UnavailableError } from '@soorma/org-identity';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import { CONTRACT_VERSION, ProblemError, sendProblem } from './problems.ts';
+import type { SecurityLog } from './security-log.ts';
+
+export const BODY_LIMIT = 16 * 1024;
+
+export interface ListenerTls {
+  /** One PEM file holding the private key and the certificate chain. */
+  pem: Buffer;
+}
+
+export function createAdapter(tls?: ListenerTls): FastifyAdapter {
+  const adapter = new FastifyAdapter({
+    bodyLimit: BODY_LIMIT,
+    genReqId: () => randomUUID(),
+    requestIdHeader: false,
+    logger: false,
+    ...(tls ? { https: { key: tls.pem, cert: tls.pem, minVersion: 'TLSv1.3' as const } } : {}),
+  });
+  const fastify = adapter.getInstance();
+  fastify.removeAllContentTypeParsers();
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_request, body, done) => {
+    done(null, body);
+  });
+  fastify.addHook('onSend', (request, reply, payload, done) => {
+    void reply.header('Soorma-Contract-Version', CONTRACT_VERSION);
+    void reply.header('Soorma-Request-Id', request.id);
+    done(null, payload);
+  });
+  return adapter;
+}
+
+/** The raw body as received: empty when there was none. */
+export function rawBody(request: FastifyRequest): Buffer {
+  return Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+}
+
+/**
+ * One filter per listener (P-08): every refusal is a Problem; an unknown path
+ * is a bare 404 (the contract defines no Problem for it); anything unexpected
+ * is internal_error with no detail, logged with the request id.
+ */
+@Catch()
+export class ProblemFilter implements ExceptionFilter {
+  private readonly log: SecurityLog;
+
+  constructor(log: SecurityLog) {
+    this.log = log;
+  }
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const http = host.switchToHttp();
+    const reply = http.getResponse<FastifyReply>();
+    const request = http.getRequest<FastifyRequest>();
+    if (exception instanceof ProblemError) return sendProblem(reply, request.id, exception);
+    if (exception instanceof UnavailableError)
+      return sendProblem(
+        reply,
+        request.id,
+        new ProblemError('unavailable', { retryAfterSeconds: exception.retryAfterSeconds }),
+      );
+    if (exception instanceof NotFoundException) {
+      void reply.status(404).send();
+      return;
+    }
+    // Fastify's own refusals reach the filter wrapped by NestJS as HttpException:
+    // a body over the limit (413), or a request it cannot parse (400).
+    if (exception instanceof HttpException && exception.getStatus() === 413)
+      return sendProblem(reply, request.id, new ProblemError('payload_too_large'));
+    if (exception instanceof HttpException && exception.getStatus() === 400)
+      return sendProblem(reply, request.id, new ProblemError('malformed_request'));
+    this.log.error(request.id, 'internal_error');
+    sendProblem(reply, request.id, new ProblemError('internal_error'));
+  }
+}

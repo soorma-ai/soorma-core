@@ -38,6 +38,7 @@ export {
   secretInput,
   type Argon2Call,
   type Argon2id,
+  type Argon2Parameters,
 } from './crypto/secret-hash.ts';
 export {
   asSecretBytes,
@@ -97,7 +98,13 @@ export {
   type SecretRejection,
 } from './policy/secret-policy.ts';
 export { migrationStatement, SQL, statement, type Statement } from './sql.ts';
-export { MIGRATION_LOCK_KEY, MigrationError, MIGRATIONS_DIR, migrate } from './store/migrations.ts';
+export {
+  MIGRATION_LOCK_KEY,
+  MigrationError,
+  MIGRATIONS_DIR,
+  migrate,
+  runMigrations,
+} from './store/migrations.ts';
 export {
   CONNECTION_TIMEOUT_MS,
   ConflictError,
@@ -129,3 +136,13 @@ export {
   RETENTION_MS,
   type PruneResult,
 } from './domain/pruner.ts';
+export {
+  bodyHash,
+  INTERNAL_LEEWAY_SECONDS,
+  INTERNAL_MAX_LIFETIME_SECONDS,
+  INTERNAL_TYP,
+  internalAudience,
+  signInternalRequest,
+  verifyInternalRequest,
+  type ReceivedRequest,
+} from './crypto/internal-request.ts';

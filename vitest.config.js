@@ -11,6 +11,10 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   ssr: { resolve: { conditions: ['source', 'module', 'node', 'development|production'] } },
   test: {
+    // Argon2id at 64 MiB takes about 170 ms a call (NFR-OI-11), and the flow
+    // tests make dozens.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     // The test-database harness (D-CG-OI-15): when TEST_DATABASE_URL is set,
     // creates the roles and a migrated template database once per run.
     globalSetup: ['packages/org-identity/test/harness/global-setup.ts'],
