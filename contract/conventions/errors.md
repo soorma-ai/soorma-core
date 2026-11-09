@@ -62,7 +62,8 @@ A request is refused with the first check it fails, so a refusal is deterministi
 2. Credential presentation and kind: `credential_refused`
 3. Credential verification, then expiry: `credential_refused`, then `credential_expired`
 4. Environment, and revocation state: `credential_refused`; `unavailable` if unreadable
-5. Contract version: `unsupported_contract_version`
+5. Contract version: `unsupported_contract_version`, for a version not accepted **and for a
+   missing `Soorma-Contract-Version` header** on a call without a draft
 6. Draft schema, **stamped fields before unknown fields**: `malformed_request`,
    `stamped_field_set`, `unknown_field`
 7. Forwarded context: seal, scope, envelope version: `invalid_inbound_context`
@@ -77,6 +78,13 @@ operation that names no security scheme) runs step 1, then **refuses a presented
 then continues from step 5. It applies its abuse bound before verifying any presented
 material. A `401` would be wrong there: it carries `WWW-Authenticate: Bearer`, and no bearer
 credential can succeed on such an operation.
+
+## Unknown paths
+
+**In this contract version, a request to a path or method that no surface document defines is
+answered `404` with no body: not a Problem.** The response still carries `Soorma-Contract-Version`
+and `Soorma-Request-Id`. No error code is defined for it, and a client must not expect one.
+Defining a Problem for it later would be an addition.
 
 ## What soorma-core emits, and what a client accepts
 

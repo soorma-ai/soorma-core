@@ -29,6 +29,9 @@ Every response carries `Soorma-Contract-Version`, set to the server's contract v
   zero, elapses.** The window is not exercised in this version
 - A version not accepted is refused with `unsupported_contract_version`, listing
   `supportedVersions`
+- **A call without a draft that sends no `Soorma-Contract-Version` header is refused the same
+  way**: `unsupported_contract_version`, listing `supportedVersions`, at step 5 of the check
+  order ([errors.md](errors.md)). Declaring no version is not declaring an accepted one
 
 ## Change classification
 

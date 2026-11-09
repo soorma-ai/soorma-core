@@ -166,6 +166,27 @@ describe('the check order for operations naming no scheme (business-logic-model 
     }
   });
 
+  it('refuses a request with no Soorma-Contract-Version header at all (versioning.md; step 5)', async () => {
+    const { principal } = await active(g);
+    const r = await g.edge
+      .getHttpAdapter()
+      .getInstance()
+      .inject({
+        method: 'POST',
+        url: '/sign-ins',
+        headers: { 'content-type': 'application/json' },
+        payload: JSON.stringify({ principal, secret: K }),
+      });
+    const response = {
+      status: r.statusCode,
+      headers: r.headers,
+      body: JSON.parse(r.body),
+      text: r.body,
+    };
+    expectProblem(response, 400, 'unsupported_contract_version');
+    expect(response.body.supportedVersions).toEqual(['0.1.0']);
+  });
+
   it('refuses a body that is not JSON, or fails the schema, naming the field', async () => {
     const { principal } = await active(g);
     expectProblem(await post(g.edge, '/sign-ins', '{not json'), 400, 'malformed_request');
@@ -301,7 +322,7 @@ describe('the sign-in operations (TC-OI-020, 024, 027)', () => {
 });
 
 describe('TC-OI-047 (edge side): only the five operations are served', () => {
-  it('answers an internal path, an unknown path, or another method with a bare 404', async () => {
+  it('answers an internal path, an unknown path, or another method with a bare 404 (errors.md, Unknown paths)', async () => {
     for (const r of [
       await get(g.edge, '/verify-keys'),
       await get(g.edge, '/principals/exists?organization=o1&principal=h@x'),

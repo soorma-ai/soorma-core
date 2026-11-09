@@ -1402,3 +1402,33 @@ D-CG-OI-15: the harness's SQL. roles.sql must be safe to run twice, because role
 **Context**: CONSTRUCTION, U2 org-identity, Code Generation Part 2 complete; awaiting approval.
 
 ---
+
+## Code Generation: Request Changes (org-identity)
+**Timestamp**: 2026-11-09T08:18:34Z
+**User Input**: "Request Changes. Two items, then show me the result before I approve.
+
+The stack's secrets fail on Linux. This blocks, and it's a design-rule change (stop condition 7). CI's stack job fails because org-db gets Permission denied on /run/secrets/org-db-superuser-password, and Compose warns that uid, gid and mode are ignored. I read Compose's source at 2.38.2 (CI) and 5.1.4 (local): a file: secret is always a read-only bind mount that keeps the host file's owner and mode. uid, gid and mode are applied only to environment: secrets, which Compose copies into the container (injectSecrets, createTar). Docker Desktop's file sharing hid this.
+Probe this fix on Linux first. Declare each secret with environment:, and have stack:up read .secrets/ and pass the values only in the docker compose process's environment, never a container's. Check three things in CI, on the Linux runner:
+that Compose can copy into our read-only root filesystems (if not, whether a tmpfs at /run/secrets fixes it)
+that PostgreSQL accepts its TLS key at owner 999 and mode 0400
+that the distroless services read theirs at 65532
+Use a throwaway branch or a draft workflow run for the probe, not main.
+If it works, propose the amendment to shared-infrastructure.md's Secrets row and Infrastructure Design §3 as a question with options. If it doesn't, stop and give me the options you found.
+Don't change the rule until I answer.
+Write down the two contract behaviours you decided in code.
+In contract/conventions/versioning.md and errors.md: a missing Soorma-Contract-Version is refused as unsupported_contract_version (keep that choice), at check-order step 5.
+In errors.md: an unknown path is a bare 404, not a Problem, in 0.1.0.
+Add both to contract/CHANGELOG.md, with a fixture or test for each, and log them in audit.md as Code Generation decisions.
+Push to dev, so #14's CI runs again, and report the result. The Code Generation gate stays open until the stack job passes on Linux."
+**AI Response**: "Request Changes received. Item 1 is stop condition 7 (the secrets design rule cannot be built as written on Linux): a probe of environment: secrets on a throwaway branch's workflow, then a question with options; the rule is not changed until the user answers. Item 2: the two contract behaviours written into the conventions, the CHANGELOG, and tests. Then a push to dev and #14's CI result."
+**Context**: CONSTRUCTION, U2 org-identity, Code Generation: changes requested; the gate stays open until the stack job passes on Linux.
+
+---
+
+## Code Generation Decisions: Two Contract Behaviours Written Down (org-identity)
+**Timestamp**: 2026-11-09T08:23:21Z
+**User Input**: (the request of 2026-11-09T08:18:34Z, item 2)
+**AI Response**: "Two contract behaviours decided in code at U2's Code Generation, now written into the contract, as the user asked: (1) A call without a draft that sends no Soorma-Contract-Version header is refused with unsupported_contract_version, listing supportedVersions, at check-order step 5 (the user kept this choice): contract/conventions/versioning.md (Accepted versions) and errors.md (step 5 of the check order). (2) In contract 0.1.0, a request to a path or method no surface defines is a bare 404 with no body, not a Problem, carrying Soorma-Contract-Version and Soorma-Request-Id; no error code is defined for it: errors.md (Unknown paths). Both recorded in contract/CHANGELOG.md under 0.1.0 (unreleased) as compatible. Tests: contract/test/conventions.test.ts (TC-WC-025: step 5 and Unknown paths; TC-WC-028: versioning.md), services/org-gateway/test/edge.test.ts (a request with no Soorma-Contract-Version header at all is 400 unsupported_contract_version with supportedVersions; an unknown path, an internal path, and another method are bare 404s)."
+**Context**: CONSTRUCTION, U2 org-identity, Code Generation (changes requested): Code Generation decisions logged.
+
+---
