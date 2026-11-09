@@ -1432,3 +1432,11 @@ Push to dev, so #14's CI runs again, and report the result. The Code Generation 
 **Context**: CONSTRUCTION, U2 org-identity, Code Generation (changes requested): Code Generation decisions logged.
 
 ---
+
+## Code Generation: Linux Secrets Probe; Q-CG-4 Raised; #14 CI (org-identity)
+**Timestamp**: 2026-11-09T13:03:49Z
+**User Input**: (the request of 2026-11-09T08:18:34Z, item 1)
+**AI Response**: "Probed on the throwaway branch probe/compose-env-secrets (its own workflow, triggered only by probe/** pushes; never merged; runs 42585099775, 42585551215, 42586756589, 42600681863; ubuntu-24.04, Docker 28.0.4, Compose v2.38.2). The requested fix does not work with the hardening: Compose refuses environment: secrets in any read_only service at create ('cannot create secret … in read-only service …: file is the sole supported option'), and a tmpfs at /run/secrets does not change that. Stopped on item 1 as instructed; the rule is unchanged. Options probed: (A) environment: secrets with read_only: false works (distroless reads at 65532/0400; PostgreSQL accepts its key at 999:999/0400 and serves TLS; nothing in the container's environment); (B) a one-shot secrets-init container (root, cap_drop ALL plus CHOWN, DAC_OVERRIDE, FOWNER; read-only; no network) copying file: secrets into a named volume, one subpath per consumer, mounted read-only, works with every long-running service keeping read_only, non-root, cap_drop ALL, no-new-privileges (the first B run failed on a probe bug: secrets mounted without targets; fixed and re-run). (C) Swarm secrets: not probed. Raised as Q-CG-4 (recommended B) in the plan. Item 2 committed as 4ddf535 and pushed to dev: #14's CI ran on push and pull_request: 'Build, check, and test' passes on Linux (the database tests included); 'Image, image secret scan, and stack smoke test' fails, as expected while the secrets rule is unchanged. The Code Generation gate stays open."
+**Context**: CONSTRUCTION, U2 org-identity, Code Generation (changes requested): Q-CG-4 Awaiting Answer.
+
+---
