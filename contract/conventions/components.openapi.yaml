@@ -58,7 +58,9 @@ components:
             response's Soorma-Request-Id. Accept any value.
           type: string
         errors:
-          description: On validation errors. Each pointer is a JSON Pointer into the request body.
+          description: >-
+            On validation errors. Each entry names what failed: a JSON Pointer
+            into the request body (pointer), or a request header (header).
           type: array
           items:
             $ref: '#/components/schemas/ProblemFieldError'
@@ -87,15 +89,43 @@ components:
             - too_many_attempts
             - unavailable
             - internal_error
+            - authentication_failed
+            - second_factor_enrollment_required
+            - second_factor_not_confirmed
+            - secret_rejected
         - type: string
     ProblemFieldError:
       type: object
       additionalProperties: true
       properties:
         pointer:
+          description: A JSON Pointer into the request body.
+          type: string
+        header:
+          description: >-
+            The name of a request header, on malformed_request when an operation
+            that names no security scheme receives an Authorization or
+            Soorma-Delegation header. Never the header's value.
           type: string
         detail:
           type: string
+        reason:
+          description: >-
+            Why the field was rejected, on secret_rejected. An open set.
+          $ref: '#/components/schemas/SecretRejectedReason'
+    SecretRejectedReason:
+      description: >-
+        Why a new secret (K) was rejected, on secret_rejected. An open set:
+        tolerate reasons you do not know.
+      anyOf:
+        - enum:
+            - too_short
+            - too_long
+            - disallowed_character
+            - breached
+            - reused
+            - context_word
+        - type: string
 
     # Identifier definitions, for request inputs only (BR-ID-01 to 06). Wherever
     # an identifier is received, it is a plain string (BR-ID-11). Identifiers
@@ -132,6 +162,34 @@ components:
       minLength: 1
       maxLength: 256
       pattern: "^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.@:-]+$"
+    HumanPrincipalReferenceInput:
+      description: >-
+        A human principal, named with its organization (request side). Two
+        references are equal only when both parts are equal, compared exactly.
+      type: object
+      additionalProperties: false
+      required:
+        - organization
+        - principal
+      properties:
+        organization:
+          $ref: '#/components/schemas/ConfiguredIdentifier'
+        principal:
+          $ref: '#/components/schemas/HumanPrincipalIdentifier'
+    HumanPrincipalReference:
+      description: >-
+        A human principal, named with its organization (received side). Each part
+        is an opaque string; do not validate its syntax.
+      type: object
+      additionalProperties: true
+      required:
+        - organization
+        - principal
+      properties:
+        organization:
+          type: string
+        principal:
+          type: string
     PermissionIdentifier:
       description: A permission identifier. The accepted set may widen in a compatible version.
       type: string

@@ -28,12 +28,13 @@ export interface Finding {
   message: string;
 }
 
-const SKIPPED_DIRS = new Set(['node_modules', 'fixtures', 'meta', 'generated', 'test']);
+const SKIPPED_DIRS = new Set(['node_modules', 'dist', 'fixtures', 'meta', 'generated', 'test']);
 
 /** Every file under `contract/`, relative, with `/` separators. */
 export function listFiles(
   root: string = contractRoot,
-  skip: Set<string> = new Set(['node_modules']),
+  // dist/ is the git-ignored output of tsconfig.build.json (D-CG-OI-02), not contract source.
+  skip: Set<string> = new Set(['node_modules', 'dist']),
 ): string[] {
   const out: string[] = [];
   const walkDir = (dir: string): void => {

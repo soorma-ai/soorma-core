@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./contract/tsconfig.build.json"
+    },
+    {
+      "path": "./seams/identity-resolution/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/config/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/org-identity/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/abuse-bound/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/identity-resolution/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/perimeter/tsconfig.build.json"
+    },
+    {
+      "path": "./services/org-gateway/tsconfig.build.json"
+    }
+  ]
+}

@@ -62,6 +62,23 @@ describe('TC-WC-024: errors follow the Problem definition', () => {
     expect(valid('Problem', { ...samples.problem, code: 7 })).toBe(false);
   });
 
+  it('step 10: accepts a header entry in errors, and ProblemFieldError has optional pointer and header (A4)', () => {
+    expect(
+      valid('Problem', {
+        code: 'malformed_request',
+        status: 400,
+        errors: [{ header: 'Authorization', detail: 'This operation accepts no credential' }],
+      }),
+    ).toBe(true);
+    const field = component('schemas', 'ProblemFieldError');
+    expect(field.properties).toMatchObject({
+      pointer: { type: 'string' },
+      header: { type: 'string' },
+    });
+    expect(field).not.toHaveProperty('required');
+    expect(valid('Problem', { errors: [{ header: 7 }] })).toBe(false);
+  });
+
   it('requires no field', () => {
     expect(component('schemas', 'Problem')).not.toHaveProperty('required');
   });

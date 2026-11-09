@@ -1,0 +1,7 @@
+{
+  "type": "urn:soorma:problem:authentication_failed",
+  "title": "Request refused",
+  "status": 403,
+  "code": "authentication_failed",
+  "instance": "urn:soorma:request:01J9Z3"
+}

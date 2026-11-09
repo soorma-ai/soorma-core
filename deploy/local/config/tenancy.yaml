@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+#
+# The local stack's tenancy (Infrastructure Design §3; D-CG-OI-12): one
+# organization, one project, two environments, and their first Admin. It
+# holds no secret: each secret is named here and read from /run/secrets.
+# `pnpm stack:init` generates every named secret into deploy/local/.secrets/.
+organization: o1
+secondFactorRequired: false
+organizationLevel:
+  edge:
+    port: 8443
+    tls: org-gateway-tls
+  internal:
+    port: 9443
+    tls: org-gateway-tls
+  health:
+    port: 8080
+  database:
+    host: org-db.soorma.internal
+    port: 5432
+    name: soorma_org
+    user: soorma_org_app
+    password: org-db-app-password
+    ca: stack-ca-cert
+  migrator:
+    user: soorma_org_migrator
+    password: org-db-migrator-password
+  keys:
+    signing: org-signing-key
+    seed:
+      current: s1
+      keys:
+        - id: s1
+          secret: org-seed-key
+    counter: org-counter-secret
+    logPseudonym: org-log-pseudonym-key
+  # Enrollment material, in the organization's part only (BR-CFG-02), one
+  # secret per first Admin, named by index in this order.
+  enrollment:
+    - principal: h@example.com
+      secret: org-enrollment-1
+projects:
+  - id: p1
+    environments:
+      - id: e
+        firstAdmin: h@example.com
+      - id: e2
+        firstAdmin: h@example.com

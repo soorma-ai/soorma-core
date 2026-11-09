@@ -1,0 +1,11 @@
+{
+  "principal": {
+    "organization": "o1",
+    "principal": "h@example.com"
+  },
+  "secret": "x",
+  "secondFactor": {
+    "type": "totp",
+    "code": "12345"
+  }
+}

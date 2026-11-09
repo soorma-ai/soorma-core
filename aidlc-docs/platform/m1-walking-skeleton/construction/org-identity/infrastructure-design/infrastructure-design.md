@@ -93,6 +93,26 @@ read from `/run/secrets/{name}`.
 **Secrets never pass through environment variables.** A setting that is not secret (a port,
 a budget) may.
 
+**Delivery into the containers** (*amended at Code Generation, Q-CG-4 B, the user's answer,
+2026-11-09*). On Linux, a Compose `file:` secret is a read-only bind mount that keeps the host
+file's owner and mode, so a non-root container cannot read a 0600 file; and Compose refuses
+`environment:` secrets in a read-only service (both probed on GitHub's ubuntu-24.04 runner,
+Compose v2.38.2). So:
+- **One secrets volume per level**: `org-secrets` for the organization level; each environment
+  that U4 adds gets `{env}-secrets`
+- **One one-shot init container per level**, `org-secrets-init`: it mounts **only this level's**
+  `file:` secrets, and copies each into a subdirectory per consuming service with that service's
+  owner and mode 0400 (directories 0500): `org-db/` (999), `org-migrate/` (65532),
+  `org-gateway/` (65532). The services start only after it completes successfully
+- **Each service mounts only its own subpath** of its own level's volume, read-only, at
+  `/run/secrets`. An environment's containers never mount `org-secrets`, so organization-level
+  secrets never reach them by construction (ID §6)
+- **The copies sit in Docker's volume storage**, on the same host as `.secrets/`, and are removed
+  by `pnpm stack:down -v`
+- **Minimum versions**: `pnpm stack:up` refuses to start, with a message, without Docker Engine
+  26 (volume subpaths, API 1.45) and Docker Compose 2.26.0 (the first release that passes a
+  subpath to the Engine)
+
 ## 4. TLS and the Local CA (Q3 A, the user's change)
 
 | Item | Design |
@@ -145,6 +165,13 @@ Every U2 container: a non-root user; `read_only: true`, with a small `tmpfs` at 
 `cap_drop: [ALL]`; `security_opt: [no-new-privileges:true]`; `org-gateway` with a memory
 limit of **768 MiB** (the default hashing budget of 512 MiB plus 256 MiB, P-09); a restart
 policy of `unless-stopped` for S1 and `no` for `org-migrate`.
+
+**The one exception** (*amended at Code Generation, Q-CG-4 B, the user's answer*):
+`org-secrets-init` runs as **root**, with `cap_drop: [ALL]` plus **only `CHOWN`,
+`DAC_OVERRIDE`, and `FOWNER`** (to read the host's 0600 files and set each copy's owner and
+mode), **no network** (`network_mode: none`), a **read-only root**, and no-new-privileges.
+It **exits** once the copies are made (restart policy `no`). Every long-running container keeps
+everything above.
 
 ## 8. CI (D-ID-OI-06, 07; the user's addition)
 

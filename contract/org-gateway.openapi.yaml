@@ -1,0 +1,577 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# S1 org-gateway: the organization level's control face (U2 org-identity).
+# One organization per org-gateway, so no path carries an organization. No
+# operation carries an envelope: each is a direct human operation (PF FR-001
+# v1.3; ID FR-022). Shared definitions are referenced from
+# conventions/components.openapi.yaml, never copied. The written rules are in
+# conventions/*.md.
+openapi: 3.1.1
+info:
+  title: soorma org-gateway (S1)
+  version: 0.1.0
+  description: >-
+    The organization sign-in, first authentication, and self-service material
+    change. Pre-release (0.y.z): see conventions/pre-release.md.
+  license:
+    name: Apache 2.0
+    identifier: Apache-2.0
+paths:
+  /first-authentication:
+    post:
+      operationId: firstAuthenticate
+      summary: First authentication with enrollment material
+      description: >-
+        A pending human presents their single-use enrollment material and sets
+        their own secret (K). Names no security scheme: a presented
+        Authorization or Soorma-Delegation header is malformed_request.
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FirstAuthenticateRequest'
+      responses:
+        '200':
+          description: >-
+            The principal is active. Either a sign-in, or, where the organization
+            requires a second factor, secondFactorEnrollmentRequired.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirstAuthenticateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/AuthenticationRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /sign-ins:
+    post:
+      operationId: authenticate
+      summary: Sign in with K, or K and P
+      description: >-
+        Names no security scheme: a presented Authorization or Soorma-Delegation
+        header is malformed_request.
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticateRequest'
+      responses:
+        '200':
+          description: The organization sign-in.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/AuthenticationRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /sign-ins/current/renewal:
+    post:
+      operationId: renewSignIn
+      summary: Renew one's own sign-in
+      description: >-
+        A new sign-in for the same authentication, never past the absolute
+        maximum. Takes no request body.
+      security:
+        - signIn: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      responses:
+        '200':
+          description: The renewed sign-in.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/AuthenticationRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /sign-ins/current/end:
+    post:
+      operationId: endSignIn
+      summary: End one's own sign-in
+      description: The sign-in is ended and refused from then on. Takes no request body.
+      security:
+        - signIn: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      responses:
+        '204':
+          description: Ended.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /material-changes:
+    post:
+      operationId: changeMaterial
+      summary: Change one's own material by presenting the current material
+      description: >-
+        Replace K, or begin or confirm a second factor (P). Needs no sign-in, so
+        a human for whom P is required can enrol it by presenting K. Names no
+        security scheme: a presented Authorization or Soorma-Delegation header
+        is malformed_request. A change of K or P ends every live sign-in.
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeMaterialRequest'
+      responses:
+        '200':
+          description: The change, by its type.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeMaterialResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/AuthenticationRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+components:
+  schemas:
+    # Request side: closed, every string bounded, identifiers patterned.
+    FirstAuthenticateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - principal
+        - enrollmentMaterial
+        - newSecret
+      properties:
+        principal:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReferenceInput'
+        enrollmentMaterial:
+          $ref: '#/components/schemas/EnrollmentMaterial'
+        newSecret:
+          $ref: '#/components/schemas/Secret'
+    AuthenticateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - principal
+        - secret
+      properties:
+        principal:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReferenceInput'
+        secret:
+          $ref: '#/components/schemas/Secret'
+        secondFactor:
+          $ref: '#/components/schemas/SecondFactorProof'
+    ChangeMaterialRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - principal
+        - current
+        - change
+      properties:
+        principal:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReferenceInput'
+        current:
+          $ref: '#/components/schemas/CurrentMaterial'
+        change:
+          $ref: '#/components/schemas/MaterialChange'
+    CurrentMaterial:
+      description: The material presented to authorize a change. secondFactor once P is enrolled.
+      type: object
+      additionalProperties: false
+      required:
+        - secret
+      properties:
+        secret:
+          $ref: '#/components/schemas/Secret'
+        secondFactor:
+          $ref: '#/components/schemas/SecondFactorProof'
+    MaterialChange:
+      description: One change, selected by type. Closed on the request side.
+      oneOf:
+        - $ref: '#/components/schemas/ReplaceSecretChange'
+        - $ref: '#/components/schemas/BeginSecondFactorChange'
+        - $ref: '#/components/schemas/ConfirmSecondFactorChange'
+    ReplaceSecretChange:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - newSecret
+      properties:
+        type:
+          const: replaceSecret
+        newSecret:
+          $ref: '#/components/schemas/Secret'
+    BeginSecondFactorChange:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - authenticatorType
+      properties:
+        type:
+          const: beginSecondFactor
+        authenticatorType:
+          $ref: '#/components/schemas/AuthenticatorTypeInput'
+    ConfirmSecondFactorChange:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - enrollment
+        - proof
+      properties:
+        type:
+          const: confirmSecondFactor
+        enrollment:
+          description: The id returned by beginSecondFactor.
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/PlatformReference'
+        proof:
+          $ref: '#/components/schemas/SecondFactorProof'
+    SecondFactorProof:
+      description: A proof of P. Its fields are set by its type; totp in this contract version.
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - code
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthenticatorTypeInput'
+        code:
+          description: A TOTP code (RFC 6238), six digits.
+          type: string
+          maxLength: 6
+          pattern: '^[0-9]{6}$'
+    AuthenticatorTypeInput:
+      description: The second-factor types accepted. A later type is a compatible widening.
+      type: string
+      enum:
+        - totp
+    Secret:
+      description: >-
+        K, as a JSON string. The policy (8 to 256 code points after NFKC
+        normalization, and the rest) is checked in code after normalization and
+        refused with secret_rejected; this bound only stops oversized input early.
+      type: string
+      minLength: 1
+      maxLength: 1024
+    EnrollmentMaterial:
+      description: Single-use enrollment material. Material, not a credential.
+      type: string
+      maxLength: 256
+      pattern: '^soorma_em_[A-Za-z0-9_-]+$'
+
+    # Received side: open, identifiers plain strings, enumerations open.
+    SignIn:
+      description: >-
+        The organization sign-in. token is opaque: present it as Authorization:
+        Bearer. The other fields repeat what it asserts, for convenience.
+      type: object
+      additionalProperties: true
+      required:
+        - token
+        - expiresAt
+        - subject
+        - authenticatedAt
+        - classes
+      properties:
+        token:
+          type: string
+        expiresAt:
+          description: RFC 3339.
+          type: string
+        subject:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReference'
+        authenticatedAt:
+          description: RFC 3339.
+          type: string
+        classes:
+          description: The material classes verified at authentication.
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialClass'
+    SignInResponse:
+      type: object
+      additionalProperties: true
+      required:
+        - signIn
+      properties:
+        signIn:
+          $ref: '#/components/schemas/SignIn'
+    FirstAuthenticateResponse:
+      type: object
+      additionalProperties: true
+      required:
+        - principal
+        - state
+      properties:
+        principal:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReference'
+        state:
+          $ref: '#/components/schemas/PrincipalState'
+        signIn:
+          $ref: '#/components/schemas/SignIn'
+        secondFactorEnrollmentRequired:
+          description: >-
+            True when the organization requires a second factor: no sign-in is
+            issued, and P is enrolled through changeMaterial by presenting K.
+          type: boolean
+    ChangeMaterialResponse:
+      type: object
+      additionalProperties: true
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/MaterialChangeType'
+        retired:
+          description: The material classes the change retired.
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialClass'
+        signInsEnded:
+          description: How many live sign-ins the change ended.
+          type: integer
+          minimum: 0
+        enrollment:
+          $ref: '#/components/schemas/SecondFactorEnrollment'
+    SecondFactorEnrollment:
+      description: A pending second-factor enrollment, confirmed with a proof before it expires.
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - expiresAt
+        - setup
+      properties:
+        id:
+          type: string
+        expiresAt:
+          description: RFC 3339.
+          type: string
+        setup:
+          $ref: '#/components/schemas/SecondFactorSetup'
+    SecondFactorSetup:
+      description: >-
+        What an authenticator needs, by type. For totp: the seed in Base32, and
+        an otpauth:// URI carrying it. Shown once; never stored by the client
+        beyond its authenticator.
+      type: object
+      additionalProperties: true
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthenticatorType'
+        seed:
+          type: string
+        otpauthUri:
+          type: string
+    MaterialClass:
+      description: A material class. An open set.
+      anyOf:
+        - enum:
+            - K
+            - P
+        - type: string
+    PrincipalState:
+      description: A human principal's state. An open set.
+      anyOf:
+        - enum:
+            - pending
+            - active
+        - type: string
+    MaterialChangeType:
+      description: A material change's type. An open set.
+      anyOf:
+        - enum:
+            - replaceSecret
+            - beginSecondFactor
+            - confirmSecondFactor
+        - type: string
+    AuthenticatorType:
+      description: A second-factor type. An open set.
+      anyOf:
+        - enum:
+            - totp
+        - type: string
+
+  headers:
+    Soorma-Contract-Version:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Contract-Version'
+    Soorma-Request-Id:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Request-Id'
+    Retry-After:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Retry-After'
+    WWW-Authenticate:
+      description: Bearer, on a 401 (RFC 6750). Never on a 403.
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: >-
+        malformed_request (a credential header on an operation naming no
+        security scheme included), unsupported_contract_version, or
+        secret_rejected.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    CredentialRefused:
+      description: credential_refused or credential_expired.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWW-Authenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    AuthenticationRefused:
+      description: >-
+        authentication_failed, second_factor_enrollment_required, or
+        second_factor_not_confirmed. No WWW-Authenticate.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: payload_too_large. Request bodies are at most 16 KiB.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    TooManyAttempts:
+      description: too_many_attempts. Does not reveal whether the principal exists.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Unavailable:
+      description: unavailable. The request fails closed.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    InternalError:
+      description: internal_error, with no detail.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+
+  securitySchemes:
+    signIn:
+      $ref: 'conventions/components.openapi.yaml#/components/securitySchemes/signIn'

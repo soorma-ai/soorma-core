@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.base.json",
+  "include": ["local/scripts/**/*.ts", "test/**/*.ts"],
+  "compilerOptions": {
+    "customConditions": ["source"]
+  }
+}

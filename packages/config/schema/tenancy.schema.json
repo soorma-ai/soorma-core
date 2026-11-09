@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soorma.ai/schemas/tenancy.schema.json",
+  "$comment": "SPDX-License-Identifier: FSL-1.1-ALv2. tenancy.yaml: the organization, its projects and environments, and the organization level's settings (BR-CFG; D-CG-OI-12). Closed at every level. It holds no secret: secrets are named, and read from the secrets directory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["organization", "secondFactorRequired", "organizationLevel", "projects"],
+  "properties": {
+    "organization": { "$ref": "#/$defs/ConfiguredIdentifier" },
+    "secondFactorRequired": { "type": "boolean" },
+    "organizationLevel": { "$ref": "#/$defs/OrganizationLevel" },
+    "projects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/Project" }
+    }
+  },
+  "$defs": {
+    "ConfiguredIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]*$"
+    },
+    "HumanPrincipalIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.@:-]+$"
+    },
+    "SecretName": {
+      "description": "A file name in the secrets directory. No path separator, so it cannot leave the directory.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "KeyId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "Port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "Project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "environments"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ConfiguredIdentifier" },
+        "environments": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/Environment" }
+        }
+      }
+    },
+    "Environment": {
+      "description": "An environment's part names its first Admin by identifier only. It has no field for material, so it cannot carry any (BR-CFG-02).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "firstAdmin"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ConfiguredIdentifier" },
+        "firstAdmin": { "$ref": "#/$defs/HumanPrincipalIdentifier" }
+      }
+    },
+    "Listener": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["port", "tls"],
+      "properties": { "port": { "$ref": "#/$defs/Port" }, "tls": { "$ref": "#/$defs/SecretName" } }
+    },
+    "OrganizationLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge", "internal", "health", "database", "migrator", "keys", "enrollment"],
+      "properties": {
+        "edge": { "$ref": "#/$defs/Listener" },
+        "internal": { "$ref": "#/$defs/Listener" },
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["port"],
+          "properties": { "port": { "$ref": "#/$defs/Port" } }
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host", "port", "name", "user", "password", "ca"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253,
+              "pattern": "^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$"
+            },
+            "port": { "$ref": "#/$defs/Port" },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "password": { "$ref": "#/$defs/SecretName" },
+            "ca": { "$ref": "#/$defs/SecretName" }
+          }
+        },
+        "migrator": {
+          "description": "Read only by org-migrate. S1 never reads the migrator password (D-ID-OI-02).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["user", "password"],
+          "properties": {
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "password": { "$ref": "#/$defs/SecretName" }
+          }
+        },
+        "keys": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signing", "seed", "counter", "logPseudonym"],
+          "properties": {
+            "signing": { "$ref": "#/$defs/SecretName" },
+            "verify": {
+              "description": "Further verify-only public keys, during a signing-key rotation (P-02).",
+              "type": "array",
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/SecretName" }
+            },
+            "seed": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["current", "keys"],
+              "properties": {
+                "current": { "$ref": "#/$defs/KeyId" },
+                "keys": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id", "secret"],
+                    "properties": {
+                      "id": { "$ref": "#/$defs/KeyId" },
+                      "secret": { "$ref": "#/$defs/SecretName" }
+                    }
+                  }
+                }
+              }
+            },
+            "counter": { "$ref": "#/$defs/SecretName" },
+            "logPseudonym": { "$ref": "#/$defs/SecretName" }
+          }
+        },
+        "enrollment": {
+          "description": "Enrollment material, referenced only here, in the organization's part, keyed by principal identifier (BR-CFG-02).",
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["principal", "secret"],
+            "properties": {
+              "principal": { "$ref": "#/$defs/HumanPrincipalIdentifier" },
+              "secret": { "$ref": "#/$defs/SecretName" }
+            }
+          }
+        },
+        "internalCallers": {
+          "description": "Each environment's caller public key, for signed internal requests (P-06).",
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["environment", "publicKey"],
+            "properties": {
+              "environment": { "$ref": "#/$defs/ConfiguredIdentifier" },
+              "publicKey": { "$ref": "#/$defs/SecretName" }
+            }
+          }
+        },
+        "hashing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "budgetMiB": { "type": "integer", "minimum": 64, "maximum": 65536 },
+            "permits": { "type": "integer", "minimum": 1, "maximum": 1024 }
+          }
+        }
+      }
+    }
+  }
+}

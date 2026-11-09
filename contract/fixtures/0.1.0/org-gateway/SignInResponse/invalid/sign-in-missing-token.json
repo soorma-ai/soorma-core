@@ -1,0 +1,11 @@
+{
+  "signIn": {
+    "expiresAt": "2026-11-08T12:15:00Z",
+    "subject": {
+      "organization": "o1",
+      "principal": "h@example.com"
+    },
+    "authenticatedAt": "2026-11-08T12:00:00Z",
+    "classes": ["K"]
+  }
+}

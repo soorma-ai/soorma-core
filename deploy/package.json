@@ -1,0 +1,13 @@
+{
+  "name": "@soorma/deploy",
+  "private": true,
+  "description": "The local stack's scripts: stack-init, stack-certs, db-test",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/config": "workspace:*"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "beginSecondFactor",
+  "enrollment": {
+    "id": "0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+    "expiresAt": "2026-11-08T12:10:00Z",
+    "setup": {
+      "type": "totp",
+      "seed": "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP",
+      "otpauthUri": "otpauth://totp/soorma:o1:h%40example.com?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=soorma&algorithm=SHA1&digits=6&period=30"
+    }
+  }
+}

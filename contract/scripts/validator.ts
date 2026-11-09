@@ -9,7 +9,10 @@
 // its schemas, it is loaded as a JSON Schema whose `$defs` are its
 // `components.schemas`, under the document's own `$id`, with its internal
 // references (`#/components/schemas/X`) pointed at `#/$defs/X`. That is an
-// in-memory view for validation only; the document is never changed.
+// in-memory view for validation only; the document is never changed. Each surface
+// document (`{surface}.openapi.yaml`, such as org-gateway) is loaded the same way,
+// under its own `$id`, so its request and response definitions are validated by
+// the same strict validator, and its references into the shared components resolve.
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import { isObject, loadContract, type Contract } from './checks/model.ts';
 
@@ -29,9 +32,19 @@ export type ContractSchema =
   | 'PlatformReference'
   | 'InstanceIdentifier'
   | 'HumanPrincipalIdentifier'
-  | 'PermissionIdentifier';
+  | 'PermissionIdentifier'
+  | 'HumanPrincipalReferenceInput'
+  | 'HumanPrincipalReference'
+  | SurfaceSchema;
 
-const LOCATIONS: Record<ContractSchema, string> = {
+/** The surface documents whose definitions can be validated. */
+export const SURFACES = ['org-gateway'] as const;
+export type Surface = (typeof SURFACES)[number];
+
+/** A definition in a surface document's `components.schemas`, as `{surface}#{name}`. */
+export type SurfaceSchema = `${Surface}#${string}`;
+
+const LOCATIONS: Record<Exclude<ContractSchema, SurfaceSchema>, string> = {
   Envelope: `${BASE}envelope.schema.json#/$defs/Envelope`,
   Draft: `${BASE}envelope.schema.json#/$defs/Draft`,
   Inbound: `${BASE}envelope.schema.json#/$defs/Inbound`,
@@ -44,7 +57,21 @@ const LOCATIONS: Record<ContractSchema, string> = {
   InstanceIdentifier: `${COMPONENTS_ID}#/$defs/InstanceIdentifier`,
   HumanPrincipalIdentifier: `${COMPONENTS_ID}#/$defs/HumanPrincipalIdentifier`,
   PermissionIdentifier: `${COMPONENTS_ID}#/$defs/PermissionIdentifier`,
+  HumanPrincipalReferenceInput: `${COMPONENTS_ID}#/$defs/HumanPrincipalReferenceInput`,
+  HumanPrincipalReference: `${COMPONENTS_ID}#/$defs/HumanPrincipalReference`,
 };
+
+function isSurfaceSchema(schema: ContractSchema): schema is SurfaceSchema {
+  return schema.includes('#');
+}
+
+function location(schema: ContractSchema): string {
+  if (!isSurfaceSchema(schema)) return LOCATIONS[schema];
+  const [surface, name] = schema.split('#') as [string, string];
+  return `${BASE}${surface}.openapi.yaml#/$defs/${name}`;
+}
+
+const SURFACE_PATHS: ReadonlySet<string> = new Set(SURFACES.map((s) => `${s}.openapi.yaml`));
 
 function toDefsRefs(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(toDefsRefs);
@@ -53,7 +80,7 @@ function toDefsRefs(value: unknown): unknown {
   for (const [k, v] of Object.entries(value)) {
     out[k] =
       k === '$ref' && typeof v === 'string'
-        ? v.replace(/^#\/components\/schemas\//, '#/$defs/')
+        ? v.replace(/#\/components\/schemas\//, '#/$defs/')
         : toDefsRefs(v);
   }
   return out;
@@ -74,13 +101,16 @@ export function createValidator(contract: Contract = loadContract()): ContractVa
     } else if (doc.path === 'conventions/components.openapi.yaml' && isObject(doc.data)) {
       const components = isObject(doc.data.components) ? doc.data.components : {};
       ajv.addSchema({ $id: COMPONENTS_ID, $defs: toDefsRefs(components.schemas) });
+    } else if (SURFACE_PATHS.has(doc.path) && isObject(doc.data)) {
+      const components = isObject(doc.data.components) ? doc.data.components : {};
+      ajv.addSchema({ $id: `${BASE}${doc.path}`, $defs: toDefsRefs(components.schemas) });
     }
   }
   const cache = new Map<ContractSchema, ValidateFunction>();
   const validator = (schema: ContractSchema): ValidateFunction => {
     let fn = cache.get(schema);
     if (!fn) {
-      fn = ajv.getSchema(LOCATIONS[schema]);
+      fn = ajv.getSchema(location(schema));
       if (!fn) throw new Error(`no compiled schema for ${schema}`);
       cache.set(schema, fn);
     }

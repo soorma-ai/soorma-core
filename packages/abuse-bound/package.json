@@ -1,0 +1,23 @@
+{
+  "name": "@soorma/abuse-bound",
+  "private": true,
+  "description": "P8: the abuse bound over the attempt-slot table, and the Failed Attempt writer",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/org-identity": "workspace:*"
+  }
+}

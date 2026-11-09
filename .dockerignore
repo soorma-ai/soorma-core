@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+#
+# The image build context (Infrastructure Design §2; D-ID-OI-09): everything
+# is excluded, then only what the Dockerfile copies is let back in. The last
+# matching line wins. Secrets, git, dependencies, and build output never
+# enter the context.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!tsconfig.build.json
+!tools/package.json
+!deploy/package.json
+!contract/
+!seams/
+!packages/
+!services/
+!data/breached/top-1m.sha256-64.bin
+!data/breached/MANIFEST.md
+
+# Never, wherever they appear.
+**/node_modules
+**/dist
+**/test
+**/*.tsbuildinfo
+**/.env*
+**/*.pem
+**/*.key
+deploy/local/.secrets
+.git

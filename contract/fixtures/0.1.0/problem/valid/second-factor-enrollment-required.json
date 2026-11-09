@@ -1,0 +1,7 @@
+{
+  "type": "urn:soorma:problem:second_factor_enrollment_required",
+  "title": "Request refused",
+  "status": 403,
+  "code": "second_factor_enrollment_required",
+  "instance": "urn:soorma:request:01J9Z3"
+}

@@ -21,6 +21,24 @@ jobs:
   build:
     name: Build, check, and test
     runs-on: ubuntu-24.04
+    # The package and service tests' database (Q-CG-2 A; D-CG-OI-15): the same
+    # pinned PostgreSQL as the stack, without TLS. The harness creates the
+    # roles from deploy/local/db/roles.sql and migrates as the migrator; tests
+    # connect as the app role. The password is a throwaway for this container
+    # on the runner's loopback; TLS to the store is checked by the stack smoke
+    # test below.
+    services:
+      postgres:
+        image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+        env:
+          POSTGRES_PASSWORD: ci-throwaway-test-database
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h 127.0.0.1"
+          --health-interval 2s --health-timeout 2s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://postgres:ci-throwaway-test-database@127.0.0.1:5432/postgres
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,6 +73,15 @@ jobs:
       - name: Check formatting
         run: pnpm run format:check
 
+      - name: Check the SQL, secret comparisons, and injection tokens
+        run: pnpm run check:code
+
+      - name: Check the repository for secrets
+        run: pnpm run check:secrets
+
+      - name: Check the breached list against its manifest
+        run: pnpm run check:breached
+
       - name: Check the generated types are current
         run: pnpm run check:generated
 
@@ -84,6 +111,51 @@ jobs:
           name: sbom-cyclonedx
           path: sbom/soorma-core.cdx.json
           if-no-files-found: error
+
+  image-and-stack:
+    name: Image, image secret scan, and stack smoke test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node from .node-version
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the S1 image
+        run: docker build -f services/org-gateway/Dockerfile -t soorma/org-gateway:local .
+
+      - name: Check the image's file system for secrets
+        run: node tools/checks/run.ts secrets --image soorma/org-gateway:local
+
+      # Throwaway secrets for this run only, generated on the runner.
+      - name: Generate the stack's secrets
+        run: pnpm stack:init
+
+      - name: Start the stack
+        run: pnpm stack:up
+
+      - name: Stack smoke test
+        run: pnpm stack:smoke
+
+      - name: Show the logs on failure
+        if: failure()
+        run: docker compose -f deploy/local/compose.yaml logs --no-color
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f deploy/local/compose.yaml down -v
 
   dependency-review:
     name: Dependency review

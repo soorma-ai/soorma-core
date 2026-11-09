@@ -1,0 +1,14 @@
+{
+  "principal": {
+    "organization": "o1",
+    "principal": "h@example.com"
+  },
+  "current": {
+    "secret": "correct horse battery staple"
+  },
+  "change": {
+    "type": "replaceSecret",
+    "newSecret": "x",
+    "extra": 1
+  }
+}

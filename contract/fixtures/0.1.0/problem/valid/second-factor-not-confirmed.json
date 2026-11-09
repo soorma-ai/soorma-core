@@ -1,0 +1,7 @@
+{
+  "type": "urn:soorma:problem:second_factor_not_confirmed",
+  "title": "Request refused",
+  "status": 403,
+  "code": "second_factor_not_confirmed",
+  "instance": "urn:soorma:request:01J9Z3"
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@soorma/org-gateway",
+  "private": true,
+  "description": "S1 org-gateway: the organization level's control face",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@nestjs/common": "12.3.2",
+    "@nestjs/core": "12.3.2",
+    "@nestjs/platform-fastify": "12.3.2",
+    "@soorma/abuse-bound": "workspace:*",
+    "@soorma/config": "workspace:*",
+    "@soorma/contract": "workspace:*",
+    "@soorma/identity-resolution": "workspace:*",
+    "@soorma/org-identity": "workspace:*",
+    "@soorma/perimeter": "workspace:*",
+    "ajv": "8.20.0",
+    "fastify": "5.12.7",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "yaml": "2.9.1"
+  }
+}

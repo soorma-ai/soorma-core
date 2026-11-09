@@ -62,7 +62,7 @@ export interface components {
             code?: components["schemas"]["ProblemCode"];
             /** @description soorma-core emits urn:soorma:request:{request id}, equal to the response's Soorma-Request-Id. Accept any value. */
             instance?: string;
-            /** @description On validation errors. Each pointer is a JSON Pointer into the request body. */
+            /** @description On validation errors. Each entry names what failed: a JSON Pointer into the request body (pointer), or a request header (header). */
             errors?: components["schemas"]["ProblemFieldError"][];
             /** @description On unsupported_contract_version, the accepted contract versions. */
             supportedVersions?: string[];
@@ -70,13 +70,20 @@ export interface components {
             [key: string]: unknown;
         };
         /** @description A stable, machine-readable error code. An open set: tolerate codes you do not know, and problems with none. */
-        ProblemCode: "malformed_request" | "unknown_field" | "stamped_field_set" | "invalid_inbound_context" | "chain_too_deep" | "envelope_too_large" | "unsupported_contract_version" | "credential_refused" | "credential_expired" | "forbidden" | "payload_too_large" | "too_many_attempts" | "unavailable" | "internal_error" | (string & {});
+        ProblemCode: "malformed_request" | "unknown_field" | "stamped_field_set" | "invalid_inbound_context" | "chain_too_deep" | "envelope_too_large" | "unsupported_contract_version" | "credential_refused" | "credential_expired" | "forbidden" | "payload_too_large" | "too_many_attempts" | "unavailable" | "internal_error" | "authentication_failed" | "second_factor_enrollment_required" | "second_factor_not_confirmed" | "secret_rejected" | (string & {});
         ProblemFieldError: {
+            /** @description A JSON Pointer into the request body. */
             pointer?: string;
+            /** @description The name of a request header, on malformed_request when an operation that names no security scheme receives an Authorization or Soorma-Delegation header. Never the header's value. */
+            header?: string;
             detail?: string;
+            /** @description Why the field was rejected, on secret_rejected. An open set. */
+            reason?: components["schemas"]["SecretRejectedReason"];
         } & {
             [key: string]: unknown;
         };
+        /** @description Why a new secret (K) was rejected, on secret_rejected. An open set: tolerate reasons you do not know. */
+        SecretRejectedReason: "too_short" | "too_long" | "disallowed_character" | "breached" | "reused" | "context_word" | (string & {});
         /** @description An organization, project, or environment identifier. */
         ConfiguredIdentifier: string;
         /** @description A logical agent identifier. */
@@ -87,6 +94,18 @@ export interface components {
         InstanceIdentifier: string;
         /** @description A human principal identifier: an email address, or an issuer, a vertical bar, and a subject. ASCII-only in this contract version. */
         HumanPrincipalIdentifier: string;
+        /** @description A human principal, named with its organization (request side). Two references are equal only when both parts are equal, compared exactly. */
+        HumanPrincipalReferenceInput: {
+            organization: components["schemas"]["ConfiguredIdentifier"];
+            principal: components["schemas"]["HumanPrincipalIdentifier"];
+        };
+        /** @description A human principal, named with its organization (received side). Each part is an opaque string; do not validate its syntax. */
+        HumanPrincipalReference: {
+            organization: string;
+            principal: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** @description A permission identifier. The accepted set may widen in a compatible version. */
         PermissionIdentifier: string;
         /** @description An identifier as received: an opaque string, compared exactly. Never validate its syntax: identifier patterns and lengths constrain only what the platform accepts (BR-ID-11). */

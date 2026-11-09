@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "composite": true,
+    "customConditions": [],
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../seams/identity-resolution/tsconfig.build.json"
+    },
+    {
+      "path": "../org-identity/tsconfig.build.json"
+    }
+  ]
+}

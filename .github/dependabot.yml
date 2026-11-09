@@ -21,3 +21,21 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+
+  # The pinned images (D-CG-OI-10; NFR-OI-26): the S1 build and run stages,
+  # in the Dockerfile, and the org store, in the Compose file.
+  - package-ecosystem: docker
+    directory: /services/org-gateway
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker-compose
+    directory: /deploy/local
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5

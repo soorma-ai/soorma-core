@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+#
+# Alert rules over the named security events (NFR-OI-23; P-17; SECURITY-14).
+# Validated by alerts.schema.json and its test. Nothing evaluates them in M1:
+# alerting and the dashboard are not applicable in M1, by the user's decision,
+# and are carried to the first hosted deployment.
+#
+# A rule fires when `event` occurs at least `threshold.count` times within
+# `threshold.windowMinutes`, counted per `groupBy` value. A human is grouped by
+# log pseudonym, never by identifier (NFR-OI-22).
+version: 1
+
+# The named security events. Units add theirs here (shared-infrastructure.md).
+events:
+  - auth.failed
+  - auth.bound_refused
+  - auth.second_factor_required
+  - signin.issued
+  - signin.ended
+  - material.changed
+  - failed_attempt.dropped
+  - internal.call_refused
+  - config.enrollment_ignored
+
+rules:
+  - id: auth-failed-repeated
+    event: auth.failed
+    groupBy: pseudonym
+    threshold: { count: 5, windowMinutes: 15 }
+    severity: warning
+    description: Repeated failures to authenticate one human, before the bound refuses.
+
+  - id: auth-bound-refused
+    event: auth.bound_refused
+    groupBy: pseudonym
+    threshold: { count: 1, windowMinutes: 15 }
+    severity: warning
+    description: The abuse bound refused attempts for a human.
+
+  - id: internal-call-refused
+    event: internal.call_refused
+    groupBy: none
+    threshold: { count: 1, windowMinutes: 5 }
+    severity: critical
+    description: A call to the internal interface failed its signed-request check.
+
+  - id: failed-attempt-dropped
+    event: failed_attempt.dropped
+    groupBy: none
+    threshold: { count: 1, windowMinutes: 5 }
+    severity: critical
+    description: Failed Attempt records were dropped (a full queue, or a failed write).
+
+  - id: enrollment-ignored
+    event: config.enrollment_ignored
+    groupBy: pseudonym
+    threshold: { count: 1, windowMinutes: 60 }
+    severity: info
+    description: Configured enrollment material was ignored for an existing principal.

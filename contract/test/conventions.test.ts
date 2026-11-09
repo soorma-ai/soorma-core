@@ -100,7 +100,22 @@ describe('TC-WC-025: error codes, disclosure, and the check order', () => {
     expect(errors).toMatch(/\| `credential_refused` \| 401 \| [^|]+ \| None \|/);
     expect(errors).toMatch(/\| `forbidden` \| 403 \| [^|]+ \| None \|/);
     expect(errors).toContain('The code set is open');
-    expect(errors).toContain('Only the validation codes carry a pointer');
+    expect(errors).toContain(
+      'Only the validation codes carry a pointer, or, for `malformed_request`, a header name',
+    );
+  });
+
+  it('step 7: an operation naming no security scheme refuses a credential header as malformed_request (A4)', () => {
+    expect(errors).toMatch(
+      /\| `malformed_request` \| 400 \| [^|]*the operation names no security scheme and an `Authorization` or `Soorma-Delegation` header is present \| [^|]*\(`header`\), never a header value \|/,
+    );
+    expect(errors).toMatch(
+      /\| `credential_refused` \| 401 \| On an operation that names a security scheme: [^|]+ \| None \|/,
+    );
+    const order = errors.slice(errors.indexOf('## Check order'));
+    expect(order).toContain(
+      'runs step 1, then refuses a presented `Authorization` or `Soorma-Delegation` header with `malformed_request`, naming the header, then continues from step 5',
+    );
   });
 
   it('states the disclosure rules', () => {
@@ -116,6 +131,16 @@ describe('TC-WC-025: error codes, disclosure, and the check order', () => {
     for (let step = 1; step <= 10; step++) expect(order).toContain(`${step}. `);
     expect(order).toContain('stamped fields before unknown fields');
     expect(order).toContain('The size of the envelope to be stamped, last');
+  });
+
+  it('refuses a missing contract version at step 5, and answers an unknown path with a bare 404', () => {
+    const order = errors.slice(errors.indexOf('## Check order'));
+    expect(order).toContain(
+      '5. Contract version: `unsupported_contract_version`, for a version not accepted and for a missing `Soorma-Contract-Version` header',
+    );
+    expect(errors).toContain(
+      'a request to a path or method that no surface document defines is answered `404` with no body: not a Problem',
+    );
   });
 
   it('states the response headers', () => {
@@ -151,6 +176,12 @@ describe('TC-WC-026: credential presentation', () => {
     expect(credentials).toContain('They go in a request body, never in `Authorization`');
     expect(credentials).toContain('Each is at most 256 characters');
     expect(credentials).toContain('The `Soorma-Delegation` header is reserved');
+    expect(credentials).toContain(
+      'with `credential_refused` on an operation that names a security scheme, and with `malformed_request` naming the header on one that names none',
+    );
+    expect(credentials).toContain(
+      'An operation that names no security scheme accepts no credential',
+    );
     expect(credentials).toContain('No cookies');
     expect(credentials).toContain('No CORS');
   });
@@ -176,6 +207,9 @@ describe('TC-WC-022 and 028: identifiers and versioning', () => {
       'A version once accepted stays accepted until a published deprecation window, longer than zero, elapses',
     );
     expect(versioning).toContain('`unsupported_contract_version`, listing `supportedVersions`');
+    expect(versioning).toContain(
+      'A call without a draft that sends no `Soorma-Contract-Version` header is refused the same way',
+    );
     expect(versioning).toContain('Not in this contract version: no breaking change to envelope v1');
     expect(versioning).toMatch(/Widen an identifier pattern or length \| Compatible/);
   });

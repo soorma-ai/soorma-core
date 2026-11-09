@@ -1,0 +1,13 @@
+{
+  "type": "urn:soorma:problem:malformed_request",
+  "title": "Request refused",
+  "status": 400,
+  "code": "malformed_request",
+  "instance": "urn:soorma:request:01J9Z3",
+  "errors": [
+    {
+      "header": "Authorization",
+      "detail": "This operation accepts no credential"
+    }
+  ]
+}

@@ -2,8 +2,12 @@
 //
 // Generates TypeScript types from the contract (M1-TECH-02; BR-LG-03 to 06; T-07).
 //
-//   node scripts/generate-types.ts          write contract/generated/components.ts
-//   node scripts/generate-types.ts --check  fail if the committed file differs
+//   node scripts/generate-types.ts          write contract/generated/*.ts
+//   node scripts/generate-types.ts --check  fail if a committed file differs
+//
+// One file per OpenAPI document: the shared components, and each surface
+// document (org-gateway). A surface document's types bundle the shared
+// definitions it references.
 //
 // One generator, openapi-typescript, run through its Node API. Its one
 // customization is the `transform` hook below, recorded as T-07 condition 1:
@@ -12,7 +16,7 @@
 // accepted while the known ones stay visible. Nothing else post-processes the
 // output, and the output is never edited by hand.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import openapiTS, { astToString, tsLiteral, tsUnion } from 'openapi-typescript';
 import type { SchemaObject } from 'openapi-typescript';
@@ -25,6 +29,20 @@ export const componentsDocument = resolve(contractRoot, 'conventions/components.
 
 /** Where the generated types are committed. */
 export const generatedFile = resolve(contractRoot, 'generated/components.ts');
+
+/** Every OpenAPI document that generates types, and where each is committed. */
+export const generatedDocuments: readonly { document: string; output: string; source: string }[] = [
+  {
+    document: componentsDocument,
+    output: generatedFile,
+    source: 'contract/conventions/components.openapi.yaml',
+  },
+  {
+    document: resolve(contractRoot, 'org-gateway.openapi.yaml'),
+    output: resolve(contractRoot, 'generated/org-gateway.ts'),
+    source: 'contract/org-gateway.openapi.yaml',
+  },
+];
 
 const ANNOTATION_KEYS = new Set(['description', 'title', '$comment']);
 
@@ -94,31 +112,38 @@ export async function generate(documentPath: string, sourceLabel: string): Promi
 }
 
 /** The drift check: undefined when the committed file is what the schemas generate. */
-export function driftMessage(committed: string, generated: string): string | undefined {
+export function driftMessage(
+  committed: string,
+  generated: string,
+  file = 'contract/generated/components.ts',
+): string | undefined {
   if (committed === generated) return undefined;
   return (
-    'contract/generated/components.ts differs from what the schemas generate. ' +
+    `${file} differs from what the schemas generate. ` +
     'Run `pnpm run generate` and commit the result; never edit generated files by hand.'
   );
 }
 
 async function main(): Promise<void> {
   const check = process.argv.includes('--check');
-  const output = await generate(componentsDocument, 'contract/conventions/components.openapi.yaml');
-  if (check) {
-    const committed = await readFile(generatedFile, 'utf8').catch(() => '');
-    const drift = driftMessage(committed, output);
-    if (drift) {
-      console.error(drift);
-      process.exitCode = 1;
-      return;
+  for (const { document, output: outFile, source } of generatedDocuments) {
+    const output = await generate(document, source);
+    const label = `contract/${relative(contractRoot, outFile)}`;
+    if (check) {
+      const committed = await readFile(outFile, 'utf8').catch(() => '');
+      const drift = driftMessage(committed, output, label);
+      if (drift) {
+        console.error(drift);
+        process.exitCode = 1;
+        continue;
+      }
+      console.log(`${label} matches the schemas.`);
+      continue;
     }
-    console.log('contract/generated/components.ts matches the schemas.');
-    return;
+    await mkdir(dirname(outFile), { recursive: true });
+    await writeFile(outFile, output);
+    console.log(`Wrote ${label}`);
   }
-  await mkdir(dirname(generatedFile), { recursive: true });
-  await writeFile(generatedFile, output);
-  console.log('Wrote contract/generated/components.ts');
 }
 
 if (import.meta.main) {

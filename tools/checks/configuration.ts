@@ -7,7 +7,12 @@
 // - packageManager pins pnpm exactly, and the running pnpm is that version
 // - pmOnFail is "ignore" (so the lockfile stays one document GitHub can read)
 // - no Corepack anywhere
-import { directDependencies, type Finding, type PackageManifest } from './workspace.ts';
+import {
+  directDependencies,
+  workspaceDependencies,
+  type Finding,
+  type PackageManifest,
+} from './workspace.ts';
 
 const EXACT = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/;
 
@@ -30,6 +35,15 @@ export function configurationFindings(input: ConfigurationInput): Finding[] {
   for (const d of directDependencies(input.manifests)) {
     if (!EXACT.test(d.version))
       add(`${d.manifest}: ${d.name}`, `version ${d.version} is not exact`);
+  }
+  // A dependency on another workspace package is `workspace:*`, and names a
+  // package of this workspace (D-CG-OI-01).
+  const workspaceNames = new Set(input.manifests.map((m) => m.name));
+  for (const d of workspaceDependencies(input.manifests)) {
+    if (d.version !== 'workspace:*')
+      add(`${d.manifest}: ${d.name}`, `workspace dependency ${d.version} must be workspace:*`);
+    if (!workspaceNames.has(d.name))
+      add(`${d.manifest}: ${d.name}`, 'workspace dependency names no package of this workspace');
   }
 
   const s = input.settings;

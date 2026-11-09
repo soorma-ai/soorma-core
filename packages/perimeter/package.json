@@ -1,0 +1,23 @@
+{
+  "name": "@soorma/perimeter",
+  "private": true,
+  "description": "P1, sign-in checks: classifies and verifies the presenter at S1",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/org-identity": "workspace:*"
+  }
+}

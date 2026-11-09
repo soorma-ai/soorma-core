@@ -15,10 +15,14 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contractRoot, listFiles, type Finding } from './model.ts';
-import type { ContractSchema } from '../validator.ts';
+import { SURFACES, type ContractSchema } from '../validator.ts';
 
 export interface Fixture {
-  /** `{version}/{schema}/{valid|invalid}/{name}.json`, relative to contract/fixtures/. */
+  /**
+   * `{version}/{schema}/{valid|invalid}/{name}.json`, or, for a surface document's
+   * definition, `{version}/{surface}/{Definition}/{valid|invalid}/{name}.json`;
+   * relative to contract/fixtures/.
+   */
   path: string;
   version: string;
   schema: ContractSchema;
@@ -41,11 +45,18 @@ export function loadFixtures(root: string = contractRoot): Fixture[] {
   return listFiles(join(root, 'fixtures'))
     .filter((p) => p.endsWith('.json'))
     .map((path) => {
-      const [version, dir, kind] = path.split('/');
-      const schema = SCHEMA_DIRS[dir ?? ''];
+      const parts = path.split('/');
+      const surface = SURFACES.find((s) => s === parts[1]);
+      const [version, dir, kind] =
+        surface && parts.length === 5 ? [parts[0], parts[2], parts[3]] : parts;
+      const schema: ContractSchema | undefined = surface
+        ? parts.length === 5 && dir
+          ? `${surface}#${dir}`
+          : undefined
+        : SCHEMA_DIRS[dir ?? ''];
       if (!version || !schema || (kind !== 'valid' && kind !== 'invalid')) {
         throw new Error(
-          `fixture ${path} is not at {version}/{envelope|draft|inbound|delivery|problem}/{valid|invalid}/`,
+          `fixture ${path} is not at {version}/{envelope|draft|inbound|delivery|problem}/{valid|invalid}/ or {version}/{surface}/{Definition}/{valid|invalid}/`,
         );
       }
       const data = JSON.parse(readFileSync(join(root, 'fixtures', path), 'utf8')) as unknown;

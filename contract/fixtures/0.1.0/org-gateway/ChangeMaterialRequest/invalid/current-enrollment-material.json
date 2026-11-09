@@ -1,0 +1,13 @@
+{
+  "principal": {
+    "organization": "o1",
+    "principal": "h@example.com"
+  },
+  "current": {
+    "enrollmentMaterial": "soorma_em_Ab3-_xAb3-_xAb3-_xAb3-_xAb3-_xAb3-_xAb3-_x"
+  },
+  "change": {
+    "type": "replaceSecret",
+    "newSecret": "x"
+  }
+}

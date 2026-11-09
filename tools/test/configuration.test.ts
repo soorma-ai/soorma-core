@@ -60,6 +60,20 @@ describe('TC-WC-039: installs are reproducible, and the toolchain is pinned', ()
     );
   });
 
+  it('accepts workspace:* on a workspace package, and rejects any other workspace version (D-CG-OI-01)', () => {
+    const withDep = (version: string, name = '@soorma/contract'): ConfigurationInput =>
+      input((i) => {
+        root(i).dependencies = { ...root(i).dependencies, [name]: version };
+      });
+    expect(configurationFindings(withDep('workspace:*'))).toEqual([]);
+    expect(configurationFindings(withDep('workspace:^')).map((f) => f.message)).toEqual([
+      'workspace dependency workspace:^ must be workspace:*',
+    ]);
+    expect(
+      configurationFindings(withDep('workspace:*', '@soorma/nowhere')).map((f) => f.message),
+    ).toEqual(['workspace dependency names no package of this workspace']);
+  });
+
   it('rejects engines.node that does not agree with .node-version (D-CG-13)', () => {
     expect(
       configurationFindings(input((i) => (root(i).engines = { node: '>=26' }))),

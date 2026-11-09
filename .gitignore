@@ -2,3 +2,5 @@ node_modules/
 coverage/
 sbom/
 *.tsbuildinfo
+dist/
+deploy/local/.secrets/
