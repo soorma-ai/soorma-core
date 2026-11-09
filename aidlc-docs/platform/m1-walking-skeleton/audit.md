@@ -1462,3 +1462,11 @@ Amend the Secrets row of shared-infrastructure.md, Infrastructure Design §3, an
 **Context**: CONSTRUCTION, U2 org-identity, Code Generation: changes applied; the stack job passes on Linux; awaiting approval.
 
 ---
+
+## Code Generation: APPROVED; U2 org-identity Complete; Next Unit Set (org-identity → authority-evaluation)
+**Timestamp**: 2026-11-09T13:24:27Z
+**User Input**: "Continue to Next Stage. U2's Code Generation is approved, and soorma-core#14 is merged. Log the approval in audit.md and mark U2 org-identity complete in aidlc-state.md. Merge origin/main back into dev and push. Set the state file so the next unit, U3 authority-evaluation (soorma-core#6), starts cleanly in a new session. That includes the forward obligations it inherits: BR-ERR-08 from U1, and GAP-INT-004's and GAP-INT-007's status. Then stop. U3 runs in its own session."
+**AI Response**: "Code Generation for U2 org-identity APPROVED by the user. soorma-core#14 confirmed merged (2026-11-09T13:22:33Z, merge commit e61c620). origin/main merged into dev (a fast-forward to e61c620; dev equals main) and pushed. aidlc-state.md: U2 marked COMPLETE; the current stage set to U3 authority-evaluation (#6), not started, to begin in a new session; a session stop point recording what U3 inherits: BR-ERR-08 from U1 (recorded on #6, issuecomment-6717621632), U1's D-CG-05 (the runtime regex engine for Ajv, for U3's NFR Requirements), GAP-INT-004 (Resolved — PRD amended at PF v1.3; the work-around comes out: U3 builds FR-017's evaluation rule as stated), GAP-INT-007 (Open, soorma-prd#25 open as of 2026-11-09T13:24:27Z; M1 keeps the reject-and-stamp work-around), the two contract behaviours written down at U2 (a missing Soorma-Contract-Version at check-order step 5; an unknown path a bare 404), and shared-infrastructure.md as amended (one secrets volume and init container per level; Docker Engine 26 and Compose 2.26.0). Build and Test's carried items from U2 recorded. soorma-core#5 is not closed by this step: the user did not ask for it. Session stopped; U3 runs in its own session."
+**Context**: CONSTRUCTION, U2 org-identity COMPLETE; next unit U3 authority-evaluation (#6), in a new session.
+
+---

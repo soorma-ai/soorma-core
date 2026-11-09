@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION, unit U2 `org-identity` (#5): **Code Generation, Part 2 complete; changes requested and applied (Q-CG-4 B: the secrets-init container; the two contract behaviours written down); #14's stack job passes on Linux 2026-11-09T13:18:14Z; awaiting approval** (2026-11-09T07:18:26Z; seven commit groups on `dev`, an unmerged PR to `main`; summary `construction/org-identity/code/code-summary.md`). Q-CG-3 answered B 2026-11-09T01:29:04Z: the breached list is SecLists `xato-net-10-million-passwords-1000000.txt` at `00f80ec`. Groups 1 and 2 committed (`4089286`, `5ebcb9b`); Steps 8 and 9 done, uncommitted (`construction/working/org-identity-code-generation-plan.md`: 29 steps in seven commit groups; Q-CG-1 A, Q-CG-2 A). Part 1 APPROVED 2026-11-09T00:54:48Z (revision 2, with the user's amendments 1 and 2 applied as revision 3). Construction Design PR gate APPROVED 2026-11-08T22:27:46Z (soorma-core#13 merged as `27619c4`; `origin/main` merged back into `dev`). Toolchain verified 2026-11-08T22:27:46Z: Node v26.13.0, pnpm 12.18.0. QA construction enrichment complete (62 cases; amendment A5 and the TC-OI-029 split at its review). Infrastructure Design APPROVED 2026-11-08T21:51:00Z (`construction/org-identity/infrastructure-design/`; Q1 to Q6 answered; SECURITY-03 finding resolved 2026-11-08T21:41:45Z by the user's decision, with the log-pseudonym amendment). NFR Design committed `5882ef8` and pushed; F-1 to F-3 posted on #7 (issuecomment-6727058030). NFR Design APPROVED 2026-11-08T21:00:25Z (`construction/org-identity/nfr-design/`; Q1 to Q4, all technology). NFR Requirements committed `95b3d53` and pushed. NFR Requirements APPROVED 2026-11-08T20:30:39Z (`construction/org-identity/nfr-requirements/`; Q1 to Q12, all technology; Q9 and Q10 conditions met by probes; Q6's condition checked at Code Generation). Functional Design committed `5f50704` and pushed; U4 obligations posted on #7 (issuecomment-6726146898). Functional Design APPROVED 2026-11-08T19:37:29Z (`construction/org-identity/functional-design/`; plan Q1 to Q12, all technology; no specification gap; U1 amendment A4). Session resumed 2026-11-08T18:39:49Z; re-intake not needed (brief unchanged at `0aad84a`, no new tags, every gap issue open); extension rules reloaded; Unit Initialization and the L1 gate's initial assessment done for U2. **Previous unit**: U1 `wire-contract` (#4) complete: Code Generation APPROVED 2026-11-08T07:53:50Z; soorma-core#12 merged to `main` 2026-11-08T07:52:11Z as `2b3a64d`, after its CI passed (dependency review included, once the user enabled the dependency graph); soorma-core#4 closed. **Next unit: U2 `org-identity` (#5), to be started in a new session.** Summary: `construction/wire-contract/code/code-summary.md`. Toolchain verified 2026-11-08T06:24:45Z (Node v26.13.0, pnpm 12.18.0); the earlier block was a stale session PATH. Construction Design PR gate APPROVED 2026-11-08T06:18:09Z (soorma-core#11 merged 2026-11-08T05:17:11Z, `15c475d`). Functional Design amended (A1, A2, A3) before the gate. QA construction enrichment complete. NFR Requirements approved 2026-11-08T04:34:32Z; NFR Design and Infrastructure Design skipped. Functional Design approved 2026-11-08T02:35:51Z. Inception complete; Inception PR gate APPROVED (soorma-core#2 merged 2026-11-02, `d348c34`)
+- **Current Stage**: CONSTRUCTION. **U2 `org-identity` (#5) COMPLETE**: Code Generation APPROVED 2026-11-09T13:24:27Z; soorma-core#14 merged as `e61c620` (2026-11-09T13:22:33Z); `origin/main` merged back into `dev` (fast-forward; `dev` equals `main`). **Next unit: U3 `authority-evaluation` (soorma-core#6), not started, to begin in a new session** (see *Session stop point* below). Earlier stage history for U2 is under *Stage Progress*; for U1, *Session stop point* history in `audit.md`.
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -179,17 +179,60 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] Infrastructure Design: **APPROVED** 2026-11-08T21:51:00Z; artifacts generated (infrastructure-design, deployment-architecture, construction/shared-infrastructure.md; D-ID-OI-01 to 10; NFR-OI-18 and 31, P-07, P-15, logical components amended). SECURITY-03 finding resolved by the user's decision (2026-11-08T21:41:45Z): the centralized log service not applicable in M1, carried to Build and Test and the first hosted deployment; logs carry a keyed pseudonym (HMAC-SHA-256, a dedicated log-pseudonym key), never a human identifier (NFR-OI-22, 23, BR-CFG-04, BR-RF-05, P-02, P-17 amended). Correction at approval: each environment has its own log-pseudonym key, never the organization's (shared-infrastructure.md, Logs). U4 obligations (per-environment network, per-environment log-pseudonym key) posted on #7
   - [x] QA construction enrichment: **COMPLETE** 2026-11-08T21:56:07Z (`inception/test-cases/org-identity/`: 62 cases; every QA enrichment marker in the L1 and invariant matrices replaced by TC IDs). At its review (2026-11-08T22:11:06Z): Functional Design amendment A5 (BR-K-07 reason `context_word`; `reason` an open enumeration; TC-OI-042 updated); TC-OI-029 made structural and deterministic, and TC-OI-062 added as a reported Build and Test timing measurement, not a gate (sources: functional-design/, nfr-requirements/, nfr-design/, infrastructure-design/, by the user's instruction; tooling finding F38 not yet applied to the rule)
   - [x] Construction Design PR gate: **APPROVED** 2026-11-08T22:27:46Z; soorma-core#13 merged as `27619c4`. Opened (2026-11-08T22:11:06Z); branch `dev`, PR to `main` (confirmed by the user, 2026-11-08T21:51:00Z)
-  - [ ] Code Generation: Part 1 plan written (2026-11-08T22:32:11Z): 29 steps, seven groups, D-CG-OI-01 to 14, seven stop conditions; Q-CG-1 A (crypto.argon2 treated as Stable) and Q-CG-2 A (throwaway container) answered 2026-11-08T23:51:43Z; revision 2 (D-CG-OI-02 decorators config, D-CG-OI-05 type-based compare, D-CG-OI-14 pre-commit gate, D-CG-OI-15 test-database harness, Step 6 runtime ajv and yaml and the register rows); **Part 1 APPROVED 2026-11-09T00:54:48Z** with amendments 1 (package resolution: exports source/types/default, composite references, the proof across a package boundary) and 2 (roles.sql idempotent and parameterized by database; the identity sequence grant), applied as revision 3; **Part 2 in progress**: Group 1 `4089286`, Group 2 `5ebcb9b`; stopped at Step 10 on Q-CG-3 2026-11-09T01:18:07Z; answered B 2026-11-09T01:29:04Z, resumed; Group 3 `42a293f`, Group 4 `dfa6c97`, Group 5 `032b718`, Group 6 `787b3be`, Group 7 with the summary; **Part 2 complete 2026-11-09T07:18:26Z, awaiting approval**. L1: 32 rows Implemented, 0 Missing; invariants I1 to I10 Implemented, I11 N/A; 452 tests; local smoke run and stack smoke test pass
-- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE)
+  - [x] Code Generation: **APPROVED** 2026-11-09T13:24:27Z. soorma-core#14 merged as `e61c620`; CI green on Linux (build, check, and test; image, image secret scan, and stack smoke test; dependency review). Part 1 approved 2026-11-09T00:54:48Z (revision 3: amendments 1 and 2); Q-CG-1 A, Q-CG-2 A, Q-CG-3 B (SecLists `xato-net-10-million-passwords-1000000.txt` at `00f80ec`), Q-CG-4 B (the per-level secrets-init container; shared-infrastructure.md *Secrets* and Infrastructure Design §3, §7 amended). Commits `4089286`, `5ebcb9b`, `42a293f`, `dfa6c97`, `032b718`, `787b3be`, `9beb42c`, then the review changes `4ddf535` (the missing-version refusal and the bare 404 written into the contract) and `8e75f2b` (secrets-init). 456 tests; the stack smoke test 22 checks; L1 matrix 32 rows Implemented, 0 Missing; invariants I1 to I10 Implemented, I11 N/A. Summary: `construction/org-identity/code/code-summary.md`
+- **Unit U2 `org-identity` (#5): COMPLETE** 2026-11-09T13:24:27Z
+- **Next unit: U3 `authority-evaluation` (#6): not started** (new session; see *Session stop point*)
+- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2. Remaining: U3 to U7
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point**: U1 `wire-contract` COMPLETE (Code Generation approved; #12 merged as
-`2b3a64d`; #4 closed; `origin/main` merged back into `dev`). Next: U2 `org-identity` (#5), in a
-new session, starting with Unit Initialization (extension rules, the L1 gate) and re-checking
-`node --version` (26.13.0) and `pnpm --version` (12.18.0). Build and Test comes after all units
-and uses U1's verification (CI on #12, `pnpm run check:github`). U1's inherited gaps: GAP-INT-003
-and GAP-INT-008 (work-arounds). Forward obligations: BR-ERR-08 to U3 (soorma-core#6); D-CG-05 to
-U3's NFR Requirements (the runtime regex engine for Ajv).
+**Session stop point** (2026-11-09T13:24:27Z): U2 `org-identity` COMPLETE (Code Generation approved;
+soorma-core#14 merged as `e61c620`; `origin/main` merged back into `dev`, which equals `main`).
+soorma-core#5 is still open: closing it was not part of the approval step.
+
+**Next: U3 `authority-evaluation` (soorma-core#6), in a new session.** Start with:
+1. Session resumption (`common/session-continuity.md`); re-intake check: brief still at `0aad84a`,
+   no new PF or ID tag, the gap issues' states (soorma-prd#24, #25, #27, #28; #13 for GAP-INT-003)
+2. Construction Phase Initialization (extension rules; `prd-gap-classification.md` active), then
+   Unit Initialization and the L1 gate's initial assessment for U3
+3. Toolchain: `node --version` 26.13.0, `pnpm --version` 12.18.0; for any stack work, Docker
+   Engine 26+ and Compose 2.26.0+ (`pnpm stack:up` enforces both). The database tests need
+   `pnpm db:test` and the `TEST_DATABASE_URL` it prints (they fail, never skip, without it)
+
+**What U3 inherits**:
+- **BR-ERR-08, from U1** (recorded on #6, issuecomment-6717621632): the perimeter's tests verify
+  that every Problem soorma-core emits carries `type`, `title`, `status`, `code`, and `instance`,
+  with `type` = `urn:soorma:problem:{code}` and `instance` = `urn:soorma:request:{request id}`
+  equal to `Soorma-Request-Id`. S1 (U2) already emits and tests these on its own surface
+  (`services/org-gateway/src/problems.ts`; `test/edge.test.ts`, `expectProblem`); U3 owns the
+  rule for the agent perimeter
+- **D-CG-05, from U1, for U3's NFR Requirements**: confirm the runtime regex engine for Ajv. U2
+  already runs Ajv's 2020 build at run time (S1's request validation and `packages/config`) on
+  V8's engine, with the contract's linear-time patterns
+- **GAP-INT-004: Resolved — PRD amended** (PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b,
+  §8b *Re-broadening*, §20 Decision 16; soorma-prd#14 closed). **The work-around comes out**: U3
+  builds FR-017's evaluation as stated: re-broadening is exercised only when load-bearing (denied
+  without it, allowed with it); at the declaring hop, `standing ∩ authority(delegating principal)
+  ∩ (authority(upstream agent hops) ∪ declared)`, local to that hop; the record is stamped only
+  when load-bearing and travels with the chain; in autonomous origin the delegating-principal
+  term reads *yes*. (A declaration beyond the standing set is rejected at registration: U5)
+- **GAP-INT-007: Open** (soorma-prd#25, open on 2026-11-09; raised against PF @
+  `prd-platform-foundations-v1.3`). **M1 keeps the reject-and-stamp work-around** (M1-FR-01,
+  M1-FR-08): the perimeter stamps origin on every first hop, and a draft setting origin mode is
+  rejected. U3 must not accept an asserted origin. If a new PF tag resolves the gap, re-intake
+  first (Step 9 of `inception/prd-intake.md`)
+- **Two contract behaviours written down at U2** (`contract/conventions/`), for every surface: a
+  call without a draft and without `Soorma-Contract-Version` is `unsupported_contract_version` at
+  check-order step 5; an unknown path or method is a bare 404, not a Problem, in 0.1.0
+- **`construction/shared-infrastructure.md`** for any deployable U3 adds, as amended at U2
+  (Q-CG-4 B): one secrets volume and one one-shot secrets-init container per level, each service
+  mounting only its own subpath, read-only
+
+**Carried to Build and Test** (from U2): TC-OI-059 and TC-OI-062 (`pnpm test:perf`); on the
+workstation, Argon2id at 64 MiB measured about 710 ms late in U2's session, which puts NFR-OI-19's
+500 ms p95 for `authenticate` at risk on that machine; the user's "not applicable in M1" decisions
+(SECURITY-01 at rest, SECURITY-03's log service, SECURITY-14) and U2's accepted residuals. U4's
+obligations from U2 are on soorma-core#7. From U1: Build and Test also uses U1's verification (CI on
+soorma-core#12, `pnpm run check:github`), and U1's work-around gaps GAP-INT-003 and GAP-INT-008 stand.
