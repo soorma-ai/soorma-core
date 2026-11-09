@@ -1470,3 +1470,11 @@ Amend the Secrets row of shared-infrastructure.md, Infrastructure Design §3, an
 **Context**: CONSTRUCTION, U2 org-identity COMPLETE; next unit U3 authority-evaluation (#6), in a new session.
 
 ---
+
+## soorma-core#5 Closed (org-identity)
+**Timestamp**: 2026-11-09T13:45:06Z
+**User Input**: "Close soorma-core#5 the way #4 was closed: a comment saying U2 org-identity is complete and its code merged in #14 (e61c620), after CI passed, including the stack smoke test on Linux. List what was built, then the verification: TC-OI-001 to 061 automated and passing in CI. TC-OI-059 and 062, the latency and timing measurements, run at Build and Test after U7, together with the Argon2id timing risk. Point to the code summary. Then close it as completed, and stop the test database with pnpm db:test:stop."
+**AI Response**: "Commented on soorma-core#5 (issuecomment-6741579291) in #4's format: complete, merged in #14 (e61c620) after CI passed, including the stack smoke test on Linux; what was built; the verification (TC-OI-001 to 061 automated and passing in CI, except TC-OI-059, which is the latency measurement and runs at Build and Test with TC-OI-062 and the Argon2id timing risk); the code summary. Closed #5 as completed. Stopped the test database (pnpm db:test:stop: soorma-db-test removed)."
+**Context**: CONSTRUCTION, U2 org-identity COMPLETE; #5 closed.
+
+---

@@ -190,7 +190,7 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
 
 **Session stop point** (2026-11-09T13:24:27Z): U2 `org-identity` COMPLETE (Code Generation approved;
 soorma-core#14 merged as `e61c620`; `origin/main` merged back into `dev`, which equals `main`).
-soorma-core#5 is still open: closing it was not part of the approval step.
+soorma-core#5 closed as completed (issuecomment-6741579291).
 
 **Next: U3 `authority-evaluation` (soorma-core#6), in a new session.** Start with:
 1. Session resumption (`common/session-continuity.md`); re-intake check: brief still at `0aad84a`,
