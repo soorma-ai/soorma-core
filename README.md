@@ -63,7 +63,8 @@ pnpm audit --audit-level moderate
 The database tests need PostgreSQL: `pnpm db:test` starts a throwaway, pinned container and
 prints a `TEST_DATABASE_URL` to export before `pnpm test` (`pnpm db:test:stop` removes it).
 Without it, the database tests fail rather than skip. To run the organization level locally,
-see [`services/org-gateway/README.md`](services/org-gateway/README.md).
+see [`services/org-gateway/README.md`](services/org-gateway/README.md); the local stack needs
+Docker Engine 26 and Docker Compose 2.26.0 or later, which `pnpm stack:up` checks.
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of these
 on every push and pull request, against a PostgreSQL service container; builds

@@ -5,15 +5,22 @@
 #   pnpm stack:up        build and start
 #   pnpm stack:down      stop
 #
-# - Secrets are Compose secret files, mounted read-only into only the
-#   containers that need them, owned by that container's user, mode 0400.
-#   None passes through an environment variable
+# - Secrets (Infrastructure Design §3, amended: Q-CG-4 B): the files in
+#   .secrets/ reach only org-secrets-init, which copies each into the
+#   org-secrets volume, one subdirectory per service, owned by that service's
+#   user, mode 0400. Each service mounts only its own subdirectory, read-only,
+#   at /run/secrets. None passes through an environment variable. The copies
+#   are removed by `pnpm stack:down -v`
+# - Requires Docker Engine 26 and Compose 2.26.0 (volume subpaths); `pnpm
+#   stack:up` checks both
 # - S1's edge is published on the host's loopback only (127.0.0.1:8441); the
 #   internal port and the store are published nowhere; health is on no network
 # - org-migrate runs first, as the migrator; S1 starts only once it has
 #   completed, and never holds the migrator password
 # - Every container: a non-root user, a read-only root file system, all
-#   capabilities dropped, no new privileges
+#   capabilities dropped, no new privileges; the one exception is
+#   org-secrets-init (root, only CHOWN, DAC_OVERRIDE, FOWNER; no network;
+#   read-only root; it exits)
 name: soorma-local
 
 x-hardening: &hardening
@@ -22,6 +29,34 @@ x-hardening: &hardening
   security_opt: ['no-new-privileges:true']
 
 services:
+  # The organization level's one-shot secrets copy (Q-CG-4 B). It alone sees
+  # this level's secret files, and only this level's.
+  org-secrets-init:
+    image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+    user: '0:0'
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: ['no-new-privileges:true']
+    network_mode: none
+    entrypoint: ['sh', '/soorma/secrets-init/org.sh']
+    volumes:
+      - ./secrets-init/org.sh:/soorma/secrets-init/org.sh:ro
+      - org-secrets:/out
+    secrets:
+      - stack-ca-cert
+      - org-gateway-tls
+      - org-db-tls
+      - org-db-superuser-password
+      - org-db-app-password
+      - org-db-migrator-password
+      - org-signing-key
+      - org-seed-key
+      - org-counter-secret
+      - org-log-pseudonym-key
+      - org-enrollment-1
+    restart: 'no'
+
   org-db:
     <<: *hardening
     image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
@@ -44,24 +79,14 @@ services:
       POSTGRES_DB: soorma_org
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD_FILE: /run/secrets/org-db-superuser-password
-    secrets:
-      - { source: org-db-tls, target: org-db-tls, uid: '999', gid: '999', mode: 0400 }
-      - source: org-db-superuser-password
-        target: org-db-superuser-password
-        uid: '999'
-        gid: '999'
-        mode: 0400
-      - source: org-db-app-password
-        target: org-db-app-password
-        uid: '999'
-        gid: '999'
-        mode: 0400
-      - source: org-db-migrator-password
-        target: org-db-migrator-password
-        uid: '999'
-        gid: '999'
-        mode: 0400
     volumes:
+      - {
+          type: volume,
+          source: org-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: org-db },
+        }
       - org-db-data:/var/lib/postgresql
       - ./db/roles.sql:/soorma/db/roles.sql:ro
       - ./db/pg_hba.conf:/soorma/db/pg_hba.conf:ro
@@ -72,6 +97,8 @@ services:
     networks:
       org:
         aliases: [org-db.soorma.internal]
+    depends_on:
+      org-secrets-init: { condition: service_completed_successfully }
     healthcheck:
       test: ['CMD', 'pg_isready', '-q', '-h', '/var/run/postgresql', '-d', 'soorma_org']
       interval: 2s
@@ -86,17 +113,19 @@ services:
       context: ../..
       dockerfile: services/org-gateway/Dockerfile
     command: ['dist/migrate.js']
-    secrets:
-      - source: org-db-migrator-password
-        target: org-db-migrator-password
-        uid: '65532'
-        gid: '65532'
-        mode: 0400
-      - { source: stack-ca-cert, target: stack-ca-cert, uid: '65532', gid: '65532', mode: 0400 }
+    volumes:
+      - {
+          type: volume,
+          source: org-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: org-migrate },
+        }
     configs:
       - { source: tenancy, target: /etc/soorma/tenancy.yaml }
     networks: [org]
     depends_on:
+      org-secrets-init: { condition: service_completed_successfully }
       org-db: { condition: service_healthy }
     restart: 'no'
 
@@ -106,31 +135,14 @@ services:
     command: ['dist/main.js']
     environment:
       SOORMA_HEALTH_PORT: '8080'
-    secrets:
-      - { source: org-gateway-tls, target: org-gateway-tls, uid: '65532', gid: '65532', mode: 0400 }
-      - { source: stack-ca-cert, target: stack-ca-cert, uid: '65532', gid: '65532', mode: 0400 }
-      - source: org-db-app-password
-        target: org-db-app-password
-        uid: '65532'
-        gid: '65532'
-        mode: 0400
-      - { source: org-signing-key, target: org-signing-key, uid: '65532', gid: '65532', mode: 0400 }
-      - { source: org-seed-key, target: org-seed-key, uid: '65532', gid: '65532', mode: 0400 }
-      - source: org-counter-secret
-        target: org-counter-secret
-        uid: '65532'
-        gid: '65532'
-        mode: 0400
-      - source: org-log-pseudonym-key
-        target: org-log-pseudonym-key
-        uid: '65532'
-        gid: '65532'
-        mode: 0400
-      - source: org-enrollment-1
-        target: org-enrollment-1
-        uid: '65532'
-        gid: '65532'
-        mode: 0400
+    volumes:
+      - {
+          type: volume,
+          source: org-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: org-gateway },
+        }
     configs:
       - { source: tenancy, target: /etc/soorma/tenancy.yaml }
     tmpfs:
@@ -150,6 +162,7 @@ services:
       timeout: 3s
       retries: 24
     depends_on:
+      org-secrets-init: { condition: service_completed_successfully }
       org-migrate: { condition: service_completed_successfully }
     restart: unless-stopped
 
@@ -161,6 +174,9 @@ networks:
 
 volumes:
   org-db-data: {}
+  # The organization level's secrets volume: one subdirectory per service.
+  # Each environment that U4 adds gets its own ({env}-secrets).
+  org-secrets: {}
 
 configs:
   tenancy:

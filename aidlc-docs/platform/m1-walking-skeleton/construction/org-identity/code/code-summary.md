@@ -101,6 +101,18 @@ D-CG-OI-01 to 15 are built as the plan states them, with these specifics:
     PEM-parsing code holds the header string alone
 13. **Unused dependencies removed**: the NestJS peers from `abuse-bound`, `identity-resolution`,
     and `perimeter`, and `pg` from `abuse-bound`, which reaches the store through `org-identity`
+14. **Secrets delivery (Q-CG-4 B, the user's answer, at the Code Generation review)**: Compose
+    `file:` secrets keep the host file's owner and mode on Linux, and Compose refuses
+    `environment:` secrets in a read-only service (probed on the GitHub runner). So
+    `org-secrets-init` (root; only `CHOWN`, `DAC_OVERRIDE`, `FOWNER`; no network; read-only;
+    exits) copies this level's secrets into the `org-secrets` volume, one subdirectory per
+    service, owner and mode 0400; each service mounts only its own subpath, read-only. One
+    volume and one init container per level. `stack:up` refuses Docker Engine below 26 and
+    Compose below 2.26.0. shared-infrastructure.md (*Secrets*) and Infrastructure Design §3, §7
+    amended
+15. **Two contract behaviours written down** (the user's request): a missing
+    `Soorma-Contract-Version` is `unsupported_contract_version` at check-order step 5
+    (`versioning.md`, `errors.md`); an unknown path is a bare 404 in 0.1.0 (`errors.md`)
 
 ---
 
@@ -163,7 +175,7 @@ Against a fresh test database and a fresh stack:
 | `pnpm test` (with `db:test`) | Pass: 452 tests, 2 gated |
 | `pnpm audit --audit-level moderate` | Pass |
 | The image build, and the secret check over its file system | Pass |
-| `stack:init`, `stack:up`, `stack:smoke` | Pass: 18 smoke checks |
+| `stack:init`, `stack:up`, `stack:smoke` | Pass: 18 smoke checks; 22 after Q-CG-4 B (the init container, and each service's own secrets: owner, mode 0400, read-only) |
 
 ### For Build and Test
 

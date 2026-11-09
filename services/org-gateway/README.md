@@ -20,15 +20,24 @@ environment key. That interface is not published, and nothing on it is unauthent
 
 ## Running the local stack
 
-Prerequisites: Docker with Compose, Node 26.13.0, pnpm 12.18.0, and the OpenSSL CLI.
+Prerequisites: **Docker Engine 26 or later** and **Docker Compose 2.26.0 or later** (the stack
+mounts each service's own subpath of a secrets volume; `pnpm stack:up` checks both and refuses
+to start otherwise), Node 26.13.0, pnpm 12.18.0, and the OpenSSL CLI.
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm stack:init     # every secret, into deploy/local/.secrets/ (mode 0600; never overwritten)
 pnpm stack:up       # build the image, migrate the store, start S1
 pnpm stack:smoke    # optional: the smoke test CI runs
-pnpm stack:down
+pnpm stack:down     # pnpm stack:down -v also removes the store's data and the secret copies
 ```
+
+**How secrets reach the containers.** The files in `deploy/local/.secrets/` are read only by a
+one-shot `org-secrets-init` container, which copies each into the `org-secrets` Docker volume,
+one subdirectory per service, owned by that service's user, mode 0400. Each service mounts only
+its own subdirectory, read-only, at `/run/secrets`. The copies sit in Docker's volume storage on
+the same host as `.secrets/`; `pnpm stack:down -v` removes them. Secrets never pass through an
+environment variable.
 
 `stack:init` prints the path of a **one-time handover file**,
 `deploy/local/.secrets/handover/first-admin-1.txt`, holding the first Admin's enrollment

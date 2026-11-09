@@ -25,7 +25,7 @@
     "check:code": "node tools/checks/run.ts sql compare inject",
     "stack:init": "node --conditions=source deploy/local/scripts/stack-init.ts",
     "stack:certs": "node --conditions=source deploy/local/scripts/stack-certs.ts",
-    "stack:up": "docker compose -f deploy/local/compose.yaml up -d --build --wait",
+    "stack:up": "node deploy/local/scripts/stack-up.ts",
     "stack:down": "docker compose -f deploy/local/compose.yaml down",
     "stack:smoke": "node deploy/local/scripts/smoke.ts",
     "db:test": "node deploy/local/scripts/db-test.ts start",

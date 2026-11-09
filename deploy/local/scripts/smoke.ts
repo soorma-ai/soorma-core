@@ -16,6 +16,9 @@
 //  6. every container runs non-root, read-only, with all capabilities
 //     dropped; S1 holds no migrator password
 //  7. S1's logs carry no human identifier and no secret
+//  8. secrets (Q-CG-4 B): org-secrets-init completed, with only its three
+//     capabilities and no network; each service sees only its own secrets,
+//     owned by its user, mode 0400
 // The enrollment material is read from the handover file into the request
 // body only; it is never printed.
 import { execFileSync } from 'node:child_process';
@@ -228,6 +231,68 @@ async function main(): Promise<void> {
     "console.log(require('fs').existsSync('/run/secrets/org-db-migrator-password'))",
   ]);
   check('S1 holds no migrator password', holds === 'false');
+
+  // 8. Secrets: the init container, and each service's own directory.
+  const initId = docker([...COMPOSE, 'ps', '-a', '-q', 'org-secrets-init']);
+  const init = docker([
+    'inspect',
+    '-f',
+    '{{.State.Status}} {{.State.ExitCode}}|{{.HostConfig.ReadonlyRootfs}}|{{.HostConfig.CapDrop}}|{{.HostConfig.CapAdd}}|{{.HostConfig.NetworkMode}}',
+    initId,
+  ]);
+  check(
+    'org-secrets-init completed: read-only, only CHOWN, DAC_OVERRIDE, FOWNER, no network',
+    // Docker reports capabilities with or without the CAP_ prefix, by version.
+    init.replace(/CAP_/g, '') === 'exited 0|true|[ALL]|[CHOWN DAC_OVERRIDE FOWNER]|none',
+    init,
+  );
+  const listing = (id: string): string =>
+    docker([
+      'exec',
+      id,
+      '/nodejs/bin/node',
+      '-e',
+      "const fs=require('fs');console.log(fs.readdirSync('/run/secrets').sort().map(n=>{const s=fs.statSync('/run/secrets/'+n);return n+':'+s.uid+':'+(s.mode&0o777).toString(8)}).join(' '))",
+    ]);
+  const gatewaySecrets = listing(gatewayId);
+  const expectedGateway = [
+    'org-counter-secret',
+    'org-db-app-password',
+    'org-enrollment-1',
+    'org-gateway-tls',
+    'org-log-pseudonym-key',
+    'org-seed-key',
+    'org-signing-key',
+    'stack-ca-cert',
+  ]
+    .map((n) => `${n}:65532:400`)
+    .join(' ');
+  check(
+    'org-gateway sees exactly its own secrets, 65532, 0400',
+    gatewaySecrets === expectedGateway,
+    gatewaySecrets,
+  );
+  const dbSecrets = docker([
+    'exec',
+    dbId,
+    'sh',
+    '-c',
+    'cd /run/secrets && for f in *; do echo "$f:$(stat -c %u:%a "$f")"; done | sort | tr "\\n" " "',
+  ]).trim();
+  check(
+    'org-db sees exactly its own secrets, 999, 0400',
+    dbSecrets ===
+      'org-db-app-password:999:400 org-db-migrator-password:999:400 org-db-superuser-password:999:400 org-db-tls:999:400',
+    dbSecrets,
+  );
+  const writable = docker([
+    'exec',
+    gatewayId,
+    '/nodejs/bin/node',
+    '-e',
+    "try{require('fs').writeFileSync('/run/secrets/x','x');console.log('writable')}catch{console.log('read-only')}",
+  ]);
+  check("a service's secrets mount is read-only", writable === 'read-only');
 
   // 7. The logs.
   const logs = docker([...COMPOSE, 'logs', '--no-color', 'org-gateway', 'org-migrate']);
