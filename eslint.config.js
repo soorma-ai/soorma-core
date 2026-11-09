@@ -7,6 +7,8 @@ export default tseslint.config(
   {
     ignores: [
       '**/node_modules/**',
+      // Compiled output of the build configurations (D-CG-OI-02); git-ignored.
+      '**/dist/**',
       'contract/generated/**',
       'contract/test/golden/*.ts',
       // The lint fixture holds a deliberate floating promise. The lint test

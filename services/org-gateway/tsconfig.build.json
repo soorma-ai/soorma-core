@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "composite": true,
+    "customConditions": [],
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../contract/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/config/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/org-identity/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/abuse-bound/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/identity-resolution/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/perimeter/tsconfig.build.json"
+    }
+  ]
+}

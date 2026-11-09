@@ -14,3 +14,9 @@ path = "contract/meta/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "OpenAPI Initiative"
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "data/breached/top-1m.sha256-64.bin"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Daniel Miessler and SecLists contributors (source list); soorma.ai (derivation)"
+SPDX-License-Identifier = "MIT"

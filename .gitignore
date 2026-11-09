@@ -2,3 +2,4 @@ node_modules/
 coverage/
 sbom/
 *.tsbuildinfo
+dist/

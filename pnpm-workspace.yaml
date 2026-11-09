@@ -4,6 +4,10 @@
 packages:
   - contract
   - tools
+  - seams/*
+  - packages/*
+  - services/*
+  - deploy
 
 # pnpm's own refusal of a mismatched pnpm version is off. With it on, pnpm 12
 # writes pnpm-lock.yaml as two YAML documents, and GitHub's dependency graph

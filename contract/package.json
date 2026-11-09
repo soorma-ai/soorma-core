@@ -4,6 +4,28 @@
   "description": "The soorma wire contract: envelope and Delivery schemas, shared OpenAPI components, conventions, and generated types",
   "type": "module",
   "license": "Apache-2.0",
+  "exports": {
+    "./types/components": {
+      "source": "./generated/components.ts",
+      "types": "./dist/components.d.ts",
+      "default": "./dist/components.js"
+    },
+    "./types/org-gateway": {
+      "source": "./generated/org-gateway.ts",
+      "types": "./dist/org-gateway.d.ts",
+      "default": "./dist/org-gateway.js"
+    },
+    "./*.openapi.yaml": "./*.openapi.yaml",
+    "./*.schema.json": "./*.schema.json",
+    "./conventions/*.openapi.yaml": "./conventions/*.openapi.yaml"
+  },
+  "files": [
+    "dist",
+    "*.openapi.yaml",
+    "*.schema.json",
+    "conventions/*.openapi.yaml",
+    "LICENSE"
+  ],
   "scripts": {
     "typecheck": "tsc -p .",
     "generate": "node scripts/generate-types.ts",

@@ -3,7 +3,7 @@
 // Reads the workspace: package manifests, pnpm settings, the toolchain pins, the
 // dependency register, and the workflows. Each check is a pure function over
 // what this module reads, so tests can run it against mutated copies.
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
@@ -48,9 +48,24 @@ function readText(path: string): string {
   return readFileSync(join(repoRoot, path), 'utf8');
 }
 
+/**
+ * The package directories a `packages` entry names: a directory, or `dir/*` for
+ * each subdirectory of `dir` holding a package.json. No other glob form is used.
+ */
+export function expandPackages(entries: string[], root: string = repoRoot): string[] {
+  return entries.flatMap((entry) => {
+    if (!entry.endsWith('/*')) return [entry];
+    const dir = entry.slice(0, -2);
+    return readdirSync(join(root, dir), { withFileTypes: true })
+      .filter((d) => d.isDirectory() && existsSync(join(root, dir, d.name, 'package.json')))
+      .map((d) => `${dir}/${d.name}`)
+      .sort();
+  });
+}
+
 export function loadWorkspace(): Workspace {
   const settings = parseYaml(readText('pnpm-workspace.yaml')) as Record<string, unknown>;
-  const packages = (settings.packages as string[] | undefined) ?? [];
+  const packages = expandPackages((settings.packages as string[] | undefined) ?? []);
   const manifests = ['package.json', ...packages.map((p) => `${p}/package.json`)].map((path) => ({
     ...(JSON.parse(readText(path)) as Omit<PackageManifest, 'path'>),
     path,
@@ -63,8 +78,24 @@ export function loadWorkspace(): Workspace {
   };
 }
 
-/** Every direct dependency of every workspace package. */
+/** The workspace protocol: a dependency on another package of this workspace. */
+export const WORKSPACE_PROTOCOL = 'workspace:';
+
+/**
+ * Every direct third-party dependency of every workspace package. A dependency
+ * on another workspace package (`workspace:*`) is not third-party: it is listed
+ * by workspaceDependencies, and checked by the configuration check.
+ */
 export function directDependencies(manifests: PackageManifest[]): DirectDependency[] {
+  return allDependencies(manifests).filter((d) => !d.version.startsWith(WORKSPACE_PROTOCOL));
+}
+
+/** Every dependency of one workspace package on another (`workspace:` versions). */
+export function workspaceDependencies(manifests: PackageManifest[]): DirectDependency[] {
+  return allDependencies(manifests).filter((d) => d.version.startsWith(WORKSPACE_PROTOCOL));
+}
+
+function allDependencies(manifests: PackageManifest[]): DirectDependency[] {
   const out: DirectDependency[] = [];
   for (const m of manifests) {
     for (const [name, version] of Object.entries(m.dependencies ?? {})) {

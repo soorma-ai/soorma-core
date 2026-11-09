@@ -1,0 +1,30 @@
+{
+  "name": "@soorma/org-identity",
+  "private": true,
+  "description": "P10: human principals, material, sign-ins, keys, tokens, TOTP, the K policy, and the org store",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@nestjs/common": "12.3.2",
+    "jose": "6.2.14",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}

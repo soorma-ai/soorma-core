@@ -1,0 +1,20 @@
+{
+  "name": "@soorma/identity-resolution-seam",
+  "private": true,
+  "description": "The identity-resolution seam: type definitions only (PF \u00a712; BR-SEAM)",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}
