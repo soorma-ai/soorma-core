@@ -1,0 +1,8 @@
+{
+  "principal": {
+    "organization": "o1",
+    "principal": "h@example.com"
+  },
+  "enrollmentMaterial": "soorma_rs_abc",
+  "newSecret": "x"
+}

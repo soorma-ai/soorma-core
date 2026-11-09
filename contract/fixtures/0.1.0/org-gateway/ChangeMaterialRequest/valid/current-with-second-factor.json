@@ -1,0 +1,17 @@
+{
+  "principal": {
+    "organization": "o1",
+    "principal": "h@example.com"
+  },
+  "current": {
+    "secret": "correct horse battery staple",
+    "secondFactor": {
+      "type": "totp",
+      "code": "123456"
+    }
+  },
+  "change": {
+    "type": "replaceSecret",
+    "newSecret": "a new long passphrase"
+  }
+}

@@ -100,7 +100,22 @@ describe('TC-WC-025: error codes, disclosure, and the check order', () => {
     expect(errors).toMatch(/\| `credential_refused` \| 401 \| [^|]+ \| None \|/);
     expect(errors).toMatch(/\| `forbidden` \| 403 \| [^|]+ \| None \|/);
     expect(errors).toContain('The code set is open');
-    expect(errors).toContain('Only the validation codes carry a pointer');
+    expect(errors).toContain(
+      'Only the validation codes carry a pointer, or, for `malformed_request`, a header name',
+    );
+  });
+
+  it('step 7: an operation naming no security scheme refuses a credential header as malformed_request (A4)', () => {
+    expect(errors).toMatch(
+      /\| `malformed_request` \| 400 \| [^|]*the operation names no security scheme and an `Authorization` or `Soorma-Delegation` header is present \| [^|]*\(`header`\), never a header value \|/,
+    );
+    expect(errors).toMatch(
+      /\| `credential_refused` \| 401 \| On an operation that names a security scheme: [^|]+ \| None \|/,
+    );
+    const order = errors.slice(errors.indexOf('## Check order'));
+    expect(order).toContain(
+      'runs step 1, then refuses a presented `Authorization` or `Soorma-Delegation` header with `malformed_request`, naming the header, then continues from step 5',
+    );
   });
 
   it('states the disclosure rules', () => {
@@ -151,6 +166,12 @@ describe('TC-WC-026: credential presentation', () => {
     expect(credentials).toContain('They go in a request body, never in `Authorization`');
     expect(credentials).toContain('Each is at most 256 characters');
     expect(credentials).toContain('The `Soorma-Delegation` header is reserved');
+    expect(credentials).toContain(
+      'with `credential_refused` on an operation that names a security scheme, and with `malformed_request` naming the header on one that names none',
+    );
+    expect(credentials).toContain(
+      'An operation that names no security scheme accepts no credential',
+    );
     expect(credentials).toContain('No cookies');
     expect(credentials).toContain('No CORS');
   });

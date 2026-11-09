@@ -22,6 +22,19 @@ export const requestSide: readonly string[] = [
   'conventions/components.openapi.yaml#/components/schemas/InstanceIdentifier',
   'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalIdentifier',
   'conventions/components.openapi.yaml#/components/schemas/PermissionIdentifier',
+  'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReferenceInput',
+  'org-gateway.openapi.yaml#/components/schemas/FirstAuthenticateRequest',
+  'org-gateway.openapi.yaml#/components/schemas/AuthenticateRequest',
+  'org-gateway.openapi.yaml#/components/schemas/ChangeMaterialRequest',
+  'org-gateway.openapi.yaml#/components/schemas/CurrentMaterial',
+  'org-gateway.openapi.yaml#/components/schemas/MaterialChange',
+  'org-gateway.openapi.yaml#/components/schemas/ReplaceSecretChange',
+  'org-gateway.openapi.yaml#/components/schemas/BeginSecondFactorChange',
+  'org-gateway.openapi.yaml#/components/schemas/ConfirmSecondFactorChange',
+  'org-gateway.openapi.yaml#/components/schemas/SecondFactorProof',
+  'org-gateway.openapi.yaml#/components/schemas/AuthenticatorTypeInput',
+  'org-gateway.openapi.yaml#/components/schemas/Secret',
+  'org-gateway.openapi.yaml#/components/schemas/EnrollmentMaterial',
 ];
 
 export const receivedSide: readonly string[] = [
@@ -37,6 +50,18 @@ export const receivedSide: readonly string[] = [
   'conventions/components.openapi.yaml#/components/schemas/Problem',
   'conventions/components.openapi.yaml#/components/schemas/ProblemCode',
   'conventions/components.openapi.yaml#/components/schemas/ProblemFieldError',
+  'conventions/components.openapi.yaml#/components/schemas/SecretRejectedReason',
+  'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReference',
+  'org-gateway.openapi.yaml#/components/schemas/SignIn',
+  'org-gateway.openapi.yaml#/components/schemas/SignInResponse',
+  'org-gateway.openapi.yaml#/components/schemas/FirstAuthenticateResponse',
+  'org-gateway.openapi.yaml#/components/schemas/ChangeMaterialResponse',
+  'org-gateway.openapi.yaml#/components/schemas/SecondFactorEnrollment',
+  'org-gateway.openapi.yaml#/components/schemas/SecondFactorSetup',
+  'org-gateway.openapi.yaml#/components/schemas/MaterialClass',
+  'org-gateway.openapi.yaml#/components/schemas/PrincipalState',
+  'org-gateway.openapi.yaml#/components/schemas/MaterialChangeType',
+  'org-gateway.openapi.yaml#/components/schemas/AuthenticatorType',
 ];
 
 /**

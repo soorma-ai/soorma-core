@@ -7,6 +7,9 @@
 - **A credential is presented only as `Authorization: Bearer {credential}`. One per request**
 - A credential presented anywhere else is refused with `credential_refused`: in another header,
   a cookie, or a query parameter. **No cookies** are used in this contract version
+- **An operation that names no security scheme accepts no credential.** A presented
+  `Authorization` header there is refused with `malformed_request`, with an `errors[]` entry
+  naming the header (see [`errors.md`](errors.md))
 - **No CORS**: no browser origin is allowed. Allowing one later will be an explicit list, never
   `*`
 
@@ -42,8 +45,10 @@ taken for credentials.
 ## Reserved: delegation
 
 **The `Soorma-Delegation` header is reserved** for a delegation credential presented beside an
-agent credential. In this contract version, any request carrying it is refused with
-`credential_refused`. Delegation-credential presentation will be added without a breaking change.
+agent credential. In this contract version, any request carrying it is refused: with
+`credential_refused` on an operation that names a security scheme, and with
+`malformed_request` naming the header on one that names none. Delegation-credential
+presentation will be added without a breaking change.
 
 ## Security schemes
 

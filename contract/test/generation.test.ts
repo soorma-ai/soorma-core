@@ -18,6 +18,7 @@ import {
   componentsDocument,
   driftMessage,
   generate,
+  generatedDocuments,
   generatedFile,
 } from '../scripts/generate-types.ts';
 
@@ -127,6 +128,14 @@ describe('TC-WC-033: generation is deterministic, and the build fails on drift',
     expect(second).toBe(first);
     expect(driftMessage(committed, first)).toBeUndefined();
   });
+
+  it.each(generatedDocuments.map((d) => [d.source, d] as const))(
+    'every generated file matches its document: %s',
+    async (_source, { document, output, source }) => {
+      const generated = await generate(document, source);
+      expect(driftMessage(readFileSync(output, 'utf8'), generated, output)).toBeUndefined();
+    },
+  );
 
   it('fails on a hand edit of the generated file', async () => {
     const output = await generate(componentsDocument, SOURCE);
