@@ -49,7 +49,7 @@ COPY services/org-gateway/src/ services/org-gateway/src/
 RUN pnpm exec tsc -b services/org-gateway/tsconfig.build.json \
  && pnpm --filter @soorma/org-gateway deploy --prod --legacy /out
 
-FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:9b945e92c1b5463a4b75f11e8417515e4bea7355f6adfd79ec220fbbe905dda8
+FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:33c86a63859efc2ebd88ea0a355863582ec6f1220d048de62baffb2584e709b3
 WORKDIR /app
 COPY --from=build /out/ /app/
 COPY data/breached/top-1m.sha256-64.bin data/breached/MANIFEST.md /app/data/breached/
