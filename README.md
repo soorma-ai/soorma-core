@@ -4,8 +4,9 @@ The open-core substrate for governed agentic systems.
 
 > **Early construction.** This repository was reset on 10 September 2026 and
 > started from an empty tree. Design precedes code here — see
-> [Background](#background). The first thing built is the wire contract; the
-> substrate's services follow.
+> [Background](#background). Built so far: the wire contract, and the
+> organization level's control face (`org-gateway`, S1) with its local stack.
+> The environment-level services follow.
 
 ## What this is
 
@@ -27,11 +28,16 @@ that decide it.
 
 ## What is here
 
-| Path                                 | What it is                                                                                                                                                                                            | Licence      |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| [`contract/`](contract/)             | The wire contract: the envelope and `Delivery` schemas, the shared OpenAPI components, the written conventions, generated TypeScript types, and the compatibility fixtures. **Pre-release** (`0.y.z`) | Apache 2.0   |
-| [`tools/`](tools/)                   | Repository checks: the dependency register, licences, workspace configuration, and workflow integrity                                                                                                 | FSL-1.1-ALv2 |
-| [`DEPENDENCIES.md`](DEPENDENCIES.md) | Every dependency, and every exception to the dependency policy                                                                                                                                        | FSL-1.1-ALv2 |
+| Path                                             | What it is                                                                                                                                                                                            | Licence            |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| [`contract/`](contract/)                         | The wire contract: the envelope and `Delivery` schemas, the shared OpenAPI components, the written conventions, generated TypeScript types, and the compatibility fixtures. **Pre-release** (`0.y.z`) | Apache 2.0         |
+| [`services/org-gateway/`](services/org-gateway/) | S1, the organization level's control face: human principals, their material, and the organization sign-in. See its [README](services/org-gateway/README.md)                                           | FSL-1.1-ALv2       |
+| [`packages/`](packages/)                         | The organization level's modules: `org-identity`, `abuse-bound`, `identity-resolution`, `perimeter`, `config`                                                                                         | FSL-1.1-ALv2       |
+| [`seams/`](seams/)                               | Type definitions for the identity-resolution seam                                                                                                                                                     | Apache 2.0         |
+| [`deploy/`](deploy/)                             | The local stack (Docker Compose, `stack:init`, the local CA) and the monitoring files                                                                                                                 | FSL-1.1-ALv2       |
+| [`data/breached/`](data/breached/)               | The breached-secret list, derived from SecLists, with its manifest                                                                                                                                    | MIT (derived data) |
+| [`tools/`](tools/)                               | Repository checks: the dependency register, licences, workspace configuration, workflow integrity, SQL, secret comparisons, injection tokens, and secret patterns                                     | FSL-1.1-ALv2       |
+| [`DEPENDENCIES.md`](DEPENDENCIES.md)             | Every dependency, and every exception to the dependency policy                                                                                                                                        | FSL-1.1-ALv2       |
 
 ## Working on it
 
@@ -48,12 +54,22 @@ pnpm run check:generated   # the committed types match the schemas
 pnpm run check:contract    # contract rules, licences, meta-schema, compatibility
 pnpm run check:deps        # register, licences, workspace configuration, pnpm version
 pnpm run check:workflows   # SHA-pinned actions, read-only default permissions
+pnpm run check:code        # SQL from sql.ts only, constant-time secret comparisons, injection tokens
+pnpm run check:secrets     # no material, token, or private key in the tracked files
+pnpm run check:breached    # the breached list matches its manifest
 pnpm audit --audit-level moderate
 ```
 
+The database tests need PostgreSQL: `pnpm db:test` starts a throwaway, pinned container and
+prints a `TEST_DATABASE_URL` to export before `pnpm test` (`pnpm db:test:stop` removes it).
+Without it, the database tests fail rather than skip. To run the organization level locally,
+see [`services/org-gateway/README.md`](services/org-gateway/README.md).
+
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of these
-on every push and pull request, keeps a CycloneDX SBOM of each build, and
-reviews dependency changes on pull requests.
+on every push and pull request, against a PostgreSQL service container; builds
+the S1 image, scans its file system for secrets, and runs the stack smoke test;
+keeps a CycloneDX SBOM of each build; and reviews dependency changes on pull
+requests.
 
 ## Licence
 
