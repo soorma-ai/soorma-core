@@ -6,10 +6,14 @@
 //   node tools/checks/run.ts workflows
 //   node tools/checks/run.ts github-settings
 //   node tools/checks/run.ts breached
+//   node tools/checks/run.ts sql compare inject
+//   node tools/checks/run.ts secrets [--image <ref>]
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { breachedFindings, BREACHED_PATH, MANIFEST_PATH } from './breached.ts';
+import { codeFindings } from './code.ts';
+import { imageFindings, repositoryFindings } from './secrets.ts';
 import { configurationFindings } from './configuration.ts';
 import { githubSettingsFindings, REPOSITORY, sbomPackageNames } from './github-settings.ts';
 import { fromPnpmLicences, licenceFindings, parseLicenceExceptions } from './licence.ts';
@@ -31,7 +35,13 @@ function pnpmJson(args: string[]): Record<string, { name: string; versions?: str
     : {};
 }
 
-const checks: Record<string, (ws: Workspace) => Finding[]> = {
+/** `--image <ref>` on the command line: the secrets check scans that image instead. */
+function imageArgument(): string | undefined {
+  const i = process.argv.indexOf('--image');
+  return i === -1 ? undefined : process.argv[i + 1];
+}
+
+const checks: Record<string, (ws: Workspace) => Finding[] | Promise<Finding[]>> = {
   register: (ws) =>
     registerFindings(
       directDependencies(ws.manifests),
@@ -72,6 +82,14 @@ const checks: Record<string, (ws: Workspace) => Finding[]> = {
 
   workflows: () => workflowFindings(loadWorkflows()),
 
+  sql: () => codeFindings('sql'),
+  compare: () => codeFindings('compare'),
+  inject: () => codeFindings('inject'),
+  secrets: () => {
+    const image = imageArgument();
+    return image === undefined ? repositoryFindings() : imageFindings(image);
+  },
+
   breached: () =>
     breachedFindings(
       readFileSync(join(repoRoot, BREACHED_PATH)),
@@ -96,20 +114,37 @@ const checks: Record<string, (ws: Workspace) => Finding[]> = {
   },
 };
 
-if (import.meta.main) {
-  const names = process.argv.slice(2);
+async function main(): Promise<void> {
+  const image = imageArgument();
+  const names = process.argv
+    .slice(2)
+    .filter((a, i, all) => a !== '--image' && all[i - 1] !== '--image');
   const unknown = names.filter((n) => !(n in checks));
-  if (names.length === 0 || unknown.length > 0) {
-    console.error(`usage: node tools/checks/run.ts <${Object.keys(checks).join('|')}>...`);
+  if (
+    names.length === 0 ||
+    unknown.length > 0 ||
+    (image !== undefined && !names.includes('secrets'))
+  ) {
+    console.error(
+      `usage: node tools/checks/run.ts <${Object.keys(checks).join('|')}>... [--image <ref>]`,
+    );
     process.exit(2);
   }
   const workspace = loadWorkspace();
-  const findings = names.flatMap((n) => checks[n]!(workspace));
+  const findings: Finding[] = [];
+  for (const n of names) findings.push(...(await checks[n]!(workspace)));
   for (const f of findings) console.error(`${f.check}: ${f.location}: ${f.message}`);
   if (findings.length > 0) {
     console.error(`${findings.length} finding(s).`);
     process.exitCode = 1;
   } else {
-    console.log(`Passed: ${names.join(', ')}.`);
+    console.log(`Passed: ${names.join(', ')}${image ? ` (${image})` : ''}.`);
   }
+}
+
+if (import.meta.main) {
+  main().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }

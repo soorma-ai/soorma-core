@@ -22,10 +22,12 @@
     "check:github": "node tools/checks/run.ts github-settings",
     "check:breached": "node tools/checks/run.ts breached",
     "check:secrets": "node tools/checks/run.ts secrets",
+    "check:code": "node tools/checks/run.ts sql compare inject",
     "stack:init": "node --conditions=source deploy/local/scripts/stack-init.ts",
     "stack:certs": "node --conditions=source deploy/local/scripts/stack-certs.ts",
-    "stack:up": "docker compose -f deploy/local/compose.yaml up -d --build",
+    "stack:up": "docker compose -f deploy/local/compose.yaml up -d --build --wait",
     "stack:down": "docker compose -f deploy/local/compose.yaml down",
+    "stack:smoke": "node deploy/local/scripts/smoke.ts",
     "db:test": "node deploy/local/scripts/db-test.ts start",
     "db:test:stop": "node deploy/local/scripts/db-test.ts stop"
   },

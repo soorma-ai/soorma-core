@@ -56,25 +56,9 @@ importers:
 
   packages/abuse-bound:
     dependencies:
-      '@nestjs/common':
-        specifier: 12.3.2
-        version: 12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
-      pg:
-        specifier: 8.23.1
-        version: 8.23.1
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: 7.8.2
-        version: 7.8.2
-    devDependencies:
-      '@types/pg':
-        specifier: 8.23.1
-        version: 8.23.1
 
   packages/config:
     dependencies:
@@ -87,21 +71,12 @@ importers:
 
   packages/identity-resolution:
     dependencies:
-      '@nestjs/common':
-        specifier: 12.3.2
-        version: 12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
       '@soorma/identity-resolution-seam':
         specifier: workspace:*
         version: link:../../seams/identity-resolution
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: 7.8.2
-        version: 7.8.2
 
   packages/org-identity:
     dependencies:
@@ -130,18 +105,9 @@ importers:
 
   packages/perimeter:
     dependencies:
-      '@nestjs/common':
-        specifier: 12.3.2
-        version: 12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: 7.8.2
-        version: 7.8.2
 
   seams/identity-resolution: {}
 
@@ -192,6 +158,9 @@ importers:
 
   tools:
     devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
       yaml:
         specifier: 2.9.1
         version: 2.9.1

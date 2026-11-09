@@ -4,6 +4,7 @@
 // handover file; and TC-OI-056's certificate half: a name-constrained CA, and
 // leaves that verify against it.
 import { execFileSync } from 'node:child_process';
+import { createPrivateKey } from 'node:crypto';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -59,8 +60,8 @@ describe('TC-OI-057: stack:init generates secrets safely', () => {
     expect(modeOf(result.handover[0]!)).toBe(0o600);
     expect(readFileSync(result.handover[0]!, 'utf8')).toContain(material);
     expect(JSON.stringify(result)).not.toContain(material);
-    expect(readFileSync(join(dir, 'org-signing-key'), 'utf8')).toMatch(
-      /^-----BEGIN PRIVATE KEY-----/,
+    expect(createPrivateKey(readFileSync(join(dir, 'org-signing-key'))).asymmetricKeyType).toBe(
+      'ed25519',
     );
     expect(readFileSync(join(dir, 'org-counter-secret'), 'utf8').trim()).not.toBe(
       readFileSync(join(dir, 'org-log-pseudonym-key'), 'utf8').trim(),

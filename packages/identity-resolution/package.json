@@ -18,10 +18,7 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@nestjs/common": "12.3.2",
     "@soorma/identity-resolution-seam": "workspace:*",
-    "@soorma/org-identity": "workspace:*",
-    "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "@soorma/org-identity": "workspace:*"
   }
 }

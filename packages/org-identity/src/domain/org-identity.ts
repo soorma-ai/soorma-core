@@ -143,16 +143,16 @@ export class OrgIdentity {
     const missing: string[] = [];
     for (const admin of firstAdmins) {
       const reference = { organization: this.d.organization, principal: admin.principal };
-      const material = enrollment.find((e) => e.principal === admin.principal)?.material;
+      const configured = enrollment.find((e) => e.principal === admin.principal);
       if (await this.exists(reference)) {
-        if (material !== undefined) outcome.ignored.push(reference);
+        if (configured) outcome.ignored.push(reference);
         continue;
       }
-      if (material === undefined) {
+      if (!configured) {
         missing.push(admin.principal);
         continue;
       }
-      const verifier = await this.d.hasher.hash(material);
+      const verifier = await this.d.hasher.hash(configured.material);
       const now = this.d.clock.now();
       const inserted = await this.d.store.transaction(async (tx) => {
         const rows = await tx.query(SQL.registerPrincipal, [
