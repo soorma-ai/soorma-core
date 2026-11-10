@@ -1478,3 +1478,69 @@ Amend the Secrets row of shared-infrastructure.md, Infrastructure Design §3, an
 **Context**: CONSTRUCTION, U2 org-identity COMPLETE; #5 closed.
 
 ---
+
+## Session Resumption: Start Construction for U3 (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"authority-evaluation\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Session resumed from aidlc-state.md: CONSTRUCTION; U1 and U2 complete; next unit U3 authority-evaluation (soorma-core#6). The user's intent names the next step, so the welcome-back choice is taken as A (continue). Branch dev, clean, equal to origin/dev (d169198). Re-intake check (session-continuity.md step 3), against soorma-prd fetched from origin: (1) legacy format: no, one ### PRD: subsection per PRD; (2) brief pin: recorded, 0aad84a; (3) brief changed: no, backlog/m1-walking-skeleton.md has no diff between 0aad84a and origin/main; (4) gap answered: no, soorma-prd#13, #24, #25, #27, #28 all OPEN. No new tag: the newest are prd-platform-foundations-v1.3 and prd-identity-v1.0, the recorded ones. No re-intake. No PENDING entry under PR Checkpoint State. Inception artifacts loaded: requirements, stories, application design (components, component-methods, services, component-dependency, unit-of-work, story map, dependencies), coverage map and gap register, U3's inception test specs (TC-AE-001 to 022); U1's Functional Design (domain entities, business rules, including the amendments A1 to A4) and the contract conventions (envelope, versioning, errors); U2's Problem emission (services/org-gateway/src/problems.ts). PF read at prd-platform-foundations-v1.3: §3, §5 (FR-001 to FR-027), §7, §8, §9, §11, §12, §15, §17."
+**Context**: CONSTRUCTION, session start for U3 authority-evaluation; re-intake check: not needed.
+
+---
+
+## Construction Phase Initialization (re-run on resume) and Unit Initialization (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: (none; required on resume by session-continuity.md step 4, and at the start of every unit)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline (security-baseline.md), soorma Platform Invariants (soorma-platform-invariants.md), PR Checkpoint (pr-checkpoint.md), QA Test Cases (qa-test-cases.md), JIRA Tickets (jira-tickets.md; adapted: GitHub issues)]. prd-gap-classification.md loaded and active for every construction stage (## PRD Intake exists). Invariant text checked: references/platform/invariants.md is identical at prd-platform-foundations-v1.3 and prd-identity-v1.0. Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted)] (unit: authority-evaluation)."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Phase Initialization and Unit Initialization.
+
+---
+
+## L1 Domain Coverage Gate: Initial Assessment (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: (none)
+**AI Response**: "L1 sources (PF @ prd-platform-foundations-v1.3, ID @ prd-identity-v1.0) assessed for U3. Applicable: PF FR-001, 002, 005, 006, 014, 015, 017, 018, 019 (L1 to L5, satisfied by core's baseline model), 021 and 022 (scope from the presented credential, keyed on environment), 026 (the policy-decision half); PF §7a (the registration attributes U3 reads: standing set, re-broadening declaration, autonomy declared; the Permission Grant minimal model); PF §7b (envelope fields and the stamped/asserted partition; the obligations rows on preserving unknown fields, propagating origin, appending the chain, maxChainDepth; Recoverability at zero hops); PF §8a (publish and subscribe: required authority and the autonomous-origin column); PF §8b (intersection; the origin stamping table; declared autonomy against forwarded context; re-broadening rule and case table; O5 to O9 and O12; L1 to L5; Core Baseline); PF §9 failure modes (chain depth, malformed or stamped field, asserted autonomous, no context undeclared); PF §11 (what the SDK may not populate; forward inbound context; effective-authority evaluation internal); PF §12 (the policy-decision seam; seam containment); PF §17 (the envelope is not proof; policy grammar). Non-applicable to U3: PF FR-003, 004 (U1); FR-007, 008, 013, 016 (U5); FR-009 to 012, 027 (U6); FR-020 (the entry points: U6, U7); FR-023, 024 (out); FR-025 (U4, U7); PF §9 operations and NFR profile (U6); PF §10 (control face); ID §7a, §8a, §8b, FR-022 (U4's evaluateHuman); ID FR-013 (the human-only class, U5); ID FR-019 to 021 (absent in M1). 0 Missing. One case found while reading, to be classified at Functional Design before any row is closed: O12's text ('Autonomous origin is denied unless the presenting credential's registration declares autonomy') against FR-015, the §8b origin table, and §11, which apply it only where no context is forwarded. They differ for an agent that has not declared autonomy and forwards an autonomous inbound envelope."
+**Context**: CONSTRUCTION, U3 authority-evaluation: L1 gate initial assessment (covered / non-applicable / missing: 0 missing; one case to classify).
+
+---
+
+## Functional Design: Plan and Questions (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: (none since the session's opening request)
+**AI Response**: "Functional Design plan written: construction/working/authority-evaluation-functional-design-plan.md (git-ignored). It sets out what U3 designs (P2 envelope, P3 authority, P11 policy-decision, seams/policy-decision), the proposed inputs, the evaluation (without re-broadening: S ∩ P ∩ U1..Un; with: S ∩ P ∩ ((U1..Un) ∪ D); load-bearing when allowed only with it), and the stamped envelope field by field. Proposals P-01 to P-11 (technology; recorded unless the user objects): P-01 a verified inbound origin other than autonomous is forbidden; P-02 scope from the verified credential's claims, never configuration (forward obligation to U6); P-03 an unresolvable upstream agent is the empty set, and a store failure is unavailable; P-04 required authority as a set; P-05 typed refusals with internal reasons for the security log only; P-06 version on a draft call (missing clientContractVersion is unsupported_contract_version; a differing Soorma-Contract-Version header is malformed_request naming the header; a conventions clarification); P-07 a forwarded chain of 32 is chain_too_deep, at step 8; P-08 unknown fields preserved at every level U3 does not replace; P-09 invalid reBroadening indexes are invalid_inbound_context; P-10 L1 to L5 by table-driven tests, no new dependency; P-11 trace context validated as the conventions state. Questions: Q1, a non-declaring agent forwarding an autonomous envelope, classified as specification (prd-gap-classification.md Step 1: O12's text denies it; FR-015, the §8b origin table and §11 apply O12 only with no forwarded context; the §8b declared-autonomy table does not cover a forwarded autonomous chain; proposed GAP-AE-001; options per Step 3: A raise and work around by denying (recommended), B resolve here: allow, C resolve here: deny). Q2 to Q6 classified technology: Q2 the policy-decision seam's contents (A both halves of PF §12, recommended; B containment only, as Application Design), with the upstream agent term recorded as its standing set; Q3 human-only permissions also refused at evaluation (A, recommended); Q4 one entry point for steps 5 to 10 (A, recommended) or separate steps; Q5 unknown fields in the forwarded traceContext (A carry them, U1 amendment A5, recommended; B keep U1's rule); Q6 BR-ERR-08 (A move Problem emission into P1 with a shared test assertion for U6 and U7, recommended; B carry the tests to U6 and U7)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: plan created; Q1 to Q6 Awaiting Answer.
+
+---
+
+## Functional Design: Answers to Q1 to Q6 (authority-evaluation)
+**Timestamp**: 2026-11-10T06:40:00Z
+**User Input**: "Q1: A. Raise GAP-AE-001 on soorma-prd with the spec-gap label, citing PF @ prd-platform-foundations-v1.3: O12, FR-015, §8b and §11. Also cite §8b's "Declared autonomy against forwarded context" table, which gives delegated on every forwarded row and so contradicts FR-015's "propagated unchanged" for an autonomous inbound envelope. Cross-reference soorma-prd#25 (GAP-INT-007), which touches the same origin table. Build the deny reading meanwhile.
+
+Q2: A. Q3: A. Q4: A. Q6: A.
+
+Q5: A, with two corrections. It is U1 amendment A6, because A5 is U2's reason amendment. And the known fields come only from the draft: the new traceContext is the forwarded envelope's unknown fields plus the draft's traceparent, and its tracestate if present. A forwarded tracestate is never carried when the draft omits one.
+
+P-01 to P-11: accepted as written.
+
+Log the answers verbatim in audit.md, classify each through prd-gap-classification.md, open the soorma-prd issue for GAP-AE-001, and generate the Functional Design artifacts."
+**AI Response**: "Answers recorded by question ID. Q1 (GAP-AE-001): A, specification; routing A (raise against soorma-prd) with the deny reading built meanwhile (work-around, status Open). Q2: A, both halves of the PF §12 policy-decision seam (grantedSet and contains); composition stays in core. Q3: A, P3 also denies human-only permissions to an agent; one definition exported by packages/authority. Q4: A, one entry point for check-order steps 5 to 10. Q5: A as corrected: U1 amendment A6 (not A5, which is U2's reason amendment); the new traceContext is the forwarded envelope's traceContext unknown fields, plus the draft's traceparent, plus the draft's tracestate only if the draft carries one; a forwarded tracestate is never carried. Q6: A, Problem emission moves into P1 with a shared test assertion for U6 and U7. P-01 to P-11 accepted as written, recorded as decisions. Ambiguity check: none; Q5's correction is unambiguous and is applied as stated."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: answers collected (plan step 2).
+
+---
+
+## Functional Design: Classification of Q1 to Q6 and P-01 to P-11 (authority-evaluation)
+**Timestamp**: 2026-11-10T06:40:00Z
+**User Input**: (the answers above)
+**AI Response**: "Classified through prd-gap-classification.md Step 1. Q1: specification (an authority rule with an unspecified case; two PRD sections that cannot both be satisfied; the user adds the §8b 'Declared autonomy against forwarded context' table, whose forwarded rows give delegated and so contradict FR-015's 'propagated unchanged' for an autonomous inbound envelope). Routed under Step 3 option A (raise) with option D's work-around (build deny); status Open. Q2 to Q6: technology, each answer satisfies PF @ prd-platform-foundations-v1.3 (Q2 is the seam's internal structure within PF §12's stated interface; Q3 is defence in depth with no outcome change while U5's check holds; Q4 is internal module structure; Q5 is the reading of FR-005 (a) already within U1's open envelope traceContext, a contract-wording amendment within unreleased 0.1.0, and the user's correction fixes the known fields to the draft's; Q6 is code organisation and test structure). P-01 to P-11: technology, as proposed; none reclassified."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: classification (plan step 3).
+
+---

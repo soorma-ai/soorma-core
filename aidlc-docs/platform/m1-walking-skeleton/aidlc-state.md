@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U2 `org-identity` (#5) COMPLETE**: Code Generation APPROVED 2026-11-09T13:24:27Z; soorma-core#14 merged as `e61c620` (2026-11-09T13:22:33Z); `origin/main` merged back into `dev` (fast-forward; `dev` equals `main`). **Next unit: U3 `authority-evaluation` (soorma-core#6), not started, to begin in a new session** (see *Session stop point* below). Earlier stage history for U2 is under *Stage Progress*; for U1, *Session stop point* history in `audit.md`.
+- **Current Stage**: CONSTRUCTION. **U3 `authority-evaluation` (soorma-core#6): Functional Design in progress** (plan with Q1 to Q6 awaiting answers, 2026-11-09T13:57:36Z). U1 and U2 complete (U2: soorma-core#14 merged as `e61c620`; `dev` equals `main` at session start). Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -99,7 +99,7 @@
 
 ## PRD Specification Gaps
 
-Full entries: `inception/prd-intake/specification-gaps.md`.
+Full entries: `inception/prd-intake/specification-gaps.md` (GAP-INT); `construction/authority-evaluation/prd-gaps/specification-gaps.md` (GAP-AE).
 
 | ID | Unit | Summary | Status | Raised Against | Resolved By | Issue |
 |---|---|---|---|---|---|---|
@@ -112,6 +112,7 @@ Full entries: `inception/prd-intake/specification-gaps.md`.
 | GAP-INT-007 | U3, U7 | Origin at an autonomous first hop: agent-asserted (PF §8b) or platform-stamped (PF §11, FR-015, §7b); found at User Stories | Open: raised; worked around in M1 (reject and stamp, M1-FR-01; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#25 |
 | GAP-INT-008 | U6, U1 | Do bootstrap and renewal carry an envelope (PF FR-001 vs §8a, §11); found at Application Design | Open: raised; worked around in M1 (neither carries an envelope; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 |
 | GAP-INT-009 | U6 | Does the internal revocation read produce an attribution record (PF FR-025 vs §8a); found at Units Generation | Open: raised; worked around (no record; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#28 |
+| GAP-AE-001 | U3, U7 | Origin for a forwarded autonomous envelope when the presenter has not declared autonomy (PF O12 vs FR-015, §8b, §11; §8b's forwarded rows give `delegated`); found at U3 Functional Design | Open: raised; worked around in M1 (deny under O12; routing A) | PF @ `prd-platform-foundations-v1.3` | — | (pending) |
 
 **Counts**: Open 4 (GAP-INT-006, 007, 008, 009; all worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4.
 
@@ -181,7 +182,8 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] Construction Design PR gate: **APPROVED** 2026-11-08T22:27:46Z; soorma-core#13 merged as `27619c4`. Opened (2026-11-08T22:11:06Z); branch `dev`, PR to `main` (confirmed by the user, 2026-11-08T21:51:00Z)
   - [x] Code Generation: **APPROVED** 2026-11-09T13:24:27Z. soorma-core#14 merged as `e61c620`; CI green on Linux (build, check, and test; image, image secret scan, and stack smoke test; dependency review). Part 1 approved 2026-11-09T00:54:48Z (revision 3: amendments 1 and 2); Q-CG-1 A, Q-CG-2 A, Q-CG-3 B (SecLists `xato-net-10-million-passwords-1000000.txt` at `00f80ec`), Q-CG-4 B (the per-level secrets-init container; shared-infrastructure.md *Secrets* and Infrastructure Design §3, §7 amended). Commits `4089286`, `5ebcb9b`, `42a293f`, `dfa6c97`, `032b718`, `787b3be`, `9beb42c`, then the review changes `4ddf535` (the missing-version refusal and the bare 404 written into the contract) and `8e75f2b` (secrets-init). 456 tests; the stack smoke test 22 checks; L1 matrix 32 rows Implemented, 0 Missing; invariants I1 to I10 Implemented, I11 N/A. Summary: `construction/org-identity/code/code-summary.md`
 - **Unit U2 `org-identity` (#5): COMPLETE** 2026-11-09T13:24:27Z
-- **Next unit: U3 `authority-evaluation` (#6): not started** (new session; see *Session stop point*)
+- **Current unit**: U3 `authority-evaluation` (#6). Session resumed 2026-11-09T13:57:36Z: re-intake check clean (brief unchanged at `0aad84a`; no new PF or ID tag; soorma-prd#13, #24, #25, #27, #28 open). Construction Phase Initialization re-run: rules loaded for all five enabled extensions; prd-gap-classification.md active; invariant text identical at both tags. Unit Initialization and the L1 gate's initial assessment done (0 Missing; one case to classify at Functional Design: O12 against FR-015 for a non-declaring agent forwarding an autonomous envelope)
+  - [ ] Functional Design: plan answered 2026-11-10T06:40:00Z (`construction/working/authority-evaluation-functional-design-plan.md`): Q1 specification, **GAP-AE-001** raised (routing A, deny built meanwhile); Q2 to Q6 technology, all A (Q5 as corrected: U1 amendment A6); P-01 to P-11 accepted. Artifacts being generated
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2. Remaining: U3 to U7
 - [ ] Build and Test: EXECUTE
 
