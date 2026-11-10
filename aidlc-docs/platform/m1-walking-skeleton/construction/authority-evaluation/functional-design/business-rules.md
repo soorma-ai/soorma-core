@@ -59,7 +59,7 @@ P11 `policy-decision`, and `seams/policy-decision`.
 |---|---|---|
 | BR-IN-01 | `admitEnvelopeRequest` runs **only after** the surface has run steps 1 to 4 (body size, credential presentation and kind, verification and expiry, environment and revocation). Those are P1's at S3 and S4 (U6, U7). U3 never re-runs them and never runs without them | BR-ERR-07; O10 |
 | BR-IN-02 | Its request inputs are: the parsed body (any JSON value); the `Soorma-Contract-Version` header values (zero or more); the **Checked Agent Context** (scope, agent, instance), from the verified credential; the **required authority**; and the request id | D-AE-04; D-AE-08 |
-| BR-IN-03 | Its ports are: the **Registration View** source (autonomy declared, re-broadening declaration; U5 fills it from P4); the **policy decision** (the seam; P11 by default, whose `GrantSource` U5 and U4 fill); the **Sealer** (seal and verify with this environment's sealing material; NFR Design); the **configured scope** (P9); the **accepted contract versions** (P1, D-AE-25); and the **security log** | D-AE-02; D-AE-25 |
+| BR-IN-03 | Its ports are: the **agent-facts source** (each agent's Registration View and standing set together; U5 fills it from P4 with one query), read once at the start of step 9 through one caching decorator; the **policy decision** (the seam; P11 by default, whose agent `GrantSource` is served from that read, and whose human `GrantSource` U4 fills). *Consistency fix from NFR Design (2026-11-10; the user's agent-facts design)*; the **Sealer** (seal and verify with this environment's sealing material; NFR Design); the **configured scope** (P9); the **accepted contract versions** (P1, D-AE-25); and the **security log** | D-AE-02; D-AE-25 |
 | BR-IN-04 | Every input is treated as untrusted except the Checked Agent Context, which P1 produced from a verified credential. The body is validated before any field of it is read, except `clientContractVersion` at step 5 | SECURITY-05; O5 |
 
 ## 3. Contract Version on a Draft Call (BR-VR, step 5)
@@ -113,7 +113,7 @@ The internal reason says which.
 | BR-OR-03 | `inbound` with origin `autonomous`; autonomy declared | origin `autonomous`, **propagated unchanged** | — | PF FR-015; §8b |
 | BR-OR-04 | `inbound` with origin `autonomous`; autonomy **not** declared | **`forbidden`** (GAP-AE-001 work-around, D-AE-01) | `o12_undeclared` | O12 as written; GAP-AE-001 |
 | BR-OR-05 | `inbound` with origin `delegated`, or a value this version does not know | `forbidden` | `origin_unsupported` | D-AE-07; PF FR-005 b |
-| BR-OR-06 | The presenter's registration not found; or a failure reading it | `forbidden`; or `unavailable` | `presenter_unresolved`; `registration_read_failed` | D-AE-24 |
+| BR-OR-06 | The presenter's registration not found; or the agent-facts read failing | `forbidden`; or `unavailable` | `presenter_unresolved`; `agent_facts_read_failed` (*Consistency fix from NFR Design (2026-11-10; the user's agent-facts design)*) | D-AE-24 |
 
 **Autonomy declared** is the registration's boolean, **default no** (PF §7a). Origin is
 never read from the draft (BR-DV-04), and **origin is computed in P3 only** (seam
@@ -143,13 +143,13 @@ load-bearing  =  allowed, and not contains(N, R)
 |---|---|---|
 | BR-AU-01 | **Effective authority is computed in exactly one place: P3's `evaluateAgent`.** No other module, surface, or seam computes an intersection or a union of permission sets | I5; M1-FR-08; PF §12 *Seam containment* |
 | BR-AU-02 | `N` and `W` are composed **in core**. The seam is asked only for granted sets and for containment, never for an effective set (D-AE-02) | PF §12: "decides containment, never composition" |
-| BR-AU-03 | **Human-only class** (D-AE-03): if `R` contains `grant:human`, `human:manage`, or `agent:delegate`, the request is `forbidden` (reason `human_only_permission`), before any term is read. Matched literally, never by pattern | PF §8b; ID FR-013; ID OB-16 |
+| BR-AU-03 | **Human-only class** (D-AE-03): if `R` contains `grant:human`, `human:manage`, or `agent:delegate`, the request is `forbidden` (reason `human_only_permission`), before containment is asked. The terms are already read, at the start of step 9 (*Consistency fix from NFR Design (2026-11-10; the user's agent-facts design)*: formerly "before any term is read"). Matched literally, never by pattern | PF §8b; ID FR-013; ID OB-16 |
 | BR-AU-04 | **Re-broadening at the declaring hop**: `W = S ∩ P ∩ (U ∪ D)`. It recovers only what **upstream agents** narrowed away, never what `P` lacked, and never more than `S` (the formula intersects with `S` even if `D` were wider, D-AE-03's defence-in-depth reading) | PF FR-017; §8b |
 | BR-AU-05 | **Exercised only when load-bearing**: allowed with re-broadening and not without it. Only then is the record stamped (BR-ST-04) | PF §8b *Exercised*, *Record* |
 | BR-AU-06 | **Local to its hop**: later hops compute their own `U` from the chain's standing sets, ignoring every re-broadening record (D-AE-20) | PF §8b *Propagation* |
 | BR-AU-07 | **First hop**: with no upstream term, `U` imposes nothing, so `W = N = S ∩ P` and re-broadening is never load-bearing | PF §8b case table, row 1 |
 | BR-AU-08 | **Deny by default**: an empty or unknown set contains nothing; a principal with no grants in E has the empty set; an unresolved upstream agent has the empty set (D-AE-09) | O9; PF FR-018; L3 |
-| BR-AU-09 | A failure reading any term is `unavailable` (reason `term_read_failed`). Never allow on a failed read | D-AE-09; fail closed |
+| BR-AU-09 | **The agent-facts read is all-or-nothing**: a failure is `unavailable` (reason `agent_facts_read_failed`), and nothing from it is used. A failure reading a human's grants (U4) is `unavailable` too. Never allow on a failed read. *Consistency fix from NFR Design (2026-11-10; the user's agent-facts design)* | D-AE-09; fail closed |
 | BR-AU-10 | A denial is `forbidden` (reason `authority_denied`, or `upstream_unresolved` when an upstream agent did not resolve). Nothing beyond the code is returned | BR-ERR-01 |
 
 **The case table, checked by a test for every row** (PF §8b; for `p` in `S`; outside `S`
@@ -186,7 +186,7 @@ every row denies):
 | 6 | Draft schema; trace context | `stamped_field_set`, `unknown_field`, `malformed_request` | `stamped_field`, `unknown_field`, `schema`, `trace_context` |
 | 7 | Forwarded context | `invalid_inbound_context` | `jcs_invalid` (*consistency fix from NFR Requirements*), `inbound_too_large`, `seal_failed`, `envelope_version`, `scope_mismatch`, `rebroadening_index` |
 | 8 | Chain depth | `chain_too_deep` | `chain_depth` |
-| 9 | Origin, then authority | `forbidden`, `unavailable` | `o12_undeclared`, `origin_unsupported`, `presenter_unresolved`, `human_only_permission`, `upstream_unresolved`, `authority_denied`; `registration_read_failed`, `term_read_failed` |
+| 9 | Origin, then authority | `forbidden`, `unavailable` | `o12_undeclared`, `origin_unsupported`, `presenter_unresolved`, `human_only_permission`, `upstream_unresolved`, `authority_denied`; `agent_facts_read_failed` |
 | 10 | The envelope to be stamped | `envelope_too_large` | `envelope_bound` |
 | — | An invariant breach | `internal_error` | `credential_scope_mismatch` (D-AE-23), `empty_required_set` (D-AE-10) |
 
@@ -203,7 +203,7 @@ every row denies):
 | BR-SEAM-01 | `seams/policy-decision` declares **types only**: `PermissionId`, `PermissionSet`, `PrincipalRef` (an agent or a human principal), `EnvironmentRef` (a scope), and `PolicyDecision` with `grantedSet(principal, environment)` and `contains(effectiveSet, requiredSet)`. Apache 2.0, **unpublished**, and no configuration selects an implementation (M1-FR-13) | D-AE-02; PF §12; M1-FR-13 |
 | BR-SEAM-02 | **No seam operation returns an effective set.** `grantedSet` returns one principal's own granted set; `contains` answers yes or no | PF §12 *Seam containment* |
 | BR-SEAM-03 | **P11's default**: flat, opaque identifiers with set semantics; **literal** containment (`requiredSet ⊆ effectiveSet`, exact string comparison, no wildcard or hierarchy); **deny by default**; environment-scoped: it answers only for the environment it was built for, and returns the empty set for any other | PF §8b *Core Baseline*; PF §12; ID OB-16 |
-| BR-SEAM-04 | P11's `GrantSource` port: **an agent's granted set is its standing set** (U5 fills it from the registration); **a human's is the union of its grants in E** (U4 fills it, the held set). U3 builds the port and an in-memory source for its tests | D-AE-02; PF §7a; PF FR-018 |
+| BR-SEAM-04 | P11's `GrantSource` port: **an agent's granted set is its standing set**, served from the request's agent-facts read (*Consistency fix from NFR Design (2026-11-10; the user's agent-facts design)*); **a human's is the union of its grants in E** (U4 fills it, the held set). U3 builds the port and an in-memory source for its tests | D-AE-02; PF §7a; PF FR-018 |
 | BR-SEAM-05 | The seam never decides: the intersection, origin stamping (O12 included), chain append and `maxChainDepth`, re-broadening, or the human-only class. They stay in P2 and P3 | PF §12; M1-FR-13 |
 
 ## 12. Problem Emission (BR-PE)
@@ -276,8 +276,10 @@ Posted on each unit's issue when this stage is approved.
 - S2 emits Problems through P1 (BR-PE) and runs the shared assertion on every Problem
 
 **To U5 `agent-registration` (soorma-core#8)**
-- Fill the Registration View source (autonomy declared, default no; re-broadening
-  declaration) and P11's `GrantSource` for an agent (its standing set), from P4
+- Fill the **agent-facts port** from P4 **with one query**: for a list of agents, each
+  one's Registration View (autonomy declared, default no; re-broadening declaration) and
+  standing set together, or not found. *Revised at U3's NFR Design (2026-11-10): one port
+  replaces the separate Registration View source and agent `GrantSource`*
 - The registration check imports the human-only class from `packages/authority`
   (D-AE-03), never a copy
 - Registrations are never deleted, so an upstream agent in a sealed chain always resolves

@@ -1656,3 +1656,66 @@ Then log the approval verbatim in audit.md, commit the NFR Requirements artifact
 **Context**: CONSTRUCTION, U3 authority-evaluation: NFR Requirements APPROVED; next stage NFR Design. Infrastructure Design to be skipped (no deployable).
 
 ---
+
+## Forward Obligations Posted (authority-evaluation NFR Requirements)
+**Timestamp**: 2026-11-10T14:56:25Z
+**User Input**: (the approval above)
+**AI Response**: "NFR Requirements committed as c05a83f on dev and pushed. nfr-requirements.md §4 obligations posted, pinned to c05a83f: U4 (human grants never cached by U3) https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6770627019 ; U6 (one propagation bound, read by both caches) https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6770627790 ; U7 (wire the cache; provision the key ring; maximum-depth edge test at S4's actual limit) https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6770628300 ."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Requirements obligations posted.
+
+---
+
+## NFR Design: Plan and Questions (authority-evaluation)
+**Timestamp**: 2026-11-10T14:57:52Z
+**User Input**: (none since the NFR Requirements approval)
+**AI Response**: "NFR Design plan written: construction/working/authority-evaluation-nfr-design-plan.md (git-ignored). Proposals P-ND-01 to 08 (technology; recorded unless the user objects): HMAC domain-separation label; operator-assigned key ids (no '.'), base64url MAC of 43 characters; strict seal parsing, seal_failed before any MAC; key material loaded and validated at start-up, start-up stops on any failure, rotation by restart; two-phase rotation across S4 instances; cache keys include the environment (I1); the cache as a decorator on each port (batching, coalescing, successes only, LRU); the entry point returns results and never throws for an expected refusal. Questions, all technology: Q1 the seal's form (A v1.{kid}.{mac}, recommended; B {kid}.{mac}); Q2 the key ring's configuration (A U2's seed-key shape: one secret file per key, ids and current in tenancy.yaml, recommended; B one secret file for the whole ring); Q3 the canonicalizer's home (A a shared packages/jcs, with U2's canonical.ts as a thin wrapper, recommended; B separate implementations), found while reading U2's code: packages/org-identity already has a restricted, recursive RFC 8785 serializer; Q4 framework-free packages (A, recommended) or NestJS modules (B)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Design: plan created; Q1 to Q4 Awaiting Answer.
+
+---
+
+## NFR Design: Answers to Q1 to Q4 (authority-evaluation)
+**Timestamp**: 2026-11-10T15:27:28Z
+**User Input**: "Q1: A. Q2: A. Q4: A.
+
+Q3: A, with a condition. U2's canonicalJson output is also the associated data for the stored encrypted TOTP seeds, so the wrapper must be byte-identical for every input U2 uses. Before swapping in packages/jcs, commit literal-byte vectors for both U2 uses (the log pseudonym's input and the seed associated data), plus a test that decrypts a seed encrypted by the current code. All of these must pass unchanged after the swap.
+
+P-ND-01 to 06 and 08: accepted. P-ND-07: revise. As written, it can't meet NFR-AE-06, which promises one read round trip on a cold cache:
+
+it caches two ports separately;
+step 9a reads the Registration View before 9b reads the grant sets;
+the seam's grantedSet is per principal.
+Design it this way instead:
+
+one agent-facts source port, which returns each agent's Registration View and standing set together;
+read once, at the start of step 9, for the presenter and every distinct upstream agent, in one batched call, behind one caching decorator that keeps NFR-AE-09 to 15 as approved;
+P11's agent GrantSource and the Registration View port are both served from that cache, so the seam stays per principal and P3 is unchanged;
+the read is all-or-nothing, so a store failure is unavailable, and origin is still decided before authority, from the same read;
+human principals bypass the cache and go straight to U4's source (NFR-AE-14).
+Add to the obligation on #8 (U5): fill the agent-facts port with one query. Then log the answers verbatim in audit.md and generate the NFR Design artifacts."
+**AI Response**: "Answers recorded by question ID, all technology (I11), no specification gap. Q1 A (seal v1.{kid}.{mac}); Q2 A (U2's seed-key shape: one secret file per key; ids and current in tenancy.yaml); Q4 A (framework-free packages). Q3 A with the user's condition: before the swap, commit literal-byte vectors for both U2 uses (the log pseudonym's input, the seed associated data) and a fixture seed encrypted by the current code with a test that decrypts it; all pass unchanged after packages/jcs replaces U2's implementation. P-ND-01 to 06 and 08 accepted. P-ND-07 replaced by the user's design: one agent-facts port (Registration View and standing set together), read once at the start of step 9 for the presenter and every distinct upstream agent in one batched, all-or-nothing call behind one caching decorator (NFR-AE-09 to 15 unchanged); the Registration View and P11's agent GrantSource served from that read; human principals bypass the cache to U4's source. Consequences applied as consistency fixes: Functional Design BR-IN-03, BR-AU-03 wording (the human-only check runs before containment, after the read), BR-OR-06 and BR-AU-09 reasons merged into agent_facts_read_failed, §10, §16 (U5), business-logic-model §2 and §3, domain-entities; NFR Requirements NFR-AE-08, 09. The #8 obligation (fill the agent-facts port with one query) is posted at this stage's approval with the others."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Design: answers collected and classified (technology).
+
+---
+
+## NFR Design: Artifacts Generated; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T15:30:09Z
+**User Input**: (none since the answers)
+**AI Response**: "Generated construction/authority-evaluation/nfr-design/: nfr-design-patterns.md (NP-01 seal v1.{kid}.{mac} with domain separation and strict parsing; NP-02 key ring in U2's shape, start-up validation, two-phase rotation; NP-03 packages/jcs, iterative, with the U2 swap ordered behind committed byte vectors and a seed-decryption fixture; NP-04 the user's agent-facts design with a request snapshot, so P11's agent GrantSource and origin read the same single result and no second round trip is possible; NP-05 framework-free assembly; NP-06 to 08 validation, depth, logging and Problems) and logical-components.md. Consistency fixes marked in place: Functional Design BR-IN-03, BR-OR-06, BR-AU-03 wording, BR-AU-09, BR-SEAM-04, §10, §16 (U5), business-logic-model §2 and §3, domain-entities (Agent Facts); NFR Requirements NFR-AE-08, 09; L1 matrix L1-14, L1-15 and invariant I1 implementation targets. Design choices flagged for review: the request snapshot (a principal missing from it is internal_error, never a read); P11 built per request over a composite GrantSource; BR-AU-03's human-only check now runs after the read (before containment), so with the store down a human-only request is unavailable rather than forbidden. Security: compliant or N/A as listed; invariants: no Missing. Presented the standard NFR Design completion message: Request Changes, or Continue to Next Stage (the QA construction enrichment; Infrastructure Design skipped)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Design: awaiting approval.
+
+---
+
+## NFR Design: APPROVED, after three edits (authority-evaluation)
+**Timestamp**: 2026-11-10T15:40:14Z
+**User Input**: "Continue to Next Stage, after three edits.
+
+The snapshot as the only source of agent sets, P11 built per request, and BR-AU-03's new position: accepted.
+
+NP-02, match U2 exactly (Q2 A). Each seal key file is base64url text of 256 random bits, as stack:init writes symmetric keys today, read through P9's SecretReader.key(name, true). Not raw bytes. The configuration shape is U2's seed-key shape, sealKeys: { current, keys: [{ id, secret }] }, naming each key's secret, not file names derived from ids. P9 loads seal keys through the same path as seed keys. Update logical-components.md's configuration table and the #10 obligation to match.
+NP-04: an entry's TTL is measured from when its batched read was issued, not when it completed. Add a clock test where the read takes time.
+NP-07: the iterative copy creates every key as an own data property (for example with Object.defineProperty), so a key named __proto__ is copied as a field and never sets a prototype. Add a unit test of the copy with a __proto__ key.
+Then log the approval verbatim in audit.md, commit the NFR Design artifacts and consistency fixes on dev, post the obligations on #7, #8 and #10, and start the QA construction enrichment."
+**AI Response**: "NP-02 now matches U2 exactly: sealKeys: { current, keys: [{ id, secret }] } in the environment's part of tenancy.yaml, each entry naming its secret; each secret base64url text of 256 random bits, loaded by P9 through SecretReader.key(secret, true) on the seed keys' path; P2's loadSealKeyRing validates ids and current. logical-components.md's configuration table, run-time block and P9 row, and the U7 obligation, updated to match. NP-04: TTL measured from when the batched read was issued, with a clock test where the read takes time. NP-07: the iterative copy defines every key as an own data property, so __proto__ is copied as a field; a unit test of the copy with a __proto__ key. The snapshot, per-request P11, and BR-AU-03's position accepted. NFR Design approved. Committing on dev, posting obligations on soorma-core#7, #8, #10, then starting the QA construction enrichment. Infrastructure Design skipped for U3 (no deployable; key delivery is U7's)."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Design APPROVED; Infrastructure Design SKIPPED; next: QA construction enrichment.
+
+---

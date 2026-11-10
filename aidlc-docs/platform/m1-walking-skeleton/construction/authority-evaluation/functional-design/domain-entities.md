@@ -22,7 +22,8 @@ document names what U3 builds from them. Field names are camelCase (D-WC-01).
 | Envelope Request | value (input) | the surface (U7) | one request | D-AE-04; BR-IN-02 |
 | Checked Agent Context | value (input) | P1, from the verified agent credential (U6) | one request | D-AE-08 |
 | Required Authority | value (input) | the surface, per operation | one request | D-AE-10; PF §8a |
-| Registration View | view of P4's registration | P3, through a port U5 fills | one request | PF §7a |
+| Agent Facts | view of P4's registrations | the entry point, through the agent-facts port U5 fills, behind one cache | one request | PF §7a; *Consistency fix from NFR Design (2026-11-10)* |
+| Registration View | part of Agent Facts | the agent-facts read | one request | PF §7a |
 | Permission Set | value | P3; the seam | one request | PF FR-018 |
 | Principal Reference | value | P3 | one request | PF §7a *Permission Grant* |
 | Validated Draft | value | P2 (steps 5 and 6) | one request | BR-DR; BR-DV |
@@ -72,14 +73,30 @@ A **non-empty** Permission Set: every member must be contained (D-AE-10).
 ## Registration View
 
 What P3 reads from the presenter's registration, besides its standing set (which it reads
-through the seam, D-AE-02). A view, not a copy: U5 fills the port from P4.
+through the seam, D-AE-02). A view, not a copy. Both come from the request's **Agent Facts**
+read (below).
 
 | Field | Type | Notes |
 |---|---|---|
 | `autonomyDeclared` | boolean | PF §7a, **default no**. Decides BR-OR-01 to 04 |
 | `reBroadeningDeclaration` | Permission Set, possibly empty | PF §7a; within the standing set (U5 enforces it; BR-AU-04 intersects with `S` anyway) |
 
-Result: the view, **not found** (BR-OR-06, `forbidden`), or **read failed** (`unavailable`).
+Result: the view, or **not found** (BR-OR-06, `forbidden`). A failed read refuses the request
+before origin is decided (`unavailable`).
+
+## Agent Facts
+
+*Consistency fix from NFR Design (2026-11-10)*. One port returns, **for a list of agents in one call**, each agent's Registration
+View and standing set together, or **not found**. Read **once, at the start of step 9**, for
+the presenter and every distinct upstream agent. **All or nothing**: a failure is
+`unavailable`, and nothing from it is used.
+
+| Field (per agent) | Type | Serves |
+|---|---|---|
+| `registrationView` | Registration View | Origin (BR-OR), and `D` (BR-AU) |
+| `standingSet` | Permission Set | P11's agent `GrantSource` (`S`, `U1 … Un`) |
+
+Behind one caching decorator (NFR-AE-09 to 15). Human principals never pass through it.
 
 ## Permission Set
 

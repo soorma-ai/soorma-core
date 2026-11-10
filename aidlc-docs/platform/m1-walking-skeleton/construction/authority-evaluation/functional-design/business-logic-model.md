@@ -30,8 +30,9 @@ A request is refused at the first step it fails. Steps 5 to 8 read nothing from 
 | 6 | Draft schema and trace context (BR-DV) | P2 `validateDraft` | the body | `stamped_field_set`, then `unknown_field`, then `malformed_request` |
 | 7 | Forwarded context, if `inbound` (BR-FX) | P2 `verifyInbound` | the Sealer; the configured scope | `invalid_inbound_context` |
 | 8 | Chain depth (BR-CD) | P2 `checkChainDepth` | — | `chain_too_deep` |
-| 9a | Origin (BR-OR) | P3 `resolveOrigin` | the Registration View | `forbidden`, `unavailable` |
-| 9b | Authority (BR-AU) | P3 `evaluateAgent` | the seam: `grantedSet` for the presenter and each distinct upstream agent; `contains` | `forbidden`, `unavailable` |
+| 9 | **Agent facts**: one batched, all-or-nothing read for the presenter and every distinct upstream agent (*Consistency fix from NFR Design (2026-11-10)*) | the entry point | the agent-facts port, through its caching decorator | `unavailable` |
+| 9a | Origin (BR-OR) | P3 `resolveOrigin` | the presenter's Registration View, from that read | `forbidden` |
+| 9b | Authority (BR-AU) | P3 `evaluateAgent` | the seam: `grantedSet` for the presenter and each distinct upstream agent, **served from that read**; `contains` | `forbidden` |
 | 10 | Stamp, bound, seal (BR-ST) | P2 `stamp` | the Sealer | `envelope_too_large` |
 
 Before step 5, the entry point checks that the Checked Agent Context's scope equals the
@@ -59,8 +60,7 @@ input:  presenter, required set R, declaration D, forwarded chain (possibly none
    else          -> allow, loadBearing
 ```
 
-Any read failure in steps 2 and 3 is `unavailable` (fail closed, BR-AU-09). `S`, `U`, `N`
-and `W` never leave P3.
+Steps 2 and 3 are served from the agent-facts read at the start of step 9: they never reach the store, and a read failure there has already refused the request `unavailable` (BR-AU-09). *Consistency fix from NFR Design (2026-11-10)*. `S`, `U`, `N` and `W` never leave P3.
 
 **Re-broadening at each case-table row** (TC-AE-022): with `S = {p}`, one upstream agent
 with term `U1`, and declaration `D`:
