@@ -95,6 +95,7 @@ The internal reason says which.
 | BR-FX-04 | `scope`'s organization, project, and environment are not all equal to this environment's (exact comparison; unknown fields in `scope` are not compared) | `scope_mismatch` | BR-FC-02; I1 |
 | BR-FX-05 | A `reBroadening` record names a `hop` not less than the chain's length, or two records name the same `hop` | `rebroadening_index` | D-AE-15; BR-ENV-03 |
 | BR-FX-06 | **A verified forwarded envelope gives no authority.** It contributes terms to the intersection (§8) and a chain prefix; the presenter still acts on its own credential | PF FR-002; BR-FC-06 | — |
+| BR-FX-07 | `inbound.envelope` holds a **lone surrogate** in any string, so it has no RFC 8785 (JCS) form. Checked when its JCS form is computed, so before the bound (BR-FX-01) and the seal (BR-FX-02). *Consistency fix from NFR Requirements (2026-11-10; NFR-AE-04)* | `jcs_invalid` | RFC 8785 §3.2 (I-JSON); NFR-AE-04 |
 
 ## 6. Chain Depth (BR-CD, step 8)
 
@@ -183,7 +184,7 @@ every row denies):
 |---|---|---|---|
 | 5 | Contract version | `malformed_request` (body not an object; header), `unsupported_contract_version` | `body_not_object`, `version_missing`, `version_not_accepted`, `version_header_mismatch` |
 | 6 | Draft schema; trace context | `stamped_field_set`, `unknown_field`, `malformed_request` | `stamped_field`, `unknown_field`, `schema`, `trace_context` |
-| 7 | Forwarded context | `invalid_inbound_context` | `inbound_too_large`, `seal_failed`, `envelope_version`, `scope_mismatch`, `rebroadening_index` |
+| 7 | Forwarded context | `invalid_inbound_context` | `jcs_invalid` (*consistency fix from NFR Requirements*), `inbound_too_large`, `seal_failed`, `envelope_version`, `scope_mismatch`, `rebroadening_index` |
 | 8 | Chain depth | `chain_too_deep` | `chain_depth` |
 | 9 | Origin, then authority | `forbidden`, `unavailable` | `o12_undeclared`, `origin_unsupported`, `presenter_unresolved`, `human_only_permission`, `upstream_unresolved`, `authority_denied`; `registration_read_failed`, `term_read_failed` |
 | 10 | The envelope to be stamped | `envelope_too_large` | `envelope_bound` |

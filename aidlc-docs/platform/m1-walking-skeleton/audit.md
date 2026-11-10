@@ -1582,3 +1582,77 @@ Then log the approval verbatim in audit.md, commit the Functional Design artifac
 **Context**: CONSTRUCTION, U3 authority-evaluation: Functional Design APPROVED; next stage NFR Requirements.
 
 ---
+
+## Forward Obligations Posted (authority-evaluation Functional Design)
+**Timestamp**: 2026-11-10T07:44:23Z
+**User Input**: (the approval above)
+**AI Response**: "Functional Design committed as 42248c6 on dev and pushed. business-rules.md §16 obligations posted, pinned to 42248c6: U4 https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6761896685 ; U5 https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6761897097 ; U6 https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6761897486 ; U7 (including the step-1 body-size floor) https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6761897846 ."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Functional Design obligations posted.
+
+---
+
+## NFR Requirements: Plan and Questions (authority-evaluation)
+**Timestamp**: 2026-11-10T09:45:56Z
+**User Input**: (none since the Functional Design approval)
+**AI Response**: "NFR Requirements plan written: construction/working/authority-evaluation-nfr-requirements-plan.md (git-ignored). Step 1.5 applies: PF §9 NFR Profile @ prd-platform-foundations-v1.3 carried forward (hot-path latency, cache-bounded availability as stated for revocation, throughput scaling with request volume, per-environment isolation); no control-face property added. Proposals P-NFR-01 to 07 (technology; recorded unless the user objects): validators compiled once at start-up; the security log as a port with a fixed structured event, no new dependency; Retry-After 1 on unavailable; no cross-request state; benchmarks through vitest bench; sealing key at least 256 bits, never logged or in source, delivered at U7's Infrastructure Design; constant-time seal comparison. Questions, all technology: Q1 the Ajv runtime regex engine, D-CG-05 (A V8 default with U1's pattern check and a worst-case test, recommended; B re2; C V8's experimental linear engine); Q2 JCS (A in-house, iterative, lone surrogates refused, recommended; B canonicalize); Q3 latency for steps 5 to 10 (A structural bounds gated and p99 <= 2 ms excluding reads reported at Build and Test, recommended; B gating threshold; C structural only); Q4 term reads (A one batched read per request, no cache in M1, recommended; B batched plus a cache bounded by the propagation bound; C one read per term); Q5 the seal primitive (A HMAC-SHA-256 via node:crypto, recommended; B Ed25519); Q6 key rotation (A a key ring, no automatic rotation, recommended; B one key); Q7 deep nesting in a forwarded envelope (A no contract rule, iterative implementation, recommended; B a published depth bound)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: plan created; Q1 to Q7 Awaiting Answer.
+
+---
+
+## NFR Requirements: Answers to Q1 to Q7 (authority-evaluation)
+**Timestamp**: 2026-11-10T14:38:56Z
+**User Input**: "Q1: A. The worst-case pattern test uses a generous fixed limit (around 100 ms), not a tight one. Catastrophic backtracking takes seconds, so this catches it without the flakiness Q3 cites.
+
+Q2: A. Compute each envelope's JCS form once and use it for both the size limit and the seal. Don't compute it twice.
+
+Q3: A.
+
+Q4: B, not A. M1-NFR-01 states for the data face: "Availability is bounded by the cache, not by the store". PF §9's rationale is that caching "decouples per-request authorization from store availability". Under A, a registration-store outage stops every publish and subscribe even while U6's revocation cache is still working. So:
+
+batched reads through GrantSource, plus an in-process cache of standing sets and Registration Views, behind the port (P-NFR-04);
+the cache's TTL is the same propagation bound M1-NFR-01 makes one number, not a second number;
+the cache is bounded in size;
+failed lookups are never cached.
+Record that no M1 operation changes a standing set or a declaration, so the cache can't serve stale data in M1. The unit that first adds such an operation must account for the staleness window. Carry that as a note to whichever unit adds it.
+
+Q5: A. Q6: A.
+
+Q7: A. The maximum-depth test starts from the raw body string, so JSON parsing is covered as well as the canonical JSON and the copy.
+
+P-NFR-01 to P-NFR-07: accepted.
+
+Log the answers verbatim in audit.md, classify each through prd-gap-classification.md, and generate the NFR Requirements artifacts."
+**AI Response**: "Answers recorded by question ID. Q1 A with a generous fixed limit (about 100 ms) for the worst-case pattern test. Q2 A; each envelope's JCS form computed once and used for both the bound and the seal. Q3 A. Q4 B as specified by the user: batched GrantSource reads plus a bounded in-process cache of agent standing sets and Registration Views behind the port; TTL = the one propagation bound of M1-NFR-01 (value set at the data face's NFR Requirements, U6), not a second number; failed lookups never cached; the staleness note carried to whichever unit first adds an operation changing a standing set or declaration. Q5 A. Q6 A. Q7 A, the maximum-depth test starting from the raw body string. P-NFR-01 to 07 accepted. Ambiguity check: none blocking. Two consequences decided and flagged in the artifacts: 'not found' is treated like a failed lookup and never cached (a registration created later is then seen at once); the cache covers agent principals only, so a human's grants (U4, which changes in M1 through grantToHuman) are never served from it."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: answers collected.
+
+---
+
+## NFR Requirements: Classification of Q1 to Q7 (authority-evaluation)
+**Timestamp**: 2026-11-10T14:38:56Z
+**User Input**: (the answers above)
+**AI Response**: "Classified through prd-gap-classification.md Step 1: all technology. PF §9 states classes (hot path; availability bounded by the cache; throughput by request volume; per-environment isolation) and no mechanism, number, or library, and every answer satisfies it. Q4's answer applies PF §9's availability class and M1-NFR-01 to U3's term reads; it adds no property from the other face. No specification gap. P-NFR-01 to 07: technology, accepted."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: classification.
+
+---
+
+## NFR Requirements: Artifacts Generated; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T14:40:41Z
+**User Input**: (none since the answers)
+**AI Response**: "Generated construction/authority-evaluation/nfr-requirements/: nfr-requirements.md (PF §9 profile carried forward; NFR-AE-01 to 23; obligations to U3 NFR Design, Code Generation, Build and Test, U4, U6, U7, and any unit adding a change operation) and tech-stack-decisions.md (T-AE-01 to 06; no new dependency; Ajv gains packages/envelope as a runtime workspace). Decisions flagged for review: not-found lookups are never cached (NFR-AE-12); the cache holds agent principals only, never human grants (NFR-AE-14); cache size 4096 entries per environment, LRU (NFR-AE-11); concurrent misses coalesced (NFR-AE-13); a lone surrogate in a forwarded envelope is invalid_inbound_context (NFR-AE-04). Standing note NFR-AE-16 recorded in aidlc-state.md. Security: 03 (except the centralized log service, N/A in M1 by the user's decision), 05, 08 to 13, 15 compliant; 14 N/A in M1 by the user's decision; 01, 02, 04, 06, 07 N/A. Invariants: no Missing. Presented the standard NFR Requirements completion message: Request Changes, or Continue to Next Stage (NFR Design)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: awaiting approval.
+
+---
+
+## NFR Requirements: APPROVED, after two edits (authority-evaluation)
+**Timestamp**: 2026-11-10T14:56:01Z
+**User Input**: "Continue to Next Stage, after two edits.
+
+NFR-AE-04, 11, 12, 13 and 14: accepted as written.
+
+NFR-AE-19: the maximum-depth test uses a fixed raw body of 1 MiB, as deeply nested as it can be within that size, not "the step-1 body bound". U7 hasn't set that bound yet. 1 MiB stays valid whatever U7 picks, as long as its limit is at most 1 MiB. Add to the #10 obligation that U7's edge test uses its actual limit.
+jcs_invalid: add it to step 7's internal reasons in Functional Design business-rules.md §10, and as a BR-FX row (a lone surrogate in inbound.envelope, checked when its JCS form is computed, before the seal). Record it as a consistency fix from NFR Requirements.
+Then log the approval verbatim in audit.md, commit the NFR Requirements artifacts on dev, post the new obligations on #7, #9 and #10, and start NFR Design."
+**AI Response**: "NFR-AE-19 now uses a fixed 1 MiB raw body, as deeply nested as fits, valid for any step-1 limit up to 1 MiB; the #10 obligation adds that U7's edge test uses S4's actual limit. Functional Design business-rules.md: BR-FX-07 added (a lone surrogate in inbound.envelope, jcs_invalid, checked when its JCS form is computed, before the bound and the seal) and jcs_invalid added to step 7's reasons in §10, both recorded as a consistency fix from NFR Requirements. NFR-AE-04, 11, 12, 13, 14 accepted as written. NFR Requirements approved. Committing on dev, posting the new obligations on soorma-core#7, #9, #10, then starting NFR Design."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Requirements APPROVED; next stage NFR Design. Infrastructure Design to be skipped (no deployable).
+
+---
