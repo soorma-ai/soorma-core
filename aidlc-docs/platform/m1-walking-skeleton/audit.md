@@ -1790,3 +1790,27 @@ Trace every L1 row and every TC-AE case to a plan step. TC-AE-040 is reported on
 **Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate APPROVED; Code Generation Part 1 (planning) started.
 
 ---
+
+## Code Generation Part 1: Plan Created; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T21:37:38Z
+**User Input**: (none; the plan follows the instruction logged at 2026-11-10T21:31:28Z)
+**AI Response**: "Loaded construction/code-generation.md. Wrote construction/working/authority-evaluation-code-generation-plan.md: 23 steps in seven commit groups, Group 1 committed alone. The six named obligations each have their own step: the U2 swap in NP-03's order (Step 1: byte vectors for the pseudonym input and the seed associated data, plus the seed-decryption fixture, passing on the current code and committed alone; Step 4: the swap, with stop condition 1 on any difference); the §13 contract changes with U1 amendment A6 (Step 8); Problem emission into P1 with ./testing (Steps 5, 6); sealKeys in P9's schema, U2's seed-key shape, through SecretReader.key(secret, true) (Step 11); packages/envelope on Ajv's register row (Step 15); the entry point createEnvelopeAdmission(dependencies).admit(request) (Step 18). Every applicable L1 row (38) and every TC-AE case (40) traced to a step; TC-AE-040 reported only, not a gate (Step 19). Found at planning: a third caller of referenceJson (P8's attempt slot), covered by the Step 1 vectors plus slot values (D-CG-AE-01); P9's KeyId pattern differs from NP-01's kid pattern, raised as Q-CG-AE-1 (recommendation A: reuse KeyId, U2's shape exactly). Decisions D-CG-AE-01 to 09. Approval prompt: the user is asked to answer Q-CG-AE-1 and approve the plan, or request changes."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation Part 1, plan awaiting approval.
+
+---
+
+## Code Generation Part 1: Q-CG-AE-1 Answered; Plan APPROVED with Two Amendments (authority-evaluation)
+**Timestamp**: 2026-11-10T21:53:41Z
+**User Input**: "Q-CG-AE-1: A. Keep KeyId, U2's shape exactly. The effective id rule, ^[a-z0-9][a-z0-9-]{0,15}$, goes in packages/envelope/README.md.
+
+Plan approved, with two amendments:
+
+Group 1's contents. Group 1 includes one change to U2's source: associatedData in seed-cipher.ts becomes a named export, for the test only. It is not added to the package index, and nothing else in src/ changes. Replace "and nothing else" in Step 1 with a list of exactly what Group 1 commits: the vectors, the fixture, the generator, the test, and that one export.
+Bookkeeping commit first. Commit the plan-approval bookkeeping (aidlc-state.md, audit.md) on its own, as a chore(aidlc) commit, before Group 1. Group 1 then holds only the guard.
+Record the answer in the plan's [Answer]: line. Log this verbatim in audit.md, with Q-CG-AE-1's answer keyed by its ID. Mark the plan Approved with both amendments, then start Part 2 at Step 1. Stop only on the plan's stop conditions, or at Step 23's completion message."
+**Answers by question ID**:
+- **Q-CG-AE-1** (Which pattern governs a seal key's id?): **A** — "Keep KeyId, U2's shape exactly. The effective id rule, ^[a-z0-9][a-z0-9-]{0,15}$, goes in packages/envelope/README.md." Classification: technology (prd-gap-classification.md; a detail between two approved designs, no PRD content)
+**AI Response**: "Answer recorded in the plan's [Answer]: line (Status: Answered (A)); applied at Steps 11 and 13. Amendment 1: Step 1 now names associatedData's named export (test only, not in the package index, nothing else in src/) and lists exactly what Group 1 commits: the vectors, the fixture, the generator, the test, and that one export. Amendment 2: Step 0 added; the plan-approval bookkeeping (aidlc-state.md, audit.md) is committed on its own as chore(aidlc) before Group 1. Plan marked Approved (Revision 2). Starting Part 2: Step 0, then Step 1. Stopping only on the plan's stop conditions or at Step 23's completion message."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation Part 1 APPROVED (with amendments 1 and 2); Part 2 started.
+
+---
