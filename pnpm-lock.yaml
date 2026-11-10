@@ -60,6 +60,25 @@ importers:
         specifier: workspace:*
         version: link:../org-identity
 
+  packages/authority:
+    dependencies:
+      '@soorma/envelope':
+        specifier: workspace:*
+        version: link:../envelope
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+    devDependencies:
+      '@soorma/jcs':
+        specifier: workspace:*
+        version: link:../jcs
+      '@soorma/perimeter':
+        specifier: workspace:*
+        version: link:../perimeter
+      '@soorma/policy-decision':
+        specifier: workspace:*
+        version: link:../policy-decision
+
   packages/config:
     dependencies:
       ajv:
@@ -68,6 +87,15 @@ importers:
       yaml:
         specifier: 2.9.1
         version: 2.9.1
+
+  packages/envelope:
+    dependencies:
+      '@soorma/contract':
+        specifier: workspace:*
+        version: link:../../contract
+      '@soorma/jcs':
+        specifier: workspace:*
+        version: link:../jcs
 
   packages/identity-resolution:
     dependencies:
@@ -78,6 +106,8 @@ importers:
         specifier: workspace:*
         version: link:../org-identity
 
+  packages/jcs: {}
+
   packages/org-identity:
     dependencies:
       '@nestjs/common':
@@ -86,6 +116,9 @@ importers:
       '@soorma/identity-resolution-seam':
         specifier: workspace:*
         version: link:../../seams/identity-resolution
+      '@soorma/jcs':
+        specifier: workspace:*
+        version: link:../jcs
       jose:
         specifier: 6.2.14
         version: 6.2.14
@@ -109,7 +142,15 @@ importers:
         specifier: workspace:*
         version: link:../org-identity
 
+  packages/policy-decision:
+    dependencies:
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+
   seams/identity-resolution: {}
+
+  seams/policy-decision: {}
 
   services/org-gateway:
     dependencies:

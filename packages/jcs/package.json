@@ -1,0 +1,20 @@
+{
+  "name": "@soorma/jcs",
+  "private": true,
+  "description": "RFC 8785 (JCS) canonical JSON, iterative; the repository's one implementation (U3 NP-03)",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}

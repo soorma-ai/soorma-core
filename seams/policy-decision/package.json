@@ -1,0 +1,20 @@
+{
+  "name": "@soorma/policy-decision-seam",
+  "private": true,
+  "description": "The policy-decision seam: type definitions only (PF \u00a712; BR-SEAM)",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}

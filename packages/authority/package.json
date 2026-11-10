@@ -1,0 +1,29 @@
+{
+  "name": "@soorma/authority",
+  "private": true,
+  "description": "P3: step 9 (origin, effective authority) and the envelope admission entry point",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/envelope": "workspace:*",
+    "@soorma/policy-decision-seam": "workspace:*"
+  },
+  "devDependencies": {
+    "@soorma/jcs": "workspace:*",
+    "@soorma/perimeter": "workspace:*",
+    "@soorma/policy-decision": "workspace:*"
+  }
+}

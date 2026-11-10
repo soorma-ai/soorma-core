@@ -8,6 +8,21 @@
       "path": "./seams/identity-resolution/tsconfig.build.json"
     },
     {
+      "path": "./packages/jcs/tsconfig.build.json"
+    },
+    {
+      "path": "./seams/policy-decision/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/policy-decision/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/envelope/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/authority/tsconfig.build.json"
+    },
+    {
       "path": "./packages/config/tsconfig.build.json"
     },
     {
