@@ -64,7 +64,31 @@
       "required": ["id", "firstAdmin"],
       "properties": {
         "id": { "$ref": "#/$defs/ConfiguredIdentifier" },
-        "firstAdmin": { "$ref": "#/$defs/HumanPrincipalIdentifier" }
+        "firstAdmin": { "$ref": "#/$defs/HumanPrincipalIdentifier" },
+        "sealKeys": { "$ref": "#/$defs/SealKeys" }
+      }
+    },
+    "SealKeys": {
+      "description": "The environment's envelope-seal key ring (U3 NFR Design NP-02), in the seed keys' shape: one current key id, and the keys by id, each naming its secret. A name is never derived from an id. Each secret is base64url text of exactly 256 bits, read only by the environment's own event transport (S4). Optional here: an environment without it cannot run S4, whose loader refuses it. Rotation is two-phase (packages/envelope/README.md).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current", "keys"],
+      "properties": {
+        "current": { "$ref": "#/$defs/KeyId" },
+        "keys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "secret"],
+            "properties": {
+              "id": { "$ref": "#/$defs/KeyId" },
+              "secret": { "$ref": "#/$defs/SecretName" }
+            }
+          }
+        }
       }
     },
     "Listener": {
