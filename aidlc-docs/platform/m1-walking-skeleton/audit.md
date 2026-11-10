@@ -1544,3 +1544,41 @@ Log the answers verbatim in audit.md, classify each through prd-gap-classificati
 **Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: classification (plan step 3).
 
 ---
+
+## Specification Gap Raised: GAP-AE-001 (authority-evaluation)
+**Timestamp**: 2026-11-10T06:42:05Z
+**User Input**: (Q1: A, recorded above)
+**AI Response**: "Routed under prd-gap-classification.md Step 3 option A. Checked first: open spec-gap issues on soorma-prd are #13, #24, #25, #27, #28; none covers the forwarded case (#25, GAP-INT-007, is the no-context first hop on the same §8b table, and is cross-referenced). Gap entry committed as eaabba8 on dev (construction/authority-evaluation/prd-gaps/specification-gaps.md, with audit and state) and pushed. Opened https://github.com/soorma-ai/soorma-prd/issues/30 with label spec-gap, titled 'Specification gap from build: origin for a forwarded autonomous envelope when the presenter has not declared autonomy (GAP-AE-001)'. The body cites PF @ prd-platform-foundations-v1.3 (verbatim since v1.0): O12, FR-015, §8b Origin stamping, §8b Declared autonomy against forwarded context (forwarded rows give delegated, contradicting FR-015's 'propagated unchanged' for an autonomous inbound envelope), §11 Forward inbound context, with §9 and §17. It contains the entry verbatim and permalinks pinned to eaabba8. Issue URL recorded in the gap entry and the register. Status Open; M1 builds deny (O12 as written)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: GAP-AE-001 raised (plan step 9).
+
+---
+
+## L1 Domain Coverage Gate: Functional Design Result (authority-evaluation)
+**Timestamp**: 2026-11-10T06:51:35Z
+**User Input**: (none)
+**AI Response**: "l1-coverage-matrix.md written: 38 applicable rows, all Covered (L1-07, L1-21, L1-25, L1-38 rest on the GAP-AE-001 work-around, Open, soorma-prd#30; L1-27 on the GAP-INT-007 work-around, Open, soorma-prd#25); 17 N/A with reasons; 0 Missing. The O12 case found at the gate's first pass is classified (specification, GAP-AE-001) and worked around, so no row is Missing. ID FR-013 and PF FR-016's human-only clause move from N/A to applicable (L1-28) because Q3 A puts the class's definition and a defence-in-depth check in P3. Inherited obligations (BR-ERR-08; D-CG-05; U1's BR-ENV, BR-DR, BR-FC rows naming U3) traced separately."
+**Context**: CONSTRUCTION, U3 authority-evaluation: L1 gate at Functional Design (covered 38 / non-applicable 17 / missing 0).
+
+---
+
+## Functional Design: Artifacts Generated; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T06:51:35Z
+**User Input**: (none since the answers)
+**AI Response**: "Generated construction/authority-evaluation/functional-design/: domain-entities.md, business-rules.md (D-AE-01 to 26; D-AE-18, 19, 23 flagged for review as not asked), business-logic-model.md, l1-coverage-matrix.md, invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; 0 Missing). U1 amendment A6 recorded in construction/wire-contract/functional-design/business-rules.md (BR-FC-04, BR-TC-05 reworded). Application Design correction notes added to components.md and component-methods.md (D-AE-02, 03, 04, 10). Security baseline: SECURITY-03, 05, 08, 09, 11, 13, 15 compliant; 10 compliant (no new dependency; JCS library chosen at NFR Requirements); 01, 02, 04, 06, 07, 12, 14 N/A (modules only: no storage, network, intermediary, web surface, or credential handling; alerting with U7's deployable). Next-stage assessment: NFR Requirements execute; NFR Design execute; Infrastructure Design skip (no deployable; sealing-material provisioning carried to U7). Presented the standard Functional Design completion message with two options: Request Changes, or Continue to Next Stage (NFR Requirements)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: awaiting approval.
+
+---
+
+## Functional Design: APPROVED, with one addition (authority-evaluation)
+**Timestamp**: 2026-11-10T07:43:41Z
+**User Input**: "Continue to Next Stage, after one addition.
+
+D-AE-18, D-AE-19 and D-AE-23: accepted as written.
+
+Before committing, add to §16, To U7 event-transport: S4's published body size limit (check-order step 1) must accept a draft that forwards an envelope at the full 16 KiB limit, so the contract's \"every envelope the platform stamps can be forwarded\" holds. Such a draft is the forwarded envelope (up to 16384 bytes in JCS form), plus the seal (up to 1024), the draft's traceContext (traceparent and tracestate, up to 512 each), clientContractVersion and the JSON wrapping. A client may also serialize less compactly than JCS. U7 sets the number at its NFR Requirements, with this as the floor, and a test sends a maximum-size forwarding draft through step 1. Post this with the other obligations on soorma-core#10.
+
+Then log the approval verbatim in audit.md, commit the Functional Design artifacts on dev, post the §16 obligations on #7 to #10, and start NFR Requirements."
+**AI Response**: "Added to business-rules.md §16, To U7: S4's step-1 body size limit must admit a draft forwarding an envelope at the full envelope bound (forwarded envelope up to 16384 JCS bytes, seal up to 1024, traceparent and tracestate up to 512 each, clientContractVersion, JSON wrapping, and non-JCS serialization); U7 sets the number at its NFR Requirements with this as the floor, and a test sends a maximum-size forwarding draft through step 1. D-AE-18, 19, 23 accepted as written. Functional Design approved. Committing on dev, posting the §16 obligations on soorma-core#7 to #10, then starting NFR Requirements."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Functional Design APPROVED; next stage NFR Requirements.
+
+---

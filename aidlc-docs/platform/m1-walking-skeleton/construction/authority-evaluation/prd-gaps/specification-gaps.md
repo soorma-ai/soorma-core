@@ -6,7 +6,7 @@ Gaps*. Intake-time gaps are in `inception/prd-intake/specification-gaps.md`.
 
 | ID | Status | Raised against | Resolved by | Issue |
 |---|---|---|---|---|
-| [GAP-AE-001](#gap-ae-001-origin-for-a-forwarded-autonomous-envelope-when-the-presenter-has-not-declared-autonomy) | **Open**; worked around in M1 (deny) | PF @ `prd-platform-foundations-v1.3` | — | (pending; opened after this entry is committed) |
+| [GAP-AE-001](#gap-ae-001-origin-for-a-forwarded-autonomous-envelope-when-the-presenter-has-not-declared-autonomy) | **Open**; worked around in M1 (deny) | PF @ `prd-platform-foundations-v1.3` | — | [soorma-prd#30](https://github.com/soorma-ai/soorma-prd/issues/30) (open) |
 
 ---
 
@@ -23,7 +23,7 @@ forwarded context*; PF §11 *Harness Surface*, row *Forward inbound context*. Al
 wording. All present verbatim since `prd-platform-foundations-v1.0`
 **Owner**: platform-foundations
 **Unit**: U3 (origin resolution); U7 (publish and subscribe at S4, which call U3)
-**Issue**: (pending; opened after this entry is committed)
+**Issue**: [soorma-prd#30](https://github.com/soorma-ai/soorma-prd/issues/30), opened 2026-11-10 with this entry verbatim, pinned to `eaabba8`
 **Resolved by**: —
 
 ### What the build needs
@@ -133,5 +133,5 @@ and US-09's journey is the same under either reading. It governs U3's origin res
 every publish or subscribe at S4 (U7) by an agent that has not declared autonomy and
 forwards an autonomous envelope.
 
-**Status**: `Open`. Raised against PF @ `prd-platform-foundations-v1.3`, and worked around in
+**Status**: `Open`. Raised as [soorma-prd#30](https://github.com/soorma-ai/soorma-prd/issues/30) against PF @ `prd-platform-foundations-v1.3`, and worked around in
 M1 (deny)

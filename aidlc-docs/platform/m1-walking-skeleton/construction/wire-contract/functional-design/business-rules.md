@@ -30,6 +30,16 @@ D-OI-26; within unreleased 0.1.0):
   where no bearer credential can succeed. BR-CR-02, BR-CR-06, and the `credential_refused`
   and `malformed_request` rows below are narrowed to match
 
+**Amendment from U3 `authority-evaluation`'s Functional Design** (2026-11-10, plan Q5, as
+corrected by the user; U3 D-AE-05; within unreleased 0.1.0; applied to the contract at U3's
+Code Generation):
+- **A6, the stamped `traceContext` carries forwarded unknown fields.** With a verified
+  `inbound`, the new envelope's `traceContext` is the forwarded `traceContext`'s fields other
+  than `traceparent` and `tracestate`, plus the draft's `traceparent`, plus the draft's
+  `tracestate` **only if the draft carries one**. A forwarded `tracestate` is never carried
+  when the draft omits one. So every unknown field anywhere in a forwarded envelope reaches
+  the stamped envelope (PF FR-005 a). BR-FC-04 and BR-TC-05 are reworded to match
+
 U1 states these rules **in the contract**: in the schemas, and in `contract/conventions/`.
 The perimeter rules (who rejects what, and when) are **implemented** by the surface and
 mechanism units named in each rule. U1's own verification is that the schemas and
@@ -142,7 +152,7 @@ specification gap, and none is raised. **How** it verifies is the technology dec
 | BR-FC-01 | Before a forwarded envelope is used, its seal is verified against the JCS form of `inbound.envelope`, with **this** environment's sealing material | D-WC-06; PF FR-002, §8b, §17; O10 | U3 |
 | BR-FC-02 | `inbound.envelope.scope` must equal this environment's scope | I1; PF FR-021 | U3 |
 | BR-FC-03 | A seal that fails, a seal from another environment, a scope mismatch, or an `envelopeVersion` other than `1` is rejected under O5 with **one** code, `invalid_inbound_context`. The response never says which | D-WC-06; I1; non-disclosure | U3 |
-| BR-FC-04 | With a verified `inbound`, the new envelope takes: `scope` = this environment; `originMode` and `delegatingPrincipal` **unchanged** from `inbound`; `actorChain` = `inbound`'s chain plus this hop; `reBroadening` = `inbound`'s records, plus this hop's when load-bearing; `traceContext` from the draft; and `inbound`'s unknown fields | PF FR-006, FR-015, §8b; O6, O7 | U3 `resolveOrigin`, `stamp` |
+| BR-FC-04 | With a verified `inbound`, the new envelope takes: `scope` = this environment; `originMode` and `delegatingPrincipal` **unchanged** from `inbound`; `actorChain` = `inbound`'s chain plus this hop; `reBroadening` = `inbound`'s records, plus this hop's when load-bearing; `traceContext` from the draft, **carrying `inbound`'s unknown trace-context fields** (*A6*); and `inbound`'s unknown fields | PF FR-006, FR-015, §8b; O6, O7 | U3 `resolveOrigin`, `stamp` |
 | BR-FC-05 | Without `inbound`, origin is `autonomous` if the presenter's registration declares autonomy, and the request is **denied** (`forbidden`) if not | O12; PF §8b | U3 |
 | BR-FC-06 | The seal is opaque to clients. A client forwards it unchanged and must not treat it as proof it can check | PF §17 | U1 conventions |
 
@@ -154,7 +164,7 @@ specification gap, and none is raised. **How** it verifies is the technology dec
 | BR-TC-02 | For version `00`, `traceparent` is exactly 55 characters. A higher version may carry further `-`-separated fields after the flags, as W3C allows | W3C forward compatibility |
 | BR-TC-03 | `tracestate` is optional: at most 512 characters, at most 32 list members, in W3C list-member syntax | W3C; SECURITY-05 |
 | BR-TC-04 | The platform validates form only. It never interprets the values, and emits no spans | PF §7b; T-3 |
-| BR-TC-05 | **Two definitions** (amendment A1), on BR-ID-11's principle: strict on what the platform accepts, tolerant of what it delivers. **In a draft**, `traceContext` is closed. **In an envelope**, it is open, like every other envelope object. W3C defines the `traceparent` and `tracestate` header strings, not this object, so the object is the contract's own and may gain optional fields compatibly (BR-VER-05). The stamped envelope takes `traceContext` from the draft (BR-FC-04), so in M1 it holds exactly what the draft's closed definition admits | PF FR-005 a; BR-VER-05; I7 |
+| BR-TC-05 | **Two definitions** (amendment A1), on BR-ID-11's principle: strict on what the platform accepts, tolerant of what it delivers. **In a draft**, `traceContext` is closed. **In an envelope**, it is open, like every other envelope object. W3C defines the `traceparent` and `tracestate` header strings, not this object, so the object is the contract's own and may gain optional fields compatibly (BR-VER-05). The stamped envelope takes `traceparent`, and `tracestate` if sent, from the draft (BR-FC-04). *A6*: with `inbound`, it also carries the forwarded `traceContext`'s unknown fields, never its `traceparent` or `tracestate`. In M1 no such field arises, because this perimeter writes none | PF FR-005 a; BR-VER-05; I7 |
 
 ## 6. Delivery Rules (BR-DL)
 
