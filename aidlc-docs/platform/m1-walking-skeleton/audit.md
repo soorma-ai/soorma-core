@@ -1719,3 +1719,31 @@ Then log the approval verbatim in audit.md, commit the NFR Design artifacts and 
 **Context**: CONSTRUCTION, U3 authority-evaluation: NFR Design APPROVED; Infrastructure Design SKIPPED; next: QA construction enrichment.
 
 ---
+
+## Forward Obligations Posted (authority-evaluation NFR Design)
+**Timestamp**: 2026-11-10T15:40:42Z
+**User Input**: (the approval above)
+**AI Response**: "NFR Design committed as 5a1947c on dev and pushed. Obligations posted, pinned to 5a1947c: U5 (fill the agent-facts port with one query; replaces the two ports posted at Functional Design) https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6771751434 ; U7 (seal keys in U2's seed-key shape via stack:init and SecretReader.key; construct the entry point once per S4 instance; two-phase rotation) https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6771752194 ; U4 (supply the human GrantSource, never cached by U3) https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6771750752 ."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Design obligations posted; starting the QA construction enrichment.
+
+---
+
+## QA Construction Enrichment: Generated (authority-evaluation)
+**Timestamp**: 2026-11-10T15:46:05Z
+**User Input**: (the NFR Design approval: "...start the QA construction enrichment.")
+**AI Response**: "Gates passed: qa-test-cases Enabled; both inception spec files present; no enrichment-delta.md (not yet enriched). Sources: construction/authority-evaluation/functional-design/ (required) and nfr-design/, as qa-test-cases.md §2.5 lists them; infrastructure-design/ absent (skipped). nfr-requirements/ was NOT read as a source: U1's and U2's enrichments read it by the user's instruction (F38), and none was given for this pass; NFR Design restates the rows its patterns meet, so only NFR-AE-07's reported p99 is not carried (it stays a Build and Test report). Updated in place: test-specs-narrative.md (Common Fixtures gains a construction-pass subsection; TC-AE-001 to 022 enriched, IDs and Construction-artifacts links unchanged) and test-case-index.md (39 rows). Added TC-AE-023 to 039 (GAP-AE-001 work-around; forwarded-context failures; delegated or unknown origin; human-only; A6 trace context; the bound at stamping; step 6 precedence; step 5; BR-ERR-08; the seal; the key ring; agent facts and the cache; L1 to L5; JCS and the U2 swap; depth and __proto__; worst-case patterns; the entry point's structure and log). Created enrichment-delta.md. Replaced every QA enrichment marker in l1-coverage-matrix.md and invariant-coverage-matrix.md with TC IDs. Presented for review; next is the Construction Design PR gate."
+**Context**: CONSTRUCTION, U3 authority-evaluation: QA construction enrichment generated; awaiting review.
+
+---
+
+## QA Construction Enrichment: Review Changes and APPROVAL; Construction Design PR Gate (authority-evaluation)
+**Timestamp**: 2026-11-10T16:07:33Z
+**User Input**: "Read nfr-requirements/ for this pass too, as U1 and U2 did (F38). Add a case for NFR-AE-07, the way U2's TC-OI-062 does it: the p99 of steps 5 to 10, excluding term reads, for a maximum-size forwarding draft with a 31-entry forwarded chain, measured with vitest bench, target ≤ 2 ms. It is reported at Build and Test, not a gate. Record any other change in enrichment-delta.md with its NFR-AE source.
+
+Retitle TC-AE-006 to "The policy-decision boundary decides containment, never composition" (PF §12's wording). The ID is unchanged, and its steps already cover grantedSet. Update the index row to match.
+
+Then the test specs are approved. Log this verbatim in audit.md and proceed to the Construction Design PR gate: commit on dev, open the design PR from dev to main with Refs #6, #3, and stop for its review."
+**AI Response**: "nfr-requirements/ read for this pass by the user's instruction (F38). Added TC-AE-040 (the p99 of steps 5 to 10, excluding term reads, maximum-size forwarding draft with a 31-entry forwarded chain, vitest bench, target <= 2 ms; reported at Build and Test, not a gate; Priority Low, as TC-OI-062). Other changes from NFR-AE rows, recorded in enrichment-delta.md: TC-AE-034 step 13 (no separate cache-lifetime setting, NFR-AE-10); TC-AE-039 steps 5 to 7 (validator compiled once, NFR-AE-03; two instances agree, NFR-AE-22; no new dependency, NFR-AE-23). TC-AE-006 retitled; ID unchanged; index row updated. L1-30's verification target now TC-AE-034 and TC-AE-040. Test specs APPROVED (40 cases). Construction Design PR gate: branch dev, PR to main (confirmed by this instruction); instructions written to construction/working/authority-evaluation-design-pr-checkpoint-instructions.md; gate state PENDING; committing on dev and opening the PR with Refs #6, #3; stopping for its review."
+**Context**: CONSTRUCTION, U3 authority-evaluation: QA construction enrichment APPROVED; Construction Design PR gate PENDING.
+
+---
