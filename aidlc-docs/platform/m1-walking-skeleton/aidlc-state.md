@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U3 `authority-evaluation` (soorma-core#6): Construction Design PR gate PENDING** (Functional Design, NFR Requirements, NFR Design approved 2026-11-10; Infrastructure Design skipped; GAP-AE-001 raised as soorma-prd#30). U1 and U2 complete (U2: soorma-core#14 merged as `e61c620`; `dev` equals `main` at session start). Stage history is under *Stage Progress*
+- **Current Stage**: CONSTRUCTION. **U3 `authority-evaluation` (soorma-core#6): Code Generation Part 1 (planning)** (Construction Design PR gate APPROVED 2026-11-10, #16 merged as `fbb567c`; Functional Design, NFR Requirements, NFR Design approved 2026-11-10; Infrastructure Design skipped; GAP-AE-001 raised as soorma-prd#30). U1 and U2 complete (U2: soorma-core#14 merged as `e61c620`; `dev` equals `main` at session start). Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -98,13 +98,13 @@
 - **Approved**: 2026-11-08T22:27:46Z (user confirmed; #13 merged to `main` at 2026-11-08T22:26:42Z, merge commit `27619c4`)
 
 ### Construction Design PR Gate — authority-evaluation
-- **Status**: PENDING
+- **Status**: APPROVED
 - **PR**: **soorma-core#16** (`dev` → `main`), opened 2026-11-10 at the user's request
 - **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-10)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/authority-evaluation-design-pr-checkpoint-instructions.md
 - **Created**: 2026-11-10T16:07:33Z
 - **Changes requested**: 2026-11-10T20:19:53Z, one fix: the entry point named `createEnvelopeAdmission(dependencies).admit(request)` throughout (formerly `admitEnvelopeRequest` in Functional Design and `component-methods.md`); pushed to #16
-- **Approved**: —
+- **Approved**: 2026-11-10T21:31:28Z (the user confirmed; #16 merged 2026-11-10T21:30:40Z as fbb567c)
 
 ## PRD Specification Gaps
 
@@ -197,7 +197,8 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] NFR Design: **APPROVED** 2026-11-10T15:40:14Z (presented 2026-11-10T15:30:09Z). Q1 to Q4 answered 2026-11-10, all A (Q3 with the user's byte-vector and seed-decryption condition on the U2 swap); P-ND-01 to 06, 08 accepted; P-ND-07 replaced by the user's agent-facts design (one port, one batched all-or-nothing read at the start of step 9, one caching decorator, humans bypass). Artifacts: nfr-design-patterns (NP-01 to 08), logical-components (new `packages/jcs`). Consistency fixes in Functional Design and NFR Requirements, marked in place. At approval: NP-02 matched to U2 exactly (sealKeys { current, keys: [{ id, secret }] }, base64url 256-bit secrets via SecretReader.key); NP-04 TTL from read issue; NP-07 own-data-property copy with a __proto__ test. Obligations posted on #7, #8, #10
   - [x] Infrastructure Design: **SKIPPED** 2026-11-10T15:40:14Z (no deployable; key ring and propagation bound delivered at U7's Infrastructure Design)
   - [x] QA construction enrichment: **APPROVED** 2026-11-10T16:07:33Z (generated 2026-11-10T15:46:05Z) (`inception/test-cases/authority-evaluation/`: 40 cases; TC-AE-001 to 022 enriched in place, TC-AE-023 to 040 added; `enrichment-delta.md`; every QA enrichment marker in the L1 and invariant matrices replaced by TC IDs). Sources: functional-design/, nfr-requirements/ (by the user's instruction at the review, F38, as for U1 and U2), nfr-design/. At the review: TC-AE-040 added (NFR-AE-07 p99, reported, modelled on TC-OI-062); TC-AE-034, 039 gained NFR-AE-03, 10, 22, 23 steps; TC-AE-006 retitled "decides containment, never composition"
-  - [ ] Construction Design PR gate: **PENDING**, soorma-core#16 open; 2026-11-10T16:07:33Z (branch `dev`, PR to `main`)
+  - [x] Construction Design PR gate: **APPROVED** 2026-11-10T21:31:28Z (opened 2026-11-10T16:07:33Z as soorma-core#16, `dev` → `main`; one change requested 2026-11-10T20:19:53Z, the entry point named `createEnvelopeAdmission(dependencies).admit(request)` throughout, fixed in `1a44021`; merged 2026-11-10T21:30:40Z as `fbb567c`)
+  - [ ] Code Generation: Part 1 (planning) started 2026-11-10T21:31:28Z
   - **Standing note (NFR-AE-16)**: no M1 operation changes a standing set, re-broadening declaration, or autonomy declared, or suspends or retires an agent, so U3's term cache cannot serve stale data in M1. **The unit that first adds such an operation must account for the cache's staleness window** (up to the propagation bound)
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2. Remaining: U3 to U7
 - [ ] Build and Test: EXECUTE

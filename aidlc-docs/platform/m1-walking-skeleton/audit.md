@@ -1770,3 +1770,23 @@ Commit on dev and push, so #16 picks it up. Log this request verbatim in audit.m
 **Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate, changes requested (one naming consistency fix). Gate PENDING.
 
 ---
+
+## Construction Design PR Gate: APPROVED (authority-evaluation); Code Generation Part 1 started
+**Timestamp**: 2026-11-10T21:31:28Z
+**User Input**: "Confirm PR Approved. I merged #16.
+
+Log this verbatim in audit.md and set the gate to APPROVED with a real timestamp. Bring dev up to date with main, commit the gate record on dev, and push.
+
+Then start Code Generation for authority-evaluation: load construction/code-generation.md and write the Part 1 plan. The plan must carry these obligations from design, each as its own step:
+
+U2's canonicalJson swap, in NP-03's order. First commit the literal-byte vectors for the pseudonym input and the seed associated data, plus the seed-decryption fixture, and make them pass on the current code. Swap only after that. Stop on any difference.
+The §13 contract changes, including U1 amendment A6.
+Problem emission moves into P1, with the ./testing export.
+sealKeys goes into P9's schema, in U2's seed-key shape, loaded through SecretReader.key(secret, true).
+packages/envelope goes on Ajv's row in the dependency register.
+The entry point is createEnvelopeAdmission(dependencies).admit(request).
+Trace every L1 row and every TC-AE case to a plan step. TC-AE-040 is reported only, not a gate. Then stop for my approval of the plan."
+**AI Response**: "PR soorma-core#16 confirmed merged (2026-11-10T21:30:40Z, merge commit fbb567c). Construction Design PR gate set to APPROVED at 2026-11-10T21:31:28Z. dev fast-forwarded to origin/main; gate record committed on dev and pushed. Starting U3 Code Generation Part 1: loading construction/code-generation.md and writing the plan with the six named obligations as separate steps, L1 rows and TC-AE-001 to 040 traced to steps (TC-AE-040 reported, not a gate). Stopping for plan approval."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate APPROVED; Code Generation Part 1 (planning) started.
+
+---
