@@ -1462,3 +1462,311 @@ Amend the Secrets row of shared-infrastructure.md, Infrastructure Design §3, an
 **Context**: CONSTRUCTION, U2 org-identity, Code Generation: changes applied; the stack job passes on Linux; awaiting approval.
 
 ---
+
+## Code Generation: APPROVED; U2 org-identity Complete; Next Unit Set (org-identity → authority-evaluation)
+**Timestamp**: 2026-11-09T13:24:27Z
+**User Input**: "Continue to Next Stage. U2's Code Generation is approved, and soorma-core#14 is merged. Log the approval in audit.md and mark U2 org-identity complete in aidlc-state.md. Merge origin/main back into dev and push. Set the state file so the next unit, U3 authority-evaluation (soorma-core#6), starts cleanly in a new session. That includes the forward obligations it inherits: BR-ERR-08 from U1, and GAP-INT-004's and GAP-INT-007's status. Then stop. U3 runs in its own session."
+**AI Response**: "Code Generation for U2 org-identity APPROVED by the user. soorma-core#14 confirmed merged (2026-11-09T13:22:33Z, merge commit e61c620). origin/main merged into dev (a fast-forward to e61c620; dev equals main) and pushed. aidlc-state.md: U2 marked COMPLETE; the current stage set to U3 authority-evaluation (#6), not started, to begin in a new session; a session stop point recording what U3 inherits: BR-ERR-08 from U1 (recorded on #6, issuecomment-6717621632), U1's D-CG-05 (the runtime regex engine for Ajv, for U3's NFR Requirements), GAP-INT-004 (Resolved — PRD amended at PF v1.3; the work-around comes out: U3 builds FR-017's evaluation rule as stated), GAP-INT-007 (Open, soorma-prd#25 open as of 2026-11-09T13:24:27Z; M1 keeps the reject-and-stamp work-around), the two contract behaviours written down at U2 (a missing Soorma-Contract-Version at check-order step 5; an unknown path a bare 404), and shared-infrastructure.md as amended (one secrets volume and init container per level; Docker Engine 26 and Compose 2.26.0). Build and Test's carried items from U2 recorded. soorma-core#5 is not closed by this step: the user did not ask for it. Session stopped; U3 runs in its own session."
+**Context**: CONSTRUCTION, U2 org-identity COMPLETE; next unit U3 authority-evaluation (#6), in a new session.
+
+---
+
+## soorma-core#5 Closed (org-identity)
+**Timestamp**: 2026-11-09T13:45:06Z
+**User Input**: "Close soorma-core#5 the way #4 was closed: a comment saying U2 org-identity is complete and its code merged in #14 (e61c620), after CI passed, including the stack smoke test on Linux. List what was built, then the verification: TC-OI-001 to 061 automated and passing in CI. TC-OI-059 and 062, the latency and timing measurements, run at Build and Test after U7, together with the Argon2id timing risk. Point to the code summary. Then close it as completed, and stop the test database with pnpm db:test:stop."
+**AI Response**: "Commented on soorma-core#5 (issuecomment-6741579291) in #4's format: complete, merged in #14 (e61c620) after CI passed, including the stack smoke test on Linux; what was built; the verification (TC-OI-001 to 061 automated and passing in CI, except TC-OI-059, which is the latency measurement and runs at Build and Test with TC-OI-062 and the Argon2id timing risk); the code summary. Closed #5 as completed. Stopped the test database (pnpm db:test:stop: soorma-db-test removed)."
+**Context**: CONSTRUCTION, U2 org-identity COMPLETE; #5 closed.
+
+---
+
+## Session Resumption: Start Construction for U3 (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"authority-evaluation\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Session resumed from aidlc-state.md: CONSTRUCTION; U1 and U2 complete; next unit U3 authority-evaluation (soorma-core#6). The user's intent names the next step, so the welcome-back choice is taken as A (continue). Branch dev, clean, equal to origin/dev (d169198). Re-intake check (session-continuity.md step 3), against soorma-prd fetched from origin: (1) legacy format: no, one ### PRD: subsection per PRD; (2) brief pin: recorded, 0aad84a; (3) brief changed: no, backlog/m1-walking-skeleton.md has no diff between 0aad84a and origin/main; (4) gap answered: no, soorma-prd#13, #24, #25, #27, #28 all OPEN. No new tag: the newest are prd-platform-foundations-v1.3 and prd-identity-v1.0, the recorded ones. No re-intake. No PENDING entry under PR Checkpoint State. Inception artifacts loaded: requirements, stories, application design (components, component-methods, services, component-dependency, unit-of-work, story map, dependencies), coverage map and gap register, U3's inception test specs (TC-AE-001 to 022); U1's Functional Design (domain entities, business rules, including the amendments A1 to A4) and the contract conventions (envelope, versioning, errors); U2's Problem emission (services/org-gateway/src/problems.ts). PF read at prd-platform-foundations-v1.3: §3, §5 (FR-001 to FR-027), §7, §8, §9, §11, §12, §15, §17."
+**Context**: CONSTRUCTION, session start for U3 authority-evaluation; re-intake check: not needed.
+
+---
+
+## Construction Phase Initialization (re-run on resume) and Unit Initialization (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: (none; required on resume by session-continuity.md step 4, and at the start of every unit)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline (security-baseline.md), soorma Platform Invariants (soorma-platform-invariants.md), PR Checkpoint (pr-checkpoint.md), QA Test Cases (qa-test-cases.md), JIRA Tickets (jira-tickets.md; adapted: GitHub issues)]. prd-gap-classification.md loaded and active for every construction stage (## PRD Intake exists). Invariant text checked: references/platform/invariants.md is identical at prd-platform-foundations-v1.3 and prd-identity-v1.0. Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted)] (unit: authority-evaluation)."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Phase Initialization and Unit Initialization.
+
+---
+
+## L1 Domain Coverage Gate: Initial Assessment (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: (none)
+**AI Response**: "L1 sources (PF @ prd-platform-foundations-v1.3, ID @ prd-identity-v1.0) assessed for U3. Applicable: PF FR-001, 002, 005, 006, 014, 015, 017, 018, 019 (L1 to L5, satisfied by core's baseline model), 021 and 022 (scope from the presented credential, keyed on environment), 026 (the policy-decision half); PF §7a (the registration attributes U3 reads: standing set, re-broadening declaration, autonomy declared; the Permission Grant minimal model); PF §7b (envelope fields and the stamped/asserted partition; the obligations rows on preserving unknown fields, propagating origin, appending the chain, maxChainDepth; Recoverability at zero hops); PF §8a (publish and subscribe: required authority and the autonomous-origin column); PF §8b (intersection; the origin stamping table; declared autonomy against forwarded context; re-broadening rule and case table; O5 to O9 and O12; L1 to L5; Core Baseline); PF §9 failure modes (chain depth, malformed or stamped field, asserted autonomous, no context undeclared); PF §11 (what the SDK may not populate; forward inbound context; effective-authority evaluation internal); PF §12 (the policy-decision seam; seam containment); PF §17 (the envelope is not proof; policy grammar). Non-applicable to U3: PF FR-003, 004 (U1); FR-007, 008, 013, 016 (U5); FR-009 to 012, 027 (U6); FR-020 (the entry points: U6, U7); FR-023, 024 (out); FR-025 (U4, U7); PF §9 operations and NFR profile (U6); PF §10 (control face); ID §7a, §8a, §8b, FR-022 (U4's evaluateHuman); ID FR-013 (the human-only class, U5); ID FR-019 to 021 (absent in M1). 0 Missing. One case found while reading, to be classified at Functional Design before any row is closed: O12's text ('Autonomous origin is denied unless the presenting credential's registration declares autonomy') against FR-015, the §8b origin table, and §11, which apply it only where no context is forwarded. They differ for an agent that has not declared autonomy and forwards an autonomous inbound envelope."
+**Context**: CONSTRUCTION, U3 authority-evaluation: L1 gate initial assessment (covered / non-applicable / missing: 0 missing; one case to classify).
+
+---
+
+## Functional Design: Plan and Questions (authority-evaluation)
+**Timestamp**: 2026-11-09T13:57:36Z
+**User Input**: (none since the session's opening request)
+**AI Response**: "Functional Design plan written: construction/working/authority-evaluation-functional-design-plan.md (git-ignored). It sets out what U3 designs (P2 envelope, P3 authority, P11 policy-decision, seams/policy-decision), the proposed inputs, the evaluation (without re-broadening: S ∩ P ∩ U1..Un; with: S ∩ P ∩ ((U1..Un) ∪ D); load-bearing when allowed only with it), and the stamped envelope field by field. Proposals P-01 to P-11 (technology; recorded unless the user objects): P-01 a verified inbound origin other than autonomous is forbidden; P-02 scope from the verified credential's claims, never configuration (forward obligation to U6); P-03 an unresolvable upstream agent is the empty set, and a store failure is unavailable; P-04 required authority as a set; P-05 typed refusals with internal reasons for the security log only; P-06 version on a draft call (missing clientContractVersion is unsupported_contract_version; a differing Soorma-Contract-Version header is malformed_request naming the header; a conventions clarification); P-07 a forwarded chain of 32 is chain_too_deep, at step 8; P-08 unknown fields preserved at every level U3 does not replace; P-09 invalid reBroadening indexes are invalid_inbound_context; P-10 L1 to L5 by table-driven tests, no new dependency; P-11 trace context validated as the conventions state. Questions: Q1, a non-declaring agent forwarding an autonomous envelope, classified as specification (prd-gap-classification.md Step 1: O12's text denies it; FR-015, the §8b origin table and §11 apply O12 only with no forwarded context; the §8b declared-autonomy table does not cover a forwarded autonomous chain; proposed GAP-AE-001; options per Step 3: A raise and work around by denying (recommended), B resolve here: allow, C resolve here: deny). Q2 to Q6 classified technology: Q2 the policy-decision seam's contents (A both halves of PF §12, recommended; B containment only, as Application Design), with the upstream agent term recorded as its standing set; Q3 human-only permissions also refused at evaluation (A, recommended); Q4 one entry point for steps 5 to 10 (A, recommended) or separate steps; Q5 unknown fields in the forwarded traceContext (A carry them, U1 amendment A5, recommended; B keep U1's rule); Q6 BR-ERR-08 (A move Problem emission into P1 with a shared test assertion for U6 and U7, recommended; B carry the tests to U6 and U7)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: plan created; Q1 to Q6 Awaiting Answer.
+
+---
+
+## Functional Design: Answers to Q1 to Q6 (authority-evaluation)
+**Timestamp**: 2026-11-10T06:40:00Z
+**User Input**: "Q1: A. Raise GAP-AE-001 on soorma-prd with the spec-gap label, citing PF @ prd-platform-foundations-v1.3: O12, FR-015, §8b and §11. Also cite §8b's "Declared autonomy against forwarded context" table, which gives delegated on every forwarded row and so contradicts FR-015's "propagated unchanged" for an autonomous inbound envelope. Cross-reference soorma-prd#25 (GAP-INT-007), which touches the same origin table. Build the deny reading meanwhile.
+
+Q2: A. Q3: A. Q4: A. Q6: A.
+
+Q5: A, with two corrections. It is U1 amendment A6, because A5 is U2's reason amendment. And the known fields come only from the draft: the new traceContext is the forwarded envelope's unknown fields plus the draft's traceparent, and its tracestate if present. A forwarded tracestate is never carried when the draft omits one.
+
+P-01 to P-11: accepted as written.
+
+Log the answers verbatim in audit.md, classify each through prd-gap-classification.md, open the soorma-prd issue for GAP-AE-001, and generate the Functional Design artifacts."
+**AI Response**: "Answers recorded by question ID. Q1 (GAP-AE-001): A, specification; routing A (raise against soorma-prd) with the deny reading built meanwhile (work-around, status Open). Q2: A, both halves of the PF §12 policy-decision seam (grantedSet and contains); composition stays in core. Q3: A, P3 also denies human-only permissions to an agent; one definition exported by packages/authority. Q4: A, one entry point for check-order steps 5 to 10. Q5: A as corrected: U1 amendment A6 (not A5, which is U2's reason amendment); the new traceContext is the forwarded envelope's traceContext unknown fields, plus the draft's traceparent, plus the draft's tracestate only if the draft carries one; a forwarded tracestate is never carried. Q6: A, Problem emission moves into P1 with a shared test assertion for U6 and U7. P-01 to P-11 accepted as written, recorded as decisions. Ambiguity check: none; Q5's correction is unambiguous and is applied as stated."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: answers collected (plan step 2).
+
+---
+
+## Functional Design: Classification of Q1 to Q6 and P-01 to P-11 (authority-evaluation)
+**Timestamp**: 2026-11-10T06:40:00Z
+**User Input**: (the answers above)
+**AI Response**: "Classified through prd-gap-classification.md Step 1. Q1: specification (an authority rule with an unspecified case; two PRD sections that cannot both be satisfied; the user adds the §8b 'Declared autonomy against forwarded context' table, whose forwarded rows give delegated and so contradict FR-015's 'propagated unchanged' for an autonomous inbound envelope). Routed under Step 3 option A (raise) with option D's work-around (build deny); status Open. Q2 to Q6: technology, each answer satisfies PF @ prd-platform-foundations-v1.3 (Q2 is the seam's internal structure within PF §12's stated interface; Q3 is defence in depth with no outcome change while U5's check holds; Q4 is internal module structure; Q5 is the reading of FR-005 (a) already within U1's open envelope traceContext, a contract-wording amendment within unreleased 0.1.0, and the user's correction fixes the known fields to the draft's; Q6 is code organisation and test structure). P-01 to P-11: technology, as proposed; none reclassified."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: classification (plan step 3).
+
+---
+
+## Specification Gap Raised: GAP-AE-001 (authority-evaluation)
+**Timestamp**: 2026-11-10T06:42:05Z
+**User Input**: (Q1: A, recorded above)
+**AI Response**: "Routed under prd-gap-classification.md Step 3 option A. Checked first: open spec-gap issues on soorma-prd are #13, #24, #25, #27, #28; none covers the forwarded case (#25, GAP-INT-007, is the no-context first hop on the same §8b table, and is cross-referenced). Gap entry committed as eaabba8 on dev (construction/authority-evaluation/prd-gaps/specification-gaps.md, with audit and state) and pushed. Opened https://github.com/soorma-ai/soorma-prd/issues/30 with label spec-gap, titled 'Specification gap from build: origin for a forwarded autonomous envelope when the presenter has not declared autonomy (GAP-AE-001)'. The body cites PF @ prd-platform-foundations-v1.3 (verbatim since v1.0): O12, FR-015, §8b Origin stamping, §8b Declared autonomy against forwarded context (forwarded rows give delegated, contradicting FR-015's 'propagated unchanged' for an autonomous inbound envelope), §11 Forward inbound context, with §9 and §17. It contains the entry verbatim and permalinks pinned to eaabba8. Issue URL recorded in the gap entry and the register. Status Open; M1 builds deny (O12 as written)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: GAP-AE-001 raised (plan step 9).
+
+---
+
+## L1 Domain Coverage Gate: Functional Design Result (authority-evaluation)
+**Timestamp**: 2026-11-10T06:51:35Z
+**User Input**: (none)
+**AI Response**: "l1-coverage-matrix.md written: 38 applicable rows, all Covered (L1-07, L1-21, L1-25, L1-38 rest on the GAP-AE-001 work-around, Open, soorma-prd#30; L1-27 on the GAP-INT-007 work-around, Open, soorma-prd#25); 17 N/A with reasons; 0 Missing. The O12 case found at the gate's first pass is classified (specification, GAP-AE-001) and worked around, so no row is Missing. ID FR-013 and PF FR-016's human-only clause move from N/A to applicable (L1-28) because Q3 A puts the class's definition and a defence-in-depth check in P3. Inherited obligations (BR-ERR-08; D-CG-05; U1's BR-ENV, BR-DR, BR-FC rows naming U3) traced separately."
+**Context**: CONSTRUCTION, U3 authority-evaluation: L1 gate at Functional Design (covered 38 / non-applicable 17 / missing 0).
+
+---
+
+## Functional Design: Artifacts Generated; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T06:51:35Z
+**User Input**: (none since the answers)
+**AI Response**: "Generated construction/authority-evaluation/functional-design/: domain-entities.md, business-rules.md (D-AE-01 to 26; D-AE-18, 19, 23 flagged for review as not asked), business-logic-model.md, l1-coverage-matrix.md, invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; 0 Missing). U1 amendment A6 recorded in construction/wire-contract/functional-design/business-rules.md (BR-FC-04, BR-TC-05 reworded). Application Design correction notes added to components.md and component-methods.md (D-AE-02, 03, 04, 10). Security baseline: SECURITY-03, 05, 08, 09, 11, 13, 15 compliant; 10 compliant (no new dependency; JCS library chosen at NFR Requirements); 01, 02, 04, 06, 07, 12, 14 N/A (modules only: no storage, network, intermediary, web surface, or credential handling; alerting with U7's deployable). Next-stage assessment: NFR Requirements execute; NFR Design execute; Infrastructure Design skip (no deployable; sealing-material provisioning carried to U7). Presented the standard Functional Design completion message with two options: Request Changes, or Continue to Next Stage (NFR Requirements)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, Functional Design: awaiting approval.
+
+---
+
+## Functional Design: APPROVED, with one addition (authority-evaluation)
+**Timestamp**: 2026-11-10T07:43:41Z
+**User Input**: "Continue to Next Stage, after one addition.
+
+D-AE-18, D-AE-19 and D-AE-23: accepted as written.
+
+Before committing, add to §16, To U7 event-transport: S4's published body size limit (check-order step 1) must accept a draft that forwards an envelope at the full 16 KiB limit, so the contract's \"every envelope the platform stamps can be forwarded\" holds. Such a draft is the forwarded envelope (up to 16384 bytes in JCS form), plus the seal (up to 1024), the draft's traceContext (traceparent and tracestate, up to 512 each), clientContractVersion and the JSON wrapping. A client may also serialize less compactly than JCS. U7 sets the number at its NFR Requirements, with this as the floor, and a test sends a maximum-size forwarding draft through step 1. Post this with the other obligations on soorma-core#10.
+
+Then log the approval verbatim in audit.md, commit the Functional Design artifacts on dev, post the §16 obligations on #7 to #10, and start NFR Requirements."
+**AI Response**: "Added to business-rules.md §16, To U7: S4's step-1 body size limit must admit a draft forwarding an envelope at the full envelope bound (forwarded envelope up to 16384 JCS bytes, seal up to 1024, traceparent and tracestate up to 512 each, clientContractVersion, JSON wrapping, and non-JCS serialization); U7 sets the number at its NFR Requirements with this as the floor, and a test sends a maximum-size forwarding draft through step 1. D-AE-18, 19, 23 accepted as written. Functional Design approved. Committing on dev, posting the §16 obligations on soorma-core#7 to #10, then starting NFR Requirements."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Functional Design APPROVED; next stage NFR Requirements.
+
+---
+
+## Forward Obligations Posted (authority-evaluation Functional Design)
+**Timestamp**: 2026-11-10T07:44:23Z
+**User Input**: (the approval above)
+**AI Response**: "Functional Design committed as 42248c6 on dev and pushed. business-rules.md §16 obligations posted, pinned to 42248c6: U4 https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6761896685 ; U5 https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6761897097 ; U6 https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6761897486 ; U7 (including the step-1 body-size floor) https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6761897846 ."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Functional Design obligations posted.
+
+---
+
+## NFR Requirements: Plan and Questions (authority-evaluation)
+**Timestamp**: 2026-11-10T09:45:56Z
+**User Input**: (none since the Functional Design approval)
+**AI Response**: "NFR Requirements plan written: construction/working/authority-evaluation-nfr-requirements-plan.md (git-ignored). Step 1.5 applies: PF §9 NFR Profile @ prd-platform-foundations-v1.3 carried forward (hot-path latency, cache-bounded availability as stated for revocation, throughput scaling with request volume, per-environment isolation); no control-face property added. Proposals P-NFR-01 to 07 (technology; recorded unless the user objects): validators compiled once at start-up; the security log as a port with a fixed structured event, no new dependency; Retry-After 1 on unavailable; no cross-request state; benchmarks through vitest bench; sealing key at least 256 bits, never logged or in source, delivered at U7's Infrastructure Design; constant-time seal comparison. Questions, all technology: Q1 the Ajv runtime regex engine, D-CG-05 (A V8 default with U1's pattern check and a worst-case test, recommended; B re2; C V8's experimental linear engine); Q2 JCS (A in-house, iterative, lone surrogates refused, recommended; B canonicalize); Q3 latency for steps 5 to 10 (A structural bounds gated and p99 <= 2 ms excluding reads reported at Build and Test, recommended; B gating threshold; C structural only); Q4 term reads (A one batched read per request, no cache in M1, recommended; B batched plus a cache bounded by the propagation bound; C one read per term); Q5 the seal primitive (A HMAC-SHA-256 via node:crypto, recommended; B Ed25519); Q6 key rotation (A a key ring, no automatic rotation, recommended; B one key); Q7 deep nesting in a forwarded envelope (A no contract rule, iterative implementation, recommended; B a published depth bound)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: plan created; Q1 to Q7 Awaiting Answer.
+
+---
+
+## NFR Requirements: Answers to Q1 to Q7 (authority-evaluation)
+**Timestamp**: 2026-11-10T14:38:56Z
+**User Input**: "Q1: A. The worst-case pattern test uses a generous fixed limit (around 100 ms), not a tight one. Catastrophic backtracking takes seconds, so this catches it without the flakiness Q3 cites.
+
+Q2: A. Compute each envelope's JCS form once and use it for both the size limit and the seal. Don't compute it twice.
+
+Q3: A.
+
+Q4: B, not A. M1-NFR-01 states for the data face: "Availability is bounded by the cache, not by the store". PF §9's rationale is that caching "decouples per-request authorization from store availability". Under A, a registration-store outage stops every publish and subscribe even while U6's revocation cache is still working. So:
+
+batched reads through GrantSource, plus an in-process cache of standing sets and Registration Views, behind the port (P-NFR-04);
+the cache's TTL is the same propagation bound M1-NFR-01 makes one number, not a second number;
+the cache is bounded in size;
+failed lookups are never cached.
+Record that no M1 operation changes a standing set or a declaration, so the cache can't serve stale data in M1. The unit that first adds such an operation must account for the staleness window. Carry that as a note to whichever unit adds it.
+
+Q5: A. Q6: A.
+
+Q7: A. The maximum-depth test starts from the raw body string, so JSON parsing is covered as well as the canonical JSON and the copy.
+
+P-NFR-01 to P-NFR-07: accepted.
+
+Log the answers verbatim in audit.md, classify each through prd-gap-classification.md, and generate the NFR Requirements artifacts."
+**AI Response**: "Answers recorded by question ID. Q1 A with a generous fixed limit (about 100 ms) for the worst-case pattern test. Q2 A; each envelope's JCS form computed once and used for both the bound and the seal. Q3 A. Q4 B as specified by the user: batched GrantSource reads plus a bounded in-process cache of agent standing sets and Registration Views behind the port; TTL = the one propagation bound of M1-NFR-01 (value set at the data face's NFR Requirements, U6), not a second number; failed lookups never cached; the staleness note carried to whichever unit first adds an operation changing a standing set or declaration. Q5 A. Q6 A. Q7 A, the maximum-depth test starting from the raw body string. P-NFR-01 to 07 accepted. Ambiguity check: none blocking. Two consequences decided and flagged in the artifacts: 'not found' is treated like a failed lookup and never cached (a registration created later is then seen at once); the cache covers agent principals only, so a human's grants (U4, which changes in M1 through grantToHuman) are never served from it."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: answers collected.
+
+---
+
+## NFR Requirements: Classification of Q1 to Q7 (authority-evaluation)
+**Timestamp**: 2026-11-10T14:38:56Z
+**User Input**: (the answers above)
+**AI Response**: "Classified through prd-gap-classification.md Step 1: all technology. PF §9 states classes (hot path; availability bounded by the cache; throughput by request volume; per-environment isolation) and no mechanism, number, or library, and every answer satisfies it. Q4's answer applies PF §9's availability class and M1-NFR-01 to U3's term reads; it adds no property from the other face. No specification gap. P-NFR-01 to 07: technology, accepted."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: classification.
+
+---
+
+## NFR Requirements: Artifacts Generated; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T14:40:41Z
+**User Input**: (none since the answers)
+**AI Response**: "Generated construction/authority-evaluation/nfr-requirements/: nfr-requirements.md (PF §9 profile carried forward; NFR-AE-01 to 23; obligations to U3 NFR Design, Code Generation, Build and Test, U4, U6, U7, and any unit adding a change operation) and tech-stack-decisions.md (T-AE-01 to 06; no new dependency; Ajv gains packages/envelope as a runtime workspace). Decisions flagged for review: not-found lookups are never cached (NFR-AE-12); the cache holds agent principals only, never human grants (NFR-AE-14); cache size 4096 entries per environment, LRU (NFR-AE-11); concurrent misses coalesced (NFR-AE-13); a lone surrogate in a forwarded envelope is invalid_inbound_context (NFR-AE-04). Standing note NFR-AE-16 recorded in aidlc-state.md. Security: 03 (except the centralized log service, N/A in M1 by the user's decision), 05, 08 to 13, 15 compliant; 14 N/A in M1 by the user's decision; 01, 02, 04, 06, 07 N/A. Invariants: no Missing. Presented the standard NFR Requirements completion message: Request Changes, or Continue to Next Stage (NFR Design)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Requirements: awaiting approval.
+
+---
+
+## NFR Requirements: APPROVED, after two edits (authority-evaluation)
+**Timestamp**: 2026-11-10T14:56:01Z
+**User Input**: "Continue to Next Stage, after two edits.
+
+NFR-AE-04, 11, 12, 13 and 14: accepted as written.
+
+NFR-AE-19: the maximum-depth test uses a fixed raw body of 1 MiB, as deeply nested as it can be within that size, not "the step-1 body bound". U7 hasn't set that bound yet. 1 MiB stays valid whatever U7 picks, as long as its limit is at most 1 MiB. Add to the #10 obligation that U7's edge test uses its actual limit.
+jcs_invalid: add it to step 7's internal reasons in Functional Design business-rules.md §10, and as a BR-FX row (a lone surrogate in inbound.envelope, checked when its JCS form is computed, before the seal). Record it as a consistency fix from NFR Requirements.
+Then log the approval verbatim in audit.md, commit the NFR Requirements artifacts on dev, post the new obligations on #7, #9 and #10, and start NFR Design."
+**AI Response**: "NFR-AE-19 now uses a fixed 1 MiB raw body, as deeply nested as fits, valid for any step-1 limit up to 1 MiB; the #10 obligation adds that U7's edge test uses S4's actual limit. Functional Design business-rules.md: BR-FX-07 added (a lone surrogate in inbound.envelope, jcs_invalid, checked when its JCS form is computed, before the bound and the seal) and jcs_invalid added to step 7's reasons in §10, both recorded as a consistency fix from NFR Requirements. NFR-AE-04, 11, 12, 13, 14 accepted as written. NFR Requirements approved. Committing on dev, posting the new obligations on soorma-core#7, #9, #10, then starting NFR Design."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Requirements APPROVED; next stage NFR Design. Infrastructure Design to be skipped (no deployable).
+
+---
+
+## Forward Obligations Posted (authority-evaluation NFR Requirements)
+**Timestamp**: 2026-11-10T14:56:25Z
+**User Input**: (the approval above)
+**AI Response**: "NFR Requirements committed as c05a83f on dev and pushed. nfr-requirements.md §4 obligations posted, pinned to c05a83f: U4 (human grants never cached by U3) https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6770627019 ; U6 (one propagation bound, read by both caches) https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6770627790 ; U7 (wire the cache; provision the key ring; maximum-depth edge test at S4's actual limit) https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6770628300 ."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Requirements obligations posted.
+
+---
+
+## NFR Design: Plan and Questions (authority-evaluation)
+**Timestamp**: 2026-11-10T14:57:52Z
+**User Input**: (none since the NFR Requirements approval)
+**AI Response**: "NFR Design plan written: construction/working/authority-evaluation-nfr-design-plan.md (git-ignored). Proposals P-ND-01 to 08 (technology; recorded unless the user objects): HMAC domain-separation label; operator-assigned key ids (no '.'), base64url MAC of 43 characters; strict seal parsing, seal_failed before any MAC; key material loaded and validated at start-up, start-up stops on any failure, rotation by restart; two-phase rotation across S4 instances; cache keys include the environment (I1); the cache as a decorator on each port (batching, coalescing, successes only, LRU); the entry point returns results and never throws for an expected refusal. Questions, all technology: Q1 the seal's form (A v1.{kid}.{mac}, recommended; B {kid}.{mac}); Q2 the key ring's configuration (A U2's seed-key shape: one secret file per key, ids and current in tenancy.yaml, recommended; B one secret file for the whole ring); Q3 the canonicalizer's home (A a shared packages/jcs, with U2's canonical.ts as a thin wrapper, recommended; B separate implementations), found while reading U2's code: packages/org-identity already has a restricted, recursive RFC 8785 serializer; Q4 framework-free packages (A, recommended) or NestJS modules (B)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Design: plan created; Q1 to Q4 Awaiting Answer.
+
+---
+
+## NFR Design: Answers to Q1 to Q4 (authority-evaluation)
+**Timestamp**: 2026-11-10T15:27:28Z
+**User Input**: "Q1: A. Q2: A. Q4: A.
+
+Q3: A, with a condition. U2's canonicalJson output is also the associated data for the stored encrypted TOTP seeds, so the wrapper must be byte-identical for every input U2 uses. Before swapping in packages/jcs, commit literal-byte vectors for both U2 uses (the log pseudonym's input and the seed associated data), plus a test that decrypts a seed encrypted by the current code. All of these must pass unchanged after the swap.
+
+P-ND-01 to 06 and 08: accepted. P-ND-07: revise. As written, it can't meet NFR-AE-06, which promises one read round trip on a cold cache:
+
+it caches two ports separately;
+step 9a reads the Registration View before 9b reads the grant sets;
+the seam's grantedSet is per principal.
+Design it this way instead:
+
+one agent-facts source port, which returns each agent's Registration View and standing set together;
+read once, at the start of step 9, for the presenter and every distinct upstream agent, in one batched call, behind one caching decorator that keeps NFR-AE-09 to 15 as approved;
+P11's agent GrantSource and the Registration View port are both served from that cache, so the seam stays per principal and P3 is unchanged;
+the read is all-or-nothing, so a store failure is unavailable, and origin is still decided before authority, from the same read;
+human principals bypass the cache and go straight to U4's source (NFR-AE-14).
+Add to the obligation on #8 (U5): fill the agent-facts port with one query. Then log the answers verbatim in audit.md and generate the NFR Design artifacts."
+**AI Response**: "Answers recorded by question ID, all technology (I11), no specification gap. Q1 A (seal v1.{kid}.{mac}); Q2 A (U2's seed-key shape: one secret file per key; ids and current in tenancy.yaml); Q4 A (framework-free packages). Q3 A with the user's condition: before the swap, commit literal-byte vectors for both U2 uses (the log pseudonym's input, the seed associated data) and a fixture seed encrypted by the current code with a test that decrypts it; all pass unchanged after packages/jcs replaces U2's implementation. P-ND-01 to 06 and 08 accepted. P-ND-07 replaced by the user's design: one agent-facts port (Registration View and standing set together), read once at the start of step 9 for the presenter and every distinct upstream agent in one batched, all-or-nothing call behind one caching decorator (NFR-AE-09 to 15 unchanged); the Registration View and P11's agent GrantSource served from that read; human principals bypass the cache to U4's source. Consequences applied as consistency fixes: Functional Design BR-IN-03, BR-AU-03 wording (the human-only check runs before containment, after the read), BR-OR-06 and BR-AU-09 reasons merged into agent_facts_read_failed, §10, §16 (U5), business-logic-model §2 and §3, domain-entities; NFR Requirements NFR-AE-08, 09. The #8 obligation (fill the agent-facts port with one query) is posted at this stage's approval with the others."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Design: answers collected and classified (technology).
+
+---
+
+## NFR Design: Artifacts Generated; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T15:30:09Z
+**User Input**: (none since the answers)
+**AI Response**: "Generated construction/authority-evaluation/nfr-design/: nfr-design-patterns.md (NP-01 seal v1.{kid}.{mac} with domain separation and strict parsing; NP-02 key ring in U2's shape, start-up validation, two-phase rotation; NP-03 packages/jcs, iterative, with the U2 swap ordered behind committed byte vectors and a seed-decryption fixture; NP-04 the user's agent-facts design with a request snapshot, so P11's agent GrantSource and origin read the same single result and no second round trip is possible; NP-05 framework-free assembly; NP-06 to 08 validation, depth, logging and Problems) and logical-components.md. Consistency fixes marked in place: Functional Design BR-IN-03, BR-OR-06, BR-AU-03 wording, BR-AU-09, BR-SEAM-04, §10, §16 (U5), business-logic-model §2 and §3, domain-entities (Agent Facts); NFR Requirements NFR-AE-08, 09; L1 matrix L1-14, L1-15 and invariant I1 implementation targets. Design choices flagged for review: the request snapshot (a principal missing from it is internal_error, never a read); P11 built per request over a composite GrantSource; BR-AU-03's human-only check now runs after the read (before containment), so with the store down a human-only request is unavailable rather than forbidden. Security: compliant or N/A as listed; invariants: no Missing. Presented the standard NFR Design completion message: Request Changes, or Continue to Next Stage (the QA construction enrichment; Infrastructure Design skipped)."
+**Context**: CONSTRUCTION, U3 authority-evaluation, NFR Design: awaiting approval.
+
+---
+
+## NFR Design: APPROVED, after three edits (authority-evaluation)
+**Timestamp**: 2026-11-10T15:40:14Z
+**User Input**: "Continue to Next Stage, after three edits.
+
+The snapshot as the only source of agent sets, P11 built per request, and BR-AU-03's new position: accepted.
+
+NP-02, match U2 exactly (Q2 A). Each seal key file is base64url text of 256 random bits, as stack:init writes symmetric keys today, read through P9's SecretReader.key(name, true). Not raw bytes. The configuration shape is U2's seed-key shape, sealKeys: { current, keys: [{ id, secret }] }, naming each key's secret, not file names derived from ids. P9 loads seal keys through the same path as seed keys. Update logical-components.md's configuration table and the #10 obligation to match.
+NP-04: an entry's TTL is measured from when its batched read was issued, not when it completed. Add a clock test where the read takes time.
+NP-07: the iterative copy creates every key as an own data property (for example with Object.defineProperty), so a key named __proto__ is copied as a field and never sets a prototype. Add a unit test of the copy with a __proto__ key.
+Then log the approval verbatim in audit.md, commit the NFR Design artifacts and consistency fixes on dev, post the obligations on #7, #8 and #10, and start the QA construction enrichment."
+**AI Response**: "NP-02 now matches U2 exactly: sealKeys: { current, keys: [{ id, secret }] } in the environment's part of tenancy.yaml, each entry naming its secret; each secret base64url text of 256 random bits, loaded by P9 through SecretReader.key(secret, true) on the seed keys' path; P2's loadSealKeyRing validates ids and current. logical-components.md's configuration table, run-time block and P9 row, and the U7 obligation, updated to match. NP-04: TTL measured from when the batched read was issued, with a clock test where the read takes time. NP-07: the iterative copy defines every key as an own data property, so __proto__ is copied as a field; a unit test of the copy with a __proto__ key. The snapshot, per-request P11, and BR-AU-03's position accepted. NFR Design approved. Committing on dev, posting obligations on soorma-core#7, #8, #10, then starting the QA construction enrichment. Infrastructure Design skipped for U3 (no deployable; key delivery is U7's)."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Design APPROVED; Infrastructure Design SKIPPED; next: QA construction enrichment.
+
+---
+
+## Forward Obligations Posted (authority-evaluation NFR Design)
+**Timestamp**: 2026-11-10T15:40:42Z
+**User Input**: (the approval above)
+**AI Response**: "NFR Design committed as 5a1947c on dev and pushed. Obligations posted, pinned to 5a1947c: U5 (fill the agent-facts port with one query; replaces the two ports posted at Functional Design) https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6771751434 ; U7 (seal keys in U2's seed-key shape via stack:init and SecretReader.key; construct the entry point once per S4 instance; two-phase rotation) https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6771752194 ; U4 (supply the human GrantSource, never cached by U3) https://github.com/soorma-ai/soorma-core/issues/7#issuecomment-6771750752 ."
+**Context**: CONSTRUCTION, U3 authority-evaluation: NFR Design obligations posted; starting the QA construction enrichment.
+
+---
+
+## QA Construction Enrichment: Generated (authority-evaluation)
+**Timestamp**: 2026-11-10T15:46:05Z
+**User Input**: (the NFR Design approval: "...start the QA construction enrichment.")
+**AI Response**: "Gates passed: qa-test-cases Enabled; both inception spec files present; no enrichment-delta.md (not yet enriched). Sources: construction/authority-evaluation/functional-design/ (required) and nfr-design/, as qa-test-cases.md §2.5 lists them; infrastructure-design/ absent (skipped). nfr-requirements/ was NOT read as a source: U1's and U2's enrichments read it by the user's instruction (F38), and none was given for this pass; NFR Design restates the rows its patterns meet, so only NFR-AE-07's reported p99 is not carried (it stays a Build and Test report). Updated in place: test-specs-narrative.md (Common Fixtures gains a construction-pass subsection; TC-AE-001 to 022 enriched, IDs and Construction-artifacts links unchanged) and test-case-index.md (39 rows). Added TC-AE-023 to 039 (GAP-AE-001 work-around; forwarded-context failures; delegated or unknown origin; human-only; A6 trace context; the bound at stamping; step 6 precedence; step 5; BR-ERR-08; the seal; the key ring; agent facts and the cache; L1 to L5; JCS and the U2 swap; depth and __proto__; worst-case patterns; the entry point's structure and log). Created enrichment-delta.md. Replaced every QA enrichment marker in l1-coverage-matrix.md and invariant-coverage-matrix.md with TC IDs. Presented for review; next is the Construction Design PR gate."
+**Context**: CONSTRUCTION, U3 authority-evaluation: QA construction enrichment generated; awaiting review.
+
+---
+
+## QA Construction Enrichment: Review Changes and APPROVAL; Construction Design PR Gate (authority-evaluation)
+**Timestamp**: 2026-11-10T16:07:33Z
+**User Input**: "Read nfr-requirements/ for this pass too, as U1 and U2 did (F38). Add a case for NFR-AE-07, the way U2's TC-OI-062 does it: the p99 of steps 5 to 10, excluding term reads, for a maximum-size forwarding draft with a 31-entry forwarded chain, measured with vitest bench, target ≤ 2 ms. It is reported at Build and Test, not a gate. Record any other change in enrichment-delta.md with its NFR-AE source.
+
+Retitle TC-AE-006 to "The policy-decision boundary decides containment, never composition" (PF §12's wording). The ID is unchanged, and its steps already cover grantedSet. Update the index row to match.
+
+Then the test specs are approved. Log this verbatim in audit.md and proceed to the Construction Design PR gate: commit on dev, open the design PR from dev to main with Refs #6, #3, and stop for its review."
+**AI Response**: "nfr-requirements/ read for this pass by the user's instruction (F38). Added TC-AE-040 (the p99 of steps 5 to 10, excluding term reads, maximum-size forwarding draft with a 31-entry forwarded chain, vitest bench, target <= 2 ms; reported at Build and Test, not a gate; Priority Low, as TC-OI-062). Other changes from NFR-AE rows, recorded in enrichment-delta.md: TC-AE-034 step 13 (no separate cache-lifetime setting, NFR-AE-10); TC-AE-039 steps 5 to 7 (validator compiled once, NFR-AE-03; two instances agree, NFR-AE-22; no new dependency, NFR-AE-23). TC-AE-006 retitled; ID unchanged; index row updated. L1-30's verification target now TC-AE-034 and TC-AE-040. Test specs APPROVED (40 cases). Construction Design PR gate: branch dev, PR to main (confirmed by this instruction); instructions written to construction/working/authority-evaluation-design-pr-checkpoint-instructions.md; gate state PENDING; committing on dev and opening the PR with Refs #6, #3; stopping for its review."
+**Context**: CONSTRUCTION, U3 authority-evaluation: QA construction enrichment APPROVED; Construction Design PR gate PENDING.
+
+---
+
+## Construction Design PR Opened (authority-evaluation)
+**Timestamp**: 2026-11-10T16:08:06Z
+**User Input**: (the instruction above: "...open the design PR from dev to main with Refs #6, #3, and stop for its review.")
+**AI Response**: "Design committed as 6a29d1d on dev and pushed. Opened https://github.com/soorma-ai/soorma-core/pull/16 (dev -> main), titled 'feat(construction): platform/m1-walking-skeleton — authority-evaluation design complete', with the description from the instructions file (Refs #6, #3). Gate PENDING; stopped for the PR's review. Code Generation does not begin until the user confirms the PR is approved."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate PENDING (soorma-core#16).
+
+---
+
+## Construction Design PR Gate: Request Changes (authority-evaluation)
+**Timestamp**: 2026-11-10T20:19:53Z
+**User Input**: "Request Changes, one fix before I merge #16.
+
+The entry point has two names. admitEnvelopeRequest is in Functional Design (D-AE-04, business-rules, business-logic-model), component-methods.md, and the #10 obligation. createEnvelopeAdmission(dependencies) and its admit(request) are in NFR Design and the test specs. Settle on the NFR Design form: D-AE-04's single entry point is createEnvelopeAdmission(dependencies).admit(request).
+
+Replace admitEnvelopeRequest in the Functional Design files and component-methods.md, each marked as a consistency fix from NFR Design.
+Note the mapping once in logical-components.md.
+Post a one-line correction on soorma-core#10.
+Commit on dev and push, so #16 picks it up. Log this request verbatim in audit.md and stop. I'll merge #16 and then confirm the gate."
+**AI Response**: "Replacing every admitEnvelopeRequest (business-rules.md D-AE-04, BR-IN-01, §10, §14, §16; business-logic-model.md §1 and §2; component-methods.md) with createEnvelopeAdmission(dependencies).admit(request), each marked as a consistency fix from NFR Design. Noting the old-to-new mapping once in logical-components.md, posting a one-line correction on soorma-core#10, committing on dev and pushing so #16 picks it up, then stopping. The gate stays PENDING until the user confirms."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate, changes requested (one naming consistency fix). Gate PENDING.
+
+---

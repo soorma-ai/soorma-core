@@ -139,6 +139,12 @@ offered** (M1-FR-13). The implementations are P6 and P11.
 
 All of these stay in P2 to P5, P10, and P4, outside both seams.
 
+*Corrected at U3 Functional Design (2026-11-10, plan Q2 and Q3): the policy-decision seam has
+**both** halves PF §12 states, `grantedSet(principal, environment)` and `contains(effectiveSet,
+requiredSet)`; composition stays in P3. The human-only class is **defined in P3**
+(`packages/authority`) and used by P4's registration check. See
+`construction/authority-evaluation/functional-design/business-rules.md` (D-AE-02, D-AE-03).*
+
 ---
 
 ## Contract (`contract/`, Apache 2.0)

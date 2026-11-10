@@ -2,7 +2,7 @@
 
 Unit abbreviation: AE = authority-evaluation
 
-Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 22 test cases, comprehensive scope.
+Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 40 test cases, comprehensive scope: TC-AE-001 to 022 from the inception pass (enriched in place, 2026-11-10), TC-AE-023 to 040 added by the construction pass ([enrichment-delta.md](enrichment-delta.md)).
 
 | Test Case ID | Title | Source | Scope | Priority |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 22 test ca
 | TC-AE-003 | Origin propagates unchanged from an inbound envelope, and the chain grows | authority-evaluation / M1-FR-08, M1-FR-01 | happy-path | High |
 | TC-AE-004 | Authority is allowed when every term holds the permission | authority-evaluation / M1-FR-08 | happy-path | High |
 | TC-AE-005 | Load-bearing re-broadening allows, and is recorded at the declaring hop | authority-evaluation / M1-FR-08, M1-FR-01 | happy-path | High |
-| TC-AE-006 | The policy-decision boundary answers containment only | authority-evaluation / M1-FR-13 | happy-path | Medium |
+| TC-AE-006 | The policy-decision boundary decides containment, never composition | authority-evaluation / M1-FR-13 | happy-path | Medium |
 | TC-AE-007 | A well-formed trace context is accepted and carried as asserted | authority-evaluation / M1-FR-01 | happy-path | Medium |
 | TC-AE-008 | Unknown fields are preserved, and unknown enumerated values are non-fatal | authority-evaluation / M1-FR-01 | happy-path | Medium |
 | TC-AE-009 | A draft setting any platform-stamped field is rejected | authority-evaluation / M1-FR-01 | negative | High |
@@ -28,3 +28,21 @@ Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 22 test ca
 | TC-AE-020 | A permission outside the standing set is always denied | authority-evaluation / M1-FR-08 | edge-boundary | High |
 | TC-AE-021 | Evaluation is deny-by-default for an empty or unknown set | authority-evaluation / M1-FR-08 | edge-boundary | Medium |
 | TC-AE-022 | Evaluation matches every row of the re-broadening case table | authority-evaluation / M1-FR-08 | edge-boundary | High |
+| TC-AE-023 | An agent without declared autonomy forwarding an autonomous envelope is denied | authority-evaluation / M1-FR-08 (GAP-AE-001) | negative | High |
+| TC-AE-024 | Every forwarded-context failure is one code, with the cause only in the log | authority-evaluation / M1-FR-01, M1-FR-08 | negative | High |
+| TC-AE-025 | A forwarded `delegated` or unknown origin is refused, not crashed | authority-evaluation / M1-FR-01, M1-FR-08 | edge-boundary | High |
+| TC-AE-026 | A human-only permission is never an agent's | authority-evaluation / M1-FR-08 | negative | High |
+| TC-AE-027 | The stamped trace context carries forwarded unknown fields, and only the draft's known ones | authority-evaluation / M1-FR-01 | edge-boundary | High |
+| TC-AE-028 | An envelope over the bound is refused at stamping, never truncated | authority-evaluation / M1-FR-01 | edge-boundary | High |
+| TC-AE-029 | Step 6 refuses with one code, in a fixed precedence | authority-evaluation / M1-FR-01 | negative | Medium |
+| TC-AE-030 | Step 5 on a draft call: the body, the version, and the header | authority-evaluation / M1-FR-01 | negative | Medium |
+| TC-AE-031 | Every Problem soorma-core emits meets BR-ERR-08 | authority-evaluation / M1-FR-01 | happy-path | High |
+| TC-AE-032 | The seal: form, vector, and domain separation | authority-evaluation / M1-FR-01 | happy-path | High |
+| TC-AE-033 | The key ring: start-up checks and rotation | authority-evaluation / M1-FR-01 | edge-boundary | High |
+| TC-AE-034 | One read per request, and the cache's rules | authority-evaluation / M1-FR-08 | edge-boundary | High |
+| TC-AE-035 | The permission model satisfies L1 to L5 | authority-evaluation / M1-FR-08 | edge-boundary | Medium |
+| TC-AE-036 | Canonical JSON, computed once, and the swap in U2 | authority-evaluation / M1-FR-01 | edge-boundary | High |
+| TC-AE-037 | Maximum depth and `__proto__`: no crash, no prototype | authority-evaluation / M1-FR-01 | edge-boundary | High |
+| TC-AE-038 | Every contract pattern finishes on its worst-case input | authority-evaluation / M1-FR-01 | edge-boundary | Medium |
+| TC-AE-039 | The entry point's structure: one import, no framework, refusals returned, and the log | authority-evaluation / M1-FR-08, M1-FR-13 | edge-boundary | High |
+| TC-AE-040 | The latency of steps 5 to 10 is measured and reported | authority-evaluation / M1-FR-01, M1-FR-08 (NFR-AE-07) | edge-boundary | Low |
