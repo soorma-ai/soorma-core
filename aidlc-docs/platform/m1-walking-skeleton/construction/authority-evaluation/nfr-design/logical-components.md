@@ -25,6 +25,8 @@ P3 does not import P1 or P11.
 
 ## The Entry Point at Run Time
 
+**Naming**: D-AE-04's single entry point is `createEnvelopeAdmission(dependencies).admit(request)`. Functional Design, `component-methods.md` and the first #10 obligation called it `admitEnvelopeRequest`; they now use this form, each marked as a consistency fix from NFR Design (2026-11-10).
+
 ```text
 S4 (U7), once per instance:
     sealKeys  = P9's environment loader: { current, keys: [{ id, key }] }  SecretReader.key(secret, true)

@@ -13,14 +13,16 @@ P11 `policy-decision`, and `seams/policy-decision`.
 | Steps | What | Who |
 |---|---|---|
 | 1 to 4 | Body size; credential presentation and kind; verification and expiry; environment and revocation | P1 at S3, S4 (U6, U7) |
-| **5 to 10** | **Contract version; draft schema; forwarded context; chain depth; origin and authority; the envelope bound, the stamp, and the seal** | **`admitEnvelopeRequest` (U3)** |
+| **5 to 10** | **Contract version; draft schema; forwarded context; chain depth; origin and authority; the envelope bound, the stamp, and the seal** | **`createEnvelopeAdmission(dependencies).admit(request)` (U3)** (*Consistency fix from NFR Design (2026-11-10): formerly `admitEnvelopeRequest`*) |
 | after | Publish or subscribe; attribution record; Problem on a refusal | S4 (U7), P7, P1 |
 
 **Module dependencies** (no cycle): S4 → P1, P3. P3 → P2, `seams/policy-decision`.
 P11 → `seams/policy-decision`. S4 wires P11 into P3. **No surface imports P2.** P2 and P3
 do not depend on P1 (D-AE-25).
 
-## 2. The Pipeline (`admitEnvelopeRequest`)
+## 2. The Pipeline (`createEnvelopeAdmission(dependencies).admit(request)`)
+
+*Consistency fix from NFR Design (2026-11-10): the entry point's name, formerly `admitEnvelopeRequest`.*
 
 A request is refused at the first step it fails. Steps 5 to 8 read nothing from storage.
 

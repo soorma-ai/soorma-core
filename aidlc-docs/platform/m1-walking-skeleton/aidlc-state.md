@@ -99,9 +99,11 @@
 
 ### Construction Design PR Gate — authority-evaluation
 - **Status**: PENDING
+- **PR**: **soorma-core#16** (`dev` → `main`), opened 2026-11-10 at the user's request
 - **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-10)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/authority-evaluation-design-pr-checkpoint-instructions.md
 - **Created**: 2026-11-10T16:07:33Z
+- **Changes requested**: 2026-11-10T20:19:53Z, one fix: the entry point named `createEnvelopeAdmission(dependencies).admit(request)` throughout (formerly `admitEnvelopeRequest` in Functional Design and `component-methods.md`); pushed to #16
 - **Approved**: —
 
 ## PRD Specification Gaps
@@ -195,7 +197,7 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] NFR Design: **APPROVED** 2026-11-10T15:40:14Z (presented 2026-11-10T15:30:09Z). Q1 to Q4 answered 2026-11-10, all A (Q3 with the user's byte-vector and seed-decryption condition on the U2 swap); P-ND-01 to 06, 08 accepted; P-ND-07 replaced by the user's agent-facts design (one port, one batched all-or-nothing read at the start of step 9, one caching decorator, humans bypass). Artifacts: nfr-design-patterns (NP-01 to 08), logical-components (new `packages/jcs`). Consistency fixes in Functional Design and NFR Requirements, marked in place. At approval: NP-02 matched to U2 exactly (sealKeys { current, keys: [{ id, secret }] }, base64url 256-bit secrets via SecretReader.key); NP-04 TTL from read issue; NP-07 own-data-property copy with a __proto__ test. Obligations posted on #7, #8, #10
   - [x] Infrastructure Design: **SKIPPED** 2026-11-10T15:40:14Z (no deployable; key ring and propagation bound delivered at U7's Infrastructure Design)
   - [x] QA construction enrichment: **APPROVED** 2026-11-10T16:07:33Z (generated 2026-11-10T15:46:05Z) (`inception/test-cases/authority-evaluation/`: 40 cases; TC-AE-001 to 022 enriched in place, TC-AE-023 to 040 added; `enrichment-delta.md`; every QA enrichment marker in the L1 and invariant matrices replaced by TC IDs). Sources: functional-design/, nfr-requirements/ (by the user's instruction at the review, F38, as for U1 and U2), nfr-design/. At the review: TC-AE-040 added (NFR-AE-07 p99, reported, modelled on TC-OI-062); TC-AE-034, 039 gained NFR-AE-03, 10, 22, 23 steps; TC-AE-006 retitled "decides containment, never composition"
-  - [ ] Construction Design PR gate: **PENDING** 2026-11-10T16:07:33Z (branch `dev`, PR to `main`)
+  - [ ] Construction Design PR gate: **PENDING**, soorma-core#16 open; 2026-11-10T16:07:33Z (branch `dev`, PR to `main`)
   - **Standing note (NFR-AE-16)**: no M1 operation changes a standing set, re-broadening declaration, or autonomy declared, or suspends or retires an agent, so U3's term cache cannot serve stale data in M1. **The unit that first adds such an operation must account for the cache's staleness window** (up to the propagation bound)
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2. Remaining: U3 to U7
 - [ ] Build and Test: EXECUTE

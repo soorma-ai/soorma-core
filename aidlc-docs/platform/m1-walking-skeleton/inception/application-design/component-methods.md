@@ -140,7 +140,7 @@ top level, and envelopes are sealed. See `construction/wire-contract/functional-
 
 *Corrected at U3 Functional Design (2026-11-10, plan Q2 and Q4; P-04): P11 also implements
 `grantedSet(principal, environment)`, reading through a `GrantSource` port that U5 and U4 fill;
-`contains` takes a required **set**. P3 adds `admitEnvelopeRequest`, the one entry point a
-surface imports, which runs check-order steps 5 to 10 through P2 and P3. See
+`contains` takes a required **set**. P3 adds `createEnvelopeAdmission(dependencies).admit(request)`, the one entry point a
+surface imports (consistency fix from NFR Design, 2026-11-10: formerly `admitEnvelopeRequest`), which runs check-order steps 5 to 10 through P2 and P3. See
 `construction/authority-evaluation/functional-design/business-rules.md` (D-AE-02, D-AE-04,
 D-AE-10).*

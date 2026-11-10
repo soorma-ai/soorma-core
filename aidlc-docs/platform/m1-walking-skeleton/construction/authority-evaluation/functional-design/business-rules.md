@@ -27,7 +27,7 @@ P11 `policy-decision`, and `seams/policy-decision`.
 | **D-AE-01** | **An `autonomous` origin, stamped or propagated, requires the presenter's registration to declare autonomy.** An agent that has not declared autonomy and forwards an autonomous envelope is refused `forbidden` (O12 as written). **Work-around for GAP-AE-001** (Open, soorma-prd#30); allowing the case later is additive. Published as pre-release statement 9 (§13) | Q1 A; PF O12 | **Specification gap**, worked around |
 | **D-AE-02** | **`seams/policy-decision` has both halves PF §12 states**: `grantedSet(principal, environment)` and `contains(effectiveSet, requiredSet)`. P3 asks the seam for each term's granted set, **composes the effective set in core**, then asks containment. Composition never crosses the seam. P11's default reads grants through a port (`GrantSource`) that U5 (agent standing sets) and U4 (human grants) fill. U3 tests it with an in-memory source. **An upstream agent's term is its standing set**, read now (recorded at Q2; reading it as of its hop cannot differ in M1, where no operation changes a standing set) | Q2 A; PF §12 | Technology |
 | **D-AE-03** | **P3 refuses a human-only permission to an agent, whatever its standing set** (defence in depth). The class (`grant:human`, `human:manage`, `agent:delegate`) has **one definition**, exported by `packages/authority`, and used by P3 and by U5's registration check. While U5's check holds, no outcome changes | Q3 A; PF FR-016, §8b; ID FR-013 | Technology |
-| **D-AE-04** | **One entry point** for an envelope-bearing request, `admitEnvelopeRequest`, in `packages/authority`. It runs check-order steps 5 to 10 in order and returns the stamped, sealed envelope, or the first refusal. U7 calls it once per publish and per subscribe. P2's and P3's functions stay separate and are tested alone, but **the entry point is the only one a surface imports**. The order and the *one place* (I5) are structural | Q4 A; BR-ERR-07 | Technology |
+| **D-AE-04** | **One entry point** for an envelope-bearing request, `createEnvelopeAdmission(dependencies).admit(request)`, in `packages/authority`: S4 builds it once per instance with its dependencies, and calls `admit` per request (*Consistency fix from NFR Design (2026-11-10): formerly `admitEnvelopeRequest`*). It runs check-order steps 5 to 10 in order and returns the stamped, sealed envelope, or the first refusal. U7 calls it once per publish and per subscribe. P2's and P3's functions stay separate and are tested alone, but **the entry point is the only one a surface imports**. The order and the *one place* (I5) are structural | Q4 A; BR-ERR-07 | Technology |
 | **D-AE-05** | **The stamped `traceContext` carries the forwarded envelope's unknown trace-context fields.** It is: the forwarded `traceContext`'s fields other than `traceparent` and `tracestate`; plus the draft's `traceparent`; plus the draft's `tracestate` **only if the draft carries one**. A forwarded `traceparent` or `tracestate` is never carried. **U1 amendment A6** (§13) | Q5 A, as corrected by the user; PF FR-005 (a) | Technology |
 | **D-AE-06** | **Problem emission moves into P1** (`packages/perimeter`): the code table (status, title), the Problem body, and the response's headers, with U3's codes added. S1 imports it, keeping only a thin Fastify adapter; its own `problems.ts` is removed, with no change in behaviour. P1 also exports **one test assertion** for BR-ERR-08 that every edge runs on every Problem (S1 now; U6 and U7 at S3 and S4) | Q6 A; BR-ERR-08 | Technology |
 | D-AE-07 | A verified `inbound` whose `originMode` is not `autonomous` (`delegated`, or a value this version does not know) is refused `forbidden`. It cannot occur in M1: only this environment's perimeter seals, and it stamps only `autonomous`. An unknown value is a denial, never a crash or a malformed-request error (PF FR-005 b) | P-01; O9 | Technology |
@@ -57,7 +57,7 @@ P11 `policy-decision`, and `seams/policy-decision`.
 
 | ID | Rule | Source |
 |---|---|---|
-| BR-IN-01 | `admitEnvelopeRequest` runs **only after** the surface has run steps 1 to 4 (body size, credential presentation and kind, verification and expiry, environment and revocation). Those are P1's at S3 and S4 (U6, U7). U3 never re-runs them and never runs without them | BR-ERR-07; O10 |
+| BR-IN-01 | The entry point's `admit(request)` (D-AE-04; *Consistency fix from NFR Design (2026-11-10): formerly `admitEnvelopeRequest`*) runs **only after** the surface has run steps 1 to 4 (body size, credential presentation and kind, verification and expiry, environment and revocation). Those are P1's at S3 and S4 (U6, U7). U3 never re-runs them and never runs without them | BR-ERR-07; O10 |
 | BR-IN-02 | Its request inputs are: the parsed body (any JSON value); the `Soorma-Contract-Version` header values (zero or more); the **Checked Agent Context** (scope, agent, instance), from the verified credential; the **required authority**; and the request id | D-AE-04; D-AE-08 |
 | BR-IN-03 | Its ports are: the **agent-facts source** (each agent's Registration View and standing set together; U5 fills it from P4 with one query), read once at the start of step 9 through one caching decorator; the **policy decision** (the seam; P11 by default, whose agent `GrantSource` is served from that read, and whose human `GrantSource` U4 fills). *Consistency fix from NFR Design (2026-11-10; the user's agent-facts design)*; the **Sealer** (seal and verify with this environment's sealing material; NFR Design); the **configured scope** (P9); the **accepted contract versions** (P1, D-AE-25); and the **security log** | D-AE-02; D-AE-25 |
 | BR-IN-04 | Every input is treated as untrusted except the Checked Agent Context, which P1 produced from a verified credential. The body is validated before any field of it is read, except `clientContractVersion` at step 5 | SECURITY-05; O5 |
@@ -177,8 +177,8 @@ every row denies):
 
 ## 10. Refusals and the Check Order (BR-RF)
 
-`admitEnvelopeRequest` returns the **first** refusal, in this order (BR-ERR-07, steps 5 to
-10):
+The entry point's `admit(request)` returns the **first** refusal, in this order (BR-ERR-07, steps 5 to
+10). *Consistency fix from NFR Design (2026-11-10): formerly `admitEnvelopeRequest`*:
 
 | Step | Check | Contract code | Internal reasons |
 |---|---|---|---|
@@ -239,7 +239,7 @@ Recorded as notes on the Application Design documents, as U1 did (component-meth
 | Document | Correction | Decision |
 |---|---|---|
 | `components.md`, P3 and P11; *Seam Interfaces* | The policy-decision seam has **both** halves (`grantedSet`, `contains`), not containment only. The human-only class is **defined in P3** (`packages/authority`) and used by P4's registration check | D-AE-02, D-AE-03 |
-| `component-methods.md`, P2, P3, P11 | `admitEnvelopeRequest` is the surface's one entry point (P3); `contains` takes a required **set**; P11 gains `grantedSet` | D-AE-04, D-AE-02, D-AE-10 |
+| `component-methods.md`, P2, P3, P11 | `createEnvelopeAdmission(dependencies).admit(request)` is the surface's one entry point (P3; *Consistency fix from NFR Design (2026-11-10): formerly `admitEnvelopeRequest`*); `contains` takes a required **set**; P11 gains `grantedSet` | D-AE-04, D-AE-02, D-AE-10 |
 
 ## 15. Misuse Cases (SECURITY-11)
 
@@ -291,8 +291,9 @@ Posted on each unit's issue when this stage is approved.
 - S3 emits Problems through P1 and runs the shared assertion on every Problem (BR-PE-06)
 
 **To U7 `event-transport` (soorma-core#10)**
-- S4 runs steps 1 to 4, then calls `admitEnvelopeRequest` **once** per publish and per
-  subscribe, with required authority `{event:publish}` or `{event:subscribe}`, the
+- S4 runs steps 1 to 4, then builds the entry point once per instance with
+  `createEnvelopeAdmission(dependencies)`, then calls its `admit(request)` **once** per publish and per
+  subscribe (*Consistency fix from NFR Design (2026-11-10): formerly `admitEnvelopeRequest`*), with required authority `{event:publish}` or `{event:subscribe}`, the
   `Soorma-Contract-Version` header values, and the request id. **S4 does not import P2 or
   P3's internals** (D-AE-04)
 - Turn each refusal into a Problem through P1, and run the shared assertion on every Problem

@@ -1747,3 +1747,26 @@ Then the test specs are approved. Log this verbatim in audit.md and proceed to t
 **Context**: CONSTRUCTION, U3 authority-evaluation: QA construction enrichment APPROVED; Construction Design PR gate PENDING.
 
 ---
+
+## Construction Design PR Opened (authority-evaluation)
+**Timestamp**: 2026-11-10T16:08:06Z
+**User Input**: (the instruction above: "...open the design PR from dev to main with Refs #6, #3, and stop for its review.")
+**AI Response**: "Design committed as 6a29d1d on dev and pushed. Opened https://github.com/soorma-ai/soorma-core/pull/16 (dev -> main), titled 'feat(construction): platform/m1-walking-skeleton — authority-evaluation design complete', with the description from the instructions file (Refs #6, #3). Gate PENDING; stopped for the PR's review. Code Generation does not begin until the user confirms the PR is approved."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate PENDING (soorma-core#16).
+
+---
+
+## Construction Design PR Gate: Request Changes (authority-evaluation)
+**Timestamp**: 2026-11-10T20:19:53Z
+**User Input**: "Request Changes, one fix before I merge #16.
+
+The entry point has two names. admitEnvelopeRequest is in Functional Design (D-AE-04, business-rules, business-logic-model), component-methods.md, and the #10 obligation. createEnvelopeAdmission(dependencies) and its admit(request) are in NFR Design and the test specs. Settle on the NFR Design form: D-AE-04's single entry point is createEnvelopeAdmission(dependencies).admit(request).
+
+Replace admitEnvelopeRequest in the Functional Design files and component-methods.md, each marked as a consistency fix from NFR Design.
+Note the mapping once in logical-components.md.
+Post a one-line correction on soorma-core#10.
+Commit on dev and push, so #16 picks it up. Log this request verbatim in audit.md and stop. I'll merge #16 and then confirm the gate."
+**AI Response**: "Replacing every admitEnvelopeRequest (business-rules.md D-AE-04, BR-IN-01, §10, §14, §16; business-logic-model.md §1 and §2; component-methods.md) with createEnvelopeAdmission(dependencies).admit(request), each marked as a consistency fix from NFR Design. Noting the old-to-new mapping once in logical-components.md, posting a one-line correction on soorma-core#10, committing on dev and pushing so #16 picks it up, then stopping. The gate stays PENDING until the user confirms."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate, changes requested (one naming consistency fix). Gate PENDING.
+
+---
