@@ -3,6 +3,7 @@
 // response against the contract. TC-OI-002 to 007, 010, 011, 014, 020, 023,
 // 024, 026, 027, 042 (over HTTP), 047 (edge side), 052, 055.
 import { asSecretBytes, codeAt, stepAt, Store } from '@soorma/org-identity';
+import { assertProblem } from '@soorma/perimeter/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   testDatabase,
@@ -33,24 +34,14 @@ afterAll(async () => {
   await db?.drop();
 });
 
-/** Every response: the Soorma headers; every Problem: the emission rules (BR-ERR-08). */
+/**
+ * Every Problem: P1's shared assertion (U3 BR-PE-06; TC-AE-031 step 3), which
+ * checks everything S1's former local helper did and more, plus S1's own
+ * check that the request id is a UUID it generated.
+ */
 function expectProblem(r: Response, status: number, code: string): void {
-  expect(r.status).toBe(status);
-  expect(r.headers['soorma-contract-version']).toBe('0.1.0');
-  const id = r.headers['soorma-request-id'];
-  expect(id).toMatch(/^[0-9a-f-]{36}$/);
-  expect(r.headers['content-type']).toBe('application/problem+json; charset=utf-8');
-  expect(r.body).toMatchObject({
-    type: `urn:soorma:problem:${code}`,
-    title: expect.any(String),
-    status,
-    code,
-    instance: `urn:soorma:request:${String(id)}`,
-  });
-  expect(validator.conforms('components', 'Problem', r.body)).toBe(true);
-  if (status === 401) expect(r.headers['www-authenticate']).toBe('Bearer');
-  else expect(r.headers['www-authenticate']).toBeUndefined();
-  if (status === 429 || status === 503) expect(Number(r.headers['retry-after'])).toBeGreaterThan(0);
+  assertProblem(r, { status, code });
+  expect(r.headers['soorma-request-id']).toMatch(/^[0-9a-f-]{36}$/);
 }
 
 const bearer = (token: string) => ({ authorization: `Bearer ${token}` });

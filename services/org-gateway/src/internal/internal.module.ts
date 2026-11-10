@@ -18,10 +18,9 @@ import {
   type DynamicModule,
 } from '@nestjs/common';
 import { verifyInternalRequest } from '@soorma/org-identity';
-import { rawHeaderValues } from '@soorma/perimeter';
+import { ProblemError, rawHeaderValues } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { rawBody } from '../http.ts';
-import { ProblemError } from '../problems.ts';
 import type { Runtime } from '../runtime.ts';
 
 export const INTERNAL_RUNTIME = Symbol('soorma.internal.runtime');

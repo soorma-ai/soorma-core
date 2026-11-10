@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
 import { parse as parseYaml } from 'yaml';
-import type { FieldError } from './problems.ts';
+import type { FieldError } from '@soorma/perimeter';
 
 const BASE = 'https://soorma.ai/contract/';
 const require = createRequire(import.meta.url);

@@ -241,3 +241,37 @@ describe('TC-WC-029: the remaining pre-release and trust statements', () => {
     expect(text).toContain(statement);
   });
 });
+
+describe('U3 business-rules §13: the contract changes at U3 Code Generation', () => {
+  it('A6: the stamped traceContext on a forwarded call', () => {
+    expect(envelope).toContain(
+      "The stamped `traceContext` on a forwarded call is the forwarded envelope's `traceContext` without its `traceparent` and `tracestate`",
+    );
+    expect(envelope).toContain('A forwarded `traceparent` or `tracestate` is never carried');
+  });
+
+  it('the version on a call with a draft (D-AE-12)', () => {
+    expect(versioning).toContain(
+      'A call with a draft whose `clientContractVersion` is missing, or is not a string, is refused the same way',
+    );
+    const order = errors.slice(errors.indexOf('## Check order'));
+    expect(order).toContain(
+      'On a call with a draft: a body that is not a JSON object is `malformed_request`',
+    );
+  });
+
+  it('step 6 precedence (D-AE-18), and a forwarded envelope over the bound (D-AE-19)', () => {
+    const order = errors.slice(errors.indexOf('## Check order'));
+    expect(order).toContain('The precedence is fixed');
+    expect(order).toContain('A forwarded envelope over the envelope bound is refused here');
+    expect(envelope).toContain(
+      'A forwarded envelope over the bound is refused with `invalid_inbound_context`',
+    );
+  });
+
+  it('pre-release statement 9 (GAP-AE-001)', () => {
+    expect(preRelease).toContain(
+      'An agent whose registration does not declare autonomy is refused (`forbidden`) on any request whose origin is `autonomous`, including one forwarding an autonomous envelope.',
+    );
+  });
+});

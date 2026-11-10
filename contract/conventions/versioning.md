@@ -17,7 +17,8 @@ A client declares the contract version it was built against:
 
 - **A call with a draft** declares it in the draft's `clientContractVersion`
 - **A call without a draft** sends the required `Soorma-Contract-Version` request header
-- On a call with a draft, the header may be sent, but then it must equal the draft's value
+- On a call with a draft, the header may be sent, but then it must equal the draft's value, and
+  be sent once
 
 Every response carries `Soorma-Contract-Version`, set to the server's contract version.
 
@@ -32,6 +33,10 @@ Every response carries `Soorma-Contract-Version`, set to the server's contract v
 - **A call without a draft that sends no `Soorma-Contract-Version` header is refused the same
   way**: `unsupported_contract_version`, listing `supportedVersions`, at step 5 of the check
   order ([errors.md](errors.md)). Declaring no version is not declaring an accepted one
+- **A call with a draft whose `clientContractVersion` is missing, or is not a string, is refused
+  the same way**: `unsupported_contract_version`, listing `supportedVersions`. A body that is not
+  a JSON object is `malformed_request`. A `Soorma-Contract-Version` header sent with a draft that
+  is repeated, or differs from the draft's value, is `malformed_request`, naming the header
 
 ## Change classification
 

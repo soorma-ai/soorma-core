@@ -58,6 +58,11 @@ Its unknown fields are preserved into the envelope stamped for this hop. The pla
 the seal before using the forwarded envelope, and requires its scope to be this environment's. A
 failure of either is `invalid_inbound_context`.
 
+**The stamped `traceContext` on a forwarded call** is the forwarded envelope's `traceContext`
+without its `traceparent` and `tracestate`, so its unknown fields are kept; then the draft's
+`traceparent`; then the draft's `tracestate`, **only if the draft carries one**. A forwarded
+`traceparent` or `tracestate` is never carried: the trace context is this hop's assertion.
+
 **The seal is opaque.** A client forwards it unchanged and must not treat it as proof it can
 check. It proves to the platform that this environment stamped the envelope, unaltered. It does
 not prove that the envelope was delivered to the forwarder, or that it is recent.
@@ -68,6 +73,9 @@ not prove that the envelope was delivered to the forwarder, or that it is recent
 applies to a forwarded envelope (`inbound.envelope`) and to an envelope the platform would stamp:
 the platform refuses to stamp an envelope over the bound with `envelope_too_large`, and never
 truncates or drops fields to fit. So every envelope the platform stamps can be forwarded.
+
+**A forwarded envelope over the bound is refused with `invalid_inbound_context`**, before its seal
+is computed: no envelope the platform stamped can exceed it.
 
 ## Envelope-bearing operations
 
