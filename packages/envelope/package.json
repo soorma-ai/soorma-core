@@ -19,6 +19,10 @@
   },
   "dependencies": {
     "@soorma/contract": "workspace:*",
-    "@soorma/jcs": "workspace:*"
+    "@soorma/jcs": "workspace:*",
+    "ajv": "8.20.0"
+  },
+  "devDependencies": {
+    "yaml": "2.9.1"
   }
 }
