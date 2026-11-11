@@ -2274,3 +2274,26 @@ Each group ends with the pre-commit gate, including the image build. The stage i
 **Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate APPROVED; Code Generation Part 1 starting.
 
 ---
+
+## Code Generation Part 1: Plan and Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:21:53Z
+**User Input**: (none; continuing the request logged at 2026-11-11T07:16:14Z)
+**AI Response**: "Loaded construction/code-generation.md. L1 gate: 33 Covered, 20 N/A, 0 Missing. Wrote construction/working/env-human-access-code-generation-plan.md (git-ignored): Step 0 bookkeeping commit; Group 1 the pure move into packages/service-kit (Steps 1 to 3; U2's tests with only import lines changed; check:code clean; S1's image); Group 2 the generalisations (Steps 4 to 7: Semaphore, the store's name, the HTTP plumbing under @soorma/service-kit/http, and the user's four sign-in verification changes; org-identity out of perimeter's runtime dependencies; S1's image); Group 3 S1's changes (Steps 8 to 10: A7, publicKeys with the four refusals; S1's image); Group 4 U4's packages (Steps 11 to 18a: contract, env-store with migrations and privileges, P4, P5, P7, P3, P9, P1); Group 5 S2 (Steps 19 to 21; both images); Group 6 the Compose stack, secrets, certificates, monitoring (Steps 22 to 25; stack:init, up, smoke, and s1-outage.ts locally); Group 7 READMEs and the docs test (Steps 26, 27); Group 8 completion (Steps 28 to 31: the PR dev to main, Refs #7 and #3, not merged; complete only when its checks are green). Decisions D-CG-EHA-01 to 12, two found at planning: U2's Store, Queryable and ConflictError move too (env-store's transaction helper; consistency fix to logical-components §2.1); P1 re-exports the problem documents so surfaces still emit through P1 (D-EHA-21). Stop conditions 1 to 7. L1 and test-case traceability tables included. Awaiting the user's approval of the plan."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Part 1, plan awaiting approval.
+
+---
+
+## Code Generation Part 1: Plan APPROVED with Changes (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:26:16Z
+**User Input**: "Approved, with two changes:
+
+Group 1 must keep S1's health check working. deploy/local/compose.yaml:160 runs node dist/healthcheck.js in S1's image, so moving services/org-gateway/src/healthcheck.ts breaks S1's health and stack:up. Leave a services/org-gateway/src/healthcheck.ts that only imports and runs service-kit's, so dist/healthcheck.js still exists and the Compose file doesn't change. Record this as a decision in the plan.
+Run S1 for real in every group, not just at Group 6.
+In the gate for Groups 1, 2, 3 and 5, after the image build, also run locally pnpm stack:init, stack:up, stack:smoke, then stack:down -v.
+After each group's commit, push dev, and wait for the push's CI run to go green before starting the next group.
+A red run is fixed on dev before moving on, under stop condition 7.
+Log this verbatim in audit.md, update the plan and D-CG-EHA-12, commit the Step 0 bookkeeping, and start Part 2 with Group 1. Stop and report after Group 1's push run is green, before Group 2."
+**AI Response**: "Plan approved with the user's two changes: D-CG-EHA-13 (S1 keeps services/org-gateway/src/healthcheck.ts as a shim that imports and runs service-kit's, so dist/healthcheck.js and compose.yaml are unchanged); D-CG-EHA-12 updated (Groups 1, 2, 3 and 5 also run stack:init, stack:up, stack:smoke and stack:down -v locally after the image build; after each group's commit, push dev and wait for the push's CI run to go green before the next group; a red run is fixed on dev first, under stop condition 7, which now covers every push run). Committing the Step 0 bookkeeping, then Part 2 Group 1; stopping after Group 1's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation plan APPROVED; Part 2 starting with Group 1.
+
+---
