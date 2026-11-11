@@ -19,8 +19,8 @@ import {
 } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { UnavailableError } from '@soorma/org-identity';
+import { CONTRACT_VERSION, ProblemError, problemResponse, type Refusal } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { CONTRACT_VERSION, ProblemError, sendProblem } from './problems.ts';
 import type { SecurityLog } from './security-log.ts';
 
 export const BODY_LIMIT = 16 * 1024;
@@ -49,6 +49,16 @@ export function createAdapter(tls?: ListenerTls): FastifyAdapter {
     done(null, payload);
   });
   return adapter;
+}
+
+/**
+ * S1's Fastify adapter over P1's emission (U3 D-AE-06; BR-PE-02): the table,
+ * the body, and the headers are P1's. P1's headers include the two Soorma
+ * headers, with the values the onSend hook also sets.
+ */
+export function sendProblem(reply: FastifyReply, requestId: string, refusal: Refusal): void {
+  const { status, headers, body } = problemResponse(refusal, requestId);
+  void reply.status(status).headers(headers).send(JSON.stringify(body));
 }
 
 /** The raw body as received: empty when there was none. */

@@ -418,8 +418,9 @@ A refusal is checked by its **contract code** and, where the case names one, its
 
 **Steps**:
 1. Evaluate B's request for `p`
+2. *(Construction, consistency fix, 2026-11-11)* With no `P` term: B holds and declared `p`, and forwards a sealed envelope whose chain names an agent X that facts reports **not found**. Evaluate B's request for `p`, through `admit` and on `evaluateAgent`
 
-**Expected outcome**: Denied, and no re-broadening record. *(Construction pass)* Exercised on `evaluateAgent` directly, with a constructed `P` term. Through `admit` a delegated origin is refused earlier (TC-AE-025), so this row is reachable only at the evaluation level (business-logic-model §3, row 4).
+**Expected outcome**: Denied, and no re-broadening record. *(Construction pass)* Exercised on `evaluateAgent` directly, with a constructed `P` term. Through `admit` a delegated origin is refused earlier (TC-AE-025), so this row is reachable only at the evaluation level (business-logic-model §3, row 4). Step 2: **allowed**, re-broadening load-bearing, and the stamped envelope carries `reBroadening` `[{ hop: 1 }]`. X's term is the empty set and evaluation continues (D-AE-09), exactly as for a registered X with no grants; what an unresolved upstream agent lacked, the presenter's declaration recovers, while what the delegating principal lacked it never does.
 
 **Scope**: edge-boundary · **Priority**: High  
 **Source**: authority-evaluation / M1-FR-08  
@@ -536,10 +537,10 @@ A refusal is checked by its **contract code** and, where the case names one, its
 
 **Steps**:
 1. Evaluate a request for `event:publish`
-2. *(Construction pass)* B forwards a sealed envelope whose chain names an agent X that facts reports **not found**; B holds `event:publish`
+2. *(Construction pass)* B forwards a sealed envelope whose chain names an agent X that facts reports **not found**; B holds `event:publish` and declares nothing
 3. *(Construction pass)* The presenter itself is not found in facts
 
-**Expected outcome**: Denied. *(Construction pass)* Step 2: `forbidden`, reason `upstream_unresolved`: X's term is the empty set (D-AE-09). Step 3: `forbidden`, reason `presenter_unresolved` (D-AE-24). Neither not-found is cached: a second request after X is added to facts reads it (TC-AE-034).
+**Expected outcome**: Denied. *(Construction pass)* Step 2: `forbidden`, reason `upstream_unresolved`: X's term is the empty set, and B's declaration does not cover the request (D-AE-09; with a declaration that covers it, the request is allowed: TC-AE-016 step 2). Step 3: `forbidden`, reason `presenter_unresolved` (D-AE-24). Neither not-found is cached: a second request after X is added to facts reads it (TC-AE-034).
 
 **Scope**: edge-boundary · **Priority**: Medium  
 **Source**: authority-evaluation / M1-FR-08  
@@ -725,8 +726,9 @@ A refusal is checked by its **contract code** and, where the case names one, its
 2. A draft with `foo`, `bar`, and a malformed `traceparent`
 3. A draft with an unknown field inside `traceContext`
 4. A draft with only a malformed `traceparent`
+5. *(Construction, consistency fix, 2026-11-11)* A draft with 15 unknown fields and a malformed `traceparent`; one with 12 malformed fields; and one with 12 malformed fields and one unknown field whose pointer sorts after them all
 
-**Expected outcome**: 1: `stamped_field_set`, `errors[]` = `[/scope]`. 2: `unknown_field`, `errors[]` = `[/bar, /foo]`, ordered by pointer. 3: `unknown_field`, pointer into `/traceContext`. 4: `malformed_request`. facts is never called.
+**Expected outcome**: 1: `stamped_field_set`, `errors[]` = `[/scope]`. 2: `unknown_field`, `errors[]` = `[/bar, /foo]`, ordered by pointer. 3: `unknown_field`, pointer into `/traceContext`. 4: `malformed_request`. 5: `errors[]` holds **at most 10** entries, the first 10 by pointer (D-AE-18): `unknown_field` with 10; `malformed_request` with 10; and `unknown_field` with only the unknown field, because the code is picked from every failure before the list is cut. facts is never called.
 
 **Scope**: negative · **Priority**: Medium  
 **Source**: authority-evaluation / M1-FR-01  

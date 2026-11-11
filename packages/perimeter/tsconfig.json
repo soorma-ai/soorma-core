@@ -4,5 +4,5 @@
     "experimentalDecorators": true,
     "customConditions": ["source"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "testing/**/*.ts", "test/**/*.ts"]
 }

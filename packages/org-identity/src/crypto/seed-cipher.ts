@@ -24,7 +24,7 @@ export class SeedDecryptionError extends Error {
   }
 }
 
-function associatedData(reference: PrincipalReference, recordId: string): Buffer {
+export function associatedData(reference: PrincipalReference, recordId: string): Buffer {
   return Buffer.from(
     canonicalJson({
       organization: reference.organization,

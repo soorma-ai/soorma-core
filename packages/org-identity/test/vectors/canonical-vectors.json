@@ -1,0 +1,98 @@
+{
+  "$comment": "U3 NP-03 step 1: the outputs of U2's canonicalJson before the swap, written once by generate.ts. Test material only.",
+  "keys": {
+    "logPseudonymKeyHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "counterSecretHex": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
+  },
+  "references": [
+    {
+      "organization": "o1",
+      "principal": "h@example.com",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a2268406578616d706c652e636f6d227d",
+      "pseudonym": "hp_7zfjLtDHBn8va8XSGleQuA",
+      "slot": 58828
+    },
+    {
+      "organization": "o1",
+      "principal": "o'brien@example.com",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a226f27627269656e406578616d706c652e636f6d227d",
+      "pseudonym": "hp_HpY1mrxvH2t4fCGNvxqGiw",
+      "slot": 527264
+    },
+    {
+      "organization": "acme",
+      "principal": "a/b|c@d+e:f.g",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a2261636d65222c227072696e636970616c223a22612f627c6340642b653a662e67227d",
+      "pseudonym": "hp_RlEFUFtjC5BhAU4ONHaKaw",
+      "slot": 177514
+    },
+    {
+      "organization": "o1",
+      "principal": "x!#$%&'*+/=?^_`{|}~.@:-",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a22782123242526272a2b2f3d3f5e5f607b7c7d7e2e403a2d227d",
+      "pseudonym": "hp_YKD8H6xTkSBQRCzNfu-Ydg",
+      "slot": 210877
+    },
+    {
+      "organization": "o1",
+      "principal": "x",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a2278227d",
+      "pseudonym": "hp_KGenz_VAF8KArS_T_hElPw",
+      "slot": 385732
+    },
+    {
+      "organization": "o1",
+      "principal": "q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a2271272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e227d",
+      "pseudonym": "hp_FsNAsTRlSPMSx6hCVaJ7PQ",
+      "slot": 192898
+    },
+    {
+      "organization": "O1._~-O1._~-O1._~-O1._~-O1._~-O1._~-O1._~-O1._~-O1._~-O1._~-O1._",
+      "principal": "h@example.com",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a224f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f7e2d4f312e5f222c227072696e636970616c223a2268406578616d706c652e636f6d227d",
+      "pseudonym": "hp_Lwi1YrtHEbYigttJgx7zgg",
+      "slot": 743301
+    },
+    {
+      "organization": "Org.Two",
+      "principal": "MiXeD.Case+1@Example.COM",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a224f72672e54776f222c227072696e636970616c223a224d695865442e436173652b31404578616d706c652e434f4d227d",
+      "pseudonym": "hp__uW787KwyRAIh8Ctz_xYXg",
+      "slot": 792153
+    },
+    {
+      "organization": "o-3",
+      "principal": "a:b:c",
+      "referenceJsonHex": "7b226f7267616e697a6174696f6e223a226f2d33222c227072696e636970616c223a22613a623a63227d",
+      "pseudonym": "hp_x__E9WERvGwgK7_H72Ro4Q",
+      "slot": 212255
+    }
+  ],
+  "seedAssociatedData": [
+    {
+      "organization": "o1",
+      "principal": "h@example.com",
+      "recordId": "6f1c2b3a-4d5e-4f60-8172-93a4b5c6d7e8",
+      "bytesHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a2268406578616d706c652e636f6d222c227265636f72644964223a2236663163326233612d346435652d346636302d383137322d393361346235633664376538227d"
+    },
+    {
+      "organization": "o1",
+      "principal": "o'brien@example.com",
+      "recordId": "00000000-0000-4000-8000-000000000000",
+      "bytesHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a226f27627269656e406578616d706c652e636f6d222c227265636f72644964223a2230303030303030302d303030302d343030302d383030302d303030303030303030303030227d"
+    },
+    {
+      "organization": "acme",
+      "principal": "a/b|c@d+e:f.g",
+      "recordId": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "bytesHex": "7b226f7267616e697a6174696f6e223a2261636d65222c227072696e636970616c223a22612f627c6340642b653a662e67222c227265636f72644964223a2266666666666666662d666666662d346666662d626666662d666666666666666666666666227d"
+    },
+    {
+      "organization": "o1",
+      "principal": "q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.q'/|@+:.",
+      "recordId": "0f8fad5b-d9cb-469f-a165-70867728950e",
+      "bytesHex": "7b226f7267616e697a6174696f6e223a226f31222c227072696e636970616c223a2271272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e71272f7c402b3a2e222c227265636f72644964223a2230663866616435622d643963622d343639662d613136352d373038363737323839353065227d"
+    }
+  ]
+}

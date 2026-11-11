@@ -1,0 +1,17 @@
+{
+  "$comment": "U3 NP-03 step 1: a seed encrypted by U2's encryptSeed before the swap, written once by generate.ts. Test material only.",
+  "seedKeyId": "fixture-1",
+  "seedKeyHex": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+  "reference": {
+    "organization": "o1",
+    "principal": "h@example.com"
+  },
+  "recordId": "6f1c2b3a-4d5e-4f60-8172-93a4b5c6d7e8",
+  "stored": {
+    "keyId": "fixture-1",
+    "nonce": "DDoPOKQg_rcRcKJK",
+    "ciphertext": "fmztqTbde7ur_Pi3Uni3itJU-ZA",
+    "tag": "itiTR_vcdNoW82ucATJF0w"
+  },
+  "plaintextHex": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3"
+}

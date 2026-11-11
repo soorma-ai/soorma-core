@@ -1,7 +1,7 @@
 {
   "name": "@soorma/perimeter",
   "private": true,
-  "description": "P1, sign-in checks: classifies and verifies the presenter at S1",
+  "description": "P1: the presenter checks, and the one Problem table and emission for every edge",
   "type": "module",
   "license": "FSL-1.1-ALv2",
   "exports": {
@@ -9,6 +9,9 @@
       "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./testing": {
+      "source": "./testing/index.ts"
     }
   },
   "files": [
@@ -19,5 +22,10 @@
   },
   "dependencies": {
     "@soorma/org-identity": "workspace:*"
+  },
+  "devDependencies": {
+    "@soorma/contract": "workspace:*",
+    "ajv": "8.20.0",
+    "yaml": "2.9.1"
   }
 }

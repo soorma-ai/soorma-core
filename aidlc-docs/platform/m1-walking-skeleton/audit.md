@@ -1770,3 +1770,76 @@ Commit on dev and push, so #16 picks it up. Log this request verbatim in audit.m
 **Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate, changes requested (one naming consistency fix). Gate PENDING.
 
 ---
+
+## Construction Design PR Gate: APPROVED (authority-evaluation); Code Generation Part 1 started
+**Timestamp**: 2026-11-10T21:31:28Z
+**User Input**: "Confirm PR Approved. I merged #16.
+
+Log this verbatim in audit.md and set the gate to APPROVED with a real timestamp. Bring dev up to date with main, commit the gate record on dev, and push.
+
+Then start Code Generation for authority-evaluation: load construction/code-generation.md and write the Part 1 plan. The plan must carry these obligations from design, each as its own step:
+
+U2's canonicalJson swap, in NP-03's order. First commit the literal-byte vectors for the pseudonym input and the seed associated data, plus the seed-decryption fixture, and make them pass on the current code. Swap only after that. Stop on any difference.
+The §13 contract changes, including U1 amendment A6.
+Problem emission moves into P1, with the ./testing export.
+sealKeys goes into P9's schema, in U2's seed-key shape, loaded through SecretReader.key(secret, true).
+packages/envelope goes on Ajv's row in the dependency register.
+The entry point is createEnvelopeAdmission(dependencies).admit(request).
+Trace every L1 row and every TC-AE case to a plan step. TC-AE-040 is reported only, not a gate. Then stop for my approval of the plan."
+**AI Response**: "PR soorma-core#16 confirmed merged (2026-11-10T21:30:40Z, merge commit fbb567c). Construction Design PR gate set to APPROVED at 2026-11-10T21:31:28Z. dev fast-forwarded to origin/main; gate record committed on dev and pushed. Starting U3 Code Generation Part 1: loading construction/code-generation.md and writing the plan with the six named obligations as separate steps, L1 rows and TC-AE-001 to 040 traced to steps (TC-AE-040 reported, not a gate). Stopping for plan approval."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Construction Design PR gate APPROVED; Code Generation Part 1 (planning) started.
+
+---
+
+## Code Generation Part 1: Plan Created; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T21:37:38Z
+**User Input**: (none; the plan follows the instruction logged at 2026-11-10T21:31:28Z)
+**AI Response**: "Loaded construction/code-generation.md. Wrote construction/working/authority-evaluation-code-generation-plan.md: 23 steps in seven commit groups, Group 1 committed alone. The six named obligations each have their own step: the U2 swap in NP-03's order (Step 1: byte vectors for the pseudonym input and the seed associated data, plus the seed-decryption fixture, passing on the current code and committed alone; Step 4: the swap, with stop condition 1 on any difference); the §13 contract changes with U1 amendment A6 (Step 8); Problem emission into P1 with ./testing (Steps 5, 6); sealKeys in P9's schema, U2's seed-key shape, through SecretReader.key(secret, true) (Step 11); packages/envelope on Ajv's register row (Step 15); the entry point createEnvelopeAdmission(dependencies).admit(request) (Step 18). Every applicable L1 row (38) and every TC-AE case (40) traced to a step; TC-AE-040 reported only, not a gate (Step 19). Found at planning: a third caller of referenceJson (P8's attempt slot), covered by the Step 1 vectors plus slot values (D-CG-AE-01); P9's KeyId pattern differs from NP-01's kid pattern, raised as Q-CG-AE-1 (recommendation A: reuse KeyId, U2's shape exactly). Decisions D-CG-AE-01 to 09. Approval prompt: the user is asked to answer Q-CG-AE-1 and approve the plan, or request changes."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation Part 1, plan awaiting approval.
+
+---
+
+## Code Generation Part 1: Q-CG-AE-1 Answered; Plan APPROVED with Two Amendments (authority-evaluation)
+**Timestamp**: 2026-11-10T21:53:41Z
+**User Input**: "Q-CG-AE-1: A. Keep KeyId, U2's shape exactly. The effective id rule, ^[a-z0-9][a-z0-9-]{0,15}$, goes in packages/envelope/README.md.
+
+Plan approved, with two amendments:
+
+Group 1's contents. Group 1 includes one change to U2's source: associatedData in seed-cipher.ts becomes a named export, for the test only. It is not added to the package index, and nothing else in src/ changes. Replace "and nothing else" in Step 1 with a list of exactly what Group 1 commits: the vectors, the fixture, the generator, the test, and that one export.
+Bookkeeping commit first. Commit the plan-approval bookkeeping (aidlc-state.md, audit.md) on its own, as a chore(aidlc) commit, before Group 1. Group 1 then holds only the guard.
+Record the answer in the plan's [Answer]: line. Log this verbatim in audit.md, with Q-CG-AE-1's answer keyed by its ID. Mark the plan Approved with both amendments, then start Part 2 at Step 1. Stop only on the plan's stop conditions, or at Step 23's completion message."
+**Answers by question ID**:
+- **Q-CG-AE-1** (Which pattern governs a seal key's id?): **A** — "Keep KeyId, U2's shape exactly. The effective id rule, ^[a-z0-9][a-z0-9-]{0,15}$, goes in packages/envelope/README.md." Classification: technology (prd-gap-classification.md; a detail between two approved designs, no PRD content)
+**AI Response**: "Answer recorded in the plan's [Answer]: line (Status: Answered (A)); applied at Steps 11 and 13. Amendment 1: Step 1 now names associatedData's named export (test only, not in the package index, nothing else in src/) and lists exactly what Group 1 commits: the vectors, the fixture, the generator, the test, and that one export. Amendment 2: Step 0 added; the plan-approval bookkeeping (aidlc-state.md, audit.md) is committed on its own as chore(aidlc) before Group 1. Plan marked Approved (Revision 2). Starting Part 2: Step 0, then Step 1. Stopping only on the plan's stop conditions or at Step 23's completion message."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation Part 1 APPROVED (with amendments 1 and 2); Part 2 started.
+
+---
+
+## Code Generation Part 2: Complete; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-10T22:31:47Z
+**User Input**: (none; Part 2 ran under the instruction logged at 2026-11-10T21:53:41Z: "Stop only on the plan's stop conditions, or at Step 23's completion message.")
+**AI Response**: "Part 2 complete: Steps 0 to 23. No stop condition fired. Step 0 bookkeeping committed alone (4821788). Group 1, the U2 guard, committed alone (8d90404): referenceJson bytes for nine references with their pseudonyms and P8 attempt slots, the seed associated data for four pairs, and a seed encrypted by the current code; 16 tests passed on the current code. Group 2 (626ed4b): packages/jcs and the swap; the guard's files unchanged since 8d90404 and all 16 tests pass unchanged (stop condition 1 not fired). Group 3 (ef7c392): P1's Problem table, problemResponse, @soorma/perimeter/testing; S1 moved with no behaviour change; the §13 contract changes with U1 amendment A6 and pre-release statement 9. Group 4 (90dc1fd): the seam, P11, sealKeys in P9 (KeyId, SecretReader.key(secret, true)). Group 5 (6508782): P2; the Ajv and yaml register rows. Group 6 (b6a59c5): P3 and createEnvelopeAdmission(dependencies).admit(request); TC-AE-040's benchmark, reported only. Group 7: documentation, code-summary.md, L1 matrix (38 rows Implemented), invariant matrix (I1 to I10 Implemented; I8 re-checked). Local run: frozen install, build, lint, format, every check, pnpm audit clean, 766 tests passed (2 skipped), bench runs (p50 0.279 ms, p99 0.590 ms, for Build and Test to record). Settled during generation, recorded in code-summary.md: the slot asserted with the real slotOf by relative path; the seam package named @soorma/policy-decision-seam; Vitest 5's context bench API; no clock dependency on the entry point; an unresolved upstream agent denies outright (D-AE-09). Finding for review: step 6's errors[] is unbounded as D-AE-18 states (S1 caps at 10); not exposed until U7. Committing Group 7, pushing dev, opening the code-review PR (dev to main, Refs #6, #3, not merged), and presenting the completion message."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation complete, awaiting approval.
+
+---
+
+## Code Generation: Code-Review PR Opened (authority-evaluation)
+**Timestamp**: 2026-11-10T22:33:44Z
+**User Input**: (none; Step 23 of the approved plan)
+**AI Response**: "Group 7 committed as e803e90 and dev pushed. Opened https://github.com/soorma-ai/soorma-core/pull/17 (dev -> main), 'feat: platform/m1-walking-skeleton — authority-evaluation code generation (U3)', Refs #6, #3. Not merged: Build and Test uses it for CI. Presented the Code Generation completion message; awaiting the user's approval."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation complete, awaiting approval (soorma-core#17).
+
+---
+
+## Code Generation: Request Changes (authority-evaluation)
+**Timestamp**: 2026-11-11T02:25:14Z
+**User Input**: "Request Changes: three fixes before I approve. Log this verbatim in audit.md.
+
+#17's image check fails. services/org-gateway/Dockerfile doesn't copy packages/jcs, which org-identity now depends on (TS6053, packages/jcs/tsconfig.build.json not found). Add its manifest files to the install layer and packages/jcs/src/ to the source layer. Run docker build -f services/org-gateway/Dockerfile . locally if Docker is available. From now on, a group whose changes reach S1's dependencies runs the image build in its pre-commit gate. Don't present completion until every #17 check is green.
+Unresolved upstream agent: build it as the logic model says. An unresolved upstream agent's term is the empty set, and evaluation continues: W = S ∩ P ∩ (U ∪ D). Deny with upstream_unresolved only when W doesn't contain R and an upstream agent did not resolve. If the presenter's declaration covers R, the request is allowed, with re-broadening load-bearing and a { hop: n } record. This also treats an unresolved agent the same as a registered agent with no grants. Make D-AE-09's wording (\"so the request is denied\") a consistency fix: denied unless the presenter's re-broadening covers R. Add the allow case to TC-AE-016's construction steps or a new case, and a unit test in evaluate.test.ts. Remove the entry from code-summary.md's list of decisions settled during generation. A departure from the approved design was stop condition 2.
+Cap errors[] at 10 in P2, matching S1's MAX_ERRORS. Pick the winning code from all the errors, then keep the first 10 by pointer. Make this a consistency fix to D-AE-18. Update errors.md step 6 and the U3 changelog line to say \"at most 10\", and add a test with more than 10 failing fields.
+Commit on dev and push, so #17 picks it up. Update the code summary. Wait for #17's checks, then present the completion message again with their results."
+**AI Response**: "Applying the three fixes: (1) packages/jcs added to services/org-gateway/Dockerfile's install and source layers, image built locally; the image build joins the pre-commit gate for any group reaching S1's dependencies. (2) An unresolved upstream agent's term is the empty set and evaluation continues; upstream_unresolved only when W does not contain R and an upstream agent did not resolve; D-AE-09 consistency fix; allow case added to TC-AE-016 and evaluate.test.ts; the code-summary entry removed and recorded as a missed stop condition 2. (3) errors[] capped at 10 in P2 (winning code from all errors, first 10 by pointer); D-AE-18 consistency fix; errors.md step 6 and the U3 changelog line say at most 10; a test with more than 10 failing fields. Commit on dev, push, wait for #17's checks, then present the completion message again."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation, Request Changes (three fixes).
+
+---

@@ -21,11 +21,10 @@ import type {
   Refusal,
   SignInClaims,
 } from '@soorma/org-identity';
-import { presentedCredentialHeaders } from '@soorma/perimeter';
+import { CONTRACT_VERSION, presentedCredentialHeaders, ProblemError } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { RequestSchema } from '../contract-validator.ts';
 import { rawBody } from '../http.ts';
-import { CONTRACT_VERSION, ProblemError } from '../problems.ts';
 import type { Runtime } from '../runtime.ts';
 
 type Schemas = components['schemas'];

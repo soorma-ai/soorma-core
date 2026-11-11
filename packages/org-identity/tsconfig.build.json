@@ -20,6 +20,9 @@
   "references": [
     {
       "path": "../../seams/identity-resolution/tsconfig.build.json"
+    },
+    {
+      "path": "../jcs/tsconfig.build.json"
     }
   ]
 }

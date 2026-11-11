@@ -14,7 +14,7 @@ machine-readable `code`. The `Problem` schema is in [`components.openapi.yaml`](
 | `malformed_request`                 | 400    | The body is not JSON, or fails the schema; or the operation names no security scheme and an `Authorization` or `Soorma-Delegation` header is present                                                                                                        | `errors[]`, each with a JSON Pointer (`pointer`) or a request header name (`header`), never a header value                                                                      |
 | `unknown_field`                     | 400    | A field the closed draft does not define, other than a platform-stamped field                                                                                                                                                                               | A pointer to the field                                                                                                                                                          |
 | `stamped_field_set`                 | 400    | A draft sets a platform-stamped field, `envelopeVersion` included. Takes precedence over `unknown_field`                                                                                                                                                    | A pointer to the field                                                                                                                                                          |
-| `invalid_inbound_context`           | 400    | The seal fails, is from another environment, the scope differs, or the envelope version is not accepted                                                                                                                                                     | **None**: one code for every cause                                                                                                                                              |
+| `invalid_inbound_context`           | 400    | The seal fails, is from another environment, the scope differs, the envelope version is not accepted, or the forwarded envelope exceeds the envelope bound                                                                                                  | **None**: one code for every cause                                                                                                                                              |
 | `chain_too_deep`                    | 400    | The actor chain would exceed `maxChainDepth` (32)                                                                                                                                                                                                           | None                                                                                                                                                                            |
 | `envelope_too_large`                | 400    | The envelope to be stamped would exceed the envelope bound, 16 KiB on its JCS serialization                                                                                                                                                                 | None                                                                                                                                                                            |
 | `unsupported_contract_version`      | 400    | The declared contract version is not accepted                                                                                                                                                                                                               | `supportedVersions`                                                                                                                                                             |
@@ -63,10 +63,20 @@ A request is refused with the first check it fails, so a refusal is deterministi
 3. Credential verification, then expiry: `credential_refused`, then `credential_expired`
 4. Environment, and revocation state: `credential_refused`; `unavailable` if unreadable
 5. Contract version: `unsupported_contract_version`, for a version not accepted **and for a
-   missing `Soorma-Contract-Version` header** on a call without a draft
+   missing `Soorma-Contract-Version` header** on a call without a draft. **On a call with a
+   draft**: a body that is not a JSON object is `malformed_request`; a missing or non-string
+   `clientContractVersion` is `unsupported_contract_version`; then a `Soorma-Contract-Version`
+   header sent more than once, or different from the draft's value, is `malformed_request`,
+   naming the header
 6. Draft schema, **stamped fields before unknown fields**: `malformed_request`,
-   `stamped_field_set`, `unknown_field`
-7. Forwarded context: seal, scope, envelope version: `invalid_inbound_context`
+   `stamped_field_set`, `unknown_field`. **The precedence is fixed**: a platform-stamped field at
+   the draft's top level is `stamped_field_set`, whatever else fails; otherwise a field the draft
+   or its `traceContext` does not define is `unknown_field`; otherwise any other failure, a
+   trace-context rule included, is `malformed_request`. The code is picked from every failure;
+   `errors[]` then lists the fields failing with the winning code, ordered by pointer, **at most
+   10**: the first 10 by pointer
+7. Forwarded context: seal, scope, envelope version: `invalid_inbound_context`. **A forwarded
+   envelope over the envelope bound is refused here, before its seal is computed**
 8. Chain depth: `chain_too_deep`
 9. Origin, then authority: `forbidden`
 10. **The size of the envelope to be stamped, last**: `envelope_too_large`. Last, because the

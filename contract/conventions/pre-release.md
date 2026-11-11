@@ -20,6 +20,9 @@ These hold for contract version `0.1.0`.
 8. **The envelope bound is 16 KiB**, measured on the RFC 8785 (JCS) serialization, both for a
    forwarded envelope and for one the platform would stamp (`envelope_too_large`). **Received
    identifiers are opaque strings; do not validate their syntax**
+9. **An agent whose registration does not declare autonomy is refused (`forbidden`) on any
+   request whose origin is `autonomous`, including one forwarding an autonomous envelope.**
+   Allowing it later would be additive
 
 **The Delivery payload bound is not set in this version of the conventions.** It is set by the
 event transport unit, and published with it.

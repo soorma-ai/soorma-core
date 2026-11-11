@@ -141,7 +141,7 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** @description W3C Trace Context, as carried in an envelope. Open, like every envelope object, so an optional field added later is compatible. The platform stamps it from the draft, so it holds what the draft's closed definition admits (BR-TC-05). */
+        /** @description W3C Trace Context, as carried in an envelope. Open, like every envelope object, so an optional field added later is compatible. The platform stamps traceparent and tracestate from the draft; on a forwarded call it keeps the forwarded traceContext's other fields, so its unknown fields are preserved. A forwarded traceparent or tracestate is never carried (U1 amendment A6). */
         EnvelopeTraceContext: {
             traceparent: string;
             tracestate?: string;

@@ -36,6 +36,20 @@ export class ConfigurationError extends Error {
 export interface Environment {
   id: string;
   firstAdmin: string;
+  /** The envelope-seal key ring (U3 NP-02); only S4 reads its secrets. */
+  sealKeys?: SealKeyNames;
+}
+
+/** An environment's seal keys as configured: the seed keys' shape (U3 NP-02). */
+export interface SealKeyNames {
+  current: string;
+  keys: { id: string; secret: string }[];
+}
+
+/** An environment's seal keys, loaded: each key exactly 256 bits (U3 NP-02). */
+export interface SealKeys {
+  current: string;
+  keys: { id: string; key: Buffer }[];
 }
 
 export interface Project {
@@ -185,6 +199,18 @@ function readTenancy(configPath: string): { raw: RawTenancy; settings: Organizat
   if (!seedIds.includes(level.keys.seed.current))
     problems.push('/organizationLevel/keys/seed/current: names no configured seed key');
 
+  // Each environment's seal keys: checked as the seed keys are (U3 NP-02).
+  for (const [pi, project] of raw.projects.entries()) {
+    for (const [ei, env] of project.environments.entries()) {
+      if (!env.sealKeys) continue;
+      const at = `/projects/${pi}/environments/${ei}/sealKeys`;
+      const ids = env.sealKeys.keys.map((k) => k.id);
+      for (const id of duplicates(ids)) problems.push(`${at}: key id ${id} appears twice`);
+      if (!ids.includes(env.sealKeys.current))
+        problems.push(`${at}/current: names no configured seal key`);
+    }
+  }
+
   const callers = (level.internalCallers ?? []).map((c) => c.environment);
   for (const env of duplicates(callers))
     problems.push(`/organizationLevel/internalCallers: environment ${env} appears twice`);
@@ -323,6 +349,38 @@ export function loadMigrator(options: LoadOptions): {
   };
   if (read.problems.length > 0) throw new ConfigurationError(read.problems);
   return { settings, secrets };
+}
+
+/**
+ * One environment's seal keys, for its event transport (S4) at start-up (U3
+ * NP-02; D-CG-AE-06). Each key is read through the seed keys' path,
+ * SecretReader.key(secret, true): base64url text of exactly 256 bits. Every
+ * problem is collected, then start-up is refused. An unknown project or
+ * environment, or one with no sealKeys, is refused. Reads no other secret.
+ */
+export function loadSealKeys(
+  options: LoadOptions,
+  where: { project: string; environment: string },
+): SealKeys {
+  const { raw } = readTenancy(options.configPath);
+  const env = raw.projects
+    .find((p) => p.id === where.project)
+    ?.environments.find((e) => e.id === where.environment);
+  if (!env)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} is not configured`,
+    ]);
+  if (!env.sealKeys)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} has no sealKeys`,
+    ]);
+  const read = new SecretReader(options.secretsDir ?? DEFAULT_SECRETS_DIR);
+  const sealKeys: SealKeys = {
+    current: env.sealKeys.current,
+    keys: env.sealKeys.keys.map((k) => ({ id: k.id, key: read.key(k.secret, true) })),
+  };
+  if (read.problems.length > 0) throw new ConfigurationError(read.problems);
+  return sealKeys;
 }
 
 /** The secret names a configuration references, by who reads them; for stack:init. */
