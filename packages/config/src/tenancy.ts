@@ -610,6 +610,8 @@ export interface SecretNames {
     tls: string;
     /** Ed25519 private keys: E's verify keys (signing among them) and its caller key. */
     ed25519: string[];
+    /** The caller key (among `ed25519`), whose public half `callerPublic` holds. */
+    caller: string;
     /** The caller keys' public halves, as S1's internalCallers names them. */
     callerPublic: string[];
     logPseudonym: string;
@@ -664,6 +666,7 @@ export function listSecrets(options: LoadOptions): SecretNames {
             migrator: unique([cg.migrator.password, cg.database.ca]),
             tls: cg.edge.tls,
             ed25519: unique([...cg.keys.verify, cg.keys.caller]),
+            caller: cg.keys.caller,
             callerPublic,
             logPseudonym: cg.keys.logPseudonym,
             databasePassword: cg.database.password,

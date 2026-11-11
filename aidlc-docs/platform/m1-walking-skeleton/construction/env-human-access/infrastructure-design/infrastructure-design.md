@@ -90,7 +90,20 @@ the verify keys by fetching them, never by file.
 The PostgreSQL image's `POSTGRES_PASSWORD_FILE` holds a **path**. Role passwords are set inside
 `psql` from the files (`\set … \`cat …\``), as U2's init script does, so no value is ever on a
 command line or in the environment. The only environment variables on these services are
-non-secret: `SOORMA_ENV` (the environment id, for the init script) and `SOORMA_HEALTH_PORT`.
+non-secret:
+
+| Service | Environment variables |
+|---|---|
+| `{env}-control-gateway` | `SOORMA_PROJECT` and `SOORMA_ENVIRONMENT` (which part of `tenancy.yaml` is its own), `SOORMA_HEALTH_PORT` |
+| `{env}-migrate` | `SOORMA_PROJECT`, `SOORMA_ENVIRONMENT` |
+| `{env}-db` | `SOORMA_ENVIRONMENT` (the environment id, for the init script), and the PostgreSQL image's `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD_FILE` (a path) |
+
+*Corrected in place at U4 Code Generation (2026-11-11, D-CG-EHA-23, the user's decision at the
+S2 review)*: this section named only `SOORMA_ENV` and `SOORMA_HEALTH_PORT`. S2 and
+`{env}-migrate` learn their environment from `SOORMA_PROJECT` and `SOORMA_ENVIRONMENT`
+(D-CG-EHA-20), and the init script reads `SOORMA_ENVIRONMENT` in place of `SOORMA_ENV`, so one
+set holds across Compose, the init script, and the Compose-model test's allowlist. All are
+non-secret; the rule above is unchanged.
 
 **The Compose-model test** (`deploy/test/`, run in CI) reads `docker compose config` and asserts
 that:
@@ -100,6 +113,8 @@ that:
   files;
 - no service's `environment` has a value matching the secret pattern, or a name ending in
   `PASSWORD`, `KEY`, `SECRET`, or `TOKEN`, other than the `_FILE` path variables;
+- each service's environment variables are within the table above (*added in place,
+  D-CG-EHA-23*);
 - `{env}-control-gateway` has no migrator password.
 
 The secret-pattern check runs over the repository and each built image, as U2's CI does.
@@ -210,7 +225,7 @@ One PostgreSQL 18.4 instance per environment, at U2's digest: `{env}-db`, aliase
 |---|---|
 | `deploy/local/db/env-pg_hba.conf` | `local all postgres peer`; `hostssl soorma_env soorma_env_migrator,soorma_env_app` with `scram-sha-256` (IPv4 and IPv6). Nothing else |
 | `deploy/local/db/env-roles.sql` | Creates `soorma_env_migrator` and `soorma_env_app` if absent (`LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`); `REVOKE ALL ON DATABASE` from `PUBLIC`; `CONNECT` to both; schema `public`: `CREATE` revoked from `PUBLIC`, `USAGE, CREATE` to the migrator, `USAGE` to the app. Safe to run twice, as U2's |
-| `deploy/local/db/init/10-soorma-env-roles.sh` | At first start, runs `env-roles.sql` and sets the two passwords from `/run/secrets/${SOORMA_ENV}-db-…-password` inside `psql` |
+| `deploy/local/db/init/10-soorma-env-roles.sh` | At first start, runs `env-roles.sql` and sets the two passwords from `/run/secrets/${SOORMA_ENVIRONMENT}-db-…-password` inside `psql` (*corrected in place, D-CG-EHA-23: was `SOORMA_ENV`*) |
 
 **Role and database names are the same in every environment** (`soorma_env`,
 `soorma_env_migrator`, `soorma_env_app`), because `env-store`'s migrations are shared and grant

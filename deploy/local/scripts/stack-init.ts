@@ -15,8 +15,13 @@
 // - TLS: the local CA (if absent) and each service certificate (stack-certs);
 //   the CA certificate is also written under the secret name tenancy.yaml
 //   gives it
+// - Each environment's secrets (U4 Infrastructure Design §3): its Ed25519
+//   keys (signing and verify, and its caller key), its passwords and
+//   log-pseudonym key, its database superuser password; and its caller key's
+//   PUBLIC half, derived as SPKI PEM, for org-gateway's internalCallers. A
+//   derived public key that no longer matches its private key refuses the run
 // Secrets never pass through environment variables or arguments.
-import { generateKeyPairSync, randomBytes } from 'node:crypto';
+import { createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { listSecrets } from '@soorma/config';
@@ -69,7 +74,35 @@ export function stackInit(options: { configPath?: string; dir?: string } = {}): 
     result.handover.push(file);
   }
 
-  const handled = new Set([...names.tls, names.ca, ...names.enrollment.map((e) => e.secret)]);
+  // Each environment's secrets (U4): Ed25519 keys first, then the derived
+  // public halves, then the passwords and keys of 256 bits.
+  const ed25519 = (): string =>
+    generateKeyPairSync('ed25519').privateKey.export({ format: 'pem', type: 'pkcs8' });
+  const environmentNames = new Set<string>();
+  for (const env of names.environments) {
+    for (const name of env.ed25519) write(name, ed25519());
+    const caller = env.caller;
+    const spki = createPublicKey(createPrivateKey(readFileSync(join(dir, caller)))).export({
+      format: 'pem',
+      type: 'spki',
+    });
+    for (const name of env.callerPublic) {
+      if (!write(name, spki) && readFileSync(join(dir, name), 'utf8') !== spki)
+        throw new Error(`${name} does not match ${caller}: remove it and run stack:init again`);
+    }
+    const superuser = `${env.environment}-db-superuser-password`;
+    for (const name of [env.logPseudonym, env.databasePassword, env.migratorPassword, superuser])
+      write(name, `${key256()}\n`);
+    for (const name of [...env.controlGateway, ...env.migrator, ...env.callerPublic, superuser])
+      environmentNames.add(name);
+  }
+
+  const handled = new Set([
+    ...names.tls,
+    names.ca,
+    ...names.enrollment.map((e) => e.secret),
+    ...environmentNames,
+  ]);
   for (const name of new Set([...names.gateway, ...names.migrator, ...STACK_ONLY])) {
     if (handled.has(name)) continue;
     write(

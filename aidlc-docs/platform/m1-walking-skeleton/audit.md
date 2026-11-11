@@ -2371,3 +2371,55 @@ Continue with Groups 4 and 5, each with the full gate and a push, waiting for gr
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 4 and 5.
 
 ---
+
+## Code Generation Part 2: S2 Accepted; Groups 6 to 8 (U4 env-human-access)
+**Timestamp**: 2026-11-11T15:52:11Z
+**User Input**: "S2 reviewed and accepted. Record your five choices (the ProblemFilter options, sign_in_expiring, the environment variables, no_grant_in_environment as credential.refused, and if (!token)) as D-CG-EHA-18 to 22 in the plan.
+
+One thing for Group 6. S2 reads SOORMA_PROJECT and SOORMA_ENVIRONMENT, but Infrastructure Design §3 lists SOORMA_ENV and SOORMA_HEALTH_PORT as the only environment variables. Settle on one set:
+
+make it match in Compose, in the init script, and in the Compose-model test's allowlist;
+mark Infrastructure Design §3 and shared-infrastructure.md as corrected in place;
+keep the rule that only non-secret values are environment variables.
+Continue with Groups 6, 7 and 8 as planned, including D-CG-EHA-17's monitoring split:
+
+Push after each group and wait for green. Stop on any stop condition.
+In Group 8, open the PR dev → main with Refs #7, #3, and leave it unmerged.
+Present the completion message only when every check on that PR is green, with the PR link, the check results, the latency figures, and the open obligations."
+**AI Response**: "Recorded D-CG-EHA-18 to 22 (the five choices) and D-CG-EHA-23 (one set of environment variables: SOORMA_PROJECT, SOORMA_ENVIRONMENT, SOORMA_HEALTH_PORT for S2 and {env}-migrate; SOORMA_ENVIRONMENT for {env}-db's init script, replacing SOORMA_ENV; all non-secret), to be applied in Compose, the init script, and the Compose-model test's allowlist, with Infrastructure Design §3 and shared-infrastructure.md corrected in place. Continuing with Groups 6, 7, and 8, each pushed and awaited green; the PR dev to main (Refs #7, #3) left unmerged; completion presented only with every PR check green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation, Groups 6 to 8.
+
+---
+
+## Code Generation Part 2: Group 6 Stop Condition (U4 env-human-access)
+**Timestamp**: 2026-11-11T16:17:26Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 6 (Steps 22 to 24) built, uncommitted. Compose gains E and E2 (secrets-init, db, migrate, control-gateway), with D-CG-EHA-23's environment variables (SOORMA_PROJECT, SOORMA_ENVIRONMENT, SOORMA_HEALTH_PORT; SOORMA_ENVIRONMENT in the init script); Infrastructure Design §3 (and its §6 init-script row) and shared-infrastructure.md corrected in place. smoke.ts extended (TC-EHA-086), s1-outage.ts (TC-EHA-084, 085) as pnpm stack:outage on a fresh stack (D-CG-EHA-24), S2's monitoring events, five rules and ten panels, with D-CG-EHA-17's split (deploy/test/monitoring.test.ts; S1's lines 46, 50, 52 replaced by one assertion that every S1 event is listed), deploy/test/compose-model.test.ts (TC-EHA-079, 089), stack-init tests, and CI building and scanning S2's image and running the outage demonstration. Decisions D-CG-EHA-24 to 27 recorded (shared stack-client.ts; ajv and yaml joining @soorma/deploy under stop condition 4's rule for registered dependencies; listSecrets naming the caller key; the CI job's new name, with no required status check affected). Local gate green: frozen install, build, lint, format, every check, 1039 tests (3 skipped, perf) with db:test, both images built and scanned, stack:init, up, smoke (44 checks), down -v, up, stack:outage (both cases; case 2 recovered in 22 s), down -v. STOPPED before committing (stop condition 1): U2's smoke.ts section 8 assertion on org-gateway's exact secrets must gain e-caller-public-key and e2-caller-public-key (required by Infrastructure Design §3; without it the smoke test fails), and section 7's leak check is extended to S2's and the environment migrators' logs and to section 9's tokens. Asking the user."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 6, stop condition 1.
+
+---
+
+## Code Generation Part 2: Group 6 Stop Answered; Standing Approval (U4 env-human-access)
+**Timestamp**: 2026-11-11T16:46:55Z
+**User Input**: "A. Record both as D-CG-EHA-28.
+
+Standing approval for the rest of this unit:
+
+A change to a U2 assertion needs no stop when it does only one of these:
+adds an item the approved design adds, with no existing item removed or reworded;
+widens a negative check, adding sources or values to scan, with the existing ones unchanged.
+Record each such change as a D-CG-EHA decision.
+Still stop for anything that removes, relaxes or replaces an assertion.
+Moving helpers is not covered: if a helper that a U2 check depends on changes behaviour, stop.
+Commit Group 6, push, and wait for green. Then continue with Groups 7 and 8. In Group 8, open the PR dev → main with Refs #7, #3, and leave it unmerged.
+
+Present completion only when every check on the PR is green, with:
+
+the PR link and the check results;
+the latency figures from test:perf:s2;
+every change to a U2 assertion in this unit (D-CG-EHA-16, 17, 28 and any later ones), each as a before/after diff with the design item it implements;
+the open obligations: specification gaps (Open and Awaiting PRD counted separately), and the items carried to Build and Test and to the first hosted deployment."
+**AI Response**: "Option A. Recorded D-CG-EHA-28 (both smoke.ts assertion changes: section 8's org-gateway secrets gain e-caller-public-key and e2-caller-public-key; section 7's leak check widened to the S2 and environment-migrate logs and section 9's tokens) and D-CG-EHA-29 (the standing approval for the rest of the unit: a U2 assertion change that only adds an item the approved design adds, or only widens a negative check, needs no stop and is recorded as a D-CG-EHA decision; anything removing, relaxing or replacing an assertion still stops; a moved helper a U2 check depends on that changes behaviour still stops). Checked the moved helpers: call() keeps 8441 as its default port and its request unchanged, and only adds the Retry-After field to its reply; check() and docker() are unchanged; the failure count is read through failed(). Committing Group 6, pushing, waiting for green; then Groups 7 and 8."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 6, stop condition 1 answered.
+
+---

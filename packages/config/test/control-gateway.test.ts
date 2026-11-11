@@ -184,6 +184,7 @@ describe("TC-EHA-036: S2 loads only its own environment's part", () => {
     expect(e.controlGateway).not.toContain('e-db-migrator-password');
     expect(e.migrator).toEqual(['e-db-migrator-password', 'stack-ca-cert']);
     expect(e.ed25519).toEqual(['e-signing-key-1', 'e-caller-key']);
+    expect(e.caller).toBe('e-caller-key');
     expect(e.callerPublic).toEqual(['env-e-caller-key']);
   });
 

@@ -17,6 +17,9 @@
 #   internal port and the store are published nowhere; health is on no network
 # - org-migrate runs first, as the migrator; S1 starts only once it has
 #   completed, and never holds the migrator password
+# - Environments E and E2 (U4): each its own secrets volume and copier, store,
+#   migrate service, network, and S2, on 127.0.0.1:8442 and 8443; S2 joins
+#   org-internal-{env} and does not wait for org-gateway
 # - Every container: a non-root user, a read-only root file system, all
 #   capabilities dropped, no new privileges; the one exception is
 #   org-secrets-init (root, only CHOWN, DAC_OVERRIDE, FOWNER; no network;
@@ -27,6 +30,56 @@ x-hardening: &hardening
   read_only: true
   cap_drop: [ALL]
   security_opt: ['no-new-privileges:true']
+
+# The shared shape of every environment's secrets copier (the hardening
+# exception, as org-secrets-init: root, only CHOWN, DAC_OVERRIDE, FOWNER; no
+# network; read-only root; it exits).
+x-secrets-init: &secrets-init
+  image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+  user: '0:0'
+  read_only: true
+  cap_drop: [ALL]
+  cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+  security_opt: ['no-new-privileges:true']
+  network_mode: none
+  restart: 'no'
+
+# An environment store's shared shape (U4 Infrastructure Design §6).
+x-env-db: &env-db
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+  user: '999:999'
+  tmpfs:
+    - /var/run/postgresql
+    - /tmp
+  healthcheck:
+    test: ['CMD', 'pg_isready', '-q', '-h', '/var/run/postgresql', '-d', 'soorma_env']
+    interval: 2s
+    timeout: 2s
+    retries: 30
+  restart: unless-stopped
+
+# An environment's S2 (U4 Infrastructure Design §1, §8). It does not wait for
+# org-gateway: it starts without S1 (P-01; D-EHA-23).
+x-control-gateway: &control-gateway
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  image: soorma/control-gateway:local
+  command: ['dist/main.js']
+  configs:
+    - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+  tmpfs:
+    - /tmp
+  mem_limit: 256m
+  healthcheck:
+    test: ['CMD', '/nodejs/bin/node', 'dist/healthcheck.js']
+    interval: 5s
+    timeout: 3s
+    retries: 24
+  restart: unless-stopped
 
 services:
   # The organization level's one-shot secrets copy (Q-CG-4 B). It alone sees
@@ -55,6 +108,10 @@ services:
       - org-counter-secret
       - org-log-pseudonym-key
       - org-enrollment-1
+      # The one value that crosses levels: each environment's caller PUBLIC key,
+      # for org-gateway's internalCallers (U4 Infrastructure Design §3).
+      - e-caller-public-key
+      - e2-caller-public-key
     restart: 'no'
 
   org-db:
@@ -166,17 +223,241 @@ services:
       org-migrate: { condition: service_completed_successfully }
     restart: unless-stopped
 
+  # ---- Environment e (U4 Infrastructure Design; Q1 A: written out in full) ----
+
+  # Environment e's one-shot secrets copy: it alone sees e's secret files.
+  e-secrets-init:
+    <<: *secrets-init
+    entrypoint: ['sh', '/soorma/secrets-init/env.sh', 'e']
+    volumes:
+      - ./secrets-init/env.sh:/soorma/secrets-init/env.sh:ro
+      - e-secrets:/out
+    secrets:
+      - stack-ca-cert
+      - e-control-gateway-tls
+      - e-db-tls
+      - e-db-superuser-password
+      - e-db-app-password
+      - e-db-migrator-password
+      - e-signing-key-1
+      - e-caller-key
+      - e-log-pseudonym-key
+
+  e-db:
+    <<: *env-db
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_min_protocol_version=TLSv1.3
+      - -c
+      - ssl_cert_file=/run/secrets/e-db-tls
+      - -c
+      - ssl_key_file=/run/secrets/e-db-tls
+      - -c
+      - hba_file=/soorma/db/env-pg_hba.conf
+      - -c
+      - synchronous_commit=on
+    environment:
+      POSTGRES_DB: soorma_env
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/e-db-superuser-password
+      SOORMA_ENVIRONMENT: e
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: db },
+        }
+      - e-db-data:/var/lib/postgresql
+      - ./db/env-roles.sql:/soorma/db/env-roles.sql:ro
+      - ./db/env-pg_hba.conf:/soorma/db/env-pg_hba.conf:ro
+      - ./db/init/10-soorma-env-roles.sh:/docker-entrypoint-initdb.d/10-soorma-env-roles.sh:ro
+    networks:
+      e:
+        aliases: [env-db.e.soorma.internal]
+    depends_on:
+      e-secrets-init: { condition: service_completed_successfully }
+
+  e-migrate:
+    <<: *hardening
+    image: soorma/control-gateway:local
+    build:
+      context: ../..
+      dockerfile: services/control-gateway/Dockerfile
+    command: ['dist/migrate.js']
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: migrate },
+        }
+    configs:
+      - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+    networks: [e]
+    depends_on:
+      e-secrets-init: { condition: service_completed_successfully }
+      e-db: { condition: service_healthy }
+    restart: 'no'
+
+  e-control-gateway:
+    <<: *control-gateway
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e
+      SOORMA_HEALTH_PORT: '8080'
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: control-gateway },
+        }
+    ports:
+      - '127.0.0.1:8442:8443'
+    networks:
+      e:
+        aliases: [control-gateway.e.soorma.internal]
+      org-internal-e: {}
+    depends_on:
+      e-secrets-init: { condition: service_completed_successfully }
+      e-migrate: { condition: service_completed_successfully }
+
+  # ---- Environment e2 (U4 Infrastructure Design; Q1 A: written out in full) ----
+
+  # Environment e2's one-shot secrets copy: it alone sees e2's secret files.
+  e2-secrets-init:
+    <<: *secrets-init
+    entrypoint: ['sh', '/soorma/secrets-init/env.sh', 'e2']
+    volumes:
+      - ./secrets-init/env.sh:/soorma/secrets-init/env.sh:ro
+      - e2-secrets:/out
+    secrets:
+      - stack-ca-cert
+      - e2-control-gateway-tls
+      - e2-db-tls
+      - e2-db-superuser-password
+      - e2-db-app-password
+      - e2-db-migrator-password
+      - e2-signing-key-1
+      - e2-caller-key
+      - e2-log-pseudonym-key
+
+  e2-db:
+    <<: *env-db
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_min_protocol_version=TLSv1.3
+      - -c
+      - ssl_cert_file=/run/secrets/e2-db-tls
+      - -c
+      - ssl_key_file=/run/secrets/e2-db-tls
+      - -c
+      - hba_file=/soorma/db/env-pg_hba.conf
+      - -c
+      - synchronous_commit=on
+    environment:
+      POSTGRES_DB: soorma_env
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/e2-db-superuser-password
+      SOORMA_ENVIRONMENT: e2
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: db },
+        }
+      - e2-db-data:/var/lib/postgresql
+      - ./db/env-roles.sql:/soorma/db/env-roles.sql:ro
+      - ./db/env-pg_hba.conf:/soorma/db/env-pg_hba.conf:ro
+      - ./db/init/10-soorma-env-roles.sh:/docker-entrypoint-initdb.d/10-soorma-env-roles.sh:ro
+    networks:
+      e2:
+        aliases: [env-db.e2.soorma.internal]
+    depends_on:
+      e2-secrets-init: { condition: service_completed_successfully }
+
+  e2-migrate:
+    <<: *hardening
+    image: soorma/control-gateway:local
+    command: ['dist/migrate.js']
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e2
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: migrate },
+        }
+    configs:
+      - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+    networks: [e2]
+    depends_on:
+      e2-secrets-init: { condition: service_completed_successfully }
+      e2-db: { condition: service_healthy }
+      e-migrate: { condition: service_completed_successfully }
+    restart: 'no'
+
+  e2-control-gateway:
+    <<: *control-gateway
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e2
+      SOORMA_HEALTH_PORT: '8080'
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: control-gateway },
+        }
+    ports:
+      - '127.0.0.1:8443:8443'
+    networks:
+      e2:
+        aliases: [control-gateway.e2.soorma.internal]
+      org-internal-e2: {}
+    depends_on:
+      e2-secrets-init: { condition: service_completed_successfully }
+      e2-migrate: { condition: service_completed_successfully }
+
 networks:
   org: {}
   # One internal network per environment: environments share no network.
   org-internal-e: {}
   org-internal-e2: {}
+  # Each environment's own network: its store, migrate service, and S2.
+  e: {}
+  e2: {}
 
 volumes:
   org-db-data: {}
   # The organization level's secrets volume: one subdirectory per service.
   # Each environment that U4 adds gets its own ({env}-secrets).
   org-secrets: {}
+  # Each environment's database and secrets volume (U4 Infrastructure Design §3, §6).
+  e-db-data: {}
+  e2-db-data: {}
+  e-secrets: {}
+  e2-secrets: {}
 
 configs:
   tenancy:
@@ -194,3 +475,21 @@ secrets:
   org-counter-secret: { file: ./.secrets/org-counter-secret }
   org-log-pseudonym-key: { file: ./.secrets/org-log-pseudonym-key }
   org-enrollment-1: { file: ./.secrets/org-enrollment-1 }
+  e-control-gateway-tls: { file: ./.secrets/e-control-gateway-tls }
+  e-db-tls: { file: ./.secrets/e-db-tls }
+  e-db-superuser-password: { file: ./.secrets/e-db-superuser-password }
+  e-db-app-password: { file: ./.secrets/e-db-app-password }
+  e-db-migrator-password: { file: ./.secrets/e-db-migrator-password }
+  e-signing-key-1: { file: ./.secrets/e-signing-key-1 }
+  e-caller-key: { file: ./.secrets/e-caller-key }
+  e-caller-public-key: { file: ./.secrets/e-caller-public-key }
+  e-log-pseudonym-key: { file: ./.secrets/e-log-pseudonym-key }
+  e2-control-gateway-tls: { file: ./.secrets/e2-control-gateway-tls }
+  e2-db-tls: { file: ./.secrets/e2-db-tls }
+  e2-db-superuser-password: { file: ./.secrets/e2-db-superuser-password }
+  e2-db-app-password: { file: ./.secrets/e2-db-app-password }
+  e2-db-migrator-password: { file: ./.secrets/e2-db-migrator-password }
+  e2-signing-key-1: { file: ./.secrets/e2-signing-key-1 }
+  e2-caller-key: { file: ./.secrets/e2-caller-key }
+  e2-caller-public-key: { file: ./.secrets/e2-caller-public-key }
+  e2-log-pseudonym-key: { file: ./.secrets/e2-log-pseudonym-key }

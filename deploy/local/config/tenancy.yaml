@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
 #
 # The local stack's tenancy (Infrastructure Design §3; D-CG-OI-12): one
-# organization, one project, two environments, and their first Admin. It
+# organization, one project, two environments, and their first Admin; each
+# environment's S2 part (U4 Infrastructure Design §3). It
 # holds no secret: each secret is named here and read from /run/secrets.
 # `pnpm stack:init` generates every named secret into deploy/local/.secrets/.
 organization: o1
@@ -39,10 +40,62 @@ organizationLevel:
   enrollment:
     - principal: h@example.com
       secret: org-enrollment-1
+  # Each environment's caller public key (U4 Infrastructure Design §4): a
+  # list, so a caller key rotates with no outage. stack:init derives each
+  # from the environment's own caller key.
+  internalCallers:
+    - environment: e
+      publicKeys: [e-caller-public-key]
+    - environment: e2
+      publicKeys: [e2-caller-public-key]
 projects:
   - id: p1
     environments:
       - id: e
         firstAdmin: h@example.com
+        controlGateway:
+          edge: { port: 8443, tls: e-control-gateway-tls }
+          health: { port: 8080 }
+          database:
+            host: env-db.e.soorma.internal
+            port: 5432
+            name: soorma_env
+            user: soorma_env_app
+            password: e-db-app-password
+            ca: stack-ca-cert
+          migrator:
+            user: soorma_env_migrator
+            password: e-db-migrator-password
+          keys:
+            signing: e-signing-key-1
+            verify: [e-signing-key-1]
+            caller: e-caller-key
+            logPseudonym: e-log-pseudonym-key
+          organizationLevel:
+            host: org-gateway.soorma.internal
+            port: 9443
+            ca: stack-ca-cert
       - id: e2
         firstAdmin: h@example.com
+        controlGateway:
+          edge: { port: 8443, tls: e2-control-gateway-tls }
+          health: { port: 8080 }
+          database:
+            host: env-db.e2.soorma.internal
+            port: 5432
+            name: soorma_env
+            user: soorma_env_app
+            password: e2-db-app-password
+            ca: stack-ca-cert
+          migrator:
+            user: soorma_env_migrator
+            password: e2-db-migrator-password
+          keys:
+            signing: e2-signing-key-1
+            verify: [e2-signing-key-1]
+            caller: e2-caller-key
+            logPseudonym: e2-log-pseudonym-key
+          organizationLevel:
+            host: org-gateway.soorma.internal
+            port: 9443
+            ca: stack-ca-cert
