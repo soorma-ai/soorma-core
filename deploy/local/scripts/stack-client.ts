@@ -3,7 +3,7 @@
 // What the stack's scripted checks share (the smoke test, TC-OI-056 and
 // TC-EHA-086; the S1-stopped demonstration, TC-EHA-084 and 085): Compose, a
 // TLS client trusting only the local CA, and a pass/fail tally.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { request } from 'node:https';
 import { join, resolve } from 'node:path';
@@ -22,6 +22,19 @@ export const failed = (): number => failures;
 
 export const docker = (args: string[]): string =>
   execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+
+/**
+ * `docker` with `input` on stdin: how a script hands a container a secret or a
+ * token without putting it on a command line or in an environment variable.
+ * Never throws: it returns the exit status and both streams.
+ */
+export function dockerWithInput(
+  args: string[],
+  input: string,
+): { status: number; stdout: string; stderr: string } {
+  const r = spawnSync('docker', args, { input, encoding: 'utf8' });
+  return { status: r.status ?? -1, stdout: r.stdout.trim(), stderr: r.stderr.trim() };
+}
 
 export interface Reply {
   status: number;

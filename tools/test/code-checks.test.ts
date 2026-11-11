@@ -8,7 +8,7 @@ import { createReadStream, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { codeFindings } from '../checks/code.ts';
+import { codeFindings, sourceProjects } from '../checks/code.ts';
 import { repositoryFindings, tarFindings, textFindings } from '../checks/secrets.ts';
 import { repoRoot } from '../checks/workspace.ts';
 
@@ -156,5 +156,34 @@ describe('secrets (TC-OI-057)', () => {
     execFileSync('tar', ['-cf', join(dir, 'fs.tar'), '-C', dir, 'app']);
     const found = await tarFindings(createReadStream(join(dir, 'fs.tar')));
     expect(found.map((f) => f.location)).toEqual(['app/deep/leak.pem']);
+  });
+});
+
+describe("TC-EHA-069: the code checks cover U4's packages, and === on a secret token fails them", () => {
+  it('the real-tree checks above include service-kit, env-store, P4, P5, P7, and S2', () => {
+    const projects = sourceProjects().map((p) => p.slice(repoRoot.length + 1));
+    for (const project of [
+      'packages/service-kit/tsconfig.json',
+      'packages/env-store/tsconfig.json',
+      'packages/registry/tsconfig.json',
+      'packages/credentials/tsconfig.json',
+      'packages/attribution/tsconfig.json',
+      'services/control-gateway/tsconfig.json',
+    ])
+      expect(projects).toContain(project);
+  });
+
+  it('reports === on a SecretText token, even against undefined', () => {
+    const root = tree({
+      'token.ts': `declare const secretTextBrand: unique symbol;
+export type SecretText = string & { readonly [secretTextBrand]: true };
+export function f(token: SecretText | undefined, other: SecretText, n: number): boolean[] {
+  return [token === undefined, token === other, n === 1];
+}
+`,
+    });
+    const lines = codeFindings('compare', root).map((f) => f.location);
+    expect(lines).toHaveLength(2);
+    expect(lines.every((l) => l.endsWith('token.ts:4'))).toBe(true);
   });
 });

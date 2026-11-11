@@ -142,7 +142,7 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
     ]);
   });
 
-  it('org-signing-key is listed on the organization level only', () => {
+  it('TC-EHA-022: org-signing-key is listed on the organization level only', () => {
     for (const name of Object.keys(services))
       if (name !== 'org-secrets-init') expect(listed(name), name).not.toContain('org-signing-key');
   });

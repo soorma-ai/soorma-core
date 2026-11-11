@@ -2431,3 +2431,11 @@ the open obligations: specification gaps (Open and Awaiting PRD counted separate
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 7.
 
 ---
+
+## Code Generation Part 2: Group 7 Green; Group 8 (U4 env-human-access)
+**Timestamp**: 2026-11-11T17:13:43Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 7 committed as 4c6bb1d; push run 43063186098 green. Group 8 (Steps 28 to 30): latency measured (TC-EHA-070; pnpm test:perf:s2, three runs of 500 per operation): p95 issuance 4.9 to 5.1 ms, renewal 4.8 to 5.2 ms, ending 4.7 to 4.9 ms, grantToHuman 5.8 ms (targets 300 and 200 ms; reported, not a gate); test:perf:s2 now passes --silent=false (D-CG-EHA-30). Cross-checking every TC-EHA id against the tests found six with no test (022, 031, 050, 051, 067, 069): added services/control-gateway/test/isolation.test.ts, smoke section 10 with a new dockerWithInput helper (docker unchanged), a new describe in tools/test/code-checks.test.ts (no existing test changed), and the TC-EHA-022 label (D-CG-EHA-31); no U2 assertion changed. code-summary.md written, including every change to a U2 assertion in this unit (D-CG-EHA-16, Group 3's A7, D-CG-EHA-17, D-CG-EHA-28) as diffs; L1 matrix 33 rows and invariant matrix I1 to I10 Implemented; the I8 packaging table re-checked; logical-components §2.1 corrected in place (D-CG-EHA-01). Local run: frozen install, build, lint, format, every check, pnpm audit clean, 1050 tests (3 skipped, perf) with db:test, both images built and scanned, stack:init, up, smoke (52 checks), down -v, up, stack:outage (both cases; 22 s), down -v. Committing Group 8, pushing, opening the PR dev to main (Refs #7, #3), unmerged; completion only when every PR check is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 7 and 8.
+
+---
