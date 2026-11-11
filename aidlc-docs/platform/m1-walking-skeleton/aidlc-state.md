@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U4 `env-human-access` (soorma-core#7): Functional Design APPROVED 2026-11-11T04:17:24Z; NFR Requirements APPROVED 2026-11-11T06:19:46Z; NFR Design APPROVED 2026-11-11T06:44:26Z; Infrastructure Design APPROVED 2026-11-11T06:58:38Z; QA construction enrichment APPROVED 2026-11-11T07:08:34Z; Construction Design PR gate in progress** (GAP-EHA-001 resolved — clarified, no PRD change; U2 amendment A7). U1, U2, and U3 complete. Stage history is under *Stage Progress*
+- **Current Stage**: CONSTRUCTION. **U4 `env-human-access` (soorma-core#7): Functional Design APPROVED 2026-11-11T04:17:24Z; NFR Requirements APPROVED 2026-11-11T06:19:46Z; NFR Design APPROVED 2026-11-11T06:44:26Z; Infrastructure Design APPROVED 2026-11-11T06:58:38Z; QA construction enrichment APPROVED 2026-11-11T07:08:34Z; Construction Design PR gate APPROVED 2026-11-11T07:17:28Z (#18 merged as 1a19082); Code Generation Part 1 (plan) in progress** (GAP-EHA-001 resolved — clarified, no PRD change; U2 amendment A7). U1, U2, and U3 complete. Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -107,12 +107,12 @@
 - **Approved**: 2026-11-10T21:31:28Z (the user confirmed; #16 merged 2026-11-10T21:30:40Z as fbb567c)
 
 ### Construction Design PR Gate — env-human-access
-- **Status**: PENDING
-- **PR**: opening (`dev` → `main`), at the user's request
+- **Status**: APPROVED
+- **PR**: **soorma-core#18** (`dev` → `main`), opened 2026-11-11 at the user's request; checks green at 2026-11-11 (head `7d33d3d`)
 - **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-11)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/env-human-access-design-pr-checkpoint-instructions.md
 - **Created**: 2026-11-11T07:09:43Z
-- **Approved**: —
+- **Approved**: 2026-11-11T07:17:28Z (the user confirmed; #18 merged 2026-11-11T07:16:59Z as 1a19082)
 
 ## PRD Specification Gaps
 

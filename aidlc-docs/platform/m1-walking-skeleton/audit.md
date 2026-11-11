@@ -2242,3 +2242,35 @@ Then run the Construction Design PR gate (pr-checkpoint.md Section 5): open the 
 **Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate, PR opening.
 
 ---
+
+## Construction Design PR Gate: PR Open, Checks Green (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:13:04Z
+**User Input**: (none)
+**AI Response**: "Opened https://github.com/soorma-ai/soorma-core/pull/18 (dev → main, head 7d33d3d), referencing #7 and #3. Checks, two workflow runs (push and pull_request): Build, check, and test — pass (1m55s, 1m51s); Image, image secret scan, and stack smoke test — pass (2m49s, 2m56s); Dependency review — pass (6s) on the pull_request run, skipped on the push run; cla-assistant — pass. Gate remains PENDING until the user reviews, merges, and confirms. Stopped before Code Generation."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate PENDING.
+
+---
+
+## Construction Design PR Gate: Confirmation Received, Merge Not Found (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:16:14Z
+**User Input**: "Merged #18. Mark the Construction Design gate approved in aidlc-state.md, log it verbatim in audit.md, commit with the pending PR-link edit on dev, and push.
+
+Then start Code Generation for U4, Part 1 only: write the plan and stop for my approval. The plan must order the work as NP-EHA-15 and Infrastructure Design §15 require:
+
+The pure move into service-kit: U2's tests green, check:code clean, S1's image rebuilt.
+The generalisations: the four sign-in verification changes; org-identity out of perimeter's runtime dependencies.
+S1's changes: A7, and publicKeys with the four refusals, S1's image rebuilt.
+U4's packages and S2, then the Compose stack, secrets, certificates and monitoring, then the READMEs and their docs test.
+Each group ends with the pre-commit gate, including the image build. The stage is complete only when the PR's checks are green."
+**AI Response**: "Checked before acting: gh reports soorma-core#18 as OPEN (mergedAt null, mergeCommit null, last updated 2026-11-11T07:09:47Z), and origin/main's head is still a9aa74b (Merge pull request #17). The gate was NOT marked approved, nothing was committed or pushed (a push to dev would add to the open PR), and Code Generation was not started. Reported to the user and asked them to merge #18, or say how to proceed."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate still PENDING.
+
+---
+
+## Construction Design PR Gate: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:17:28Z
+**User Input**: "merged"
+**AI Response**: "Verified: soorma-core#18 MERGED at 2026-11-11T07:16:59Z, merge commit 1a19082. Applying the earlier request (2026-11-11T07:16:14Z): gate marked APPROVED in aidlc-state.md; committing with the pending PR-link edit on dev and pushing; then Code Generation Part 1 (plan only) in the user's order, stopping for approval."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate APPROVED; Code Generation Part 1 starting.
+
+---
