@@ -106,6 +106,14 @@
 - **Changes requested**: 2026-11-10T20:19:53Z, one fix: the entry point named `createEnvelopeAdmission(dependencies).admit(request)` throughout (formerly `admitEnvelopeRequest` in Functional Design and `component-methods.md`); pushed to #16
 - **Approved**: 2026-11-10T21:31:28Z (the user confirmed; #16 merged 2026-11-10T21:30:40Z as fbb567c)
 
+### Construction Design PR Gate — env-human-access
+- **Status**: PENDING
+- **PR**: opening (`dev` → `main`), at the user's request
+- **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-11)
+- **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/env-human-access-design-pr-checkpoint-instructions.md
+- **Created**: 2026-11-11T07:09:43Z
+- **Approved**: —
+
 ## PRD Specification Gaps
 
 Full entries: `inception/prd-intake/specification-gaps.md` (GAP-INT); `construction/authority-evaluation/prd-gaps/specification-gaps.md` (GAP-AE); `construction/env-human-access/prd-gaps/specification-gaps.md` (GAP-EHA).
