@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 // The presenter checks at S1: TC-OI-024, 026, 027; D-OI-05, 26.
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
-import type { Clock } from '@soorma/service-kit';
+import type { Clock, SignInClaims, SignInStatus } from '@soorma/service-kit';
 import { KeyRing, mintSignIn } from '@soorma/org-identity';
 import { describe, expect, it } from 'vitest';
 import { presentedCredentialHeaders, presentedSignIn, SignInPerimeter } from '../src/index.ts';
@@ -81,7 +81,8 @@ describe('TC-OI-027: a credential of the wrong kind is refused on the sign-in op
 });
 
 describe('TC-OI-024: a sign-in that fails verification is refused at the organization level', () => {
-  const live = (): Promise<boolean> => Promise.resolve(true);
+  const live = (claims: SignInClaims): Promise<SignInStatus> =>
+    Promise.resolve({ status: 'live', expiresAt: claims.expiresAt });
 
   it('accepts a valid, live sign-in', async () => {
     const p = new SignInPerimeter(keys, 'o1', clock, live);
@@ -118,10 +119,9 @@ describe('TC-OI-024: a sign-in that fails verification is refused at the organiz
       ]),
     ).toEqual({ accepted: false, code: 'credential_refused' });
     expect(
-      await new SignInPerimeter(keys, 'o1', clock, () => Promise.resolve(false)).check([
-        'Authorization',
-        `Bearer ${await token()}`,
-      ]),
+      await new SignInPerimeter(keys, 'o1', clock, () =>
+        Promise.resolve({ status: 'ended' }),
+      ).check(['Authorization', `Bearer ${await token()}`]),
     ).toEqual({ accepted: false, code: 'credential_refused' });
   });
 });

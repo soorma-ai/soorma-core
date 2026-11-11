@@ -2320,3 +2320,23 @@ Then continue with Groups 2 and 3, each with the full gate including the local s
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation, between Group 1 and Group 2.
 
 ---
+
+## Code Generation Part 2: roles.sql Fix Done; Group 2 Stopped at Stop Condition 1 (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:01:15Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "D-CG-EHA-15 done: deploy/local/db/roles.sql wrapped in BEGIN; SELECT pg_advisory_xact_lock(8361432257233209235); ... COMMIT;, key derivation in the header; store.test.ts unchanged and passed 20 of 20 runs locally; full gate passed (S1 image, stack:init, up, smoke, down -v); committed as d2db9e0 with the Group 1 bookkeeping as 3d913b4; push run 42982443327 green. Group 2 (Steps 4 to 6) implemented, not committed: service-kit Semaphore (FIFO, release-once, abortable wait) with HashSemaphore over it; Store errors named by StoreOptions (S1 passes org); @soorma/service-kit/http (createAdapter, ProblemFilter, rawBody, sendProblem, generic SecurityLog and ContractValidator; S1 keeps thin subclasses with the same exports); verifySignIn with a tolerance parameter (default the organization level's { expSeconds: 0 }; an explicit iat-ahead check), an unknownKey result, SignInKeySource.hasKeys(), SignInStatus (A7); SignInPerimeter with status(claims) -> SignInStatus, optional refetch (verify exactly once more), tolerance, retryAfterSeconds; unavailable when no key is held; S1 passes its O3 check as live/ended; org-identity moved to perimeter's devDependencies (closure checked); SecretText's comment widened. Build, lint, format, check:deps, check:code, check:generated, check:contract, check:secrets pass. Tests: 793 pass, 2 skipped, 2 fail: both U2 assertions in packages/org-identity/test/crypto.test.ts (TC-OI-044) expect verifySignIn to answer 'invalid' for a kid the key ring lacks ('an unknown kid', line 301; 'once removed, it is refused', line 328); with the user's unknownKey change it answers 'unknownKey'. S1's behaviour is unchanged (P1 maps unknownKey to credential_refused; TC-OI-024's presenter tests pass). Stop condition 1 (a U2 assertion would have to change): stopped and asked the user."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 2 paused at stop condition 1.
+
+---
+
+## Code Generation Part 2: Stop Condition 1 Answered (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:06:50Z
+**User Input**: "A. Record it as D-CG-EHA-16, an intended interface change and the one exception to D-CG-EHA-05 in Group 2:
+
+In crypto.test.ts, move 'an unknown kid' out of the it.each that expects 'invalid', into its own case expecting 'unknownKey'. Change line 328's removed-key assertion to 'unknownKey'. Change nothing else in U2's tests.
+Add the S1-level assertion: P1 at S1's settings answers credential_refused for both tokens, the unknown kid and the removed key, so TC-OI-044's \"refused\" still holds where S1 serves it.
+Then finish Group 2's gate (S1 image, then stack:init, up, smoke, down -v), commit, push, and wait for green. Do Group 3 the same way. Stop and report after Group 3's push run is green. If any other U2 assertion would change, stop again."
+**AI Response**: "Applying D-CG-EHA-16: the two TC-OI-044 assertions move to 'unknownKey' as specified, nothing else in U2's tests changes, and a new test asserts P1 at S1's settings answers credential_refused for both tokens. Then Group 2's gate, commit, push, green; Group 3 likewise; stop after Group 3's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 2, D-CG-EHA-16.
+
+---

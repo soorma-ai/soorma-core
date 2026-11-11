@@ -6,7 +6,7 @@
 import { NestFactory } from '@nestjs/core';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { EdgeModule } from './edge/edge.module.ts';
-import { createAdapter, ProblemFilter, type ListenerTls } from './http.ts';
+import { createAdapter, ProblemFilter, type ListenerTls } from '@soorma/service-kit/http';
 import { InternalModule } from './internal/internal.module.ts';
 import type { Runtime } from './runtime.ts';
 

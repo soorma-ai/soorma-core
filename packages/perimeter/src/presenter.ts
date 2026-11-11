@@ -12,8 +12,23 @@
 //   and no Soorma-Delegation, else credential_refused; then verification with
 //   the organization's verify keys (O2); expiry only after verification
 //   (credential_expired); then the sign-in record (O3)
-import { type Clock, SIGN_IN_PREFIX, type SignInClaims, verifySignIn } from '@soorma/service-kit';
-import type { KeyRing } from '@soorma/org-identity';
+//
+// Generalised for an environment's issuance (U4 NP-EHA-03, 15): the key source
+// is read on every verification; an unknown `kid` may trigger one refetch and
+// one more verification; the tolerance is the caller's; the status callback
+// answers A7's SignInStatus, and an accepted check carries the `live` answer,
+// so its expiry can cap what the caller issues.
+import {
+  ORGANIZATION_TOLERANCE,
+  SIGN_IN_PREFIX,
+  UnavailableError,
+  verifySignIn,
+  type Clock,
+  type SignInClaims,
+  type SignInKeySource,
+  type SignInStatus,
+  type SignInTolerance,
+} from '@soorma/service-kit';
 
 export const CREDENTIAL_HEADERS = ['Authorization', 'Soorma-Delegation'] as const;
 export type CredentialHeader = (typeof CREDENTIAL_HEADERS)[number];
@@ -50,36 +65,71 @@ export function presentedSignIn(rawHeaders: readonly string[]): string | undefin
 }
 
 export type SignInCheck =
-  | { accepted: true; claims: SignInClaims }
+  | { accepted: true; claims: SignInClaims; status: Extract<SignInStatus, { status: 'live' }> }
   | { accepted: false; code: 'credential_refused' | 'credential_expired' };
 
+export interface SignInPerimeterOptions {
+  /** The leeway on the token check; the organization level's own by default (U2 P-01). */
+  tolerance?: SignInTolerance;
+  /**
+   * Fetches the verify keys again, or joins a fetch in progress, or does
+   * nothing inside its rate limit (U4 NP-EHA-03). Called at most once per check.
+   */
+  refetch?: () => Promise<void>;
+  /** `Retry-After` when no verify key is held at all (BR-IS-02). */
+  retryAfterSeconds?: number;
+}
+
 export class SignInPerimeter {
-  private readonly keys: KeyRing;
+  private readonly keys: SignInKeySource;
   private readonly organization: string;
   private readonly clock: Clock;
-  private readonly isLive: (claims: SignInClaims) => Promise<boolean>;
+  private readonly status: (claims: SignInClaims) => Promise<SignInStatus>;
+  private readonly options: SignInPerimeterOptions;
 
-  /** `isLive` is O3: the sign-in record is live and its principal active (P10). */
+  /**
+   * `status` is O3: the sign-in's status as its record says (U2 A7 at an
+   * environment; the organization level's own record at S1). Only `live` is
+   * accepted. A thrown UnavailableError propagates: unavailable, never a pass.
+   */
   constructor(
-    keys: KeyRing,
+    keys: SignInKeySource,
     organization: string,
     clock: Clock,
-    isLive: (claims: SignInClaims) => Promise<boolean>,
+    status: (claims: SignInClaims) => Promise<SignInStatus>,
+    options: SignInPerimeterOptions = {},
   ) {
     this.keys = keys;
     this.organization = organization;
     this.clock = clock;
-    this.isLive = isLive;
+    this.status = status;
+    this.options = options;
   }
 
   async check(rawHeaders: readonly string[]): Promise<SignInCheck> {
     const token = presentedSignIn(rawHeaders);
     if (token === undefined) return { accepted: false, code: 'credential_refused' };
-    const verified = await verifySignIn(token, this.keys, this.organization, this.clock.now());
-    if (verified.status === 'invalid') return { accepted: false, code: 'credential_refused' };
+    let verified = await this.verify(token);
+    if (verified.status === 'unknownKey' && this.options.refetch) {
+      await this.options.refetch();
+      verified = await this.verify(token);
+    }
+    if (verified.status === 'unknownKey' && !this.keys.hasKeys())
+      throw new UnavailableError('no verify keys held', this.options.retryAfterSeconds ?? 1);
     if (verified.status === 'expired') return { accepted: false, code: 'credential_expired' };
-    if (!(await this.isLive(verified.claims)))
-      return { accepted: false, code: 'credential_refused' };
-    return { accepted: true, claims: verified.claims };
+    if (verified.status !== 'valid') return { accepted: false, code: 'credential_refused' };
+    const status = await this.status(verified.claims);
+    if (status.status !== 'live') return { accepted: false, code: 'credential_refused' };
+    return { accepted: true, claims: verified.claims, status };
+  }
+
+  private verify(token: string) {
+    return verifySignIn(
+      token,
+      this.keys,
+      this.organization,
+      this.clock.now(),
+      this.options.tolerance ?? ORGANIZATION_TOLERANCE,
+    );
   }
 }

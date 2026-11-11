@@ -60,11 +60,17 @@ export class ConflictError extends Error {
 
 const CONFLICT_CODES = new Set(['23505', '23514', '23P01']);
 
-function mapError(error: unknown): Error {
+function mapError(error: unknown, name: string | undefined): Error {
   const e = error as { code?: unknown; constraint?: unknown };
   if (typeof e.code === 'string' && CONFLICT_CODES.has(e.code))
     return new ConflictError(typeof e.constraint === 'string' ? e.constraint : undefined);
-  return new UnavailableError('the org store cannot be reached or refused the statement');
+  const store = name === undefined ? 'the store' : `the ${name} store`;
+  return new UnavailableError(`${store} cannot be reached or refused the statement`);
+}
+
+/** How a store is named in its errors: `org` for the org store, `env` for an environment's. */
+export interface StoreOptions {
+  name?: string;
 }
 
 export interface Queryable {
@@ -73,9 +79,11 @@ export interface Queryable {
 
 class ClientQueries implements Queryable {
   private readonly client: pg.PoolClient;
+  private readonly name: string | undefined;
 
-  constructor(client: pg.PoolClient) {
+  constructor(client: pg.PoolClient, name: string | undefined) {
     this.client = client;
+    this.name = name;
   }
 
   async query<R extends pg.QueryResultRow>(
@@ -85,23 +93,25 @@ class ClientQueries implements Queryable {
     try {
       return (await this.client.query<R>(statement, params)).rows;
     } catch (error) {
-      throw mapError(error);
+      throw mapError(error, this.name);
     }
   }
 }
 
 export class Store implements Queryable {
   readonly pool: pg.Pool;
+  private readonly name: string | undefined;
 
-  constructor(pool: pg.Pool) {
+  constructor(pool: pg.Pool, options: StoreOptions = {}) {
     this.pool = pool;
+    this.name = options.name;
   }
 
-  static connect(settings: ConnectionSettings): Store {
+  static connect(settings: ConnectionSettings, options: StoreOptions = {}): Store {
     const pool = new pg.Pool(poolConfig(settings));
     // An idle client's error (the server went away) must not crash the process.
     pool.on('error', () => undefined);
-    return new Store(pool);
+    return new Store(pool, options);
   }
 
   async query<R extends pg.QueryResultRow>(
@@ -111,7 +121,7 @@ export class Store implements Queryable {
     try {
       return (await this.pool.query<R>(statement, params)).rows;
     } catch (error) {
-      throw mapError(error);
+      throw mapError(error, this.name);
     }
   }
 
@@ -121,9 +131,9 @@ export class Store implements Queryable {
     try {
       client = await this.pool.connect();
     } catch (error) {
-      throw mapError(error);
+      throw mapError(error, this.name);
     }
-    const tx = new ClientQueries(client);
+    const tx = new ClientQueries(client, this.name);
     try {
       await tx.query(SQL.begin);
       const result = await work(tx);

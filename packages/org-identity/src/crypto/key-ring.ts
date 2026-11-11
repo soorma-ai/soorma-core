@@ -144,6 +144,11 @@ export class KeyRing {
     return this.verifyKeys.find((k) => k.kid === kid)?.key;
   }
 
+  /** Always true: the ring holds at least its signing key's public half (SignInKeySource). */
+  hasKeys(): boolean {
+    return this.verifyKeys.length > 0;
+  }
+
   seedKey(id: string): SecretBytes | undefined {
     return this.seedKeys.get(id);
   }

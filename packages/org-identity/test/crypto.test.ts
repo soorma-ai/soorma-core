@@ -298,7 +298,6 @@ describe('TC-OI-044: sign-in verification is strict, and the token asserts no en
   it.each([
     ['another typ', { typ: 'JWT' }, {}],
     ['EdDSA', { alg: 'EdDSA' }, {}],
-    ['an unknown kid', { kid: 'unknown' }, {}],
     ['no sid', {}, { sid: undefined }],
     ['no auth_time', {}, { auth_time: undefined }],
     ['no amr', {}, { amr: undefined }],
@@ -307,6 +306,11 @@ describe('TC-OI-044: sign-in verification is strict, and the token asserts no en
   ])('refuses a token with %s', async (_name, header, claims) => {
     const token = await forged(header, claims);
     expect((await verifySignIn(token, keys, 'o1', now)).status).toBe('invalid');
+  });
+
+  it('answers unknownKey for a token with an unknown kid (U4 D-CG-EHA-16)', async () => {
+    const token = await forged({ kid: 'unknown' }, {});
+    expect((await verifySignIn(token, keys, 'o1', now)).status).toBe('unknownKey');
   });
 
   it('never reports an expired token as expired unless its form verified', async () => {
@@ -325,7 +329,7 @@ describe('TC-OI-044: sign-in verification is strict, and the token asserts no en
     );
     expect((await verifySignIn(token, rotated, 'o1', now)).status).toBe('valid');
     const removed = KeyRing.fromConfiguration(material({ signingKey: next.privatePem }));
-    expect((await verifySignIn(token, removed, 'o1', now)).status).toBe('invalid');
+    expect((await verifySignIn(token, removed, 'o1', now)).status).toBe('unknownKey');
   });
 });
 

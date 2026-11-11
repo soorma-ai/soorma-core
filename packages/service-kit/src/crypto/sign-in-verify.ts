@@ -11,10 +11,39 @@
 import type { KeyObject } from 'node:crypto';
 import { errors, jwtVerify, type JWTPayload } from 'jose';
 
-/** Where verification finds a key by `kid`; @soorma/org-identity's KeyRing is one. */
+/**
+ * Where verification finds a key by `kid`, read on every verification
+ * (U4 NP-EHA-15): @soorma/org-identity's KeyRing is one, and an environment's
+ * verify-key cache is another, whose answer changes when it refreshes.
+ */
 export interface SignInKeySource {
   verifyKey(kid: string): KeyObject | undefined;
+  /** False only when no key is held at all, so nothing could be verified. */
+  hasKeys(): boolean;
 }
+
+/**
+ * Clock tolerance (U4 NP-EHA-15; NFR-EHA-03). `expSeconds` is the leeway on
+ * `exp`. `iatAheadSeconds`, when given, refuses an `iat` further ahead of
+ * `now` than that, an explicit check: jose does not check a future `iat`.
+ * The organization level passes `{ expSeconds: 0 }` (U2 P-01); an environment
+ * passes 30 and 30 (U2 F-2).
+ */
+export interface SignInTolerance {
+  expSeconds: number;
+  iatAheadSeconds?: number;
+}
+
+/** The organization level's own tolerance (U2 P-01): no leeway, one clock. */
+export const ORGANIZATION_TOLERANCE: SignInTolerance = Object.freeze({ expSeconds: 0 });
+
+/**
+ * A sign-in's status as the organization level reports it (U2 amendment A7):
+ * `live` with its current expiry only for a live, unexpired sign-in of an
+ * active principal; `ended` otherwise; `unknown` when there is no record.
+ */
+export type SignInStatus =
+  { status: 'live'; expiresAt: Date } | { status: 'ended' } | { status: 'unknown' };
 
 export const SIGN_IN_PREFIX = 'soorma_si_';
 export const SIGN_IN_TYP = 'soorma-si+jwt';
@@ -42,7 +71,11 @@ export interface SignInClaims {
 }
 
 export type VerifyResult =
-  { status: 'valid'; claims: SignInClaims } | { status: 'expired' } | { status: 'invalid' };
+  | { status: 'valid'; claims: SignInClaims }
+  | { status: 'expired' }
+  | { status: 'invalid' }
+  /** The header names a `kid` the key source does not hold (U4 NP-EHA-15). */
+  | { status: 'unknownKey' };
 
 function claimsOf(payload: JWTPayload, organization: string): SignInClaims | undefined {
   const {
@@ -84,15 +117,17 @@ function claimsOf(payload: JWTPayload, organization: string): SignInClaims | und
 }
 
 /**
- * Verifies a presented token. `invalid` for anything that does not verify;
- * `expired` only for a token whose signature and form verified and whose
- * `exp` has passed.
+ * Verifies a presented token. `unknownKey` when the header names a `kid` the
+ * key source does not hold; `invalid` for anything else that does not verify,
+ * a missing `kid` included; `expired` only for a token whose signature and form
+ * verified and whose `exp` has passed, beyond the tolerance.
  */
 export async function verifySignIn(
   token: string,
   keys: SignInKeySource,
   organization: string,
   now: Date,
+  tolerance: SignInTolerance = ORGANIZATION_TOLERANCE,
 ): Promise<VerifyResult> {
   if (!token.startsWith(SIGN_IN_PREFIX)) return { status: 'invalid' };
   const jws = token.slice(SIGN_IN_PREFIX.length);
@@ -101,19 +136,31 @@ export async function verifySignIn(
     typ: SIGN_IN_TYP,
     issuer: issuerOf(organization),
     currentDate: now,
-    clockTolerance: 0,
+    clockTolerance: tolerance.expSeconds,
     requiredClaims: ['iss', 'sub', 'sid', 'jti', 'iat', 'exp', 'auth_time', 'amr'],
   };
+  let unknownKey = false;
   const keyFor = (header: { kid?: string }) => {
-    const key = header.kid === undefined ? undefined : keys.verifyKey(header.kid);
-    if (!key) throw new errors.JWKSNoMatchingKey();
+    if (header.kid === undefined) throw new errors.JWKSNoMatchingKey();
+    const key = keys.verifyKey(header.kid);
+    if (!key) {
+      unknownKey = true;
+      throw new errors.JWKSNoMatchingKey();
+    }
     return key;
   };
   try {
     const { payload } = await jwtVerify(jws, keyFor, options);
     const claims = claimsOf(payload, organization);
-    return claims ? { status: 'valid', claims } : { status: 'invalid' };
+    if (!claims) return { status: 'invalid' };
+    if (
+      tolerance.iatAheadSeconds !== undefined &&
+      claims.issuedAt.getTime() > now.getTime() + tolerance.iatAheadSeconds * 1000
+    )
+      return { status: 'invalid' };
+    return { status: 'valid', claims };
   } catch (error) {
+    if (unknownKey) return { status: 'unknownKey' };
     if (error instanceof errors.JWTExpired) {
       // jose verifies the signature, typ, and algorithm before the time
       // claims. Re-check the form so a malformed but signed token is never

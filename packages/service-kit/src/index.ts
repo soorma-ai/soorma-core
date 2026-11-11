@@ -40,10 +40,13 @@ export {
   issuerOf,
   SIGN_IN_PREFIX,
   SIGN_IN_TYP,
+  ORGANIZATION_TOLERANCE,
   verifySignIn,
   type MaterialClass,
   type SignInClaims,
   type SignInKeySource,
+  type SignInStatus,
+  type SignInTolerance,
   type VerifyResult,
 } from './crypto/sign-in-verify.ts';
 export { createHealthServer, HEALTH_HOST, listenHealth } from './http/health.ts';
@@ -61,6 +64,14 @@ export {
   type ProblemResponse,
   type Refusal,
 } from './http/problems.ts';
+export {
+  AcquireAbortedError,
+  globalTimers,
+  Semaphore,
+  type Release,
+  type SemaphoreOptions,
+  type Timers,
+} from './semaphore.ts';
 export { migrationStatement, statement, type Statement } from './sql.ts';
 export { MigrationError, migrate, runMigrations } from './store/migrations.ts';
 export {
@@ -72,4 +83,5 @@ export {
   Store,
   type ConnectionSettings,
   type Queryable,
+  type StoreOptions,
 } from './store/store.ts';

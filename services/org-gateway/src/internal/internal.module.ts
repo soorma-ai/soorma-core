@@ -20,7 +20,7 @@ import {
 import { verifyInternalRequest } from '@soorma/service-kit';
 import { ProblemError, rawHeaderValues } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { rawBody } from '../http.ts';
+import { rawBody } from '@soorma/service-kit/http';
 import type { Runtime } from '../runtime.ts';
 
 export const INTERNAL_RUNTIME = Symbol('soorma.internal.runtime');

@@ -13,6 +13,7 @@ export {
   SignInPerimeter,
   type CredentialHeader,
   type SignInCheck,
+  type SignInPerimeterOptions,
 } from './presenter.ts';
 export {
   CONTRACT_VERSION,

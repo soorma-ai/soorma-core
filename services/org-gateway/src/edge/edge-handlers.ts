@@ -19,7 +19,7 @@ import type { IssuedSignIn, MaterialChangeResult, Refusal } from '@soorma/org-id
 import { CONTRACT_VERSION, presentedCredentialHeaders, ProblemError } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { RequestSchema } from '../contract-validator.ts';
-import { rawBody } from '../http.ts';
+import { rawBody } from '@soorma/service-kit/http';
 import type { Runtime } from '../runtime.ts';
 
 type Schemas = components['schemas'];

@@ -70,12 +70,15 @@ export async function start(
     ...(options.secretsDir === undefined ? {} : { secretsDir: options.secretsDir }),
   });
   const keys = KeyRing.fromConfiguration(secrets);
-  const store = Store.connect({
-    ...settings.database,
-    database: settings.database.name,
-    password: secrets.databasePassword,
-    ca: secrets.databaseCa,
-  });
+  const store = Store.connect(
+    {
+      ...settings.database,
+      database: settings.database.name,
+      password: secrets.databasePassword,
+      ca: secrets.databaseCa,
+    },
+    { name: 'org' },
+  );
   const [commit] = await store.query<{ synchronous_commit: string }>(SQL.synchronousCommit);
   if (commit?.synchronous_commit !== 'on')
     throw new ConfigurationError(['the org store must run with synchronous_commit = on']);
