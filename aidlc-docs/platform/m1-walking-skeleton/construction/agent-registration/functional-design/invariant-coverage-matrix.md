@@ -13,6 +13,12 @@ QA construction enrichment adds before the Construction Design PR gate.
 **Result**: I1 to I10 `Covered`; I11 `N/A`. **0 `Missing`.** I1, I4, I5, and I8 are this unit's
 centre.
 
+**Updated at NFR Design (2026-11-11)**: no status changed. I1's access paths gain their
+physical form (four-column keys, the secret's foreign key, the cap's lock key including the
+environment, per-environment backup services mounting only their own `backup/` subpath); I4
+gains the restore round trip (NP-AR-09); I5 gains the store's `<@` constraints as defence in
+depth, P3 still deciding (NP-AR-01, 05).
+
 | Code | PRD Status | Applies to Unit | Code-Level Risk in This Unit | Implementation Target | Verification Target | Status |
 |---|---|---|---|---|---|---|
 | I1 Isolation | Addressed | **Yes** | A registration, secret, or agent-facts read with no environment constraint; an identifier unique across environments rather than per environment; an E2 credential registering in E | **Access paths** (all in E's own store; every row carries the three columns and every statement constrains on them, U4 D-EHA-29): the registration write and uniqueness (BR-RG-02); the registration lookup at issuance (BR-SE-03); the secret write (BR-SE-05); the agent-facts query (BR-AF-02); the held-set read (U4's). Credentials: E's material only (BR-PR-AR-02) | *QA enrichment*: one test per access path showing a principal of E cannot register into, issue for, look up, or read the facts of E2's registrations; the same `agent` in E and E2 are independent; E2's credential refused at E | Covered |

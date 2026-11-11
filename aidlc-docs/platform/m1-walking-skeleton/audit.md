@@ -2618,3 +2618,61 @@ Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-
 **Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements APPROVED.
 
 ---
+
+## NFR Requirements Committed; Obligation Posted; NFR Design Plan (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:33:08Z
+**User Input**: (none; carrying out the approval's instructions)
+**AI Response**: "Committed the NFR Requirements artifacts, the Functional Design consistency fixes, state and audit on dev as c0b222a and pushed; push run 43111942139 passed (Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run). Posted the verifier obligation on soorma-core#9: https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6808678348 (the value format; the unkeyed domain-separated SHA-256; one encoding per value; one record loaded, constant-time compare, one refusal; shared functions, their home decided at U5 NFR Design). Loaded construction/nfr-design.md. Wrote construction/working/agent-registration-nfr-design-plan.md (git-ignored): P-01 to P-09 proposed (migration 0002; the registrations table with the four-column primary key; registration_secrets with a foreign key over the four columns and a 32-byte digest CHECK; INSERT and SELECT only for the app role; the agent-facts statement over the primary key, without snapshot or sponsor; evaluateHeld, evaluateHuman over it, readHumanAuthority as frozen closures, checkRegistrationRequest; one transaction per operation, the held-set read before it; SecretText and no-store; events and three alert rules; the backup and restore services under a Compose profile mounting only the migrator's subpath, pgpass built in a tmpfs, PGPASSFILE only). Questions: Q1 the cap's serialisation (recommended A, pg_advisory_xact_lock over a domain-separated key; B a counter table with column UPDATE; C a slot column), Q2 the secret format's home (recommended A, packages/registry, with a U6 obligation not to link org-identity into S3), Q3 the dump's path out (recommended A, streamed to a host file opened 0600), Q4 the restore test (recommended A, the db:test round trip plus a CI stack step), Q5 set invariants as CHECK constraints (recommended A, flat-set <@, the human-only class never repeated in SQL). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements closed out; NFR Design plan, awaiting answers.
+
+---
+
+## NFR Design Answers (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:38:59Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A.
+
+P-01 to P-09: accepted, with two corrections to P-09 and an addition to Q4.
+
+A dedicated secrets subdirectory for the backup service. env.sh owns migrate/ as uid 65532 with mode 0400, and the pinned PostgreSQL image runs as 999, so the backup container can't read it. The store also requires verify-full TLS.
+Add copy backup 999 \"$env-db-migrator-password\" stack-ca-cert to env.sh, and mount only that backup subpath.
+Connect with sslmode=verify-full and sslrootcert from /run/secrets.
+The Compose-model test checks the service mounts only backup/.
+Streaming needs -T. Backup runs docker compose run --rm -T (no terminal, so the custom-format dump isn't corrupted), and restore runs with stdin open. Diagnostics go to stderr, never into the dump. Test that a dump's checksum is stable across two consecutive runs on an unchanged store.
+Q4's addition. Restore into an empty database. Then run {env}-migrate and assert it applies nothing (the restored schema_migrations checksums match), and re-run the app-role privilege test against the restored store, so a dump that loses the GRANTs fails.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-design-patterns.md and logical-components.md, and stop for review."
+**Answers Recorded** (construction/working/agent-registration-nfr-design-plan.md):
+- Q1 — How the cap of 10 is serialised without UPDATE privilege: A — pg_advisory_xact_lock over the first 63 bits of a domain-separated SHA-256 of the registration's four columns, then count and insert
+- Q2 — Where the secret's format lives: A — packages/registry (a pure module); forward obligation to U6 that P6's agent half not make S3 link org-identity
+- Q3 — How the dump leaves the container: A — streamed: stdout to a host file opened 0600 in a 0700 directory; restore streams the file to stdin. With the user's correction, verbatim above: docker compose run --rm -T for backup, stdin open for restore; diagnostics to stderr only; a stable-checksum test across two consecutive runs on an unchanged store
+- Q4 — Where the restore test runs: A — both the db:test round trip and a CI stack step. With the user's addition, verbatim above: restore into an empty database; then {env}-migrate applies nothing (restored schema_migrations checksums match); the app-role privilege test re-run against the restored store
+- Q5 — Set invariants as CHECK constraints: A — standing <@ snapshot and declaration <@ standing, flat-set assumption recorded; the human-only class never in SQL
+- P-01 to P-09: accepted; P-09 corrected by the user: a dedicated backup/ subdirectory (env.sh: copy backup 999 \"$env-db-migrator-password\" stack-ca-cert), the service mounting only that subpath, the Compose-model test checking so; connecting with sslmode=verify-full and sslrootcert from /run/secrets
+**AI Response**: "All five answered; none deferred; all technology (prd-gap-classification.md Step 1); no specification gap. One finding to raise at review, not silently resolved: a custom-format pg_dump archive records its creation time in its header, so two consecutive dumps of an unchanged store differ byte for byte, and a checksum of the raw file cannot be stable; and PostgreSQL 18's plain SQL output carries a random \restrict key unless one is fixed. The design states the stability test over a normalised projection (the archive's SQL as pg_restore emits it with a fixed --restrict-key) and flags it for the user's decision. Generating nfr-design-patterns.md and logical-components.md."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design answers recorded and classified.
+
+---
+
+## NFR Design Complete, Presented for Review (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:41:58Z
+**User Input**: (none; the user asked to stop for review once the artifacts are generated)
+**AI Response**: "Generated construction/agent-registration/nfr-design/: nfr-design-patterns.md (NP-AR-01 the tables in migration 0002, four-column primary key, the secret's foreign key and 32-byte digest, flat-set <@ CHECKs with their assumption recorded, the human-only class never in SQL, app role SELECT and INSERT only; NP-AR-02 the secret module in packages/registry; NP-AR-03 the cap under pg_advisory_xact_lock over a domain-separated 63-bit key; NP-AR-04 the agent-facts statement without snapshot or sponsor; NP-AR-05 evaluateHeld, evaluateHuman unchanged, readHumanAuthority as frozen closures, checkRegistrationRequest; NP-AR-06 the transactions, registration_exists only on the primary-key constraint; NP-AR-07 routes, no-store, events, three alert rules; NP-AR-08 backup and restore: env.sh copy backup 999, services under the backup profile mounting only backup/, PGPASSFILE only, verify-full with the stack CA, run --rm -T, the file opened wx 0o600 in a 0700 directory, stdin streamed to restore, which refuses a non-empty database; NP-AR-09 the db:test round trip and the CI stack step, each restoring into an empty database, migrate applying nothing, the privilege test re-run; NP-AR-10 ids and time) and logical-components.md (S2's two routes; packages; tables; backup components and the Compose-model test's assertions; harness; forward obligations, including U6 importing the secret functions from registry and P6's agent half not linking org-identity). Finding raised for the user, not silently resolved: a custom-format archive records its creation time in its header, so two consecutive dumps differ byte for byte and a raw-file checksum cannot be stable; plain format carries a random \restrict key in PostgreSQL 18 unless fixed, and a fixed key defeats that protection. The checksum test is designed over a normalised projection (pg_restore --file=- with a fixed test --restrict-key, and pg_restore --list without its header), never executed, with a control showing a write changes it; the alternative (plain format with a fixed key, restored by psql) is stated. L1 and invariant matrices: targets noted, no status changed. Security and invariants: no blocking finding. Presenting: Request Changes, or Continue to Next Stage (QA construction enrichment)."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design completion, approval prompt.
+
+---
+
+## NFR Design Approval (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:45:47Z
+**User Input**: "Continue to Next Stage: NFR Design approved, with NP-AR-09 (3) replaced.
+
+You're right about the custom-format header timestamp. My checksum requirement was the wrong test, so drop it, along with the normalised-projection design. What it was meant to catch is a dump damaged in transit (a terminal, or diagnostics in the stream). Replace it with an archive validity check after each backup:
+
+the file begins with the custom-format magic bytes PGDMP;
+pg_restore --list parses it with exit 0.
+The round trip already proves the data survives. Keep the dump in custom format.
+
+Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md. Commit the NFR Design artifacts, the matrices, state and audit on dev, and push; wait for the push run to pass. Post §7's U6 obligation on soorma-core#9 and record the link. Then run QA construction enrichment for U5 (qa-test-cases.md §2.6, including nfr-requirements/). Give a TC-AR id to every verification target in the four U5 design artifacts, and stop for review before the Construction Design PR gate."
+**AI Response**: "NFR Design APPROVED. NP-AR-09 (3) replaced: the checksum test and the normalised projection dropped; an archive validity check after every backup (the first five bytes PGDMP; pg_restore --list through the backup image, no connection, exit 0, listing discarded); either failure deletes the file and fails; two negative tests (a prepended line; a one-byte truncation); custom format kept. NP-AR-08's backup row and host-script row, the header note, and logical-components §5 and §7 updated. Correction to aidlc-state.md made now: the U5 NFR Design and Infrastructure Design lines, added after c0b222a, had been inserted under U1's NFR Requirements line by a search that matched U1's first; moved under U5 (the pushed history was not affected). Committing on dev, pushing, waiting for the push run; then the U6 obligation on #9 and QA construction enrichment."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design APPROVED.
+
+---

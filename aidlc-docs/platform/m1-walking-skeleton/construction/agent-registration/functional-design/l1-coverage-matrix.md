@@ -18,6 +18,15 @@ each marker with a test-case ID.
 work-around** (Open, soorma-prd#24). L1-18 rests on D-AR-01, classified as specified (ID §3 with
 PF §8a). **0 `Missing`.**
 
+**Updated at NFR Design (2026-11-11)**: implementation targets made concrete, no row's status
+changed. L1-01, L1-02: the four-column primary key of `registrations` (NP-AR-01). L1-04, L1-11:
+the `<@ ceiling_snapshot` constraint beside P3's check. L1-06: the `<@ standing_permissions`
+constraint. L1-09, L1-10: the app role's `SELECT, INSERT` only on both tables, in migration
+`0002`. L1-13: the agent-facts statement reads neither snapshot nor sponsor (NP-AR-04). L1-18,
+L1-19: `registration_secrets` with its foreign key and 32-byte digest; the secret module in
+`packages/registry` (NP-AR-02). L1-21: backup and restore (NP-AR-08, 09). L1-24: `evaluateHeld`,
+`readHumanAuthority` (NP-AR-05).
+
 ---
 
 ## Applicable to U5
