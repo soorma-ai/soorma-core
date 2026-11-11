@@ -242,7 +242,7 @@ export interface components {
             [key: string]: unknown;
         };
         /** @description A stable, machine-readable error code. An open set: tolerate codes you do not know, and problems with none. */
-        ProblemCode: "malformed_request" | "unknown_field" | "stamped_field_set" | "invalid_inbound_context" | "chain_too_deep" | "envelope_too_large" | "unsupported_contract_version" | "credential_refused" | "credential_expired" | "forbidden" | "payload_too_large" | "too_many_attempts" | "unavailable" | "internal_error" | "authentication_failed" | "second_factor_enrollment_required" | "second_factor_not_confirmed" | "secret_rejected" | (string & {});
+        ProblemCode: "malformed_request" | "unknown_field" | "stamped_field_set" | "invalid_inbound_context" | "chain_too_deep" | "envelope_too_large" | "unsupported_contract_version" | "credential_refused" | "credential_expired" | "forbidden" | "payload_too_large" | "too_many_attempts" | "unavailable" | "internal_error" | "authentication_failed" | "second_factor_enrollment_required" | "second_factor_not_confirmed" | "secret_rejected" | "unknown_permission" | "unknown_principal" | (string & {});
         /** @description Why a new secret (K) was rejected, on secret_rejected. An open set: tolerate reasons you do not know. */
         SecretRejectedReason: "too_short" | "too_long" | "disallowed_character" | "breached" | "reused" | "context_word" | (string & {});
         ProblemFieldError: {

@@ -1,0 +1,316 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# S2 control-gateway: an environment's control face (U4 env-human-access). One
+# environment per control-gateway, so no path carries an environment. No
+# operation carries an envelope: each is a direct human operation (PF FR-001
+# v1.3; ID FR-022). Shared definitions are referenced from
+# conventions/components.openapi.yaml, never copied. The written rules are in
+# conventions/*.md. U5 adds its operations to this document.
+openapi: 3.1.1
+info:
+  title: soorma control-gateway (S2)
+  version: 0.1.0
+  description: >-
+    An environment's human environment credential, and grants to human
+    principals in the environment. Pre-release (0.y.z): see
+    conventions/pre-release.md.
+  license:
+    name: Apache 2.0
+    identifier: Apache-2.0
+paths:
+  /environment-credentials:
+    post:
+      operationId: issueEnvironmentCredential
+      summary: Obtain this environment's credential from an organization sign-in
+      description: >-
+        The only operation at an environment that accepts an organization
+        sign-in. The principal must be active and hold at least one grant in
+        this environment. The credential's expiry is never later than the
+        sign-in's. Takes no request body.
+      security:
+        - signIn: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      responses:
+        '200':
+          description: The environment credential.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentCredentialResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /environment-credentials/current/renewal:
+    post:
+      operationId: renewEnvironmentCredential
+      summary: Renew one's own environment credential
+      description: >-
+        A new token for the same credential, never past the sign-in's current
+        expiry, and refused once the sign-in has ended. Self-service: no grant
+        is required. Takes no request body.
+      security:
+        - environmentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      responses:
+        '200':
+          description: The renewed environment credential.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentCredentialResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /environment-credentials/current/end:
+    post:
+      operationId: endEnvironmentCredential
+      summary: End one's own environment credential
+      description: >-
+        The credential is ended, and every token of it is refused from then on.
+        This is the logout in this environment. Takes no request body.
+      security:
+        - environmentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      responses:
+        '204':
+          description: Ended.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /grants:
+    post:
+      operationId: grantToHuman
+      summary: Grant permissions to a human principal in this environment
+      description: >-
+        Requires grant:human in this environment. The actor need not hold what
+        they grant. Only accepted permission identifiers are granted. A grant to
+        oneself is recorded as a self-grant.
+      security:
+        - environmentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantRequest'
+      responses:
+        '200':
+          description: The grant.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grant'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  schemas:
+    # Request side: closed, every string and array bounded.
+    GrantRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - target
+        - permissions
+      properties:
+        target:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReferenceInput'
+        permissions:
+          description: The permissions granted, as a set. Each must be accepted in this environment.
+          type: array
+          minItems: 1
+          maxItems: 32
+          uniqueItems: true
+          items:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/PermissionIdentifier'
+
+    # Received side: open, identifiers as plain strings.
+    EnvironmentCredentialResponse:
+      description: >-
+        The environment credential. credential is opaque: present it as
+        Authorization: Bearer, in this environment only.
+      type: object
+      additionalProperties: true
+      required:
+        - credential
+        - expiresAt
+      properties:
+        credential:
+          type: string
+        expiresAt:
+          description: RFC 3339.
+          type: string
+    Grant:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - target
+        - permissions
+        - grantedAt
+        - selfGrant
+      properties:
+        id:
+          type: string
+        target:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReference'
+        permissions:
+          type: array
+          items:
+            type: string
+        grantedAt:
+          description: RFC 3339.
+          type: string
+        selfGrant:
+          description: True when the target is the actor.
+          type: boolean
+
+  headers:
+    Soorma-Contract-Version:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Contract-Version'
+    Soorma-Request-Id:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Request-Id'
+    Retry-After:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Retry-After'
+    WWW-Authenticate:
+      description: Bearer, on a 401 (RFC 6750). Never on a 403.
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: >-
+        malformed_request (a body on an operation that takes none included),
+        unsupported_contract_version, unknown_permission, or unknown_principal.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    CredentialRefused:
+      description: credential_refused or credential_expired.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWW-Authenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Forbidden:
+      description: forbidden. Authority denied. No WWW-Authenticate.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: payload_too_large. Request bodies are at most 16 KiB.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Unavailable:
+      description: unavailable. The request fails closed.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    InternalError:
+      description: internal_error, with no detail.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+
+  securitySchemes:
+    signIn:
+      $ref: 'conventions/components.openapi.yaml#/components/securitySchemes/signIn'
+    environmentCredential:
+      $ref: 'conventions/components.openapi.yaml#/components/securitySchemes/environmentCredential'

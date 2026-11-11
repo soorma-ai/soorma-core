@@ -7,6 +7,9 @@
 // The shared Problem assertion is the test-only `@soorma/perimeter/testing`.
 export {
   CREDENTIAL_HEADERS,
+  ENVIRONMENT_CREDENTIAL_PREFIX,
+  presentedCredential,
+  presentedEnvironmentCredential,
   presentedCredentialHeaders,
   presentedSignIn,
   rawHeaderValues,

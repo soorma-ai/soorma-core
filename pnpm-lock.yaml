@@ -63,6 +63,18 @@ importers:
         specifier: workspace:*
         version: link:../service-kit
 
+  packages/attribution:
+    dependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+
   packages/authority:
     dependencies:
       '@soorma/envelope':
@@ -90,6 +102,37 @@ importers:
       yaml:
         specifier: 2.9.1
         version: 2.9.1
+
+  packages/credentials:
+    dependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+      jose:
+        specifier: 6.2.14
+        version: 6.2.14
+
+  packages/env-store:
+    dependencies:
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
 
   packages/envelope:
     dependencies:
@@ -176,6 +219,25 @@ importers:
       '@soorma/policy-decision-seam':
         specifier: workspace:*
         version: link:../../seams/policy-decision
+
+  packages/registry:
+    dependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+    devDependencies:
+      '@soorma/authority':
+        specifier: workspace:*
+        version: link:../authority
+      '@soorma/policy-decision':
+        specifier: workspace:*
+        version: link:../policy-decision
 
   packages/service-kit:
     dependencies:

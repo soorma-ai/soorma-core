@@ -1,0 +1,8 @@
+{
+  "id": "g",
+  "target": { "organization": "o1", "principal": "j@example.com" },
+  "permissions": ["tenant:custom"],
+  "grantedAt": "2026-11-11T12:00:00Z",
+  "selfGrant": false,
+  "grantedBy": "later"
+}

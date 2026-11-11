@@ -2348,3 +2348,18 @@ Then finish Group 2's gate (S1 image, then stack:init, up, smoke, down -v), comm
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 2 and 3.
 
 ---
+
+## Code Generation Part 2: Groups 2 and 3 Accepted; D-CG-EHA-17 Approved (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:30:03Z
+**User Input**: "Groups 2 and 3 accepted.
+
+The monitoring test: approved now, as D-CG-EHA-17, for Group 6:
+
+Move the whole-file checks to deploy/test/monitoring.test.ts (TC-EHA-087). alerts.yaml's events must equal the union of S1's SECURITY_EVENTS and S2's event list, and every rule and panel must name an event in that union.
+In services/org-gateway/test/monitoring.test.ts, lines 46, 50 and 52 become: every S1 event is in alerts.yaml's events. Line 75 (S1's source emits each event) stays.
+No other U2 assertion changes. Stop as before if one would.
+Continue with Groups 4 and 5, each with the full gate and a push, waiting for green. Stop and report after Group 5's push run is green. S2 is the most security-relevant new code, and I want to review it before the stack work."
+**AI Response**: "Recorded D-CG-EHA-17 for Group 6. Continuing with Group 4 (contract, env-store, P4, P5, P7, P3, P9, P1) and Group 5 (S2), each with the full gate and a push awaited green; stopping after Group 5's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation, Groups 4 and 5 starting.
+
+---

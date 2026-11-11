@@ -1,0 +1,29 @@
+{
+  "name": "@soorma/env-store",
+  "private": true,
+  "description": "An environment's store: its one migration sequence, its pool, and the transaction its modules write through (U4 NP-EHA-06)",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/policy-decision-seam": "workspace:*",
+    "@soorma/service-kit": "workspace:*",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}

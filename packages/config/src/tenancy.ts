@@ -38,6 +38,57 @@ export interface Environment {
   firstAdmin: string;
   /** The envelope-seal key ring (U3 NP-02); only S4 reads its secrets. */
   sealKeys?: SealKeyNames;
+  /** The environment's S2 (U4 Infrastructure Design §3); only that S2 reads its secrets. */
+  controlGateway?: ControlGatewayNames;
+}
+
+/** An environment's S2 part as configured: settings, and secrets by name (U4 P-06). */
+export interface ControlGatewayNames {
+  edge: { port: number; tls: string };
+  health: { port: number };
+  database: {
+    host: string;
+    port: number;
+    name: string;
+    user: string;
+    password: string;
+    ca: string;
+  };
+  migrator: { user: string; password: string };
+  keys: { signing: string; verify: string[]; caller: string; logPseudonym: string };
+  organizationLevel: { host: string; port: number; ca: string };
+}
+
+/** S2's configuration, loaded for its own environment only (U4 P-06; BR-CFG). */
+export interface ControlGatewayConfiguration {
+  settings: {
+    organization: string;
+    project: string;
+    environment: string;
+    firstAdmin: string;
+    edge: { port: number };
+    health: { port: number };
+    database: { host: string; port: number; name: string; user: string };
+    organizationLevel: { host: string; port: number };
+  };
+  secrets: {
+    edgeTls: Buffer;
+    databasePassword: string;
+    databaseCa: Buffer;
+    /** E's key ring, by name, in configuration order; `signing` names one (NP-EHA-02). */
+    verifyKeys: { name: string; pem: Buffer }[];
+    signing: string;
+    callerKey: Buffer;
+    logPseudonymKey: Buffer;
+    organizationCa: Buffer;
+  };
+}
+
+/** {env}-migrate's configuration: its store, the migrator password, and the CA. */
+export interface EnvironmentMigratorConfiguration {
+  database: { host: string; port: number; name: string; user: string };
+  databasePassword: string;
+  databaseCa: Buffer;
 }
 
 /** An environment's seal keys as configured: the seed keys' shape (U3 NP-02). */
@@ -208,6 +259,64 @@ function readTenancy(configPath: string): { raw: RawTenancy; settings: Organizat
       for (const id of duplicates(ids)) problems.push(`${at}: key id ${id} appears twice`);
       if (!ids.includes(env.sealKeys.current))
         problems.push(`${at}/current: names no configured seal key`);
+    }
+  }
+
+  // Each environment's S2 part (U4 Infrastructure Design §3; ID §6): signing is
+  // one of verify; no name twice in verify; no secret shared with another
+  // environment's part, or with the organization level, other than the CA
+  // certificate, which is public.
+  const caNames = new Set<string>([level.database.ca]);
+  const parts: { at: string; env: string; names: string[] }[] = [];
+  for (const [pi, project] of raw.projects.entries()) {
+    for (const [ei, env] of project.environments.entries()) {
+      const cg = env.controlGateway;
+      if (!cg) continue;
+      const at = `/projects/${pi}/environments/${ei}/controlGateway`;
+      for (const name of duplicates(cg.keys.verify))
+        problems.push(`${at}/keys/verify: ${name} is listed twice`);
+      if (!cg.keys.verify.includes(cg.keys.signing))
+        problems.push(`${at}/keys/signing: names no verify key`);
+      caNames.add(cg.database.ca);
+      caNames.add(cg.organizationLevel.ca);
+      parts.push({
+        at,
+        env: env.id,
+        names: [
+          ...new Set([
+            cg.edge.tls,
+            cg.database.password,
+            cg.migrator.password,
+            ...cg.keys.verify,
+            cg.keys.caller,
+            cg.keys.logPseudonym,
+          ]),
+        ],
+      });
+    }
+  }
+  const organizationNames = new Set<string>([
+    level.edge.tls,
+    level.internal.tls,
+    level.database.password,
+    level.migrator.password,
+    level.keys.signing,
+    ...(level.keys.verify ?? []),
+    ...level.keys.seed.keys.map((k) => k.secret),
+    level.keys.counter,
+    level.keys.logPseudonym,
+    ...level.enrollment.map((e) => e.secret),
+  ]);
+  const owner = new Map<string, string>();
+  for (const part of parts) {
+    for (const name of part.names) {
+      if (caNames.has(name)) continue;
+      if (organizationNames.has(name))
+        problems.push(`${part.at}: ${name} is an organization-level secret`);
+      const other = owner.get(name);
+      if (other !== undefined && other !== part.env)
+        problems.push(`${part.at}: ${name} is also named by environment ${other}`);
+      else owner.set(name, part.env);
     }
   }
 
@@ -392,6 +501,90 @@ export function loadSealKeys(
   return sealKeys;
 }
 
+function controlGatewayOf(
+  raw: RawTenancy,
+  where: { project: string; environment: string },
+): { env: Environment; cg: ControlGatewayNames } {
+  const env = raw.projects
+    .find((p) => p.id === where.project)
+    ?.environments.find((e) => e.id === where.environment);
+  if (!env)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} is not configured`,
+    ]);
+  if (!env.controlGateway)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} has no controlGateway`,
+    ]);
+  return { env, cg: env.controlGateway };
+}
+
+/**
+ * An environment's S2 configuration at start-up (U4 P-06). Reads only that
+ * environment's part and its secrets, never the migrator password, and never
+ * another environment's or the organization level's secret. Every problem is
+ * collected, then start-up is refused (BR-CFG).
+ */
+export function loadControlGateway(
+  options: LoadOptions,
+  where: { project: string; environment: string },
+): ControlGatewayConfiguration {
+  const { raw } = readTenancy(options.configPath);
+  const { env, cg } = controlGatewayOf(raw, where);
+  const read = new SecretReader(options.secretsDir ?? DEFAULT_SECRETS_DIR);
+  const secrets = {
+    edgeTls: read.bytes(cg.edge.tls),
+    databasePassword: read.text(cg.database.password),
+    databaseCa: read.bytes(cg.database.ca),
+    verifyKeys: cg.keys.verify.map((name) => ({ name, pem: read.bytes(name) })),
+    signing: cg.keys.signing,
+    callerKey: read.bytes(cg.keys.caller),
+    logPseudonymKey: read.key(cg.keys.logPseudonym),
+    organizationCa: read.bytes(cg.organizationLevel.ca),
+  };
+  if (read.problems.length > 0) throw new ConfigurationError(read.problems);
+  return {
+    settings: {
+      organization: raw.organization,
+      project: where.project,
+      environment: env.id,
+      firstAdmin: env.firstAdmin,
+      edge: { port: cg.edge.port },
+      health: { port: cg.health.port },
+      database: {
+        host: cg.database.host,
+        port: cg.database.port,
+        name: cg.database.name,
+        user: cg.database.user,
+      },
+      organizationLevel: { host: cg.organizationLevel.host, port: cg.organizationLevel.port },
+    },
+    secrets,
+  };
+}
+
+/** {env}-migrate's configuration: the migrator password and the CA, nothing else. */
+export function loadEnvironmentMigrator(
+  options: LoadOptions,
+  where: { project: string; environment: string },
+): EnvironmentMigratorConfiguration {
+  const { raw } = readTenancy(options.configPath);
+  const { cg } = controlGatewayOf(raw, where);
+  const read = new SecretReader(options.secretsDir ?? DEFAULT_SECRETS_DIR);
+  const out = {
+    database: {
+      host: cg.database.host,
+      port: cg.database.port,
+      name: cg.database.name,
+      user: cg.migrator.user,
+    },
+    databasePassword: read.text(cg.migrator.password),
+    databaseCa: read.bytes(cg.database.ca),
+  };
+  if (read.problems.length > 0) throw new ConfigurationError(read.problems);
+  return out;
+}
+
 /** The secret names a configuration references, by who reads them; for stack:init. */
 export interface SecretNames {
   /** S1's secrets (never the migrator password). */
@@ -406,10 +599,28 @@ export interface SecretNames {
   ca: string;
   /** The Ed25519 signing key. */
   signing: string;
+  /** Each environment's S2 part (U4 P-06), for stack:init at Group 6. */
+  environments: {
+    project: string;
+    environment: string;
+    /** S2's secrets (never the migrator password). */
+    controlGateway: string[];
+    /** {env}-migrate's: the migrator password and the CA. */
+    migrator: string[];
+    tls: string;
+    /** Ed25519 private keys: E's verify keys (signing among them) and its caller key. */
+    ed25519: string[];
+    /** The caller keys' public halves, as S1's internalCallers names them. */
+    callerPublic: string[];
+    logPseudonym: string;
+    databasePassword: string;
+    migratorPassword: string;
+  }[];
 }
 
 export function listSecrets(options: LoadOptions): SecretNames {
-  const level = readTenancy(options.configPath).raw.organizationLevel;
+  const { raw } = readTenancy(options.configPath);
+  const level = raw.organizationLevel;
   const unique = (names: string[]): string[] => [...new Set(names)];
   const tls = unique([level.edge.tls, level.internal.tls]);
   return {
@@ -430,5 +641,36 @@ export function listSecrets(options: LoadOptions): SecretNames {
     tls,
     ca: level.database.ca,
     signing: level.keys.signing,
+    environments: raw.projects.flatMap((p) =>
+      p.environments.flatMap((e) => {
+        const cg = e.controlGateway;
+        if (!cg) return [];
+        const callerPublic = (level.internalCallers ?? [])
+          .filter((c) => c.environment === e.id)
+          .flatMap((c) => c.publicKeys);
+        return [
+          {
+            project: p.id,
+            environment: e.id,
+            controlGateway: unique([
+              cg.edge.tls,
+              cg.database.password,
+              cg.database.ca,
+              ...cg.keys.verify,
+              cg.keys.caller,
+              cg.keys.logPseudonym,
+              cg.organizationLevel.ca,
+            ]),
+            migrator: unique([cg.migrator.password, cg.database.ca]),
+            tls: cg.edge.tls,
+            ed25519: unique([...cg.keys.verify, cg.keys.caller]),
+            callerPublic,
+            logPseudonym: cg.keys.logPseudonym,
+            databasePassword: cg.database.password,
+            migratorPassword: cg.migrator.password,
+          },
+        ];
+      }),
+    ),
   };
 }

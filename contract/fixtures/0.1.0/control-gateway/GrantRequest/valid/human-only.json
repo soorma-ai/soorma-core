@@ -1,0 +1,4 @@
+{
+  "target": { "organization": "o1", "principal": "j@example.com" },
+  "permissions": ["grant:human", "human:manage", "agent:delegate"]
+}

@@ -1,0 +1,4 @@
+{
+  "target": { "organization": "o1", "principal": "h@example.com" },
+  "permissions": ["agent:register", "event:publish"]
+}

@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "composite": true,
+    "customConditions": [],
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../seams/policy-decision/tsconfig.build.json"
+    },
+    {
+      "path": "../service-kit/tsconfig.build.json"
+    },
+    {
+      "path": "../env-store/tsconfig.build.json"
+    }
+  ]
+}

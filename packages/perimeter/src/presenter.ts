@@ -19,6 +19,7 @@
 // answers A7's SignInStatus, and an accepted check carries the `live` answer,
 // so its expiry can cap what the caller issues.
 import {
+  asSecretText,
   ORGANIZATION_TOLERANCE,
   SIGN_IN_PREFIX,
   UnavailableError,
@@ -27,6 +28,7 @@ import {
   type SignInClaims,
   type SignInKeySource,
   type SignInStatus,
+  type SecretText,
   type SignInTolerance,
 } from '@soorma/service-kit';
 
@@ -52,8 +54,20 @@ export function presentedCredentialHeaders(rawHeaders: readonly string[]): Crede
   return CREDENTIAL_HEADERS.filter((h) => rawHeaderValues(rawHeaders, h).length > 0);
 }
 
-/** The presented sign-in token, or undefined when the presentation is refused. */
-export function presentedSignIn(rawHeaders: readonly string[]): string | undefined {
+/**
+ * The presented credential of the one kind an operation accepts, or undefined
+ * when the presentation is refused (BR-PR-01 to 07): exactly one
+ * `Authorization: Bearer`, counted on the raw header list, no
+ * `Soorma-Delegation`, an RFC 6750 b64token of at most 4096 characters, and the
+ * accepted prefix. Any other prefix, an agent's (`soorma_ac_`), a delegation
+ * credential's (`soorma_dc_`), or one unknown, is refused by kind, without
+ * verifying. The prefix only selects how a credential is checked: it is
+ * accepted only after it verifies (BR-PR-07).
+ */
+export function presentedCredential(
+  rawHeaders: readonly string[],
+  prefix: string,
+): string | undefined {
   if (rawHeaderValues(rawHeaders, 'Soorma-Delegation').length > 0) return undefined;
   const values = rawHeaderValues(rawHeaders, 'Authorization');
   if (values.length !== 1) return undefined;
@@ -61,7 +75,26 @@ export function presentedSignIn(rawHeaders: readonly string[]): string | undefin
   const credential = match?.[1];
   if (!credential || credential.length > MAX_CREDENTIAL || !B64TOKEN.test(credential))
     return undefined;
-  return credential.startsWith(SIGN_IN_PREFIX) ? credential : undefined;
+  return credential.startsWith(prefix) ? credential : undefined;
+}
+
+/** The presented sign-in token, or undefined when the presentation is refused. */
+export function presentedSignIn(rawHeaders: readonly string[]): string | undefined {
+  return presentedCredential(rawHeaders, SIGN_IN_PREFIX);
+}
+
+/** The prefix of a human environment credential (credentials.md). */
+export const ENVIRONMENT_CREDENTIAL_PREFIX = 'soorma_ec_';
+
+/**
+ * At S2's renewal, ending, and grantToHuman (BR-PR-03): the presented
+ * environment credential, as a secret (NP-EHA-14), or undefined: refused.
+ */
+export function presentedEnvironmentCredential(
+  rawHeaders: readonly string[],
+): SecretText | undefined {
+  const credential = presentedCredential(rawHeaders, ENVIRONMENT_CREDENTIAL_PREFIX);
+  return credential === undefined ? undefined : asSecretText(credential);
 }
 
 export type SignInCheck =
