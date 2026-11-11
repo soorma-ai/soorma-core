@@ -2139,3 +2139,80 @@ Update logical-components.md §2.1 commit 2 to match. Add tests for the leeway c
 **Context**: CONSTRUCTION, U4 env-human-access: NFR Design revised, awaiting approval.
 
 ---
+
+## NFR Design: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:44:26Z
+**User Input**: "Continue to Next Stage: NFR Design approved. Log the approval verbatim in audit.md and mark the stage approved in aidlc-state.md. Post §7's forward obligations as comments on soorma-core#8 (U5), #9 (U6) and #10 (U7), and record the links in the state file.
+
+Then start Infrastructure Design. Write the plan and stop for my answers. The plan must cover the obligations NFR Requirements §4 and logical-components.md §7 carried to it, including:
+
+S1's rotation note saying \"wait at least 5 minutes\";
+the column-level privileges in §3;
+the alert rules;
+each environment's secrets delivered as mounted files, never as environment variables, in source, or in IaC."
+**AI Response**: "NFR Design approved (committed as 63d0ea8). Marking the stage approved; posting logical-components.md §7's obligations on soorma-core#8, #9, #10; then starting Infrastructure Design: plan with questions, stopping for answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design APPROVED; Infrastructure Design starting.
+
+---
+
+## NFR Design Approval Actions; Infrastructure Design: Plan and Questions (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:46:58Z
+**User Input**: (none; the actions the approval at 2026-11-11T06:44:26Z asked for)
+**AI Response**: "Marked NFR Design APPROVED in aidlc-state.md. Posted logical-components.md §7's obligations, pinned to 63d0ea8: soorma-core#8 https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6789072918 (U5), #9 https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6789073310 (U6), #10 https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6789073655 (U7); links recorded in aidlc-state.md. Infrastructure Design started: loaded construction/infrastructure-design.md and shared-infrastructure.md; read the stack as built (compose.yaml, secrets-init/org.sh, db/, stack-init.ts, stack-certs.ts, tenancy.yaml, deploy/monitoring/). Wrote construction/working/env-human-access-infrastructure-design-plan.md (git-ignored): obligations O-1 to O-13 mapped, including the user's four (O-1 S1's rotation note 'wait at least 5 minutes'; O-2 the column-level privileges; O-3 the alert rules; O-4 each environment's secrets as mounted files, never in environment variables, source, or IaC). P-01 to P-11 proposed: per-environment services with S2 not depending on org-gateway; secrets via {env}-secrets-init and {env}-secrets with a Compose-model test; E's nine secrets and the derived caller public key mounted only into org-gateway; fixed role names per instance with table and column privileges in env-store's 0001_init.sql and an app-role refusal test; networks {env} and org-internal-{env}, edges on 127.0.0.1:8442 and 8443; tenancy.yaml controlGateway part; certificates; alert rules and dashboard panels; the scripted S1-stopped demonstration; resources; E's minting-key rotation notes. Three questions, all technology: Q1 Compose structure (recommended A, one compose.yaml written out per environment with anchors); Q2 caller-key rotation (recommended A, S1 accepts a list of public keys per environment, a compatible U2 config change at U4 Code Generation); Q3 operations notes (recommended A, an Operations section in each service's README). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design, plan awaiting answers.
+
+---
+
+## Infrastructure Design: Answers (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:52:06Z
+**User Input**: "Q1: A. Q2: A. Q3: A.
+
+Q2's addition: besides publicKey → publicKeys, change S1's config validation. Today it refuses an environment that appears twice (packages/config/src/tenancy.ts:214). It should refuse a key (by kid) that appears in more than one environment, and a duplicate key within one environment, so callerByKid can never attribute one environment's call to another (I1). Test both refusals. Carry it to Code Generation with S1's image rebuild, as for A7.
+
+P-01 to P-11: accepted, with one change to P-09. Add a second case: start E's S2 while S1 is stopped.
+
+With no keys loaded, issuance is 503 with Retry-After: 5.
+A credential issued before the restart still passes O1 to O4 and can be ended.
+After start org-gateway, issuance recovers on the next fetch.
+Fix the recovery wording for the first case: an S2 that held keys before S1 stopped keeps them (a failed fetch keeps the keys), so issuance recovers as soon as S1 answers.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate infrastructure-design.md and deployment-architecture.md, update shared-infrastructure.md, and stop for review."
+**AI Response**: "Answers recorded and classified; generating construction/env-human-access/infrastructure-design/infrastructure-design.md and deployment-architecture.md, and updating construction/shared-infrastructure.md."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design, answers received.
+
+**Answers Recorded** (plan: construction/working/env-human-access-infrastructure-design-plan.md)
+
+| Question | Answer | Classification |
+|---|---|---|
+| Q1 (Compose structure) | A: one compose.yaml, each environment's services written out in full, shared parts by YAML anchors | Technology (I11) |
+| Q2 (caller-key rotation) | A: S1 accepts a list of public keys per environment (publicKey → publicKeys). **With the user's addition**: S1's configuration validation refuses a key (by kid) that appears in more than one environment, and a duplicate key within one environment, so callerByKid can never attribute one environment's call to another (I1); both refusals tested; carried to Code Generation with S1's image rebuild, as for A7 | Technology (I11); the addition serves I1 |
+| Q3 (operations notes) | A: an Operations section in each service's README | Technology (I11) |
+| P-01 to P-11 | Accepted, **with one change to P-09**: a second case, E's S2 started while S1 is stopped (no keys loaded: issuance 503 with Retry-After: 5; a credential issued before the restart still passes O1 to O4 and can be ended; after start org-gateway, issuance recovers on the next fetch); and the first case's recovery wording fixed (an S2 that held keys before S1 stopped keeps them, since a failed fetch keeps the keys, so issuance recovers as soon as S1 answers) | Technology (I11) |
+
+**Specification gaps**: none.
+
+---
+
+## Infrastructure Design: Complete, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:55:07Z
+**User Input**: (none; presenting the stage for review)
+**AI Response**: "Generated construction/env-human-access/infrastructure-design/infrastructure-design.md (component mapping; images; secrets as mounted files only with per-environment secret tables, the derived caller public key as the one cross-level value, and the Compose-model test; tenancy.yaml controlGateway part and internalCallers publicKeys; S1's caller keys with the user's addition: refusals for an environment twice, a secret name twice, a kid twice in one environment, and a kid in two environments, the kid checks made where keys are loaded and thumbprinted so two files holding one key are caught; TLS; environment stores with env-roles.sql, env-pg_hba.conf, the init script, fixed role names, column-level privileges in env-store's 0001_init.sql and the app-role privilege test; networks and ports; hardening; monitoring with five rules; operations notes per README with S1's 'wait at least 5 minutes' and a docs test; the S1-stopped demonstration in two cases with the user's wording; CI; O-1 to O-13 discharged; security and invariant compliance, no blocking finding) and deployment-architecture.md (decisions index; Mermaid diagram with a text alternative; start-up order with S2 not waiting for org-gateway; volumes and mounts; the two S1-stopped cases; how U5 to U7 extend it). Updated construction/shared-infrastructure.md with U4's settlements, each marked. Presented the 2-option completion message; next stage QA construction enrichment, then the Construction Design PR gate, then Code Generation."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design complete, awaiting approval.
+
+---
+
+## Infrastructure Design: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:58:38Z
+**User Input**: "Continue to Next Stage: Infrastructure Design approved. Log the approval verbatim in audit.md and mark the stage approved in aidlc-state.md. Commit the Infrastructure Design artifacts, shared-infrastructure.md, state and audit on dev, and push.
+
+Then run QA construction enrichment for U4 (qa-test-cases.md §2.6). Give TC-EHA ids to every verification target in the Functional Design, NFR Requirements, NFR Design and Infrastructure Design, including:
+
+the outage cases;
+the Compose-model, privilege and docs tests;
+the caller-key refusals;
+the 64-abort and concurrency tests.
+Stop for review before the Construction Design PR gate."
+**AI Response**: "Infrastructure Design approved. Marking it approved, committing on dev and pushing; then running QA construction enrichment (qa-test-cases.md §2.6), and stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design APPROVED; QA construction enrichment starting.
+
+---
