@@ -15,6 +15,11 @@
       "types": "./dist/org-gateway.d.ts",
       "default": "./dist/org-gateway.js"
     },
+    "./types/control-gateway": {
+      "source": "./generated/control-gateway.ts",
+      "types": "./dist/control-gateway.d.ts",
+      "default": "./dist/control-gateway.js"
+    },
     "./*.openapi.yaml": "./*.openapi.yaml",
     "./*.schema.json": "./*.schema.json",
     "./conventions/*.openapi.yaml": "./conventions/*.openapi.yaml"

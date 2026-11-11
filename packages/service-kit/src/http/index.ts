@@ -8,6 +8,7 @@ export {
   BODY_LIMIT,
   createAdapter,
   ProblemFilter,
+  type ProblemFilterOptions,
   rawBody,
   sendProblem,
   type ListenerTls,

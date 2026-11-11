@@ -54,6 +54,9 @@
     },
     {
       "path": "./services/org-gateway/tsconfig.build.json"
+    },
+    {
+      "path": "./services/control-gateway/tsconfig.build.json"
     }
   ]
 }

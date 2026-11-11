@@ -72,12 +72,22 @@ export function rawBody(request: FastifyRequest): Buffer {
  * is a bare 404 (the contract defines no Problem for it); anything unexpected
  * is internal_error with no detail, logged with the request id.
  */
+/** A service's choices for `unavailable` (U4 NFR-EHA-04 to 07): S1 passes none. */
+export interface ProblemFilterOptions {
+  /** One Retry-After for every 503, overriding the error's own (S2: 5). */
+  retryAfterSeconds?: number;
+  /** Called once per 503 from an UnavailableError, to log its security event. */
+  onUnavailable?: (requestId: string, error: UnavailableError) => void;
+}
+
 @Catch()
 export class ProblemFilter implements ExceptionFilter {
   private readonly log: ErrorLog;
+  private readonly options: ProblemFilterOptions;
 
-  constructor(log: ErrorLog) {
+  constructor(log: ErrorLog, options: ProblemFilterOptions = {}) {
     this.log = log;
+    this.options = options;
   }
 
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -85,12 +95,16 @@ export class ProblemFilter implements ExceptionFilter {
     const reply = http.getResponse<FastifyReply>();
     const request = http.getRequest<FastifyRequest>();
     if (exception instanceof ProblemError) return sendProblem(reply, request.id, exception);
-    if (exception instanceof UnavailableError)
+    if (exception instanceof UnavailableError) {
+      this.options.onUnavailable?.(request.id, exception);
       return sendProblem(
         reply,
         request.id,
-        new ProblemError('unavailable', { retryAfterSeconds: exception.retryAfterSeconds }),
+        new ProblemError('unavailable', {
+          retryAfterSeconds: this.options.retryAfterSeconds ?? exception.retryAfterSeconds,
+        }),
       );
+    }
     if (exception instanceof NotFoundException) {
       void reply.status(404).send();
       return;

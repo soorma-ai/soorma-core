@@ -1,0 +1,55 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "composite": true,
+    "customConditions": [],
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../packages/service-kit/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/env-store/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/registry/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/credentials/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/attribution/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/authority/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/policy-decision/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/config/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/perimeter/tsconfig.build.json"
+    },
+    {
+      "path": "../../contract/tsconfig.build.json"
+    },
+    {
+      "path": "../../seams/policy-decision/tsconfig.build.json"
+    }
+  ]
+}
