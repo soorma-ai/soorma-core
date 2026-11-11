@@ -144,3 +144,36 @@ top level, and envelopes are sealed. See `construction/wire-contract/functional-
 surface imports (consistency fix from NFR Design, 2026-11-10: formerly `admitEnvelopeRequest`), which runs check-order steps 5 to 10 through P2 and P3. See
 `construction/authority-evaluation/functional-design/business-rules.md` (D-AE-02, D-AE-04,
 D-AE-10).*
+
+*Corrected at U4 Functional Design (2026-11-11, plan Q2 to Q4; P-06, P-07): P3 implements
+`evaluateHuman` over the seam (`grantedSet`, then `contains`) and adds `holdsAnyGrant` for
+issuance; P4's `heldSet` is P11's human `GrantSource`, read uncached; P7's `record` takes three
+actor kinds (human, configuration, agent), and for an agent the resolved sponsor and, with an
+envelope, the chain, origin, and re-broadening outcome; P10's internal `signInStatus` answers
+`live` with the sign-in's current expiry (U2 amendment A7). See
+`construction/env-human-access/functional-design/business-rules.md` (D-EHA-02, D-EHA-04,
+D-EHA-13, D-EHA-14).*
+
+*Corrected at U4 NFR Design (2026-11-11, plan Q2 A and Q4 A): two internal packages are added.*
+
+*`service-kit` (shared runtime; no method holds state of its own):*
+- *`verifySignIn(token, keySource, organization, now, { expSeconds, iatAheadSeconds? })` → `valid`, `expired`, `invalid`, or `unknownKey`*
+- *`signInternalRequest`, `verifyInternalRequest`*
+- *`thumbprint`*
+- *`pseudonym(key, reference)`*
+- *`secretEqual`*
+- *`Semaphore.acquire(deadline)`: returns a release-once function*
+- *`migrate(client, dir, lockKey)`*
+- *`poolConfig`*
+- *the problem documents (`ProblemError`, `problemResponse`)*
+- *the HTTP adapter, the exception filter, the security log, the contract validator, and the
+  health listener*
+
+*`env-store`:*
+- *`pool(settings)`*
+- *`withTransaction(fn: (tx: Tx) => …)`: commits only if `fn` returns*
+- *P4's, P5's, and P7's write methods take the caller's `Tx`*
+
+*`credentials.mint` returns the token as `SecretText`, and `credentials.verify` takes it as
+`SecretText`. See `construction/env-human-access/nfr-design/logical-components.md` (§2) and
+`nfr-design-patterns.md` (NP-EHA-01, 06, 14, 15).*

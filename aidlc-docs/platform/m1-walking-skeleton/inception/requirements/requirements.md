@@ -375,7 +375,9 @@ These are absent, not simplified:
   FR-027 external types and binding, FR-028, FR-029; class X
 - **Behaviour**: delegated origin paths; topics and topic administration;
   tenant-defined permission identifiers (GAP-INT-006 work-around); everything
-  commercial
+  commercial; **PF §8a's grant at project scope (expanded at grant time)**: grants are
+  made per environment only (*consistency fix at U4 Functional Design, 2026-11-11,
+  D-EHA-19*)
 
 **Registration and secret issuance by an agent** (delivery decision, 2026-11-02): PF §8a's
 *autonomous origin* column permits an agent whose standing set includes `agent:register`

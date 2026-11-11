@@ -30,6 +30,20 @@ unaffected (M1-NFR-08).
 - P10 is linked **only** into S1. Environments reach the organization level through its
   internal interface, never through P10's store
 
+*Corrected at U4 NFR Design (2026-11-11, plan Q2 A and Q4 A).* Two internal packages are added.
+**`service-kit`** is linked into S1, S2, and every module that needs a shared primitive: P1,
+P4, P5, P7, P10, and `env-store`. It depends on no `@soorma` module above it. **`env-store`**
+is linked into P4, P5, and P7, which reach the env store only through it (**S**, in this
+matrix, now passes through `env-store`).
+
+Layering rules added:
+- **P1 no longer depends on P10.** Its sign-in checker takes a key source (`verifyKey(kid)`, read on every verification), not P10's key ring.
+  Without that, S2 would link P10 through P1, against the rule above.
+- **No environment service has `@soorma/org-identity` in its production dependency closure.**
+  This is checked at Code Generation.
+
+See `construction/env-human-access/nfr-design/logical-components.md` (§2).
+
 ---
 
 ## Communication Patterns

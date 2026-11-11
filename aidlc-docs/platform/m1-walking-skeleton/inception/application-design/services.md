@@ -37,6 +37,11 @@ Design's.
    only at issuance
 2. `registry.heldSet(H, E)` is non-empty (a grant in E) → `credentials.mint(human, H, E)`
 
+*Corrected at U4 Functional Design (2026-11-11, D-EHA-13, D-EHA-02)*: step 1 also calls
+`signInStatus` (fail closed); step 2 is `authority.holdsAnyGrant(H, E)`, so no module but P3
+tests a human's set (I5); the credential's expiry is capped at the sign-in's current expiry.
+See `construction/env-human-access/functional-design/business-rules.md`.
+
 **US-04: Self-grant** (S2)
 1. `perimeter.checkHumanRequest(EnvironmentCredential)` → `credentials.isRevoked`
 2. `authority.evaluateHuman(grants, grant:human)` → `registry.isAcceptedIdentifier` for

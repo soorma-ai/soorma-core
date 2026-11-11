@@ -1843,3 +1843,402 @@ Commit on dev and push, so #17 picks it up. Update the code summary. Wait for #1
 **Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation, Request Changes (three fixes).
 
 ---
+
+## Code Generation: Request Changes Applied; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-11T02:34:46Z
+**User Input**: (none; the Request Changes logged at 2026-11-11T02:25:14Z)
+**AI Response**: "Three fixes committed as cad1772 on dev and pushed to soorma-core#17. (1) services/org-gateway/Dockerfile copies packages/jcs (manifests in the install layer, src/ in the source layer); docker build passes locally; the plan's D-CG-AE-09 gate now builds the image for any group reaching S1's dependencies. (2) evaluateAgent: an unresolved upstream agent's term is the empty set and evaluation continues; upstream_unresolved only when W does not contain R and an upstream agent did not resolve; with a covering declaration, allowed, load-bearing, { hop: 1 }. D-AE-09 consistency fix; TC-AE-016 step 2 (narrative, evaluate.test.ts, admission.test.ts); TC-AE-021 step 2 precondition states B declares nothing. The entry was removed from code-summary.md's settled list and the missed stop condition 2 recorded. (3) P2 MAX_ERRORS = 10: winning code from every failure, then the first 10 by pointer. D-AE-18 and BR-DV-03 consistency fix; errors.md step 6 and the U3 changelog line say at most 10; TC-AE-029 step 5 with three tests. Local gate with image: 771 passed, 2 skipped; check:generated and check:contract pass. #17's checks at cad1772, all green: Build, check, and test (pass, both runs); Image, image secret scan, and stack smoke test (pass, both runs); Dependency review (pass; skipped on the push run); cla-assistant (pass). Merge state CLEAN. Presenting the Code Generation completion message again."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation complete after Request Changes, awaiting approval (soorma-core#17).
+
+---
+
+## Code Generation: APPROVED (authority-evaluation)
+**Timestamp**: 2026-11-11T02:39:10Z
+**User Input**: "Continue to Next Stage. I merged #17.
+
+Log this verbatim in audit.md. Mark U3's Code Generation APPROVED in aidlc-state.md, with a real timestamp and #17's merge commit. Fast-forward dev to main. Commit the approval bookkeeping, including the pending audit entry, as one chore(aidlc) commit on dev, and push.
+
+Post a short completion comment on soorma-core#6 linking #16 and #17. Leave the issue open until Build and Test.
+
+Then stop. Don't start U4 in this session; I'll start it in a fresh one. Report the commit hash and the state's Current Stage line."
+**AI Response**: "U3 Code Generation marked APPROVED in aidlc-state.md (2026-11-11T02:39:10Z); soorma-core#17 merged 2026-11-11T02:38:46Z as a9aa74b. dev fast-forwarded to main; the approval bookkeeping (aidlc-state.md, audit.md with the pending entry) committed as one chore(aidlc) commit on dev and pushed. Completion comment posted on soorma-core#6 linking #16 and #17; the issue stays open until Build and Test. Stopping: U4 starts in a fresh session."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation APPROVED; U3 complete. Session stop.
+
+---
+
+## Session Resumption: U4 env-human-access
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"env-human-access\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed from aidlc-state.md: CONSTRUCTION, U1 to U3 complete, next U4 env-human-access (soorma-core#7). The user's intent names the next step, so the welcome-back choice was not asked. Common rules loaded (process-overview, session-continuity, content-validation, question-format-guide, artifact-durability). Re-intake check (session-continuity step 3): state already in the multi-PRD format; brief pinned at 0aad84a and unchanged at soorma-prd origin/main (no diff to backlog/m1-walking-skeleton.md); no new PF or ID tag (latest prd-platform-foundations-v1.3, prd-identity-v1.0); gap issues soorma-prd#13, #24, #25, #27, #28, #30 all OPEN. No re-intake trigger, so none offered. No PENDING PR checkpoint. Toolchain: node v26.13.0, pnpm 12.18.0, Docker 29.5.3. soorma-core dev clean at 26532c5. Inception artifacts loaded: requirements, stories, application design (components, component-methods, services, unit-of-work, story map, dependency), prd-coverage-map, U4 test specs (TC-EHA-001 to 024); forward obligations on soorma-core#7 (U2 FD, NFR Design, Infrastructure Design; U3 FD, NFR Requirements, NFR Design); PF @ prd-platform-foundations-v1.3 and ID @ prd-identity-v1.0 read at their tags."
+**Context**: CONSTRUCTION, session resumption for U4 env-human-access.
+
+---
+
+## Construction Phase Initialization (re-run on resume)
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: (none; required on resuming into Construction)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted: GitHub issues)]. prd-gap-classification.md loaded and active for every construction stage (## PRD Intake exists). Invariants read at prd-platform-foundations-v1.3 and prd-identity-v1.0: text identical at both tags."
+**Context**: CONSTRUCTION, phase initialization.
+
+---
+
+## Unit Initialization: U4 env-human-access
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted)] (unit: env-human-access)."
+**Context**: CONSTRUCTION, U4 env-human-access: Unit Initialization.
+
+---
+
+## L1 Domain Coverage Gate: initial assessment (env-human-access)
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: (none)
+**AI Response**: "Applicable L1 (PRD sections at their Built-against tags): ID §7a Human Environment Credential (and Human Principal, Organization Sign-In as referenced records); ID §6 rows: human environment credential, human grants, first grant, credential identifiers, credential validation caches, human principal identifier (composed); ID §7b obligations (environment credential only in its environment; sign-in only at issuance; human credential never beside an agent's) and Recoverability (human actor, no origin); ID §8a (obtain, renew, end one's own environment credential; grant to a human); ID §8b human-credential table and presenter matrix (Gateway column); ID §10 control operations, failure modes, NFR profile; ID FR-001 (reference), FR-004, FR-009, FR-010, FR-011 (credential half), FR-013, FR-015, FR-022, FR-023; PF §7a Permission Grant (minimal model), PF §6 (grants and caches keyed on environment), PF FR-012 (O3), FR-018, FR-021, FR-022, FR-025 (recording), PF §8a (grant permissions to a human), PF §8b O1 to O4 and O8 to O11, PF §10 NFR profile. Non-applicable: ID §9 and FR-019 to FR-021 (delegation, out of M1); ID FR-002, 003, 012, 016, 017, 018, 024, 025 (absent); PF §7b envelope fields (no envelope on a direct human operation); PF §8a project-scope grant (not in M1's requirements; to confirm at Functional Design). Missing: 0. One case to classify at Functional Design: ID FR-010, whether ending a sign-in refuses the environment credentials issued from it (U2 forward obligation 1)."
+**Context**: CONSTRUCTION, U4 env-human-access: L1 gate, initial assessment (covered at design / non-applicable / 0 missing).
+
+---
+
+## Functional Design: plan and questions (env-human-access)
+**Timestamp**: 2026-11-11T03:44:48Z
+**User Input**: (none; Functional Design started per the user's intent at session start)
+**AI Response**: "Functional Design plan written to construction/working/env-human-access-functional-design-plan.md (git-ignored). Seven questions. Q1 classified as specification (prd-gap-classification.md Step 1; U2 forward obligation 1): whether ending a sign-in refuses the environment credentials issued from it (ID @ prd-identity-v1.0 FR-010 vs FR-003, FR-011, §7a, §8b's human-credential table); proposed GAP-EHA-001, recommended A (raise on soorma-prd, build R1 cascade meanwhile). Q2 to Q7 technology: Q2 how E keeps a credential within its sign-in's life (recommended A: amend U2's signInStatus to return the current expiry and fold in the principal's active state); Q3 which operations write attribution records (recommended A: every state-changing operation); Q4 P7 scope (recommended A: the whole record, all actor kinds); Q5 unknown grant target (recommended A: unknown_principal, 400); Q6 unaccepted permission identifier (recommended A: unknown_permission, 400); Q7 when the first grant is applied (recommended A: S2 at start-up, idempotent, no S1 call). P-01 to P-15 proposed without a question, including P-12: project-scope grants (PF §8a) not built, recorded as a delivery limit. Awaiting the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design, plan awaiting answers.
+
+---
+
+## Functional Design: answers (env-human-access)
+**Timestamp**: 2026-11-11T03:59:19Z
+**User Input**: "Q1: D. Resolved, clarified, no PRD change: build R2. R1 contradicts the Identity PRD in three places, which the plan doesn't cite:
+
+FR-009: the organization level \"is on no per-request path\".
+§10's failure-mode table: it is \"Off the per-request path\", and its outage \"stops new sign-ins and organization operations\", not E's control operations.
+The glossary entry for Organization level.
+Calling signInStatus on every S2 request puts it on the per-request path. Your note that U2's BR-INT-08 allows this is wrong: its first sentence is \"None of these is on a per-request path.\" Read with FR-003 and FR-011 (two separate acts), the PRD supports only R2:
+
+The organization level is consulted at issuance and renewal only.
+An ended sign-in bars renewal and any new issuance.
+The credential lives to its own expiry, capped by Q2.
+A full logout is ending both, per FR-011.
+Record GAP-EHA-001 as Resolved — clarified, no PRD change, with these citations. Record SECURITY-12's reading: ending the environment credential is its own logout.
+
+Q2: A.
+
+Q3: A.
+
+Q4: A, plus two fields. FR-025's grant-scoped read is out of M1, but whatever it returns must be recoverable from the record alone. So the record also carries:
+
+the resolved sponsor, for an agent actor;
+U3's outcome for U7's record: whether re-broadening was load-bearing (BR-ST-08), alongside the chain and origin.
+Q5: A. Q6: A.
+
+Q7: A, with one addition. Concurrent S2 start-ups must write at most one configuration grant for the first Admin: a unique constraint, or a transaction-level advisory lock. Add a test where two start-ups run at the same time.
+
+P-01 to P-15: accepted.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify each answer, then generate the Functional Design artifacts and stop for review."
+**Answers Recorded** (construction/working/env-human-access-functional-design-plan.md):
+- Q1 — When a human ends their sign-in, are the environment credentials issued from it refused at once, or only barred from renewal: D (Resolve it here: R2, renewal only; recorded as Resolved — clarified, no PRD change) — "Resolved, clarified, no PRD change: build R2. R1 contradicts the Identity PRD in three places, which the plan doesn't cite: FR-009: the organization level \"is on no per-request path\". §10's failure-mode table: it is \"Off the per-request path\", and its outage \"stops new sign-ins and organization operations\", not E's control operations. The glossary entry for Organization level. Calling signInStatus on every S2 request puts it on the per-request path. Your note that U2's BR-INT-08 allows this is wrong: its first sentence is \"None of these is on a per-request path.\" Read with FR-003 and FR-011 (two separate acts), the PRD supports only R2: The organization level is consulted at issuance and renewal only. An ended sign-in bars renewal and any new issuance. The credential lives to its own expiry, capped by Q2. A full logout is ending both, per FR-011. Record GAP-EHA-001 as Resolved — clarified, no PRD change, with these citations. Record SECURITY-12's reading: ending the environment credential is its own logout."
+- Q2 — How E keeps a credential within its sign-in's life: A (amend U2's signInStatus: live with the sign-in's current expiry only when the record is live, unexpired, and the principal active; otherwise ended; unknown when there is no such sign-in; E caps each expiry at the earlier of now + lifetime and the sign-in's current expiry)
+- Q3 — Which of U4's operations write an attribution record: A (every state-changing operation: issue, renew, end, grant, and the configured first grant)
+- Q4 — How much of P7 attribution U4 builds: A (the whole record, once, all three actor kinds; I4 evidence written here), "plus two fields. FR-025's grant-scoped read is out of M1, but whatever it returns must be recoverable from the record alone. So the record also carries: the resolved sponsor, for an agent actor; U3's outcome for U7's record: whether re-broadening was load-bearing (BR-ST-08), alongside the chain and origin."
+- Q5 — Unknown grant target: A (new code unknown_principal, 400, errors[] pointing at /target)
+- Q6 — Well-formed permission identifier not accepted: A (new code unknown_permission, 400, errors[] pointing at each identifier, at most 10; checked at step 6)
+- Q7 — When the first grant from configuration is applied: A (E's S2 at start-up, idempotent, in one transaction with its attribution record, no S1 call), "with one addition. Concurrent S2 start-ups must write at most one configuration grant for the first Admin: a unique constraint, or a transaction-level advisory lock. Add a test where two start-ups run at the same time."
+- P-01 to P-15 — Decisions proposed without a question: accepted
+**Classification** (prd-gap-classification.md Step 1): Q1 specification, resolved under Step 3 option B (the user's decision) as GAP-EHA-001, Resolved — clarified, no PRD change; not raised on soorma-prd. Q2 to Q7 technology (decided, recorded as D-EHA decisions). Q2 amends U2's internal interface (U2 amendment A7; an unpublished interface, no contract change). Q4's two additional fields are record content for FR-025's out-of-M1 read: technology. Q7's concurrency rule: technology (a uniqueness constraint chosen; see D-EHA decisions). No ambiguity or contradiction found. Citation check: FR-009 (line 261), the glossary entry (§18) confirmed. \"Off the per-request path\" is in ID §9's Failure Modes table (row Organization level unavailable); the outage statement (\"stops new sign-ins and organization operations at once\") is in ID §10's NFR Profile; both are cited at those locations. The plan's reading of U2 BR-INT-08 was wrong, as the user says; corrected in the gap entry.
+**AI Response**: "Answers recorded and classified. Generating the Functional Design artifacts."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design, answers recorded.
+
+---
+
+## Functional Design: complete, approval prompt (env-human-access)
+**Timestamp**: 2026-11-11T04:08:50Z
+**User Input**: (none; the answers logged above)
+**AI Response**: "Functional Design artifacts generated in construction/env-human-access/functional-design/: domain-entities.md, business-rules.md (D-EHA-01 to 31; BR-PR, IS, EC, EV, GR, ACC, FG, AT, OL, RF), business-logic-model.md, l1-coverage-matrix.md (33 Covered, 20 N/A, 0 Missing; L1-17 on the GAP-INT-006 work-around; L1-05, L1-09 on GAP-EHA-001, resolved), invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; no finding). construction/env-human-access/prd-gaps/specification-gaps.md: GAP-EHA-001, Resolved — clarified, no PRD change, with the user's citations (ID FR-009; ID §9 Failure Modes, where 'Off the per-request path' appears; ID §10 NFR Profile, where the outage statement appears; ID §18 glossary; U2 BR-INT-08), and SECURITY-12's reading. Amendments and corrections: U2 amendment A7 recorded in U2 business-rules (header and BR-INT-05); requirements.md Absent from M1 gains PF §8a project-scope grants (consistency fix, D-EHA-19); correction notes on component-methods.md and services.md. aidlc-state.md: GAP-EHA-001 added to the register; counts corrected to Open 5 (GAP-AE-001 had been omitted from the Open count), Awaiting PRD 1, Resolved 5. Decisions made at design for review: D-EHA-23 (organization-level consultation points, including principalExists at grantToHuman's target check), D-EHA-24 to 31. Security baseline: no blocking finding (SECURITY-01, 02, 04, 06, 07, 10 N/A at this stage; SECURITY-14 not applicable in M1 by the user's earlier decision; rate limiting carried to NFR Requirements). Invariants: no finding. Next-stage assessment: NFR Requirements, NFR Design, Infrastructure Design all execute. Presenting the Functional Design completion message; awaiting the user's choice: Request Changes or Continue to Next Stage."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design complete, awaiting approval.
+
+---
+
+## Functional Design: APPROVED (env-human-access)
+**Timestamp**: 2026-11-11T04:17:24Z
+**User Input**: "Continue to Next Stage, after one addition. D-EHA-23 is accepted: principalExists in grantToHuman is the operation's own lookup, not a per-request freshness check.
+
+Add its consequence to §16 Accepted Residuals, or as a failure-mode row. During an organization-level outage:
+
+Unavailable: issuance, renewal and grantToHuman.
+Unaffected: ending a credential, and every O1 to O4 check on a presented environment credential.
+This goes slightly beyond ID §10's \"stops new sign-ins and organization operations\", so cite D-EHA-23 as the reason. Add a Build and Test obligation to show it with S1 stopped.
+
+D-EHA-24 to 31: accepted as written.
+
+Then:
+
+Log this approval verbatim in audit.md.
+Commit the Functional Design artifacts and the marked edits to earlier documents on dev.
+Post the §17 obligations on soorma-core#8, #9 and #10, and A7 on #5.
+Start NFR Requirements."
+**AI Response**: "Addition applied to business-rules.md: §16 gains the organization-level outage residual (unavailable: issuance, renewal, grantToHuman; unaffected: ending a credential and every O1 to O4 check on a presented environment credential), citing D-EHA-23 and noting it goes slightly beyond ID §10; §17's Build and Test row gains the obligation to show it with S1 stopped. D-EHA-23 and D-EHA-24 to 31 accepted as written. Functional Design marked APPROVED in aidlc-state.md. Next: commit on dev, post §17's obligations on #8, #9, #10 and A7 on #5, then start NFR Requirements."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design APPROVED.
+
+---
+
+## Functional Design approval actions; NFR Requirements: plan and questions (env-human-access)
+**Timestamp**: 2026-11-11T04:20:13Z
+**User Input**: (none; the actions the approval at 2026-11-11T04:17:24Z asked for)
+**AI Response**: "Committed the Functional Design artifacts and the marked edits to earlier documents on dev as b7f8904 (aidlc-state.md, audit.md, construction/env-human-access/functional-design/ and prd-gaps/, U2 business-rules amendment A7, requirements.md consistency fix, component-methods.md and services.md correction notes); pushed dev so the comments' permalinks resolve. Posted business-rules §17's obligations on soorma-core#8, #9, #10, and amendment A7 on soorma-core#5 (closed; comment added), each pinned to b7f8904. NFR Requirements started: rule construction/nfr-requirements.md loaded; plan written to construction/working/env-human-access-nfr-requirements-plan.md (git-ignored), seeded from ID §10's NFR profile (Step 1.5; no data-face property added). Five questions, all technology: Q1 the environment credential lifetime (recommended A, 15 minutes); Q2 S2 throttling (recommended A, per-instance in-flight bounds, per-principal and per-source limits carried to the first hosted deployment); Q3 environment store isolation (recommended A, one PostgreSQL 18 instance per environment); Q4 latency (recommended A, p95 300 ms issuance and renewal, 200 ms otherwise, reported not gated); Q5 credential record pruning (recommended A, none in M1). P-01 to P-10 proposed without a question, including P-08: no new dependency. Awaiting the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements, plan awaiting answers.
+
+---
+
+## NFR Requirements: Answers (U4 env-human-access)
+**Timestamp**: 2026-11-11T05:53:43Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A.
+
+Q2's residual. Record it in the SECURITY-11 compliance row, as U2 did with its flood residual (NFR-OI-20): one valid principal flooding S2 can fill an instance's request slots, so others on that instance get 503 until it drains. Per-principal and per-source limits are carried to the first hosted deployment.
+
+P-01 to P-10: accepted, with one addition to P-04. Its 5-minute refresh sets U2's signing-key rotation step 2 (\"after at least one environment refresh interval\"): the wait is at least 5 minutes. State that in nfr-requirements.md. Carry it to Infrastructure Design as an obligation: S1's rotation steps in the operations notes say \"wait at least 5 minutes\".
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify each answer, generate the NFR Requirements artifacts, and stop for review."
+**AI Response**: "Answers recorded and classified; generating construction/env-human-access/nfr-requirements/nfr-requirements.md and tech-stack-decisions.md."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements, answers received.
+
+**Answers Recorded** (plan: construction/working/env-human-access-nfr-requirements-plan.md)
+
+| Question | Answer | Classification |
+|---|---|---|
+| Q1 (environment credential lifetime) | A: 15 minutes, capped at the sign-in's current expiry (D-EHA-02) | Technology (I11). ID FR-010 "short-lived and renewable" is met by every option |
+| Q2 (S2 rate limiting or throttling, SECURITY-11) | A: per-instance throttling (64 requests in flight, 8 S1 calls in flight, 1 s wait, then 503 with Retry-After); per-principal and per-source limits carried to the first hosted deployment. **With the user's addition**: the residual is recorded in the SECURITY-11 compliance row, as U2's NFR-OI-20 flood residual: one valid principal flooding S2 can fill an instance's request slots, so others on that instance get 503 until it drains | Technology (I11); the residual is an accepted availability residual of the local M1, not a specification gap (ID §10's abuse resistance is S1's per-principal sign-in bound, which is unchanged) |
+| Q3 (environment store isolation) | A: one PostgreSQL 18 instance per environment, each with its own migrator and app roles, credentials, and certificate | Technology (I11); serves I1 |
+| Q4 (S2 latency) | A: p95 at most 300 ms for issuance and renewal, 200 ms for the others, on the local stack; measured and reported at Build and Test, not a gate | Technology (I11); ID §10 interactive for issuance |
+| Q5 (credential record pruning) | A: no pruning in M1 | Technology (I11) |
+| P-01 to P-10 | Accepted. **With the user's addition to P-04**: its 5-minute refresh sets U2's signing-key rotation step 2 ("after at least one environment refresh interval"): the wait is at least 5 minutes, stated in nfr-requirements.md; carried to U4 Infrastructure Design as an obligation that S1's rotation steps in the operations notes say "wait at least 5 minutes" | Technology (I11); P-04 discharges U2 F-1 and R-1 |
+
+**Specification gaps**: none. Every answer is satisfied by ID @ prd-identity-v1.0 and PF @ prd-platform-foundations-v1.3; no ID §10 property is unmet.
+
+---
+
+## NFR Requirements: Complete, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T05:55:53Z
+**User Input**: (none; presenting the stage for review)
+**AI Response**: "Generated construction/env-human-access/nfr-requirements/nfr-requirements.md (ID §10 profile carried forward, no data-face property; NFR-EHA-01 to 26 and 08a, each with a verification target; obligations to NFR Design, Infrastructure Design, Code Generation, Build and Test, and the first hosted deployment; security and invariant compliance, no blocking finding) and tech-stack-decisions.md (T-EHA-01 to 10; no new dependency; PostgreSQL 18.4 at U2's pinned digest). Recorded the user's Q2 residual in the SECURITY-11 row and §3 (one valid principal flooding S2 can fill an instance's request slots; others on that instance get 503 until it drains; per-principal and per-source limits carried to the first hosted deployment). Recorded the user's P-04 addition: U2's signing-key rotation step 2 waits at least 5 minutes (NFR-EHA-08, with a rotation test NFR-EHA-08a), and the Infrastructure Design obligation that S1's rotation steps in the operations notes say 'wait at least 5 minutes'. Two choices made in generation, flagged for review: Retry-After: 5 on every S2 503 (as P-03), and a throttle.refused event added to P-06's list, since Q2 A introduces the refusal. Presented the 2-option completion message; next stage NFR Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements complete, awaiting approval.
+
+---
+
+## NFR Requirements: Review, Request Changes (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:17:39Z
+**User Input**: "Request Changes: two corrections in nfr-requirements.md, then commit and I'll approve.
+
+NFR-EHA-03, the sign-in leeway test. At issuance, a token within the 30 s leeway still goes to signInStatus (A7), which reports live only if the sign-in's current expiry hasn't passed, judged on S1's clock with no leeway. Replace the test with three cases:
+a sign-in that was never renewed, 29 s past its expiry: credential_refused, because A7 reports ended;
+an older token from a renewed sign-in, 29 s past its own expiry: accepted, with the credential capped at the renewed expiry;
+any sign-in token 31 s past its expiry: credential_expired.
+Add one sentence to the requirement: the leeway applies only to the token check, and A7 judges expiry on S1's clock.
+The P-04 rotation paragraph. Replace \"the unknown-kid refetch only covers an instance that started inside the window\" with: the wait covers the normal case. The unknown-kid refetch covers an S2 whose refresh failed during step 1's S1 restart, and a refresh that runs late. \"No valid sign-in is refused\" depends on both. NFR-EHA-08a should add one case: a refresh failing during step 1, then a sign-in under the new key succeeds after one refetch.
+Accept the Retry-After: 5 and throttle.refused choices. Log this verbatim in audit.md, make the edits, commit the NFR Requirements artifacts on dev, and present for approval again."
+**AI Response**: "Applying both corrections to nfr-requirements.md (NFR-EHA-03's requirement sentence and three-case test; the P-04 rotation paragraph and NFR-EHA-08a's added case). Retry-After: 5 on every S2 503 and the throttle.refused event recorded as accepted. Then committing the NFR Requirements artifacts on dev and presenting again."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements, review changes requested (not yet approved).
+
+---
+
+## NFR Requirements: Revised, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:17:57Z
+**User Input**: (none; the actions the review at 2026-11-11T06:17:39Z asked for)
+**AI Response**: "Applied both corrections to nfr-requirements.md: NFR-EHA-03 gains the sentence that the leeway applies only to the token check and A7 judges the sign-in's expiry on S1's clock, and its test is replaced by the three issuance cases (never-renewed sign-in 29 s past expiry: credential_refused, A7 reports ended; older token of a renewed sign-in 29 s past its own expiry: accepted, capped at the renewed expiry; any token 31 s past expiry: credential_expired). The P-04 rotation paragraph now says the wait covers the normal case, the unknown-kid refetch covers an S2 whose refresh failed during step 1's S1 restart and a late refresh, and that 'no valid sign-in is refused' depends on both; NFR-EHA-08a gains the failed-refresh case (one refetch, then success). Retry-After: 5 and throttle.refused recorded as accepted. Committed the NFR Requirements artifacts with aidlc-state.md and audit.md on dev. Presented the 2-option completion message again; next stage NFR Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements revised, awaiting approval.
+
+---
+
+## NFR Requirements: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:19:46Z
+**User Input**: "Continue to Next Stage: NFR Requirements approved. Log the approval verbatim in audit.md, mark the stage approved in aidlc-state.md, and start NFR Design. Write the plan, then stop for my answers."
+**AI Response**: "NFR Requirements approved (artifacts committed as 159e5f0). Marking the stage approved in aidlc-state.md and starting NFR Design: loading construction/nfr-design.md and writing the plan with questions; stopping for the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements APPROVED; NFR Design starting.
+
+---
+
+## NFR Design: Plan and Questions (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:22:29Z
+**User Input**: (none; continuing from the approval at 2026-11-11T06:19:46Z)
+**AI Response**: "Marked NFR Requirements APPROVED in aidlc-state.md. Loaded construction/nfr-design.md. Wrote construction/working/env-human-access-nfr-design-plan.md (git-ignored): what NFR Design decides for U4; a reuse table of U2 and U3 code S2 needs (sign-in verification shares a file with minting; the internal-call signer, key ring, pseudonym, semaphore, migration runner, and clock are in @soorma/org-identity; HTTP plumbing is in services/org-gateway). P-01 to P-10 proposed without a question: E's minting key ring from configuration with three-step rotation; the verify-key cache (non-blocking start, 5-minute timer, single-flight, unknown kid or no keys refetches at most once per 30 s, replace only on a well-formed answer); the S1 caller (node:https, local CA only, server name checked, 2 s deadline, 64 KiB response cap, signed per F-3); two FIFO semaphores, the request slot taken in Fastify onRequest; the first grant's partial unique index with ON CONFLICT DO NOTHING; conditional renew and end; grant rows with a sorted text[] of permissions; 128-bit ids; S1's listener and plumbing pattern without an internal listener; the CLOCK token. Four questions, all technology: Q1 credential token (recommended A, a typed JWT with an env claim, cid, jti; B an opaque reference); Q2 shared code (recommended A, extract a new packages/service-kit so S2 never depends on @soorma/org-identity; B import org-identity; C copy); Q3 attribution record storage (recommended A, typed columns with CHECK constraints repeating BR-AT-05; B one canonical JSON document); Q4 environment store schema ownership (recommended A, one packages/env-store with one migration sequence and a transaction helper; B migrations per module). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design, plan awaiting answers.
+
+---
+
+## NFR Design: Answers (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:27:05Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A.
+
+Conditions on Q2 and Q4:
+
+service-kit and env-store are new components that Application Design doesn't have. Add a correction note for each to components.md, component-methods.md and component-dependency.md, as the Functional Design did for P3, P4, P7 and P10.
+The Q2 move must keep U2's checks working:
+tools/checks/code.ts:98 only allows migrationStatement in src/store/migrations.ts. Keep the runner at that path in service-kit, or update the check in the same commit.
+E's minting key and the token strings must use the existing secret types (SecretBytes, SecretText), or be added to the compare check, so the === rule covers them.
+Carry this to Code Generation: the move is its own first commit, a pure move with U2's tests green and S1's image rebuilt, before any U4 code.
+P-01 to P-10: accepted, with two changes:
+
+P-03: the key fetch is outside the S1-call throttle, so it must not share the 8-socket pool. Give it its own single-socket pool, so a refresh or refetch never waits behind 8 in-flight calls.
+P-04: release the request slot in both onResponse and onRequestAbort, behind a release-once guard. Add a test: abort 64 requests mid-body, and the next request still gets a slot.
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-design-patterns.md and logical-components.md, and stop for review."
+**AI Response**: "Answers recorded and classified; generating construction/env-human-access/nfr-design/nfr-design-patterns.md and logical-components.md, with Application Design correction notes for service-kit and env-store."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design, answers received.
+
+**Answers Recorded** (plan: construction/working/env-human-access-nfr-design-plan.md)
+
+| Question | Answer | Classification |
+|---|---|---|
+| Q1 (E's credential token) | A: a typed JWT, `soorma_ec_` + JWS compact, `alg: Ed25519`, `typ: soorma-ec+jwt`, `kid`; claims `env`, `sub`, `cid`, `jti`, `iat`, `exp`, all required | Technology (I11) |
+| Q2 (code shared with S1) | A: extract a new organization-neutral `packages/service-kit`; S2 never depends on `@soorma/org-identity`. **With the user's conditions**: correction notes for the new component in components.md, component-methods.md, component-dependency.md; U2's checks keep working (the migration runner stays at `src/store/migrations.ts` in service-kit, or tools/checks/code.ts:98 is updated in the same commit); E's minting key and token strings use the existing secret types (SecretBytes, SecretText) or are added to the compare check; carried to Code Generation: the move is its own first commit, a pure move with U2's tests green and S1's image rebuilt, before any U4 code | Technology (I11) |
+| Q3 (attribution record storage) | A: typed columns with CHECK constraints repeating BR-AT-05 | Technology (I11) |
+| Q4 (environment store schema ownership) | A: one `packages/env-store` with one migration sequence, the pool, and a transaction helper. **With the user's condition**: correction notes for the new component in components.md, component-methods.md, component-dependency.md | Technology (I11) |
+| P-01 to P-10 | Accepted, **with two changes**: P-03, the key fetch gets its own single-socket pool, separate from the 8-socket S1-call pool, so a refresh or refetch never waits behind in-flight calls; P-04, the request slot is released in both onResponse and onRequestAbort behind a release-once guard, with a test that aborts 64 requests mid-body and the next request still gets a slot | Technology (I11) |
+
+**Specification gaps**: none.
+
+---
+
+## NFR Design: Complete, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:33:52Z
+**User Input**: (none; presenting the stage for review)
+**AI Response**: "Generated construction/env-human-access/nfr-design/nfr-design-patterns.md (NP-EHA-01 to 15: the soorma-ec+jwt token and its nine-step verification; E's key ring with three-step rotation; the verify-key cache with the on-demand limiter counting on-demand fetches only; the S1 caller with an 8-socket call pool and the user's separate single-socket key-fetch pool; two semaphores with the user's release-once guard in onResponse and onRequestAbort and the 64-abort test; env-store transactions; attribution records with CHECK constraints repeating BR-AT-05; the first grant's partial unique index; conditional renewal and ending; the held set over text[]; 128-bit base64url ids; listeners and events; time; secret types per the user's condition; the two-commit move per the user's condition) and logical-components.md (the S2 process; new packages service-kit, env-store, registry, credentials, attribution and control-gateway; the move list for commit 1 and commit 2; the environment store's tables, constraints, indexes and column-level privileges; E's configuration items; S1's internal interface as S2 calls it; test doubles; forward obligations). Found while writing: @soorma/perimeter has a runtime dependency on @soorma/org-identity (sign-in verification, Clock, the KeyRing type), so S2 would link P10 through P1; resolved in the generalisation commit (P1's sign-in checker takes verify keys; org-identity becomes a devDependency of perimeter), and the problem documents move to service-kit in commit 1 so service-kit never depends on P1 (no cycle); the verification is the production dependency closure, not package.json. Correction notes added to components.md, component-methods.md, component-dependency.md (Q2, Q4 condition); L1-24 and L1-32 implementation targets updated. Security and invariant compliance: no blocking finding. Presented the 2-option completion message; next stage Infrastructure Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design complete, awaiting approval.
+
+---
+
+## NFR Design: Review, Request Changes (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:37:26Z
+**User Input**: "Request Changes: one gap in NP-EHA-15 commit 2 and NP-EHA-03.
+
+S2 verifies sign-ins through U2's verifySignIn and P1's SignInPerimeter. Today that code can't meet NFR-EHA-03, NFR-EHA-08 or BR-EC-04 at S2. Add these to commit 2's generalisations, each with U2's tests green and S1's behaviour unchanged:
+
+Leeway. verifySignIn takes a clock tolerance; today it hard-codes clockTolerance: 0. S1 passes 0 (U2 P-01). S2 passes 30 s for exp, and the check that iat is at most 30 s ahead is explicit and tested.
+Unknown kid. VerifyResult gains a distinct result for a kid absent from the key set. Today JWKSNoMatchingKey collapses into invalid. S1 maps it to credential_refused, unchanged. S2 triggers NP-EHA-03's on-demand fetch, then verifies again exactly once. Show this flow in NP-EHA-03.
+The liveness callback returns S1's signInStatus answer (A7), not a boolean. S2 then makes one signInStatus call per request and keeps expiresAt for the cap. S1's own callback keeps its meaning (O3, live or not).
+Keys read on every call. State that the structural key type is read per verification, so S2's cache passes an object whose verifyKey(kid) reads its current set. Add a test: a refresh between two sign-ins is seen by the second.
+Update logical-components.md §2.1 commit 2 to match. Add tests for the leeway cases and the unknown-kid refetch through P1. Log this verbatim in audit.md, make the edits, commit the NFR Design artifacts, Application Design notes, L1 matrix, state and audit on dev, push, and present again."
+**AI Response**: "Adding the four sign-in verification generalisations to NP-EHA-15's commit 2 and to logical-components.md §2.1, showing the unknown-kid flow in NP-EHA-03, adding the leeway and unknown-kid-through-P1 tests; then committing on dev, pushing, and presenting again."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design, review changes requested (not yet approved).
+
+---
+
+## NFR Design: Revised, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:38:43Z
+**User Input**: (none; the actions the review at 2026-11-11T06:37:26Z asked for)
+**AI Response**: "NP-EHA-15 commit 2 now lists four sign-in verification generalisations in a table, each keeping U2's tests green and S1's behaviour unchanged: leeway ({ expSeconds, iatAheadSeconds? }; S1 { expSeconds: 0 } with no iat check, S2 { expSeconds: 30, iatAheadSeconds: 30 } with an explicit iat-ahead check); unknown kid (VerifyResult gains unknownKey, a missing kid stays invalid; S1 maps it to credential_refused, S2 refetches then verifies exactly once); the status callback returns A7's SignInStatus (S1's keeps its O3 meaning; S2's is its one signInStatus call per request, expiresAt kept for BR-EC-04's cap); a structural SignInKeySource { verifyKey(kid), hasKeys() } read on every verification. NP-EHA-03 shows the unknown-kid flow at issuance (refetch, verify once more; unknownKey with no keys held is unavailable), states that the key source is read per verification, and adds tests through P1 (refetch brings the key; refetch does not; inside the limit; no keys and a failed fetch; no kid; a refresh between two sign-ins seen by the second; exactly one signInStatus call with the cap). NP-EHA-15's verification adds the leeway cases (a), (b), (c) and iat at +30 s and +31 s at S2's settings, and S1's unchanged answers at S1's settings. logical-components.md §2.1 commit 2 and §1's per-request flow updated to match; component-methods.md and component-dependency.md notes updated. Committed the NFR Design artifacts, the Application Design notes, the L1 matrix, aidlc-state.md and audit.md on dev, and pushed. Presented the 2-option completion message again; next stage Infrastructure Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design revised, awaiting approval.
+
+---
+
+## NFR Design: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:44:26Z
+**User Input**: "Continue to Next Stage: NFR Design approved. Log the approval verbatim in audit.md and mark the stage approved in aidlc-state.md. Post §7's forward obligations as comments on soorma-core#8 (U5), #9 (U6) and #10 (U7), and record the links in the state file.
+
+Then start Infrastructure Design. Write the plan and stop for my answers. The plan must cover the obligations NFR Requirements §4 and logical-components.md §7 carried to it, including:
+
+S1's rotation note saying \"wait at least 5 minutes\";
+the column-level privileges in §3;
+the alert rules;
+each environment's secrets delivered as mounted files, never as environment variables, in source, or in IaC."
+**AI Response**: "NFR Design approved (committed as 63d0ea8). Marking the stage approved; posting logical-components.md §7's obligations on soorma-core#8, #9, #10; then starting Infrastructure Design: plan with questions, stopping for answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design APPROVED; Infrastructure Design starting.
+
+---
+
+## NFR Design Approval Actions; Infrastructure Design: Plan and Questions (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:46:58Z
+**User Input**: (none; the actions the approval at 2026-11-11T06:44:26Z asked for)
+**AI Response**: "Marked NFR Design APPROVED in aidlc-state.md. Posted logical-components.md §7's obligations, pinned to 63d0ea8: soorma-core#8 https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6789072918 (U5), #9 https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6789073310 (U6), #10 https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6789073655 (U7); links recorded in aidlc-state.md. Infrastructure Design started: loaded construction/infrastructure-design.md and shared-infrastructure.md; read the stack as built (compose.yaml, secrets-init/org.sh, db/, stack-init.ts, stack-certs.ts, tenancy.yaml, deploy/monitoring/). Wrote construction/working/env-human-access-infrastructure-design-plan.md (git-ignored): obligations O-1 to O-13 mapped, including the user's four (O-1 S1's rotation note 'wait at least 5 minutes'; O-2 the column-level privileges; O-3 the alert rules; O-4 each environment's secrets as mounted files, never in environment variables, source, or IaC). P-01 to P-11 proposed: per-environment services with S2 not depending on org-gateway; secrets via {env}-secrets-init and {env}-secrets with a Compose-model test; E's nine secrets and the derived caller public key mounted only into org-gateway; fixed role names per instance with table and column privileges in env-store's 0001_init.sql and an app-role refusal test; networks {env} and org-internal-{env}, edges on 127.0.0.1:8442 and 8443; tenancy.yaml controlGateway part; certificates; alert rules and dashboard panels; the scripted S1-stopped demonstration; resources; E's minting-key rotation notes. Three questions, all technology: Q1 Compose structure (recommended A, one compose.yaml written out per environment with anchors); Q2 caller-key rotation (recommended A, S1 accepts a list of public keys per environment, a compatible U2 config change at U4 Code Generation); Q3 operations notes (recommended A, an Operations section in each service's README). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design, plan awaiting answers.
+
+---
+
+## Infrastructure Design: Answers (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:52:06Z
+**User Input**: "Q1: A. Q2: A. Q3: A.
+
+Q2's addition: besides publicKey → publicKeys, change S1's config validation. Today it refuses an environment that appears twice (packages/config/src/tenancy.ts:214). It should refuse a key (by kid) that appears in more than one environment, and a duplicate key within one environment, so callerByKid can never attribute one environment's call to another (I1). Test both refusals. Carry it to Code Generation with S1's image rebuild, as for A7.
+
+P-01 to P-11: accepted, with one change to P-09. Add a second case: start E's S2 while S1 is stopped.
+
+With no keys loaded, issuance is 503 with Retry-After: 5.
+A credential issued before the restart still passes O1 to O4 and can be ended.
+After start org-gateway, issuance recovers on the next fetch.
+Fix the recovery wording for the first case: an S2 that held keys before S1 stopped keeps them (a failed fetch keeps the keys), so issuance recovers as soon as S1 answers.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate infrastructure-design.md and deployment-architecture.md, update shared-infrastructure.md, and stop for review."
+**AI Response**: "Answers recorded and classified; generating construction/env-human-access/infrastructure-design/infrastructure-design.md and deployment-architecture.md, and updating construction/shared-infrastructure.md."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design, answers received.
+
+**Answers Recorded** (plan: construction/working/env-human-access-infrastructure-design-plan.md)
+
+| Question | Answer | Classification |
+|---|---|---|
+| Q1 (Compose structure) | A: one compose.yaml, each environment's services written out in full, shared parts by YAML anchors | Technology (I11) |
+| Q2 (caller-key rotation) | A: S1 accepts a list of public keys per environment (publicKey → publicKeys). **With the user's addition**: S1's configuration validation refuses a key (by kid) that appears in more than one environment, and a duplicate key within one environment, so callerByKid can never attribute one environment's call to another (I1); both refusals tested; carried to Code Generation with S1's image rebuild, as for A7 | Technology (I11); the addition serves I1 |
+| Q3 (operations notes) | A: an Operations section in each service's README | Technology (I11) |
+| P-01 to P-11 | Accepted, **with one change to P-09**: a second case, E's S2 started while S1 is stopped (no keys loaded: issuance 503 with Retry-After: 5; a credential issued before the restart still passes O1 to O4 and can be ended; after start org-gateway, issuance recovers on the next fetch); and the first case's recovery wording fixed (an S2 that held keys before S1 stopped keeps them, since a failed fetch keeps the keys, so issuance recovers as soon as S1 answers) | Technology (I11) |
+
+**Specification gaps**: none.
+
+---
+
+## Infrastructure Design: Complete, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:55:07Z
+**User Input**: (none; presenting the stage for review)
+**AI Response**: "Generated construction/env-human-access/infrastructure-design/infrastructure-design.md (component mapping; images; secrets as mounted files only with per-environment secret tables, the derived caller public key as the one cross-level value, and the Compose-model test; tenancy.yaml controlGateway part and internalCallers publicKeys; S1's caller keys with the user's addition: refusals for an environment twice, a secret name twice, a kid twice in one environment, and a kid in two environments, the kid checks made where keys are loaded and thumbprinted so two files holding one key are caught; TLS; environment stores with env-roles.sql, env-pg_hba.conf, the init script, fixed role names, column-level privileges in env-store's 0001_init.sql and the app-role privilege test; networks and ports; hardening; monitoring with five rules; operations notes per README with S1's 'wait at least 5 minutes' and a docs test; the S1-stopped demonstration in two cases with the user's wording; CI; O-1 to O-13 discharged; security and invariant compliance, no blocking finding) and deployment-architecture.md (decisions index; Mermaid diagram with a text alternative; start-up order with S2 not waiting for org-gateway; volumes and mounts; the two S1-stopped cases; how U5 to U7 extend it). Updated construction/shared-infrastructure.md with U4's settlements, each marked. Presented the 2-option completion message; next stage QA construction enrichment, then the Construction Design PR gate, then Code Generation."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design complete, awaiting approval.
+
+---
+
+## Infrastructure Design: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:58:38Z
+**User Input**: "Continue to Next Stage: Infrastructure Design approved. Log the approval verbatim in audit.md and mark the stage approved in aidlc-state.md. Commit the Infrastructure Design artifacts, shared-infrastructure.md, state and audit on dev, and push.
+
+Then run QA construction enrichment for U4 (qa-test-cases.md §2.6). Give TC-EHA ids to every verification target in the Functional Design, NFR Requirements, NFR Design and Infrastructure Design, including:
+
+the outage cases;
+the Compose-model, privilege and docs tests;
+the caller-key refusals;
+the 64-abort and concurrency tests.
+Stop for review before the Construction Design PR gate."
+**AI Response**: "Infrastructure Design approved. Marking it approved, committing on dev and pushing; then running QA construction enrichment (qa-test-cases.md §2.6), and stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design APPROVED; QA construction enrichment starting.
+
+---
+
+## QA Construction Enrichment: Complete, Awaiting Review (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:05:06Z
+**User Input**: (none; continuing from the approval at 2026-11-11T06:58:38Z)
+**AI Response**: "Infrastructure Design committed as e6ee27e and pushed. Loaded qa-test-cases.md Section 2; gates passed (extension enabled; inception specs present; no prior enrichment-delta.md for env-human-access; Functional Design, NFR Design and Infrastructure Design complete). Sources: construction/env-human-access/functional-design/, nfr-requirements/, nfr-design/, infrastructure-design/ only. Updated inception/test-cases/env-human-access/ in place: a construction-pass header line and a table of fixed values (lifetime, leeway, throttles, S1 calls, verify keys, ports, stub S1); TC-EHA-001 to 024 each gained a construction-pass expected outcome and references (IDs unchanged); TC-EHA-025 to 091 added (67) with the forward link construction/env-human-access/code/. Coverage includes: issuance from an ended sign-in (025); grants after issuance and renewal adding nothing (026); read-your-writes (027); A7 renewal extension (028); the post-logout residual (029); renewal racing an end and concurrent ends (030); no organization-level call on ending, O3 and authority (031); presenter rules (032 to 034); concurrent first-grant start-ups (035); start-up failures (036, 037); grant body and pointer limits (038, 039); environment constraints on every access path (040); other-organization targets and existence probing (041, 042); S1 failure modes after one attempt (043); one evaluator (044); env claim tampering (045); attribution recoverability and CHECK constraints (046, 047); transaction rollback (048); forged tokens, network-independent identity, cross-environment isolation (049 to 051); body-less operations (052); logs and events (053, 054); lifetime and leeway including the user's three sign-in cases (055 to 057); throttles and the user's 64-abort test (058 to 060); verify-key schedule, rotation cases and the unknown-kid flow (061 to 066); store isolation, migrations, code checks, latency (reported), body bound, ids (067 to 072); token refusal table, pre-renewal tokens, minting-key rotation, held-set union, request ids (073 to 077); the shared-code move (078); the Compose-model, privilege and docs tests (079 to 081); the caller-key refusals and rotation (082, 083); the two outage cases (084, 085); smoke, monitoring, image, network tests (086 to 089); A7 at S1 (090); a pending target (091). test-case-index.md: 91 rows. enrichment-delta.md written (git-ignored per artifact-durability). The l1-coverage-matrix and invariant-coverage-matrix QA enrichment markers now name their TC ids. Stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U4 env-human-access: QA construction enrichment complete, awaiting review.
+
+---
+
+## QA Construction Enrichment: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:08:34Z
+**User Input**: "Approved: QA construction enrichment for U4. Log it verbatim in audit.md, mark it approved in aidlc-state.md, commit the test cases, matrix markers, state and audit on dev, and push.
+
+Then run the Construction Design PR gate (pr-checkpoint.md Section 5): open the PR dev → main for U4's construction design, link soorma-core#7, and wait for its checks to go green. Report the PR link and check results, then stop. I'll review and merge before Code Generation."
+**AI Response**: "QA construction enrichment approved. Marking it approved, committing on dev and pushing; then running the Construction Design PR gate per pr-checkpoint.md Section 5."
+**Context**: CONSTRUCTION, U4 env-human-access: QA construction enrichment APPROVED; Construction Design PR gate starting.
+
+---
+
+## Construction Design PR Gate: Opening (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:09:43Z
+**User Input**: (none; the actions the approval at 2026-11-11T07:08:34Z asked for)
+**AI Response**: "QA construction enrichment committed as 729fc28 and pushed. Loaded pr-checkpoint.md Section 5. Gate conditions met: extension enabled; Functional Design, NFR Requirements, NFR Design and Infrastructure Design complete for env-human-access; Code Generation not begun; no approved gate entry for the unit. Branch dev, PR to main, confirmed by the user in the request. Always-expected artifact present (functional-design/, five files); conditional artifacts present (nfr-requirements/, nfr-design/, infrastructure-design/). Wrote the instructions file and the PR description (construction/working/, git-ignored). Recorded the gate as PENDING in aidlc-state.md. Committing the state entry and audit on dev, pushing, and opening the PR dev → main referencing soorma-core#7 and #3."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate, PR opening.
+
+---

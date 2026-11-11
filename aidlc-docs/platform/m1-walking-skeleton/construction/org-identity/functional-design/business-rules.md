@@ -3,6 +3,7 @@
 **Unit**: U2 `org-identity` (soorma-core#5). Control face, organization level
 **Built against**: ID @ `prd-identity-v1.0`, PF @ `prd-platform-foundations-v1.3`
 **Amendment A5** (2026-11-08, at the QA construction enrichment, the user's): BR-K-07 gains the reason `context_word`. `reason` is an open enumeration, `SecretRejectedReason`, carried on the `errors[]` entry as `ProblemFieldError.reason`, next to the pointer it qualifies (revised before the Construction Design PR gate's approval; contract-change table, §10).
+**Amendment A7** (2026-11-11, at U4 `env-human-access` Functional Design, plan Q2 A, the user's answer): BR-INT-05, `signInStatus`, answers `{ status: 'live', expiresAt }` only when the sign-in record is `live`, its current expiry has not passed, and its principal is `active`; otherwise `{ status: 'ended' }`; `{ status: 'unknown' }` when no such sign-in exists in the organization. It lets E cap an environment credential at its sign-in's current expiry (U4 D-EHA-02). An unpublished internal interface, so no contract change. Applied to S1's code and U2's tests at U4's Code Generation.
 **Plan**: Q1 to Q12 answered 2026-11-08 (audit.md, *Functional Design: Answers Received*).
 Every answer is classified technology (prd-gap-classification.md Step 1). **No
 specification gap was found in U2.**
@@ -179,7 +180,7 @@ BR-ID, BR-VER), which apply unchanged unless a rule below says otherwise
 | BR-INT-02 | **Every call presents the calling environment's configured credential**, verified with that environment's caller material. A call without one, or one that fails, is refused. **No caller is trusted because of its network location** | I3; D-OI-22 |
 | BR-INT-03 | `verifyOnlyMaterial` returns only material that can verify sign-ins. Never minting material | ID FR-009; PF §6 |
 | BR-INT-04 | `principalExists` answers yes or no, and nothing else: no state, no attributes | ID FR-017 is out; minimum disclosure |
-| BR-INT-05 | `signInStatus` answers `live`, `ended`, or `unknown`, and nothing else | ID §8b O3 |
+| BR-INT-05 | `signInStatus` answers `live`, `ended`, or `unknown`, and nothing else. *A7 (U4 D-EHA-02)*: `live` carries the sign-in's current `expiresAt`, and is answered only when the record is `live`, unexpired, and its principal `active`; an expired sign-in, or one whose principal is not `active`, is `ended` | ID §8b O3; ID FR-010 |
 | BR-INT-06 | **No internal operation changes state** | Least privilege |
 | BR-INT-07 | Each internal call is logged with the calling environment and the operation, never with a token | SECURITY-03 |
 | BR-INT-08 | None of these is on a per-request path. U4 caches verify-only material, and calls `principalExists` and `signInStatus` from control operations only | ID FR-009; M1-NFR-08 |
