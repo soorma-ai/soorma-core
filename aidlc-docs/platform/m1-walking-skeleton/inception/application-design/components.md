@@ -165,6 +165,12 @@ requiredSet)`; composition stays in P3. The human-only class is **defined in P3*
 (`packages/authority`) and used by P4's registration check. See
 `construction/authority-evaluation/functional-design/business-rules.md` (D-AE-02, D-AE-03).*
 
+*Corrected at U5 Functional Design (2026-11-11): the human-only check and the sponsor ceiling
+are **P3's**, over the seam, not P4's: P4's registration write compares no permission sets. The
+registration is also the agent's grant (PF §7a, agent-principal form); P4's grants stay
+human-only. See `construction/agent-registration/functional-design/business-rules.md` (D-AR-06,
+D-AR-07, D-AR-10).*
+
 ---
 
 ## Contract (`contract/`, Apache 2.0)
