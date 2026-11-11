@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkVersion, createDraftValidator, STAMPED_FIELDS } from '../src/index.ts';
+import { checkVersion, createDraftValidator, MAX_ERRORS, STAMPED_FIELDS } from '../src/index.ts';
 import { draft, envelope, TRACEPARENT } from './support.ts';
 
 const ACCEPTED = ['0.1.0'];
@@ -222,6 +222,49 @@ describe('TC-AE-029: one code, in a fixed precedence, every failing field ordere
       validate(draft({ inbound: { envelope: envelope(), seal: 'v1.k1.x', extra: 1 } })),
     ).toMatchObject({
       refusal: { code: 'malformed_request', errors: [{ pointer: '/inbound/extra' }] },
+    });
+  });
+});
+
+describe('TC-AE-029 step 5: errors[] holds at most 10 entries, the first by pointer (D-AE-18)', () => {
+  const names = (n: number) =>
+    Array.from({ length: n }, (_, i) => `f${String(i).padStart(2, '0')}`).reverse();
+  it('15 unknown fields and a malformed traceparent: unknown_field, the first 10 by pointer', () => {
+    const fields = Object.fromEntries(names(15).map((f) => [f, 1]));
+    const result = validate(draft({ ...fields, traceContext: { traceparent: 'bad' } }));
+    expect(MAX_ERRORS).toBe(10);
+    expect(result).toEqual({
+      ok: false,
+      refusal: {
+        code: 'unknown_field',
+        reason: 'unknown_field',
+        errors: names(10)
+          .reverse()
+          .map((f) => ({ pointer: `/${f}` })),
+      },
+    });
+  });
+  it('12 malformed fields: malformed_request, the first 10 by pointer', () => {
+    const extra = Object.fromEntries(names(12).map((f) => [f, 1]));
+    const result = validate(
+      draft({ inbound: { envelope: envelope(), seal: 'v1.k1.x', ...extra } }),
+    );
+    expect(result).toMatchObject({ ok: false, refusal: { code: 'malformed_request' } });
+    if (!result.ok)
+      expect(result.refusal.errors?.map((e) => e.pointer)).toEqual(
+        names(10)
+          .reverse()
+          .map((f) => `/inbound/${f}`),
+      );
+  });
+  it('the winning code is picked from every error, not from the first 10', () => {
+    // 12 malformed fields sort before the one unknown field, which still wins.
+    const extra = Object.fromEntries(names(12).map((f) => [f, 1]));
+    expect(
+      validate(draft({ inbound: { envelope: envelope(), seal: 'v1.k1.x', ...extra }, zz: 1 })),
+    ).toEqual({
+      ok: false,
+      refusal: { code: 'unknown_field', reason: 'unknown_field', errors: [{ pointer: '/zz' }] },
     });
   });
 });

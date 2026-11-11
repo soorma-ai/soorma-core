@@ -24,8 +24,10 @@
 // load-bearing (BR-AU-07). W intersects with S, so a declaration wider than
 // the standing set grants nothing (BR-AU-04).
 //
-// An upstream agent that did not resolve has the empty set as its term, so
-// the request is denied, reason upstream_unresolved (D-AE-09).
+// An upstream agent that did not resolve has the empty set as its term, exactly
+// as a registered agent with no grants, and evaluation continues (D-AE-09). It
+// is denied unless the presenter's re-broadening covers R; a denial names
+// upstream_unresolved when an upstream agent did not resolve (BR-AU-10).
 import type {
   EnvironmentRef,
   PermissionId,
@@ -101,8 +103,11 @@ export async function evaluateAgent(input: EvaluationInput): Promise<Evaluation>
   const N = U === undefined ? SP : meet(SP, U);
   const W = U === undefined ? SP : meet(SP, join(U, input.declaration));
 
-  if (input.upstream.some((agent) => input.unresolved?.has(agent)))
-    return denied('upstream_unresolved');
-  if (!policy.contains(W, required)) return denied('authority_denied');
+  if (!policy.contains(W, required))
+    return denied(
+      input.upstream.some((agent) => input.unresolved?.has(agent))
+        ? 'upstream_unresolved'
+        : 'authority_denied',
+    );
   return { allowed: true, loadBearing: !policy.contains(N, required) };
 }

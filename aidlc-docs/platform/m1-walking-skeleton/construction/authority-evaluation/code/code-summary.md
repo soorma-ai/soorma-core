@@ -17,7 +17,8 @@ Revision 2, approved 2026-11-10 with two amendments. Steps 0 to 23
 | `90dc1fd` | 4 | `seams/policy-decision`; P11; `sealKeys` in P9 |
 | `6508782` | 5 | P2, `packages/envelope`; the dependency register |
 | `b6a59c5` | 6 | P3, `packages/authority`, and the entry point; the benchmark |
-| (Group 7) | 7 | Documentation, this summary, the matrices, `aidlc-state.md` |
+| `e803e90` | 7 | Documentation, this summary, the matrices, `aidlc-state.md` |
+| (Request Changes) | RC | The image, an unresolved upstream agent, and `errors[]` at most 10 (below) |
 
 ## Files
 
@@ -91,9 +92,6 @@ Revision 2, approved 2026-11-10 with two amendments. Steps 0 to 23
 - **No `clock` dependency on `createEnvelopeAdmission`.** The plan listed one among its
   dependencies, but `admit` reads no time: the clock belongs to `createCachingAgentFacts`, which
   S4 builds once per instance.
-- **An unresolved upstream agent denies the request outright** (`upstream_unresolved`), even
-  where the presenter's declaration would otherwise recover the permission. That is D-AE-09 as
-  written ("so the request is denied"), and it fails closed. TC-AE-021 step 2 checks it.
 - **`tracestate` member count**: empty list members are not counted (W3C).
 - **`packages/envelope` has `yaml` as a development dependency**, for the worst-case pattern
   test, which reads the OpenAPI documents. `yaml` is already registered at 2.9.1. Its row gains
@@ -103,19 +101,33 @@ Revision 2, approved 2026-11-10 with two amendments. Steps 0 to 23
 - **`contract/generated/components.ts` was regenerated.** One doc comment changed, A6's wording
   of `EnvelopeTraceContext`. No type changed, so stop condition 6 did not fire.
 
-## Finding for Review
+## Request Changes (2026-11-11)
 
-**Step 6's `errors[]` is unbounded (D-AE-18).** As designed, it lists every field that fails
-with the winning code. Ajv runs with `allErrors`, so a body of many invalid items could yield a
-very large refusal: a 1 MiB body of tiny invalid array entries could produce roughly 20 times
-its size in `errors[]`. S1 caps its own validation errors at 10. **Nothing is exposed in U3**,
-because no surface calls `admit` until U7.
+The user asked for three fixes after the first completion message.
 
-Two fixes are possible:
-- cap `errors[]` at S1's 10, ordered by pointer, as a consistency fix to D-AE-18
-- have U7 bound it at the edge
-
-This needs your decision. It is not built here.
+1. **The image.** soorma-core#17's image check failed: `services/org-gateway/Dockerfile` did not
+   copy `packages/jcs`, which U2's `org-identity` now depends on (TS6053). The Dockerfile now
+   copies `packages/jcs`'s manifest files in the install layer and `packages/jcs/src/` in the
+   source layer, and the image builds locally. **D-CG-AE-09's gate now also runs the image
+   build for any group whose changes reach S1's dependencies.** Group 2 reached them and the
+   gate did not build the image, so the defect reached CI.
+2. **An unresolved upstream agent, as the logic model says** (§3 step 7). Its term is the empty
+   set, exactly as a registered agent with no grants, and evaluation continues:
+   `W = S ∩ P ∩ (U ∪ D)`. The request is denied `upstream_unresolved` only when `W` does not
+   contain `R` and an upstream agent did not resolve. When the presenter's declaration covers
+   `R`, the request is allowed, re-broadening is load-bearing, and the stamped envelope carries
+   `{ hop: n }`. D-AE-09's wording ("so the request is denied") is a consistency fix: denied
+   unless the presenter's re-broadening covers `R`. Tests: TC-AE-016 step 2, in
+   `evaluate.test.ts` and through `admit`; TC-AE-021 step 2 now states that B declares nothing.
+   **The first build departed from the approved logic model, and that was stop condition 2**
+   ("a design rule cannot be built as written; never adapt silently"). Generation should have
+   stopped and asked, and did not: it read D-AE-09's wording over §3 and listed the choice as
+   settled during generation.
+3. **`errors[]` at most 10** (D-AE-18 consistency fix; BR-DV-03). P2's `MAX_ERRORS` is 10, S1's
+   value. The winning code is picked from every failure, then the first 10 by pointer are kept.
+   `errors.md` step 6 and the U3 changelog line say "at most 10". TC-AE-029 step 5 tests 15
+   unknown fields, 12 malformed fields, and 12 malformed fields with one unknown field sorting
+   after them, which still wins.
 
 ## Q-CG Answers
 
@@ -134,7 +146,7 @@ This needs your decision. It is not built here.
 - The worst-case pattern test walks **11 patterns** in the contract. Every match finishes within
   100 ms, so stop condition 4 did not fire.
 
-## Local Run (Step 21, 2026-11-10)
+## Local Run (Step 21, 2026-11-10; again after the Request Changes, 2026-11-11)
 
 | Check | Result |
 |---|---|
@@ -144,10 +156,11 @@ This needs your decision. It is not built here.
 | `check:generated`, `check:contract` | Pass |
 | `check:deps`, `check:workflows`, `check:code`, `check:secrets`, `check:breached` | Pass |
 | `pnpm audit --audit-level moderate` | No known vulnerabilities |
-| `pnpm test` (with `db:test`) | **766 passed, 2 skipped** (U2's perf cases, which run at Build and Test), in 45 files |
+| `pnpm test` (with `db:test`) | **771 passed, 2 skipped** (U2's perf cases, which run at Build and Test), in 45 files; 766 before the Request Changes |
+| `docker build -f services/org-gateway/Dockerfile .` | Pass (after the Request Changes) |
 | `pnpm bench:admit` | Runs. p50 0.279 ms, p99 0.590 ms, 7033 samples. **For proof that it runs only**: Build and Test records the numbers |
 
-Per package: `jcs` 44; `envelope` 110; `authority` 86; `policy-decision` 9; `perimeter` 44;
+Per package: `jcs` 44; `envelope` 113; `authority` 88; `policy-decision` 9; `perimeter` 44;
 `config` 27; `org-identity` 99; `org-gateway` 46 (2 skipped); `contract` 228.
 
 ## Coverage

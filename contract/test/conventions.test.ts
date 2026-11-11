@@ -263,6 +263,7 @@ describe('U3 business-rules §13: the contract changes at U3 Code Generation', (
   it('step 6 precedence (D-AE-18), and a forwarded envelope over the bound (D-AE-19)', () => {
     const order = errors.slice(errors.indexOf('## Check order'));
     expect(order).toContain('The precedence is fixed');
+    expect(order).toContain('ordered by pointer, at most 10: the first 10 by pointer');
     expect(order).toContain('A forwarded envelope over the envelope bound is refused here');
     expect(envelope).toContain(
       'A forwarded envelope over the bound is refused with `invalid_inbound_context`',

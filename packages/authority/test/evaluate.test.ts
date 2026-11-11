@@ -137,6 +137,31 @@ describe('Effective authority (BR-AU): the one place it is computed', () => {
     expect(r).toEqual({ allowed: false, loadBearing: false, reason: 'authority_denied' });
   });
 
+  it('TC-AE-016 step 2: re-broadening recovers what an unresolved upstream agent lacked (D-AE-09)', async () => {
+    const base = {
+      policy: policyOf({ b: [p] }),
+      environment: E,
+      presenter: 'b',
+      upstream: ['x'],
+      unresolved: new Set(['x']),
+      required: set(p),
+    };
+    // x's term is the empty set, and evaluation continues: W = S ∩ (∅ ∪ D).
+    expect(await evaluateAgent({ ...base, declaration: set(p) })).toEqual({
+      allowed: true,
+      loadBearing: true,
+    });
+    // The same as a registered agent with no grants.
+    expect(
+      await evaluateAgent({
+        ...base,
+        policy: policyOf({ b: [p], x: [] }),
+        unresolved: new Set(),
+        declaration: set(p),
+      }),
+    ).toEqual({ allowed: true, loadBearing: true });
+  });
+
   it.each([
     [
       'row 1: in P, in every upstream term, declared',
@@ -267,7 +292,7 @@ describe('Effective authority (BR-AU): the one place it is computed', () => {
         policy: policyOf({ b: ['event:publish'] }),
         environment: E,
         presenter: 'b',
-        declaration: set('event:publish'),
+        declaration: set(),
         upstream: ['x'],
         unresolved: new Set(['x']),
         required: set('event:publish'),

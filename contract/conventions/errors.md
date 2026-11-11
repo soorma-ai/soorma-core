@@ -72,8 +72,9 @@ A request is refused with the first check it fails, so a refusal is deterministi
    `stamped_field_set`, `unknown_field`. **The precedence is fixed**: a platform-stamped field at
    the draft's top level is `stamped_field_set`, whatever else fails; otherwise a field the draft
    or its `traceContext` does not define is `unknown_field`; otherwise any other failure, a
-   trace-context rule included, is `malformed_request`. `errors[]` lists every field failing with
-   the winning code, ordered by pointer
+   trace-context rule included, is `malformed_request`. The code is picked from every failure;
+   `errors[]` then lists the fields failing with the winning code, ordered by pointer, **at most
+   10**: the first 10 by pointer
 7. Forwarded context: seal, scope, envelope version: `invalid_inbound_context`. **A forwarded
    envelope over the envelope bound is refused here, before its seal is computed**
 8. Chain depth: `chain_too_deep`

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 // The entry point end to end: createEnvelopeAdmission(dependencies).admit(
-// request). TC-AE-001, 002, 003, 005, 009, 011, 013, 015, 017, 018, 019,
+// request). TC-AE-001, 002, 003, 005, 009, 011, 013, 015, 016, 017, 018, 019,
 // 021, 022 (rows 1 to 3), 023, 024, 025, 026, 027, 028, 030, 031 step 2;
 // D-AE-04, 08, 10, 11, 23, 26; NP-05, NP-08; BR-IN; BR-RF; L1-01, 02, 12,
 // 18, 19, 24, 34, 36; I2, I3, I5.
@@ -233,6 +233,18 @@ describe('Refusals through admit: returned, logged once with the reason, never i
     const me = await refusal({}, request('b'));
     expect(me.result).toEqual({ refused: { code: 'forbidden' } });
     expect(me.event.reason).toBe('presenter_unresolved');
+  });
+
+  it('TC-AE-016 step 2: an unresolved upstream agent, recovered by the presenter’s declaration', async () => {
+    const { admission, log } = admissionE({
+      b: { standing: ['event:publish'], declared: ['event:publish'] },
+    });
+    const a = admitted(
+      await admission.admit(request('b', draft({ inbound: sealed(envelope(['x'])) }))),
+    );
+    expect(a.envelope.reBroadening).toEqual([{ hop: 1 }]);
+    expect(a.outcome.reBroadeningLoadBearing).toBe(true);
+    expect(log.events).toEqual([]);
   });
 
   it('TC-AE-023: C, autonomy not declared, forwarding A’s autonomous envelope: forbidden', async () => {

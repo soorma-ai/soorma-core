@@ -14,9 +14,10 @@
 //    not define
 // 3. malformed_request: any other failure, a trace-context rule included
 //
-// errors[] lists every field failing with the winning code, ordered by
-// pointer (BR-DV-03). A draft that fails is refused; nothing in it is ever
-// overwritten (BR-DV-05).
+// The winning code is picked from all the errors. errors[] then lists the
+// fields failing with that code, ordered by pointer, at most MAX_ERRORS of
+// them: the first 10 by pointer, as S1 caps its own (BR-DV-03; D-AE-18). A
+// draft that fails is refused; nothing in it is ever overwritten (BR-DV-05).
 //
 // Ajv's 2020 build, strict, with V8's default RegExp (NFR-AE-01; T-AE-01),
 // created and compiled once, when the validator is created (NFR-AE-03).
@@ -28,6 +29,9 @@ import { traceparentProblems, tracestateProblems } from './trace-context.ts';
 
 const require = createRequire(import.meta.url);
 const SCHEMA_ID = 'https://soorma.ai/contract/envelope.schema.json';
+
+/** At most this many entries in errors[], the first by pointer: S1's MAX_ERRORS (D-AE-18). */
+export const MAX_ERRORS = 10;
 
 /** The draft's platform-stamped fields, forbidden by name (BR-DR-02). */
 export const STAMPED_FIELDS: readonly string[] = Object.freeze([
@@ -63,10 +67,11 @@ function pointerOf(e: ErrorObject): string {
   return e.instancePath;
 }
 
+/** One entry per pointer, ordered by pointer, the first MAX_ERRORS kept. */
 function unique(errors: FieldError[]): FieldError[] {
   const seen = new Map<string, FieldError>();
   for (const e of errors) if (!seen.has(e.pointer ?? '')) seen.set(e.pointer ?? '', e);
-  return byPointer([...seen.values()]);
+  return byPointer([...seen.values()]).slice(0, MAX_ERRORS);
 }
 
 /** Builds the validator: Ajv created, and the Draft schema compiled, once. */

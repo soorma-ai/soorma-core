@@ -11,6 +11,7 @@ export { checkChainDepth, MAX_CHAIN_DEPTH } from './chain.ts';
 export { copyJson } from './copy.ts';
 export {
   createDraftValidator,
+  MAX_ERRORS,
   STAMPED_FIELDS,
   type DraftValidator,
   type ValidDraft,

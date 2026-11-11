@@ -25,6 +25,7 @@ COPY deploy/package.json deploy/package.json
 COPY contract/package.json contract/tsconfig.json contract/tsconfig.build.json contract/LICENSE contract/
 COPY seams/LICENSE seams/LICENSE
 COPY seams/identity-resolution/package.json seams/identity-resolution/tsconfig.json seams/identity-resolution/tsconfig.build.json seams/identity-resolution/
+COPY packages/jcs/package.json packages/jcs/tsconfig.json packages/jcs/tsconfig.build.json packages/jcs/
 COPY packages/config/package.json packages/config/tsconfig.json packages/config/tsconfig.build.json packages/config/
 COPY packages/org-identity/package.json packages/org-identity/tsconfig.json packages/org-identity/tsconfig.build.json packages/org-identity/
 COPY packages/abuse-bound/package.json packages/abuse-bound/tsconfig.json packages/abuse-bound/tsconfig.build.json packages/abuse-bound/
@@ -38,6 +39,7 @@ COPY contract/generated/ contract/generated/
 COPY contract/conventions/components.openapi.yaml contract/conventions/
 COPY contract/org-gateway.openapi.yaml contract/envelope.schema.json contract/delivery.schema.json contract/
 COPY seams/identity-resolution/src/ seams/identity-resolution/src/
+COPY packages/jcs/src/ packages/jcs/src/
 COPY packages/config/src/ packages/config/src/
 COPY packages/config/schema/ packages/config/schema/
 COPY packages/org-identity/src/ packages/org-identity/src/

@@ -1822,3 +1822,24 @@ Record the answer in the plan's [Answer]: line. Log this verbatim in audit.md, w
 **Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation complete, awaiting approval.
 
 ---
+
+## Code Generation: Code-Review PR Opened (authority-evaluation)
+**Timestamp**: 2026-11-10T22:33:44Z
+**User Input**: (none; Step 23 of the approved plan)
+**AI Response**: "Group 7 committed as e803e90 and dev pushed. Opened https://github.com/soorma-ai/soorma-core/pull/17 (dev -> main), 'feat: platform/m1-walking-skeleton — authority-evaluation code generation (U3)', Refs #6, #3. Not merged: Build and Test uses it for CI. Presented the Code Generation completion message; awaiting the user's approval."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation complete, awaiting approval (soorma-core#17).
+
+---
+
+## Code Generation: Request Changes (authority-evaluation)
+**Timestamp**: 2026-11-11T02:25:14Z
+**User Input**: "Request Changes: three fixes before I approve. Log this verbatim in audit.md.
+
+#17's image check fails. services/org-gateway/Dockerfile doesn't copy packages/jcs, which org-identity now depends on (TS6053, packages/jcs/tsconfig.build.json not found). Add its manifest files to the install layer and packages/jcs/src/ to the source layer. Run docker build -f services/org-gateway/Dockerfile . locally if Docker is available. From now on, a group whose changes reach S1's dependencies runs the image build in its pre-commit gate. Don't present completion until every #17 check is green.
+Unresolved upstream agent: build it as the logic model says. An unresolved upstream agent's term is the empty set, and evaluation continues: W = S ∩ P ∩ (U ∪ D). Deny with upstream_unresolved only when W doesn't contain R and an upstream agent did not resolve. If the presenter's declaration covers R, the request is allowed, with re-broadening load-bearing and a { hop: n } record. This also treats an unresolved agent the same as a registered agent with no grants. Make D-AE-09's wording (\"so the request is denied\") a consistency fix: denied unless the presenter's re-broadening covers R. Add the allow case to TC-AE-016's construction steps or a new case, and a unit test in evaluate.test.ts. Remove the entry from code-summary.md's list of decisions settled during generation. A departure from the approved design was stop condition 2.
+Cap errors[] at 10 in P2, matching S1's MAX_ERRORS. Pick the winning code from all the errors, then keep the first 10 by pointer. Make this a consistency fix to D-AE-18. Update errors.md step 6 and the U3 changelog line to say \"at most 10\", and add a test with more than 10 failing fields.
+Commit on dev and push, so #17 picks it up. Update the code summary. Wait for #17's checks, then present the completion message again with their results."
+**AI Response**: "Applying the three fixes: (1) packages/jcs added to services/org-gateway/Dockerfile's install and source layers, image built locally; the image build joins the pre-commit gate for any group reaching S1's dependencies. (2) An unresolved upstream agent's term is the empty set and evaluation continues; upstream_unresolved only when W does not contain R and an upstream agent did not resolve; D-AE-09 consistency fix; allow case added to TC-AE-016 and evaluate.test.ts; the code-summary entry removed and recorded as a missed stop condition 2. (3) errors[] capped at 10 in P2 (winning code from all errors, first 10 by pointer); D-AE-18 consistency fix; errors.md step 6 and the U3 changelog line say at most 10; a test with more than 10 failing fields. Commit on dev, push, wait for #17's checks, then present the completion message again."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation, Request Changes (three fixes).
+
+---
