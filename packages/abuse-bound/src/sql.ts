@@ -4,7 +4,7 @@
 // epoch milliseconds from the injected Clock, never the database's now(), so
 // tests control them (P-14). Window entries are `{ id, at }` in the slot's
 // `entries` array; an entry is live while `at` is within the last 15 minutes.
-import { statement } from '@soorma/org-identity';
+import { statement } from '@soorma/service-kit';
 
 export const SQL = {
   /**

@@ -11,10 +11,21 @@
 -- and an existing role is never altered, so a re-run writes nothing to the
 -- server-wide catalog. Passwords are never in this file: the caller sets them.
 --
+-- Concurrent runs are serialized (U4 D-CG-EHA-15): the whole file is one
+-- explicit transaction that first takes a transaction-level advisory lock, so
+-- two runs never grant or revoke on the same catalog row at once ("tuple
+-- concurrently updated"). The block is explicit because psql's \i commits
+-- each statement on its own; a bare transaction-level lock would be released
+-- at once. The key, 8361432257233209235, is the first 63 bits of
+-- SHA-256("soorma.org.roles"), derived as the migration lock's is.
+--
 -- Parameter: the session setting soorma.target_database, the database the
 -- grants are for. The caller sets it before running this file (psql: :'name';
 -- the harness: a bound query parameter). current_setting fails when it is
 -- unset, and it must name the connected database.
+
+BEGIN;
+SELECT pg_advisory_xact_lock(8361432257233209235);
 
 DO $roles$
 BEGIN
@@ -56,3 +67,5 @@ $database$;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO soorma_org_migrator;
 GRANT USAGE ON SCHEMA public TO soorma_org_app;
+
+COMMIT;

@@ -17,12 +17,17 @@ import { ConfigurationError, loadOrganization } from '@soorma/config';
 import { StoreIdentityResolver } from '@soorma/identity-resolution';
 import {
   asSecretText,
+  KeyMaterialError,
+  listenHealth,
+  Store,
+  systemClock,
+} from '@soorma/service-kit';
+import {
   BreachedList,
   BreachedListError,
   defaultPermits,
   FirstAdminError,
   HashSemaphore,
-  KeyMaterialError,
   KeyRing,
   Lifetimes,
   OrgIdentity,
@@ -30,12 +35,9 @@ import {
   SecretHasher,
   SecretPolicy,
   SQL,
-  Store,
-  systemClock,
 } from '@soorma/org-identity';
 import { createEdgeApp, createInternalApp } from './apps.ts';
 import { ContractValidator } from './contract-validator.ts';
-import { listenHealth } from './health.ts';
 import { assembleRuntime } from './runtime.ts';
 import { SecurityLog } from './security-log.ts';
 
@@ -68,12 +70,15 @@ export async function start(
     ...(options.secretsDir === undefined ? {} : { secretsDir: options.secretsDir }),
   });
   const keys = KeyRing.fromConfiguration(secrets);
-  const store = Store.connect({
-    ...settings.database,
-    database: settings.database.name,
-    password: secrets.databasePassword,
-    ca: secrets.databaseCa,
-  });
+  const store = Store.connect(
+    {
+      ...settings.database,
+      database: settings.database.name,
+      password: secrets.databasePassword,
+      ca: secrets.databaseCa,
+    },
+    { name: 'org' },
+  );
   const [commit] = await store.query<{ synchronous_commit: string }>(SQL.synchronousCommit);
   if (commit?.synchronous_commit !== 'on')
     throw new ConfigurationError(['the org store must run with synchronous_commit = on']);

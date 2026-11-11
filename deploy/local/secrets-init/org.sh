@@ -33,7 +33,10 @@ copy org-db 999 \
 copy org-migrate 65532 \
   org-db-migrator-password stack-ca-cert
 
-# org-gateway (distroless nonroot, 65532): never the migrator password.
+# org-gateway (distroless nonroot, 65532): never the migrator password. With
+# each environment's caller PUBLIC key, for internalCallers (U4 Infrastructure
+# Design §3): the one value that crosses levels.
 copy org-gateway 65532 \
   org-gateway-tls stack-ca-cert org-db-app-password org-signing-key org-seed-key \
-  org-counter-secret org-log-pseudonym-key org-enrollment-1
+  org-counter-secret org-log-pseudonym-key org-enrollment-1 \
+  e-caller-public-key e2-caller-public-key

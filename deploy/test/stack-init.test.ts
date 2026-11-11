@@ -4,8 +4,8 @@
 // handover file; and TC-OI-056's certificate half: a name-constrained CA, and
 // leaves that verify against it.
 import { execFileSync } from 'node:child_process';
-import { createPrivateKey } from 'node:crypto';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { createPrivateKey, createPublicKey } from 'node:crypto';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -96,5 +96,104 @@ describe('TC-OI-056 (certificates): a name-constrained CA, and leaves that verif
     );
     expect(verified).toMatch(/org-gateway-tls: OK/);
     expect(verified).toMatch(/org-db-tls: OK/);
+  });
+});
+
+describe("U4 Infrastructure Design §3: each environment's secrets", () => {
+  const ENV_SECRETS = (env: string): string[] => [
+    `${env}-signing-key-1`,
+    `${env}-caller-key`,
+    `${env}-caller-public-key`,
+    `${env}-log-pseudonym-key`,
+    `${env}-db-app-password`,
+    `${env}-db-migrator-password`,
+    `${env}-db-superuser-password`,
+    `${env}-control-gateway-tls`,
+    `${env}-db-tls`,
+  ];
+
+  it('generates every E and E2 secret, 0600, distinct per environment', () => {
+    const dir = fresh();
+    const result = stackInit({ dir });
+    expect(result.created).toEqual(
+      expect.arrayContaining([...ENV_SECRETS('e'), ...ENV_SECRETS('e2')]),
+    );
+    for (const name of [...ENV_SECRETS('e'), ...ENV_SECRETS('e2')])
+      expect(modeOf(join(dir, name)), name).toBe(0o600);
+    for (const name of ['signing-key-1', 'caller-key', 'log-pseudonym-key', 'db-app-password'])
+      expect(readFileSync(join(dir, `e-${name}`), 'utf8'), name).not.toBe(
+        readFileSync(join(dir, `e2-${name}`), 'utf8'),
+      );
+    for (const env of ['e', 'e2'])
+      for (const name of ['signing-key-1', 'caller-key'])
+        expect(
+          createPrivateKey(readFileSync(join(dir, `${env}-${name}`))).asymmetricKeyType,
+          `${env}-${name}`,
+        ).toBe('ed25519');
+    expect(readFileSync(join(dir, 'e-log-pseudonym-key'), 'utf8')).not.toBe(
+      readFileSync(join(dir, 'org-log-pseudonym-key'), 'utf8'),
+    );
+  });
+
+  it('derives each caller PUBLIC key from its private key, as SPKI PEM, holding no private part', () => {
+    const dir = fresh();
+    stackInit({ dir });
+    for (const env of ['e', 'e2']) {
+      const pub = readFileSync(join(dir, `${env}-caller-public-key`), 'utf8');
+      expect(pub).toMatch(/^-----BEGIN PUBLIC KEY-----/);
+      expect(pub).not.toContain('PRIVATE');
+      const derived = createPublicKey(
+        createPrivateKey(readFileSync(join(dir, `${env}-caller-key`))),
+      ).export({ format: 'pem', type: 'spki' });
+      expect(pub).toBe(derived);
+    }
+  });
+
+  it('refuses a caller public key that no longer matches its private key, and names only the files', () => {
+    const dir = fresh();
+    stackInit({ dir });
+    const other = createPublicKey(
+      createPrivateKey(readFileSync(join(dir, 'e2-caller-key'))),
+    ).export({
+      format: 'pem',
+      type: 'spki',
+    });
+    writeFileSync(join(dir, 'e-caller-public-key'), other, { mode: 0o600 });
+    expect(() => stackInit({ dir })).toThrow(
+      'e-caller-public-key does not match e-caller-key: remove it and run stack:init again',
+    );
+  });
+
+  it("each environment's certificates verify against the local CA, under its own names", () => {
+    const dir = fresh();
+    stackInit({ dir });
+    for (const env of ['e', 'e2']) {
+      const verified = execFileSync(
+        'openssl',
+        [
+          'verify',
+          '-CAfile',
+          join(dir, 'stack-ca.pem'),
+          join(dir, `${env}-control-gateway-tls`),
+          join(dir, `${env}-db-tls`),
+        ],
+        { encoding: 'utf8' },
+      );
+      expect(verified).toMatch(new RegExp(`${env}-control-gateway-tls: OK`));
+      expect(verified).toMatch(new RegExp(`${env}-db-tls: OK`));
+      const text = execFileSync(
+        'openssl',
+        [
+          'x509',
+          '-in',
+          join(dir, `${env}-control-gateway-tls`),
+          '-noout',
+          '-ext',
+          'subjectAltName',
+        ],
+        { encoding: 'utf8' },
+      );
+      expect(text).toContain(`DNS:control-gateway.${env}.soorma.internal`);
+    }
   });
 });

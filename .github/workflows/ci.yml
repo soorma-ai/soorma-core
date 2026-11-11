@@ -113,7 +113,7 @@ jobs:
           if-no-files-found: error
 
   image-and-stack:
-    name: Image, image secret scan, and stack smoke test
+    name: Images, image secret scans, stack smoke test, and the S1-stopped demonstration
     runs-on: ubuntu-24.04
     steps:
       - name: Check out
@@ -139,6 +139,13 @@ jobs:
       - name: Check the image's file system for secrets
         run: node tools/checks/run.ts secrets --image soorma/org-gateway:local
 
+      # U4 Infrastructure Design §2, §12; TC-EHA-088.
+      - name: Build the S2 image
+        run: docker build -f services/control-gateway/Dockerfile -t soorma/control-gateway:local .
+
+      - name: Check the S2 image's file system for secrets
+        run: node tools/checks/run.ts secrets --image soorma/control-gateway:local
+
       # Throwaway secrets for this run only, generated on the runner.
       - name: Generate the stack's secrets
         run: pnpm stack:init
@@ -148,6 +155,16 @@ jobs:
 
       - name: Stack smoke test
         run: pnpm stack:smoke
+
+      # U4 Infrastructure Design §11 (TC-EHA-084, TC-EHA-085), on a fresh
+      # stack: it makes the first authentication itself.
+      - name: Restart the stack from empty volumes
+        run: |
+          docker compose -f deploy/local/compose.yaml down -v
+          pnpm stack:up
+
+      - name: The S1-stopped demonstration
+        run: pnpm stack:outage
 
       - name: Show the logs on failure
         if: failure()

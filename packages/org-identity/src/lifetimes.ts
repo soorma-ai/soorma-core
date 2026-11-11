@@ -2,7 +2,7 @@
 //
 // Lifetimes of the organization level's time-bound records (NFR-OI-01, 10).
 import { Inject, Injectable } from '@nestjs/common';
-import { CLOCK, type Clock } from './clock.ts';
+import { CLOCK, type Clock } from '@soorma/service-kit';
 
 /** A sign-in token lives 15 minutes (NFR-OI-01). */
 export const SIGN_IN_LIFETIME_MS = 15 * 60 * 1000;

@@ -2242,3 +2242,200 @@ Then run the Construction Design PR gate (pr-checkpoint.md Section 5): open the 
 **Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate, PR opening.
 
 ---
+
+## Construction Design PR Gate: PR Open, Checks Green (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:13:04Z
+**User Input**: (none)
+**AI Response**: "Opened https://github.com/soorma-ai/soorma-core/pull/18 (dev → main, head 7d33d3d), referencing #7 and #3. Checks, two workflow runs (push and pull_request): Build, check, and test — pass (1m55s, 1m51s); Image, image secret scan, and stack smoke test — pass (2m49s, 2m56s); Dependency review — pass (6s) on the pull_request run, skipped on the push run; cla-assistant — pass. Gate remains PENDING until the user reviews, merges, and confirms. Stopped before Code Generation."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate PENDING.
+
+---
+
+## Construction Design PR Gate: Confirmation Received, Merge Not Found (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:16:14Z
+**User Input**: "Merged #18. Mark the Construction Design gate approved in aidlc-state.md, log it verbatim in audit.md, commit with the pending PR-link edit on dev, and push.
+
+Then start Code Generation for U4, Part 1 only: write the plan and stop for my approval. The plan must order the work as NP-EHA-15 and Infrastructure Design §15 require:
+
+The pure move into service-kit: U2's tests green, check:code clean, S1's image rebuilt.
+The generalisations: the four sign-in verification changes; org-identity out of perimeter's runtime dependencies.
+S1's changes: A7, and publicKeys with the four refusals, S1's image rebuilt.
+U4's packages and S2, then the Compose stack, secrets, certificates and monitoring, then the READMEs and their docs test.
+Each group ends with the pre-commit gate, including the image build. The stage is complete only when the PR's checks are green."
+**AI Response**: "Checked before acting: gh reports soorma-core#18 as OPEN (mergedAt null, mergeCommit null, last updated 2026-11-11T07:09:47Z), and origin/main's head is still a9aa74b (Merge pull request #17). The gate was NOT marked approved, nothing was committed or pushed (a push to dev would add to the open PR), and Code Generation was not started. Reported to the user and asked them to merge #18, or say how to proceed."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate still PENDING.
+
+---
+
+## Construction Design PR Gate: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:17:28Z
+**User Input**: "merged"
+**AI Response**: "Verified: soorma-core#18 MERGED at 2026-11-11T07:16:59Z, merge commit 1a19082. Applying the earlier request (2026-11-11T07:16:14Z): gate marked APPROVED in aidlc-state.md; committing with the pending PR-link edit on dev and pushing; then Code Generation Part 1 (plan only) in the user's order, stopping for approval."
+**Context**: CONSTRUCTION, U4 env-human-access: Construction Design PR gate APPROVED; Code Generation Part 1 starting.
+
+---
+
+## Code Generation Part 1: Plan and Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:21:53Z
+**User Input**: (none; continuing the request logged at 2026-11-11T07:16:14Z)
+**AI Response**: "Loaded construction/code-generation.md. L1 gate: 33 Covered, 20 N/A, 0 Missing. Wrote construction/working/env-human-access-code-generation-plan.md (git-ignored): Step 0 bookkeeping commit; Group 1 the pure move into packages/service-kit (Steps 1 to 3; U2's tests with only import lines changed; check:code clean; S1's image); Group 2 the generalisations (Steps 4 to 7: Semaphore, the store's name, the HTTP plumbing under @soorma/service-kit/http, and the user's four sign-in verification changes; org-identity out of perimeter's runtime dependencies; S1's image); Group 3 S1's changes (Steps 8 to 10: A7, publicKeys with the four refusals; S1's image); Group 4 U4's packages (Steps 11 to 18a: contract, env-store with migrations and privileges, P4, P5, P7, P3, P9, P1); Group 5 S2 (Steps 19 to 21; both images); Group 6 the Compose stack, secrets, certificates, monitoring (Steps 22 to 25; stack:init, up, smoke, and s1-outage.ts locally); Group 7 READMEs and the docs test (Steps 26, 27); Group 8 completion (Steps 28 to 31: the PR dev to main, Refs #7 and #3, not merged; complete only when its checks are green). Decisions D-CG-EHA-01 to 12, two found at planning: U2's Store, Queryable and ConflictError move too (env-store's transaction helper; consistency fix to logical-components §2.1); P1 re-exports the problem documents so surfaces still emit through P1 (D-EHA-21). Stop conditions 1 to 7. L1 and test-case traceability tables included. Awaiting the user's approval of the plan."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Part 1, plan awaiting approval.
+
+---
+
+## Code Generation Part 1: Plan APPROVED with Changes (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:26:16Z
+**User Input**: "Approved, with two changes:
+
+Group 1 must keep S1's health check working. deploy/local/compose.yaml:160 runs node dist/healthcheck.js in S1's image, so moving services/org-gateway/src/healthcheck.ts breaks S1's health and stack:up. Leave a services/org-gateway/src/healthcheck.ts that only imports and runs service-kit's, so dist/healthcheck.js still exists and the Compose file doesn't change. Record this as a decision in the plan.
+Run S1 for real in every group, not just at Group 6.
+In the gate for Groups 1, 2, 3 and 5, after the image build, also run locally pnpm stack:init, stack:up, stack:smoke, then stack:down -v.
+After each group's commit, push dev, and wait for the push's CI run to go green before starting the next group.
+A red run is fixed on dev before moving on, under stop condition 7.
+Log this verbatim in audit.md, update the plan and D-CG-EHA-12, commit the Step 0 bookkeeping, and start Part 2 with Group 1. Stop and report after Group 1's push run is green, before Group 2."
+**AI Response**: "Plan approved with the user's two changes: D-CG-EHA-13 (S1 keeps services/org-gateway/src/healthcheck.ts as a shim that imports and runs service-kit's, so dist/healthcheck.js and compose.yaml are unchanged); D-CG-EHA-12 updated (Groups 1, 2, 3 and 5 also run stack:init, stack:up, stack:smoke and stack:down -v locally after the image build; after each group's commit, push dev and wait for the push's CI run to go green before the next group; a red run is fixed on dev first, under stop condition 7, which now covers every push run). Committing the Step 0 bookkeeping, then Part 2 Group 1; stopping after Group 1's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation plan APPROVED; Part 2 starting with Group 1.
+
+---
+
+## Code Generation Part 2: Group 1 Complete (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:40:35Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Step 0 committed as d08bd81. Group 1 (Steps 1 to 3), the pure move into packages/service-kit, committed as 6b679e0 and pushed: secret types, canonical JSON, the pseudonym, signed internal requests, sign-in verification (minting stays in P10), key thumbprints and types, the clock, error kinds, the statement brand and runner statements, Store/Queryable/ConflictError (D-CG-EHA-01), the migration runner (P10 keeps a wrapper passing its directory and lock key), the problem documents (P1 re-exports them, D-CG-EHA-02), the health listener and healthcheck (S1 keeps src/healthcheck.ts as a shim, D-CG-EHA-13; compose.yaml unchanged). D-CG-EHA-14 found in Part 2: verifySignIn and verifyInternalRequest take structural key sources that KeyRing satisfies (type-only, no runtime change), to avoid an import cycle. U2's test files changed only in import lines (checked). Gate: build, lint, format:check, check:deps, check:code (no change to tools/checks needed), check:generated, check:contract, check:secrets, check:workflows; 771 tests passed, 2 skipped (the SOORMA_PERF tests), with db:test; S1's image built and its secret scan clean; stack:init, stack:up (org-gateway healthy through the shim), stack:smoke passed, stack:down -v. Push CI run 42980867192: Build, check, and test success; Image, image secret scan, and stack smoke test success. Found: the earlier push run 42978421797 (49cffb6, docs only, before Group 1) failed in U2's store.test.ts with 'tuple concurrently updated': the test runs deploy/local/db/roles.sql twice concurrently against one database, and concurrent GRANT/REVOKE ON DATABASE can collide. Intermittent and pre-existing; reported to the user with a proposed fix, not changed. Stopped before Group 2, as instructed."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 1 complete; paused.
+
+---
+
+## Code Generation Part 2: Group 1 Accepted; roles.sql Fix Approved (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:45:13Z
+**User Input**: "Group 1 accepted. Yes, fix roles.sql, as its own commit before Group 2:
+
+Wrap deploy/local/db/roles.sql in an explicit BEGIN; SELECT pg_advisory_xact_lock(<fixed key>); … COMMIT;. A bare pg_advisory_xact_lock wouldn't work: the init script runs the file through psql \i, which commits each statement on its own, so the lock would be released at once. The test sends the file as one query, and the explicit block works for both.
+Use a fixed key derived like the migration lock (the first 63 bits of SHA-256("soorma.org.roles")), and document it in the file's header.
+Leave store.test.ts unchanged. Run it 20 times in a loop locally to show the concurrent case no longer fails, and report the count.
+Commit as fix(deploy): serialize concurrent roles.sql runs (U2 D-CG-OI-15), push, and wait for the push run to go green.
+Record it as D-CG-EHA-15. Apply the same pattern to env-roles.sql in Group 4 ("soorma.env.roles").
+Then continue with Groups 2 and 3, each with the full gate including the local stack, and push after each, waiting for green. Stop and report after Group 3's push run is green, since those are the last groups that change U2's code."
+**AI Response**: "Recording D-CG-EHA-15 in the plan: deploy/local/db/roles.sql wrapped in an explicit BEGIN; SELECT pg_advisory_xact_lock(8361432257233209235); ... COMMIT; (the first 63 bits of SHA-256(\"soorma.org.roles\")), documented in its header; store.test.ts unchanged; the test run 20 times locally; committed as fix(deploy): serialize concurrent roles.sql runs (U2 D-CG-OI-15), pushed, push run awaited. env-roles.sql in Group 4 uses the same pattern with SHA-256(\"soorma.env.roles\") (3602168843343665555). Then Groups 2 and 3, each with the full gate including the local stack, pushed and awaited green; stop after Group 3's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation, between Group 1 and Group 2.
+
+---
+
+## Code Generation Part 2: roles.sql Fix Done; Group 2 Stopped at Stop Condition 1 (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:01:15Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "D-CG-EHA-15 done: deploy/local/db/roles.sql wrapped in BEGIN; SELECT pg_advisory_xact_lock(8361432257233209235); ... COMMIT;, key derivation in the header; store.test.ts unchanged and passed 20 of 20 runs locally; full gate passed (S1 image, stack:init, up, smoke, down -v); committed as d2db9e0 with the Group 1 bookkeeping as 3d913b4; push run 42982443327 green. Group 2 (Steps 4 to 6) implemented, not committed: service-kit Semaphore (FIFO, release-once, abortable wait) with HashSemaphore over it; Store errors named by StoreOptions (S1 passes org); @soorma/service-kit/http (createAdapter, ProblemFilter, rawBody, sendProblem, generic SecurityLog and ContractValidator; S1 keeps thin subclasses with the same exports); verifySignIn with a tolerance parameter (default the organization level's { expSeconds: 0 }; an explicit iat-ahead check), an unknownKey result, SignInKeySource.hasKeys(), SignInStatus (A7); SignInPerimeter with status(claims) -> SignInStatus, optional refetch (verify exactly once more), tolerance, retryAfterSeconds; unavailable when no key is held; S1 passes its O3 check as live/ended; org-identity moved to perimeter's devDependencies (closure checked); SecretText's comment widened. Build, lint, format, check:deps, check:code, check:generated, check:contract, check:secrets pass. Tests: 793 pass, 2 skipped, 2 fail: both U2 assertions in packages/org-identity/test/crypto.test.ts (TC-OI-044) expect verifySignIn to answer 'invalid' for a kid the key ring lacks ('an unknown kid', line 301; 'once removed, it is refused', line 328); with the user's unknownKey change it answers 'unknownKey'. S1's behaviour is unchanged (P1 maps unknownKey to credential_refused; TC-OI-024's presenter tests pass). Stop condition 1 (a U2 assertion would have to change): stopped and asked the user."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 2 paused at stop condition 1.
+
+---
+
+## Code Generation Part 2: Stop Condition 1 Answered (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:06:50Z
+**User Input**: "A. Record it as D-CG-EHA-16, an intended interface change and the one exception to D-CG-EHA-05 in Group 2:
+
+In crypto.test.ts, move 'an unknown kid' out of the it.each that expects 'invalid', into its own case expecting 'unknownKey'. Change line 328's removed-key assertion to 'unknownKey'. Change nothing else in U2's tests.
+Add the S1-level assertion: P1 at S1's settings answers credential_refused for both tokens, the unknown kid and the removed key, so TC-OI-044's \"refused\" still holds where S1 serves it.
+Then finish Group 2's gate (S1 image, then stack:init, up, smoke, down -v), commit, push, and wait for green. Do Group 3 the same way. Stop and report after Group 3's push run is green. If any other U2 assertion would change, stop again."
+**AI Response**: "Applying D-CG-EHA-16: the two TC-OI-044 assertions move to 'unknownKey' as specified, nothing else in U2's tests changes, and a new test asserts P1 at S1's settings answers credential_refused for both tokens. Then Group 2's gate, commit, push, green; Group 3 likewise; stop after Group 3's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 2, D-CG-EHA-16.
+
+---
+
+## Code Generation Part 2: Groups 2 and 3 (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:22:50Z
+**User Input**: (none; executing the approved plan with D-CG-EHA-16)
+**AI Response**: "Group 2 committed as 1297d8d (with D-CG-EHA-16: TC-OI-044's unknown-kid case moved to its own case expecting unknownKey and the removed-key assertion changed to unknownKey; nothing else in U2's tests changed beyond the presenter test's status-callback fixtures; new packages/perimeter/test/organization-sign-in.test.ts shows P1 at S1's settings answers credential_refused for both tokens). Gate: 797 tests; S1 image; stack:init, up, smoke, down -v. Push run 42985132072 green. Group 3 (Steps 8 and 9) implemented: A7 (P10's signInStatus answers { status: 'live', expiresAt } only for a live, unexpired sign-in of an active principal, judged on S1's clock; { status: 'ended' } otherwise; { status: 'unknown' } when absent; the internal route sends expiresAt as RFC 3339); the two A7 assertions in U2's tests updated as planned (domain.test.ts, internal.test.ts, the latter at whole-second precision because the record keeps milliseconds and the token's exp does not); TC-EHA-090 added (sign-in-status.test.ts, including expiry by S1's clock). publicKeys: the schema's internalCallers[].publicKeys (1 to 8 secret names); tenancy.ts keeps 'environment appears twice' and adds 'listed more than once' for a secret name within one environment or across two; listSecrets lists every key; KeyRing refuses a kid twice for one environment and a kid configured for two environments, checked on the loaded keys; U2 fixtures changed from publicKey to publicKeys (inputs only). New tests: packages/config/test/internal-callers.test.ts and packages/org-identity/test/internal-callers.test.ts (TC-EHA-082, 083: both refusals including two PEM files holding one key; either of E's two keys attributed to E; E2's key under E's iss refused). Gate: build, lint, format, all checks, 808 tests with db:test; S1 image built and scanned; stack:init, up, smoke, down -v. Committing Group 3, pushing, and waiting for green; then stopping, as instructed."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 2 and 3.
+
+---
+
+## Code Generation Part 2: Groups 2 and 3 Accepted; D-CG-EHA-17 Approved (U4 env-human-access)
+**Timestamp**: 2026-11-11T08:30:03Z
+**User Input**: "Groups 2 and 3 accepted.
+
+The monitoring test: approved now, as D-CG-EHA-17, for Group 6:
+
+Move the whole-file checks to deploy/test/monitoring.test.ts (TC-EHA-087). alerts.yaml's events must equal the union of S1's SECURITY_EVENTS and S2's event list, and every rule and panel must name an event in that union.
+In services/org-gateway/test/monitoring.test.ts, lines 46, 50 and 52 become: every S1 event is in alerts.yaml's events. Line 75 (S1's source emits each event) stays.
+No other U2 assertion changes. Stop as before if one would.
+Continue with Groups 4 and 5, each with the full gate and a push, waiting for green. Stop and report after Group 5's push run is green. S2 is the most security-relevant new code, and I want to review it before the stack work."
+**AI Response**: "Recorded D-CG-EHA-17 for Group 6. Continuing with Group 4 (contract, env-store, P4, P5, P7, P3, P9, P1) and Group 5 (S2), each with the full gate and a push awaited green; stopping after Group 5's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation, Groups 4 and 5 starting.
+
+---
+
+## Code Generation Part 2: Groups 4 and 5 (U4 env-human-access)
+**Timestamp**: 2026-11-11T09:15:28Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 4 (Steps 11 to 18) committed as a50f8fc; gate: 946 tests with db:test, S1 image, stack:init, up, smoke, down -v; push run 42990083535 green. It adds contract/control-gateway.openapi.yaml (four operations; GrantRequest, EnvironmentCredentialResponse, Grant; fixtures; generated types; CHANGELOG) and unknown_permission and unknown_principal (ProblemCode, errors.md, P1's table); packages/env-store (0001_init.sql with the three tables, the BR-AT-05 CHECK constraints including load-bearing-has-hop, the partial unique index, and the app role's column-level privileges; withTransaction; newRecordId; its test harness; deploy/local/db/env-roles.sql serialized with lock 3602168843343665555, D-CG-EHA-15); P4 registry; P5 credentials; P7 attribution; P3 evaluateHuman and holdsAnyGrant; P9 controlGateway and loadEnvironmentMigrator with cross-environment and organization-secret checks; P1 presentedCredential and presentedEnvironmentCredential. Group 5 (Steps 19 to 20): services/control-gateway (settings, security log with the ten events, contract validator, healthcheck shim, the S1 caller with an 8-socket call pool and a 1-socket key-fetch pool, TLS 1.3 with the local CA only and the server name, a 2-second deadline, a 64 KiB cap and exact shapes; the verify-key cache; the request throttle on Fastify's onRequest with release-once in onResponse and onRequestAbort; the runtime; the configured first grant; the four handlers in §11's check order; the app with Retry-After 5 on every 503 and an event per cause; main and migrate) and its Dockerfile (image without @soorma/org-identity, checked). One additive option in service-kit's ProblemFilter (retryAfterSeconds, onUnavailable); S1 passes none. Tests: flows (28), failures (11), throttle (5, including the user's 64-abort test), S1 caller against a TLS stub with openssl certificates (12), verify-key cache (7), logs and events (4), structure (4), and the reported latency test (skipped unless SOORMA_PERF=1; pnpm test:perf:s2). Gate: build, lint, format, all checks, 1017 tests (3 skipped: the perf tests), S1 and S2 images built and scanned, stack:init, up, smoke, down -v. Committing Group 5, pushing, waiting for green; then stopping for the user's review of S2, as instructed."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 4 and 5.
+
+---
+
+## Code Generation Part 2: S2 Accepted; Groups 6 to 8 (U4 env-human-access)
+**Timestamp**: 2026-11-11T15:52:11Z
+**User Input**: "S2 reviewed and accepted. Record your five choices (the ProblemFilter options, sign_in_expiring, the environment variables, no_grant_in_environment as credential.refused, and if (!token)) as D-CG-EHA-18 to 22 in the plan.
+
+One thing for Group 6. S2 reads SOORMA_PROJECT and SOORMA_ENVIRONMENT, but Infrastructure Design §3 lists SOORMA_ENV and SOORMA_HEALTH_PORT as the only environment variables. Settle on one set:
+
+make it match in Compose, in the init script, and in the Compose-model test's allowlist;
+mark Infrastructure Design §3 and shared-infrastructure.md as corrected in place;
+keep the rule that only non-secret values are environment variables.
+Continue with Groups 6, 7 and 8 as planned, including D-CG-EHA-17's monitoring split:
+
+Push after each group and wait for green. Stop on any stop condition.
+In Group 8, open the PR dev → main with Refs #7, #3, and leave it unmerged.
+Present the completion message only when every check on that PR is green, with the PR link, the check results, the latency figures, and the open obligations."
+**AI Response**: "Recorded D-CG-EHA-18 to 22 (the five choices) and D-CG-EHA-23 (one set of environment variables: SOORMA_PROJECT, SOORMA_ENVIRONMENT, SOORMA_HEALTH_PORT for S2 and {env}-migrate; SOORMA_ENVIRONMENT for {env}-db's init script, replacing SOORMA_ENV; all non-secret), to be applied in Compose, the init script, and the Compose-model test's allowlist, with Infrastructure Design §3 and shared-infrastructure.md corrected in place. Continuing with Groups 6, 7, and 8, each pushed and awaited green; the PR dev to main (Refs #7, #3) left unmerged; completion presented only with every PR check green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation, Groups 6 to 8.
+
+---
+
+## Code Generation Part 2: Group 6 Stop Condition (U4 env-human-access)
+**Timestamp**: 2026-11-11T16:17:26Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 6 (Steps 22 to 24) built, uncommitted. Compose gains E and E2 (secrets-init, db, migrate, control-gateway), with D-CG-EHA-23's environment variables (SOORMA_PROJECT, SOORMA_ENVIRONMENT, SOORMA_HEALTH_PORT; SOORMA_ENVIRONMENT in the init script); Infrastructure Design §3 (and its §6 init-script row) and shared-infrastructure.md corrected in place. smoke.ts extended (TC-EHA-086), s1-outage.ts (TC-EHA-084, 085) as pnpm stack:outage on a fresh stack (D-CG-EHA-24), S2's monitoring events, five rules and ten panels, with D-CG-EHA-17's split (deploy/test/monitoring.test.ts; S1's lines 46, 50, 52 replaced by one assertion that every S1 event is listed), deploy/test/compose-model.test.ts (TC-EHA-079, 089), stack-init tests, and CI building and scanning S2's image and running the outage demonstration. Decisions D-CG-EHA-24 to 27 recorded (shared stack-client.ts; ajv and yaml joining @soorma/deploy under stop condition 4's rule for registered dependencies; listSecrets naming the caller key; the CI job's new name, with no required status check affected). Local gate green: frozen install, build, lint, format, every check, 1039 tests (3 skipped, perf) with db:test, both images built and scanned, stack:init, up, smoke (44 checks), down -v, up, stack:outage (both cases; case 2 recovered in 22 s), down -v. STOPPED before committing (stop condition 1): U2's smoke.ts section 8 assertion on org-gateway's exact secrets must gain e-caller-public-key and e2-caller-public-key (required by Infrastructure Design §3; without it the smoke test fails), and section 7's leak check is extended to S2's and the environment migrators' logs and to section 9's tokens. Asking the user."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 6, stop condition 1.
+
+---
+
+## Code Generation Part 2: Group 6 Stop Answered; Standing Approval (U4 env-human-access)
+**Timestamp**: 2026-11-11T16:46:55Z
+**User Input**: "A. Record both as D-CG-EHA-28.
+
+Standing approval for the rest of this unit:
+
+A change to a U2 assertion needs no stop when it does only one of these:
+adds an item the approved design adds, with no existing item removed or reworded;
+widens a negative check, adding sources or values to scan, with the existing ones unchanged.
+Record each such change as a D-CG-EHA decision.
+Still stop for anything that removes, relaxes or replaces an assertion.
+Moving helpers is not covered: if a helper that a U2 check depends on changes behaviour, stop.
+Commit Group 6, push, and wait for green. Then continue with Groups 7 and 8. In Group 8, open the PR dev → main with Refs #7, #3, and leave it unmerged.
+
+Present completion only when every check on the PR is green, with:
+
+the PR link and the check results;
+the latency figures from test:perf:s2;
+every change to a U2 assertion in this unit (D-CG-EHA-16, 17, 28 and any later ones), each as a before/after diff with the design item it implements;
+the open obligations: specification gaps (Open and Awaiting PRD counted separately), and the items carried to Build and Test and to the first hosted deployment."
+**AI Response**: "Option A. Recorded D-CG-EHA-28 (both smoke.ts assertion changes: section 8's org-gateway secrets gain e-caller-public-key and e2-caller-public-key; section 7's leak check widened to the S2 and environment-migrate logs and section 9's tokens) and D-CG-EHA-29 (the standing approval for the rest of the unit: a U2 assertion change that only adds an item the approved design adds, or only widens a negative check, needs no stop and is recorded as a D-CG-EHA decision; anything removing, relaxing or replacing an assertion still stops; a moved helper a U2 check depends on that changes behaviour still stops). Checked the moved helpers: call() keeps 8441 as its default port and its request unchanged, and only adds the Retry-After field to its reply; check() and docker() are unchanged; the failure count is read through failed(). Committing Group 6, pushing, waiting for green; then Groups 7 and 8."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 6, stop condition 1 answered.
+
+---
+
+## Code Generation Part 2: Group 6 Green; Group 7 (U4 env-human-access)
+**Timestamp**: 2026-11-11T16:56:04Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 6 committed as 7e00606; push run 43061755886 green (build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration). Group 7 (Steps 26 and 27): services/org-gateway/README.md gains ## Operations (Rotating the signing key, with 'Wait at least 5 minutes' at step 2 and the reason; Internal callers: adding, the three-step rotation, the kid refusals); services/control-gateway/README.md (new: operations, running it, Operations: rotating E's minting key, rotating E's caller key, when the organization level is down; what it keeps; layout); READMEs for service-kit, env-store, registry, credentials, attribution; the root README (status, the S2 row, the packages, the stack and CI). deploy/test/docs.test.ts (TC-EHA-081). No U2 assertion changed. Gate: frozen install, build, lint, format, every check, 1042 tests (3 skipped, perf) with db:test, both images built and scanned. Committing, pushing, waiting for green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 7.
+
+---
+
+## Code Generation Part 2: Group 7 Green; Group 8 (U4 env-human-access)
+**Timestamp**: 2026-11-11T17:13:43Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 7 committed as 4c6bb1d; push run 43063186098 green. Group 8 (Steps 28 to 30): latency measured (TC-EHA-070; pnpm test:perf:s2, three runs of 500 per operation): p95 issuance 4.9 to 5.1 ms, renewal 4.8 to 5.2 ms, ending 4.7 to 4.9 ms, grantToHuman 5.8 ms (targets 300 and 200 ms; reported, not a gate); test:perf:s2 now passes --silent=false (D-CG-EHA-30). Cross-checking every TC-EHA id against the tests found six with no test (022, 031, 050, 051, 067, 069): added services/control-gateway/test/isolation.test.ts, smoke section 10 with a new dockerWithInput helper (docker unchanged), a new describe in tools/test/code-checks.test.ts (no existing test changed), and the TC-EHA-022 label (D-CG-EHA-31); no U2 assertion changed. code-summary.md written, including every change to a U2 assertion in this unit (D-CG-EHA-16, Group 3's A7, D-CG-EHA-17, D-CG-EHA-28) as diffs; L1 matrix 33 rows and invariant matrix I1 to I10 Implemented; the I8 packaging table re-checked; logical-components §2.1 corrected in place (D-CG-EHA-01). Local run: frozen install, build, lint, format, every check, pnpm audit clean, 1050 tests (3 skipped, perf) with db:test, both images built and scanned, stack:init, up, smoke (52 checks), down -v, up, stack:outage (both cases; 22 s), down -v. Committing Group 8, pushing, opening the PR dev to main (Refs #7, #3), unmerged; completion only when every PR check is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 7 and 8.
+
+---

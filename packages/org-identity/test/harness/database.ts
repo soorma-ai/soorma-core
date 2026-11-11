@@ -7,7 +7,7 @@
 import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { inject } from 'vitest';
-import { Store } from '../../src/store/store.ts';
+import { Store } from '@soorma/service-kit';
 import { connect, type DatabaseInfo } from './global-setup.ts';
 import { APP, MIGRATOR, runRolesSql } from './roles.ts';
 

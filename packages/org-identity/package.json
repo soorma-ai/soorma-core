@@ -22,6 +22,7 @@
     "@nestjs/common": "12.3.2",
     "@soorma/identity-resolution-seam": "workspace:*",
     "@soorma/jcs": "workspace:*",
+    "@soorma/service-kit": "workspace:*",
     "jose": "6.2.14",
     "pg": "8.23.1",
     "reflect-metadata": "0.2.2",

@@ -2,7 +2,8 @@
 // S1's edge through HTTP: the five operations, the check order, and every
 // response against the contract. TC-OI-002 to 007, 010, 011, 014, 020, 023,
 // 024, 026, 027, 042 (over HTTP), 047 (edge side), 052, 055.
-import { asSecretBytes, codeAt, stepAt, Store } from '@soorma/org-identity';
+import { asSecretBytes, Store } from '@soorma/service-kit';
+import { codeAt, stepAt } from '@soorma/org-identity';
 import { assertProblem } from '@soorma/perimeter/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {

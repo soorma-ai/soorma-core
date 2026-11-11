@@ -47,7 +47,7 @@ function tenancy(): Record<string, any> {
         logPseudonym: 'org-log-pseudonym-key',
       },
       enrollment: [{ principal: 'h@example.com', secret: 'org-enrollment-1' }],
-      internalCallers: [{ environment: 'e', publicKey: 'env-e-caller-key' }],
+      internalCallers: [{ environment: 'e', publicKeys: ['env-e-caller-key'] }],
     },
     projects: [
       {

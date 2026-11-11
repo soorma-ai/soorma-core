@@ -91,9 +91,12 @@ is rebuilt.
 | `UnavailableError`, `KeyMaterialError` | `org-identity/src/errors.ts` | `service-kit/src/errors.ts` |
 | `Statement`, `statement`, `migrationStatement`, and the runner's own statements. **S1's statements stay** in org-identity's `src/sql.ts` | `org-identity/src/sql.ts` | `service-kit/src/sql.ts` |
 | The migration runner (`migrate`, `runMigrations`, `MigrationError`). It takes `dir` **and `lockKey`**; `MIGRATIONS_DIR` and `MIGRATION_LOCK_KEY` stay in org-identity, which passes them | `org-identity/src/store/migrations.ts` | **`service-kit/src/store/migrations.ts`** (the path U2's `isMigrationRunner` matches) |
-| `poolConfig`, `ConnectionSettings` | `org-identity/src/store/store.ts` | `service-kit/src/store/pool.ts` |
+| `poolConfig`, `ConnectionSettings`, **and `Store`, `Queryable`, `ConflictError`** (*consistency fix at U4 Code Generation, D-CG-EHA-01: the class that wraps the pool moves with it; `Store.transaction` is `env-store`'s `withTransaction`, and `Queryable` its `Tx`. Its error text takes the store's name, which S1 passes as `org`*) | `org-identity/src/store/store.ts` | `service-kit/src/store/store.ts` (*as built: one file, moved whole; was `store/pool.ts`*) |
 | **Problem documents**: `CONTRACT_VERSION`, `SUPPORTED_VERSIONS`, `ProblemCode`, `PROBLEM_TABLE`, `isProblemCode`, `FieldError`, `Refusal`, `ProblemError`, `problemBody`, `problemResponse`. The module has no imports. Moving it keeps service-kit's HTTP plumbing from depending on P1, which would be a cycle | `perimeter/src/problems.ts` | `service-kit/src/http/problems.ts` |
 | `createHealthServer`, `listenHealth`, `HEALTH_HOST`; the healthcheck script | `services/org-gateway/src/health.ts`, `healthcheck.ts` | `service-kit/src/http/health.ts`, `healthcheck.ts` |
+
+*Corrected in place at U4 Code Generation (2026-11-11, D-CG-EHA-01)*: the `poolConfig` row
+above gained `Store`, `Queryable`, and `ConflictError`, and the target path `store/store.ts`.
 
 *Found while writing this stage*: `@soorma/perimeter` has a runtime dependency on `@soorma/org-identity`. It imports `SIGN_IN_PREFIX`, `verifySignIn`, and `Clock`, which move in commit 1, and the type `KeyRing`, which is fixed in commit 2. Without the fix, S2 would link P10 through P1.
 

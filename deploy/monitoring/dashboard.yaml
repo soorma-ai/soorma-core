@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
 #
-# The organization level's security dashboard (NFR-OI-23; SECURITY-14), as a
-# file. Validated by dashboard.schema.json and its test; nothing renders it in
+# The security dashboard of the organization level (NFR-OI-23) and of each
+# environment's S2 (U4 Infrastructure Design §9; NFR-EHA-19), as a file
+# (SECURITY-14). Validated by dashboard.schema.json and its test; nothing renders it in
 # M1 (not applicable in M1, by the user's decision). Each panel counts one
 # named event over a window, optionally grouped.
 version: 1
-title: Organization level security
+title: Organization and environment security
 panels:
   - id: sign-ins
     title: Sign-ins issued and ended
@@ -32,4 +33,56 @@ panels:
   - id: dropped
     title: Dropped Failed Attempt records
     events: [failed_attempt.dropped]
+    windowMinutes: 60
+
+  # Each environment's S2: one panel per event, by environment.
+  - id: credentials-issued
+    title: Environment credentials issued, by environment
+    events: [credential.issued]
+    groupBy: environment
+    windowMinutes: 60
+  - id: credentials-renewed
+    title: Environment credentials renewed, by environment
+    events: [credential.renewed]
+    groupBy: environment
+    windowMinutes: 60
+  - id: credentials-ended
+    title: Environment credentials ended, by environment
+    events: [credential.ended]
+    groupBy: environment
+    windowMinutes: 60
+  - id: credentials-refused
+    title: Environment credentials refused, by environment
+    events: [credential.refused]
+    groupBy: environment
+    windowMinutes: 60
+  - id: grants-made
+    title: Grants made, by environment
+    events: [grant.made]
+    groupBy: environment
+    windowMinutes: 60
+  - id: grants-denied
+    title: Grants denied, by environment
+    events: [grant.denied]
+    groupBy: environment
+    windowMinutes: 60
+  - id: first-grants
+    title: First grants applied, by environment
+    events: [first_grant.applied]
+    groupBy: environment
+    windowMinutes: 60
+  - id: orglevel-unavailable
+    title: Organization level unavailable, by environment
+    events: [orglevel.unavailable]
+    groupBy: environment
+    windowMinutes: 60
+  - id: env-store-unavailable
+    title: Environment store unavailable, by environment
+    events: [store.unavailable]
+    groupBy: environment
+    windowMinutes: 60
+  - id: throttle-refused
+    title: Refused at the S1-call limit, by environment
+    events: [throttle.refused]
+    groupBy: environment
     windowMinutes: 60

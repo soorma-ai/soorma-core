@@ -4,13 +4,14 @@
 // store, keys, and clock, so tests wire the same graph over a test database;
 // `startRuntime` (main.ts) builds them from configuration.
 import {
-  OrgIdentity,
+  ORGANIZATION_TOLERANCE,
   pseudonym,
   type Clock,
   type HumanPseudonym,
-  type KeyRing,
   type PrincipalReference,
-} from '@soorma/org-identity';
+  type SignInStatus,
+} from '@soorma/service-kit';
+import { OrgIdentity, type KeyRing } from '@soorma/org-identity';
 import { SignInPerimeter } from '@soorma/perimeter';
 import type { ContractValidator } from './contract-validator.ts';
 import type { SecurityLog } from './security-log.ts';
@@ -35,8 +36,17 @@ export function assembleRuntime(parts: {
   log: SecurityLog;
   validator: ContractValidator;
 }): Runtime {
-  const perimeter = new SignInPerimeter(parts.keys, parts.organization, parts.clock, (claims) =>
-    parts.identity.checkSignIn(claims),
+  // O3 from S1's own record, live or not (U4 D-CG-EHA-06). The `live` answer's
+  // expiry is the token's; S1 uses none of it.
+  const perimeter = new SignInPerimeter(
+    parts.keys,
+    parts.organization,
+    parts.clock,
+    async (claims): Promise<SignInStatus> =>
+      (await parts.identity.checkSignIn(claims))
+        ? { status: 'live', expiresAt: claims.expiresAt }
+        : { status: 'ended' },
+    { tolerance: ORGANIZATION_TOLERANCE },
   );
   return {
     ...parts,

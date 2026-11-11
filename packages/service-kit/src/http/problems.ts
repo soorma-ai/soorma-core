@@ -28,6 +28,8 @@ export type ProblemCode =
   | 'envelope_too_large'
   | 'unsupported_contract_version'
   | 'secret_rejected'
+  | 'unknown_permission'
+  | 'unknown_principal'
   | 'credential_refused'
   | 'credential_expired'
   | 'forbidden'
@@ -54,6 +56,8 @@ export const PROBLEM_TABLE: Readonly<Record<ProblemCode, Entry>> = Object.freeze
   envelope_too_large: { status: 400, title: 'Envelope too large' },
   unsupported_contract_version: { status: 400, title: 'Unsupported contract version' },
   secret_rejected: { status: 400, title: 'Secret rejected' },
+  unknown_permission: { status: 400, title: 'Unknown permission' },
+  unknown_principal: { status: 400, title: 'Unknown principal' },
   credential_refused: { status: 401, title: 'Credential refused' },
   credential_expired: { status: 401, title: 'Credential expired' },
   forbidden: { status: 403, title: 'Forbidden' },

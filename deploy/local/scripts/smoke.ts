@@ -19,73 +19,34 @@
 //  8. secrets (Q-CG-4 B): org-secrets-init completed, with only its three
 //     capabilities and no network; each service sees only its own secrets,
 //     owned by its user, mode 0400
+//  9. environments E and E2 (U4; TC-EHA-086): e-migrate and e2-migrate
+//     completed, each S2 healthy; over TLS 1.3 on 127.0.0.1:8442, a
+//     credential issued from a live sign-in, renewed, used for a self-grant,
+//     and ended; E's credential refused at E2 (8443); each S2 published on its
+//     own loopback port only, its store nowhere; S2 and its store hardened,
+//     each seeing only its own secrets; S2 holds no migrator password
+// 10. what reaches E (U4; TC-EHA-050, TC-EHA-067): E's store name does not
+//     resolve from E2's S2, nor E2's from E's, and E2's app password does not
+//     open E's store (E's own does); from inside network e, a credential
+//     resolves the same actor as from the host, and from org-internal-e, no
+//     credential is credential_refused
 // The enrollment material is read from the handover file into the request
 // body only; it is never printed.
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { request } from 'node:https';
 import { connect } from 'node:net';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import {
+  call,
+  check,
+  COMPOSE,
+  docker,
+  dockerWithInput,
+  failed,
+  PRINCIPAL,
+  SECRETS,
+} from './stack-client.ts';
 
-const LOCAL = resolve(import.meta.dirname, '..');
-const SECRETS = join(LOCAL, '.secrets');
-const COMPOSE = ['compose', '-f', join(LOCAL, 'compose.yaml')];
-const PRINCIPAL = { organization: 'o1', principal: 'h@example.com' };
 const K = `smoke ${Date.now().toString(36)} lantern garden`;
-
-let failures = 0;
-function check(name: string, ok: boolean, detail = ''): void {
-  console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${detail ? ` (${detail})` : ''}`);
-  if (!ok) failures += 1;
-}
-
-const docker = (args: string[]): string =>
-  execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
-interface Reply {
-  status: number;
-  body: string;
-  protocol: string | null;
-}
-
-function call(
-  path: string,
-  options: {
-    body?: unknown;
-    token?: string;
-    ca?: Buffer | null;
-    maxVersion?: 'TLSv1.2';
-  } = {},
-): Promise<Reply> {
-  const ca = options.ca === undefined ? readFileSync(join(SECRETS, 'stack-ca.pem')) : options.ca;
-  return new Promise((done, fail) => {
-    const req = request(
-      {
-        host: 'localhost',
-        port: 8441,
-        path,
-        method: 'POST',
-        agent: false,
-        ...(ca ? { ca } : {}),
-        ...(options.maxVersion ? { maxVersion: options.maxVersion } : {}),
-        headers: {
-          'soorma-contract-version': '0.1.0',
-          ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-          ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-        },
-      },
-      (res) => {
-        const protocol =
-          (res.socket as { getProtocol?: () => string | null }).getProtocol?.() ?? null;
-        let body = '';
-        res.on('data', (c: Buffer) => (body += c.toString()));
-        res.on('end', () => done({ status: res.statusCode ?? 0, body, protocol }));
-      },
-    );
-    req.on('error', fail);
-    req.end(options.body === undefined ? undefined : JSON.stringify(options.body));
-  });
-}
 
 const refused = async (p: Promise<unknown>): Promise<boolean> =>
   p.then(
@@ -256,6 +217,9 @@ async function main(): Promise<void> {
     ]);
   const gatewaySecrets = listing(gatewayId);
   const expectedGateway = [
+    // Each environment's caller PUBLIC key (U4 Infrastructure Design §3).
+    'e-caller-public-key',
+    'e2-caller-public-key',
     'org-counter-secret',
     'org-db-app-password',
     'org-enrollment-1',
@@ -294,19 +258,300 @@ async function main(): Promise<void> {
   ]);
   check("a service's secrets mount is read-only", writable === 'read-only');
 
+  // 9. Environments E and E2 (U4).
+  const secrets = await environments();
+
+  // 10. What reaches E (U4).
+  secrets.push(...(await reach()));
+
   // 7. The logs.
-  const logs = docker([...COMPOSE, 'logs', '--no-color', 'org-gateway', 'org-migrate']);
-  const leaked = [PRINCIPAL.principal, material, K, token].filter(
+  const logs = docker([
+    ...COMPOSE,
+    'logs',
+    '--no-color',
+    'org-gateway',
+    'org-migrate',
+    'e-control-gateway',
+    'e2-control-gateway',
+    'e-migrate',
+    'e2-migrate',
+  ]);
+  const leaked = [PRINCIPAL.principal, material, K, token, ...secrets].filter(
     (s) => s.length > 0 && logs.includes(s),
   );
   check('the logs carry no identifier and no secret', leaked.length === 0);
 
-  if (failures > 0) {
-    console.error(`${failures} smoke check(s) failed.`);
+  if (failed() > 0) {
+    console.error(`${failed()} smoke check(s) failed.`);
     process.exitCode = 1;
   } else {
     console.log('Stack smoke test passed.');
   }
+}
+
+/** Section 9: E and E2. Returns the tokens it saw, for the log check. */
+async function environments(): Promise<string[]> {
+  for (const env of ['e', 'e2']) {
+    const migrate = docker([
+      ...COMPOSE,
+      'ps',
+      '-a',
+      '--format',
+      '{{.State}} {{.ExitCode}}',
+      `${env}-migrate`,
+    ]);
+    check(`${env}-migrate completed`, migrate === 'exited 0', migrate);
+    const id = docker([...COMPOSE, 'ps', '-q', `${env}-control-gateway`]);
+    check(
+      `${env}-control-gateway is healthy`,
+      docker(['inspect', '-f', '{{.State.Health.Status}}', id]) === 'healthy',
+    );
+  }
+  const signIn = await call('/sign-ins', { body: { principal: PRINCIPAL, secret: K } });
+  const signInToken =
+    signIn.status === 200
+      ? (JSON.parse(signIn.body) as { signIn: { token: string } }).signIn.token
+      : '';
+  const issued = await call('/environment-credentials', { token: signInToken, port: 8442 });
+  check(
+    "E's credential is issued from a live sign-in, over TLS 1.3",
+    issued.status === 200 && issued.protocol === 'TLSv1.3',
+    `${issued.status} ${issued.protocol}`,
+  );
+  const credential =
+    issued.status === 200 ? (JSON.parse(issued.body) as { credential: string }).credential : '';
+  const renewed = await call('/environment-credentials/current/renewal', {
+    token: credential,
+    port: 8442,
+  });
+  check("E's credential renews", renewed.status === 200, String(renewed.status));
+  const granted = await call('/grants', {
+    token: credential,
+    port: 8442,
+    body: { target: PRINCIPAL, permissions: ['agent:register'] },
+  });
+  check(
+    'a self-grant at E',
+    granted.status === 200 &&
+      (JSON.parse(granted.body) as { selfGrant?: boolean }).selfGrant === true,
+    String(granted.status),
+  );
+  check(
+    "E's credential is refused at E2",
+    (await call('/environment-credentials/current/renewal', { token: credential, port: 8443 }))
+      .status === 401,
+  );
+  check(
+    'ending at E',
+    (await call('/environment-credentials/current/end', { token: credential, port: 8442 }))
+      .status === 204,
+  );
+  check(
+    'an ended credential is refused',
+    (await call('/environment-credentials/current/renewal', { token: credential, port: 8442 }))
+      .status === 401,
+  );
+
+  const id = (service: string): string => docker([...COMPOSE, 'ps', '-q', service]);
+  for (const [env, port] of [
+    ['e', '8442'],
+    ['e2', '8443'],
+  ] as const) {
+    const s2 = id(`${env}-control-gateway`);
+    const db = id(`${env}-db`);
+    const ports = docker(['inspect', '-f', '{{json .HostConfig.PortBindings}}', s2]);
+    check(
+      `${env}-control-gateway is published on 127.0.0.1:${port} only`,
+      ports === `{"8443/tcp":[{"HostIp":"127.0.0.1","HostPort":"${port}"}]}`,
+      ports,
+    );
+    check(
+      `${env}-db is not published`,
+      docker(['inspect', '-f', '{{json .HostConfig.PortBindings}}', db]) === '{}',
+    );
+    for (const [name, cid] of [
+      [`${env}-control-gateway`, s2],
+      [`${env}-db`, db],
+    ] as const) {
+      const h = docker([
+        'inspect',
+        '-f',
+        '{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{.HostConfig.CapDrop}}|{{.HostConfig.SecurityOpt}}',
+        cid,
+      ]);
+      const [user, ro, caps, opts] = h.split('|');
+      check(
+        `${name} is hardened`,
+        !!user &&
+          user !== 'root' &&
+          user !== '0' &&
+          ro === 'true' &&
+          caps === '[ALL]' &&
+          opts === '[no-new-privileges:true]',
+        h,
+      );
+    }
+    const listing = docker([
+      'exec',
+      s2,
+      '/nodejs/bin/node',
+      '-e',
+      "const fs=require('fs');console.log(fs.readdirSync('/run/secrets').sort().map(n=>{const s=fs.statSync('/run/secrets/'+n);return n+':'+s.uid+':'+(s.mode&0o777).toString(8)}).join(' '))",
+    ]);
+    const expected = [
+      `${env}-caller-key`,
+      `${env}-control-gateway-tls`,
+      `${env}-db-app-password`,
+      `${env}-log-pseudonym-key`,
+      `${env}-signing-key-1`,
+      'stack-ca-cert',
+    ]
+      .map((n) => `${n}:65532:400`)
+      .join(' ');
+    check(
+      `${env}-control-gateway sees exactly its own secrets (no migrator password), 65532, 0400`,
+      listing === expected,
+      listing,
+    );
+    const initId = docker([...COMPOSE, 'ps', '-a', '-q', `${env}-secrets-init`]);
+    const init = docker([
+      'inspect',
+      '-f',
+      '{{.State.Status}} {{.State.ExitCode}}|{{.HostConfig.ReadonlyRootfs}}|{{.HostConfig.CapDrop}}|{{.HostConfig.CapAdd}}|{{.HostConfig.NetworkMode}}',
+      initId,
+    ]);
+    check(
+      `${env}-secrets-init completed: read-only, only CHOWN, DAC_OVERRIDE, FOWNER, no network`,
+      init.replace(/CAP_/g, '') === 'exited 0|true|[ALL]|[CHOWN DAC_OVERRIDE FOWNER]|none',
+      init,
+    );
+  }
+  return [signInToken, credential].filter((t) => t.length > 0);
+}
+
+/** Section 10: what reaches E. Returns the tokens it used, for the log check. */
+async function reach(): Promise<string[]> {
+  // TC-EHA-067 step 1: no store name resolves across environments.
+  const resolves = (service: string, name: string): string =>
+    dockerWithInput(
+      [
+        ...COMPOSE,
+        'exec',
+        '-T',
+        service,
+        '/nodejs/bin/node',
+        '-e',
+        "require('dns').lookup(require('fs').readFileSync(0,'utf8').trim(),(e)=>console.log(e?e.code:'resolved'))",
+      ],
+      name,
+    ).stdout;
+  check(
+    "E's store name resolves from E's S2",
+    resolves('e-control-gateway', 'env-db.e.soorma.internal') === 'resolved',
+  );
+  for (const [service, name] of [
+    ['e-control-gateway', 'env-db.e2.soorma.internal'],
+    ['e2-control-gateway', 'env-db.e.soorma.internal'],
+  ] as const) {
+    const answer = resolves(service, name);
+    check(`${name} does not resolve from ${service}`, answer !== 'resolved', answer);
+  }
+
+  // TC-EHA-067 step 2: E2's app password does not open E's store.
+  const connect = (password: string) =>
+    dockerWithInput(
+      [
+        ...COMPOSE,
+        'exec',
+        '-T',
+        'e-db',
+        'sh',
+        '-c',
+        'read -r PGPASSWORD; export PGPASSWORD; psql -X -q -t "host=127.0.0.1 dbname=soorma_env user=soorma_env_app sslmode=require" -c "SELECT 1"',
+      ],
+      password,
+    );
+  const own = connect(readFileSync(join(SECRETS, 'e-db-app-password'), 'utf8').trim());
+  check("E's app password opens E's store (the control)", own.status === 0, own.stderr);
+  const other = connect(readFileSync(join(SECRETS, 'e2-db-app-password'), 'utf8').trim());
+  check(
+    "E2's app password does not open E's store",
+    other.status !== 0 && /password authentication failed/.test(other.stderr),
+    other.stderr.split('\n')[0] ?? '',
+  );
+
+  // TC-EHA-050: identity from the credential alone, never the network.
+  const signIn = await call('/sign-ins', { body: { principal: PRINCIPAL, secret: K } });
+  const signInToken =
+    signIn.status === 200
+      ? (JSON.parse(signIn.body) as { signIn: { token: string } }).signIn.token
+      : '';
+  const issued = await call('/environment-credentials', { token: signInToken, port: 8442 });
+  const credential =
+    issued.status === 200 ? (JSON.parse(issued.body) as { credential: string }).credential : '';
+  const body = { target: PRINCIPAL, permissions: ['agent:register'] };
+  const fromHost = await call('/grants', { token: credential, port: 8442, body });
+  const ca = readFileSync(join(SECRETS, 'stack-ca.pem'), 'utf8');
+  // A one-off container on one of the stack's networks, calling E's S2 by its
+  // network name; the CA and the credential arrive on stdin.
+  const inside = (
+    network: string,
+    host: string,
+    token: string,
+  ): { status: number; selfGrant?: boolean } => {
+    const r = dockerWithInput(
+      [
+        'run',
+        '--rm',
+        '-i',
+        '--network',
+        `soorma-local_${network}`,
+        '--read-only',
+        '--cap-drop',
+        'ALL',
+        '--security-opt',
+        'no-new-privileges:true',
+        '--entrypoint',
+        '/nodejs/bin/node',
+        'soorma/control-gateway:local',
+        '-e',
+        `const {ca,host,token,body}=JSON.parse(require('fs').readFileSync(0,'utf8'));
+const r=require('https').request({host,servername:'control-gateway.e.soorma.internal',port:8443,path:'/grants',method:'POST',ca,
+headers:{'soorma-contract-version':'0.1.0','content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})}},
+(res)=>{let b='';res.on('data',(c)=>b+=c);res.on('end',()=>{let j={};try{j=JSON.parse(b)}catch{}console.log(JSON.stringify({status:res.statusCode,selfGrant:j.selfGrant,code:j.code}))})});
+r.on('error',(e)=>console.log(JSON.stringify({status:0,code:e.code})));r.end(JSON.stringify(body));`,
+      ],
+      JSON.stringify({ ca, host, token, body }),
+    );
+    try {
+      return JSON.parse(r.stdout) as { status: number; selfGrant?: boolean };
+    } catch {
+      return { status: -1 };
+    }
+  };
+  const fromE = inside('e', 'control-gateway.e.soorma.internal', credential);
+  check(
+    'from inside network e, the credential resolves the same actor as from the host',
+    fromHost.status === 200 &&
+      fromE.status === 200 &&
+      (JSON.parse(fromHost.body) as { selfGrant?: boolean }).selfGrant === true &&
+      fromE.selfGrant === true,
+    `${fromHost.status} ${fromE.status}`,
+  );
+  // On org-internal-e, S2 has no alias: it is reached by its service name.
+  const fromInternal = inside('org-internal-e', 'e-control-gateway', '');
+  check(
+    'from org-internal-e, no credential is credential_refused',
+    fromInternal.status === 401 &&
+      (fromInternal as { code?: string }).code === 'credential_refused',
+    JSON.stringify(fromInternal),
+  );
+  check(
+    'ending the credential',
+    (await call('/environment-credentials/current/end', { token: credential, port: 8442 }))
+      .status === 204,
+  );
+  return [signInToken, credential].filter((t) => t.length > 0);
 }
 
 if (import.meta.main) {

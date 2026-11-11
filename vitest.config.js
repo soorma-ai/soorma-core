@@ -17,6 +17,11 @@ export default defineConfig({
     hookTimeout: 30_000,
     // The test-database harness (D-CG-OI-15): when TEST_DATABASE_URL is set,
     // creates the roles and a migrated template database once per run.
-    globalSetup: ['packages/org-identity/test/harness/global-setup.ts'],
+    // The environment store's harness (U4 D-CG-EHA-07) sets up its own template
+    // on the same server.
+    globalSetup: [
+      'packages/org-identity/test/harness/global-setup.ts',
+      'packages/env-store/test/harness/global-setup.ts',
+    ],
   },
 });

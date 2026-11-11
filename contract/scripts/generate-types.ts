@@ -42,6 +42,11 @@ export const generatedDocuments: readonly { document: string; output: string; so
     output: resolve(contractRoot, 'generated/org-gateway.ts'),
     source: 'contract/org-gateway.openapi.yaml',
   },
+  {
+    document: resolve(contractRoot, 'control-gateway.openapi.yaml'),
+    output: resolve(contractRoot, 'generated/control-gateway.ts'),
+    source: 'contract/control-gateway.openapi.yaml',
+  },
 ];
 
 const ANNOTATION_KEYS = new Set(['description', 'title', '$comment']);

@@ -19,6 +19,9 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
+      "path": "../service-kit/tsconfig.build.json"
+    },
+    {
       "path": "../org-identity/tsconfig.build.json"
     }
   ]

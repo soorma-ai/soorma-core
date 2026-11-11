@@ -11,6 +11,12 @@
       "path": "./packages/jcs/tsconfig.build.json"
     },
     {
+      "path": "./packages/service-kit/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/env-store/tsconfig.build.json"
+    },
+    {
       "path": "./seams/policy-decision/tsconfig.build.json"
     },
     {
@@ -38,7 +44,19 @@
       "path": "./packages/perimeter/tsconfig.build.json"
     },
     {
+      "path": "./packages/registry/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/credentials/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/attribution/tsconfig.build.json"
+    },
+    {
       "path": "./services/org-gateway/tsconfig.build.json"
+    },
+    {
+      "path": "./services/control-gateway/tsconfig.build.json"
     }
   ]
 }

@@ -6,14 +6,22 @@
   "additionalProperties": false,
   "required": ["organization", "secondFactorRequired", "organizationLevel", "projects"],
   "properties": {
-    "organization": { "$ref": "#/$defs/ConfiguredIdentifier" },
-    "secondFactorRequired": { "type": "boolean" },
-    "organizationLevel": { "$ref": "#/$defs/OrganizationLevel" },
+    "organization": {
+      "$ref": "#/$defs/ConfiguredIdentifier"
+    },
+    "secondFactorRequired": {
+      "type": "boolean"
+    },
+    "organizationLevel": {
+      "$ref": "#/$defs/OrganizationLevel"
+    },
     "projects": {
       "type": "array",
       "minItems": 1,
       "maxItems": 64,
-      "items": { "$ref": "#/$defs/Project" }
+      "items": {
+        "$ref": "#/$defs/Project"
+      }
     }
   },
   "$defs": {
@@ -42,18 +50,26 @@
       "maxLength": 32,
       "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
-    "Port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "Port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
     "Project": {
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "environments"],
       "properties": {
-        "id": { "$ref": "#/$defs/ConfiguredIdentifier" },
+        "id": {
+          "$ref": "#/$defs/ConfiguredIdentifier"
+        },
         "environments": {
           "type": "array",
           "minItems": 1,
           "maxItems": 64,
-          "items": { "$ref": "#/$defs/Environment" }
+          "items": {
+            "$ref": "#/$defs/Environment"
+          }
         }
       }
     },
@@ -63,9 +79,18 @@
       "additionalProperties": false,
       "required": ["id", "firstAdmin"],
       "properties": {
-        "id": { "$ref": "#/$defs/ConfiguredIdentifier" },
-        "firstAdmin": { "$ref": "#/$defs/HumanPrincipalIdentifier" },
-        "sealKeys": { "$ref": "#/$defs/SealKeys" }
+        "id": {
+          "$ref": "#/$defs/ConfiguredIdentifier"
+        },
+        "firstAdmin": {
+          "$ref": "#/$defs/HumanPrincipalIdentifier"
+        },
+        "sealKeys": {
+          "$ref": "#/$defs/SealKeys"
+        },
+        "controlGateway": {
+          "$ref": "#/$defs/ControlGateway"
+        }
       }
     },
     "SealKeys": {
@@ -74,7 +99,9 @@
       "additionalProperties": false,
       "required": ["current", "keys"],
       "properties": {
-        "current": { "$ref": "#/$defs/KeyId" },
+        "current": {
+          "$ref": "#/$defs/KeyId"
+        },
         "keys": {
           "type": "array",
           "minItems": 1,
@@ -84,8 +111,12 @@
             "additionalProperties": false,
             "required": ["id", "secret"],
             "properties": {
-              "id": { "$ref": "#/$defs/KeyId" },
-              "secret": { "$ref": "#/$defs/SecretName" }
+              "id": {
+                "$ref": "#/$defs/KeyId"
+              },
+              "secret": {
+                "$ref": "#/$defs/SecretName"
+              }
             }
           }
         }
@@ -95,20 +126,35 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["port", "tls"],
-      "properties": { "port": { "$ref": "#/$defs/Port" }, "tls": { "$ref": "#/$defs/SecretName" } }
+      "properties": {
+        "port": {
+          "$ref": "#/$defs/Port"
+        },
+        "tls": {
+          "$ref": "#/$defs/SecretName"
+        }
+      }
     },
     "OrganizationLevel": {
       "type": "object",
       "additionalProperties": false,
       "required": ["edge", "internal", "health", "database", "migrator", "keys", "enrollment"],
       "properties": {
-        "edge": { "$ref": "#/$defs/Listener" },
-        "internal": { "$ref": "#/$defs/Listener" },
+        "edge": {
+          "$ref": "#/$defs/Listener"
+        },
+        "internal": {
+          "$ref": "#/$defs/Listener"
+        },
         "health": {
           "type": "object",
           "additionalProperties": false,
           "required": ["port"],
-          "properties": { "port": { "$ref": "#/$defs/Port" } }
+          "properties": {
+            "port": {
+              "$ref": "#/$defs/Port"
+            }
+          }
         },
         "database": {
           "type": "object",
@@ -121,7 +167,9 @@
               "maxLength": 253,
               "pattern": "^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$"
             },
-            "port": { "$ref": "#/$defs/Port" },
+            "port": {
+              "$ref": "#/$defs/Port"
+            },
             "name": {
               "type": "string",
               "minLength": 1,
@@ -134,8 +182,12 @@
               "maxLength": 63,
               "pattern": "^[a-z_][a-z0-9_]*$"
             },
-            "password": { "$ref": "#/$defs/SecretName" },
-            "ca": { "$ref": "#/$defs/SecretName" }
+            "password": {
+              "$ref": "#/$defs/SecretName"
+            },
+            "ca": {
+              "$ref": "#/$defs/SecretName"
+            }
           }
         },
         "migrator": {
@@ -150,7 +202,9 @@
               "maxLength": 63,
               "pattern": "^[a-z_][a-z0-9_]*$"
             },
-            "password": { "$ref": "#/$defs/SecretName" }
+            "password": {
+              "$ref": "#/$defs/SecretName"
+            }
           }
         },
         "keys": {
@@ -158,19 +212,25 @@
           "additionalProperties": false,
           "required": ["signing", "seed", "counter", "logPseudonym"],
           "properties": {
-            "signing": { "$ref": "#/$defs/SecretName" },
+            "signing": {
+              "$ref": "#/$defs/SecretName"
+            },
             "verify": {
               "description": "Further verify-only public keys, during a signing-key rotation (P-02).",
               "type": "array",
               "maxItems": 8,
-              "items": { "$ref": "#/$defs/SecretName" }
+              "items": {
+                "$ref": "#/$defs/SecretName"
+              }
             },
             "seed": {
               "type": "object",
               "additionalProperties": false,
               "required": ["current", "keys"],
               "properties": {
-                "current": { "$ref": "#/$defs/KeyId" },
+                "current": {
+                  "$ref": "#/$defs/KeyId"
+                },
                 "keys": {
                   "type": "array",
                   "minItems": 1,
@@ -180,15 +240,23 @@
                     "additionalProperties": false,
                     "required": ["id", "secret"],
                     "properties": {
-                      "id": { "$ref": "#/$defs/KeyId" },
-                      "secret": { "$ref": "#/$defs/SecretName" }
+                      "id": {
+                        "$ref": "#/$defs/KeyId"
+                      },
+                      "secret": {
+                        "$ref": "#/$defs/SecretName"
+                      }
                     }
                   }
                 }
               }
             },
-            "counter": { "$ref": "#/$defs/SecretName" },
-            "logPseudonym": { "$ref": "#/$defs/SecretName" }
+            "counter": {
+              "$ref": "#/$defs/SecretName"
+            },
+            "logPseudonym": {
+              "$ref": "#/$defs/SecretName"
+            }
           }
         },
         "enrollment": {
@@ -200,22 +268,35 @@
             "additionalProperties": false,
             "required": ["principal", "secret"],
             "properties": {
-              "principal": { "$ref": "#/$defs/HumanPrincipalIdentifier" },
-              "secret": { "$ref": "#/$defs/SecretName" }
+              "principal": {
+                "$ref": "#/$defs/HumanPrincipalIdentifier"
+              },
+              "secret": {
+                "$ref": "#/$defs/SecretName"
+              }
             }
           }
         },
         "internalCallers": {
-          "description": "Each environment's caller public key, for signed internal requests (P-06).",
+          "description": "Each environment's caller public keys, for signed internal requests (P-06). A list, so a caller key rotates with no outage (U4 Infrastructure Design \u00a74).",
           "type": "array",
           "maxItems": 64,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["environment", "publicKey"],
+            "required": ["environment", "publicKeys"],
             "properties": {
-              "environment": { "$ref": "#/$defs/ConfiguredIdentifier" },
-              "publicKey": { "$ref": "#/$defs/SecretName" }
+              "environment": {
+                "$ref": "#/$defs/ConfiguredIdentifier"
+              },
+              "publicKeys": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": {
+                  "$ref": "#/$defs/SecretName"
+                }
+              }
             }
           }
         },
@@ -223,8 +304,133 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "budgetMiB": { "type": "integer", "minimum": 64, "maximum": 65536 },
-            "permits": { "type": "integer", "minimum": 1, "maximum": 1024 }
+            "budgetMiB": {
+              "type": "integer",
+              "minimum": 64,
+              "maximum": 65536
+            },
+            "permits": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1024
+            }
+          }
+        }
+      }
+    },
+    "ControlGateway": {
+      "description": "An environment's S2 control-gateway (U4 Infrastructure Design \u00a73; P-06). It names secrets only; each is read from the secrets directory by that environment's own S2 or migrate service. S2 reads only its own environment's part.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge", "health", "database", "migrator", "keys", "organizationLevel"],
+      "properties": {
+        "edge": {
+          "$ref": "#/$defs/Listener"
+        },
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["port"],
+          "properties": {
+            "port": {
+              "$ref": "#/$defs/Port"
+            }
+          }
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host", "port", "name", "user", "password", "ca"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253,
+              "pattern": "^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$"
+            },
+            "port": {
+              "$ref": "#/$defs/Port"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "password": {
+              "$ref": "#/$defs/SecretName"
+            },
+            "ca": {
+              "$ref": "#/$defs/SecretName"
+            }
+          }
+        },
+        "migrator": {
+          "description": "Read only by {env}-migrate. S2 never reads the migrator password (NFR-EHA-14).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["user", "password"],
+          "properties": {
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "password": {
+              "$ref": "#/$defs/SecretName"
+            }
+          }
+        },
+        "keys": {
+          "description": "E's own key ring (NP-02): each verify entry names an Ed25519 private key in PKCS #8 PEM, and signing names one of them; the caller key signs internal calls to the organization level; the log-pseudonym key is E's own (never the organization's).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signing", "verify", "caller", "logPseudonym"],
+          "properties": {
+            "signing": {
+              "$ref": "#/$defs/SecretName"
+            },
+            "verify": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/SecretName"
+              }
+            },
+            "caller": {
+              "$ref": "#/$defs/SecretName"
+            },
+            "logPseudonym": {
+              "$ref": "#/$defs/SecretName"
+            }
+          }
+        },
+        "organizationLevel": {
+          "description": "The organization level's internal listener, as S2 calls it (NP-EHA-04): its name, port, and the CA that alone is trusted.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host", "port", "ca"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253,
+              "pattern": "^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$"
+            },
+            "port": {
+              "$ref": "#/$defs/Port"
+            },
+            "ca": {
+              "$ref": "#/$defs/SecretName"
+            }
           }
         }
       }

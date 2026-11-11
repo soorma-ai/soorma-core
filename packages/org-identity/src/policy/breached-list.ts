@@ -11,7 +11,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { SecretText } from '../crypto/secret-types.ts';
+import type { SecretText } from '@soorma/service-kit';
 
 export const BREACHED_FILE = 'top-1m.sha256-64.bin';
 export const BREACHED_MANIFEST = 'MANIFEST.md';

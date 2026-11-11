@@ -2,7 +2,7 @@
 //
 // Every SQL statement of identity resolution (D-CG-OI-04). Read-only: it
 // decides identity and changes no record (BR-SEAM-02).
-import { statement } from '@soorma/org-identity';
+import { statement } from '@soorma/service-kit';
 
 export const SQL = {
   /** The principal's current (not retired) material of one class, if any. $1 org, $2 principal, $3 class. */

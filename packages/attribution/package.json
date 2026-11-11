@@ -1,0 +1,25 @@
+{
+  "name": "@soorma/attribution",
+  "private": true,
+  "description": "P7: attribution records, written once, in the transaction of the operation they record (U4; agent records by U6 and U7)",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/env-store": "workspace:*",
+    "@soorma/policy-decision-seam": "workspace:*",
+    "@soorma/service-kit": "workspace:*"
+  }
+}

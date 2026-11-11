@@ -12,7 +12,7 @@
 //
 // Only records for an existing principal reach it (D-OI-16), and nothing
 // presented is in them: no K, P proof, or enrollment material.
-import type { Queryable } from '@soorma/org-identity';
+import type { Queryable } from '@soorma/service-kit';
 import { SQL } from './sql.ts';
 
 export const QUEUE_LIMIT = 10_000;

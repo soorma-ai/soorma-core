@@ -8,8 +8,8 @@ import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { AbuseBound } from '../../../abuse-bound/src/index.ts';
 import { StoreIdentityResolver } from '../../../identity-resolution/src/index.ts';
+import { asSecretText, type Clock } from '@soorma/service-kit';
 import {
-  asSecretText,
   BreachedList,
   HashSemaphore,
   KeyRing,
@@ -20,7 +20,6 @@ import {
   nodeArgon2id,
   type Argon2Call,
   type Argon2id,
-  type Clock,
   type FailureRecorder,
 } from '../../src/index.ts';
 import type { TestDatabase } from './database.ts';
@@ -82,7 +81,7 @@ export function breachedList(): BreachedList {
 }
 
 export function testKeys(
-  internalCallers: { environment: string; publicKey: Buffer }[] = [],
+  internalCallers: { environment: string; publicKeys: Buffer[] }[] = [],
 ): KeyRing {
   return KeyRing.fromConfiguration({
     signingKey: Buffer.from(

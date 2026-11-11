@@ -14,6 +14,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:perf": "SOORMA_PERF=1 vitest run services/org-gateway/test/perf",
+    "test:perf:s2": "SOORMA_PERF=1 vitest run services/control-gateway/test/perf --silent=false",
     "bench:admit": "vitest bench --run --reporter=verbose packages/authority/bench",
     "generate": "pnpm --filter @soorma/contract run generate",
     "check:generated": "pnpm --filter @soorma/contract run check:generated",
@@ -29,6 +30,7 @@
     "stack:up": "node deploy/local/scripts/stack-up.ts",
     "stack:down": "docker compose -f deploy/local/compose.yaml down",
     "stack:smoke": "node deploy/local/scripts/smoke.ts",
+    "stack:outage": "node deploy/local/scripts/s1-outage.ts",
     "db:test": "node deploy/local/scripts/db-test.ts start",
     "db:test:stop": "node deploy/local/scripts/db-test.ts stop"
   },

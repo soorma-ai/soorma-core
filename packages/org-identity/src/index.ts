@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 //
 // @soorma/org-identity (P10): human principals, material, sign-ins, keys, tokens,
-// TOTP, the K policy, and the org store.
-export { CLOCK, systemClock, type Clock } from './clock.ts';
-export { KeyMaterialError, UnavailableError } from './errors.ts';
+// TOTP, the K policy, and the org store. Its organization-neutral runtime moved
+// to @soorma/service-kit (U4 NP-EHA-15).
 export {
   Lifetimes,
   PENDING_SECOND_FACTOR_LIFETIME_MS,
@@ -11,26 +10,12 @@ export {
   SIGN_IN_LIFETIME_MS,
 } from './lifetimes.ts';
 export {
-  canonicalJson,
-  referenceJson,
-  type Canonical,
-  type PrincipalReference,
-} from './crypto/canonical.ts';
-export {
   defaultPermits,
   HASH_MEMORY_MIB,
   HASH_WAIT_MS,
   HashSemaphore,
 } from './crypto/hash-semaphore.ts';
-export {
-  KeyRing,
-  thumbprint,
-  type CallerKey,
-  type KeyMaterialInput,
-  type PublicJwk,
-  type VerifyKey,
-} from './crypto/key-ring.ts';
-export { pseudonym, type HumanPseudonym } from './crypto/pseudonym.ts';
+export { KeyRing, type KeyMaterialInput } from './crypto/key-ring.ts';
 export {
   ARGON2_PARAMETERS,
   nodeArgon2id,
@@ -41,33 +26,12 @@ export {
   type Argon2Parameters,
 } from './crypto/secret-hash.ts';
 export {
-  asSecretBytes,
-  asSecretText,
-  asTotpCode,
-  asVerifier,
-  secretEqual,
-  type SecretBytes,
-  type SecretText,
-  type TotpCode,
-  type Verifier,
-} from './crypto/secret-types.ts';
-export {
   decryptSeed,
   encryptSeed,
   SeedDecryptionError,
   type StoredSeed,
 } from './crypto/seed-cipher.ts';
-export {
-  issuerOf,
-  mintSignIn,
-  SIGN_IN_PREFIX,
-  SIGN_IN_TYP,
-  verifySignIn,
-  type MaterialClass,
-  type MintInput,
-  type SignInClaims,
-  type VerifyResult,
-} from './crypto/sign-in-token.ts';
+export { mintSignIn, type MintInput } from './crypto/sign-in-token.ts';
 export {
   base32,
   codeAt,
@@ -97,7 +61,7 @@ export {
   type PolicyResult,
   type SecretRejection,
 } from './policy/secret-policy.ts';
-export { migrationStatement, SQL, statement, type Statement } from './sql.ts';
+export { SQL } from './sql.ts';
 export {
   MIGRATION_LOCK_KEY,
   MigrationError,
@@ -105,16 +69,6 @@ export {
   migrate,
   runMigrations,
 } from './store/migrations.ts';
-export {
-  CONNECTION_TIMEOUT_MS,
-  ConflictError,
-  POOL_MAX,
-  poolConfig,
-  STATEMENT_TIMEOUT_MS,
-  Store,
-  type ConnectionSettings,
-  type Queryable,
-} from './store/store.ts';
 export {
   FirstAdminError,
   OrgIdentity,
@@ -136,13 +90,3 @@ export {
   RETENTION_MS,
   type PruneResult,
 } from './domain/pruner.ts';
-export {
-  bodyHash,
-  INTERNAL_LEEWAY_SECONDS,
-  INTERNAL_MAX_LIFETIME_SECONDS,
-  INTERNAL_TYP,
-  internalAudience,
-  signInternalRequest,
-  verifyInternalRequest,
-  type ReceivedRequest,
-} from './crypto/internal-request.ts';

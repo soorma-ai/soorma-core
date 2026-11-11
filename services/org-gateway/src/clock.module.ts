@@ -2,7 +2,8 @@
 //
 // Provides the clock and the lifetimes from @soorma/org-identity.
 import { Module } from '@nestjs/common';
-import { CLOCK, Lifetimes, systemClock } from '@soorma/org-identity';
+import { CLOCK, systemClock } from '@soorma/service-kit';
+import { Lifetimes } from '@soorma/org-identity';
 
 @Module({
   providers: [{ provide: CLOCK, useValue: systemClock }, Lifetimes],

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 //
-// The Fastify instance under each NestJS listener (P-07, P-08):
+// The Fastify instance under each NestJS listener (U2 P-07, P-08), shared by
+// every service (U4 NP-EHA-12, 15):
 // - TLS 1.3 only, from the configured key and certificate (one PEM file)
 // - request bodies at most 16 KiB (NFR-OI-27); larger is payload_too_large
 // - every body kept as raw bytes: S1 parses JSON itself, after the earlier
@@ -18,10 +19,10 @@ import {
   type ExceptionFilter,
 } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
-import { UnavailableError } from '@soorma/org-identity';
-import { CONTRACT_VERSION, ProblemError, problemResponse, type Refusal } from '@soorma/perimeter';
+import { UnavailableError } from '../errors.ts';
+import { CONTRACT_VERSION, ProblemError, problemResponse, type Refusal } from './problems.ts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { SecurityLog } from './security-log.ts';
+import type { ErrorLog } from './security-log.ts';
 
 export const BODY_LIMIT = 16 * 1024;
 
@@ -52,7 +53,7 @@ export function createAdapter(tls?: ListenerTls): FastifyAdapter {
 }
 
 /**
- * S1's Fastify adapter over P1's emission (U3 D-AE-06; BR-PE-02): the table,
+ * The Fastify adapter over P1's emission (U3 D-AE-06; BR-PE-02): the table,
  * the body, and the headers are P1's. P1's headers include the two Soorma
  * headers, with the values the onSend hook also sets.
  */
@@ -71,12 +72,22 @@ export function rawBody(request: FastifyRequest): Buffer {
  * is a bare 404 (the contract defines no Problem for it); anything unexpected
  * is internal_error with no detail, logged with the request id.
  */
+/** A service's choices for `unavailable` (U4 NFR-EHA-04 to 07): S1 passes none. */
+export interface ProblemFilterOptions {
+  /** One Retry-After for every 503, overriding the error's own (S2: 5). */
+  retryAfterSeconds?: number;
+  /** Called once per 503 from an UnavailableError, to log its security event. */
+  onUnavailable?: (requestId: string, error: UnavailableError) => void;
+}
+
 @Catch()
 export class ProblemFilter implements ExceptionFilter {
-  private readonly log: SecurityLog;
+  private readonly log: ErrorLog;
+  private readonly options: ProblemFilterOptions;
 
-  constructor(log: SecurityLog) {
+  constructor(log: ErrorLog, options: ProblemFilterOptions = {}) {
     this.log = log;
+    this.options = options;
   }
 
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -84,12 +95,16 @@ export class ProblemFilter implements ExceptionFilter {
     const reply = http.getResponse<FastifyReply>();
     const request = http.getRequest<FastifyRequest>();
     if (exception instanceof ProblemError) return sendProblem(reply, request.id, exception);
-    if (exception instanceof UnavailableError)
+    if (exception instanceof UnavailableError) {
+      this.options.onUnavailable?.(request.id, exception);
       return sendProblem(
         reply,
         request.id,
-        new ProblemError('unavailable', { retryAfterSeconds: exception.retryAfterSeconds }),
+        new ProblemError('unavailable', {
+          retryAfterSeconds: this.options.retryAfterSeconds ?? exception.retryAfterSeconds,
+        }),
       );
+    }
     if (exception instanceof NotFoundException) {
       void reply.status(404).send();
       return;

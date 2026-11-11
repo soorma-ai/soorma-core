@@ -12,9 +12,16 @@
 // - Environment caller keys: each configured environment's Ed25519 public key
 //
 // Any missing or malformed key stops start-up (BR-CFG-08).
-import { createHash, createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto';
-import { KeyMaterialError } from '../errors.ts';
-import { asSecretBytes, type SecretBytes } from './secret-types.ts';
+import { createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto';
+import {
+  asSecretBytes,
+  KeyMaterialError,
+  thumbprint,
+  type CallerKey,
+  type PublicJwk,
+  type SecretBytes,
+  type VerifyKey,
+} from '@soorma/service-kit';
 
 /** The raw key material, as configuration delivers it. */
 export interface KeyMaterialInput {
@@ -23,36 +30,7 @@ export interface KeyMaterialInput {
   seedKeys: { current: string; keys: { id: string; key: Buffer }[] };
   counterSecret: Buffer;
   logPseudonymKey: Buffer;
-  internalCallers: { environment: string; publicKey: Buffer }[];
-}
-
-/** A public Ed25519 key as a JWK, for the JWKS. */
-export interface PublicJwk {
-  kty: 'OKP';
-  crv: 'Ed25519';
-  x: string;
-  kid: string;
-  alg: 'Ed25519';
-  use: 'sig';
-}
-
-export interface VerifyKey {
-  kid: string;
-  key: KeyObject;
-  jwk: PublicJwk;
-}
-
-export interface CallerKey {
-  environment: string;
-  kid: string;
-  key: KeyObject;
-}
-
-/** The RFC 7638 thumbprint of an Ed25519 public key (SHA-256, base64url). */
-export function thumbprint(key: KeyObject): string {
-  const { x } = key.export({ format: 'jwk' });
-  const members = `{"crv":"Ed25519","kty":"OKP","x":"${String(x)}"}`;
-  return createHash('sha256').update(members).digest('base64url');
+  internalCallers: { environment: string; publicKeys: Buffer[] }[];
 }
 
 function ed25519Public(key: KeyObject): VerifyKey {
@@ -132,15 +110,32 @@ export class KeyRing {
     if (input.counterSecret.length < 32) problems.push('the counter secret is under 256 bits');
     if (input.logPseudonymKey.length < 32) problems.push('the log-pseudonym key is under 256 bits');
 
+    // A kid names one key of one environment, so callerByKid can never
+    // attribute one environment's call to another (U4 Infrastructure Design
+    // §4; I1). Checked on the loaded keys, so two files holding one key are caught.
     const callers: CallerKey[] = [];
-    for (const { environment, publicKey } of input.internalCallers) {
-      try {
-        const key = createPublicKey(publicKey);
-        if (key.asymmetricKeyType !== 'ed25519')
+    for (const { environment, publicKeys } of input.internalCallers) {
+      for (const publicKey of publicKeys) {
+        let key: KeyObject;
+        try {
+          key = createPublicKey(publicKey);
+        } catch {
+          problems.push(`the caller key for environment ${environment} is not a PEM public key`);
+          continue;
+        }
+        if (key.asymmetricKeyType !== 'ed25519') {
           problems.push(`the caller key for environment ${environment} is not Ed25519`);
-        else callers.push({ environment, kid: thumbprint(key), key });
-      } catch {
-        problems.push(`the caller key for environment ${environment} is not a PEM public key`);
+          continue;
+        }
+        const kid = thumbprint(key);
+        const earlier = callers.find((c) => c.kid === kid);
+        if (earlier?.environment === environment)
+          problems.push(`internal caller key ${kid} appears twice for environment ${environment}`);
+        else if (earlier)
+          problems.push(
+            `internal caller key ${kid} is configured for environments ${earlier.environment} and ${environment}`,
+          );
+        else callers.push({ environment, kid, key });
       }
     }
 
@@ -164,6 +159,11 @@ export class KeyRing {
 
   verifyKey(kid: string): KeyObject | undefined {
     return this.verifyKeys.find((k) => k.kid === kid)?.key;
+  }
+
+  /** Always true: the ring holds at least its signing key's public half (SignInKeySource). */
+  hasKeys(): boolean {
+    return this.verifyKeys.length > 0;
   }
 
   seedKey(id: string): SecretBytes | undefined {

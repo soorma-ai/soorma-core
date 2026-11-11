@@ -20,7 +20,10 @@ export type SecretBytes = Buffer & { readonly [secretBytesBrand]: true };
 /** A stored verifier: an Argon2id PHC string over K or enrollment material, or a derived tag. */
 export type Verifier = string & { readonly [verifierBrand]: true };
 
-/** K or enrollment material, as presented or configured. */
+/**
+ * K or enrollment material, as presented or configured; and a bearer token, as
+ * presented or as minted (U4 NP-EHA-14), so `===` on one fails the compare check.
+ */
 export type SecretText = string & { readonly [secretTextBrand]: true };
 
 /** A presented or generated TOTP code. */

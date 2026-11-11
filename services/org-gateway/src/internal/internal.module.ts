@@ -17,10 +17,10 @@ import {
   Res,
   type DynamicModule,
 } from '@nestjs/common';
-import { verifyInternalRequest } from '@soorma/org-identity';
+import { verifyInternalRequest } from '@soorma/service-kit';
 import { ProblemError, rawHeaderValues } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { rawBody } from '../http.ts';
+import { rawBody } from '@soorma/service-kit/http';
 import type { Runtime } from '../runtime.ts';
 
 export const INTERNAL_RUNTIME = Symbol('soorma.internal.runtime');
@@ -109,7 +109,11 @@ export class InternalController {
     this.handlers.json(reply, { exists });
   }
 
-  /** signInStatus: live, ended, or unknown, and nothing else (BR-INT-05). */
+  /**
+   * signInStatus (BR-INT-05, as amended by A7): `{ status: 'live', expiresAt }`
+   * (RFC 3339) for a live, unexpired sign-in of an active principal;
+   * `{ status: 'ended' }`; `{ status: 'unknown' }`. Nothing else.
+   */
   @Get('sign-ins/:id/status')
   async signInStatus(
     @Param('id') id: string,
@@ -117,8 +121,15 @@ export class InternalController {
     @Res() reply: FastifyReply,
   ): Promise<void> {
     await this.handlers.caller(request);
-    const status = /^[0-9a-f]{32}$/.test(id) ? await this.rt.identity.signInStatus(id) : 'unknown';
-    this.handlers.json(reply, { status });
+    const answer = /^[0-9a-f]{32}$/.test(id)
+      ? await this.rt.identity.signInStatus(id)
+      : { status: 'unknown' as const };
+    this.handlers.json(
+      reply,
+      answer.status === 'live'
+        ? { status: 'live', expiresAt: answer.expiresAt.toISOString() }
+        : { status: answer.status },
+    );
   }
 }
 

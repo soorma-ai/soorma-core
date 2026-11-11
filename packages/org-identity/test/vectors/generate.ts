@@ -27,11 +27,14 @@ import { createHmac, generateKeyPairSync } from 'node:crypto';
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { referenceJson, type PrincipalReference } from '../../src/crypto/canonical.ts';
+import {
+  asSecretBytes,
+  type PrincipalReference,
+  pseudonym,
+  referenceJson,
+} from '@soorma/service-kit';
 import { KeyRing } from '../../src/crypto/key-ring.ts';
-import { pseudonym } from '../../src/crypto/pseudonym.ts';
 import { associatedData, encryptSeed } from '../../src/crypto/seed-cipher.ts';
-import { asSecretBytes } from '../../src/crypto/secret-types.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const VECTORS = join(here, 'canonical-vectors.json');

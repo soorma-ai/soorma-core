@@ -93,6 +93,8 @@ components:
             - second_factor_enrollment_required
             - second_factor_not_confirmed
             - secret_rejected
+            - unknown_permission
+            - unknown_principal
         - type: string
     ProblemFieldError:
       type: object

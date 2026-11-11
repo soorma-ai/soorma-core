@@ -6,13 +6,8 @@
 // environment `e` (D-CG-OI-11).
 import { generateKeyPairSync, randomBytes, type KeyObject } from 'node:crypto';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
-import {
-  asSecretText,
-  signInternalRequest,
-  type HashSemaphore,
-  type Argon2id,
-  type Store,
-} from '@soorma/org-identity';
+import { asSecretText, signInternalRequest, type Store } from '@soorma/service-kit';
+import type { HashSemaphore, Argon2id } from '@soorma/org-identity';
 import type { LightMyRequestResponse } from 'fastify';
 import type { TestDatabase } from '../../../packages/org-identity/test/harness/database.ts';
 import {
@@ -75,8 +70,8 @@ export async function gateway(
   const e2 = generateKeyPairSync('ed25519');
   const pem = (k: KeyObject) => Buffer.from(k.export({ format: 'pem', type: 'spki' }));
   const keys = testKeys([
-    { environment: 'e', publicKey: pem(e.publicKey) },
-    { environment: 'e2', publicKey: pem(e2.publicKey) },
+    { environment: 'e', publicKeys: [pem(e.publicKey)] },
+    { environment: 'e2', publicKeys: [pem(e2.publicKey)] },
   ]);
   const clock = new TestClock();
   const domain = await testDomain(db, { ...options, keys, clock });

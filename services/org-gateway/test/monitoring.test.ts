@@ -42,14 +42,11 @@ describe('the monitoring files', () => {
     expect(ajv.validate(schema('dashboard.schema.json'), dashboard), ajv.errorsText()).toBe(true);
   });
 
-  it('list exactly the events the log helper accepts', () => {
-    expect([...alerts.events].sort()).toEqual([...SECURITY_EVENTS].sort());
-  });
-
-  it('name only listed events, in every rule and panel', () => {
-    for (const rule of alerts.rules) expect(SECURITY_EVENTS).toContain(rule.event);
-    for (const panel of dashboard.panels)
-      for (const event of panel.events) expect(SECURITY_EVENTS).toContain(event);
+  // The whole-file checks (the events list against every service's, and every
+  // rule and panel against that list) are deploy/test/monitoring.test.ts's
+  // (U4 D-CG-EHA-17; TC-EHA-087).
+  it("list every one of S1's events", () => {
+    for (const event of SECURITY_EVENTS) expect(alerts.events).toContain(event);
   });
 
   it('carry the rules NFR-OI-23 names, grouping humans by pseudonym, never by identifier', () => {

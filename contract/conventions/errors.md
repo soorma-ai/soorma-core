@@ -19,6 +19,8 @@ machine-readable `code`. The `Problem` schema is in [`components.openapi.yaml`](
 | `envelope_too_large`                | 400    | The envelope to be stamped would exceed the envelope bound, 16 KiB on its JCS serialization                                                                                                                                                                 | None                                                                                                                                                                            |
 | `unsupported_contract_version`      | 400    | The declared contract version is not accepted                                                                                                                                                                                                               | `supportedVersions`                                                                                                                                                             |
 | `secret_rejected`                   | 400    | A new secret fails the secret policy, after the presented material verified                                                                                                                                                                                 | `errors[]` with exactly one entry: the field's `pointer`, and its `reason`, an open set (`too_short`, `too_long`, `disallowed_character`, `breached`, `reused`, `context_word`) |
+| `unknown_permission`                | 400    | A grant names a well-formed permission identifier that this environment does not accept (only the plane-declared identifiers are accepted in this contract version)                                                                                         | `errors[]`, a `pointer` to each such identifier, at most 10                                                                                                                     |
+| `unknown_principal`                 | 400    | A grant names a human principal that does not exist in the environment's organization, or of another organization; reported only to a caller holding `grant:human`                                                                                          | `errors[]` with one entry: the `pointer` `/target`                                                                                                                              |
 | `credential_refused`                | 401    | On an operation that names a security scheme: every credential failure except a verified expiry: missing, malformed, unverifiable, revoked, ended, wrong environment, wrong kind for this surface, an extra credential, or the `Soorma-Delegation` header   | **None**                                                                                                                                                                        |
 | `credential_expired`                | 401    | The credential verifies with this environment's material, and has expired                                                                                                                                                                                   | None                                                                                                                                                                            |
 | `forbidden`                         | 403    | Authority denied                                                                                                                                                                                                                                            | **None**                                                                                                                                                                        |
@@ -68,7 +70,8 @@ A request is refused with the first check it fails, so a refusal is deterministi
    `clientContractVersion` is `unsupported_contract_version`; then a `Soorma-Contract-Version`
    header sent more than once, or different from the draft's value, is `malformed_request`,
    naming the header
-6. Draft schema, **stamped fields before unknown fields**: `malformed_request`,
+6. Request body or draft schema; for a grant, then the accepted permission identifiers
+   (`unknown_permission`). Draft schema, **stamped fields before unknown fields**: `malformed_request`,
    `stamped_field_set`, `unknown_field`. **The precedence is fixed**: a platform-stamped field at
    the draft's top level is `stamped_field_set`, whatever else fails; otherwise a field the draft
    or its `traceContext` does not define is `unknown_field`; otherwise any other failure, a
@@ -78,7 +81,7 @@ A request is refused with the first check it fails, so a refusal is deterministi
 7. Forwarded context: seal, scope, envelope version: `invalid_inbound_context`. **A forwarded
    envelope over the envelope bound is refused here, before its seal is computed**
 8. Chain depth: `chain_too_deep`
-9. Origin, then authority: `forbidden`
+9. Origin, then authority: `forbidden`. For a grant, then the target principal: `unknown_principal`
 10. **The size of the envelope to be stamped, last**: `envelope_too_large`. Last, because the
     envelope's final form, including any re-broadening record, is known only after authority
 

@@ -15,7 +15,7 @@
 import { argon2, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import type { HashSemaphore } from './hash-semaphore.ts';
-import { asSecretText, asVerifier, type SecretText, type Verifier } from './secret-types.ts';
+import { asSecretText, asVerifier, type SecretText, type Verifier } from '@soorma/service-kit';
 
 const argon2Async = promisify(argon2);
 

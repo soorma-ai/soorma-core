@@ -1,0 +1,35 @@
+{
+  "name": "@soorma/control-gateway",
+  "private": true,
+  "description": "S2 control-gateway: an environment's control face",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@nestjs/common": "12.3.2",
+    "@nestjs/core": "12.3.2",
+    "@nestjs/platform-fastify": "12.3.2",
+    "@soorma/attribution": "workspace:*",
+    "@soorma/authority": "workspace:*",
+    "@soorma/config": "workspace:*",
+    "@soorma/contract": "workspace:*",
+    "@soorma/credentials": "workspace:*",
+    "@soorma/env-store": "workspace:*",
+    "@soorma/perimeter": "workspace:*",
+    "@soorma/policy-decision": "workspace:*",
+    "@soorma/policy-decision-seam": "workspace:*",
+    "@soorma/registry": "workspace:*",
+    "@soorma/service-kit": "workspace:*",
+    "fastify": "5.12.7",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@soorma/org-identity": "workspace:*"
+  }
+}

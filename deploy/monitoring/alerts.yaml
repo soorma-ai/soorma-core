@@ -21,6 +21,17 @@ events:
   - failed_attempt.dropped
   - internal.call_refused
   - config.enrollment_ignored
+  # Each environment's S2 (U4 Infrastructure Design §9).
+  - credential.issued
+  - credential.renewed
+  - credential.ended
+  - credential.refused
+  - grant.made
+  - grant.denied
+  - first_grant.applied
+  - orglevel.unavailable
+  - store.unavailable
+  - throttle.refused
 
 rules:
   - id: auth-failed-repeated
@@ -57,3 +68,39 @@ rules:
     threshold: { count: 1, windowMinutes: 60 }
     severity: info
     description: Configured enrollment material was ignored for an existing principal.
+
+  # Each environment's S2 (U4 Infrastructure Design §9; NFR-EHA-19).
+  - id: credential-refused-repeated
+    event: credential.refused
+    groupBy: pseudonym
+    threshold: { count: 5, windowMinutes: 15 }
+    severity: warning
+    description: Repeated refusals of a human's environment credentials, or of issuing one.
+
+  - id: grant-denied
+    event: grant.denied
+    groupBy: pseudonym
+    threshold: { count: 1, windowMinutes: 15 }
+    severity: warning
+    description: A human was refused a grant they asked to make.
+
+  - id: orglevel-unavailable
+    event: orglevel.unavailable
+    groupBy: environment
+    threshold: { count: 1, windowMinutes: 5 }
+    severity: critical
+    description: An environment could not reach the organization level (S1), or holds no verify keys.
+
+  - id: env-store-unavailable
+    event: store.unavailable
+    groupBy: environment
+    threshold: { count: 1, windowMinutes: 5 }
+    severity: critical
+    description: An environment's store could not be read or written.
+
+  - id: throttle-refused
+    event: throttle.refused
+    groupBy: environment
+    threshold: { count: 1, windowMinutes: 5 }
+    severity: warning
+    description: An environment's S2 refused requests at its limit on concurrent calls to S1.

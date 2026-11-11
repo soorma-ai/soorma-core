@@ -53,12 +53,34 @@ importers:
       '@soorma/config':
         specifier: workspace:*
         version: link:../packages/config
+    devDependencies:
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
 
   packages/abuse-bound:
     dependencies:
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+
+  packages/attribution:
+    dependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
 
   packages/authority:
     dependencies:
@@ -88,6 +110,37 @@ importers:
         specifier: 2.9.1
         version: 2.9.1
 
+  packages/credentials:
+    dependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+      jose:
+        specifier: 6.2.14
+        version: 6.2.14
+
+  packages/env-store:
+    dependencies:
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
+
   packages/envelope:
     dependencies:
       '@soorma/contract':
@@ -112,6 +165,9 @@ importers:
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
 
   packages/jcs: {}
 
@@ -126,6 +182,9 @@ importers:
       '@soorma/jcs':
         specifier: workspace:*
         version: link:../jcs
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
       jose:
         specifier: 6.2.14
         version: 6.2.14
@@ -145,13 +204,16 @@ importers:
 
   packages/perimeter:
     dependencies:
-      '@soorma/org-identity':
+      '@soorma/service-kit':
         specifier: workspace:*
-        version: link:../org-identity
+        version: link:../service-kit
     devDependencies:
       '@soorma/contract':
         specifier: workspace:*
         version: link:../../contract
+      '@soorma/org-identity':
+        specifier: workspace:*
+        version: link:../org-identity
       ajv:
         specifier: 8.20.0
         version: 8.20.0
@@ -165,9 +227,129 @@ importers:
         specifier: workspace:*
         version: link:../../seams/policy-decision
 
+  packages/registry:
+    dependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+    devDependencies:
+      '@soorma/authority':
+        specifier: workspace:*
+        version: link:../authority
+      '@soorma/policy-decision':
+        specifier: workspace:*
+        version: link:../policy-decision
+
+  packages/service-kit:
+    dependencies:
+      '@nestjs/common':
+        specifier: 12.3.2
+        version: 12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
+      '@nestjs/core':
+        specifier: 12.3.2
+        version: 12.3.2(@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-fastify':
+        specifier: 12.3.2
+        version: 12.3.2(@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.3.2(@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      '@soorma/contract':
+        specifier: workspace:*
+        version: link:../../contract
+      '@soorma/jcs':
+        specifier: workspace:*
+        version: link:../jcs
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
+      fastify:
+        specifier: 5.12.7
+        version: 5.12.7
+      jose:
+        specifier: 6.2.14
+        version: 6.2.14
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: 7.8.2
+        version: 7.8.2
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
+    devDependencies:
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
+
   seams/identity-resolution: {}
 
   seams/policy-decision: {}
+
+  services/control-gateway:
+    dependencies:
+      '@nestjs/common':
+        specifier: 12.3.2
+        version: 12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
+      '@nestjs/core':
+        specifier: 12.3.2
+        version: 12.3.2(@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-fastify':
+        specifier: 12.3.2
+        version: 12.3.2(@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.3.2(@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      '@soorma/attribution':
+        specifier: workspace:*
+        version: link:../../packages/attribution
+      '@soorma/authority':
+        specifier: workspace:*
+        version: link:../../packages/authority
+      '@soorma/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@soorma/contract':
+        specifier: workspace:*
+        version: link:../../contract
+      '@soorma/credentials':
+        specifier: workspace:*
+        version: link:../../packages/credentials
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../../packages/env-store
+      '@soorma/perimeter':
+        specifier: workspace:*
+        version: link:../../packages/perimeter
+      '@soorma/policy-decision':
+        specifier: workspace:*
+        version: link:../../packages/policy-decision
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/registry':
+        specifier: workspace:*
+        version: link:../../packages/registry
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
+      fastify:
+        specifier: 5.12.7
+        version: 5.12.7
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: 7.8.2
+        version: 7.8.2
+    devDependencies:
+      '@soorma/org-identity':
+        specifier: workspace:*
+        version: link:../../packages/org-identity
 
   services/org-gateway:
     dependencies:
@@ -198,6 +380,9 @@ importers:
       '@soorma/perimeter':
         specifier: workspace:*
         version: link:../../packages/perimeter
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
       ajv:
         specifier: 8.20.0
         version: 8.20.0
