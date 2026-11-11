@@ -2216,3 +2216,21 @@ Stop for review before the Construction Design PR gate."
 **Context**: CONSTRUCTION, U4 env-human-access: Infrastructure Design APPROVED; QA construction enrichment starting.
 
 ---
+
+## QA Construction Enrichment: Complete, Awaiting Review (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:05:06Z
+**User Input**: (none; continuing from the approval at 2026-11-11T06:58:38Z)
+**AI Response**: "Infrastructure Design committed as e6ee27e and pushed. Loaded qa-test-cases.md Section 2; gates passed (extension enabled; inception specs present; no prior enrichment-delta.md for env-human-access; Functional Design, NFR Design and Infrastructure Design complete). Sources: construction/env-human-access/functional-design/, nfr-requirements/, nfr-design/, infrastructure-design/ only. Updated inception/test-cases/env-human-access/ in place: a construction-pass header line and a table of fixed values (lifetime, leeway, throttles, S1 calls, verify keys, ports, stub S1); TC-EHA-001 to 024 each gained a construction-pass expected outcome and references (IDs unchanged); TC-EHA-025 to 091 added (67) with the forward link construction/env-human-access/code/. Coverage includes: issuance from an ended sign-in (025); grants after issuance and renewal adding nothing (026); read-your-writes (027); A7 renewal extension (028); the post-logout residual (029); renewal racing an end and concurrent ends (030); no organization-level call on ending, O3 and authority (031); presenter rules (032 to 034); concurrent first-grant start-ups (035); start-up failures (036, 037); grant body and pointer limits (038, 039); environment constraints on every access path (040); other-organization targets and existence probing (041, 042); S1 failure modes after one attempt (043); one evaluator (044); env claim tampering (045); attribution recoverability and CHECK constraints (046, 047); transaction rollback (048); forged tokens, network-independent identity, cross-environment isolation (049 to 051); body-less operations (052); logs and events (053, 054); lifetime and leeway including the user's three sign-in cases (055 to 057); throttles and the user's 64-abort test (058 to 060); verify-key schedule, rotation cases and the unknown-kid flow (061 to 066); store isolation, migrations, code checks, latency (reported), body bound, ids (067 to 072); token refusal table, pre-renewal tokens, minting-key rotation, held-set union, request ids (073 to 077); the shared-code move (078); the Compose-model, privilege and docs tests (079 to 081); the caller-key refusals and rotation (082, 083); the two outage cases (084, 085); smoke, monitoring, image, network tests (086 to 089); A7 at S1 (090); a pending target (091). test-case-index.md: 91 rows. enrichment-delta.md written (git-ignored per artifact-durability). The l1-coverage-matrix and invariant-coverage-matrix QA enrichment markers now name their TC ids. Stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U4 env-human-access: QA construction enrichment complete, awaiting review.
+
+---
+
+## QA Construction Enrichment: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:08:34Z
+**User Input**: "Approved: QA construction enrichment for U4. Log it verbatim in audit.md, mark it approved in aidlc-state.md, commit the test cases, matrix markers, state and audit on dev, and push.
+
+Then run the Construction Design PR gate (pr-checkpoint.md Section 5): open the PR dev → main for U4's construction design, link soorma-core#7, and wait for its checks to go green. Report the PR link and check results, then stop. I'll review and merge before Code Generation."
+**AI Response**: "QA construction enrichment approved. Marking it approved, committing on dev and pushing; then running the Construction Design PR gate per pr-checkpoint.md Section 5."
+**Context**: CONSTRUCTION, U4 env-human-access: QA construction enrichment APPROVED; Construction Design PR gate starting.
+
+---
