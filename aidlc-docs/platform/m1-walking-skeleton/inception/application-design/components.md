@@ -113,6 +113,26 @@ internal per PF §11.
 | P10 | `org-identity` | S1 | Human principals (`pending`, `active`; never pruned), material (K and P; enrollment; X absent), sign-ins, verify-only material publication, and the principal lookup environments use | 16, 17, 19 |
 | P11 | `policy-decision` | P3 | Implements the policy-decision seam over the minimal model: flat opaque identifiers, set semantics, deny by default. **It answers containment, never composition** | 13, 08 |
 
+*Corrected at U4 NFR Design (2026-11-11, plan Q2 A and Q4 A).* Two internal packages are added
+beside P1 to P11. **`service-kit`** holds the organization-neutral runtime that S1 and S2 share:
+- secret types;
+- sign-in verification (minting stays in P10);
+- the internal-call signer and verifier;
+- key thumbprints;
+- the log pseudonym;
+- the clock;
+- the semaphore;
+- the migration runner and pool settings;
+- problem documents;
+- the HTTP plumbing.
+
+It is moved out of P10 and S1, so **S2 never links P10**. **`env-store`** owns the environment
+store: its one migration sequence, its pool, and the transaction handle P4, P5, and P7 write
+through, so one operation's writes share one transaction. U5 and U6 add their tables to it. The
+env store is PostgreSQL 18, one instance per environment. See
+`construction/env-human-access/nfr-design/logical-components.md` (§2, §3) and
+`nfr-design-patterns.md` (NP-EHA-06, 15).
+
 ---
 
 ## Seam Interfaces (`seams/`, Apache 2.0, unpublished in M1)

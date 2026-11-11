@@ -2058,3 +2058,84 @@ Accept the Retry-After: 5 and throttle.refused choices. Log this verbatim in aud
 **Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements revised, awaiting approval.
 
 ---
+
+## NFR Requirements: APPROVED (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:19:46Z
+**User Input**: "Continue to Next Stage: NFR Requirements approved. Log the approval verbatim in audit.md, mark the stage approved in aidlc-state.md, and start NFR Design. Write the plan, then stop for my answers."
+**AI Response**: "NFR Requirements approved (artifacts committed as 159e5f0). Marking the stage approved in aidlc-state.md and starting NFR Design: loading construction/nfr-design.md and writing the plan with questions; stopping for the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements APPROVED; NFR Design starting.
+
+---
+
+## NFR Design: Plan and Questions (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:22:29Z
+**User Input**: (none; continuing from the approval at 2026-11-11T06:19:46Z)
+**AI Response**: "Marked NFR Requirements APPROVED in aidlc-state.md. Loaded construction/nfr-design.md. Wrote construction/working/env-human-access-nfr-design-plan.md (git-ignored): what NFR Design decides for U4; a reuse table of U2 and U3 code S2 needs (sign-in verification shares a file with minting; the internal-call signer, key ring, pseudonym, semaphore, migration runner, and clock are in @soorma/org-identity; HTTP plumbing is in services/org-gateway). P-01 to P-10 proposed without a question: E's minting key ring from configuration with three-step rotation; the verify-key cache (non-blocking start, 5-minute timer, single-flight, unknown kid or no keys refetches at most once per 30 s, replace only on a well-formed answer); the S1 caller (node:https, local CA only, server name checked, 2 s deadline, 64 KiB response cap, signed per F-3); two FIFO semaphores, the request slot taken in Fastify onRequest; the first grant's partial unique index with ON CONFLICT DO NOTHING; conditional renew and end; grant rows with a sorted text[] of permissions; 128-bit ids; S1's listener and plumbing pattern without an internal listener; the CLOCK token. Four questions, all technology: Q1 credential token (recommended A, a typed JWT with an env claim, cid, jti; B an opaque reference); Q2 shared code (recommended A, extract a new packages/service-kit so S2 never depends on @soorma/org-identity; B import org-identity; C copy); Q3 attribution record storage (recommended A, typed columns with CHECK constraints repeating BR-AT-05; B one canonical JSON document); Q4 environment store schema ownership (recommended A, one packages/env-store with one migration sequence and a transaction helper; B migrations per module). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design, plan awaiting answers.
+
+---
+
+## NFR Design: Answers (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:27:05Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A.
+
+Conditions on Q2 and Q4:
+
+service-kit and env-store are new components that Application Design doesn't have. Add a correction note for each to components.md, component-methods.md and component-dependency.md, as the Functional Design did for P3, P4, P7 and P10.
+The Q2 move must keep U2's checks working:
+tools/checks/code.ts:98 only allows migrationStatement in src/store/migrations.ts. Keep the runner at that path in service-kit, or update the check in the same commit.
+E's minting key and the token strings must use the existing secret types (SecretBytes, SecretText), or be added to the compare check, so the === rule covers them.
+Carry this to Code Generation: the move is its own first commit, a pure move with U2's tests green and S1's image rebuilt, before any U4 code.
+P-01 to P-10: accepted, with two changes:
+
+P-03: the key fetch is outside the S1-call throttle, so it must not share the 8-socket pool. Give it its own single-socket pool, so a refresh or refetch never waits behind 8 in-flight calls.
+P-04: release the request slot in both onResponse and onRequestAbort, behind a release-once guard. Add a test: abort 64 requests mid-body, and the next request still gets a slot.
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-design-patterns.md and logical-components.md, and stop for review."
+**AI Response**: "Answers recorded and classified; generating construction/env-human-access/nfr-design/nfr-design-patterns.md and logical-components.md, with Application Design correction notes for service-kit and env-store."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design, answers received.
+
+**Answers Recorded** (plan: construction/working/env-human-access-nfr-design-plan.md)
+
+| Question | Answer | Classification |
+|---|---|---|
+| Q1 (E's credential token) | A: a typed JWT, `soorma_ec_` + JWS compact, `alg: Ed25519`, `typ: soorma-ec+jwt`, `kid`; claims `env`, `sub`, `cid`, `jti`, `iat`, `exp`, all required | Technology (I11) |
+| Q2 (code shared with S1) | A: extract a new organization-neutral `packages/service-kit`; S2 never depends on `@soorma/org-identity`. **With the user's conditions**: correction notes for the new component in components.md, component-methods.md, component-dependency.md; U2's checks keep working (the migration runner stays at `src/store/migrations.ts` in service-kit, or tools/checks/code.ts:98 is updated in the same commit); E's minting key and token strings use the existing secret types (SecretBytes, SecretText) or are added to the compare check; carried to Code Generation: the move is its own first commit, a pure move with U2's tests green and S1's image rebuilt, before any U4 code | Technology (I11) |
+| Q3 (attribution record storage) | A: typed columns with CHECK constraints repeating BR-AT-05 | Technology (I11) |
+| Q4 (environment store schema ownership) | A: one `packages/env-store` with one migration sequence, the pool, and a transaction helper. **With the user's condition**: correction notes for the new component in components.md, component-methods.md, component-dependency.md | Technology (I11) |
+| P-01 to P-10 | Accepted, **with two changes**: P-03, the key fetch gets its own single-socket pool, separate from the 8-socket S1-call pool, so a refresh or refetch never waits behind in-flight calls; P-04, the request slot is released in both onResponse and onRequestAbort behind a release-once guard, with a test that aborts 64 requests mid-body and the next request still gets a slot | Technology (I11) |
+
+**Specification gaps**: none.
+
+---
+
+## NFR Design: Complete, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:33:52Z
+**User Input**: (none; presenting the stage for review)
+**AI Response**: "Generated construction/env-human-access/nfr-design/nfr-design-patterns.md (NP-EHA-01 to 15: the soorma-ec+jwt token and its nine-step verification; E's key ring with three-step rotation; the verify-key cache with the on-demand limiter counting on-demand fetches only; the S1 caller with an 8-socket call pool and the user's separate single-socket key-fetch pool; two semaphores with the user's release-once guard in onResponse and onRequestAbort and the 64-abort test; env-store transactions; attribution records with CHECK constraints repeating BR-AT-05; the first grant's partial unique index; conditional renewal and ending; the held set over text[]; 128-bit base64url ids; listeners and events; time; secret types per the user's condition; the two-commit move per the user's condition) and logical-components.md (the S2 process; new packages service-kit, env-store, registry, credentials, attribution and control-gateway; the move list for commit 1 and commit 2; the environment store's tables, constraints, indexes and column-level privileges; E's configuration items; S1's internal interface as S2 calls it; test doubles; forward obligations). Found while writing: @soorma/perimeter has a runtime dependency on @soorma/org-identity (sign-in verification, Clock, the KeyRing type), so S2 would link P10 through P1; resolved in the generalisation commit (P1's sign-in checker takes verify keys; org-identity becomes a devDependency of perimeter), and the problem documents move to service-kit in commit 1 so service-kit never depends on P1 (no cycle); the verification is the production dependency closure, not package.json. Correction notes added to components.md, component-methods.md, component-dependency.md (Q2, Q4 condition); L1-24 and L1-32 implementation targets updated. Security and invariant compliance: no blocking finding. Presented the 2-option completion message; next stage Infrastructure Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design complete, awaiting approval.
+
+---
+
+## NFR Design: Review, Request Changes (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:37:26Z
+**User Input**: "Request Changes: one gap in NP-EHA-15 commit 2 and NP-EHA-03.
+
+S2 verifies sign-ins through U2's verifySignIn and P1's SignInPerimeter. Today that code can't meet NFR-EHA-03, NFR-EHA-08 or BR-EC-04 at S2. Add these to commit 2's generalisations, each with U2's tests green and S1's behaviour unchanged:
+
+Leeway. verifySignIn takes a clock tolerance; today it hard-codes clockTolerance: 0. S1 passes 0 (U2 P-01). S2 passes 30 s for exp, and the check that iat is at most 30 s ahead is explicit and tested.
+Unknown kid. VerifyResult gains a distinct result for a kid absent from the key set. Today JWKSNoMatchingKey collapses into invalid. S1 maps it to credential_refused, unchanged. S2 triggers NP-EHA-03's on-demand fetch, then verifies again exactly once. Show this flow in NP-EHA-03.
+The liveness callback returns S1's signInStatus answer (A7), not a boolean. S2 then makes one signInStatus call per request and keeps expiresAt for the cap. S1's own callback keeps its meaning (O3, live or not).
+Keys read on every call. State that the structural key type is read per verification, so S2's cache passes an object whose verifyKey(kid) reads its current set. Add a test: a refresh between two sign-ins is seen by the second.
+Update logical-components.md §2.1 commit 2 to match. Add tests for the leeway cases and the unknown-kid refetch through P1. Log this verbatim in audit.md, make the edits, commit the NFR Design artifacts, Application Design notes, L1 matrix, state and audit on dev, push, and present again."
+**AI Response**: "Adding the four sign-in verification generalisations to NP-EHA-15's commit 2 and to logical-components.md §2.1, showing the unknown-kid flow in NP-EHA-03, adding the leeway and unknown-kid-through-P1 tests; then committing on dev, pushing, and presenting again."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design, review changes requested (not yet approved).
+
+---
+
+## NFR Design: Revised, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:38:43Z
+**User Input**: (none; the actions the review at 2026-11-11T06:37:26Z asked for)
+**AI Response**: "NP-EHA-15 commit 2 now lists four sign-in verification generalisations in a table, each keeping U2's tests green and S1's behaviour unchanged: leeway ({ expSeconds, iatAheadSeconds? }; S1 { expSeconds: 0 } with no iat check, S2 { expSeconds: 30, iatAheadSeconds: 30 } with an explicit iat-ahead check); unknown kid (VerifyResult gains unknownKey, a missing kid stays invalid; S1 maps it to credential_refused, S2 refetches then verifies exactly once); the status callback returns A7's SignInStatus (S1's keeps its O3 meaning; S2's is its one signInStatus call per request, expiresAt kept for BR-EC-04's cap); a structural SignInKeySource { verifyKey(kid), hasKeys() } read on every verification. NP-EHA-03 shows the unknown-kid flow at issuance (refetch, verify once more; unknownKey with no keys held is unavailable), states that the key source is read per verification, and adds tests through P1 (refetch brings the key; refetch does not; inside the limit; no keys and a failed fetch; no kid; a refresh between two sign-ins seen by the second; exactly one signInStatus call with the cap). NP-EHA-15's verification adds the leeway cases (a), (b), (c) and iat at +30 s and +31 s at S2's settings, and S1's unchanged answers at S1's settings. logical-components.md §2.1 commit 2 and §1's per-request flow updated to match; component-methods.md and component-dependency.md notes updated. Committed the NFR Design artifacts, the Application Design notes, the L1 matrix, aidlc-state.md and audit.md on dev, and pushed. Presented the 2-option completion message again; next stage Infrastructure Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Design revised, awaiting approval.
+
+---
