@@ -2423,3 +2423,11 @@ the open obligations: specification gaps (Open and Awaiting PRD counted separate
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 6, stop condition 1 answered.
 
 ---
+
+## Code Generation Part 2: Group 6 Green; Group 7 (U4 env-human-access)
+**Timestamp**: 2026-11-11T16:56:04Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Group 6 committed as 7e00606; push run 43061755886 green (build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration). Group 7 (Steps 26 and 27): services/org-gateway/README.md gains ## Operations (Rotating the signing key, with 'Wait at least 5 minutes' at step 2 and the reason; Internal callers: adding, the three-step rotation, the kid refusals); services/control-gateway/README.md (new: operations, running it, Operations: rotating E's minting key, rotating E's caller key, when the organization level is down; what it keeps; layout); READMEs for service-kit, env-store, registry, credentials, attribution; the root README (status, the S2 row, the packages, the stack and CI). deploy/test/docs.test.ts (TC-EHA-081). No U2 assertion changed. Gate: frozen install, build, lint, format, every check, 1042 tests (3 skipped, perf) with db:test, both images built and scanned. Committing, pushing, waiting for green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 7.
+
+---

@@ -27,7 +27,7 @@ to start otherwise), Node 26.13.0, pnpm 12.18.0, and the OpenSSL CLI.
 ```sh
 pnpm install --frozen-lockfile
 pnpm stack:init     # every secret, into deploy/local/.secrets/ (mode 0600; never overwritten)
-pnpm stack:up       # build the image, migrate the store, start S1
+pnpm stack:up       # build the images, migrate the stores, start S1 and each environment's S2
 pnpm stack:smoke    # optional: the smoke test CI runs
 pnpm stack:down     # pnpm stack:down -v also removes the store's data and the secret copies
 ```
@@ -69,6 +69,54 @@ curl --cacert deploy/local/.secrets/stack-ca.pem \
 
 **At rest:** the org store is not encrypted at rest in M1 (by decision; carried to the first
 hosted deployment). On a workstation, use host full-disk encryption.
+
+## Operations
+
+### Rotating the signing key
+
+S1 signs sign-ins with `keys.signing` and accepts any key in `keys.verify` (in
+`deploy/local/config/tenancy.yaml`). Every environment's S2 verifies sign-ins with the keys it
+fetches from S1, so a rotation has three steps:
+
+1. Generate the new key, add it to `keys.verify`, and restart S1. It is published as a verify key
+   but signs nothing yet.
+2. **Wait at least 5 minutes**, then make the new key `keys.signing` and restart S1.
+3. Once every token the old key signed has expired (15 minutes after step 2), remove the old key
+   from `keys.verify`, and restart S1.
+
+**Why at least 5 minutes:** every environment's S2 refreshes S1's verify keys every 5 minutes.
+The wait lets each S2 hold the new key before the first sign-in it signs reaches it. An S2 whose
+refresh failed or ran late still recovers: a sign-in under a key it does not hold makes it fetch
+again, at most once every 30 seconds. "No valid sign-in is refused during a rotation" depends on
+both the wait and that fetch.
+
+### Internal callers
+
+Each environment's S2 calls S1's internal listener with requests signed by its own **caller
+key**. S1 holds only the public half, named in `organizationLevel.internalCallers`:
+
+```yaml
+internalCallers:
+  - environment: e
+    publicKeys: [e-caller-public-key]
+```
+
+`pnpm stack:init` derives `{env}-caller-public-key` from the environment's `{env}-caller-key`;
+the private half never leaves that environment's secrets.
+
+**Adding an environment:** add its entry, run `pnpm stack:init`, and restart S1.
+
+**Rotating an environment's caller key**, with no window in which its calls are refused:
+
+1. Add the new public key to the environment's `publicKeys`, and restart S1.
+2. Switch the environment's `controlGateway.keys.caller` to the new private key, and restart
+   that environment's S2.
+3. Remove the old public key, and restart S1.
+
+**S1 refuses to start** when a caller could be attributed to the wrong environment: an
+environment listed twice; a secret name listed twice; or a key, by `kid` (its RFC 7638
+thumbprint), that appears twice within one environment or in more than one environment. The
+`kid` checks run on the loaded keys, so two files holding the same key are caught.
 
 ## Layout
 
