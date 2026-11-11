@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U3 `authority-evaluation` (soorma-core#6): Code Generation complete, awaiting approval** (plan approved 2026-11-10T21:53:41Z; generated 2026-11-10T22:31:47Z) (Construction Design PR gate APPROVED 2026-11-10, #16 merged as `fbb567c`; Functional Design, NFR Requirements, NFR Design approved 2026-11-10; Infrastructure Design skipped; GAP-AE-001 raised as soorma-prd#30). U1 and U2 complete (U2: soorma-core#14 merged as `e61c620`; `dev` equals `main` at session start). Stage history is under *Stage Progress*
+- **Current Stage**: CONSTRUCTION. **U3 `authority-evaluation` (soorma-core#6) COMPLETE: Code Generation APPROVED 2026-11-11T02:39:10Z** (soorma-core#17 merged as `a9aa74b`; Construction Design PR gate #16 merged as `fbb567c`). U1, U2, and U3 complete; `dev` fast-forwarded to `main`. **Next: U4 `env-human-access` (soorma-core#7), in a new session.** Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -198,55 +198,39 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] Infrastructure Design: **SKIPPED** 2026-11-10T15:40:14Z (no deployable; key ring and propagation bound delivered at U7's Infrastructure Design)
   - [x] QA construction enrichment: **APPROVED** 2026-11-10T16:07:33Z (generated 2026-11-10T15:46:05Z) (`inception/test-cases/authority-evaluation/`: 40 cases; TC-AE-001 to 022 enriched in place, TC-AE-023 to 040 added; `enrichment-delta.md`; every QA enrichment marker in the L1 and invariant matrices replaced by TC IDs). Sources: functional-design/, nfr-requirements/ (by the user's instruction at the review, F38, as for U1 and U2), nfr-design/. At the review: TC-AE-040 added (NFR-AE-07 p99, reported, modelled on TC-OI-062); TC-AE-034, 039 gained NFR-AE-03, 10, 22, 23 steps; TC-AE-006 retitled "decides containment, never composition"
   - [x] Construction Design PR gate: **APPROVED** 2026-11-10T21:31:28Z (opened 2026-11-10T16:07:33Z as soorma-core#16, `dev` → `main`; one change requested 2026-11-10T20:19:53Z, the entry point named `createEnvelopeAdmission(dependencies).admit(request)` throughout, fixed in `1a44021`; merged 2026-11-10T21:30:40Z as `fbb567c`)
-  - [ ] Code Generation: plan APPROVED 2026-11-10T21:53:41Z (two amendments; Q-CG-AE-1 A). **Part 2 generated 2026-11-10T22:31:47Z, awaiting approval**: Steps 0 to 23 on `dev` (`4821788`, `8d90404` the U2 guard alone, `626ed4b` the swap with the guard unchanged, `ef7c392`, `90dc1fd`, `6508782`, `b6a59c5`, and Group 7); code-review PR **soorma-core#17** from `dev` to `main` (not merged). L1: 38 rows Implemented; I1 to I10 Implemented. Local run: 766 passed, 2 skipped; every check passes; `pnpm audit` clean. TC-AE-040 reported only. **Request Changes 2026-11-11T02:25:14Z**: (1) the S1 image copies `packages/jcs` (#17's image check), and the gate builds the image for a group reaching S1's dependencies; (2) an unresolved upstream agent is the empty set and evaluation continues (D-AE-09 consistency fix; TC-AE-016 step 2; the first build missed stop condition 2); (3) `errors[]` at most 10 (D-AE-18 consistency fix; TC-AE-029 step 5). Local run after: 771 passed, 2 skipped; image builds. Awaiting #17's checks, then approval
+  - [x] Code Generation: **APPROVED** 2026-11-11T02:39:10Z. soorma-core#17 merged as `a9aa74b` (2026-11-11T02:38:46Z); CI green at `cad1772` (build, check, and test; image, image secret scan, and stack smoke test; dependency review). Plan APPROVED 2026-11-10T21:53:41Z (two amendments; Q-CG-AE-1 A). Part 2 generated 2026-11-10T22:31:47Z: Steps 0 to 23 on `dev` (`4821788`, `8d90404` the U2 guard alone, `626ed4b` the swap with the guard unchanged, `ef7c392`, `90dc1fd`, `6508782`, `b6a59c5`, and Group 7); code-review PR **soorma-core#17** from `dev` to `main` (not merged). L1: 38 rows Implemented; I1 to I10 Implemented. Local run: 766 passed, 2 skipped; every check passes; `pnpm audit` clean. TC-AE-040 reported only. **Request Changes 2026-11-11T02:25:14Z**: (1) the S1 image copies `packages/jcs` (#17's image check), and the gate builds the image for a group reaching S1's dependencies; (2) an unresolved upstream agent is the empty set and evaluation continues (D-AE-09 consistency fix; TC-AE-016 step 2; the first build missed stop condition 2); (3) `errors[]` at most 10 (D-AE-18 consistency fix; TC-AE-029 step 5). Local run after: 771 passed, 2 skipped; image builds. Fixes committed as `cad1772`
   - **Standing note (NFR-AE-16)**: no M1 operation changes a standing set, re-broadening declaration, or autonomy declared, or suspends or retires an agent, so U3's term cache cannot serve stale data in M1. **The unit that first adds such an operation must account for the cache's staleness window** (up to the propagation bound)
-- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2. Remaining: U3 to U7
+- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3. Remaining: U4 to U7
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point** (2026-11-09T13:24:27Z): U2 `org-identity` COMPLETE (Code Generation approved;
-soorma-core#14 merged as `e61c620`; `origin/main` merged back into `dev`, which equals `main`).
-soorma-core#5 closed as completed (issuecomment-6741579291).
+**Session stop point** (2026-11-11T02:39:10Z): U3 `authority-evaluation` COMPLETE (Code Generation
+approved; soorma-core#17 merged as `a9aa74b`; `dev` fast-forwarded to `main`). soorma-core#6 stays
+open until Build and Test, with a completion comment linking #16 and #17.
 
-**Next: U3 `authority-evaluation` (soorma-core#6), in a new session.** Start with:
+**Next: U4 `env-human-access` (soorma-core#7), in a new session.** Start with:
 1. Session resumption (`common/session-continuity.md`); re-intake check: brief still at `0aad84a`,
-   no new PF or ID tag, the gap issues' states (soorma-prd#24, #25, #27, #28; #13 for GAP-INT-003)
+   no new PF or ID tag, the gap issues' states (soorma-prd#24, #25, #27, #28, #30; #13 for
+   GAP-INT-003)
 2. Construction Phase Initialization (extension rules; `prd-gap-classification.md` active), then
-   Unit Initialization and the L1 gate's initial assessment for U3
-3. Toolchain: `node --version` 26.13.0, `pnpm --version` 12.18.0; for any stack work, Docker
-   Engine 26+ and Compose 2.26.0+ (`pnpm stack:up` enforces both). The database tests need
-   `pnpm db:test` and the `TEST_DATABASE_URL` it prints (they fail, never skip, without it)
+   Unit Initialization and the L1 gate's initial assessment for U4
+3. Toolchain: `node --version` 26.13.0, `pnpm --version` 12.18.0; Docker for the S1 image build.
+   The database tests need `pnpm db:test` and the `TEST_DATABASE_URL` it prints
 
-**What U3 inherits**:
-- **BR-ERR-08, from U1** (recorded on #6, issuecomment-6717621632): the perimeter's tests verify
-  that every Problem soorma-core emits carries `type`, `title`, `status`, `code`, and `instance`,
-  with `type` = `urn:soorma:problem:{code}` and `instance` = `urn:soorma:request:{request id}`
-  equal to `Soorma-Request-Id`. S1 (U2) already emits and tests these on its own surface
-  (`services/org-gateway/src/problems.ts`; `test/edge.test.ts`, `expectProblem`); U3 owns the
-  rule for the agent perimeter
-- **D-CG-05, from U1, for U3's NFR Requirements**: confirm the runtime regex engine for Ajv. U2
-  already runs Ajv's 2020 build at run time (S1's request validation and `packages/config`) on
-  V8's engine, with the contract's linear-time patterns
-- **GAP-INT-004: Resolved — PRD amended** (PF @ `prd-platform-foundations-v1.3` FR-017, §7a, §7b,
-  §8b *Re-broadening*, §20 Decision 16; soorma-prd#14 closed). **The work-around comes out**: U3
-  builds FR-017's evaluation as stated: re-broadening is exercised only when load-bearing (denied
-  without it, allowed with it); at the declaring hop, `standing ∩ authority(delegating principal)
-  ∩ (authority(upstream agent hops) ∪ declared)`, local to that hop; the record is stamped only
-  when load-bearing and travels with the chain; in autonomous origin the delegating-principal
-  term reads *yes*. (A declaration beyond the standing set is rejected at registration: U5)
-- **GAP-INT-007: Open** (soorma-prd#25, open on 2026-11-09; raised against PF @
-  `prd-platform-foundations-v1.3`). **M1 keeps the reject-and-stamp work-around** (M1-FR-01,
-  M1-FR-08): the perimeter stamps origin on every first hop, and a draft setting origin mode is
-  rejected. U3 must not accept an asserted origin. If a new PF tag resolves the gap, re-intake
-  first (Step 9 of `inception/prd-intake.md`)
-- **Two contract behaviours written down at U2** (`contract/conventions/`), for every surface: a
-  call without a draft and without `Soorma-Contract-Version` is `unsupported_contract_version` at
-  check-order step 5; an unknown path or method is a bare 404, not a Problem, in 0.1.0
-- **`construction/shared-infrastructure.md`** for any deployable U3 adds, as amended at U2
-  (Q-CG-4 B): one secrets volume and one one-shot secrets-init container per level, each service
-  mounting only its own subpath, read-only
+**What U4 inherits from U3** (U3 business-rules §16 and NFR Requirements §4, posted on soorma-core#7):
+- Add `evaluateHuman` in P3 (`packages/authority`) through the same seam: `grantedSet(human, E)`,
+  then `contains`. No second place computes authority (BR-AU-01; I5)
+- Fill P11's human `GrantSource` (`humanGrants` on `createEnvelopeAdmission`): the union of the
+  human's grants in E. Human grants are never cached by U3
+- S2 emits Problems through P1 (`problemResponse`) and runs `@soorma/perimeter/testing`'s
+  `assertProblem` on every Problem (BR-PE)
+- **The pre-commit gate builds S1's image** (`docker build -f services/org-gateway/Dockerfile .`)
+  for any group whose changes reach S1's dependencies, and a new workspace package S1 reaches is
+  added to the Dockerfile's install and source layers (the user, 2026-11-11)
+- **Standing note (NFR-AE-16)** above applies to the first unit that changes a standing set,
+  declaration, or autonomy, or suspends or retires an agent
 
 **Carried to Build and Test** (from U2): TC-OI-059 and TC-OI-062 (`pnpm test:perf`); on the
 workstation, Argon2id at 64 MiB measured about 710 ms late in U2's session, which puts NFR-OI-19's

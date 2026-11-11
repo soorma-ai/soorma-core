@@ -1843,3 +1843,25 @@ Commit on dev and push, so #17 picks it up. Update the code summary. Wait for #1
 **Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation, Request Changes (three fixes).
 
 ---
+
+## Code Generation: Request Changes Applied; Approval Prompt (authority-evaluation)
+**Timestamp**: 2026-11-11T02:34:46Z
+**User Input**: (none; the Request Changes logged at 2026-11-11T02:25:14Z)
+**AI Response**: "Three fixes committed as cad1772 on dev and pushed to soorma-core#17. (1) services/org-gateway/Dockerfile copies packages/jcs (manifests in the install layer, src/ in the source layer); docker build passes locally; the plan's D-CG-AE-09 gate now builds the image for any group reaching S1's dependencies. (2) evaluateAgent: an unresolved upstream agent's term is the empty set and evaluation continues; upstream_unresolved only when W does not contain R and an upstream agent did not resolve; with a covering declaration, allowed, load-bearing, { hop: 1 }. D-AE-09 consistency fix; TC-AE-016 step 2 (narrative, evaluate.test.ts, admission.test.ts); TC-AE-021 step 2 precondition states B declares nothing. The entry was removed from code-summary.md's settled list and the missed stop condition 2 recorded. (3) P2 MAX_ERRORS = 10: winning code from every failure, then the first 10 by pointer. D-AE-18 and BR-DV-03 consistency fix; errors.md step 6 and the U3 changelog line say at most 10; TC-AE-029 step 5 with three tests. Local gate with image: 771 passed, 2 skipped; check:generated and check:contract pass. #17's checks at cad1772, all green: Build, check, and test (pass, both runs); Image, image secret scan, and stack smoke test (pass, both runs); Dependency review (pass; skipped on the push run); cla-assistant (pass). Merge state CLEAN. Presenting the Code Generation completion message again."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation complete after Request Changes, awaiting approval (soorma-core#17).
+
+---
+
+## Code Generation: APPROVED (authority-evaluation)
+**Timestamp**: 2026-11-11T02:39:10Z
+**User Input**: "Continue to Next Stage. I merged #17.
+
+Log this verbatim in audit.md. Mark U3's Code Generation APPROVED in aidlc-state.md, with a real timestamp and #17's merge commit. Fast-forward dev to main. Commit the approval bookkeeping, including the pending audit entry, as one chore(aidlc) commit on dev, and push.
+
+Post a short completion comment on soorma-core#6 linking #16 and #17. Leave the issue open until Build and Test.
+
+Then stop. Don't start U4 in this session; I'll start it in a fresh one. Report the commit hash and the state's Current Stage line."
+**AI Response**: "U3 Code Generation marked APPROVED in aidlc-state.md (2026-11-11T02:39:10Z); soorma-core#17 merged 2026-11-11T02:38:46Z as a9aa74b. dev fast-forwarded to main; the approval bookkeeping (aidlc-state.md, audit.md with the pending entry) committed as one chore(aidlc) commit on dev and pushed. Completion comment posted on soorma-core#6 linking #16 and #17; the issue stays open until Build and Test. Stopping: U4 starts in a fresh session."
+**Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation APPROVED; U3 complete. Session stop.
+
+---
