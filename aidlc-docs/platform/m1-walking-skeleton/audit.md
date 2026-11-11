@@ -2297,3 +2297,26 @@ Log this verbatim in audit.md, update the plan and D-CG-EHA-12, commit the Step 
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation plan APPROVED; Part 2 starting with Group 1.
 
 ---
+
+## Code Generation Part 2: Group 1 Complete (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:40:35Z
+**User Input**: (none; executing the approved plan)
+**AI Response**: "Step 0 committed as d08bd81. Group 1 (Steps 1 to 3), the pure move into packages/service-kit, committed as 6b679e0 and pushed: secret types, canonical JSON, the pseudonym, signed internal requests, sign-in verification (minting stays in P10), key thumbprints and types, the clock, error kinds, the statement brand and runner statements, Store/Queryable/ConflictError (D-CG-EHA-01), the migration runner (P10 keeps a wrapper passing its directory and lock key), the problem documents (P1 re-exports them, D-CG-EHA-02), the health listener and healthcheck (S1 keeps src/healthcheck.ts as a shim, D-CG-EHA-13; compose.yaml unchanged). D-CG-EHA-14 found in Part 2: verifySignIn and verifyInternalRequest take structural key sources that KeyRing satisfies (type-only, no runtime change), to avoid an import cycle. U2's test files changed only in import lines (checked). Gate: build, lint, format:check, check:deps, check:code (no change to tools/checks needed), check:generated, check:contract, check:secrets, check:workflows; 771 tests passed, 2 skipped (the SOORMA_PERF tests), with db:test; S1's image built and its secret scan clean; stack:init, stack:up (org-gateway healthy through the shim), stack:smoke passed, stack:down -v. Push CI run 42980867192: Build, check, and test success; Image, image secret scan, and stack smoke test success. Found: the earlier push run 42978421797 (49cffb6, docs only, before Group 1) failed in U2's store.test.ts with 'tuple concurrently updated': the test runs deploy/local/db/roles.sql twice concurrently against one database, and concurrent GRANT/REVOKE ON DATABASE can collide. Intermittent and pre-existing; reported to the user with a proposed fix, not changed. Stopped before Group 2, as instructed."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation Group 1 complete; paused.
+
+---
+
+## Code Generation Part 2: Group 1 Accepted; roles.sql Fix Approved (U4 env-human-access)
+**Timestamp**: 2026-11-11T07:45:13Z
+**User Input**: "Group 1 accepted. Yes, fix roles.sql, as its own commit before Group 2:
+
+Wrap deploy/local/db/roles.sql in an explicit BEGIN; SELECT pg_advisory_xact_lock(<fixed key>); … COMMIT;. A bare pg_advisory_xact_lock wouldn't work: the init script runs the file through psql \i, which commits each statement on its own, so the lock would be released at once. The test sends the file as one query, and the explicit block works for both.
+Use a fixed key derived like the migration lock (the first 63 bits of SHA-256("soorma.org.roles")), and document it in the file's header.
+Leave store.test.ts unchanged. Run it 20 times in a loop locally to show the concurrent case no longer fails, and report the count.
+Commit as fix(deploy): serialize concurrent roles.sql runs (U2 D-CG-OI-15), push, and wait for the push run to go green.
+Record it as D-CG-EHA-15. Apply the same pattern to env-roles.sql in Group 4 ("soorma.env.roles").
+Then continue with Groups 2 and 3, each with the full gate including the local stack, and push after each, waiting for green. Stop and report after Group 3's push run is green, since those are the last groups that change U2's code."
+**AI Response**: "Recording D-CG-EHA-15 in the plan: deploy/local/db/roles.sql wrapped in an explicit BEGIN; SELECT pg_advisory_xact_lock(8361432257233209235); ... COMMIT; (the first 63 bits of SHA-256(\"soorma.org.roles\")), documented in its header; store.test.ts unchanged; the test run 20 times locally; committed as fix(deploy): serialize concurrent roles.sql runs (U2 D-CG-OI-15), pushed, push run awaited. env-roles.sql in Group 4 uses the same pattern with SHA-256(\"soorma.env.roles\") (3602168843343665555). Then Groups 2 and 3, each with the full gate including the local stack, pushed and awaited green; stop after Group 3's push run is green."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation, between Group 1 and Group 2.
+
+---
