@@ -51,7 +51,7 @@ Module names are the Application Design's: P1 `perimeter`, P3 `authority`, P4 `r
 | D-AR-20 | **No read surface** for registrations or secrets: PF §8a assigns none, so building one would put an unassigned capability in core (I8). Core's read of the ceiling snapshot is FR-025's grant-scoped attribution read, "readable by a holder of the attribution grant" (PF §12, *Recording versus exploiting*), which is absent from M1. *Done when* 1's raw-call proof reads `registerAgent`'s response; attribution is checked in the store in tests | P-14; I8; PF §12 | Technology |
 | D-AR-21 | **Coverage** (ID FR-014): both operations' effects are confined to E; authority is required in E only | P-15; ID FR-014 | Technology |
 | D-AR-22 | **Responses**: `200` for both, each naming the `environmentCredential` scheme only. `registerAgent` returns the registration (domain-entities, every attribute and `state`), `sponsor` as `HumanPrincipalReference`; `issueRegistrationSecret` returns `{ id, registration, secret, issuedAt }` | P-16; U4 D-EHA-22, 25 | Technology |
-| D-AR-23 | **Problems through P1** (`problemResponse`); S2's tests run `assertProblem` on every Problem, the five new codes included | P-17; U3 BR-PE; U4 D-EHA-21 | Technology |
+| D-AR-23 | **Problems through P1** (`problemResponse`); S2's tests run `assertProblem` on every Problem, the six new codes included (`secret_limit_reached` added at NFR Requirements) | P-17; U3 BR-PE; U4 D-EHA-21 | Technology |
 | D-AR-24 | **Refusals are security-log events, not attribution records**, with an internal reason (BR-RF-AR-03), the human named only by E's log pseudonym | P-18; U4 D-EHA-18 | Technology |
 | D-AR-25 | **A secret's `id`** has at least 128 random bits, unique within E. The registration's identifier is the client's (D-AR-02) | P-19; U4 D-EHA-30 | Technology |
 | D-AR-26 | **Concurrent registrations of one `agent`**: the store's uniqueness on (organization, project, environment, `agent`) decides; the loser is `registration_exists` and writes nothing, its attribution record included. Tested with two at the same time | Made at design, from D-AR-02 and D-AR-18 | Technology |
@@ -110,7 +110,7 @@ can learn only what the public accepted set and the human-only class already say
 | BR-SE-03 | Then **the registration** in E: absent, `unknown_registration` (D-AR-05; TC-AR-017). A store failure: `unavailable` | D-AR-05 |
 | BR-SE-04 | Then **sponsor or Admin** (D-AR-01): the presenter equals the `sponsor` (D-AR-27), **or** `allows({ grant:human, human:manage })`. Else `forbidden` | PF §8a, §10, §11; ID §3 |
 | BR-SE-05 | Then **one secret record** (domain-entities), issuer = the presenter, with its attribution record, in one transaction. The value is generated, its verification material stored, and **the value returned once** | PF §7a v1.3, FR-008; ID FR-026; TC-AR-006, 020 |
-| BR-SE-06 | **Several active secrets** may exist for one registration, up to NFR Requirements' cap (D-AR-04). Issuing one changes no other secret and no credential | PF FR-008 (independent lifecycles) |
+| BR-SE-06 | **Several active secrets** may exist for one registration, up to NFR Requirements' cap (D-AR-04): **10**; an issuance that would make an 11th is **`secret_limit_reached`** (409, no `errors[]`), decided after BR-SE-04, serialised per registration without `UPDATE` privilege. *(Consistency fix from NFR Requirements, 2026-11-11: NFR-AR-06)* Issuing one changes no other secret and no credential | PF FR-008 (independent lifecycles) |
 | BR-SE-07 | The secret never appears in a log, an attribution record, an error, or any response but its issuance | SECURITY-03, 12 |
 
 ## 7. Agent Facts (BR-AF)
@@ -148,7 +148,7 @@ can learn only what the public accepted set and the human-only class already say
 | 3, 4 | U4 BR-EC-02 (verification, expiry, O4, O3) | same |
 | 5 | Contract version (header) | same |
 | 6 | BR-RQ-01 schema; BR-RQ-02 `unknown_permission`; BR-RQ-03 `human_only_permission`; BR-RQ-04 `declaration_outside_standing` | BR-SE-01 schema |
-| 9 | BR-SP-01 read (`unavailable`); BR-SP-02 `forbidden`; BR-SP-03 `exceeds_sponsor_ceiling` | BR-SP-01 read; BR-SE-02 `forbidden`; BR-SE-03 `unknown_registration`; BR-SE-04 `forbidden` |
+| 9 | BR-SP-01 read (`unavailable`); BR-SP-02 `forbidden`; BR-SP-03 `exceeds_sponsor_ceiling` | BR-SP-01 read; BR-SE-02 `forbidden`; BR-SE-03 `unknown_registration`; BR-SE-04 `forbidden`; BR-SE-06 `secret_limit_reached` *(Consistency fix from NFR Requirements, 2026-11-11: NFR-AR-06)* |
 | write | Registration and attribution record; `registration_exists` on a taken `agent`; any other failure `unavailable` | Secret and attribution record; any failure `unavailable` |
 
 Steps 7, 8, and 10 do not apply: no envelope (ID FR-022).
@@ -157,12 +157,12 @@ Steps 7, 8, and 10 do not apply: no envelope (ID FR-022).
 |---|---|---|
 | BR-RF-AR-01 | **Specific for validation, generic for trust**: `malformed_request`, `unknown_permission`, `human_only_permission`, `declaration_outside_standing`, `unknown_registration`, `registration_exists` name a field; `exceeds_sponsor_ceiling` names the caller's own requested entries only (D-AR-03); `credential_refused`, `credential_expired`, `forbidden` name nothing | U1 BR-ERR-01 |
 | BR-RF-AR-02 | **No response discloses another environment**, or whether a registration exists in another environment. Within E, whether an identifier is taken is learnable by a holder of `agent:register` (D-AR-02, 05; an accepted residual, §16) | U1 BR-ERR; PF §6 |
-| BR-RF-AR-03 | Every refusal is logged as a security event with its internal reason: `ceiling_exceeded`, `human_only_in_standing`, `declaration_outside_standing`, `unknown_permission`, `authority_denied`, `not_sponsor_or_admin`, `unknown_registration`, `registration_exists`, `held_set_unreadable`, `store_unavailable`; never in a response. A human is named only by E's log pseudonym; no secret, token, or key in any log | SECURITY-03; D-AR-24 |
+| BR-RF-AR-03 | Every refusal is logged as a security event with its internal reason: `ceiling_exceeded`, `human_only_in_standing`, `declaration_outside_standing`, `unknown_permission`, `authority_denied`, `not_sponsor_or_admin`, `unknown_registration`, `registration_exists`, `secret_limit_reached`, `held_set_unreadable`, `store_unavailable`; never in a response. A human is named only by E's log pseudonym; no secret, token, or key in any log | SECURITY-03; D-AR-24 |
 | BR-RF-AR-04 | `unavailable` carries `Retry-After`; a 401 carries `WWW-Authenticate: Bearer`; a 409 carries neither | U1 BR-ERR |
 
 ## 11. Problem Emission (BR-PE)
 
-U3's BR-PE applies unchanged (D-AR-23). P1's Problem table gains the five codes (§13); S2's tests
+U3's BR-PE applies unchanged (D-AR-23). P1's Problem table gains the six codes (§13); S2's tests
 run `assertProblem` on every Problem.
 
 ## 12. Two Faces and Packaging
@@ -183,7 +183,7 @@ Made at U5's Code Generation, under contract `0.1.0` (unreleased), and recorded 
 | Change | Where | Classification |
 |---|---|---|
 | **Two operations** in `contract/control-gateway.openapi.yaml`: `POST /registrations` (`registerAgent`, `environmentCredential`) and `POST /registration-secrets` (`issueRegistrationSecret`, `environmentCredential`), each referencing the shared components, naming one scheme, and validating every input (adding-an-operation.md). The secret's response is marked not cacheable (the header is NFR Design's) | the document; generated types | Compatible: new operations |
-| **Five codes**: `human_only_permission` (400), `declaration_outside_standing` (400), `exceeds_sponsor_ceiling` (403), `registration_exists` (409), `unknown_registration` (400) | `ProblemCode` in `components.openapi.yaml`; `conventions/errors.md` (codes table; check order steps 6 and 9) | Compatible: the code set is open |
+| **Six codes**: `human_only_permission` (400), `declaration_outside_standing` (400), `exceeds_sponsor_ceiling` (403), `registration_exists` (409), `unknown_registration` (400), `secret_limit_reached` (409) *(Consistency fix from NFR Requirements, 2026-11-11: NFR-AR-06)* | `ProblemCode` in `components.openapi.yaml`; `conventions/errors.md` (codes table; check order steps 6 and 9) | Compatible: the code set is open |
 | **Check order text**: step 6 gains "for a registration, then the accepted identifiers, the human-only class, and declaration ⊆ standing"; step 9 gains "for a registration, then the ceiling, and at the write, a taken identifier; for a secret, then the registration, then sponsor or Admin" | `conventions/errors.md` | Compatible: documents new operations |
 | **Disclosure**: a line stating that, within an environment, whether a logical agent identifier is taken is learnable by a holder of `agent:register` | `conventions/errors.md` *Disclosure* | Compatible: a statement |
 | `credentials.md` already defines `soorma_rs_` (material, body only, at most 256 characters). No change | — | — |

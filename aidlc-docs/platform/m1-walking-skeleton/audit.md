@@ -2567,3 +2567,54 @@ Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-
 **Context**: CONSTRUCTION, U5 agent-registration: Functional Design APPROVED.
 
 ---
+
+## Functional Design Committed; Obligations Posted; NFR Requirements Plan (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:13:16Z
+**User Input**: (none; carrying out the approval's instructions)
+**AI Response**: "Committed the Functional Design artifacts, the Application Design notes, state and audit on dev as 5d8294f and pushed; push run 43108905552 passed (Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run). Posted business-rules §17's obligations: soorma-core#9 https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6808306600 (bootstrap by agent; any active secret; parse the id from the value, load that one record, active and of the named registration, constant-time compare, every mismatch the unknown-secret refusal, never iterate; state registered; sponsor through the registration; U6's own bookkeeping) and soorma-core#10 https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6808307067 (sponsor through the registration; upstream agents always resolve; new registrations visible at once). Loaded construction/nfr-requirements.md. Wrote construction/working/agent-registration-nfr-requirements-plan.md (git-ignored): PF §10's profile carried forward (no data-face property added; durability the highest; latency not a constraint); P-01 to P-12 proposed (value soorma_rs_{id}.{secret}, 128-bit id and 256-bit secret; a domain-separated SHA-256 if unkeyed; no-store; no latency target, p95 reported; S2's throttle unchanged; 16 KiB body bound; the cap held under concurrency; the agent-facts query on the unique key within U3's budget; security events and alert rules; no new dependency); questions Q1 verifier keyed or not (decides Infrastructure Design; recommended A, unkeyed, skip), Q2 checksum (recommended A, none), Q3 secrets cap (recommended A, 10, secret_limit_reached 409; a lifetime total in M1), Q4 durability (recommended A, documented backup and restore with a test; replication and PITR carried), Q5 registration bound (recommended A, none in M1, residual; B flagged against I8, since quotas are commercial). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U5 agent-registration: Functional Design closed out; NFR Requirements plan, awaiting answers.
+
+---
+
+## NFR Requirements Answers (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:17:08Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A.
+
+Q3's addition: record the cap of 10 in the I8 table as a security bound (each active secret is a separate way in, PF §7a's issuer as a lower bound on who knows it), not a tenant quota, with the same reasoning Q5 used for option B.
+
+Q4's addition: the documented pg_dump contains human identifiers (sponsors and attribution records). The backup writes to a git-ignored path with mode 0600, never into the repository, and the README says so. The restore test uses a temporary path and deletes it.
+
+P-01 to P-12: accepted, with one correction to P-07. A row lock (SELECT … FOR UPDATE or FOR SHARE) needs UPDATE privilege on the table, and D-AR-15 gives the app role none on registrations. State in P-07 that the cap is serialised per registration without UPDATE privilege: for example pg_advisory_xact_lock keyed on (environment, agent), with the physical form chosen at NFR Design. The concurrency test at the cap stays.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-requirements.md and tech-stack-decisions.md with Infrastructure Design marked skipped and why, and stop for review."
+**Answers Recorded** (construction/working/agent-registration-nfr-requirements-plan.md):
+- Q1 — Is the secret's stored verifier keyed: A — unkeyed, domain-separated SHA-256 (P-02); no new secret; Infrastructure Design skipped
+- Q2 — Does the value carry a checksum: A — no checksum; soorma_rs_{id}.{secret}
+- Q3 — Cap on active secrets per registration: A — 10, refused with secret_limit_reached (409, no errors[]) after authority and the registration check. With the user's addition, verbatim above: recorded in the I8 table as a security bound, not a tenant quota
+- Q4 — Highest durability on the local stack: A — U4's store guarantees plus a documented backup and restore with a test; replication, PITR, off-host backups carried. With the user's addition, verbatim above: the dump holds human identifiers; it is written to a git-ignored path with mode 0600, never into the repository, and the README says so; the restore test uses a temporary path and deletes it
+- Q5 — Is the number of registrations bounded: A — no bound in M1; accepted residual; per-sponsor or per-environment quotas carried to the first hosted deployment
+- P-01 to P-12: accepted; P-07 corrected by the user: the cap is serialised per registration without UPDATE privilege (a row lock needs it, and D-AR-15 grants none), for example pg_advisory_xact_lock keyed on (environment, agent), the physical form NFR Design's; the concurrency test at the cap stays
+**AI Response**: "All five answered; none deferred; no contradiction or ambiguity. Classification: all technology (prd-gap-classification.md Step 1); no PF §10 property is unmeetable, so no specification gap. Infrastructure Design: skipped (Q1 A: no server-side key; no new deployable, store, network, or secret). Generating nfr-requirements.md and tech-stack-decisions.md; adding the cap to the I8 table as a security bound."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements answers recorded and classified.
+
+---
+
+## NFR Requirements Complete, Presented for Review (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:19:30Z
+**User Input**: (none; the user asked to stop for review once the artifacts are generated)
+**AI Response**: "Generated construction/agent-registration/nfr-requirements/: nfr-requirements.md (PF §10 profile carried forward, no data-face property added; NFR-AR-01 to 24: the value soorma_rs_{id}.{secret}, 128-bit id, 256-bit secret, no checksum; unkeyed domain-separated SHA-256, never a slow hash; one encoding per value; nothing secret stored or logged, Cache-Control no-store; the cap of 10 with secret_limit_reached after the sponsor-or-Admin check, serialised per registration without UPDATE privilege (pg_advisory_xact_lock as the example; physical form NFR Design's) with the concurrency test at the cap; the cap recorded as a security bound (NFR-AR-24); U4's durability; documented pg_dump and pg_restore as the migrator role to git-ignored deploy/local/.backups/ with mode 0600, never in the repository, the README stating it holds human identifiers; the restore test on a temporary path, deleted; carried items; S2's throttle; no registration bound, residual; 16 KiB body; no latency target, p95 reported; the agent-facts statement within U3's budget; one transaction; INSERT and SELECT only for the app role; events and alert rules; no new dependency; injected clock) and tech-stack-decisions.md (T-AR-01 to 05; rejected options; Infrastructure Design SKIPPED with its reason). Consistency fixes to Functional Design, marked in place: secret_limit_reached in business-rules §10, §13, BR-SE-06, BR-RF-AR-03 and the code counts, and in domain-entities; the I8 table gains the cap as a security bound, not a tenant quota (the user's Q3 addition). Security: compliant or N/A, with the user's M1 decisions (SECURITY-01 at rest, 03's log service, 14) carried; SECURITY-12 noted: the secret is not password-class. Invariants: no finding. Presenting: Request Changes, or Continue to Next Stage (NFR Design)."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements completion, approval prompt.
+
+---
+
+## NFR Requirements Approval (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:27:32Z
+**User Input**: "Continue to Next Stage: NFR Requirements approved, with one addition to NFR-AR-09.
+
+The backup and restore get the migrator's password from its mounted secret file, never from PGPASSWORD or any environment variable or command-line argument. Use a pgpass file built inside the container from /run/secrets; an environment variable may hold only its path (PGPASSFILE). The commands run inside the environment's network, because the store isn't published: a one-shot Compose service (or run --rm) on {env} that mounts only the migrator's secret subpath. Add this to NFR-AR-09, and add to NFR-AR-10's test that the Compose-model test sees no password in that service's environment.
+
+Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md. Commit the NFR Requirements artifacts, the Functional Design consistency fixes, state and audit on dev, and push; wait for the push run to pass. Post the verifier obligation on soorma-core#9 and record the link. Then write the NFR Design plan and stop for my answers."
+**AI Response**: "NFR Requirements APPROVED. Addition applied to NFR-AR-09 (the password from the mounted secret file only, through a pgpass file built inside the container from /run/secrets, PGPASSFILE the only variable, its path; never PGPASSWORD, an environment variable, or an argument; a one-shot Compose service or run --rm on {env}'s network mounting only the migrator's secret subpath; mechanics NFR Design's) and NFR-AR-10 (the Compose-model test sees no password in the backup service's environment, and only the migrator's subpath mounted); tech-stack-decisions §4 notes the service adds no secret, store, or network, so Infrastructure Design stays skipped. Marking approved; committing on dev, pushing, waiting for the push run; then posting the verifier obligation on #9 and writing the NFR Design plan."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements APPROVED.
+
+---

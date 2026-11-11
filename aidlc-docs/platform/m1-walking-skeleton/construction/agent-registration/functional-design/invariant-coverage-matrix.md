@@ -39,6 +39,7 @@ core item, and lands in `soorma-core`.
 | The re-broadening declaration and autonomy declared (recorded) | PF §12 core: records | soorma-core |
 | Registration secret issuance, with its issuer | PF §12 core: record (*Registration Secret*); operation (§8a *Issue a registration secret*); ID §12 core (FR-026's issuer) | soorma-core |
 | Attribution recording for both operations | PF §12 core (record) | soorma-core |
+| **The cap of 10 active secrets per registration** (*added at NFR Requirements, 2026-11-11, the user's Q3 addition*) | **A security bound, not a tenant quota**: each active secret is a separate way in, and PF §7a's issuer is only a lower bound on who knows it, so the bound limits exposure per registration. It is a platform constant, not configuration, and governs no tenant's capacity. Tenant quotas are commercial (PF §12, *Managed operation*; *Richer policy decision*), and the packaging rule names a numeric cap standing in for a governance boundary as a violation; this cap is neither (NFR-AR-06, 24) | soorma-core |
 
 **Not built, and absent from core in any form**: sponsorship policy (who may sponsor, registrant
 and role constraints; PF §12 commercial); a registration read surface (unassigned, D-AR-20); the snapshot's core read through FR-025 (core, absent from M1);

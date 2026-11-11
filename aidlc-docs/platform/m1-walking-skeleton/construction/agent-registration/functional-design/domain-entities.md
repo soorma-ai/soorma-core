@@ -77,7 +77,7 @@ declaration only (PF §8b *Sponsorship*).
 | verification material | **Only material that can verify the secret, never the secret** (TC-AR-006). A fast hash of a value with at least 256 random bits, never a slow password hash (*added at approval*); its exact form, and whether it is keyed, is NFR Requirements' | PF §8b *Bootstrap* ("locally-verified"); SECURITY-12 |
 
 A registration may hold **several active secrets**, each with its own record and issuer
-(D-AR-04). The number is capped at NFR Requirements. The secret's lifecycle is **independent of
+(D-AR-04). The number is capped at **10**, a security bound, not a tenant quota (NFR-AR-06, 24). The secret's lifecycle is **independent of
 any credential's** (PF FR-008): issuing one changes no credential, and U6's credentials never
 change a secret.
 
@@ -158,5 +158,6 @@ resolve the sponsor through it for attribution records.
 | `exceeds_sponsor_ceiling` | 403 | each `/standingPermissions/{i}` the presenter does not hold |
 | `registration_exists` | 409 | `/agent` |
 | `unknown_registration` | 400 | `/registration` |
+| `secret_limit_reached` | 409 | none *(Consistency fix from NFR Requirements, 2026-11-11: NFR-AR-06)* |
 
 Each list is ordered by pointer, at most 10 entries (U1 BR-ERR).
