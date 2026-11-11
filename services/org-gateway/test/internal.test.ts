@@ -55,12 +55,19 @@ describe('TC-OI-046: each internal operation discloses only what it states', () 
     expect(otherOrg.body).toEqual({ exists: false });
   });
 
-  it('signInStatus answers live, ended, or unknown, and nothing else', async () => {
+  it('signInStatus answers live with its expiry, ended, or unknown, and nothing else (A7)', async () => {
     const { token } = await active(g);
-    const sid = (
-      JSON.parse(Buffer.from(token.split('.')[1]!, 'base64url').toString()) as { sid: string }
-    ).sid;
-    expect((await internalGet(g, `/sign-ins/${sid}/status`)).body).toEqual({ status: 'live' });
+    const { sid, exp } = JSON.parse(Buffer.from(token.split('.')[1]!, 'base64url').toString()) as {
+      sid: string;
+      exp: number;
+    };
+    const live = (await internalGet(g, `/sign-ins/${sid}/status`)).body as {
+      status: string;
+      expiresAt: string;
+    };
+    expect(Object.keys(live).sort()).toEqual(['expiresAt', 'status']);
+    expect(live.status).toBe('live');
+    expect(Math.floor(Date.parse(live.expiresAt) / 1000)).toBe(exp);
     await post(g.edge, '/sign-ins/current/end', undefined, { authorization: `Bearer ${token}` });
     expect((await internalGet(g, `/sign-ins/${sid}/status`)).body).toEqual({ status: 'ended' });
     expect(

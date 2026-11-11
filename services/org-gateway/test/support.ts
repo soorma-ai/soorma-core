@@ -70,8 +70,8 @@ export async function gateway(
   const e2 = generateKeyPairSync('ed25519');
   const pem = (k: KeyObject) => Buffer.from(k.export({ format: 'pem', type: 'spki' }));
   const keys = testKeys([
-    { environment: 'e', publicKey: pem(e.publicKey) },
-    { environment: 'e2', publicKey: pem(e2.publicKey) },
+    { environment: 'e', publicKeys: [pem(e.publicKey)] },
+    { environment: 'e2', publicKeys: [pem(e2.publicKey)] },
   ]);
   const clock = new TestClock();
   const domain = await testDomain(db, { ...options, keys, clock });

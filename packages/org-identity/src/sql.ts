@@ -128,7 +128,13 @@ export const SQL = {
       RETURNING id`,
   ),
   /** $1 id, $2 org. */
-  signInState: sql('SELECT state FROM sign_ins WHERE id = $1 AND organization = $2'),
+  /** U2 amendment A7 (U4 D-EHA-02): the record, its expiry, and its principal's state. */
+  signInStatus: sql(
+    `SELECT s.state, s.expires_at, p.state AS principal_state
+       FROM sign_ins s
+       JOIN principals p ON p.organization = s.organization AND p.principal = s.principal
+      WHERE s.id = $1 AND s.organization = $2`,
+  ),
 
   // Retention (P-16).
   pruneLock: sql('SELECT pg_try_advisory_xact_lock($1::bigint) AS locked'),

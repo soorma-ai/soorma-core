@@ -549,8 +549,11 @@ describe('the internal operations (BR-INT-03 to 06)', () => {
     expect(await d.identity.principalExists({ organization: 'o1', principal: unique() })).toBe(
       false,
     );
-    expect(await d.identity.signInStatus(s.sid)).toBe('live');
-    expect(await d.identity.signInStatus('no-such-id')).toBe('unknown');
+    expect(await d.identity.signInStatus(s.sid)).toEqual({
+      status: 'live',
+      expiresAt: s.expiresAt,
+    });
+    expect(await d.identity.signInStatus('no-such-id')).toEqual({ status: 'unknown' });
     expect(d.identity.verifyOnlyMaterial().keys.every((k) => !('d' in k))).toBe(true);
   });
 });

@@ -206,16 +206,21 @@
           }
         },
         "internalCallers": {
-          "description": "Each environment's caller public key, for signed internal requests (P-06).",
+          "description": "Each environment's caller public keys, for signed internal requests (P-06). A list, so a caller key rotates with no outage (U4 Infrastructure Design §4).",
           "type": "array",
           "maxItems": 64,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["environment", "publicKey"],
+            "required": ["environment", "publicKeys"],
             "properties": {
               "environment": { "$ref": "#/$defs/ConfiguredIdentifier" },
-              "publicKey": { "$ref": "#/$defs/SecretName" }
+              "publicKeys": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": { "$ref": "#/$defs/SecretName" }
+              }
             }
           }
         },

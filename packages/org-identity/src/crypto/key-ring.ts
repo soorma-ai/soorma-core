@@ -30,7 +30,7 @@ export interface KeyMaterialInput {
   seedKeys: { current: string; keys: { id: string; key: Buffer }[] };
   counterSecret: Buffer;
   logPseudonymKey: Buffer;
-  internalCallers: { environment: string; publicKey: Buffer }[];
+  internalCallers: { environment: string; publicKeys: Buffer[] }[];
 }
 
 function ed25519Public(key: KeyObject): VerifyKey {
@@ -110,15 +110,32 @@ export class KeyRing {
     if (input.counterSecret.length < 32) problems.push('the counter secret is under 256 bits');
     if (input.logPseudonymKey.length < 32) problems.push('the log-pseudonym key is under 256 bits');
 
+    // A kid names one key of one environment, so callerByKid can never
+    // attribute one environment's call to another (U4 Infrastructure Design
+    // §4; I1). Checked on the loaded keys, so two files holding one key are caught.
     const callers: CallerKey[] = [];
-    for (const { environment, publicKey } of input.internalCallers) {
-      try {
-        const key = createPublicKey(publicKey);
-        if (key.asymmetricKeyType !== 'ed25519')
+    for (const { environment, publicKeys } of input.internalCallers) {
+      for (const publicKey of publicKeys) {
+        let key: KeyObject;
+        try {
+          key = createPublicKey(publicKey);
+        } catch {
+          problems.push(`the caller key for environment ${environment} is not a PEM public key`);
+          continue;
+        }
+        if (key.asymmetricKeyType !== 'ed25519') {
           problems.push(`the caller key for environment ${environment} is not Ed25519`);
-        else callers.push({ environment, kid: thumbprint(key), key });
-      } catch {
-        problems.push(`the caller key for environment ${environment} is not a PEM public key`);
+          continue;
+        }
+        const kid = thumbprint(key);
+        const earlier = callers.find((c) => c.kid === kid);
+        if (earlier?.environment === environment)
+          problems.push(`internal caller key ${kid} appears twice for environment ${environment}`);
+        else if (earlier)
+          problems.push(
+            `internal caller key ${kid} is configured for environments ${earlier.environment} and ${environment}`,
+          );
+        else callers.push({ environment, kid, key });
       }
     }
 

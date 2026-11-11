@@ -81,7 +81,7 @@ export function breachedList(): BreachedList {
 }
 
 export function testKeys(
-  internalCallers: { environment: string; publicKey: Buffer }[] = [],
+  internalCallers: { environment: string; publicKeys: Buffer[] }[] = [],
 ): KeyRing {
   return KeyRing.fromConfiguration({
     signingKey: Buffer.from(

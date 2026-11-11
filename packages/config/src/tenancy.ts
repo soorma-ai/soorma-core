@@ -92,7 +92,7 @@ export interface GatewaySecrets {
   logPseudonymKey: Buffer;
   /** Configured enrollment material, keyed by principal (organization part only). */
   enrollment: { principal: string; material: string }[];
-  internalCallers: { environment: string; publicKey: Buffer }[];
+  internalCallers: { environment: string; publicKeys: Buffer[] }[];
 }
 
 /** org-migrate's secrets: the migrator password and the CA, nothing else. */
@@ -129,7 +129,7 @@ interface RawLevel {
     logPseudonym: string;
   };
   enrollment: { principal: string; secret: string }[];
-  internalCallers?: { environment: string; publicKey: string }[];
+  internalCallers?: { environment: string; publicKeys: string[] }[];
   hashing?: { budgetMiB?: number; permits?: number };
 }
 
@@ -220,6 +220,15 @@ function readTenancy(configPath: string): { raw: RawTenancy; settings: Organizat
         `/organizationLevel/internalCallers/${i}: environment ${env} is not configured`,
       );
   }
+  // A secret name names one key, for one environment (U4 Infrastructure Design §4; I1).
+  const names = (level.internalCallers ?? []).flatMap((c) => c.publicKeys);
+  const repeated = new Set(duplicates(names));
+  for (const [i, c] of (level.internalCallers ?? []).entries())
+    for (const [j, name] of c.publicKeys.entries())
+      if (repeated.has(name))
+        problems.push(
+          `/organizationLevel/internalCallers/${i}/publicKeys/${j}: ${name} is listed more than once`,
+        );
 
   if (problems.length > 0) throw new ConfigurationError(problems);
 
@@ -326,7 +335,7 @@ export function loadOrganization(options: LoadOptions): {
     }),
     internalCallers: (level.internalCallers ?? []).map((c) => ({
       environment: c.environment,
-      publicKey: read.bytes(c.publicKey),
+      publicKeys: c.publicKeys.map((name) => read.bytes(name)),
     })),
   };
   if (secrets.counterSecret.length > 0 && secrets.counterSecret.equals(secrets.logPseudonymKey))
@@ -414,7 +423,7 @@ export function listSecrets(options: LoadOptions): SecretNames {
       level.keys.counter,
       level.keys.logPseudonym,
       ...level.enrollment.map((e) => e.secret),
-      ...(level.internalCallers ?? []).map((c) => c.publicKey),
+      ...(level.internalCallers ?? []).flatMap((c) => c.publicKeys),
     ]),
     migrator: unique([level.migrator.password, level.database.ca]),
     enrollment: level.enrollment.map((e) => ({ principal: e.principal, secret: e.secret })),

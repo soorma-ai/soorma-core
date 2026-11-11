@@ -23,6 +23,7 @@ import {
   type Queryable,
   type SecretText,
   type SignInClaims,
+  type SignInStatus,
   type Store,
 } from '@soorma/service-kit';
 import type { KeyRing } from '../crypto/key-ring.ts';
@@ -494,12 +495,24 @@ export class OrgIdentity {
     return this.exists(reference);
   }
 
-  async signInStatus(id: string): Promise<'live' | 'ended' | 'unknown'> {
-    const [row] = await this.d.store.query<{ state: 'live' | 'ended' }>(SQL.signInState, [
-      id,
-      this.d.organization,
-    ]);
-    return row?.state ?? 'unknown';
+  /**
+   * A sign-in's status for an environment (BR-INT-05, as amended by A7; U4
+   * D-EHA-02): `live` with its current expiry only when the record is live,
+   * unexpired, and its principal active; `ended` otherwise; `unknown` when
+   * there is no record. Expiry is judged on this level's clock, with no leeway.
+   */
+  async signInStatus(id: string): Promise<SignInStatus> {
+    const [row] = await this.d.store.query<{
+      state: 'live' | 'ended';
+      expires_at: Date;
+      principal_state: string;
+    }>(SQL.signInStatus, [id, this.d.organization]);
+    if (row === undefined) return { status: 'unknown' };
+    const live =
+      row.state === 'live' &&
+      row.principal_state === 'active' &&
+      row.expires_at.getTime() > this.d.clock.now().getTime();
+    return live ? { status: 'live', expiresAt: row.expires_at } : { status: 'ended' };
   }
 
   verifyOnlyMaterial(): ReturnType<KeyRing['jwks']> {

@@ -54,7 +54,7 @@ function material(change: Partial<KeyMaterialInput> = {}): KeyMaterialInput {
     seedKeys: { current: 's1', keys: [{ id: 's1', key: randomBytes(32) }] },
     counterSecret: randomBytes(32),
     logPseudonymKey: randomBytes(32),
-    internalCallers: [{ environment: 'e', publicKey: caller.publicPem }],
+    internalCallers: [{ environment: 'e', publicKeys: [caller.publicPem] }],
     ...change,
   };
 }
@@ -200,7 +200,7 @@ describe('P-02: the key ring', () => {
           verifyKeys: [Buffer.from('nope')],
           seedKeys: { current: 's2', keys: [{ id: 's1', key: randomBytes(16) }] },
           counterSecret: randomBytes(8),
-          internalCallers: [{ environment: 'e', publicKey: Buffer.from('nope') }],
+          internalCallers: [{ environment: 'e', publicKeys: [Buffer.from('nope')] }],
         }),
       );
     } catch (error) {
