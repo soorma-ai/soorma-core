@@ -7,14 +7,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { ConfigurationError } from '@soorma/config';
 import { FailedAttemptWriter } from '@soorma/abuse-bound';
-import {
-  ARGON2_PARAMETERS,
-  asSecretBytes,
-  codeAt,
-  stepAt,
-  type Argon2Call,
-  type Queryable,
-} from '@soorma/org-identity';
+import { asSecretBytes, type Queryable } from '@soorma/service-kit';
+import { ARGON2_PARAMETERS, codeAt, stepAt, type Argon2Call } from '@soorma/org-identity';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   testDatabase,

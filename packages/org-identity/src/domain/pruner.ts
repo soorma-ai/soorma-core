@@ -6,9 +6,8 @@
 // Principals and material are never touched: the app role has no DELETE on
 // them (BR-HP-03).
 import { createHash } from 'node:crypto';
-import type { Clock } from '../clock.ts';
+import type { Clock, Store } from '@soorma/service-kit';
 import { SQL } from '../sql.ts';
-import type { Store } from '../store/store.ts';
 
 export const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 export const PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000;

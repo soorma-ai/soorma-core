@@ -59,6 +59,9 @@ importers:
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
 
   packages/authority:
     dependencies:
@@ -112,6 +115,9 @@ importers:
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
 
   packages/jcs: {}
 
@@ -126,6 +132,9 @@ importers:
       '@soorma/jcs':
         specifier: workspace:*
         version: link:../jcs
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
       jose:
         specifier: 6.2.14
         version: 6.2.14
@@ -148,6 +157,9 @@ importers:
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
     devDependencies:
       '@soorma/contract':
         specifier: workspace:*
@@ -164,6 +176,22 @@ importers:
       '@soorma/policy-decision-seam':
         specifier: workspace:*
         version: link:../../seams/policy-decision
+
+  packages/service-kit:
+    dependencies:
+      '@soorma/jcs':
+        specifier: workspace:*
+        version: link:../jcs
+      jose:
+        specifier: 6.2.14
+        version: 6.2.14
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
 
   seams/identity-resolution: {}
 
@@ -198,6 +226,9 @@ importers:
       '@soorma/perimeter':
         specifier: workspace:*
         version: link:../../packages/perimeter
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
       ajv:
         specifier: 8.20.0
         version: 8.20.0

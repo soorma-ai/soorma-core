@@ -9,7 +9,7 @@
 // It has no parameter for material, a token, or a principal identifier, so
 // none can reach a log by mistake.
 import { ConsoleLogger } from '@nestjs/common';
-import type { HumanPseudonym } from '@soorma/org-identity';
+import type { HumanPseudonym } from '@soorma/service-kit';
 
 export const SECURITY_EVENTS = [
   'auth.failed',

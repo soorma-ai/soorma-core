@@ -5,8 +5,8 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { asSecretText } from '@soorma/service-kit';
 import {
-  asSecretText,
   BreachedList,
   BreachedListError,
   breachedPrefix,

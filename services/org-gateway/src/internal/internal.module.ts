@@ -17,7 +17,7 @@ import {
   Res,
   type DynamicModule,
 } from '@nestjs/common';
-import { verifyInternalRequest } from '@soorma/org-identity';
+import { verifyInternalRequest } from '@soorma/service-kit';
 import { ProblemError, rawHeaderValues } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { rawBody } from '../http.ts';

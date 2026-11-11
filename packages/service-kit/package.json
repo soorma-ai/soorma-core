@@ -1,0 +1,28 @@
+{
+  "name": "@soorma/service-kit",
+  "private": true,
+  "description": "The organization-neutral runtime the organization level and each environment share (U4 NFR Design NP-EHA-15)",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/jcs": "workspace:*",
+    "jose": "6.2.14",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}

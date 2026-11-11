@@ -6,13 +6,15 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   asSecretBytes,
   asSecretText,
+  type PrincipalReference,
+  verifySignIn,
+} from '@soorma/service-kit';
+import {
   codeAt,
   FirstAdminError,
   Pruner,
   stepAt,
-  verifySignIn,
   type MaterialChangeResult,
-  type PrincipalReference,
   type Result,
 } from '../src/index.ts';
 import { testDatabase, type TestDatabase } from './harness/database.ts';

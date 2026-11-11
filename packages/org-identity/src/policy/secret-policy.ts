@@ -12,8 +12,12 @@
 // No composition rule (BR-K-04). The caller runs it only after the presented
 // material verified (BR-RF-04), and returns `secret_rejected` with one
 // errors[] entry carrying the field's pointer and this reason (BR-K-07).
-import type { PrincipalReference } from '../crypto/canonical.ts';
-import { asSecretText, secretEqual, type SecretText } from '../crypto/secret-types.ts';
+import {
+  asSecretText,
+  type PrincipalReference,
+  secretEqual,
+  type SecretText,
+} from '@soorma/service-kit';
 import type { BreachedList } from './breached-list.ts';
 
 export const K_MIN_CODE_POINTS = 8;

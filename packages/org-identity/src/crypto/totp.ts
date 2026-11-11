@@ -9,10 +9,10 @@ import { createHmac, randomBytes } from 'node:crypto';
 import {
   asSecretBytes,
   asTotpCode,
-  secretEqual,
   type SecretBytes,
+  secretEqual,
   type TotpCode,
-} from './secret-types.ts';
+} from '@soorma/service-kit';
 
 export const TOTP_STEP_SECONDS = 30;
 export const TOTP_DIGITS = 6;

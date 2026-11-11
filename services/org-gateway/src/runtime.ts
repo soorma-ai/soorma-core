@@ -4,13 +4,12 @@
 // store, keys, and clock, so tests wire the same graph over a test database;
 // `startRuntime` (main.ts) builds them from configuration.
 import {
-  OrgIdentity,
-  pseudonym,
   type Clock,
   type HumanPseudonym,
-  type KeyRing,
   type PrincipalReference,
-} from '@soorma/org-identity';
+  pseudonym,
+} from '@soorma/service-kit';
+import { OrgIdentity, type KeyRing } from '@soorma/org-identity';
 import { SignInPerimeter } from '@soorma/perimeter';
 import type { ContractValidator } from './contract-validator.ts';
 import type { SecurityLog } from './security-log.ts';

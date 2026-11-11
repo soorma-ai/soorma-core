@@ -14,13 +14,8 @@
 //   1 body size; 2 to 4 the presented sign-in (P1): credential_refused,
 //   credential_expired; 5 contract version; then no body; then P10
 import type { components } from '@soorma/contract/types/org-gateway';
-import type {
-  IssuedSignIn,
-  MaterialChangeResult,
-  PrincipalReference,
-  Refusal,
-  SignInClaims,
-} from '@soorma/org-identity';
+import type { PrincipalReference, SignInClaims } from '@soorma/service-kit';
+import type { IssuedSignIn, MaterialChangeResult, Refusal } from '@soorma/org-identity';
 import { CONTRACT_VERSION, presentedCredentialHeaders, ProblemError } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { RequestSchema } from '../contract-validator.ts';

@@ -11,6 +11,9 @@
       "path": "./packages/jcs/tsconfig.build.json"
     },
     {
+      "path": "./packages/service-kit/tsconfig.build.json"
+    },
+    {
       "path": "./seams/policy-decision/tsconfig.build.json"
     },
     {

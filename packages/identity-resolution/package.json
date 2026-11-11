@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@soorma/identity-resolution-seam": "workspace:*",
-    "@soorma/org-identity": "workspace:*"
+    "@soorma/org-identity": "workspace:*",
+    "@soorma/service-kit": "workspace:*"
   }
 }

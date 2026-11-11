@@ -15,15 +15,8 @@ import { describe, expect, it } from 'vitest';
 // P8 depends on P10, so P10's tests reach P8's slotOf by path, never as a package.
 import { slotOf } from '../../abuse-bound/src/abuse-bound.ts';
 import { associatedData } from '../src/crypto/seed-cipher.ts';
-import {
-  asSecretBytes,
-  decryptSeed,
-  KeyRing,
-  pseudonym,
-  referenceJson,
-  SeedDecryptionError,
-  type StoredSeed,
-} from '../src/index.ts';
+import { asSecretBytes, pseudonym, referenceJson } from '@soorma/service-kit';
+import { decryptSeed, KeyRing, SeedDecryptionError, type StoredSeed } from '../src/index.ts';
 
 interface Reference {
   organization: string;

@@ -14,24 +14,30 @@
 // token) is ever stored or returned, except the new token itself.
 import { randomBytes } from 'node:crypto';
 import type { HumanPrincipalReference, IdentityResolver } from '@soorma/identity-resolution-seam';
-import type { Clock } from '../clock.ts';
-import type { PrincipalReference } from '../crypto/canonical.ts';
+import {
+  asSecretText,
+  asTotpCode,
+  type Clock,
+  type MaterialClass,
+  type PrincipalReference,
+  type Queryable,
+  type SecretText,
+  type SignInClaims,
+  type Store,
+} from '@soorma/service-kit';
 import type { KeyRing } from '../crypto/key-ring.ts';
 import type { SecretHasher } from '../crypto/secret-hash.ts';
-import { asSecretText, type SecretText } from '../crypto/secret-types.ts';
 import {
   decryptSeed,
   encryptSeed,
   SeedDecryptionError,
   type StoredSeed,
 } from '../crypto/seed-cipher.ts';
-import { mintSignIn, type MaterialClass, type SignInClaims } from '../crypto/sign-in-token.ts';
-import { asTotpCode } from '../crypto/secret-types.ts';
+import { mintSignIn } from '../crypto/sign-in-token.ts';
 import { base32, matchStep, newSeed, otpauthUri } from '../crypto/totp.ts';
 import type { Lifetimes } from '../lifetimes.ts';
 import type { SecretPolicy, SecretRejection } from '../policy/secret-policy.ts';
 import { SQL } from '../sql.ts';
-import type { Queryable, Store } from '../store/store.ts';
 import type { AttemptBound, FailureRecorder, Surface } from './ports.ts';
 
 export type Refusal =

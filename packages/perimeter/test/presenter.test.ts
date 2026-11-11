@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 // The presenter checks at S1: TC-OI-024, 026, 027; D-OI-05, 26.
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
-import { KeyRing, mintSignIn, type Clock } from '@soorma/org-identity';
+import type { Clock } from '@soorma/service-kit';
+import { KeyRing, mintSignIn } from '@soorma/org-identity';
 import { describe, expect, it } from 'vitest';
 import { presentedCredentialHeaders, presentedSignIn, SignInPerimeter } from '../src/index.ts';
 

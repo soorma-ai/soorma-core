@@ -12,13 +12,8 @@
 //   and no Soorma-Delegation, else credential_refused; then verification with
 //   the organization's verify keys (O2); expiry only after verification
 //   (credential_expired); then the sign-in record (O3)
-import {
-  SIGN_IN_PREFIX,
-  verifySignIn,
-  type Clock,
-  type KeyRing,
-  type SignInClaims,
-} from '@soorma/org-identity';
+import { type Clock, SIGN_IN_PREFIX, type SignInClaims, verifySignIn } from '@soorma/service-kit';
+import type { KeyRing } from '@soorma/org-identity';
 
 export const CREDENTIAL_HEADERS = ['Authorization', 'Soorma-Delegation'] as const;
 export type CredentialHeader = (typeof CREDENTIAL_HEADERS)[number];

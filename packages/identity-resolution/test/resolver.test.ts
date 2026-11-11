@@ -3,9 +3,9 @@
 // this level: one Argon2id call per resolution, with the real parameters, the
 // decoy for an absent principal or record); BR-SEAM-01, 02; P-10.
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
+import { asSecretText, type Clock } from '@soorma/service-kit';
 import {
   ARGON2_PARAMETERS,
-  asSecretText,
   codeAt,
   encryptSeed,
   HashSemaphore,
@@ -14,7 +14,6 @@ import {
   SecretHasher,
   stepAt,
   type Argon2Call,
-  type Clock,
 } from '@soorma/org-identity';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { testDatabase, type TestDatabase } from '../../org-identity/test/harness/database.ts';

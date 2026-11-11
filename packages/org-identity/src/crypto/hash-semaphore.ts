@@ -6,7 +6,7 @@
 // request is refused with `unavailable` (503). It is a resource bound, not
 // state (M1-TECH-03).
 import { availableParallelism } from 'node:os';
-import { UnavailableError } from '../errors.ts';
+import { UnavailableError } from '@soorma/service-kit';
 
 /** Memory per Argon2id operation (NFR-OI-11). */
 export const HASH_MEMORY_MIB = 64;

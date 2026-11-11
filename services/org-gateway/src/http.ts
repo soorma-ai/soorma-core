@@ -18,7 +18,7 @@ import {
   type ExceptionFilter,
 } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
-import { UnavailableError } from '@soorma/org-identity';
+import { UnavailableError } from '@soorma/service-kit';
 import { CONTRACT_VERSION, ProblemError, problemResponse, type Refusal } from '@soorma/perimeter';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { SecurityLog } from './security-log.ts';

@@ -6,9 +6,13 @@
 // copied to another row fails to decrypt. Decryption uses the key its `keyId`
 // names (R-3); an unknown key id fails closed.
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { canonicalJson, type PrincipalReference } from './canonical.ts';
+import {
+  asSecretBytes,
+  canonicalJson,
+  type PrincipalReference,
+  type SecretBytes,
+} from '@soorma/service-kit';
 import type { KeyRing } from './key-ring.ts';
-import { asSecretBytes, type SecretBytes } from './secret-types.ts';
 
 export interface StoredSeed {
   keyId: string;

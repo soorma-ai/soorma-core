@@ -16,12 +16,12 @@
 // - It limits rate and recovers with time; it never locks permanently
 import { createHmac, randomUUID } from 'node:crypto';
 import {
-  referenceJson,
   type Clock,
   type PrincipalReference,
   type Queryable,
+  referenceJson,
   type SecretBytes,
-} from '@soorma/org-identity';
+} from '@soorma/service-kit';
 import { SQL } from './sql.ts';
 
 export const SLOT_COUNT = 2 ** 20;

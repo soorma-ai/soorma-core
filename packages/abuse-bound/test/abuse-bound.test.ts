@@ -7,7 +7,7 @@ import {
   type Clock,
   type PrincipalReference,
   type Queryable,
-} from '@soorma/org-identity';
+} from '@soorma/service-kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { testDatabase, type TestDatabase } from '../../org-identity/test/harness/database.ts';
 import {

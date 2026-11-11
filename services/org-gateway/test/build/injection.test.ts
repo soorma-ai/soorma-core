@@ -13,7 +13,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { CLOCK, Lifetimes, SIGN_IN_LIFETIME_MS, type Clock } from '@soorma/org-identity';
+import { CLOCK, type Clock } from '@soorma/service-kit';
+import { Lifetimes, SIGN_IN_LIFETIME_MS } from '@soorma/org-identity';
 import { describe, expect, it } from 'vitest';
 import { ClockModule } from '../../src/clock.module.ts';
 

@@ -15,8 +15,12 @@
 // Network location is never the check.
 import { createHash, createPublicKey, randomUUID, type KeyObject } from 'node:crypto';
 import { errors, jwtVerify, SignJWT, type JWTPayload } from 'jose';
-import type { KeyRing } from './key-ring.ts';
-import { thumbprint } from './key-ring.ts';
+import { thumbprint, type CallerKey } from './keys.ts';
+
+/** Where verification finds a caller by `kid`; @soorma/org-identity's KeyRing is one. */
+export interface CallerKeySource {
+  callerByKid(kid: string): CallerKey | undefined;
+}
 
 export const INTERNAL_TYP = 'soorma-internal+jwt';
 export const INTERNAL_LEEWAY_SECONDS = 30;
@@ -42,7 +46,7 @@ export interface ReceivedRequest {
 /** The calling environment, or undefined: a refusal, with no detail. */
 export async function verifyInternalRequest(
   request: ReceivedRequest,
-  keys: KeyRing,
+  keys: CallerKeySource,
   organization: string,
   now: Date,
 ): Promise<string | undefined> {

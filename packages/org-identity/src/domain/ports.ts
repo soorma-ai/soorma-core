@@ -3,7 +3,7 @@
 // What P10's flows need from P8 (the abuse bound) and its Failed Attempt
 // writer. Declared here, satisfied structurally by @soorma/abuse-bound, which
 // itself builds on this package, so neither imports the other's classes.
-import type { PrincipalReference } from '../crypto/canonical.ts';
+import type { PrincipalReference } from '@soorma/service-kit';
 
 export type BoundAdmission<R> =
   { admitted: true; reservation: R } | { admitted: false; retryAfterSeconds: number };

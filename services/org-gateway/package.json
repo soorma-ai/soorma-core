@@ -20,6 +20,7 @@
     "@soorma/identity-resolution": "workspace:*",
     "@soorma/org-identity": "workspace:*",
     "@soorma/perimeter": "workspace:*",
+    "@soorma/service-kit": "workspace:*",
     "ajv": "8.20.0",
     "fastify": "5.12.7",
     "reflect-metadata": "0.2.2",

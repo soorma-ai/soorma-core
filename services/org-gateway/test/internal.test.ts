@@ -3,13 +3,12 @@
 // P-07; BR-INT-01 to 07.
 import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { signInternalRequest } from '@soorma/org-identity';
+import { HEALTH_HOST, listenHealth, signInternalRequest } from '@soorma/service-kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   testDatabase,
   type TestDatabase,
 } from '../../../packages/org-identity/test/harness/database.ts';
-import { HEALTH_HOST, listenHealth } from '../src/health.ts';
 import { active, gateway, get, internalGet, post, K, type Gateway } from './support.ts';
 
 let db: TestDatabase;

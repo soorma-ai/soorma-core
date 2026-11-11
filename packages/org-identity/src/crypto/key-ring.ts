@@ -12,9 +12,16 @@
 // - Environment caller keys: each configured environment's Ed25519 public key
 //
 // Any missing or malformed key stops start-up (BR-CFG-08).
-import { createHash, createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto';
-import { KeyMaterialError } from '../errors.ts';
-import { asSecretBytes, type SecretBytes } from './secret-types.ts';
+import { createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto';
+import {
+  asSecretBytes,
+  KeyMaterialError,
+  thumbprint,
+  type CallerKey,
+  type PublicJwk,
+  type SecretBytes,
+  type VerifyKey,
+} from '@soorma/service-kit';
 
 /** The raw key material, as configuration delivers it. */
 export interface KeyMaterialInput {
@@ -24,35 +31,6 @@ export interface KeyMaterialInput {
   counterSecret: Buffer;
   logPseudonymKey: Buffer;
   internalCallers: { environment: string; publicKey: Buffer }[];
-}
-
-/** A public Ed25519 key as a JWK, for the JWKS. */
-export interface PublicJwk {
-  kty: 'OKP';
-  crv: 'Ed25519';
-  x: string;
-  kid: string;
-  alg: 'Ed25519';
-  use: 'sig';
-}
-
-export interface VerifyKey {
-  kid: string;
-  key: KeyObject;
-  jwk: PublicJwk;
-}
-
-export interface CallerKey {
-  environment: string;
-  kid: string;
-  key: KeyObject;
-}
-
-/** The RFC 7638 thumbprint of an Ed25519 public key (SHA-256, base64url). */
-export function thumbprint(key: KeyObject): string {
-  const { x } = key.export({ format: 'jwk' });
-  const members = `{"crv":"Ed25519","kty":"OKP","x":"${String(x)}"}`;
-  return createHash('sha256').update(members).digest('base64url');
 }
 
 function ed25519Public(key: KeyObject): VerifyKey {
