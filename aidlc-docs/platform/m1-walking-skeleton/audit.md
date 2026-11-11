@@ -2439,3 +2439,33 @@ the open obligations: specification gaps (Open and Awaiting PRD counted separate
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 7 and 8.
 
 ---
+
+## Code Generation Part 2: Completion Presented (U4 env-human-access)
+**Timestamp**: 2026-11-11T17:19:54Z
+**User Input**: (none; awaiting the user's approval)
+**AI Response**: "Group 8 committed as 0904091 and pushed. PR soorma-core#19 opened from dev to main (Refs #7, #3), not merged. Every check green: Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant (pull_request runs 43066205983 and 43066205997; push run 43066136709 also green). Presenting the Code Generation completion message for U4 with the PR link, check results, latency figures, every change to a U2 assertion (D-CG-EHA-16, Group 3's A7, D-CG-EHA-17, D-CG-EHA-28) as diffs with their design items, and the open obligations (specification gaps Open 5, Awaiting PRD 1; items carried to Build and Test and to the first hosted deployment). Asking: Request Changes, or Continue to Next Stage."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation completion, approval prompt.
+
+---
+
+## Code Generation Approval (U4 env-human-access)
+**Timestamp**: 2026-11-11T17:30:27Z
+**User Input**: "Continue: Code Generation for U4 approved. I've merged #19.
+
+Log this verbatim in audit.md, and mark Code Generation approved in aidlc-state.md with #19's merge commit.
+Correction to the latency: test:perf:s2 ran in-process with a stub S1, not on the local stack as NFR-EHA-15 and D-CG-EHA-10 say. Record the figures as in-process only. Carry a Build and Test obligation to measure p95 on the running stack, with real S1 and TLS, against the 300 ms and 200 ms targets.
+Comment on soorma-core#7 with a completion note linking #18 (design) and #19 (code), the open obligations, and the Build and Test items. Leave #7 open until Build and Test, as for U3.
+Update aidlc-state.md: U4 done; next is U5 agent-registration (soorma-core#8), in a new session, with a "Start with:" note as U3's handoff had.
+Commit on dev and push. Don't open a PR for the bookkeeping alone, unless pushing is blocked."
+**AI Response**: "Code Generation approved by the user. Checked #19 before recording its merge: GitHub reports soorma-core#19 open and not merged (state open, merged false, merged_at null; origin/main still at 1a19082, #18's merge). No merge commit exists to record, so nothing was marked, committed, pushed, or commented yet: pushing to dev now would also add commits to the open #19. Asking the user to confirm the merge before proceeding."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation approved; #19's merge not found.
+
+---
+
+## Code Generation Approval: #19 Merged (U4 env-human-access)
+**Timestamp**: 2026-11-11T21:17:54Z
+**User Input**: "merged"
+**AI Response**: "Confirmed on GitHub: soorma-core#19 merged 2026-11-11T21:16:53Z as 95b96e5; dev fast-forwarded to it. Carrying out the approval's instructions (the previous entry): Code Generation marked APPROVED in aidlc-state.md with 95b96e5; the latency figures recorded as in-process only (test:perf:s2 ran S2's edge in process over a test store with a stub S1, not on the local stack as NFR-EHA-15 and D-CG-EHA-10 say), with a Build and Test obligation to measure p95 on the running stack, with real S1 and TLS, against 300 ms (issuance, renewal) and 200 ms (ending, grantToHuman); a completion comment on soorma-core#7 linking #18 and #19, with the open obligations and the Build and Test items, #7 left open until Build and Test; U4 COMPLETE, next U5 agent-registration (soorma-core#8) in a new session, with a Start with note. Committing on dev and pushing; no PR for the bookkeeping."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation APPROVED; unit complete.
+
+---

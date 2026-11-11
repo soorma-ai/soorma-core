@@ -98,7 +98,7 @@ directory and lock key).
 | D-CG-EHA-07 | The environment store's test harness: a migrated template per run, a clone per test file, as the app role |
 | D-CG-EHA-08 | The dependency-closure check: `@soorma/org-identity` is not in S2's production closure |
 | D-CG-EHA-09 | The request semaphore on Fastify's `onRequest`, released once in `onResponse` or `onRequestAbort` |
-| D-CG-EHA-10 | Latency is measured and reported, never a gate |
+| D-CG-EHA-10 | Latency is measured and reported, never a gate. *Corrected at approval (the user's, 2026-11-11)*: the plan said `test:perf:s2` runs against the running stack; it runs in process with a stub S1. The figures are in-process only, and the stack measurement is carried to Build and Test |
 | D-CG-EHA-11 | Test titles name their TC ids |
 | D-CG-EHA-12 | Commit cadence and the pre-commit gate (the stack run in Groups 1, 2, 3, 5, 6; each push run green) |
 | D-CG-EHA-13 | S1's health check keeps working through the move |
@@ -291,24 +291,32 @@ Node 26.13.0, pnpm 12.18.0, Docker Desktop; Intel Core i9-9980HK.
 | `stack:init`, `stack:up`, `stack:smoke`, `down -v` | 52 checks pass |
 | `stack:up` (fresh), `stack:outage`, `down -v` | Both cases pass; case 2 recovers within the 30-second on-demand limit (22 s) |
 
-**Latency** (TC-EHA-070; NFR-EHA-15; reported, not a gate). `SOORMA_PERF=1 pnpm test:perf:s2`:
-S2's real edge over a test environment store, with a stub S1, in process; 500 runs per operation
-after 20 warm-up issuances; three runs.
+**Latency, in process only** (TC-EHA-070; reported, not a gate). `SOORMA_PERF=1 pnpm
+test:perf:s2` drives S2's real edge **in process** (Fastify `inject`, no socket, no TLS) over a
+test environment store, with a **stub S1** in the same process; 500 runs per operation after 20
+warm-up issuances; three runs.
 
-| Operation | p95, run 1 | Run 2 | Run 3 | Target |
+| Operation | p95, run 1 | Run 2 | Run 3 | Target (on the stack) |
 |---|---|---|---|---|
 | Issuance | 4.9 ms | 5.1 ms | 5.0 ms | 300 ms |
 | Renewal | 5.2 ms | 4.8 ms | 5.1 ms | 300 ms |
 | Ending | 4.7 ms | 4.9 ms | 4.8 ms | 200 ms |
 | `grantToHuman` | 5.8 ms | 5.8 ms | 5.8 ms | 200 ms |
 
-These exclude the network hop to S1 and to the store over TLS; S1's `signInStatus` and
-`principalExists` add their own latency on the stack.
+*Correction at approval (the user's, 2026-11-11)*: NFR-EHA-15 and D-CG-EHA-10 call for the
+figures **on the local stack**. These are not that measurement: they leave out the client's TLS
+1.3 connection to S2, S2's signed calls over TLS to the real S1 (`signInStatus`,
+`principalExists`), and the store over TLS. They show S2's own processing only, and do not
+discharge NFR-EHA-15. **Build and Test measures p95 on the running stack**, with the real S1 and
+TLS, against 300 ms (issuance, renewal) and 200 ms (ending, `grantToHuman`).
 
 ### For Build and Test
 
+- **p95 latency on the running stack** (NFR-EHA-15; TC-EHA-070), with the real S1 and TLS,
+  against 300 ms (issuance, renewal) and 200 ms (ending, `grantToHuman`); reported, not a gate.
+  The Code Generation figures are in process only (above).
 - §11's two cases on the stack (scripted: `pnpm stack:outage`); the rotation test (NFR-EHA-08a)
-  as an integration run; the Compose-model, privilege, and docs tests; the performance figures.
+  as an integration run; the Compose-model, privilege, and docs tests.
 - The accepted residuals: the post-logout credential, at most 15 minutes (NFR-EHA-02); the
   Admin self-grant (recorded); the organization-level outage (D-EHA-23); the instance flood
   (Q2).
