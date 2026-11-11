@@ -1991,3 +1991,70 @@ Start NFR Requirements."
 **Context**: CONSTRUCTION, U4 env-human-access: Functional Design APPROVED.
 
 ---
+
+## Functional Design approval actions; NFR Requirements: plan and questions (env-human-access)
+**Timestamp**: 2026-11-11T04:20:13Z
+**User Input**: (none; the actions the approval at 2026-11-11T04:17:24Z asked for)
+**AI Response**: "Committed the Functional Design artifacts and the marked edits to earlier documents on dev as b7f8904 (aidlc-state.md, audit.md, construction/env-human-access/functional-design/ and prd-gaps/, U2 business-rules amendment A7, requirements.md consistency fix, component-methods.md and services.md correction notes); pushed dev so the comments' permalinks resolve. Posted business-rules §17's obligations on soorma-core#8, #9, #10, and amendment A7 on soorma-core#5 (closed; comment added), each pinned to b7f8904. NFR Requirements started: rule construction/nfr-requirements.md loaded; plan written to construction/working/env-human-access-nfr-requirements-plan.md (git-ignored), seeded from ID §10's NFR profile (Step 1.5; no data-face property added). Five questions, all technology: Q1 the environment credential lifetime (recommended A, 15 minutes); Q2 S2 throttling (recommended A, per-instance in-flight bounds, per-principal and per-source limits carried to the first hosted deployment); Q3 environment store isolation (recommended A, one PostgreSQL 18 instance per environment); Q4 latency (recommended A, p95 300 ms issuance and renewal, 200 ms otherwise, reported not gated); Q5 credential record pruning (recommended A, none in M1). P-01 to P-10 proposed without a question, including P-08: no new dependency. Awaiting the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements, plan awaiting answers.
+
+---
+
+## NFR Requirements: Answers (U4 env-human-access)
+**Timestamp**: 2026-11-11T05:53:43Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A.
+
+Q2's residual. Record it in the SECURITY-11 compliance row, as U2 did with its flood residual (NFR-OI-20): one valid principal flooding S2 can fill an instance's request slots, so others on that instance get 503 until it drains. Per-principal and per-source limits are carried to the first hosted deployment.
+
+P-01 to P-10: accepted, with one addition to P-04. Its 5-minute refresh sets U2's signing-key rotation step 2 (\"after at least one environment refresh interval\"): the wait is at least 5 minutes. State that in nfr-requirements.md. Carry it to Infrastructure Design as an obligation: S1's rotation steps in the operations notes say \"wait at least 5 minutes\".
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify each answer, generate the NFR Requirements artifacts, and stop for review."
+**AI Response**: "Answers recorded and classified; generating construction/env-human-access/nfr-requirements/nfr-requirements.md and tech-stack-decisions.md."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements, answers received.
+
+**Answers Recorded** (plan: construction/working/env-human-access-nfr-requirements-plan.md)
+
+| Question | Answer | Classification |
+|---|---|---|
+| Q1 (environment credential lifetime) | A: 15 minutes, capped at the sign-in's current expiry (D-EHA-02) | Technology (I11). ID FR-010 "short-lived and renewable" is met by every option |
+| Q2 (S2 rate limiting or throttling, SECURITY-11) | A: per-instance throttling (64 requests in flight, 8 S1 calls in flight, 1 s wait, then 503 with Retry-After); per-principal and per-source limits carried to the first hosted deployment. **With the user's addition**: the residual is recorded in the SECURITY-11 compliance row, as U2's NFR-OI-20 flood residual: one valid principal flooding S2 can fill an instance's request slots, so others on that instance get 503 until it drains | Technology (I11); the residual is an accepted availability residual of the local M1, not a specification gap (ID §10's abuse resistance is S1's per-principal sign-in bound, which is unchanged) |
+| Q3 (environment store isolation) | A: one PostgreSQL 18 instance per environment, each with its own migrator and app roles, credentials, and certificate | Technology (I11); serves I1 |
+| Q4 (S2 latency) | A: p95 at most 300 ms for issuance and renewal, 200 ms for the others, on the local stack; measured and reported at Build and Test, not a gate | Technology (I11); ID §10 interactive for issuance |
+| Q5 (credential record pruning) | A: no pruning in M1 | Technology (I11) |
+| P-01 to P-10 | Accepted. **With the user's addition to P-04**: its 5-minute refresh sets U2's signing-key rotation step 2 ("after at least one environment refresh interval"): the wait is at least 5 minutes, stated in nfr-requirements.md; carried to U4 Infrastructure Design as an obligation that S1's rotation steps in the operations notes say "wait at least 5 minutes" | Technology (I11); P-04 discharges U2 F-1 and R-1 |
+
+**Specification gaps**: none. Every answer is satisfied by ID @ prd-identity-v1.0 and PF @ prd-platform-foundations-v1.3; no ID §10 property is unmet.
+
+---
+
+## NFR Requirements: Complete, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T05:55:53Z
+**User Input**: (none; presenting the stage for review)
+**AI Response**: "Generated construction/env-human-access/nfr-requirements/nfr-requirements.md (ID §10 profile carried forward, no data-face property; NFR-EHA-01 to 26 and 08a, each with a verification target; obligations to NFR Design, Infrastructure Design, Code Generation, Build and Test, and the first hosted deployment; security and invariant compliance, no blocking finding) and tech-stack-decisions.md (T-EHA-01 to 10; no new dependency; PostgreSQL 18.4 at U2's pinned digest). Recorded the user's Q2 residual in the SECURITY-11 row and §3 (one valid principal flooding S2 can fill an instance's request slots; others on that instance get 503 until it drains; per-principal and per-source limits carried to the first hosted deployment). Recorded the user's P-04 addition: U2's signing-key rotation step 2 waits at least 5 minutes (NFR-EHA-08, with a rotation test NFR-EHA-08a), and the Infrastructure Design obligation that S1's rotation steps in the operations notes say 'wait at least 5 minutes'. Two choices made in generation, flagged for review: Retry-After: 5 on every S2 503 (as P-03), and a throttle.refused event added to P-06's list, since Q2 A introduces the refusal. Presented the 2-option completion message; next stage NFR Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements complete, awaiting approval.
+
+---
+
+## NFR Requirements: Review, Request Changes (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:17:39Z
+**User Input**: "Request Changes: two corrections in nfr-requirements.md, then commit and I'll approve.
+
+NFR-EHA-03, the sign-in leeway test. At issuance, a token within the 30 s leeway still goes to signInStatus (A7), which reports live only if the sign-in's current expiry hasn't passed, judged on S1's clock with no leeway. Replace the test with three cases:
+a sign-in that was never renewed, 29 s past its expiry: credential_refused, because A7 reports ended;
+an older token from a renewed sign-in, 29 s past its own expiry: accepted, with the credential capped at the renewed expiry;
+any sign-in token 31 s past its expiry: credential_expired.
+Add one sentence to the requirement: the leeway applies only to the token check, and A7 judges expiry on S1's clock.
+The P-04 rotation paragraph. Replace \"the unknown-kid refetch only covers an instance that started inside the window\" with: the wait covers the normal case. The unknown-kid refetch covers an S2 whose refresh failed during step 1's S1 restart, and a refresh that runs late. \"No valid sign-in is refused\" depends on both. NFR-EHA-08a should add one case: a refresh failing during step 1, then a sign-in under the new key succeeds after one refetch.
+Accept the Retry-After: 5 and throttle.refused choices. Log this verbatim in audit.md, make the edits, commit the NFR Requirements artifacts on dev, and present for approval again."
+**AI Response**: "Applying both corrections to nfr-requirements.md (NFR-EHA-03's requirement sentence and three-case test; the P-04 rotation paragraph and NFR-EHA-08a's added case). Retry-After: 5 on every S2 503 and the throttle.refused event recorded as accepted. Then committing the NFR Requirements artifacts on dev and presenting again."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements, review changes requested (not yet approved).
+
+---
+
+## NFR Requirements: Revised, Approval Prompt (U4 env-human-access)
+**Timestamp**: 2026-11-11T06:17:57Z
+**User Input**: (none; the actions the review at 2026-11-11T06:17:39Z asked for)
+**AI Response**: "Applied both corrections to nfr-requirements.md: NFR-EHA-03 gains the sentence that the leeway applies only to the token check and A7 judges the sign-in's expiry on S1's clock, and its test is replaced by the three issuance cases (never-renewed sign-in 29 s past expiry: credential_refused, A7 reports ended; older token of a renewed sign-in 29 s past its own expiry: accepted, capped at the renewed expiry; any token 31 s past expiry: credential_expired). The P-04 rotation paragraph now says the wait covers the normal case, the unknown-kid refetch covers an S2 whose refresh failed during step 1's S1 restart and a late refresh, and that 'no valid sign-in is refused' depends on both; NFR-EHA-08a gains the failed-refresh case (one refetch, then success). Retry-After: 5 and throttle.refused recorded as accepted. Committed the NFR Requirements artifacts with aidlc-state.md and audit.md on dev. Presented the 2-option completion message again; next stage NFR Design."
+**Context**: CONSTRUCTION, U4 env-human-access: NFR Requirements revised, awaiting approval.
+
+---
