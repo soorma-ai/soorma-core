@@ -1865,3 +1865,129 @@ Then stop. Don't start U4 in this session; I'll start it in a fresh one. Report 
 **Context**: CONSTRUCTION, U3 authority-evaluation: Code Generation APPROVED; U3 complete. Session stop.
 
 ---
+
+## Session Resumption: U4 env-human-access
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: "Using AI-DLC, resume the m1-walking-skeleton initiative in the platform area.
+
+aidlc-state.md is at: aidlc-docs/platform/m1-walking-skeleton/aidlc-state.md
+Project repo: soorma-core
+
+Intent: Start Construction for unit \"env-human-access\". Inception is complete.
+Please load all Inception artifacts and begin the Construction phase for this unit.
+
+Follow all AI-DLC approval gates. Stop after each phase, present the completion
+message, and wait for my explicit approval before proceeding. Do not execute
+end-to-end without my confirmation at each gate."
+**AI Response**: "Resumed from aidlc-state.md: CONSTRUCTION, U1 to U3 complete, next U4 env-human-access (soorma-core#7). The user's intent names the next step, so the welcome-back choice was not asked. Common rules loaded (process-overview, session-continuity, content-validation, question-format-guide, artifact-durability). Re-intake check (session-continuity step 3): state already in the multi-PRD format; brief pinned at 0aad84a and unchanged at soorma-prd origin/main (no diff to backlog/m1-walking-skeleton.md); no new PF or ID tag (latest prd-platform-foundations-v1.3, prd-identity-v1.0); gap issues soorma-prd#13, #24, #25, #27, #28, #30 all OPEN. No re-intake trigger, so none offered. No PENDING PR checkpoint. Toolchain: node v26.13.0, pnpm 12.18.0, Docker 29.5.3. soorma-core dev clean at 26532c5. Inception artifacts loaded: requirements, stories, application design (components, component-methods, services, unit-of-work, story map, dependency), prd-coverage-map, U4 test specs (TC-EHA-001 to 024); forward obligations on soorma-core#7 (U2 FD, NFR Design, Infrastructure Design; U3 FD, NFR Requirements, NFR Design); PF @ prd-platform-foundations-v1.3 and ID @ prd-identity-v1.0 read at their tags."
+**Context**: CONSTRUCTION, session resumption for U4 env-human-access.
+
+---
+
+## Construction Phase Initialization (re-run on resume)
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: (none; required on resuming into Construction)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted: GitHub issues)]. prd-gap-classification.md loaded and active for every construction stage (## PRD Intake exists). Invariants read at prd-platform-foundations-v1.3 and prd-identity-v1.0: text identical at both tags."
+**Context**: CONSTRUCTION, phase initialization.
+
+---
+
+## Unit Initialization: U4 env-human-access
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [security-baseline, soorma-platform-invariants, pr-checkpoint, qa-test-cases, jira-tickets (adapted)] (unit: env-human-access)."
+**Context**: CONSTRUCTION, U4 env-human-access: Unit Initialization.
+
+---
+
+## L1 Domain Coverage Gate: initial assessment (env-human-access)
+**Timestamp**: 2026-11-11T03:43:04Z
+**User Input**: (none)
+**AI Response**: "Applicable L1 (PRD sections at their Built-against tags): ID §7a Human Environment Credential (and Human Principal, Organization Sign-In as referenced records); ID §6 rows: human environment credential, human grants, first grant, credential identifiers, credential validation caches, human principal identifier (composed); ID §7b obligations (environment credential only in its environment; sign-in only at issuance; human credential never beside an agent's) and Recoverability (human actor, no origin); ID §8a (obtain, renew, end one's own environment credential; grant to a human); ID §8b human-credential table and presenter matrix (Gateway column); ID §10 control operations, failure modes, NFR profile; ID FR-001 (reference), FR-004, FR-009, FR-010, FR-011 (credential half), FR-013, FR-015, FR-022, FR-023; PF §7a Permission Grant (minimal model), PF §6 (grants and caches keyed on environment), PF FR-012 (O3), FR-018, FR-021, FR-022, FR-025 (recording), PF §8a (grant permissions to a human), PF §8b O1 to O4 and O8 to O11, PF §10 NFR profile. Non-applicable: ID §9 and FR-019 to FR-021 (delegation, out of M1); ID FR-002, 003, 012, 016, 017, 018, 024, 025 (absent); PF §7b envelope fields (no envelope on a direct human operation); PF §8a project-scope grant (not in M1's requirements; to confirm at Functional Design). Missing: 0. One case to classify at Functional Design: ID FR-010, whether ending a sign-in refuses the environment credentials issued from it (U2 forward obligation 1)."
+**Context**: CONSTRUCTION, U4 env-human-access: L1 gate, initial assessment (covered at design / non-applicable / 0 missing).
+
+---
+
+## Functional Design: plan and questions (env-human-access)
+**Timestamp**: 2026-11-11T03:44:48Z
+**User Input**: (none; Functional Design started per the user's intent at session start)
+**AI Response**: "Functional Design plan written to construction/working/env-human-access-functional-design-plan.md (git-ignored). Seven questions. Q1 classified as specification (prd-gap-classification.md Step 1; U2 forward obligation 1): whether ending a sign-in refuses the environment credentials issued from it (ID @ prd-identity-v1.0 FR-010 vs FR-003, FR-011, §7a, §8b's human-credential table); proposed GAP-EHA-001, recommended A (raise on soorma-prd, build R1 cascade meanwhile). Q2 to Q7 technology: Q2 how E keeps a credential within its sign-in's life (recommended A: amend U2's signInStatus to return the current expiry and fold in the principal's active state); Q3 which operations write attribution records (recommended A: every state-changing operation); Q4 P7 scope (recommended A: the whole record, all actor kinds); Q5 unknown grant target (recommended A: unknown_principal, 400); Q6 unaccepted permission identifier (recommended A: unknown_permission, 400); Q7 when the first grant is applied (recommended A: S2 at start-up, idempotent, no S1 call). P-01 to P-15 proposed without a question, including P-12: project-scope grants (PF §8a) not built, recorded as a delivery limit. Awaiting the user's answers."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design, plan awaiting answers.
+
+---
+
+## Functional Design: answers (env-human-access)
+**Timestamp**: 2026-11-11T03:59:19Z
+**User Input**: "Q1: D. Resolved, clarified, no PRD change: build R2. R1 contradicts the Identity PRD in three places, which the plan doesn't cite:
+
+FR-009: the organization level \"is on no per-request path\".
+§10's failure-mode table: it is \"Off the per-request path\", and its outage \"stops new sign-ins and organization operations\", not E's control operations.
+The glossary entry for Organization level.
+Calling signInStatus on every S2 request puts it on the per-request path. Your note that U2's BR-INT-08 allows this is wrong: its first sentence is \"None of these is on a per-request path.\" Read with FR-003 and FR-011 (two separate acts), the PRD supports only R2:
+
+The organization level is consulted at issuance and renewal only.
+An ended sign-in bars renewal and any new issuance.
+The credential lives to its own expiry, capped by Q2.
+A full logout is ending both, per FR-011.
+Record GAP-EHA-001 as Resolved — clarified, no PRD change, with these citations. Record SECURITY-12's reading: ending the environment credential is its own logout.
+
+Q2: A.
+
+Q3: A.
+
+Q4: A, plus two fields. FR-025's grant-scoped read is out of M1, but whatever it returns must be recoverable from the record alone. So the record also carries:
+
+the resolved sponsor, for an agent actor;
+U3's outcome for U7's record: whether re-broadening was load-bearing (BR-ST-08), alongside the chain and origin.
+Q5: A. Q6: A.
+
+Q7: A, with one addition. Concurrent S2 start-ups must write at most one configuration grant for the first Admin: a unique constraint, or a transaction-level advisory lock. Add a test where two start-ups run at the same time.
+
+P-01 to P-15: accepted.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify each answer, then generate the Functional Design artifacts and stop for review."
+**Answers Recorded** (construction/working/env-human-access-functional-design-plan.md):
+- Q1 — When a human ends their sign-in, are the environment credentials issued from it refused at once, or only barred from renewal: D (Resolve it here: R2, renewal only; recorded as Resolved — clarified, no PRD change) — "Resolved, clarified, no PRD change: build R2. R1 contradicts the Identity PRD in three places, which the plan doesn't cite: FR-009: the organization level \"is on no per-request path\". §10's failure-mode table: it is \"Off the per-request path\", and its outage \"stops new sign-ins and organization operations\", not E's control operations. The glossary entry for Organization level. Calling signInStatus on every S2 request puts it on the per-request path. Your note that U2's BR-INT-08 allows this is wrong: its first sentence is \"None of these is on a per-request path.\" Read with FR-003 and FR-011 (two separate acts), the PRD supports only R2: The organization level is consulted at issuance and renewal only. An ended sign-in bars renewal and any new issuance. The credential lives to its own expiry, capped by Q2. A full logout is ending both, per FR-011. Record GAP-EHA-001 as Resolved — clarified, no PRD change, with these citations. Record SECURITY-12's reading: ending the environment credential is its own logout."
+- Q2 — How E keeps a credential within its sign-in's life: A (amend U2's signInStatus: live with the sign-in's current expiry only when the record is live, unexpired, and the principal active; otherwise ended; unknown when there is no such sign-in; E caps each expiry at the earlier of now + lifetime and the sign-in's current expiry)
+- Q3 — Which of U4's operations write an attribution record: A (every state-changing operation: issue, renew, end, grant, and the configured first grant)
+- Q4 — How much of P7 attribution U4 builds: A (the whole record, once, all three actor kinds; I4 evidence written here), "plus two fields. FR-025's grant-scoped read is out of M1, but whatever it returns must be recoverable from the record alone. So the record also carries: the resolved sponsor, for an agent actor; U3's outcome for U7's record: whether re-broadening was load-bearing (BR-ST-08), alongside the chain and origin."
+- Q5 — Unknown grant target: A (new code unknown_principal, 400, errors[] pointing at /target)
+- Q6 — Well-formed permission identifier not accepted: A (new code unknown_permission, 400, errors[] pointing at each identifier, at most 10; checked at step 6)
+- Q7 — When the first grant from configuration is applied: A (E's S2 at start-up, idempotent, in one transaction with its attribution record, no S1 call), "with one addition. Concurrent S2 start-ups must write at most one configuration grant for the first Admin: a unique constraint, or a transaction-level advisory lock. Add a test where two start-ups run at the same time."
+- P-01 to P-15 — Decisions proposed without a question: accepted
+**Classification** (prd-gap-classification.md Step 1): Q1 specification, resolved under Step 3 option B (the user's decision) as GAP-EHA-001, Resolved — clarified, no PRD change; not raised on soorma-prd. Q2 to Q7 technology (decided, recorded as D-EHA decisions). Q2 amends U2's internal interface (U2 amendment A7; an unpublished interface, no contract change). Q4's two additional fields are record content for FR-025's out-of-M1 read: technology. Q7's concurrency rule: technology (a uniqueness constraint chosen; see D-EHA decisions). No ambiguity or contradiction found. Citation check: FR-009 (line 261), the glossary entry (§18) confirmed. \"Off the per-request path\" is in ID §9's Failure Modes table (row Organization level unavailable); the outage statement (\"stops new sign-ins and organization operations at once\") is in ID §10's NFR Profile; both are cited at those locations. The plan's reading of U2 BR-INT-08 was wrong, as the user says; corrected in the gap entry.
+**AI Response**: "Answers recorded and classified. Generating the Functional Design artifacts."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design, answers recorded.
+
+---
+
+## Functional Design: complete, approval prompt (env-human-access)
+**Timestamp**: 2026-11-11T04:08:50Z
+**User Input**: (none; the answers logged above)
+**AI Response**: "Functional Design artifacts generated in construction/env-human-access/functional-design/: domain-entities.md, business-rules.md (D-EHA-01 to 31; BR-PR, IS, EC, EV, GR, ACC, FG, AT, OL, RF), business-logic-model.md, l1-coverage-matrix.md (33 Covered, 20 N/A, 0 Missing; L1-17 on the GAP-INT-006 work-around; L1-05, L1-09 on GAP-EHA-001, resolved), invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; no finding). construction/env-human-access/prd-gaps/specification-gaps.md: GAP-EHA-001, Resolved — clarified, no PRD change, with the user's citations (ID FR-009; ID §9 Failure Modes, where 'Off the per-request path' appears; ID §10 NFR Profile, where the outage statement appears; ID §18 glossary; U2 BR-INT-08), and SECURITY-12's reading. Amendments and corrections: U2 amendment A7 recorded in U2 business-rules (header and BR-INT-05); requirements.md Absent from M1 gains PF §8a project-scope grants (consistency fix, D-EHA-19); correction notes on component-methods.md and services.md. aidlc-state.md: GAP-EHA-001 added to the register; counts corrected to Open 5 (GAP-AE-001 had been omitted from the Open count), Awaiting PRD 1, Resolved 5. Decisions made at design for review: D-EHA-23 (organization-level consultation points, including principalExists at grantToHuman's target check), D-EHA-24 to 31. Security baseline: no blocking finding (SECURITY-01, 02, 04, 06, 07, 10 N/A at this stage; SECURITY-14 not applicable in M1 by the user's earlier decision; rate limiting carried to NFR Requirements). Invariants: no finding. Next-stage assessment: NFR Requirements, NFR Design, Infrastructure Design all execute. Presenting the Functional Design completion message; awaiting the user's choice: Request Changes or Continue to Next Stage."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design complete, awaiting approval.
+
+---
+
+## Functional Design: APPROVED (env-human-access)
+**Timestamp**: 2026-11-11T04:17:24Z
+**User Input**: "Continue to Next Stage, after one addition. D-EHA-23 is accepted: principalExists in grantToHuman is the operation's own lookup, not a per-request freshness check.
+
+Add its consequence to §16 Accepted Residuals, or as a failure-mode row. During an organization-level outage:
+
+Unavailable: issuance, renewal and grantToHuman.
+Unaffected: ending a credential, and every O1 to O4 check on a presented environment credential.
+This goes slightly beyond ID §10's \"stops new sign-ins and organization operations\", so cite D-EHA-23 as the reason. Add a Build and Test obligation to show it with S1 stopped.
+
+D-EHA-24 to 31: accepted as written.
+
+Then:
+
+Log this approval verbatim in audit.md.
+Commit the Functional Design artifacts and the marked edits to earlier documents on dev.
+Post the §17 obligations on soorma-core#8, #9 and #10, and A7 on #5.
+Start NFR Requirements."
+**AI Response**: "Addition applied to business-rules.md: §16 gains the organization-level outage residual (unavailable: issuance, renewal, grantToHuman; unaffected: ending a credential and every O1 to O4 check on a presented environment credential), citing D-EHA-23 and noting it goes slightly beyond ID §10; §17's Build and Test row gains the obligation to show it with S1 stopped. D-EHA-23 and D-EHA-24 to 31 accepted as written. Functional Design marked APPROVED in aidlc-state.md. Next: commit on dev, post §17's obligations on #8, #9, #10 and A7 on #5, then start NFR Requirements."
+**Context**: CONSTRUCTION, U4 env-human-access: Functional Design APPROVED.
+
+---

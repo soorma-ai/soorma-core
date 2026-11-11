@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U3 `authority-evaluation` (soorma-core#6) COMPLETE: Code Generation APPROVED 2026-11-11T02:39:10Z** (soorma-core#17 merged as `a9aa74b`; Construction Design PR gate #16 merged as `fbb567c`). U1, U2, and U3 complete; `dev` fast-forwarded to `main`. **Next: U4 `env-human-access` (soorma-core#7), in a new session.** Stage history is under *Stage Progress*
+- **Current Stage**: CONSTRUCTION. **U4 `env-human-access` (soorma-core#7): Functional Design APPROVED 2026-11-11T04:17:24Z; NFR Requirements in progress** (GAP-EHA-001 resolved — clarified, no PRD change; U2 amendment A7). U1, U2, and U3 complete. Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -108,7 +108,7 @@
 
 ## PRD Specification Gaps
 
-Full entries: `inception/prd-intake/specification-gaps.md` (GAP-INT); `construction/authority-evaluation/prd-gaps/specification-gaps.md` (GAP-AE).
+Full entries: `inception/prd-intake/specification-gaps.md` (GAP-INT); `construction/authority-evaluation/prd-gaps/specification-gaps.md` (GAP-AE); `construction/env-human-access/prd-gaps/specification-gaps.md` (GAP-EHA).
 
 | ID | Unit | Summary | Status | Raised Against | Resolved By | Issue |
 |---|---|---|---|---|---|---|
@@ -122,8 +122,9 @@ Full entries: `inception/prd-intake/specification-gaps.md` (GAP-INT); `construct
 | GAP-INT-008 | U6, U1 | Do bootstrap and renewal carry an envelope (PF FR-001 vs §8a, §11); found at Application Design | Open: raised; worked around in M1 (neither carries an envelope; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#27 |
 | GAP-INT-009 | U6 | Does the internal revocation read produce an attribution record (PF FR-025 vs §8a); found at Units Generation | Open: raised; worked around (no record; routing E) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#28 |
 | GAP-AE-001 | U3, U7 | Origin for a forwarded autonomous envelope when the presenter has not declared autonomy (PF O12 vs FR-015, §8b, §11; §8b's forwarded rows give `delegated`); found at U3 Functional Design | Open: raised; worked around in M1 (deny under O12; routing A) | PF @ `prd-platform-foundations-v1.3` | — | soorma-prd#30 |
+| GAP-EHA-001 | U4 | Whether ending a sign-in refuses the environment credentials issued from it (ID FR-010 vs FR-003, FR-011, §7a, §8b); found at U4 Functional Design (U2 forward obligation 1) | Resolved — clarified, no PRD change (the user's decision, plan Q1 D: R2, renewal only; R1 contradicts ID FR-009, §9, §10, §18 and U2 BR-INT-08). Not raised | ID @ `prd-identity-v1.0` | The user's decision, 2026-11-11T03:59:19Z (D-EHA-01) | — |
 
-**Counts**: Open 4 (GAP-INT-006, 007, 008, 009; all worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 4.
+**Counts**: Open 5 (GAP-INT-006, 007, 008, 009, GAP-AE-001; all worked around) · Awaiting PRD 1 (GAP-INT-003, worked around) · Resolved 5 (GAP-INT-001, 002, 004, 005, GAP-EHA-001).
 
 **Errata (not a gap)**: E-1, PF §17 and §4 counts. soorma-prd#15, closed. Corrected at PF v1.2.
 
@@ -200,7 +201,9 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] Construction Design PR gate: **APPROVED** 2026-11-10T21:31:28Z (opened 2026-11-10T16:07:33Z as soorma-core#16, `dev` → `main`; one change requested 2026-11-10T20:19:53Z, the entry point named `createEnvelopeAdmission(dependencies).admit(request)` throughout, fixed in `1a44021`; merged 2026-11-10T21:30:40Z as `fbb567c`)
   - [x] Code Generation: **APPROVED** 2026-11-11T02:39:10Z. soorma-core#17 merged as `a9aa74b` (2026-11-11T02:38:46Z); CI green at `cad1772` (build, check, and test; image, image secret scan, and stack smoke test; dependency review). Plan APPROVED 2026-11-10T21:53:41Z (two amendments; Q-CG-AE-1 A). Part 2 generated 2026-11-10T22:31:47Z: Steps 0 to 23 on `dev` (`4821788`, `8d90404` the U2 guard alone, `626ed4b` the swap with the guard unchanged, `ef7c392`, `90dc1fd`, `6508782`, `b6a59c5`, and Group 7); code-review PR **soorma-core#17** from `dev` to `main` (not merged). L1: 38 rows Implemented; I1 to I10 Implemented. Local run: 766 passed, 2 skipped; every check passes; `pnpm audit` clean. TC-AE-040 reported only. **Request Changes 2026-11-11T02:25:14Z**: (1) the S1 image copies `packages/jcs` (#17's image check), and the gate builds the image for a group reaching S1's dependencies; (2) an unresolved upstream agent is the empty set and evaluation continues (D-AE-09 consistency fix; TC-AE-016 step 2; the first build missed stop condition 2); (3) `errors[]` at most 10 (D-AE-18 consistency fix; TC-AE-029 step 5). Local run after: 771 passed, 2 skipped; image builds. Fixes committed as `cad1772`
   - **Standing note (NFR-AE-16)**: no M1 operation changes a standing set, re-broadening declaration, or autonomy declared, or suspends or retires an agent, so U3's term cache cannot serve stale data in M1. **The unit that first adds such an operation must account for the cache's staleness window** (up to the propagation bound)
-- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3. Remaining: U4 to U7
+- **Current unit**: U4 `env-human-access` (#7). Session resumed 2026-11-11T03:43:04Z: re-intake check clean (brief unchanged at `0aad84a`; no new PF or ID tag; soorma-prd#13, #24, #25, #27, #28, #30 open). Construction Phase Initialization re-run: rules loaded for all five enabled extensions; prd-gap-classification.md active; invariant text identical at both tags. Unit Initialization and the L1 gate's initial assessment done (0 Missing; one case to classify at Functional Design: ID FR-010, whether ending a sign-in refuses the environment credentials issued from it)
+  - [x] Functional Design: **APPROVED** 2026-11-11T04:17:24Z (presented 2026-11-11T04:08:50Z). At approval: D-EHA-23 accepted (`principalExists` is `grantToHuman`'s own lookup, not a per-request freshness check), and its consequence added to §16 as an accepted residual (during an organization-level outage, issuance, renewal, and `grantToHuman` are `unavailable`; ending and O1 to O4 unaffected), with a Build and Test obligation to show it with S1 stopped; D-EHA-24 to 31 accepted as written. Plan answered 2026-11-11T03:59:19Z: Q1 D (specification, **GAP-EHA-001 Resolved — clarified, no PRD change**: R2, renewal only; SECURITY-12 reading: ending the environment credential is its own logout); Q2 A (**U2 amendment A7**, `signInStatus` with the current expiry and the principal's state); Q3 A; Q4 A plus the resolved sponsor and the re-broadening outcome; Q5 A (`unknown_principal`); Q6 A (`unknown_permission`); Q7 A plus at most one configuration grant under concurrent start-ups (a uniqueness constraint, tested); P-01 to P-15 accepted. Artifacts: domain-entities, business-rules (D-EHA-01 to 31), business-logic-model, l1-coverage-matrix (33 Covered, 20 N/A, 0 Missing), invariant-coverage-matrix (I1 to I10 Covered, I11 N/A), prd-gaps/specification-gaps.md. Consistency fix: requirements *Absent from M1* gains PF §8a project-scope grants (D-EHA-19). Correction notes on component-methods.md and services.md. Next-stage assessment: NFR Requirements, NFR Design, and Infrastructure Design all execute
+- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3. In progress: U4. Remaining: U5 to U7
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE

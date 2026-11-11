@@ -144,3 +144,12 @@ top level, and envelopes are sealed. See `construction/wire-contract/functional-
 surface imports (consistency fix from NFR Design, 2026-11-10: formerly `admitEnvelopeRequest`), which runs check-order steps 5 to 10 through P2 and P3. See
 `construction/authority-evaluation/functional-design/business-rules.md` (D-AE-02, D-AE-04,
 D-AE-10).*
+
+*Corrected at U4 Functional Design (2026-11-11, plan Q2 to Q4; P-06, P-07): P3 implements
+`evaluateHuman` over the seam (`grantedSet`, then `contains`) and adds `holdsAnyGrant` for
+issuance; P4's `heldSet` is P11's human `GrantSource`, read uncached; P7's `record` takes three
+actor kinds (human, configuration, agent), and for an agent the resolved sponsor and, with an
+envelope, the chain, origin, and re-broadening outcome; P10's internal `signInStatus` answers
+`live` with the sign-in's current expiry (U2 amendment A7). See
+`construction/env-human-access/functional-design/business-rules.md` (D-EHA-02, D-EHA-04,
+D-EHA-13, D-EHA-14).*
