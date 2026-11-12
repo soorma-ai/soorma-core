@@ -45,7 +45,10 @@ export {
   evaluateHeld,
   evaluateHuman,
   holdsAnyGrant,
+  readHumanAuthority,
   type HeldEvaluationInput,
+  type HumanAuthority,
   type HumanAuthorityInput,
 } from './human.ts';
+export { checkRegistrationRequest, type RegistrationRequestCheck } from './registration.ts';
 export { resolveOrigin, type Origin } from './origin.ts';

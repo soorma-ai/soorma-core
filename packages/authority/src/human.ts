@@ -11,6 +11,10 @@
 //   recorded snapshot is exactly the set the checks judged
 // - evaluateHuman: one read of the human's granted set, then evaluateHeld.
 //   Deny by default: no grant, no permission
+// - readHumanAuthority: one read, then every check over that set through
+//   evaluateHeld (U5: the agent:register check, the sponsor ceiling, the Admin
+//   test), and the set itself as a snapshot. The set is never exposed as a
+//   mutable value
 // - holdsAnyGrant: true when the human holds at least one grant in E, the
 //   condition of environment credential issuance (ID FR-010)
 // - No human-only refusal for a human (BR-EV-03): that class applies to agents
@@ -65,4 +69,35 @@ export async function holdsAnyGrant(input: HumanAuthorityInput): Promise<boolean
     input.environment,
   );
   return granted.size > 0;
+}
+
+/**
+ * A human's held set in E, read once, behind the one evaluator (U5 D-AR-07;
+ * NP-AR-05). Frozen; the set itself is never exposed.
+ */
+export interface HumanAuthority {
+  /** `evaluateHeld` over the held set. `required` must not be empty. */
+  allows(required: Iterable<PermissionId>): boolean;
+  /** The indexes of `candidate`'s members the held set does not contain, in order. */
+  exceeding(candidate: readonly PermissionId[]): number[];
+  /** The held set as read, sorted by code unit (D-CG-AR-07), frozen: the ceiling snapshot. */
+  snapshot(): readonly PermissionId[];
+}
+
+export async function readHumanAuthority(input: HumanAuthorityInput): Promise<HumanAuthority> {
+  const read = await input.policy.grantedSet(
+    { kind: 'human', principal: input.principal },
+    input.environment,
+  );
+  const held: PermissionSet = new Set(read);
+  const { policy } = input;
+  const snapshot = Object.freeze([...held].sort());
+  const allows = (required: Iterable<PermissionId>): boolean =>
+    evaluateHeld({ policy, held, required }).allowed;
+  return Object.freeze({
+    allows,
+    exceeding: (candidate: readonly PermissionId[]): number[] =>
+      candidate.flatMap((p, i) => (allows([p]) ? [] : [i])),
+    snapshot: (): readonly PermissionId[] => snapshot,
+  });
 }
