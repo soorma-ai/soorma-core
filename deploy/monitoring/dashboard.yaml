@@ -66,6 +66,17 @@ panels:
     events: [grant.denied]
     groupBy: environment
     windowMinutes: 60
+  # U5's registration operations (NFR-AR-18, 19).
+  - id: registrations
+    title: Registrations and refusals, by environment
+    events: [registration.created, registration.refused]
+    groupBy: environment
+    windowMinutes: 60
+  - id: registration-secrets
+    title: Registration secrets issued and refused, by environment
+    events: [secret.issued, secret.refused]
+    groupBy: environment
+    windowMinutes: 60
   - id: first-grants
     title: First grants applied, by environment
     events: [first_grant.applied]

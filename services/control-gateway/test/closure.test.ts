@@ -64,13 +64,16 @@ function sources(dir: string): string {
 }
 
 describe('TC-EHA-044: S2 computes a human’s authority only through P3 (I5; BR-EV-04)', () => {
-  it('S2 imports evaluateHuman and holdsAnyGrant from P3, and nothing else that computes authority', () => {
+  it('S2 imports evaluateHuman and holdsAnyGrant from P3, and U5 adds two, and nothing else that computes authority', () => {
     const s2 = sources('services/control-gateway');
     const fromAuthority = [...s2.matchAll(/import \{([^}]*)\} from '@soorma\/authority'/g)]
       .flatMap((m) => m[1]!.split(','))
       .map((n) => n.trim())
       .filter(Boolean);
-    expect(fromAuthority.sort()).toEqual(['evaluateHuman', 'holdsAnyGrant']);
+    expect(fromAuthority.sort()).toEqual(
+      // U5's two (D-CG-AR-18; D-AR-07, 10)
+      ['checkRegistrationRequest', 'evaluateHuman', 'holdsAnyGrant', 'readHumanAuthority'].sort(),
+    );
     expect(s2).not.toMatch(/\.contains\(/);
     expect(s2).not.toMatch(/evaluateAgent/);
   });

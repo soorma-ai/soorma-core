@@ -213,3 +213,44 @@ describe('TC-AR-028: no code path updates or deletes a registration or a secret'
     expect(found).toEqual([]);
   });
 });
+
+describe("TC-AR-047, 071: U5's code holds no tenant identifier or topology read, and draws randomness only from randomBytes", () => {
+  const files = [
+    'services/control-gateway/src/edge/edge-handlers.ts',
+    'packages/registry/src/registrations.ts',
+    'packages/registry/src/registration-secret.ts',
+    'packages/authority/src/registration.ts',
+    'packages/authority/src/human.ts',
+  ].map((f) => ({ file: f, text: readFileSync(join(repoRoot, f), 'utf8') }));
+  const accepted = new Set([
+    'agent:register',
+    'credential:revoke',
+    'agent:retire',
+    'grant:human',
+    'event:publish',
+    'event:subscribe',
+    'attribution:read',
+    'human:manage',
+    'agent:delegate',
+  ]);
+
+  it('every permission literal is plane-declared, never a tenant identifier (I9)', () => {
+    for (const { file, text } of files)
+      for (const [, literal] of text.matchAll(/'([a-z][a-z0-9._-]*(?::[a-z][a-z0-9._-]*)+)'/g))
+        if (!literal!.startsWith('node:'))
+          expect(accepted.has(literal!), `${file}: ${literal}`).toBe(true);
+  });
+
+  it('nothing reads a host, address, or deployment label (I3, I10)', () => {
+    for (const { file, text } of files)
+      expect(text, file).not.toMatch(/remoteAddress|hostname|x-forwarded|node:os|process\.env/i);
+  });
+
+  it('randomness only from crypto.randomBytes; digests compared only with timingSafeEqual', () => {
+    for (const { file, text } of files)
+      expect(text, file).not.toMatch(/Math\.random|getRandomValues|randomUUID/);
+    const secret = files.find((f) => f.file.endsWith('registration-secret.ts'))!.text;
+    expect(secret).toContain('randomBytes(32)');
+    expect(secret).toContain('timingSafeEqual(');
+  });
+});

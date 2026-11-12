@@ -32,6 +32,11 @@ events:
   - orglevel.unavailable
   - store.unavailable
   - throttle.refused
+  # Each environment's S2, U5's registration operations (NFR-AR-18).
+  - registration.created
+  - registration.refused
+  - secret.issued
+  - secret.refused
 
 rules:
   - id: auth-failed-repeated
