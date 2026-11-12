@@ -13,7 +13,8 @@ agent-facts port and cache)
 **Changed at approval (2026-11-11, the user's)**: NP-AR-09 (3)'s checksum test and its
 normalised-projection design are **dropped** (a custom-format archive's header records its
 creation time, so a raw checksum cannot be stable). They are replaced by an **archive validity
-check after each backup** (NP-AR-08, NP-AR-09 (3)). The dump stays in custom format.
+check after each backup** (NP-AR-08, NP-AR-09 (3)). The dump stays in custom format. *Step 2 of that
+check is a full read, not `--list`: corrected in place at Code Generation (D-CG-AR-20).*
 
 ---
 
@@ -174,6 +175,12 @@ and one record; another constraint's violation is not mapped to `registration_ex
   `registration.refused` with reason `registration_exists` above a rate (probing). Nothing
   evaluates them in M1
 
+*Corrected in place at Code Generation (2026-11-12, Step 22): U2's rule format has no reason
+filter (`groupBy` is `none`, `pseudonym`, `environment`, or `code`), so the three rules are
+`registration-refused-repeated` and `secret-refused-repeated` (one human's repeated refusals, 5
+in 15 minutes: attempted escalation and probing) and `registration-refused-burst` (one refusal
+reason, by `code`, 20 in 15 minutes).*
+
 **Meets**: NFR-AR-04, 12, 14, 18, 19. **Verified by**: a header test; event capture per flow,
 asserting no value, digest, or principal identifier appears; U2's alert-file format test.
 
@@ -203,14 +210,14 @@ under **`profiles: [backup]`**, so `stack:up` never starts them:
 | Environment | **`PGPASSFILE=/tmp/pgpass` only**; no password in `environment`, `command`, `entrypoint`, or labels |
 | Connection | The migrator role to `{env}`'s store, **`sslmode=verify-full`, `sslrootcert=/run/secrets/stack-ca-cert`**, the host the store's certificate names; `--no-password`, so nothing ever prompts |
 | Entrypoint | `umask 077`; build `/tmp/pgpass` from `/run/secrets/{env}-db-migrator-password` (escaping `\` and `:` per pgpass rules); then `exec` the tool. Inline in `compose.yaml`, since the service mounts nothing else |
-| Backup | `pg_dump --format=custom` to **stdout**; every diagnostic to **stderr**; never `--verbose` into the dump. Then the archive validity check (NP-AR-09 (3)) |
+| Backup | `pg_dump --format=custom` to **stdout**; every diagnostic to **stderr**; never `--verbose` into the dump. Then the archive validity check (NP-AR-09 (3): `PGDMP`, then a full read) |
 | Restore | First **refuses a database that is not empty** (any relation in the public schema), exiting non-zero; then `pg_restore --exit-on-error --single-transaction` from **stdin** into it |
 
 **The host scripts** (Node, `deploy/local/scripts/`):
 
 | Command | Behaviour |
 |---|---|
-| `pnpm stack:backup {env}` | Creates `deploy/local/.backups/` with mode `0700` (and resets it if it exists); **opens `{env}-{UTC time}.dump` with flags `wx` and mode `0o600`**, so the file is never readable by others at any instant; runs **`docker compose --profile backup run --rm -T {env}-backup`** (`-T`: no terminal, so the binary dump is not altered), pipes its stdout to the file and its stderr to the console; on a non-zero exit deletes the partial file and fails; then runs **the archive validity check** (`PGDMP` magic; `pg_restore --list` exit 0, NP-AR-09 (3)), deleting the file and failing if it does not pass |
+| `pnpm stack:backup {env}` | Creates `deploy/local/.backups/` with mode `0700` (and resets it if it exists); **opens `{env}-{UTC time}.dump` with flags `wx` and mode `0o600`**, so the file is never readable by others at any instant; runs **`docker compose --profile backup run --rm -T {env}-backup`** (`-T`: no terminal, so the binary dump is not altered), pipes its stdout to the file and its stderr to the console; on a non-zero exit deletes the partial file and fails; then runs **the archive validity check** (`PGDMP` magic; a full read, `pg_restore --file=/dev/null`, exit 0; NP-AR-09 (3), corrected in place, D-CG-AR-20), deleting the file and failing if it does not pass |
 | `pnpm stack:restore {env} {file}` | Runs `docker compose --profile backup run --rm -T {env}-restore` **with stdin open** (`run`'s default) and the file streamed to it; fails on a non-zero exit |
 
 `deploy/local/.backups/` is added to `.gitignore` and `.dockerignore`. S2's README *Operations*
@@ -245,7 +252,7 @@ password in the environment). **Verified by**:
    credential columns, no `DELETE`. **A dump that loses the `GRANT`s fails here**
 6. In a `finally`: drop A and B, and delete the temporary path; assert the path no longer exists
 
-**(2) The stack step, in CI's stack job**, after the smoke test: `stack:backup e`; check the file's
+**(2) The stack step, in CI's stack job** (*corrected in place at Code Generation, 2026-11-12, D-CG-AR-03: it runs in `e2e/agent-registration.test.ts` on a fresh stack, after the S1-stopped demonstration, not after the smoke test, because the smoke test spends H's one-time first authentication; it re-checks the registrations by issuing a secret and re-registering, there being no read surface*): `stack:backup e`; check the file's
 mode (`0600`), its directory's (`0700`), and that it is git-ignored; stop the `e` services and
 remove `e`'s store volume; start `env-db-e` alone, so its initialisation creates the roles and an
 **empty** database; `stack:restore e {file}`; **run `e-migrate` and assert it applies nothing**;
@@ -254,17 +261,23 @@ registration part; delete the file.
 
 **(3) The archive validity check** (the user's, at approval, replacing a checksum test). What it
 catches is **a dump damaged in transit**: a terminal altering the stream, or diagnostics written
-into it. After every backup, before reporting success, `stack:backup`:
+into it, or a lost tail. After every backup, before reporting success, `stack:backup`:
 1. reads the file's first five bytes and requires them to be **`PGDMP`**, the custom-format
    magic;
-2. streams the file to **`pg_restore --list`** in the backup service's image (`docker compose
-   --profile backup run --rm -T --entrypoint pg_restore {env}-backup --list`, with no database
-   connection), which must **exit 0**; its listing is discarded, never printed or kept.
+2. streams the file to **a full read, `pg_restore --file=/dev/null`**, in the backup service's
+   image (`docker compose --profile backup run --rm -T --entrypoint pg_restore {env}-backup
+   --file=/dev/null`, with no database connection): every block is read and restored to nowhere,
+   and it must **exit 0**.
+
+*Corrected in place at Code Generation (2026-11-12, D-CG-AR-20, the user's answer to Q-CG-AR-1):
+step 2 was `pg_restore --list`, which **reads only the archive's header and table of contents**:
+run on PostgreSQL 18.4, an archive truncated by one byte at the end passed `--list` (exit 0) and
+failed the full read (exit 1). The second negative test below is unchanged, and now holds.*
 
 Either failure deletes the file and fails the command. The data's survival is the round trip's
 to prove ((1) and (2) above). **Verified by**: both tests above run it on every dump they take;
 and two negative tests: a file with a line prepended (diagnostics in the stream) fails the magic
-check, and a valid archive truncated by one byte at the end fails `pg_restore --list`.
+check, and a valid archive truncated by one byte at the end fails the full read.
 
 **Meets**: NFR-AR-10 and the user's additions; I4 (the resolution target survives a restore).
 

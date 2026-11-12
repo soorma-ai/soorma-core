@@ -90,6 +90,11 @@ jobs:
 
       - name: Test
         run: pnpm test
+        env:
+          # The service's container, for the restore round trip's pg_dump and
+          # pg_restore (U5 D-CG-AR-04). The job context exists in a step's env,
+          # not in the job's.
+          TEST_DATABASE_CONTAINER: ${{ job.services.postgres.id }}
 
       - name: Audit dependencies (moderate and above fail)
         run: pnpm audit --audit-level moderate
@@ -165,6 +170,21 @@ jobs:
 
       - name: The S1-stopped demonstration
         run: pnpm stack:outage
+
+      # U5 (D-CG-AR-02, 03): done when 1 and the backup and restore round trip,
+      # by raw calls, on a fresh stack: e2e/ makes the first authentication.
+      - name: Restart the stack from empty volumes, for e2e
+        run: |
+          docker compose -f deploy/local/compose.yaml down -v
+          pnpm stack:up
+
+      # Vitest needs the workspace built (as the test job builds before
+      # testing); this job otherwise builds only the images (D-CG-AR-24).
+      - name: Build the workspace, for e2e
+        run: pnpm run build
+
+      - name: The e2e proofs (done when 1; backup and restore)
+        run: pnpm test:e2e
 
       - name: Show the logs on failure
         if: failure()

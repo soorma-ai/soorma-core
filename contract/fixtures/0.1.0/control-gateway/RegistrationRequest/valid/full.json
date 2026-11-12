@@ -1,0 +1,6 @@
+{
+  "agent": "a.1~x",
+  "standingPermissions": ["event:publish", "event:subscribe"],
+  "reBroadeningDeclaration": ["event:subscribe"],
+  "autonomyDeclared": true
+}

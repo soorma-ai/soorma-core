@@ -2719,3 +2719,108 @@ Wait for every check to pass, then report the PR link and the results, and stop.
 **Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate PENDING.
 
 ---
+
+## Construction Design PR Gate: Checks Green (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:41:55Z
+**User Input**: (none)
+**AI Response**: "soorma-core#20 (dev to main, head eb9ddb8) opened with Refs #8, #3 and the six reviewer flags. Every check passed: pull_request run 43128357670 (Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review), push run 43128347805 (Build, check, and test; Images and stack; Dependency review skipped on push), cla-assistant. The PR is open and mergeable. Reported to the user and stopped; the gate stays PENDING until the user reports the merge. aidlc-state.md records the PR number, uncommitted, so the PR's head is unchanged."
+**Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate PENDING, checks green.
+
+---
+
+## Construction Design PR Gate Approved (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:46:08Z
+**User Input**: "merged: #20 is merged as 1903711 (2026-11-12T00:44:32Z).
+
+Fast-forward dev to it, then mark the Construction Design gate approved in aidlc-state.md with that merge commit. Log this verbatim in audit.md.
+Commit with the pending PR-link edit on dev, push, and wait for the push run to pass.
+Then start Code Generation for U5, Part 1 only: write the plan and stop for my approval.
+Apply the standing rules recorded in the Functional Design plan: the three classes of change to earlier units' tests, and the pre-commit gate with the stack run and push-per-group.
+Include the backup services, the restore tests and the archive check.
+Group the evaluateHuman refactor (a change to U4's code) on its own, early, with U4's tests unchanged."
+**AI Response**: "Confirmed on GitHub before recording: soorma-core#20 state MERGED, mergedAt 2026-11-12T00:44:32Z, merge commit 1903711; origin/main at 1903711. dev fast-forwarded to 1903711. Construction Design PR gate marked APPROVED with 1903711. Committing with the pending PR-link edit, pushing, waiting for the push run; then Code Generation Part 1 (plan only), stopping for approval."
+**Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate APPROVED.
+
+---
+
+## Code Generation Part 1: Plan Presented for Approval (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:50:36Z
+**User Input**: (none; the instruction is logged in the gate approval entry)
+**AI Response**: "Committed the gate approval with the pending PR-link edit as 923bc16 and pushed (push run 43129729467). Loaded construction/code-generation.md; L1 matrix checked (32 Covered, 0 Missing). Wrote construction/working/agent-registration-code-generation-plan.md (git-ignored): the user's standing rules restated (three classes of change to earlier units' tests, with before/after diffs; the per-group gate: full checks and tests with db:test, image builds for every deployable whose dependencies the group touches, the local stack for every group, push and wait for CI per group; stop for merges); Step 0 bookkeeping; Group 1 the evaluateHuman refactor alone (evaluateHeld extracted; signature and results unchanged; human.test.ts untouched; a new held.test.ts); Group 2 P3's readHumanAuthority and checkRegistrationRequest, and P4's pure secret module and lock key; Group 3 migration 0002, P4's store functions and agent-facts source; Group 4 the contract and P1's six codes (S1 and S2 images); Group 5 S2's routes and tests; Group 6 backup and restore (env.sh, Compose services, scripts with the archive check, .gitignore, the db-test round trip through TEST_DATABASE_CONTAINER, alert rules); Group 7 a new test-only e2e workspace (done when 1; the stack round trip on a fresh stack; CI's two new steps); Group 8 READMEs, code summary, matrices; Group 9 the PR, not merged. Decisions D-CG-AR-01 to 12, notably D-CG-AR-02, 03 (e2e on a fresh stack, because the smoke test and the outage script each spend H's one-time first authentication; the stack round trip moves out of smoke.ts, a consistency fix to NP-AR-09 (2)) and D-CG-AR-04 (the db-test round trip reaches pg_dump through the test server's own container). Expected class-1 changes to U4's tests listed, with the Compose-model test's per-service rules flagged as a possible stop. Asking for approval."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1, approval prompt.
+
+---
+
+## Push Run Green (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:52:33Z
+**User Input**: (none)
+**AI Response**: "Push run 43129729467 (923bc16, the gate approval) passed: Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run. The Code Generation plan awaits the user's approval."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1, awaiting approval.
+
+---
+
+## Code Generation Part 1: Plan Approved (U5 agent-registration)
+**Timestamp**: 2026-11-12T01:02:26Z
+**User Input**: "Approved. Commit the Step 0 bookkeeping and start Part 2 with Group 1.
+
+Run each group through the full gate, push, and wait for green before the next, applying every stop condition. Stop and report after Group 5's push run is green, before the backup and e2e/ work, so I can review S2's two new routes.
+
+In that report, include:
+
+every change to an earlier unit's test so far, as before/after diffs with their class;
+where the ceiling, sponsor-or-Admin, cap-under-lock and once-only secret are implemented."
+**AI Response**: "Plan APPROVED (D-CG-AR-01 to 12 with it). Committing Step 0 (aidlc-state.md, audit.md) alone on dev, then Part 2 from Group 1, each group through the full gate, pushed, and green before the next; stopping after Group 5's push run is green, with every earlier-unit test change as a before/after diff with its class, and where the ceiling, sponsor-or-Admin, cap-under-lock, and once-only secret are implemented."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1 APPROVED; Part 2 starts.
+
+---
+
+## Code Generation Part 2: Groups 1 to 5 Complete; Stopped for Review (U5 agent-registration)
+**Timestamp**: 2026-11-12T01:59:10Z
+**User Input**: (none; the stop the user asked for after Group 5's push run)
+**AI Response**: "Step 0 cbed37e. Group 1 143f073 (evaluateHeld extracted; evaluateHuman unchanged; human.test.ts untouched; run 43132470557 green). Group 2 0a90d67 (readHumanAuthority, checkRegistrationRequest; the secret module and lock key; run 43133270078 green). Group 3 5b9ccc2 (migration 0002; P4's store functions and agent-facts source; store tests; run 43134373872 green). Group 4 3e9e98f (the contract: two operations, six codes; the Problem table; S1 and S2 images; run 43135835915 green). Group 5 167011c (S2's two routes, events, panels; 36 S2 tests; run 43137498916 green). Each group passed the full local gate (every check, every test with db:test, pnpm audit), the image builds and scans for the deployables it touched, and the local stack (init, up, smoke, down -v). Earlier units' test changes, each recorded with its diff: D-CG-AR-13 (TC-EHA-068 migration list, class 1), D-CG-AR-14 (code-checks.test.ts import list, no assertion), D-CG-AR-15 (TC-EHA-024 operation list, class 1), D-CG-AR-16 (TC-EHA-022 contract paths, class 1), D-CG-AR-17 (NFR-EHA-19 event list, class 1; TC-EHA-053, 054 also running U5's flows through a new U5 helper, class 2), D-CG-AR-18 (TC-EHA-044 import list, class 1). None in class 3. Reporting to the user with diffs and implementation locations; stopping before Group 6."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 2 paused for review after Group 5.
+
+---
+
+## Code Generation: Group 5 Accepted; Continue (U5 agent-registration)
+**Timestamp**: 2026-11-12T02:01:58Z
+**User Input**: "Group 5 reviewed and accepted. D-CG-AR-17 is class 2, confirmed: U4's checks now scan more, and none is removed or relaxed.
+
+Continue with Groups 6 to 9 as planned. Push after each group, wait for green, and apply every stop condition. In Group 9, open the PR dev → main with Refs #8, #3, and leave it unmerged. Present completion only when every check on it is green, with:
+
+the PR link and the check results;
+every change to an earlier unit's test across U5, as before/after diffs with their class;
+the three test cases left to Build and Test;
+the open obligations.
+Then stop. I'll merge #21 (or whatever number it gets) with you, and tell you when."
+**AI Response**: "Group 5 accepted; D-CG-AR-17 confirmed class 2 by the user. Continuing with Groups 6 to 9, each through the full gate, pushed, and green before the next; the PR dev to main with Refs #8, #3, unmerged; completion only when every check on it is green."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 2 resumes at Group 6.
+
+---
+
+## Code Generation: Stop Condition 3 in Group 6 (U5 agent-registration)
+**Timestamp**: 2026-11-12T02:06:49Z
+**User Input**: (none)
+**AI Response**: "Group 6 in progress (env.sh copy backup 999; the four backup and restore services under the backup profile; backup-archive.ts, stack-backup.ts, stack-restore.ts; .gitignore and .dockerignore; db-test.ts prints TEST_DATABASE_CONTAINER; CI sets it; U4's compose-model test's env.sh copy list gains backup, class 1, D-CG-AR-19). The db-test round trip (TC-AR-058) found that NP-AR-09 (3)'s second negative test cannot be built: an archive truncated by one byte at the end passes pg_restore --list (exit 0), because --list reads only the header and table of contents; a full read (pg_restore --file=/dev/null) fails it (exit 1); an archive truncated to 200 bytes fails both; a prepended line fails the PGDMP check. With that expectation set aside, the rest of the round trip passed: restore into an empty database, equal rows, migrate applied nothing, the privilege checks held (probe reverted). Stop condition 3: not adapted silently. Q-CG-AR-1 written (A: a full read, recommended; B: keep --list and correct the test; C: both). Group 6 uncommitted; dev at 1d37bfb."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation stopped in Group 6 for Q-CG-AR-1.
+
+---
+
+## Code Generation: Q-CG-AR-1 Answered (U5 agent-registration)
+**Timestamp**: 2026-11-12T02:10:08Z
+**User Input**: "Q-CG-AR-1: A. After the PGDMP check, the archive check is a full read: pg_restore --file=/dev/null, with a non-zero exit deleting the file and failing the command. Both negative tests stay as written. Mark NP-AR-09 (3) as corrected in place (--list reads only the header and table of contents, as you showed), and record the decision as D-CG-AR-20.
+
+One addition (class 2). Because docker compose config leaves out services in an inactive profile, U4's per-service Compose-model rules don't currently reach the backup and restore services. U5's Compose-model test must render with --profile backup, and apply U4's per-service rules to those four services as well as U5's own checks:
+
+no secret-looking value or secret-named variable in environment;
+only their own level's volume, at their own subpath;
+networks within their environment.
+Record it with its diff.
+
+Then finish Group 6 with the full gate, including the manual backup and restore on a fresh stack. Push, wait for green, and continue through Group 9 as instructed."
+**Answers Recorded** (construction/working/agent-registration-code-generation-questions.md):
+- Q-CG-AR-1 — The archive check cannot catch a truncation at the end: A — a full read, pg_restore --file=/dev/null, after the PGDMP check; a non-zero exit deletes the file and fails; both negative tests as written; NP-AR-09 (3) corrected in place; D-CG-AR-20. With the user's class-2 addition, verbatim above: U5's Compose-model test renders with --profile backup and applies U4's per-service rules to the four backup and restore services, recorded with its diff (D-CG-AR-21)
+**AI Response**: "Applying A: checkArchive reads the whole archive (pg_restore --file=/dev/null) after the magic; NP-AR-09 (3) and NP-AR-08 corrected in place; D-CG-AR-20. U5's Compose-model test with --profile backup applying U4's per-service rules to the four services (D-CG-AR-21). Then Group 6's full gate with the manual backup and restore on a fresh stack, push, green, and on through Group 9."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation resumes in Group 6.
+
+---

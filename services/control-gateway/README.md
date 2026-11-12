@@ -4,16 +4,19 @@
 
 An environment's control face. One runs in each environment (`e` and `e2` on the local stack).
 It turns a human's **organization sign-in** from S1 into an **environment credential** for its
-own environment only, and records the grants that give a human permissions there. Its
-operations are defined in
+own environment only, and records the grants that give a human permissions there. It also
+registers logical agents and issues their registration secrets (U5). Its operations are defined
+in
 [`contract/control-gateway.openapi.yaml`](../../contract/control-gateway.openapi.yaml):
 
-| Operation                    | Request                                         | What it does                                                                                                                                       |
-| ---------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `issueEnvironmentCredential` | `POST /environment-credentials`                 | Presenting a live S1 sign-in, a human who holds a grant in this environment gets a credential for it (15 minutes, never past the sign-in's expiry) |
-| `renewEnvironmentCredential` | `POST /environment-credentials/current/renewal` | A new token for the same credential, while the sign-in it came from is still live                                                                  |
-| `endEnvironmentCredential`   | `POST /environment-credentials/current/end`     | Ends the credential: every token for it is refused from then on                                                                                    |
-| `grantToHuman`               | `POST /grants`                                  | A human holding `grant:human` here grants accepted permissions to a principal of the same organization (a self-grant is allowed, and recorded)     |
+| Operation                    | Request                                         | What it does                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `issueEnvironmentCredential` | `POST /environment-credentials`                 | Presenting a live S1 sign-in, a human who holds a grant in this environment gets a credential for it (15 minutes, never past the sign-in's expiry)                                                                                                                                                                                         |
+| `renewEnvironmentCredential` | `POST /environment-credentials/current/renewal` | A new token for the same credential, while the sign-in it came from is still live                                                                                                                                                                                                                                                          |
+| `endEnvironmentCredential`   | `POST /environment-credentials/current/end`     | Ends the credential: every token for it is refused from then on                                                                                                                                                                                                                                                                            |
+| `grantToHuman`               | `POST /grants`                                  | A human holding `grant:human` here grants accepted permissions to a principal of the same organization (a self-grant is allowed, and recorded)                                                                                                                                                                                             |
+| `registerAgent`              | `POST /registrations`                           | A human holding `agent:register` here registers a logical agent they sponsor: its standing set must lie within what they hold, with no human-only permission, and its re-broadening declaration within the standing set. What they held is recorded as the ceiling snapshot. The identifier is the client's, unique here, and never reused |
+| `issueRegistrationSecret`    | `POST /registration-secrets`                    | The agent's sponsor, or an Admin here (`grant:human` and `human:manage`), holding `agent:register`, gets a registration secret, returned once (`Cache-Control: no-store`). At most 10 are active per registration                                                                                                                          |
 
 **A credential works only in the environment that issued it.** It is signed with that
 environment's own key, carries its organization, project, and environment, and is checked
@@ -94,11 +97,43 @@ they recover:
   and can be ended. Once S1 is back, issuance recovers at the next fetch: an issuance triggers
   one, at most once every 30 seconds, and the scheduled refresh runs every 5 minutes.
 
+### Backing up and restoring the environment's store
+
+```sh
+pnpm stack:backup e            # writes deploy/local/.backups/e-{time}.dump
+pnpm stack:restore e <file>    # into e's store, which must be empty
+```
+
+**A dump contains human identifiers**: sponsors, secret issuers, and the actors of attribution
+records. It is written only to `deploy/local/.backups/`, which is git-ignored and
+docker-ignored, **with mode `0600`** in a directory with mode `0700`, from the moment the file
+is opened. **It never goes into the repository.** Delete a dump when you no longer need it.
+
+- Each environment has a one-shot `{env}-backup` and `{env}-restore` service, under the Compose
+  profile `backup`, so `stack:up` never starts them. Each runs as the store's migrator role, on
+  the environment's own network (the store is not published), and mounts only its `backup/`
+  secrets subdirectory. The password reaches `pg_dump` and `pg_restore` only through a pgpass
+  file built inside the container from `/run/secrets`; `PGPASSFILE`, its path, is the only
+  variable. The connection is `verify-full` against the stack CA
+- The backup is a custom-format dump streamed to the host (`docker compose run --rm -T`, so no
+  terminal alters it). After every backup, the archive is checked: it must begin with `PGDMP`,
+  and a full read (`pg_restore --file=/dev/null`) must succeed; otherwise the file is deleted
+  and the command fails
+- The restore refuses a database that is not empty, then restores in one transaction, stopping
+  at the first error. To restore over an environment: stop `{env}-control-gateway` and
+  `{env}-db`, remove the `{env}-db-data` volume, start `{env}-db` alone, run
+  `pnpm stack:restore`, then run `{env}-migrate` (it applies nothing to a current dump) and
+  start `{env}-control-gateway`
+- Replication, point-in-time recovery, and off-host, encrypted backups are not part of the local
+  stack; they belong to the first hosted deployment
+
 ## What it keeps, and what it does not
 
-- Credential records, grants, and an attribution record for each, in the environment's own
-  store, written in one transaction per operation. Grants are never deleted, and the app role
-  has only the column privileges each operation needs
+- Credential records, grants, registrations, registration secrets, and an attribution record
+  for each, in the environment's own store, written in one transaction per operation. Grants,
+  registrations, and secrets are never updated or deleted, and the app role has only the column
+  privileges each operation needs
+- A registration secret only as a 32-byte digest, never the secret itself
 - No sign-in, no password, and no organization key: S2 verifies sign-ins with S1's public keys
 - Logs are JSON on stdout and never carry a token, a key, or a human identifier: a human is
   named by a pseudonym under the environment's own key, so it differs per environment
@@ -112,7 +147,7 @@ they recover:
 | `src/main.ts`         | S2: configuration, the key ring, the store, the first grant, the verify-key cache, two listeners |
 | `src/migrate.ts`      | `{env}-migrate`: the one-shot migration run, as the migrator role                                |
 | `src/healthcheck.ts`  | The Compose healthcheck (the image has no shell)                                                 |
-| `src/edge/`           | The four operations, in the check order                                                          |
+| `src/edge/`           | The six operations, in the check order                                                           |
 | `src/org-level.ts`    | The calls to S1's internal listener: signed, over TLS 1.3, to the local CA only                  |
 | `src/verify-keys.ts`  | S1's verify keys: fetched every 5 minutes, and on an unknown key at most once every 30 seconds   |
 | `src/throttle.ts`     | The request limit                                                                                |

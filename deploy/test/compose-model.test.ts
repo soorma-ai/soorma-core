@@ -150,7 +150,8 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
   it("{env}-control-gateway's subpath holds no migrator password, and no other level's secret", () => {
     for (const env of ENVIRONMENTS) {
       const copies = envCopies(env);
-      expect(Object.keys(copies).sort()).toEqual(['control-gateway', 'db', 'migrate']);
+      // U5's backup/ (D-CG-AR-19): the migrator password and the CA, for the backup services.
+      expect(Object.keys(copies).sort()).toEqual(['backup', 'control-gateway', 'db', 'migrate']);
       expect(copies['control-gateway']).not.toContain(`${env}-db-migrator-password`);
       expect(copies.migrate?.sort()).toEqual([`${env}-db-migrator-password`, 'stack-ca-cert']);
       for (const n of Object.values(copies).flat())

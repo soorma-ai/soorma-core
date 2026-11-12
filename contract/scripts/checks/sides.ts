@@ -36,6 +36,8 @@ export const requestSide: readonly string[] = [
   'org-gateway.openapi.yaml#/components/schemas/Secret',
   'org-gateway.openapi.yaml#/components/schemas/EnrollmentMaterial',
   'control-gateway.openapi.yaml#/components/schemas/GrantRequest',
+  'control-gateway.openapi.yaml#/components/schemas/RegistrationRequest',
+  'control-gateway.openapi.yaml#/components/schemas/RegistrationSecretRequest',
 ];
 
 export const receivedSide: readonly string[] = [
@@ -65,6 +67,9 @@ export const receivedSide: readonly string[] = [
   'org-gateway.openapi.yaml#/components/schemas/AuthenticatorType',
   'control-gateway.openapi.yaml#/components/schemas/EnvironmentCredentialResponse',
   'control-gateway.openapi.yaml#/components/schemas/Grant',
+  'control-gateway.openapi.yaml#/components/schemas/EnvironmentReference',
+  'control-gateway.openapi.yaml#/components/schemas/Registration',
+  'control-gateway.openapi.yaml#/components/schemas/RegistrationSecret',
 ];
 
 /**

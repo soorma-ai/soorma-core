@@ -44,6 +44,27 @@ x-secrets-init: &secrets-init
   network_mode: none
   restart: 'no'
 
+# The shared shape of every environment's one-shot backup and restore services
+# (U5 NP-AR-08). Under the backup profile, so stack:up never starts them; run
+# by pnpm stack:backup and stack:restore. The pinned PostgreSQL image as 999;
+# the environment's network only; only its backup/ secrets subpath mounted.
+# The migrator password reaches pg_dump and pg_restore only through a pgpass
+# file built in /tmp (a tmpfs) from /run/secrets: PGPASSFILE, its path, is the
+# only variable; never PGPASSWORD, a variable, or an argument. verify-full
+# against the stack CA.
+x-env-backup: &env-backup
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+  user: '999:999'
+  tmpfs:
+    - /tmp
+  environment:
+    PGPASSFILE: /tmp/pgpass
+  profiles: [backup]
+  restart: 'no'
+
 # An environment store's shared shape (U4 Infrastructure Design §6).
 x-env-db: &env-db
   read_only: true
@@ -332,6 +353,50 @@ services:
       e-secrets-init: { condition: service_completed_successfully }
       e-migrate: { condition: service_completed_successfully }
 
+  # e's backup (U5 NP-AR-08): a custom-format dump to stdout, diagnostics to
+  # stderr only. Run with `docker compose run --rm -T`, so no terminal alters it.
+  e-backup:
+    <<: *env-backup
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        umask 077
+        { printf '%s' 'env-db.e.soorma.internal:5432:soorma_env:soorma_env_migrator:'; sed -e 's/\\/\\\\/g' -e 's/:/\\:/g' /run/secrets/e-db-migrator-password; } > /tmp/pgpass
+        exec pg_dump --format=custom --no-password 'host=env-db.e.soorma.internal port=5432 dbname=soorma_env user=soorma_env_migrator sslmode=verify-full sslrootcert=/run/secrets/stack-ca-cert'
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: backup },
+        }
+    networks: [e]
+
+  # e's restore: refuses a database that is not empty, then restores the
+  # archive on stdin in one transaction, stopping at the first error.
+  e-restore:
+    <<: *env-backup
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        umask 077
+        { printf '%s' 'env-db.e.soorma.internal:5432:soorma_env:soorma_env_migrator:'; sed -e 's/\\/\\\\/g' -e 's/:/\\:/g' /run/secrets/e-db-migrator-password; } > /tmp/pgpass
+        n=$$(psql --no-password --no-psqlrc -Atc "SELECT count(*) FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace WHERE s.nspname = 'public'" 'host=env-db.e.soorma.internal port=5432 dbname=soorma_env user=soorma_env_migrator sslmode=verify-full sslrootcert=/run/secrets/stack-ca-cert')
+        if [ "$$n" != 0 ]; then echo 'restore: the database is not empty' >&2; exit 3; fi
+        exec pg_restore --exit-on-error --single-transaction --no-password --dbname='host=env-db.e.soorma.internal port=5432 dbname=soorma_env user=soorma_env_migrator sslmode=verify-full sslrootcert=/run/secrets/stack-ca-cert'
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: backup },
+        }
+    networks: [e]
+
   # ---- Environment e2 (U4 Infrastructure Design; Q1 A: written out in full) ----
 
   # Environment e2's one-shot secrets copy: it alone sees e2's secret files.
@@ -438,6 +503,50 @@ services:
     depends_on:
       e2-secrets-init: { condition: service_completed_successfully }
       e2-migrate: { condition: service_completed_successfully }
+
+  # e2's backup (U5 NP-AR-08): a custom-format dump to stdout, diagnostics to
+  # stderr only. Run with `docker compose run --rm -T`, so no terminal alters it.
+  e2-backup:
+    <<: *env-backup
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        umask 077
+        { printf '%s' 'env-db.e2.soorma.internal:5432:soorma_env:soorma_env_migrator:'; sed -e 's/\\/\\\\/g' -e 's/:/\\:/g' /run/secrets/e2-db-migrator-password; } > /tmp/pgpass
+        exec pg_dump --format=custom --no-password 'host=env-db.e2.soorma.internal port=5432 dbname=soorma_env user=soorma_env_migrator sslmode=verify-full sslrootcert=/run/secrets/stack-ca-cert'
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: backup },
+        }
+    networks: [e2]
+
+  # e2's restore: refuses a database that is not empty, then restores the
+  # archive on stdin in one transaction, stopping at the first error.
+  e2-restore:
+    <<: *env-backup
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        umask 077
+        { printf '%s' 'env-db.e2.soorma.internal:5432:soorma_env:soorma_env_migrator:'; sed -e 's/\\/\\\\/g' -e 's/:/\\:/g' /run/secrets/e2-db-migrator-password; } > /tmp/pgpass
+        n=$$(psql --no-password --no-psqlrc -Atc "SELECT count(*) FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace WHERE s.nspname = 'public'" 'host=env-db.e2.soorma.internal port=5432 dbname=soorma_env user=soorma_env_migrator sslmode=verify-full sslrootcert=/run/secrets/stack-ca-cert')
+        if [ "$$n" != 0 ]; then echo 'restore: the database is not empty' >&2; exit 3; fi
+        exec pg_restore --exit-on-error --single-transaction --no-password --dbname='host=env-db.e2.soorma.internal port=5432 dbname=soorma_env user=soorma_env_migrator sslmode=verify-full sslrootcert=/run/secrets/stack-ca-cert'
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: backup },
+        }
+    networks: [e2]
 
 networks:
   org: {}

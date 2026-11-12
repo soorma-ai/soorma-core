@@ -12,6 +12,7 @@ import {
   type TestEnvDatabase,
 } from '../../../packages/env-store/test/harness/database.ts';
 import { SECURITY_EVENTS } from '../src/security-log.ts';
+import { registrationFlows } from './registration-support.ts';
 import { credentialFor, gateway, grant, post, unique, type Gateway } from './support.ts';
 
 let db: TestEnvDatabase;
@@ -104,6 +105,8 @@ describe('TC-EHA-053, 054: logs carry no secret, and every event is emitted', ()
     });
     g = await gateway(db, { requests });
     secrets = await everyFlow(g, timers);
+    // U5's flows too (D-CG-AR-17): every line and event below now also covers them.
+    secrets.push(...(await registrationFlows(g)));
   });
   afterAll(async () => {
     await g?.close();
@@ -130,10 +133,15 @@ describe('TC-EHA-053, 054: logs carry no secret, and every event is emitted', ()
   });
 });
 
-describe("NFR-EHA-19: S2's source emits exactly its ten events", () => {
-  it('each listed event is named in the source, and the list is the ten', () => {
+describe("NFR-EHA-19: S2's source emits exactly its ten events, and U5's four", () => {
+  it('each listed event is named in the source, and the list is the ten and the four', () => {
     expect([...SECURITY_EVENTS].sort()).toEqual(
       [
+        // U5's four (D-CG-AR-17; NFR-AR-18)
+        'registration.created',
+        'registration.refused',
+        'secret.issued',
+        'secret.refused',
         'credential.ended',
         'credential.issued',
         'credential.refused',

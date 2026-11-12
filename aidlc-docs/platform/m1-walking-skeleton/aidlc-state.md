@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U5 `agent-registration` (soorma-core#8): Functional Design APPROVED (2026-11-11T22:06:11Z); NFR Requirements APPROVED (2026-11-11T22:27:32Z); NFR Design APPROVED (2026-11-11T22:45:47Z); QA construction enrichment APPROVED; Construction Design PR gate open (dev → main), awaiting the user's merge**. U1 to U4 complete. Stage history is under *Stage Progress*
+- **Current Stage**: CONSTRUCTION. **U5 `agent-registration` (soorma-core#8): Functional Design APPROVED (2026-11-11T22:06:11Z); NFR Requirements APPROVED (2026-11-11T22:27:32Z); NFR Design APPROVED (2026-11-11T22:45:47Z); Construction Design PR gate APPROVED (#20 merged as `1903711`); Code Generation Part 2: Groups 1 to 5 done, each push run green; reviewed and accepted by the user (2026-11-12T02:01:58Z; D-CG-AR-17 confirmed class 2); Groups 6 to 9 in progress, after the review stop. Q-CG-AR-1 (stop condition 3 in Group 6) answered A by the user: the archive check is a full read (D-CG-AR-20); U4's per-service Compose-model rules applied to the backup services (D-CG-AR-21, class 2). Group 6 `b2cc93a` + CI fix `a217d34` (D-CG-AR-23; run 43140929923 green); Group 7 `5819f6b` + CI fix `c4bda89` (D-CG-AR-24) (2026-11-12T01:59:10Z), before Group 6 (backup) and Group 7 (e2e/)**. U1 to U4 complete. Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -115,11 +115,12 @@
 - **Approved**: 2026-11-11T07:17:28Z (the user confirmed; #18 merged 2026-11-11T07:16:59Z as 1a19082)
 
 ### Construction Design PR Gate — agent-registration
-- **Status**: PENDING
+- **Status**: APPROVED
+- **PR**: **soorma-core#20** (`dev` → `main`), opened 2026-11-12 at the user's request
 - **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-12)
 - **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/agent-registration-design-pr-checkpoint-instructions.md
 - **Created**: 2026-11-12T00:35:04Z
-- **Approved**: —
+- **Approved**: 2026-11-12T00:46:08Z (the user confirmed; #20 merged 2026-11-12T00:44:32Z as `1903711`; checks green at `eb9ddb8`)
 
 ## PRD Specification Gaps
 
@@ -231,7 +232,8 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] NFR Design: **APPROVED** 2026-11-11T22:45:47Z; committed as `c6da1ff`, push run 43114570442 green; the U6 obligation (logical-components §7) posted on [#9](https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6809034256); with NP-AR-09 (3) replaced by the user (the checksum test and the normalised projection dropped; an archive validity check after each backup: the PGDMP magic bytes and pg_restore --list exiting 0; custom format kept). Plan answered 2026-11-11T22:38:59Z, all technology: Q1 A (pg_advisory_xact_lock over a domain-separated key), Q2 A (the secret format in packages/registry; U6 obligation: S3 must not link org-identity), Q3 A (streamed; with the user's correction: run --rm -T, stdin open for restore, diagnostics to stderr, a stable-checksum test), Q4 A (db:test round trip and a CI stack step; with the user's addition: restore into an empty database, migrate applies nothing, the privilege test re-run), Q5 A (flat-set `<@` CHECKs, the human-only class never in SQL); P-01 to P-09 accepted, P-09 corrected by the user (a dedicated backup/ subdirectory, uid 999, mounting only it; verify-full with the stack CA). Artifacts: nfr-design-patterns (NP-AR-01 to 10), logical-components; matrices' targets noted
   - [x] Infrastructure Design: **SKIPPED** (decided at NFR Requirements: unkeyed verifier, no server-side key; no new deployable, store, network, or secret)
   - [x] QA construction enrichment: **APPROVED** 2026-11-12T00:34:08Z (generated 2026-11-11) (`inception/test-cases/agent-registration/`: TC-AR-001 to 022 enriched in place, **TC-AR-023 to 072 added** (50); `enrichment-delta.md` written, git-ignored). Sources: functional-design/, nfr-requirements/ (by the user's instruction), nfr-design/. Every verification target in the L1 and invariant matrices, nfr-requirements.md, and nfr-design-patterns.md now names its TC id
-  - [ ] Construction Design PR gate: **PENDING** (opened 2026-11-12T00:35:04Z; `dev` → `main`, confirmed by the user). Not approved until the user reports the merge
+  - [x] Construction Design PR gate: **APPROVED** 2026-11-12T00:46:08Z (soorma-core#20 merged as `1903711`; every check green at `eb9ddb8`); recorded in `923bc16`, push run 43129729467 green
+  - [ ] Code Generation: Part 1 plan written 2026-11-12 (`construction/working/agent-registration-code-generation-plan.md`: Step 0 and Steps 1 to 29 in nine groups; Group 1 the `evaluateHuman` refactor alone with U4's tests unchanged; D-CG-AR-01 to 12; the user's standing rules; stop conditions 1 to 8). **Plan APPROVED** 2026-11-12T01:02:26Z. Part 2: Step 0 `cbed37e`; Group 1 `143f073` (the evaluateHuman refactor; U4's tests unchanged; run 43132470557); Group 2 `0a90d67` (run 43133270078); Group 3 `5b9ccc2` (run 43134373872); Group 4 `3e9e98f` (run 43135835915); Group 5 `167011c` (run 43137498916), every push run green. Earlier units' test changes so far: D-CG-AR-13 to 18 (class 1; D-CG-AR-17 part 2 class 2). **Stopped for review after Group 5** (2026-11-12T01:59:10Z), as the user asked
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3, U4. Current: U5. Remaining: U5 to U7
 - [ ] Build and Test: EXECUTE
 

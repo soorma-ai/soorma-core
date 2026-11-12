@@ -37,6 +37,11 @@ copy db 999 \
 copy migrate 65532 \
   "$env-db-migrator-password" stack-ca-cert
 
+# {env}-backup and {env}-restore (postgres, 999; U5 NP-AR-08): the migrator
+# password and the CA only, in their own subdirectory, since migrate/ is owned
+# by 65532 and unreadable by 999.
+copy backup 999 "$env-db-migrator-password" stack-ca-cert
+
 # {env}-control-gateway (distroless nonroot, 65532): never the migrator password.
 copy control-gateway 65532 \
   "$env-control-gateway-tls" stack-ca-cert "$env-db-app-password" \

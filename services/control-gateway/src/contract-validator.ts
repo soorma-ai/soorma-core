@@ -5,10 +5,13 @@
 // once at start-up. Only grantToHuman takes a body.
 import { ContractValidator as ServiceContractValidator } from '@soorma/service-kit/http';
 
-export type RequestSchema = 'GrantRequest';
+export type RequestSchema = 'GrantRequest' | 'RegistrationRequest' | 'RegistrationSecretRequest';
 
 export class ContractValidator extends ServiceContractValidator<RequestSchema> {
   constructor() {
-    super({ document: 'control-gateway.openapi.yaml', schemas: ['GrantRequest'] });
+    super({
+      document: 'control-gateway.openapi.yaml',
+      schemas: ['GrantRequest', 'RegistrationRequest', 'RegistrationSecretRequest'],
+    });
   }
 }

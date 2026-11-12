@@ -113,7 +113,7 @@ describe('TC-EHA-068: environment migrations are locked, checksummed, and run as
       const b = await fresh.migrator();
       try {
         const [x, y] = await Promise.all([migrate(a), migrate(b)]);
-        expect([...x, ...y].sort()).toEqual(['0001_init']);
+        expect([...x, ...y].sort()).toEqual(['0001_init', '0002_registrations']);
       } finally {
         await a.end();
         await b.end();

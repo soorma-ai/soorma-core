@@ -96,3 +96,14 @@ No fixture classifications: no fixture's outcome has changed.
 
 New fixtures under `fixtures/0.1.0/control-gateway/`. No fixture classifications: no existing
 fixture's outcome has changed.
+
+### Added by U5 `agent-registration` (S2 `control-gateway`), within unreleased 0.1.0
+
+| Change                                                                                                                                                                                                                                                                                                                                                                                                                          | Classification                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Two operations in `control-gateway.openapi.yaml`: `POST /registrations` (`registerAgent`, `environmentCredential`) and `POST /registration-secrets` (`issueRegistrationSecret`, `environmentCredential`); request bodies `RegistrationRequest` and `RegistrationSecretRequest` closed, responses `Registration`, `RegistrationSecret`, and `EnvironmentReference` open; the secret's response carries `Cache-Control: no-store` | Compatible: new operations                              |
+| **`human_only_permission`** (400), **`declaration_outside_standing`** (400), **`unknown_registration`** (400), **`exceeds_sponsor_ceiling`** (403), **`registration_exists`** (409), **`secret_limit_reached`** (409) in `ProblemCode` and `errors.md` (codes table; check-order steps 6 and 9)                                                                                                                                 | Compatible: the code set is open                        |
+| `errors.md` _Disclosure_: within an environment, whether a logical agent identifier is taken is learnable by a holder of `agent:register`                                                                                                                                                                                                                                                                                       | Compatible: a statement of behaviour for new operations |
+
+New fixtures under `fixtures/0.1.0/control-gateway/`. No fixture classifications: no existing
+fixture's outcome has changed.

@@ -47,7 +47,7 @@ function response(op: Json, status: string): Json {
 }
 
 describe('TC-EHA-024: S2 operations are defined in the contract and validated against it', () => {
-  it('defines exactly the four operations, each a POST with its operationId', () => {
+  it('defines exactly the four operations, and the two of U5, each a POST with its operationId', () => {
     const found: string[] = [];
     for (const [path, item] of Object.entries(doc.paths as Json)) {
       for (const [method, op] of Object.entries(item as Json)) {
@@ -56,9 +56,12 @@ describe('TC-EHA-024: S2 operations are defined in the contract and validated ag
       }
     }
     expect(found.sort()).toEqual(
-      Object.entries(operations)
-        .map(([id, { path }]) => `${id} ${path}`)
-        .sort(),
+      [
+        ...Object.entries(operations).map(([id, { path }]) => `${id} ${path}`),
+        // U5's two (D-CG-AR-15), checked in control-gateway-registration.test.ts
+        'issueRegistrationSecret /registration-secrets',
+        'registerAgent /registrations',
+      ].sort(),
     );
   });
 

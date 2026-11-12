@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 //
-// The edge listener's NestJS module: the four contract operations. S2 has no
+// The edge listener's NestJS module: the four contract operations of U4, and
+// U5's registerAgent and issueRegistrationSecret. S2 has no
 // internal listener: nothing calls S2 but clients (NP-EHA-12).
 import { Controller, Inject, Module, Post, Req, Res, type DynamicModule } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -35,6 +36,19 @@ export class EdgeController {
   @Post('grants')
   grant(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     return this.handlers.grant(request, reply);
+  }
+
+  @Post('registrations')
+  registerAgent(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
+    return this.handlers.registerAgent(request, reply);
+  }
+
+  @Post('registration-secrets')
+  issueRegistrationSecret(
+    @Req() request: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
+    return this.handlers.issueRegistrationSecret(request, reply);
   }
 }
 

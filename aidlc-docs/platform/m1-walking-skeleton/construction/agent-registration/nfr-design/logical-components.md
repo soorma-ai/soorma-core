@@ -95,7 +95,7 @@ None new. E's identity, the store's connection, and the pseudonym key are U4's.
 |---|---|---|
 | `backup/` subdirectory | `{env}-secrets` volume, by `deploy/local/secrets-init/env.sh` | `copy backup 999 "$env-db-migrator-password" stack-ca-cert` |
 | `{env}-backup`, `{env}-restore` | `deploy/local/compose.yaml`, written out per environment (U4's rule: every name literal) | `profiles: [backup]`; the pinned PostgreSQL image; user 999; `{env}`'s network only; **only `backup/`** mounted read-only at `/run/secrets`; a `tmpfs` at `/tmp`; U4's hardening anchor; `PGPASSFILE` the only variable; `verify-full` with the stack CA |
-| `stack:backup`, `stack:restore` | `deploy/local/scripts/`, `package.json` | Host scripts: `run --rm -T`; the file opened `wx`, `0o600`, in a `0700` directory; the archive validity check after each backup (`PGDMP`; `pg_restore --list` exit 0); stdin streamed to restore |
+| `stack:backup`, `stack:restore` | `deploy/local/scripts/`, `package.json` | Host scripts: `run --rm -T`; the file opened `wx`, `0o600`, in a `0700` directory; the archive validity check after each backup (`PGDMP`; a full read, `pg_restore --file=/dev/null`, exit 0; D-CG-AR-20, corrected in place); stdin streamed to restore |
 | `deploy/local/.backups/` | `.gitignore`, `.dockerignore` | Ignored |
 | S2's README *Operations* | `services/control-gateway/README.md` | The commands; the dump holds human identifiers; the path and mode; never in the repository |
 
@@ -118,6 +118,6 @@ environment, command, or entrypoint.
 
 | To | Item |
 |---|---|
-| **Code Generation (U5)** | Everything in §1 to §6; the `evaluateHuman` refactor with **U4's tests unchanged** (the user's standing rule); the gate builds S2's image for every group touching its dependencies, and runs the local stack for groups changing its runtime, `compose.yaml`, or `env.sh`; NP-AR-09 (3)'s archive validity check after each backup, with its two negative tests |
+| **Code Generation (U5)** | Everything in §1 to §6; the `evaluateHuman` refactor with **U4's tests unchanged** (the user's standing rule); the gate builds S2's image for every group touching its dependencies, and runs the local stack for groups changing its runtime, `compose.yaml`, or `env.sh`; NP-AR-09 (3)'s archive validity check after each backup (a full read, D-CG-AR-20), with its two negative tests |
 | **U6 (soorma-core#9)** | Import the secret's format from **`packages/registry`** (`parseRegistrationSecret`, `registrationSecretMatches`), never a copy. **P6's agent half must not make S3 link `@soorma/org-identity`**: today `packages/identity-resolution` depends on it (its human half), so the agent half lives apart from the human half, or the package is split. Read the registration and secret through P4's reads (four-column keys). Posted on #9 when this stage is approved |
 | **Build and Test** | The p95 of both operations on the stack (NFR-AR-15); TC-AE-040 re-run with P4's source; the backup and restore step's result; the residuals (NFR-AR-11, 13) |

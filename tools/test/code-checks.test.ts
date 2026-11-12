@@ -4,7 +4,15 @@
 // D-CG-OI-03, 04, 05; NFR-OI-17, 29.
 import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
-import { createReadStream, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  createReadStream,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -185,5 +193,64 @@ export function f(token: SecretText | undefined, other: SecretText, n: number): 
     const lines = codeFindings('compare', root).map((f) => f.location);
     expect(lines).toHaveLength(2);
     expect(lines.every((l) => l.endsWith('token.ts:4'))).toBe(true);
+  });
+});
+
+describe('TC-AR-028: no code path updates or deletes a registration or a secret', () => {
+  it("no statement in U5's packages or S2 updates or deletes either table", () => {
+    const sources = [
+      'packages/registry/src',
+      'packages/env-store/src',
+      'services/control-gateway/src',
+    ].flatMap((dir) =>
+      readdirSync(join(repoRoot, dir), { recursive: true, encoding: 'utf8' })
+        .filter((f) => f.endsWith('.ts'))
+        .map((f) => join(repoRoot, dir, f)),
+    );
+    expect(sources.length).toBeGreaterThan(0);
+    const writes = /\b(UPDATE|DELETE\s+FROM|TRUNCATE)\s+(registrations|registration_secrets)\b/i;
+    const found = sources.filter((f) => writes.test(readFileSync(f, 'utf8')));
+    expect(found).toEqual([]);
+  });
+});
+
+describe("TC-AR-047, 071: U5's code holds no tenant identifier or topology read, and draws randomness only from randomBytes", () => {
+  const files = [
+    'services/control-gateway/src/edge/edge-handlers.ts',
+    'packages/registry/src/registrations.ts',
+    'packages/registry/src/registration-secret.ts',
+    'packages/authority/src/registration.ts',
+    'packages/authority/src/human.ts',
+  ].map((f) => ({ file: f, text: readFileSync(join(repoRoot, f), 'utf8') }));
+  const accepted = new Set([
+    'agent:register',
+    'credential:revoke',
+    'agent:retire',
+    'grant:human',
+    'event:publish',
+    'event:subscribe',
+    'attribution:read',
+    'human:manage',
+    'agent:delegate',
+  ]);
+
+  it('every permission literal is plane-declared, never a tenant identifier (I9)', () => {
+    for (const { file, text } of files)
+      for (const [, literal] of text.matchAll(/'([a-z][a-z0-9._-]*(?::[a-z][a-z0-9._-]*)+)'/g))
+        if (!literal!.startsWith('node:'))
+          expect(accepted.has(literal!), `${file}: ${literal}`).toBe(true);
+  });
+
+  it('nothing reads a host, address, or deployment label (I3, I10)', () => {
+    for (const { file, text } of files)
+      expect(text, file).not.toMatch(/remoteAddress|hostname|x-forwarded|node:os|process\.env/i);
+  });
+
+  it('randomness only from crypto.randomBytes; digests compared only with timingSafeEqual', () => {
+    for (const { file, text } of files)
+      expect(text, file).not.toMatch(/Math\.random|getRandomValues|randomUUID/);
+    const secret = files.find((f) => f.file.endsWith('registration-secret.ts'))!.text;
+    expect(secret).toContain('randomBytes(32)');
+    expect(secret).toContain('timingSafeEqual(');
   });
 });

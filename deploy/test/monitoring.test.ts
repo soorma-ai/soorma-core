@@ -99,3 +99,26 @@ describe('TC-EHA-087: the monitoring files validate, and name only defined event
       ).toBe(true);
   });
 });
+
+describe("TC-AR-067: U5's three rules validate and name only defined events (NFR-AR-19)", () => {
+  it('carry the registration and secret refusals, per human and per reason', () => {
+    const rule = (id: string) => alerts.rules.find((r) => r.id === id);
+    expect(rule('registration-refused-repeated')).toMatchObject({
+      event: 'registration.refused',
+      groupBy: 'pseudonym',
+      threshold: { count: 5, windowMinutes: 15 },
+    });
+    expect(rule('secret-refused-repeated')).toMatchObject({
+      event: 'secret.refused',
+      groupBy: 'pseudonym',
+      threshold: { count: 5, windowMinutes: 15 },
+    });
+    expect(rule('registration-refused-burst')).toMatchObject({
+      event: 'registration.refused',
+      groupBy: 'code',
+      threshold: { count: 20, windowMinutes: 15 },
+    });
+    for (const event of ['registration.refused', 'secret.refused'])
+      expect(S2_EVENTS).toContain(event);
+  });
+});
