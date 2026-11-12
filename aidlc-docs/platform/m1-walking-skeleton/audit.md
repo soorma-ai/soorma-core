@@ -2711,3 +2711,11 @@ Wait for every check to pass, then report the PR link and the results, and stop.
 **Context**: CONSTRUCTION, U5 agent-registration: QA enrichment APPROVED; Construction Design PR gate opened.
 
 ---
+
+## Construction Design PR Gate Opened (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:35:04Z
+**User Input**: (none; the instruction is logged in the previous entry)
+**AI Response**: "QA enrichment committed as 6390370 and pushed. Construction Design PR gate (pr-checkpoint.md Section 5): artifacts validated (functional-design/ has five files; nfr-requirements/ and nfr-design/ present; infrastructure-design/ N/A, skipped). Instructions written to construction/working/agent-registration-design-pr-checkpoint-instructions.md (git-ignored). Gate recorded PENDING in aidlc-state.md, branch dev to main as the user confirmed. Committing this and opening the PR from dev to main with Refs #8, #3 (no closing keyword) and the six reviewer flags: the evaluateHuman refactor (D-AR-07); the FR-026 observation; the secret format and its unkeyed verifier; the cap as a security bound; the backup services and their secret handling; Infrastructure Design skipped and why. Then waiting for every check; the gate is not recorded approved until the user reports the merge."
+**Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate PENDING.
+
+---

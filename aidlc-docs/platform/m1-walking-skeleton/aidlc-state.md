@@ -114,6 +114,13 @@
 - **Created**: 2026-11-11T07:09:43Z
 - **Approved**: 2026-11-11T07:17:28Z (the user confirmed; #18 merged 2026-11-11T07:16:59Z as 1a19082)
 
+### Construction Design PR Gate — agent-registration
+- **Status**: PENDING
+- **Branch**: `dev`, PR to `main` (confirmed by the user, 2026-11-12)
+- **Instructions**: aidlc-docs/platform/m1-walking-skeleton/construction/working/agent-registration-design-pr-checkpoint-instructions.md
+- **Created**: 2026-11-12T00:35:04Z
+- **Approved**: —
+
 ## PRD Specification Gaps
 
 Full entries: `inception/prd-intake/specification-gaps.md` (GAP-INT); `construction/authority-evaluation/prd-gaps/specification-gaps.md` (GAP-AE); `construction/env-human-access/prd-gaps/specification-gaps.md` (GAP-EHA).
@@ -224,6 +231,7 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] NFR Design: **APPROVED** 2026-11-11T22:45:47Z; committed as `c6da1ff`, push run 43114570442 green; the U6 obligation (logical-components §7) posted on [#9](https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6809034256); with NP-AR-09 (3) replaced by the user (the checksum test and the normalised projection dropped; an archive validity check after each backup: the PGDMP magic bytes and pg_restore --list exiting 0; custom format kept). Plan answered 2026-11-11T22:38:59Z, all technology: Q1 A (pg_advisory_xact_lock over a domain-separated key), Q2 A (the secret format in packages/registry; U6 obligation: S3 must not link org-identity), Q3 A (streamed; with the user's correction: run --rm -T, stdin open for restore, diagnostics to stderr, a stable-checksum test), Q4 A (db:test round trip and a CI stack step; with the user's addition: restore into an empty database, migrate applies nothing, the privilege test re-run), Q5 A (flat-set `<@` CHECKs, the human-only class never in SQL); P-01 to P-09 accepted, P-09 corrected by the user (a dedicated backup/ subdirectory, uid 999, mounting only it; verify-full with the stack CA). Artifacts: nfr-design-patterns (NP-AR-01 to 10), logical-components; matrices' targets noted
   - [x] Infrastructure Design: **SKIPPED** (decided at NFR Requirements: unkeyed verifier, no server-side key; no new deployable, store, network, or secret)
   - [x] QA construction enrichment: **APPROVED** 2026-11-12T00:34:08Z (generated 2026-11-11) (`inception/test-cases/agent-registration/`: TC-AR-001 to 022 enriched in place, **TC-AR-023 to 072 added** (50); `enrichment-delta.md` written, git-ignored). Sources: functional-design/, nfr-requirements/ (by the user's instruction), nfr-design/. Every verification target in the L1 and invariant matrices, nfr-requirements.md, and nfr-design-patterns.md now names its TC id
+  - [ ] Construction Design PR gate: **PENDING** (opened 2026-11-12T00:35:04Z; `dev` → `main`, confirmed by the user). Not approved until the user reports the merge
 - [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3, U4. Current: U5. Remaining: U5 to U7
 - [ ] Build and Test: EXECUTE
 
