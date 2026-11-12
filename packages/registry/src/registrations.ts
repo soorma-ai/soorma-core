@@ -129,6 +129,23 @@ export async function findRegistration(
   };
 }
 
+/**
+ * U6's bootstrap and renewal read (BR-BS-04, BR-RN-04; D-CG-AC-20): the
+ * registration's state and its sponsor, for the attribution record. S3 runs
+ * it as soorma_env_data, which holds SELECT on registrations only.
+ */
+export async function registrationForBootstrap(
+  store: Queryable,
+  environment: EnvironmentRef,
+  agent: string,
+): Promise<{ state: string; sponsor: string } | undefined> {
+  const [row] = await store.query<{ state: string; sponsor: string }>(
+    SQL.registrationForBootstrap,
+    [...environmentParams(environment), agent],
+  );
+  return row ? { state: row.state, sponsor: row.sponsor } : undefined;
+}
+
 export interface SecretRecord {
   readonly id: string;
   readonly environment: EnvironmentRef;

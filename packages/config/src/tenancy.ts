@@ -40,6 +40,50 @@ export interface Environment {
   sealKeys?: SealKeyNames;
   /** The environment's S2 (U4 Infrastructure Design §3); only that S2 reads its secrets. */
   controlGateway?: ControlGatewayNames;
+  /** The environment's S3 (U6 Infrastructure Design §6); only that S3 reads its secrets. */
+  dataGateway?: DataGatewayNames;
+}
+
+/** An environment's S3 part as configured: settings, and secrets by name (D-ID-AC-10). */
+export interface DataGatewayNames {
+  edge: { port: number; tls: string };
+  health: { port: number };
+  database: {
+    host: string;
+    port: number;
+    name: string;
+    user: string;
+    password: string;
+    ca: string;
+  };
+  keys: { signing: string; verify: string[] };
+  bound: { counter: string };
+}
+
+/**
+ * S3's configuration, loaded for its own environment only (D-ID-AC-09, 10). It
+ * holds no propagation bound and no lifetime: those are code constants
+ * (NP-AC-01).
+ */
+export interface DataGatewayConfiguration {
+  settings: {
+    organization: string;
+    project: string;
+    environment: string;
+    edge: { port: number };
+    health: { port: number };
+    database: { host: string; port: number; name: string; user: string };
+  };
+  secrets: {
+    edgeTls: Buffer;
+    databasePassword: string;
+    databaseCa: Buffer;
+    /** E's agent key ring, by name, in configuration order; `signing` names one (D-AC-03). */
+    verifyKeys: { name: string; pem: Buffer }[];
+    signing: string;
+    /** The bound's HMAC key (D-ID-AC-06). */
+    counterSecret: Buffer;
+  };
 }
 
 /** An environment's S2 part as configured: settings, and secrets by name (U4 P-06). */
@@ -291,6 +335,32 @@ function readTenancy(configPath: string): { raw: RawTenancy; settings: Organizat
             cg.keys.caller,
             cg.keys.logPseudonym,
           ]),
+        ],
+      });
+    }
+  }
+  // Each environment's S3 part (U6 D-ID-AC-07, 09, 10), checked as S2's, and
+  // as its own owner: S3 shares no secret with its environment's S2 (the
+  // separate agent ring, D-AC-03; its own data password), and never connects
+  // as S2's role or the migrator.
+  for (const [pi, project] of raw.projects.entries()) {
+    for (const [ei, env] of project.environments.entries()) {
+      const dg = env.dataGateway;
+      if (!dg) continue;
+      const at = `/projects/${pi}/environments/${ei}/dataGateway`;
+      for (const name of duplicates(dg.keys.verify))
+        problems.push(`${at}/keys/verify: ${name} is listed twice`);
+      if (!dg.keys.verify.includes(dg.keys.signing))
+        problems.push(`${at}/keys/signing: names no verify key`);
+      const cg = env.controlGateway;
+      if (cg && [cg.database.user, cg.migrator.user].includes(dg.database.user))
+        problems.push(`${at}/database/user: ${dg.database.user} is not S3's own role`);
+      caNames.add(dg.database.ca);
+      parts.push({
+        at,
+        env: `${env.id} (dataGateway)`,
+        names: [
+          ...new Set([dg.edge.tls, dg.database.password, ...dg.keys.verify, dg.bound.counter]),
         ],
       });
     }
@@ -558,6 +628,57 @@ export function loadControlGateway(
         user: cg.database.user,
       },
       organizationLevel: { host: cg.organizationLevel.host, port: cg.organizationLevel.port },
+    },
+    secrets,
+  };
+}
+
+/**
+ * An environment's S3 configuration at start-up (U6 D-ID-AC-09, 10). Reads only
+ * that environment's S3 part and its secrets: never S2's, the migrator's,
+ * another environment's, or the organization level's. Every problem is
+ * collected, then start-up is refused (BR-CFG).
+ */
+export function loadDataGateway(
+  options: LoadOptions,
+  where: { project: string; environment: string },
+): DataGatewayConfiguration {
+  const { raw } = readTenancy(options.configPath);
+  const env = raw.projects
+    .find((p) => p.id === where.project)
+    ?.environments.find((e) => e.id === where.environment);
+  if (!env)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} is not configured`,
+    ]);
+  const dg = env.dataGateway;
+  if (!dg)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} has no dataGateway`,
+    ]);
+  const read = new SecretReader(options.secretsDir ?? DEFAULT_SECRETS_DIR);
+  const secrets = {
+    edgeTls: read.bytes(dg.edge.tls),
+    databasePassword: read.text(dg.database.password),
+    databaseCa: read.bytes(dg.database.ca),
+    verifyKeys: dg.keys.verify.map((name) => ({ name, pem: read.bytes(name) })),
+    signing: dg.keys.signing,
+    counterSecret: read.key(dg.bound.counter),
+  };
+  if (read.problems.length > 0) throw new ConfigurationError(read.problems);
+  return {
+    settings: {
+      organization: raw.organization,
+      project: where.project,
+      environment: env.id,
+      edge: { port: dg.edge.port },
+      health: { port: dg.health.port },
+      database: {
+        host: dg.database.host,
+        port: dg.database.port,
+        name: dg.database.name,
+        user: dg.database.user,
+      },
     },
     secrets,
   };

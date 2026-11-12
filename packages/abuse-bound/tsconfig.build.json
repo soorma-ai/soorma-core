@@ -22,9 +22,6 @@
       "path": "../service-kit/tsconfig.build.json"
     },
     {
-      "path": "../org-identity/tsconfig.build.json"
-    },
-    {
       "path": "../jcs/tsconfig.build.json"
     }
   ]

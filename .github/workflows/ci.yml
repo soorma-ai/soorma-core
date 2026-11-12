@@ -161,6 +161,26 @@ jobs:
       - name: Check the S2 image's installed packages
         run: node tools/checks/run.ts image-packages --image soorma/control-gateway:local --forbid @soorma/org-identity
 
+      # U6 Infrastructure Design §3, §17 (D-ID-AC-01, 18; TC-AC-083): S3's image,
+      # its secret scan, and its installed packages: no organization-level code,
+      # no human identity resolution, no evaluator, and no migrations.
+      - name: Build the S3 image
+        run: docker build -f services/data-gateway/Dockerfile -t soorma/data-gateway:local .
+
+      - name: Check the S3 image's file system for secrets
+        run: node tools/checks/run.ts secrets --image soorma/data-gateway:local
+
+      - name: Check the S3 image's installed packages
+        run: node tools/checks/run.ts image-packages --image soorma/data-gateway:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/authority
+
+      - name: Check the S3 image ships no migrations
+        run: |
+          id=$(docker create soorma/data-gateway:local)
+          if docker export "$id" | tar -t | grep -E 'env-store/migrations/'; then
+            echo "S3's image holds env-store's migrations"; exit 1
+          fi
+          docker rm "$id" > /dev/null
+
       # Throwaway secrets for this run only, generated on the runner.
       - name: Generate the stack's secrets
         run: pnpm stack:init
