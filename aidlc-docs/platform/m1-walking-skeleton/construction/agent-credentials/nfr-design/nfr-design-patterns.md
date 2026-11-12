@@ -168,26 +168,61 @@ clock })`, modelled on U3's `createCachingAgentFacts` (NP-04):
 | Used by | **S4, wired at U7.** S3 uses the direct source inside its transaction (D-AC-01) |
 | Tests | NFR-AC-01's timeline (business-logic-model §5) with an injected clock; failures never cached; shared in-flight reads; eviction at the bound; `pnpm bench:revocation` (NFR-AC-16) |
 
-## NP-AC-06: Privileges, Their Test, and Test-Only Seeding (P-07 to P-09)
+## NP-AC-06: Privileges, Their Tests, and Test-Only Seeding (P-07 to P-09; corrected at Infrastructure Design)
 
-`0003` ends:
+*Corrected in place at Infrastructure Design (2026-11-12, the user's decision D-ID-AC-07)*: the
+grants below were made to **`soorma_env_app`** (S2's role). **S3 now has its own role,
+`soorma_env_data`, created in `deploy/local/db/env-roles.sql`, and `0003` grants U6's privileges to
+it alone.** `soorma_env_app` gets **nothing** on U6's tables, and `soorma_env_data` gets nothing on
+`grants`, `credentials`, or `schema_migrations`. Least privilege per deployable, as the separate
+agent key ring (D-AC-03). See `../infrastructure-design/infrastructure-design.md` §5.
+
+`0003` ends (`0001` and `0002` untouched):
 
 ```sql
 REVOKE ALL ON agent_credentials, credential_revocations, agent_revocations,
   attempt_slots, failed_bootstrap_attempts FROM PUBLIC;
-GRANT SELECT, INSERT ON agent_credentials TO soorma_env_app;
-GRANT UPDATE (expires_at) ON agent_credentials TO soorma_env_app;
-GRANT SELECT ON credential_revocations, agent_revocations TO soorma_env_app;
-GRANT SELECT, INSERT, UPDATE ON attempt_slots TO soorma_env_app;
-GRANT INSERT ON failed_bootstrap_attempts TO soorma_env_app;
-GRANT USAGE ON SEQUENCE failed_bootstrap_attempts_id_seq TO soorma_env_app;
+-- S3 reads registrations and secrets (bootstrap) and revocation state (both operations).
+GRANT SELECT ON registrations, registration_secrets, credential_revocations, agent_revocations
+  TO soorma_env_data;
+GRANT SELECT, INSERT ON agent_credentials TO soorma_env_data;
+GRANT UPDATE (expires_at) ON agent_credentials TO soorma_env_data;
+GRANT INSERT ON attribution_records, failed_bootstrap_attempts TO soorma_env_data;
+GRANT USAGE ON SEQUENCE failed_bootstrap_attempts_id_seq TO soorma_env_data;
+-- Exactly P8's statements: admission (INSERT ... ON CONFLICT DO UPDATE ... RETURNING),
+-- the slot's state (SELECT), and settling (UPDATE). The slot number is never updated.
+GRANT SELECT ON attempt_slots TO soorma_env_data;
+GRANT INSERT (slot, entries) ON attempt_slots TO soorma_env_data;
+GRANT UPDATE (entries, consecutive, next_allowed_at) ON attempt_slots TO soorma_env_data;
 ```
 
-**No `DELETE` anywhere.** The privilege test is a **new** test beside U4's TC-EHA-080 in
-`packages/env-store/test/`, in its pattern (each forbidden statement, run as the app role, fails
-with permission denied); U4's cases are unchanged. Forbidden: `INSERT`, `UPDATE`, or `DELETE` on
-either revocation table; `UPDATE` of any `agent_credentials` column but `expires_at`; `UPDATE` or
-`DELETE` on `failed_bootstrap_attempts`; `DELETE` on `agent_credentials` or `attempt_slots`.
+**No `DELETE` anywhere**, for either role. **Two privilege tests** in `packages/env-store/test/`,
+in TC-EHA-080's pattern (each forbidden statement, run as the role, fails with permission denied),
+beside U4's, whose cases are unchanged:
+- **`soorma_env_app` on U6's tables**: every `SELECT`, `INSERT`, `UPDATE`, or `DELETE` on
+  `agent_credentials`, either revocation table, `attempt_slots`, or `failed_bootstrap_attempts`
+  fails
+- **`soorma_env_data`**: each of S3's statements succeeds (the agent half's read, bootstrap's
+  transaction, renewal's, P8's four statements, the failed-attempt insert joined to
+  `registrations`); and each of these fails: anything on `grants`, `credentials`, or
+  `schema_migrations`; `INSERT` or `UPDATE` on `registrations`, `registration_secrets`, either
+  revocation table; `UPDATE` of `agent_credentials` other than `expires_at`; `UPDATE` of
+  `attempt_slots.slot`; `SELECT` or `UPDATE` on `failed_bootstrap_attempts` or
+  `attribution_records`; `DELETE` anywhere. Its role attributes are checked as U4's are
+  (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`)
+
+*Added at Infrastructure Design approval (2026-11-12, the user's)*: **the `soorma_env_data`
+privilege test also proves the grants fit the statements**, not only that forbidden ones are
+refused. As `soorma_env_data`, it runs and expects success from: **P8's actual statements, the
+same `statement()` objects exported from `packages/abuse-bound`**: admission (`INSERT … ON CONFLICT
+DO UPDATE … RETURNING`), settling a success, settling a failure, and the backoff update (the
+column-level grants for `INSERT … ON CONFLICT DO UPDATE` need `UPDATE` on every column it sets and
+`SELECT` on every column it reads); and **S3's own statements, the same objects from
+`packages/credentials`, `packages/agent-identity`, and `packages/attribution`**: bootstrap's writes
+(the `agent_credentials` insert, the attribution insert, the failed-attempt batch insert joined to
+`registrations`), renewal's `UPDATE (expires_at)` with its `RETURNING`, the agent half's read, and
+the revocation reads at both granularities. A grant that fits no statement, or a statement no grant
+fits, fails the test.
 
 **Seeding** (M1-FR-07): the store's test harness gains a fixture that inserts revocations as the
 owner. On the running stack, `e2e/support` gains a helper running `psql` inside `{env}-db`
@@ -345,7 +380,7 @@ database's `now()` (as U2's P-14).
 | SECURITY-03 | Compliant, **except the centralized log service, by the user's decision** | Rejection reasons reach only the security log and the failed-attempt record (NP-AC-08); never a secret, id, digest, or token; NP-AC-12 scans for them |
 | SECURITY-04 | N/A | No HTML |
 | SECURITY-05 | Compliant | Constant SQL with bound values (NP-AC-03, 04, 07); closed schemas |
-| SECURITY-06 | Compliant | Separate key rings (NP-AC-09); the narrowest grants (NP-AC-06); revocation `SELECT` only |
+| SECURITY-06 | Compliant | Separate key rings (NP-AC-09); the narrowest grants, to S3's own role `soorma_env_data` (NP-AC-06, as corrected at Infrastructure Design); revocation `SELECT` only |
 | SECURITY-08 | Compliant | Renewal verified per request; the binding in the renew statement's `WHERE` (NP-AC-03) |
 | SECURITY-09 | Compliant | B, L, M not configurable (NP-AC-01); generic Problems |
 | SECURITY-10 | Compliant | No new external dependency; P8 gains `@soorma/jcs` (workspace); closure checked in images (NP-AC-10) |

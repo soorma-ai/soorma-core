@@ -57,16 +57,17 @@ attribution record in the same transaction; then mints. S3 talks to E's store on
 
 ## 3. The Environment Store: What U6 Adds
 
-| Table | Migration | Rows | App role |
+| Table | Migration | Rows | S3's role, `soorma_env_data` (*corrected at Infrastructure Design, D-ID-AC-07*: formerly the app role; `soorma_env_app` has nothing on these tables) |
 |---|---|---|---|
 | `agent_credentials` | `0003` | One per bootstrap (a lineage) | `SELECT`, `INSERT`, `UPDATE (expires_at)` |
 | `credential_revocations` | `0003` | Test-seeded only in M1 | `SELECT` |
 | `agent_revocations` | `0003` | Test-seeded only in M1 | `SELECT` |
-| `attempt_slots` | `0003` | At most 2^20 | `SELECT`, `INSERT`, `UPDATE` |
+| `attempt_slots` | `0003` | At most 2^20 | `SELECT`, `INSERT (slot, entries)`, `UPDATE (entries, consecutive, next_allowed_at)` |
 | `failed_bootstrap_attempts` | `0003` | One per failed attempt on an existing registration | `INSERT` (and its sequence's `USAGE`) |
-| `attribution_records` (U4's) | `0004` | — | unchanged; a new CHECK (D-AC-33) |
+| `attribution_records` (U4's) | `0004` | — | `INSERT` (granted in `0003`); a new CHECK in `0004` (D-AC-33) |
+| `registrations`, `registration_secrets` (U5's) | — | — | `SELECT` (granted in `0003`) |
 
-`0001` and `0002` are untouched. No `DELETE` is granted on any U6 table.
+`0001` and `0002` are untouched. No `DELETE` is granted on any U6 table, to any role. `soorma_env_data` has nothing on `grants`, `credentials`, or `schema_migrations`.
 
 ## 4. The Three Numbers
 
