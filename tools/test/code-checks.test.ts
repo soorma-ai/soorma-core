@@ -4,7 +4,15 @@
 // D-CG-OI-03, 04, 05; NFR-OI-17, 29.
 import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
-import { createReadStream, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  createReadStream,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -185,5 +193,23 @@ export function f(token: SecretText | undefined, other: SecretText, n: number): 
     const lines = codeFindings('compare', root).map((f) => f.location);
     expect(lines).toHaveLength(2);
     expect(lines.every((l) => l.endsWith('token.ts:4'))).toBe(true);
+  });
+});
+
+describe('TC-AR-028: no code path updates or deletes a registration or a secret', () => {
+  it("no statement in U5's packages or S2 updates or deletes either table", () => {
+    const sources = [
+      'packages/registry/src',
+      'packages/env-store/src',
+      'services/control-gateway/src',
+    ].flatMap((dir) =>
+      readdirSync(join(repoRoot, dir), { recursive: true, encoding: 'utf8' })
+        .filter((f) => f.endsWith('.ts'))
+        .map((f) => join(repoRoot, dir, f)),
+    );
+    expect(sources.length).toBeGreaterThan(0);
+    const writes = /\b(UPDATE|DELETE\s+FROM|TRUNCATE)\s+(registrations|registration_secrets)\b/i;
+    const found = sources.filter((f) => writes.test(readFileSync(f, 'utf8')));
+    expect(found).toEqual([]);
   });
 });

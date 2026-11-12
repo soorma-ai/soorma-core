@@ -29,3 +29,16 @@ export {
   type GeneratedRegistrationSecret,
   type ParsedRegistrationSecret,
 } from './registration-secret.ts';
+export {
+  agentFactsFromStore,
+  findRegistration,
+  insertRegistration,
+  insertSecretUnderCap,
+  MAX_ACTIVE_SECRETS,
+  type RegistrationRecord,
+  type RegistrationWrite,
+  type SecretRecord,
+  type SecretWrite,
+  type StoredAgentFacts,
+  type StoredAgentFactsSource,
+} from './registrations.ts';
