@@ -83,6 +83,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a logical agent in this environment, sponsored by the presenting human
+         * @description Requires agent:register in this environment. The sponsor is the presenting human. The standing set must lie within what the sponsor holds, contain no human-only permission, and contain the re-broadening declaration. The ceiling snapshot records what the sponsor held. The identifier is chosen by the client, unique in this environment, and never reusable.
+         */
+        post: operations["registerAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/registration-secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue a registration secret for a logical agent in this environment
+         * @description Requires agent:register in this environment, and that the presenter is the registration's sponsor or an Admin (a holder of grant:human and human:manage). The secret is returned once and never again. At most 10 secrets are active per registration.
+         */
+        post: operations["issueRegistrationSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -91,6 +131,18 @@ export interface components {
             target: components["schemas"]["HumanPrincipalReferenceInput"];
             /** @description The permissions granted, as a set. Each must be accepted in this environment. */
             permissions: components["schemas"]["PermissionIdentifier"][];
+        };
+        RegistrationRequest: {
+            agent: components["schemas"]["LogicalAgentIdentifier"];
+            /** @description The agent's standing set: within what the sponsor holds, with no human-only permission. May be empty. */
+            standingPermissions: components["schemas"]["PermissionIdentifier"][];
+            /** @description Within the standing set. Omitted means empty. */
+            reBroadeningDeclaration?: components["schemas"]["PermissionIdentifier"][];
+            /** @description Omitted means false. */
+            autonomyDeclared?: boolean;
+        };
+        RegistrationSecretRequest: {
+            registration: components["schemas"]["LogicalAgentIdentifier"];
         };
         /** @description The environment credential. credential is opaque: present it as Authorization: Bearer, in this environment only. */
         EnvironmentCredentialResponse: {
@@ -111,10 +163,43 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        EnvironmentReference: {
+            organization: string;
+            project: string;
+            environment: string;
+        } & {
+            [key: string]: unknown;
+        };
+        Registration: {
+            agent: string;
+            environment: components["schemas"]["EnvironmentReference"];
+            sponsor: components["schemas"]["HumanPrincipalReference"];
+            /** @description What the sponsor held in this environment when the standing set was granted. */
+            ceilingSnapshot: string[];
+            standingPermissions: string[];
+            reBroadeningDeclaration: string[];
+            autonomyDeclared: boolean;
+            /** @description RFC 3339. */
+            registeredAt: string;
+            /** @description An open value set; `registered` in this contract version. */
+            state: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description The registration secret, returned once. secret is material, not a credential: it goes in a request body, never in Authorization. */
+        RegistrationSecret: {
+            id: string;
+            registration: string;
+            secret: string;
+            /** @description RFC 3339. */
+            issuedAt: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** @description A contract version: SemVer major.minor.patch, with major version 0 while the contract is pre-release. The first published version is 0.1.0. */
         ContractVersion: string;
         /** @description A stable, machine-readable error code. An open set: tolerate codes you do not know, and problems with none. */
-        ProblemCode: "malformed_request" | "unknown_field" | "stamped_field_set" | "invalid_inbound_context" | "chain_too_deep" | "envelope_too_large" | "unsupported_contract_version" | "credential_refused" | "credential_expired" | "forbidden" | "payload_too_large" | "too_many_attempts" | "unavailable" | "internal_error" | "authentication_failed" | "second_factor_enrollment_required" | "second_factor_not_confirmed" | "secret_rejected" | "unknown_permission" | "unknown_principal" | (string & {});
+        ProblemCode: "malformed_request" | "unknown_field" | "stamped_field_set" | "invalid_inbound_context" | "chain_too_deep" | "envelope_too_large" | "unsupported_contract_version" | "credential_refused" | "credential_expired" | "forbidden" | "payload_too_large" | "too_many_attempts" | "unavailable" | "internal_error" | "authentication_failed" | "second_factor_enrollment_required" | "second_factor_not_confirmed" | "secret_rejected" | "unknown_permission" | "unknown_principal" | "human_only_permission" | "declaration_outside_standing" | "exceeds_sponsor_ceiling" | "registration_exists" | "unknown_registration" | "secret_limit_reached" | (string & {});
         /** @description Why a new secret (K) was rejected, on secret_rejected. An open set: tolerate reasons you do not know. */
         SecretRejectedReason: "too_short" | "too_long" | "disallowed_character" | "breached" | "reused" | "context_word" | (string & {});
         ProblemFieldError: {
@@ -164,9 +249,11 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description A logical agent identifier. */
+        LogicalAgentIdentifier: string;
     };
     responses: {
-        /** @description malformed_request (a body on an operation that takes none included), unsupported_contract_version, unknown_permission, or unknown_principal. */
+        /** @description malformed_request (a body on an operation that takes none included), unsupported_contract_version, unknown_permission, unknown_principal, human_only_permission, declaration_outside_standing, or unknown_registration. */
         BadRequest: {
             headers: {
                 "Soorma-Contract-Version": components["headers"]["Soorma-Contract-Version"];
@@ -189,8 +276,19 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description forbidden. Authority denied. No WWW-Authenticate. */
+        /** @description forbidden (authority denied), or exceeds_sponsor_ceiling. No WWW-Authenticate. */
         Forbidden: {
+            headers: {
+                "Soorma-Contract-Version": components["headers"]["Soorma-Contract-Version"];
+                "Soorma-Request-Id": components["headers"]["Soorma-Request-Id"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description registration_exists, or secret_limit_reached. */
+        Conflict: {
             headers: {
                 "Soorma-Contract-Version": components["headers"]["Soorma-Contract-Version"];
                 "Soorma-Request-Id": components["headers"]["Soorma-Request-Id"];
@@ -249,6 +347,8 @@ export interface components {
         "Retry-After": string;
         /** @description Bearer, on a 401 (RFC 6750). Never on a 403. */
         "WWW-Authenticate": string;
+        /** @description no-store, on a response that carries a secret. */
+        "Cache-Control": string;
     };
     pathItems: never;
 }
@@ -373,6 +473,79 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["CredentialRefused"];
             403: components["responses"]["Forbidden"];
+            413: components["responses"]["PayloadTooLarge"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    registerAgent: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The client contract version, required on every call without a draft. On a call with a draft it may be sent, and must then equal the draft's clientContractVersion. */
+                "Soorma-Contract-Version": components["parameters"]["SoormaContractVersion"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrationRequest"];
+            };
+        };
+        responses: {
+            /** @description The registration, every attribute. */
+            200: {
+                headers: {
+                    "Soorma-Contract-Version": components["headers"]["Soorma-Contract-Version"];
+                    "Soorma-Request-Id": components["headers"]["Soorma-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Registration"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["CredentialRefused"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            413: components["responses"]["PayloadTooLarge"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    issueRegistrationSecret: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The client contract version, required on every call without a draft. On a call with a draft it may be sent, and must then equal the draft's clientContractVersion. */
+                "Soorma-Contract-Version": components["parameters"]["SoormaContractVersion"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrationSecretRequest"];
+            };
+        };
+        responses: {
+            /** @description The secret, returned once. Not cacheable. */
+            200: {
+                headers: {
+                    "Soorma-Contract-Version": components["headers"]["Soorma-Contract-Version"];
+                    "Soorma-Request-Id": components["headers"]["Soorma-Request-Id"];
+                    "Cache-Control": components["headers"]["Cache-Control"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationSecret"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["CredentialRefused"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
             413: components["responses"]["PayloadTooLarge"];
             500: components["responses"]["InternalError"];
             503: components["responses"]["Unavailable"];

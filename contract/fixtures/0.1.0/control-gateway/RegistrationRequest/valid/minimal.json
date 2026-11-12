@@ -1,0 +1,1 @@
+{ "agent": "billing-agent", "standingPermissions": ["event:publish"] }

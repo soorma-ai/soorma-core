@@ -160,6 +160,99 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/Unavailable'
+  /registrations:
+    post:
+      operationId: registerAgent
+      summary: Register a logical agent in this environment, sponsored by the presenting human
+      description: >-
+        Requires agent:register in this environment. The sponsor is the presenting
+        human. The standing set must lie within what the sponsor holds, contain no
+        human-only permission, and contain the re-broadening declaration. The
+        ceiling snapshot records what the sponsor held. The identifier is chosen by
+        the client, unique in this environment, and never reusable.
+      security:
+        - environmentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '200':
+          description: The registration, every attribute.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registration'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /registration-secrets:
+    post:
+      operationId: issueRegistrationSecret
+      summary: Issue a registration secret for a logical agent in this environment
+      description: >-
+        Requires agent:register in this environment, and that the presenter is the
+        registration's sponsor or an Admin (a holder of grant:human and
+        human:manage). The secret is returned once and never again. At most 10
+        secrets are active per registration.
+      security:
+        - environmentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationSecretRequest'
+      responses:
+        '200':
+          description: The secret, returned once. Not cacheable.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationSecret'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
 components:
   schemas:
     # Request side: closed, every string and array bounded.
@@ -180,6 +273,42 @@ components:
           uniqueItems: true
           items:
             $ref: 'conventions/components.openapi.yaml#/components/schemas/PermissionIdentifier'
+    RegistrationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - agent
+        - standingPermissions
+      properties:
+        agent:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/LogicalAgentIdentifier'
+        standingPermissions:
+          description: >-
+            The agent's standing set: within what the sponsor holds, with no
+            human-only permission. May be empty.
+          type: array
+          maxItems: 32
+          uniqueItems: true
+          items:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/PermissionIdentifier'
+        reBroadeningDeclaration:
+          description: Within the standing set. Omitted means empty.
+          type: array
+          maxItems: 32
+          uniqueItems: true
+          items:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/PermissionIdentifier'
+        autonomyDeclared:
+          description: Omitted means false.
+          type: boolean
+    RegistrationSecretRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - registration
+      properties:
+        registration:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/LogicalAgentIdentifier'
 
     # Received side: open, identifiers as plain strings.
     EnvironmentCredentialResponse:
@@ -221,6 +350,82 @@ components:
         selfGrant:
           description: True when the target is the actor.
           type: boolean
+    EnvironmentReference:
+      type: object
+      additionalProperties: true
+      required:
+        - organization
+        - project
+        - environment
+      properties:
+        organization:
+          type: string
+        project:
+          type: string
+        environment:
+          type: string
+    Registration:
+      type: object
+      additionalProperties: true
+      required:
+        - agent
+        - environment
+        - sponsor
+        - ceilingSnapshot
+        - standingPermissions
+        - reBroadeningDeclaration
+        - autonomyDeclared
+        - registeredAt
+        - state
+      properties:
+        agent:
+          type: string
+        environment:
+          $ref: '#/components/schemas/EnvironmentReference'
+        sponsor:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/HumanPrincipalReference'
+        ceilingSnapshot:
+          description: What the sponsor held in this environment when the standing set was granted.
+          type: array
+          items:
+            type: string
+        standingPermissions:
+          type: array
+          items:
+            type: string
+        reBroadeningDeclaration:
+          type: array
+          items:
+            type: string
+        autonomyDeclared:
+          type: boolean
+        registeredAt:
+          description: RFC 3339.
+          type: string
+        state:
+          description: An open value set; `registered` in this contract version.
+          type: string
+    RegistrationSecret:
+      description: >-
+        The registration secret, returned once. secret is material, not a
+        credential: it goes in a request body, never in Authorization.
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - registration
+        - secret
+        - issuedAt
+      properties:
+        id:
+          type: string
+        registration:
+          type: string
+        secret:
+          type: string
+        issuedAt:
+          description: RFC 3339.
+          type: string
 
   headers:
     Soorma-Contract-Version:
@@ -234,12 +439,19 @@ components:
       required: true
       schema:
         type: string
+    Cache-Control:
+      description: no-store, on a response that carries a secret.
+      required: true
+      schema:
+        type: string
 
   responses:
     BadRequest:
       description: >-
         malformed_request (a body on an operation that takes none included),
-        unsupported_contract_version, unknown_permission, or unknown_principal.
+        unsupported_contract_version, unknown_permission, unknown_principal,
+        human_only_permission, declaration_outside_standing, or
+        unknown_registration.
       headers:
         Soorma-Contract-Version:
           $ref: '#/components/headers/Soorma-Contract-Version'
@@ -263,7 +475,20 @@ components:
           schema:
             $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
     Forbidden:
-      description: forbidden. Authority denied. No WWW-Authenticate.
+      description: >-
+        forbidden (authority denied), or exceeds_sponsor_ceiling. No
+        WWW-Authenticate.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Conflict:
+      description: registration_exists, or secret_limit_reached.
       headers:
         Soorma-Contract-Version:
           $ref: '#/components/headers/Soorma-Contract-Version'

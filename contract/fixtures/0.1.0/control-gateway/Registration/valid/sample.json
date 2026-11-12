@@ -1,0 +1,11 @@
+{
+  "agent": "a",
+  "environment": { "organization": "o1", "project": "p1", "environment": "e" },
+  "sponsor": { "organization": "o1", "principal": "h@example.com" },
+  "ceilingSnapshot": ["agent:register", "event:publish", "grant:human", "human:manage"],
+  "standingPermissions": ["event:publish"],
+  "reBroadeningDeclaration": [],
+  "autonomyDeclared": true,
+  "registeredAt": "2026-11-12T12:00:00Z",
+  "state": "registered"
+}

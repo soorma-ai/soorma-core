@@ -1,0 +1,5 @@
+{
+  "agent": "a",
+  "standingPermissions": [],
+  "sponsor": { "organization": "o1", "principal": "h2@example.com" }
+}

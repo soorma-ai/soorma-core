@@ -30,12 +30,18 @@ export type ProblemCode =
   | 'secret_rejected'
   | 'unknown_permission'
   | 'unknown_principal'
+  | 'human_only_permission'
+  | 'declaration_outside_standing'
+  | 'unknown_registration'
   | 'credential_refused'
   | 'credential_expired'
   | 'forbidden'
+  | 'exceeds_sponsor_ceiling'
   | 'authentication_failed'
   | 'second_factor_enrollment_required'
   | 'second_factor_not_confirmed'
+  | 'registration_exists'
+  | 'secret_limit_reached'
   | 'payload_too_large'
   | 'too_many_attempts'
   | 'unavailable'
@@ -58,12 +64,18 @@ export const PROBLEM_TABLE: Readonly<Record<ProblemCode, Entry>> = Object.freeze
   secret_rejected: { status: 400, title: 'Secret rejected' },
   unknown_permission: { status: 400, title: 'Unknown permission' },
   unknown_principal: { status: 400, title: 'Unknown principal' },
+  human_only_permission: { status: 400, title: 'Human-only permission' },
+  declaration_outside_standing: { status: 400, title: 'Declaration outside standing set' },
+  unknown_registration: { status: 400, title: 'Unknown registration' },
   credential_refused: { status: 401, title: 'Credential refused' },
   credential_expired: { status: 401, title: 'Credential expired' },
   forbidden: { status: 403, title: 'Forbidden' },
+  exceeds_sponsor_ceiling: { status: 403, title: 'Exceeds sponsor ceiling' },
   authentication_failed: { status: 403, title: 'Authentication failed' },
   second_factor_enrollment_required: { status: 403, title: 'Second factor enrollment required' },
   second_factor_not_confirmed: { status: 403, title: 'Second factor not confirmed' },
+  registration_exists: { status: 409, title: 'Registration exists' },
+  secret_limit_reached: { status: 409, title: 'Secret limit reached' },
   payload_too_large: { status: 413, title: 'Payload too large' },
   too_many_attempts: { status: 429, title: 'Too many attempts' },
   unavailable: { status: 503, title: 'Unavailable' },

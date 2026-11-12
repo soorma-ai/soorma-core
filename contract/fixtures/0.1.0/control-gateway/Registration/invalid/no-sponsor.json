@@ -1,0 +1,10 @@
+{
+  "agent": "a",
+  "environment": { "organization": "o1", "project": "p1", "environment": "e" },
+  "ceilingSnapshot": [],
+  "standingPermissions": [],
+  "reBroadeningDeclaration": [],
+  "autonomyDeclared": false,
+  "registeredAt": "2026-11-12T12:00:00Z",
+  "state": "registered"
+}

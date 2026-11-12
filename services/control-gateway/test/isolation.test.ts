@@ -59,13 +59,16 @@ describe('TC-EHA-022: E holds only verify material for the organization sign-in'
     for (const kid of kids) expect(g.cache.verifyKey(kid)?.type, kid).toBe('public');
   });
 
-  it("S2's operations are exactly its contract's four: none issues a sign-in", () => {
+  it("S2's operations are exactly its contract's four, and U5's two: none issues a sign-in", () => {
     const contract = readFileSync(
       resolve(import.meta.dirname, '../../../contract/control-gateway.openapi.yaml'),
       'utf8',
     );
     const paths = [...contract.matchAll(/^ {2}(\/[^:\s]*):\s*$/gm)].map((m) => m[1]);
-    expect(paths.sort()).toEqual([...OPERATIONS].sort());
+    expect(paths.sort()).toEqual(
+      // U5's two (D-CG-AR-16): registerAgent and issueRegistrationSecret
+      [...OPERATIONS, '/registration-secrets', '/registrations'].sort(),
+    );
     const fastify = g.edge.getHttpAdapter().getInstance();
     for (const url of OPERATIONS) expect(fastify.hasRoute({ method: 'POST', url }), url).toBe(true);
     for (const url of ['/sign-ins', '/first-authentication', '/sign-ins/current/renewal'])
