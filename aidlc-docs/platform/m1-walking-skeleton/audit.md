@@ -3269,3 +3269,11 @@ Wait for every check to pass, then report the PR link and the results, and stop.
 **Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate PENDING.
 
 ---
+
+## Construction Design PR Gate: PR Opened (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:03:03Z
+**User Input**: (none)
+**AI Response**: "Opened soorma-core#22 (https://github.com/soorma-ai/soorma-core/pull/22), dev to main, title 'feat(construction): platform/m1-walking-skeleton — agent-credentials design complete', head b8ef618, body from construction/working/agent-credentials-design-pr-body.md: Refs #9, #3, no closing keyword (checked). Recording the PR number in aidlc-state.md and pushing; then waiting for every check on the PR's head. Status stays PENDING."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate, PR open.
+
+---
