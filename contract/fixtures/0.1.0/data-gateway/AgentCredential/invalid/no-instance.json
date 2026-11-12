@@ -1,0 +1,6 @@
+{
+  "credential": "soorma_ac_abc",
+  "agent": "a",
+  "environment": { "organization": "o", "project": "p", "environment": "e" },
+  "expiresAt": "2026-11-12T12:15:00Z"
+}
