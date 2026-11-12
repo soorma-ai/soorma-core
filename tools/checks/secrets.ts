@@ -13,6 +13,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { walkTar } from './tar.ts';
 import { repoRoot, type Finding } from './workspace.ts';
 
 export const SECRET_PATTERNS: readonly { name: string; pattern: RegExp }[] = [
@@ -28,6 +29,13 @@ export const SECRET_PATTERNS: readonly { name: string; pattern: RegExp }[] = [
     pattern:
       /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----\s+[A-Za-z0-9+/=\s]{64,}-----END (?:[A-Z]+ )?PRIVATE KEY-----/,
   },
+  // U6 (NP-AC-12; D-CG-AC-12): an agent credential, shaped as the sign-in
+  // token, and a registration secret, exactly its shape (U5 NFR-AR-01).
+  {
+    name: 'an agent credential',
+    pattern: /soorma_ac_[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{40,}/,
+  },
+  { name: 'a registration secret', pattern: /soorma_rs_[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/ },
 ];
 
 /** Tracked files that hold labelled, non-working test values. */
@@ -62,47 +70,9 @@ export function repositoryFindings(root: string = repoRoot): Finding[] {
  */
 export async function tarFindings(stream: AsyncIterable<Buffer>): Promise<Finding[]> {
   const findings: Finding[] = [];
-  let buffer = Buffer.alloc(0);
-  let pending: { name: string; size: number; skip: boolean } | undefined;
-  let longName: string | undefined;
-  const take = (n: number): Buffer => {
-    const out = buffer.subarray(0, n);
-    buffer = buffer.subarray(n);
-    return out;
-  };
-  for await (const chunk of stream) {
-    buffer = Buffer.concat([buffer, chunk]);
-    for (;;) {
-      if (!pending) {
-        if (buffer.length < 512) break;
-        const header = take(512);
-        if (header.every((b) => b === 0)) continue;
-        const field = (start: number, length: number): string =>
-          header
-            .subarray(start, start + length)
-            .toString('utf8')
-            .replace(/\0.*$/s, '');
-        const prefix = field(345, 155);
-        const name = longName ?? (prefix ? `${prefix}/${field(0, 100)}` : field(0, 100));
-        longName = undefined;
-        const size = parseInt(field(124, 12).trim() || '0', 8);
-        const type = field(156, 1);
-        pending = {
-          name,
-          size,
-          skip: (type !== '0' && type !== '' && type !== 'L') || size > 16 * 2 ** 20,
-        };
-        if (type === 'L') pending = { name: '\0longname', size, skip: false };
-      }
-      const padded = Math.ceil(pending.size / 512) * 512;
-      if (buffer.length < padded) break;
-      const content = take(padded).subarray(0, pending.size);
-      if (pending.name === '\0longname') longName = content.toString('utf8').replace(/\0.*$/s, '');
-      else if (!pending.skip)
-        findings.push(...textFindings(pending.name, content.toString('latin1')));
-      pending = undefined;
-    }
-  }
+  await walkTar(stream, (file) => {
+    if (file.content) findings.push(...textFindings(file.name, file.content.toString('latin1')));
+  });
   return findings;
 }
 

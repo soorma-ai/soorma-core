@@ -144,12 +144,22 @@ jobs:
       - name: Check the image's file system for secrets
         run: node tools/checks/run.ts secrets --image soorma/org-gateway:local
 
+      # U6 NP-AC-10 (TC-AC-083): the positive control. S1 links P10, so the
+      # installed-packages check must find it here, or it proves nothing.
+      - name: Check the S1 image holds @soorma/org-identity (the positive control)
+        run: node tools/checks/run.ts image-packages --image soorma/org-gateway:local --expect @soorma/org-identity
+
       # U4 Infrastructure Design §2, §12; TC-EHA-088.
       - name: Build the S2 image
         run: docker build -f services/control-gateway/Dockerfile -t soorma/control-gateway:local .
 
       - name: Check the S2 image's file system for secrets
         run: node tools/checks/run.ts secrets --image soorma/control-gateway:local
+
+      # U6 NP-AC-10, the user's addition (TC-AC-083): S2's installed packages
+      # hold no organization-level code. S2's manifest test is unchanged.
+      - name: Check the S2 image's installed packages
+        run: node tools/checks/run.ts image-packages --image soorma/control-gateway:local --forbid @soorma/org-identity
 
       # Throwaway secrets for this run only, generated on the runner.
       - name: Generate the stack's secrets

@@ -1,0 +1,25 @@
+{
+  "name": "@soorma/data-gateway",
+  "private": true,
+  "description": "S3 data-gateway: an environment's data face (bootstrap and renewal)",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/abuse-bound": "workspace:*",
+    "@soorma/attribution": "workspace:*",
+    "@soorma/config": "workspace:*",
+    "@soorma/contract": "workspace:*",
+    "@soorma/credentials": "workspace:*",
+    "@soorma/env-store": "workspace:*",
+    "@soorma/perimeter": "workspace:*",
+    "@soorma/policy-decision-seam": "workspace:*",
+    "@soorma/registry": "workspace:*",
+    "@soorma/service-kit": "workspace:*"
+  }
+}

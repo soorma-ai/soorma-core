@@ -61,14 +61,17 @@ importers:
         specifier: 2.9.1
         version: 2.9.1
 
+  e2e: {}
+
   packages/abuse-bound:
     dependencies:
-      '@soorma/org-identity':
-        specifier: workspace:*
-        version: link:../org-identity
       '@soorma/service-kit':
         specifier: workspace:*
         version: link:../service-kit
+    devDependencies:
+      '@soorma/org-identity':
+        specifier: workspace:*
+        version: link:../org-identity
 
   packages/attribution:
     dependencies:
@@ -350,6 +353,39 @@ importers:
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../../packages/org-identity
+
+  services/data-gateway:
+    dependencies:
+      '@soorma/abuse-bound':
+        specifier: workspace:*
+        version: link:../../packages/abuse-bound
+      '@soorma/attribution':
+        specifier: workspace:*
+        version: link:../../packages/attribution
+      '@soorma/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@soorma/contract':
+        specifier: workspace:*
+        version: link:../../contract
+      '@soorma/credentials':
+        specifier: workspace:*
+        version: link:../../packages/credentials
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../../packages/env-store
+      '@soorma/perimeter':
+        specifier: workspace:*
+        version: link:../../packages/perimeter
+      '@soorma/policy-decision-seam':
+        specifier: workspace:*
+        version: link:../../seams/policy-decision
+      '@soorma/registry':
+        specifier: workspace:*
+        version: link:../../packages/registry
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
 
   services/org-gateway:
     dependencies:
