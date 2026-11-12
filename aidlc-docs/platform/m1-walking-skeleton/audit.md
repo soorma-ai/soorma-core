@@ -3422,3 +3422,33 @@ Seeding as the store's owner is approved for U6's other e2e cases (TC-AC-004, 00
 **Context**: Code Generation Part 2, Groups 8 and 9: approved class-3 change (U2's monitoring assertion), the e2e run order, and done when 2's placement
 
 ---
+
+## Code Generation (U6 agent-credentials), Part 2: complete; the code PR awaits the user's merge
+**Timestamp**: 2026-11-12T20:52:35Z
+**User Input**: (none since the decisions on U2's monitoring assertion and Group 9; this entry records the completion prompt)
+**AI Response**: "Groups 8, 9, 10 committed and green: 78410e9 (run 43295281707), 4a2dad9 (run 43297851804), 5700650 (run 43300044942). The code PR soorma-core#23 (dev to main, Refs #9, #3) is open; every check passes (Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant); mergeable. Presented the standardized completion message (Request Changes / Continue to Next Stage). Stopped for the user's merge; nothing recorded as merged."
+**Context**: Code Generation Part 2, Step 38; the merge is the user's
+
+---
+
+## Code Generation (U6 agent-credentials): approved; the code PR merged
+**Timestamp**: 2026-11-12T20:59:39Z
+**User Input**: "PR #23 is merged: merge commit 00a964b on main (2026-11-12T20:58:00Z). I verified it on GitHub. Continue to Next Stage.
+
+I reviewed Groups 8 to 10 against my decisions, and they're applied as approved. The line added inside TC-AR-008 (secrets.set(...)) is accepted: it captures a value, changes no assertion, and is recorded in the code summary.
+
+U6 close-out, then stop:
+
+Record the merge (00a964b) and my response in audit.md and aidlc-state.md, and mark U6's Code Generation complete. Commit on dev and push. That's bookkeeping only, so no PR is needed now; it rides with U7's design PR.
+Keep soorma-core#9 open until Build and Test. Post a comment on #9 listing what U6 carries to Build and Test: TC-AC-066 and 067, the on-stack p95 for S3, and anything else in the code summary marked for Build and Test.
+Post U6's forward obligations to U7 on soorma-core#10:
+E2E: done when 3 to 7 are appended to the same ordered e2e/agent-registration.test.ts journey after TC-AC-093, reusing the agents and credentials it holds. Seeding is for non-done when cases only. test:e2e runs one file at a time.
+Ports: U7's S4 takes 8446 upward.
+Monitoring: S4's events join alerts.yaml under the same shared-name rule, and only S3-only events may group by agent.
+Attribution and revocation: U7 reads revocation at the propagation bound through P5's fail-closed cache, and records envelope-carrying attribution, as U6's design hands over.
+The standing rules: the three classes of earlier-unit test change, the per-group gate, and stopping when a PR needs merging.
+Then stop. U7 (event-ingest, soorma-core#10) starts in a fresh session."
+**AI Response**: "Verified on GitHub: soorma-core#23 MERGED as 00a964b at 2026-11-12T20:58:00Z; dev fast-forwarded to it. U6 Code Generation marked complete in aidlc-state.md. Commenting on #9 (carried to Build and Test; #9 stays open) and #10 (U6's forward obligations to U7), committing the bookkeeping on dev, and stopping; U7 starts in a fresh session."
+**Context**: Code Generation (U6) approved; code PR merged; U6 close-out
+
+---
