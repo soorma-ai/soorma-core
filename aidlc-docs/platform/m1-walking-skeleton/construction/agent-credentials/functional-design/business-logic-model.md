@@ -155,7 +155,7 @@ No SDK; the calls conform to `contract/data-gateway.openapi.yaml`.
 
 | TC | Case | Where it stops | Response |
 |---|---|---|---|
-| *QA enrichment* | A draft envelope in the bootstrap body (TC-AC-004 is the converse: both succeed with none) | §2 step 4 | `malformed_request` |
+| TC-AC-037 | A draft envelope in the bootstrap body (TC-AC-004 is the converse: both succeed with none) | §2 step 4 | `malformed_request` |
 | TC-AC-007 | A wrong secret | §2 step 6.4 | `authentication_failed`; a Failed Bootstrap Attempt for A |
 | TC-AC-008 | Attempts beyond the bound | §2 step 5 | `too_many_attempts`, `Retry-After`; each recorded |
 | TC-AC-009 | A revoked credential at renewal | §3 step 3.4 | `credential_refused` at once (D-AC-01) |

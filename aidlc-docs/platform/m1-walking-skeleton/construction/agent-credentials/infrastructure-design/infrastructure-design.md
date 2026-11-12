@@ -334,3 +334,28 @@ The backup services' expected subpath (`backup`), every other assertion of the t
 | I11 | N/A | Construction is where technology is selected |
 
 **Invariant findings**: none blocking.
+
+## 20. Test Cases (assigned at QA construction enrichment, 2026-11-12)
+
+Each decision's verification, by TC id (`inception/test-cases/agent-credentials/`):
+
+| Decision | Test cases |
+|---|---|
+| D-ID-AC-01 | TC-AC-090, TC-AC-092, TC-AC-017 |
+| D-ID-AC-02 | TC-AC-086, TC-AC-087 |
+| D-ID-AC-03 | TC-AC-071 |
+| D-ID-AC-04 | TC-AC-076 |
+| D-ID-AC-05 | TC-AC-089, TC-AC-020, TC-AC-069 |
+| D-ID-AC-06 | TC-AC-089, TC-AC-060 |
+| D-ID-AC-07 | TC-AC-080, TC-AC-079, TC-AC-090 |
+| D-ID-AC-08 | TC-AC-089, TC-AC-090 |
+| D-ID-AC-09 | TC-AC-087 |
+| D-ID-AC-10 | TC-AC-090, TC-AC-087 |
+| D-ID-AC-11 | TC-AC-072, TC-AC-087 |
+| D-ID-AC-12 | TC-AC-087 |
+| D-ID-AC-13 | TC-AC-086 |
+| D-ID-AC-14 | TC-AC-088 |
+| D-ID-AC-15 | TC-AC-017 |
+| D-ID-AC-16 | TC-AC-091 |
+| D-ID-AC-17 | TC-AC-069 |
+| D-ID-AC-18 | TC-AC-083, TC-AC-092, TC-AC-093, TC-AC-073 |

@@ -3219,3 +3219,53 @@ Run QA construction enrichment for U6 (qa-test-cases.md §2.6, including nfr-req
 **Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design APPROVED.
 
 ---
+
+## QA Construction Enrichment: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T05:15:47Z
+**User Input**: (none; presenting for review before the Construction Design PR gate, as instructed)
+**AI Response**: "QA construction enrichment for U6 (qa-test-cases.md §2): inception specs present; no enrichment-delta.md existed. Sources: construction/agent-credentials/functional-design/, nfr-requirements/ (by the user's instruction), nfr-design/, infrastructure-design/. test-specs-narrative.md: TC-AC-001 to 022 enriched in place (a construction-pass outcome and references each; forward links unchanged); TC-AC-009, 010, 015 adjusted for D-AC-01 (renewal reads revocation directly; the bound's timeline tested in P5 and at S4 by U7); the fixtures record B = 60 s, L = 15 min, M = 24 h; TC-AC-023 to 093 added (71), each with the convention-based forward link to construction/agent-credentials/code/. test-case-index.md: 93 rows. enrichment-delta.md written (git-ignored): 22 modified, 71 added, none removed. Every verification target in the five U6 design artifacts with verification targets now names a TC-AC id: l1-coverage-matrix (every QA enrichment marker replaced; L1-11 and L1-26 gain theirs), invariant-coverage-matrix (I1 to I10), nfr-requirements (NFR-AC-01 to 27), nfr-design-patterns (a Test cases line per NP-AC-01 to 13), infrastructure-design (§20, D-ID-AC-01 to 18); business-logic-model §7's marker too. TC-AC-066, 067 are Build and Test's (reported). Nothing committed; stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U6 agent-credentials: QA construction enrichment, review.
+
+---
+
+## Infrastructure Design: Push Run Green (U6 agent-credentials)
+**Timestamp**: 2026-11-12T05:17:41Z
+**User Input**: (none)
+**AI Response**: "Push run 43159561380 on 7172d18 passed: build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration (dependency review skipped on push). Recorded in aidlc-state.md. The QA construction enrichment stands, awaiting the user's review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design commit verified green.
+
+---
+
+## QA Construction Enrichment Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:01:35Z
+**User Input**: "Approved: QA construction enrichment for U6.
+
+First, confirm push run 43159561380 (7172d18) passed. If it failed, fix it on dev and tell me before going on.
+
+Then:
+
+Log my approval verbatim in audit.md, and mark it approved in aidlc-state.md.
+Commit the test cases, the matrices, and the TC ids in the design artifacts, plus state and audit, on dev, and push.
+Construction Design PR gate: dev → main, as for U1 to U5.
+
+Open the PR with Refs #9, #3 and no closing keyword. Flag for reviewers:
+S3 as the first data-face deployable, and its isolation (its own network, its own database role, no org-identity);
+the separate agent key ring;
+B, L and M as code constants (PF FR-012);
+the bootstrap bound and its lockout residual;
+the class-3 change to U5's backup.test.ts you were approved to make;
+Compose-model rendering with every profile;
+the older-local-stack note for soorma_env_data.
+Wait for every check to pass, then report the PR link and the results, and stop. Don't record the gate approved: I'll merge it, and tell you when."
+**AI Response**: "Confirmed on GitHub: push run 43159561380 on 7172d18 passed. QA construction enrichment APPROVED. Marking it approved; committing the test cases, the matrices, and the TC ids in the design artifacts, plus state and audit, on dev; pushing. Then the Construction Design PR gate: PR dev to main, Refs #9, #3, no closing keyword, with the seven reviewer flags; waiting for every check; reporting and stopping. The gate stays PENDING until the user merges and says so."
+**Context**: CONSTRUCTION, U6 agent-credentials: QA construction enrichment APPROVED; Construction Design PR gate starting.
+
+---
+
+## Construction Design PR Gate: Opened (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:02:43Z
+**User Input**: (none; the user's instruction at 2026-11-12T06:01:35Z)
+**AI Response**: "QA construction enrichment marked APPROVED. Construction Design PR gate (pr-checkpoint.md Section 5): branch dev, PR to main, as the user instructed (as for U1 to U5); instructions at construction/working/agent-credentials-design-pr-checkpoint-instructions.md and the body at agent-credentials-design-pr-body.md (both git-ignored); ## PR Checkpoint State gains 'Construction Design PR Gate — agent-credentials', Status PENDING. The PR description flags the seven items the user named (S3 and its isolation; the separate agent key ring; B, L, M as code constants; the bootstrap bound and its lockout residual; the approved class-3 change to U5's backup.test.ts with its diff; Compose-model rendering with every profile; the older-local-stack note for soorma_env_data), with Refs #9, #3 and no closing keyword. Committing on dev, pushing, opening the PR, waiting for every check. The gate is not recorded as approved until the user merges and says so."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate PENDING.
+
+---

@@ -27,6 +27,8 @@ names its class where it touches U1 to U5.
 | Tests | A unit test: B < L ≤ M (NFR-AC-04). The docs test: `credentials.md`'s *Revocation and Lifetimes* section states 60 s, 15 minutes, and 24 hours, equal to the constants, with L and M as upper bounds and the three client rules (NFR-AC-05). A scan that no configuration schema (`packages/config/schema/`) defines a bound or TTL key |
 | Tests that inject | Clock tests build caches and services with the constants or with explicit small values passed as parameters; production wiring always passes the constants |
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-038, TC-AC-054, TC-AC-056.
+
 ## NP-AC-02: Two New Migrations (P-01, P-02; the user's rule)
 
 | Migration | Holds |
@@ -70,6 +72,8 @@ envelope, still accepted) and for U5's constructed record (another operation, un
 **The reverse rule stays U7's, under the standing rules.** Tests: the store refuses an
 `exchangeBootstrap` record with a chain, and a human-actor `renewAgentCredential` record.
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-076, TC-AC-036.
+
 ## NP-AC-03: `agent_credentials` (Q2 A; P-03)
 
 ```sql
@@ -108,6 +112,8 @@ every one constrained on the three environment columns):
 
 `$new` = min(now + L, `lineage_ends_at`), computed by S3 from the row it read in the same
 transaction. U4's `credentials` table, constraints, and grants are untouched.
+
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-077, TC-AC-050, TC-AC-051, TC-AC-053.
 
 ## NP-AC-04: Revocation State, Two Tables (Q5 A; P-04)
 
@@ -151,6 +157,8 @@ Each target must exist in E (the foreign keys), so a seeded revocation can never
 environment's credential or agent (I1). **Terminal**: nothing but the owner can update or delete
 (NP-AC-06).
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-078, TC-AC-025.
+
 ## NP-AC-05: The Cache, Per Credential, Read Through (Q3 A; P-17)
 
 `packages/credentials/src/revocation.ts`: `createRevocationCache(source, { ttl, max = 16384,
@@ -167,6 +175,8 @@ clock })`, modelled on U3's `createCachingAgentFacts` (NP-04):
 | `ttl` | `PROPAGATION_BOUND_MS` in production (NP-AC-01) |
 | Used by | **S4, wired at U7.** S3 uses the direct source inside its transaction (D-AC-01) |
 | Tests | NFR-AC-01's timeline (business-logic-model §5) with an injected clock; failures never cached; shared in-flight reads; eviction at the bound; `pnpm bench:revocation` (NFR-AC-16) |
+
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-054, TC-AC-065, TC-AC-034, TC-AC-066.
 
 ## NP-AC-06: Privileges, Their Tests, and Test-Only Seeding (P-07 to P-09; corrected at Infrastructure Design)
 
@@ -229,6 +239,8 @@ owner. On the running stack, `e2e/support` gains a helper running `psql` inside 
 through `docker compose exec`, as `soorma_env_migrator`, reading the migrator's password from its
 mounted secret file. Neither is in any package's `src/` or any image (NP-AC-10 checks the image).
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-079, TC-AC-080, TC-AC-046.
+
 ## NP-AC-07: The Bound in the Environment Store, and P8's Generic Core (Q4 A; P-05, 06, 12, 13)
 
 **Tables** (in `0003`):
@@ -287,6 +299,8 @@ SELECT u.organization, u.project, u.environment, u.agent, u.at, u.refused_by_bou
 | The agent's limits | `{ windowMs: 60_000, maxLive: 60, backoffFrom: 10, backoffCapSeconds: 60 }` (NFR-AC-06, 07), exported as `AGENT_BOOTSTRAP_LIMITS`. A security bound, not a tenant quota (NFR-AC-27) |
 | The manifest (D-AC-12) | `@soorma/org-identity` moves to `devDependencies`; P8 gains `@soorma/jcs` as a dependency |
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-081, TC-AC-057, TC-AC-060, TC-AC-049, TC-AC-062.
+
 ## NP-AC-08: The Seam's Agent Half and `packages/agent-identity` (P-10, P-11)
 
 **Seam types** (`seams/identity-resolution/src/agent.ts`, Apache 2.0, re-exported beside the
@@ -320,6 +334,8 @@ Dependencies: `@soorma/identity-resolution-seam`, `@soorma/registry`, `@soorma/e
 | Rejections | Always `{ resolved: false }` through the seam type; the reason goes **only** to `onRejected(reason)`, which S3 wires to its security log and the failed-attempt writer |
 | A store failure | Thrown as service-kit's `UnavailableError`; S3 answers `unavailable` and settles the bound as a failure |
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-026, TC-AC-048.
+
 ## NP-AC-09: The Agent Key Ring and Token (P-14 to P-16)
 
 | Element | Design |
@@ -330,6 +346,8 @@ Dependencies: `@soorma/identity-resolution-seam`, `@soorma/registry`, `@soorma/e
 | Kind tests | A `soorma_ec_` token's JWS behind `soorma_ac_` is refused by `verifyAgentCredential` (its `typ`, and an unknown `kid` against the agent ring); a `soorma_ac_` token's JWS behind `soorma_ec_` is refused by U4's `verifyEnvironmentCredential` (a new test of U4's function, its own tests unchanged: class 1) |
 | S4 | Verify halves only, from U7's loader variant (U7's obligation) |
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-082, TC-AC-069, TC-AC-020.
+
 ## NP-AC-10: Closure, in the Manifests and in the Images (Q6 A, with the user's addition; P-18, 19)
 
 | Check | Design | Class |
@@ -338,6 +356,8 @@ Dependencies: `@soorma/identity-resolution-seam`, `@soorma/registry`, `@soorma/e
 | **S3's image** | A new check, `node tools/checks/run.ts image-packages --image <ref> --forbid <name>[,<name>]`: it exports the image's file system as the secrets check does, and fails on any path containing `@soorma/<forbidden>` or any `package.json` whose `name` is a forbidden package. In CI's image job, after S3's secret scan: forbid `@soorma/org-identity` and `@soorma/identity-resolution` | New (U6) |
 | **S2's image** (the user's addition) | The same check on `soorma/control-gateway:local`, **forbid `@soorma/org-identity`**, in the image job beside S3's, after S2's secret scan. **S2's manifest test (TC-EHA-078) stays unchanged** | **Class 2**: strictly stronger, S2's existing checks unchanged; recorded |
 | A positive control | The check run on S1's image **finds** `@soorma/org-identity`, so it is not vacuous (as TC-EHA-078's second case does for the walk) | New |
+
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-040, TC-AC-083.
 
 ## NP-AC-11: S3's Composition and Transactions (P-20 to P-22)
 
@@ -348,6 +368,8 @@ Dependencies: `@soorma/identity-resolution-seam`, `@soorma/registry`, `@soorma/e
 | Renewal | Presenter; then **one transaction**: `checkAgentRequest` with a revocation callback bound to the transaction (O1, O2, O4 before any read; then O3 at both granularities); the record by `cid`; the registration's `state` and `sponsor`; the renew statement; the attribution record. Then mint |
 | `checkAgentRequest` (P1) | Takes `verify(token)` and `revocation(context)` callbacks (as U4's `SignInPerimeter` takes its key source and status), so `@soorma/perimeter` gains no dependency on P5 |
 | Responses | `200`, `Cache-Control: no-store`, the token a `SecretText` until serialised |
+
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-085, TC-AC-042.
 
 ## NP-AC-12: The Secret-Pattern Check Learns U6's Values (made at design; flagged for review)
 
@@ -363,6 +385,8 @@ stay listed in `FIXTURE_PATHS`.
 patterns, it uses obviously fake values** (shaped so they do not match, as U2's `soorma_em_x`),
 **never an exception in the check**: no new entry in `FIXTURE_PATHS`, no allowlist, no skip.
 
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-084.
+
 ## NP-AC-13: Identifiers and Time
 
 Every id (`cid`, `jti`) from Node's CSPRNG, 128 bits, base64url (`env-store`'s `newRecordId`).
@@ -370,6 +394,8 @@ Time from the injected `Clock`, truncated to whole seconds for tokens and record
 database's `now()` (as U2's P-14).
 
 ---
+
+**Test cases** (assigned at QA construction enrichment, 2026-11-12): TC-AC-068, TC-AC-055.
 
 ## Security Compliance at NFR Design
 
