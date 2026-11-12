@@ -17,11 +17,14 @@ esac
 psql -v ON_ERROR_STOP=1 --no-psqlrc --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
   --set=target_database="$POSTGRES_DB" \
   --set=migrator_file="/run/secrets/$env-db-migrator-password" \
-  --set=app_file="/run/secrets/$env-db-app-password" <<'SQL'
+  --set=app_file="/run/secrets/$env-db-app-password" \
+  --set=data_file="/run/secrets/$env-db-data-password" <<'SQL'
 SELECT set_config('soorma.target_database', :'target_database', false);
 \i /soorma/db/env-roles.sql
 \set migrator_password `cat :migrator_file`
 \set app_password `cat :app_file`
+\set data_password `cat :data_file`
 ALTER ROLE soorma_env_migrator PASSWORD :'migrator_password';
 ALTER ROLE soorma_env_app PASSWORD :'app_password';
+ALTER ROLE soorma_env_data PASSWORD :'data_password';
 SQL

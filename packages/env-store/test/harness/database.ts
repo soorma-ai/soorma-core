@@ -12,7 +12,7 @@ import type { Store } from '@soorma/service-kit';
 import { connect } from '../../../org-identity/test/harness/global-setup.ts';
 import { connectEnvStore } from '../../src/index.ts';
 import type { EnvDatabaseInfo } from './global-setup.ts';
-import { ENV_APP, ENV_MIGRATOR, runEnvRolesSql } from './roles.ts';
+import { ENV_APP, ENV_DATA, ENV_MIGRATOR, runEnvRolesSql } from './roles.ts';
 
 export interface TestEnvDatabase {
   name: string;
@@ -27,6 +27,8 @@ export interface TestEnvDatabase {
   app(): Promise<pg.Client>;
   /** A client as the migrator role. */
   migrator(): Promise<pg.Client>;
+  /** A client as S3's role, soorma_env_data (U6 D-ID-AC-07). */
+  data(): Promise<pg.Client>;
   drop(): Promise<void>;
 }
 
@@ -97,6 +99,7 @@ export async function testEnvDatabase(options: { empty?: boolean } = {}): Promis
     superuser: () => client(),
     app: () => client(ENV_APP, info.appPassword),
     migrator: () => client(ENV_MIGRATOR, info.migratorPassword),
+    data: () => client(ENV_DATA, info.dataPassword),
     async drop() {
       await store.close();
       const a = connect(info.url, adminDb);

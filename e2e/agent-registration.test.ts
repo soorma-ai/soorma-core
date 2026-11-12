@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest';
 import { ARCHIVE_MAGIC } from '../deploy/local/scripts/backup-archive.ts';
 import { backup } from '../deploy/local/scripts/stack-backup.ts';
 import { restore } from '../deploy/local/scripts/stack-restore.ts';
+import { doneWhenTwo } from './agent-credentials-support.ts';
 import {
   code,
   COMPOSE,
@@ -42,6 +43,8 @@ const B = `b-${Date.now().toString(36)}`;
 
 let K = '';
 let credential = '';
+/** Done when 1's secrets, kept for done when 2 (U6 TC-AC-093). */
+const secrets = new Map<string, string>();
 
 /** psql as the store's superuser, over the container's local socket (peer). */
 const sql = (statement: string): string =>
@@ -100,6 +103,7 @@ describe.skipIf(!E2E)('U5 agent-registration on the local stack', () => {
       const s = await post('/registration-secrets', credential, { registration: agent });
       expect(s.status, agent).toBe(200);
       expect((json(s) as { secret: string }).secret).toMatch(/^soorma_rs_/);
+      secrets.set(agent, (json(s) as { secret: string }).secret);
     }
     expect(sql(`SELECT count(*) FROM registrations WHERE agent IN ('${A}', '${B}')`)).toBe('2');
     expect(
@@ -107,6 +111,38 @@ describe.skipIf(!E2E)('U5 agent-registration on the local stack', () => {
         `SELECT count(*) FROM attribution_records WHERE operation = 'registerAgent' AND principal = 'h@example.com' AND target_id IN ('${A}', '${B}')`,
       ),
     ).toBe('2');
+  });
+
+  // U6 (TC-AC-093; D-AC-31): done when 2 chains from done when 1's real
+  // registrations and secrets. The calls are U6's (agent-credentials-support.ts).
+  it('TC-AC-093: done when 2, an instance of A and one of B bootstrap and renew', async () => {
+    const proof = await doneWhenTwo([
+      { agent: A, secret: secrets.get(A) ?? '', instance: 'a-1' },
+      { agent: B, secret: secrets.get(B) ?? '', instance: 'b-1' },
+    ]);
+    for (const [i, agent] of [A, B].entries()) {
+      for (const r of [proof.bootstraps[i]!, proof.renewals[i]!]) {
+        expect(r.status, r.body).toBe(200);
+        expect(r.protocol).toBe('TLSv1.3');
+        expect(json(r)).toMatchObject({
+          agent,
+          environment: { organization: 'o1', project: 'p1', environment: 'e' },
+          instance: i === 0 ? 'a-1' : 'b-1',
+        });
+      }
+    }
+    expect(proof.credentialRecords).toBe(2);
+    expect(proof.attribution).toHaveLength(4);
+    for (const record of proof.attribution)
+      expect(record).toMatchObject({ actor: 'agent', sponsor: PRINCIPAL.principal, noChain: true });
+    expect(proof.attribution.map((r) => `${r.registration}:${r.operation}`).sort()).toEqual(
+      [
+        `${A}:exchangeBootstrap`,
+        `${A}:renewAgentCredential`,
+        `${B}:exchangeBootstrap`,
+        `${B}:renewAgentCredential`,
+      ].sort(),
+    );
   });
 
   it('TC-AR-043: every rejection holds for a raw call to the stack', async () => {
@@ -212,8 +248,8 @@ r.on('error',(e)=>console.log(JSON.stringify({status:0,code:e.code})));r.end(JSO
       ).toBeGreaterThan(0);
 
       // Empty e's store: remove its volume, and start the store alone.
-      docker([...COMPOSE, 'stop', 'e-control-gateway', 'e-db']);
-      docker([...COMPOSE, 'rm', '-f', 'e-control-gateway', 'e-db', 'e-migrate']);
+      docker([...COMPOSE, 'stop', 'e-control-gateway', 'e-data-gateway', 'e-db']);
+      docker([...COMPOSE, 'rm', '-f', 'e-control-gateway', 'e-data-gateway', 'e-db', 'e-migrate']);
       docker(['volume', 'rm', 'soorma-local_e-db-data']);
       docker([...COMPOSE, 'up', '-d', '--wait', 'e-db']);
       expect(sql("SELECT count(*) FROM pg_tables WHERE schemaname = 'public'")).toBe('0');
@@ -242,7 +278,7 @@ r.on('error',(e)=>console.log(JSON.stringify({status:0,code:e.code})));r.end(JSO
         );
 
       // S2 back; a new credential from a new sign-in; the registrations survived.
-      docker([...COMPOSE, 'up', '-d', '--wait', 'e-control-gateway']);
+      docker([...COMPOSE, 'up', '-d', '--wait', 'e-control-gateway', 'e-data-gateway']);
       const fresh = await environmentCredential(K);
       expect((await post('/registration-secrets', fresh, { registration: A })).status).toBe(200);
       const again = await post('/registrations', fresh, { agent: B, standingPermissions: [] });

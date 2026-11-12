@@ -49,6 +49,16 @@ BEGIN
       NULL; -- created by a concurrent run
     END;
   END IF;
+  -- S3's own role (U6 D-ID-AC-07, the user's decision): least privilege per
+  -- deployable. Its table grants are in env-store's 0003 only.
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'soorma_env_data') THEN
+    BEGIN
+      CREATE ROLE soorma_env_data
+        LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+    EXCEPTION WHEN duplicate_object OR unique_violation THEN
+      NULL; -- created by a concurrent run
+    END;
+  END IF;
 END
 $roles$;
 
@@ -62,6 +72,7 @@ BEGIN
   END IF;
   EXECUTE format('REVOKE ALL ON DATABASE %I FROM PUBLIC', target);
   EXECUTE format('GRANT CONNECT ON DATABASE %I TO soorma_env_migrator, soorma_env_app', target);
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO soorma_env_data', target);
 END
 $database$;
 
@@ -71,5 +82,6 @@ $database$;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO soorma_env_migrator;
 GRANT USAGE ON SCHEMA public TO soorma_env_app;
+GRANT USAGE ON SCHEMA public TO soorma_env_data;
 
 COMMIT;

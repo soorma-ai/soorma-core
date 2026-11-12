@@ -3277,3 +3277,148 @@ Wait for every check to pass, then report the PR link and the results, and stop.
 **Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate, PR open.
 
 ---
+
+## Construction Design PR Gate: Checks Green, Stopped for the User's Merge (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:10:39Z
+**User Input**: (none)
+**AI Response**: "soorma-core#22 at 47d89b9: every check passed. pull_request run 43165428062: Build, check, and test (pass, 2m48s); Images, image secret scans, stack smoke test, and the S1-stopped demonstration (pass, 5m48s); Dependency review (pass, 8s). Push run 43165419300: Build, check, and test (pass, 1m57s); Images… (pass, 7m5s); Dependency review skipped on push. cla-assistant pass. State OPEN, mergeable, CLEAN. Stopping: the user merges and says so; the gate stays PENDING. The state and audit updates since 47d89b9 are not committed (committing would re-run the PR's checks)."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate PENDING, checks green.
+
+---
+
+## Construction Design PR Gate Approval: #22 Merged (U6 agent-credentials)
+**Timestamp**: 2026-11-12T07:20:36Z
+**User Input**: "merged: #22 is merged as 1c3fd7d (2026-11-12T07:18:34Z).
+
+Fast-forward dev. Mark the Construction Design gate approved in aidlc-state.md with that merge commit, and log this verbatim in audit.md.
+Commit with the pending note on dev, push, and wait for the push run to pass.
+Then start Code Generation for U6, Part 1 only: write the plan and stop for my approval. Apply the standing rules recorded in the Functional Design plan. In particular:
+Group 1, alone: P8's shared core, with U2's API, tests and vectors unchanged (stop on any U2 test change).
+A separate early group for the P8 manifest fix and S3's closure test.
+Migrations 0003 and 0004, with the data role in env-roles.sql, before any S3 code, with both privilege tests running the real statements.
+Then the packages (agent-identity, P5's agent kind and cache, P1's checkAgentRequest), the contract, S3, the stack, e2e/, and the docs.
+Each group runs the full gate, including the image and installed-packages checks and the stack where a runtime changes, then a push and a passing run.
+Plan a stop after S3's group, before the stack and e2e/ work, so I can review S3's code."
+**AI Response**: "Confirmed on GitHub before recording: soorma-core#22 state MERGED, mergedAt 2026-11-12T07:18:34Z, merge commit 1c3fd7d; origin/main at 1c3fd7d; dev fast-forwarded to it. Construction Design PR gate APPROVED with 1c3fd7d. Committing with the pending green-checks note on dev, pushing, waiting for the push run; then Code Generation Part 1 (the plan), stopping for approval."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate APPROVED.
+
+---
+
+## Code Generation Part 1: Plan Written, Approval Prompt (U6 agent-credentials)
+**Timestamp**: 2026-11-12T07:23:51Z
+**User Input**: (none)
+**AI Response**: "Code Generation Part 1 (code-generation.md Steps 1 to 6): L1 checked (34 Covered, 0 Missing). Plan written: construction/working/agent-credentials-code-generation-plan.md, the single source of truth for U6's Code Generation, with the user's standing rules (the three classes; the one approved class-3 change exactly; the gate with image, secret-scan, and installed-packages checks, the stack where a runtime changes, push and a passing run per group; stop for merges). Eleven groups: G1 P8's shared core alone (U2's API, tests, vectors unchanged; stop on any U2 test change); G2 the P8 manifest fix and S3's closure test (the data-gateway manifest walked, failing before the fix), image-packages, the two secret patterns; G3 the migrations 0003 and 0004, the data role in env-roles.sql with its password and pg_hba, the statement modules, P7's envelope-free list, and both privilege tests running the real statements (P8's statement() objects and S3's), before any S3 code, with a stack from fresh volumes; G4 P5's agent kind and cache; G5 the seam's agent half, agent-identity, P8's agent half, P1's checkAgentRequest; G6 the contract; G7 S3 with its image checks; a planned stop after G7 for the user's review of S3's code; G8 the stack; G9 e2e/; G10 docs and the record; G11 the PR. Decisions D-CG-AC-01 to 12; expected earlier-unit test changes listed with their classes; stop conditions 1 to 10; every TC-AC id 001 to 093 traced. Awaiting the user's approval of the whole plan before Part 2."
+**Context**: CONSTRUCTION, U6 agent-credentials: Code Generation Part 1, approval prompt.
+
+---
+
+## Code Generation Part 1: Plan Approved (U6 agent-credentials)
+**Timestamp**: 2026-11-12T07:25:58Z
+**User Input**: "Approved. Wait for push run 43174556890 (1b7a27c) to pass, then commit the Step 0 bookkeeping and start Part 2 with Group 1.
+
+One note for Step 12. Adding the data role to env-store's test harness changes a helper that U4's and U5's tests depend on. Record it with the evidence that their store and privilege tests pass with their files unchanged (behaviour the same). If any of them would need to change, that's class 3: stop.
+
+Run every group through the full gate, push, and wait for green, applying all ten stop conditions. Stop and report after Group 7's push run is green. In that report, include:
+
+every change to an earlier unit's test so far, as before/after diffs with their class;
+where these are implemented: bootstrap's check order and its one refusal, the single secret-record read, the bound, renewal's binding and expiry cap, the direct revocation read, and the agent key ring."
+**AI Response**: "Code Generation plan APPROVED (the whole plan and sequence). Recorded for Step 12: the harness change is evidenced by U4's and U5's store and privilege tests passing with their files unchanged; any needed change to them is class 3 and stops. Waiting for push run 43174556890 on 1b7a27c, then Step 0, then Part 2 from Group 1, every group through the full gate, pushed and green, under stop conditions 1 to 10; stopping and reporting after Group 7's push run is green, with every earlier-unit test change as before/after diffs with classes, and where bootstrap's check order and one refusal, the single secret-record read, the bound, renewal's binding and expiry cap, the direct revocation read, and the agent key ring are implemented."
+**Context**: CONSTRUCTION, U6 agent-credentials: Code Generation plan APPROVED.
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: stop after Group 7
+**Timestamp**: 2026-11-12T17:43:55Z
+**User Input**: (none since the Part 2 approval; this entry records the planned stop)
+**AI Response**: "Groups 5, 6, and 7 committed, each through the full gate, pushed, and green: 474e301 (run 43262204859), 4b9aa91 (run 43264452527), bf07765 (run 43269826107). Stop conditions 1 to 10 held. No earlier unit's test changed in Groups 5 to 7. Decisions D-CG-AC-22 to 30 recorded in the plan (D-CG-AC-24: renewal reads revocation directly twice, through P1 at the check order's step 4 and again inside its transaction, D-AC-01). Reported to the user for review of S3's code, with every earlier-unit test change so far as before/after diffs with its class, and where each asked-for rule is implemented."
+**Context**: Code Generation Part 2, the planned stop after Step 28 for the user's review of S3's code
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: review of Groups 5 to 7
+**Timestamp**: 2026-11-12T18:20:46Z
+**User Input**: "Review of Groups 5 to 7: approved, with one fix before Group 8.
+
+I verified the commits, the three green runs (including S3's image checks), that no earlier unit's test changed in Groups 5 to 7, and the code for bootstrap's order and its one refusal, the single secret-record read, the bound, renewal's binding and expiry cap, and the agent key ring. D-CG-AC-24 to 29 are approved as recorded.
+
+Fix (BR-RN-03, BR-RF-AC-03): an agent-level revocation at renewal is logged as credential_revoked.
+
+SQL.revoked returns one combined boolean.
+packages/perimeter/src/agent.ts:76 hard-codes credential_revoked.
+The read in renewal's transaction (edge-handlers.ts:216) does the same.
+Required:
+
+The internal reason must distinguish credential_revoked (the cid) from agent_revoked (the agent), on both renewal reads and through the revocation cache. For example, the statement returns both granularities and the source answers which one.
+The response stays credential_refused (401). Bootstrap stays agent_revoked.
+TC-AC-025 asserts renewal.refused with code agent_revoked.
+TC-AC-009 keeps asserting credential_revoked.
+Add a case where both are revoked, asserting whichever precedence you pick, and record that precedence in the plan.
+This is all U6 code, so no earlier unit's test is affected. If an earlier unit's test does need changing, stop as usual.
+
+Process: commit it as its own fix, through the full gate, pushed and green. Commit the pending audit.md stop entry with it. Then continue with Groups 8 to 11. Stop when the PR needs merging, and record nothing as merged until GitHub shows it merged."
+**AI Response**: "Fixing the revocation reason first, as its own commit through the full gate, then continuing with Groups 8 to 11."
+**Context**: Code Generation Part 2, review of S3's code: approved with one fix
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: stop in Group 8 (alert rules)
+**Timestamp**: 2026-11-12T19:01:50Z
+**User Input**: (none since the review; this entry records a stop condition)
+**AI Response**: "The revocation-reason fix is committed as 0d3ad19 and green (run 43281976704). Group 8 is written and passes the full local gate without its alert rules (1422 tests; S1, S2, S3 images; smoke, outage with Case 3, and e2e on a fresh stack), uncommitted. Stopped before Step 31's alert rules: S3's events can join deploy/monitoring/alerts.yaml only by changing U4's monitoring.test.ts helper (the S1 and S2 event union, which its assertions depend on, and whose each-once check S3's NFR-AC-22 names contradict), and U2's alert format has no per-agent grouping for NFR-AC-23's rule. Stop condition 1; options reported to the user."
+**Context**: Code Generation Part 2, Group 8 Step 31; stop condition 1 (class 3)
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: decision on S3's alert rules
+**Timestamp**: 2026-11-12T19:13:03Z
+**User Input**: "Decision on S3's alert rules: option A (one alerts.yaml, as §12 says), amended as follows. Treat these as approved class-3 changes and record each one.
+
+U4's monitoring.test.ts: don't make the uniqueness check vacuous.
+Keep the assertion that S1's and S2's events are disjoint, exactly as it is.
+Add an assertion that S3's events overlapping S1's and S2's are exactly NFR-AC-22's four: credential.issued, credential.renewed, store.unavailable, throttle.refused.
+The expected events list is the deduplicated union. \"alerts.events lists each event once\" stays unchanged.
+Update the file header and the test title to name S3.
+U2's alerts.schema.json:
+groupBy gains \"agent\".
+A rule may take an optional codes list, the internal reasons it counts. When it's absent, a rule counts every occurrence, so existing rules are unchanged.
+Define both in alerts.yaml's header comment.
+S3's rules (NFR-AC-23):
+Bursts of bootstrap.refused grouped by agent.
+A revoked credential still being presented, threshold 1, grouped by agent:
+renewal.refused with codes: [agent_revoked, credential_revoked];
+bootstrap.refused with codes: [agent_revoked].
+bound.refused.
+Choose the burst thresholds to match U4's and record them.
+TC-AC-073 asserts the revoked-credential rules' codes, so they can't fire on expired or record_mismatch.
+U4's compose-model.test.ts: you may correct the two stale titles (\"the twelve services\", \"8441, 8442 and 8443 only\"). Change only the titles, and record it.
+Every other Group 8 change you listed is approved as classed. Run Group 8 through the full gate, push, and wait for green. Then continue with Groups 9 to 11, and stop when the PR needs merging."
+**AI Response**: "Applying option A as amended: the approved class-3 changes to U4's monitoring.test.ts and U2's alerts.schema.json, S3's four rules, the two title corrections, then Group 8 through the full gate."
+**Context**: Code Generation Part 2, Group 8 Step 31: approved class-3 changes for S3's alert rules
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: stop in Group 8 (U2's monitoring assertion)
+**Timestamp**: 2026-11-12T19:16:32Z
+**User Input**: (none since the decision on S3's alert rules; this entry records a stop condition)
+**AI Response**: "Applied the approved changes (U4's monitoring.test.ts as amended, U2's alerts.schema.json groupBy agent and optional codes, S3's four rules, the two title corrections). Group 8's full checks then failed one test: U2's services/org-gateway/test/monitoring.test.ts ('carry the rules NFR-OI-23 names, grouping humans by pseudonym, never by identifier') allows only none, pseudonym, environment, and code as any rule's groupBy, so the approved groupBy agent fails it. Changing that assertion was not among the approved changes: stop condition 1. Group 8 uncommitted; options reported to the user."
+**Context**: Code Generation Part 2, Group 8 Step 31; stop condition 1 (class 3)
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: decisions on U2's monitoring assertion and Group 9's e2e
+**Timestamp**: 2026-11-12T19:39:38Z
+**User Input**: "Decision 1: A approved. Grouping by agent is allowed only on rules for events S3 alone emits. Every other rule and panel keeps the four groupings. Record it as a class-3 change approved by me, with the diff.
+
+Decision 2:
+
+--no-file-parallelism is approved. It changes run order only. Record it.
+Done when 2 must chain from done when 1's real registrations, not seeded ones. TC-AC-093 is the brief's evidence for done when 2. Its precondition is done when 1's registrations and secrets, and its attribution records name sponsor H.
+Add TC-AC-093 as a new test in e2e/agent-registration.test.ts, directly after TC-AR-008. Use the A and B secrets and the state that test already holds.
+Put its calls in a U6 helper module (raw HTTPS to S3, no SDK) and keep it thin in U5's file.
+No existing U5 assertion or helper changes; this is an added test. Record the addition with its diff.
+Confirm that U5's later tests (TC-AR-043, 044, and the backup round trip 059, 056, 060) pass unchanged with the credential and attribution records now present. If any of them would need changing, stop.
+Seeding as the store's owner is approved for U6's other e2e cases (TC-AC-004, 005, and the revocation stack proofs), in U6's own e2e file, using U5's real secret generator, as D-CG-AC-10."
+**AI Response**: "Applying Decision 1 A to U2's monitoring test, then Group 8 through the full gate. Group 9 follows as decided."
+**Context**: Code Generation Part 2, Groups 8 and 9: approved class-3 change (U2's monitoring assertion), the e2e run order, and done when 2's placement
+
+---

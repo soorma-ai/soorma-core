@@ -74,4 +74,14 @@ export const SQL = {
        issuer, digest, issued_at, state)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')`,
   ),
+
+  /**
+   * U6's bootstrap (BR-BS-04; BR-AT-AC-01): the registration's state, and its
+   * sponsor for the attribution record. Run by S3 as soorma_env_data.
+   * $1 to $3 the environment, $4 agent.
+   */
+  registrationForBootstrap: sql(
+    `SELECT state, sponsor FROM registrations
+      WHERE organization = $1 AND project = $2 AND environment = $3 AND agent = $4`,
+  ),
 };

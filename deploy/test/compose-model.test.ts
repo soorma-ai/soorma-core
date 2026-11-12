@@ -42,12 +42,15 @@ interface Model {
   networks: Record<string, unknown>;
 }
 
+const compose = ['compose', '-f', join(local, 'compose.yaml')];
+const run = (args: string[]): string =>
+  execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+/** Every profile the stack lists (U6 D-ID-AC-13): the model holds every service. */
+const profiles = run([...compose, 'config', '--profiles'])
+  .split('\n')
+  .filter((p) => p.length > 0);
 const model = JSON.parse(
-  execFileSync(
-    'docker',
-    ['compose', '-f', join(local, 'compose.yaml'), 'config', '--format', 'json'],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-  ),
+  run([...compose, ...profiles.flatMap((p) => ['--profile', p]), 'config', '--format', 'json']),
 ) as Model;
 const services = model.services;
 const ENVIRONMENTS = ['e', 'e2'] as const;
@@ -75,13 +78,21 @@ function envCopies(env: string): Record<string, string[]> {
 }
 
 describe('TC-EHA-079: secrets are mounted files only, and never cross a level', () => {
-  it('the model has the twelve services, and only the copiers list secrets', () => {
+  it('the model has every service, under every profile, and only the copiers list secrets', () => {
     expect(Object.keys(services).sort()).toEqual(
       ['org', ...ENVIRONMENTS]
         .flatMap((l) =>
           l === 'org'
             ? ['org-db', 'org-gateway', 'org-migrate', 'org-secrets-init']
-            : ['control-gateway', 'db', 'migrate', 'secrets-init'].map((r) => `${l}-${r}`),
+            : [
+                'backup',
+                'control-gateway',
+                'data-gateway',
+                'db',
+                'migrate',
+                'restore',
+                'secrets-init',
+              ].map((r) => `${l}-${r}`),
         )
         .sort(),
     );
@@ -117,11 +128,15 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
           `${env}-caller-key`,
           `${env}-control-gateway-tls`,
           `${env}-db-app-password`,
+          `${env}-db-data-password`,
           `${env}-db-migrator-password`,
           `${env}-db-superuser-password`,
           `${env}-db-tls`,
           `${env}-log-pseudonym-key`,
           `${env}-signing-key-1`,
+          `${env}-data-gateway-tls`,
+          `${env}-agent-signing-key-1`,
+          `${env}-bootstrap-counter-secret`,
         ].sort(),
       );
       for (const n of names) expect(n === 'stack-ca-cert' || n.startsWith(`${env}-`), n).toBe(true);
@@ -151,7 +166,14 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
     for (const env of ENVIRONMENTS) {
       const copies = envCopies(env);
       // U5's backup/ (D-CG-AR-19): the migrator password and the CA, for the backup services.
-      expect(Object.keys(copies).sort()).toEqual(['backup', 'control-gateway', 'db', 'migrate']);
+      expect(Object.keys(copies).sort()).toEqual([
+        'backup',
+        'control-gateway',
+        'data-gateway',
+        'db',
+        'migrate',
+        'restore',
+      ]);
       expect(copies['control-gateway']).not.toContain(`${env}-db-migrator-password`);
       expect(copies.migrate?.sort()).toEqual([`${env}-db-migrator-password`, 'stack-ca-cert']);
       for (const n of Object.values(copies).flat())
@@ -173,6 +195,9 @@ describe('TC-EHA-079 / D-CG-EHA-23: the only environment variables are non-secre
         [`${env}-migrate`, ['SOORMA_ENVIRONMENT', 'SOORMA_PROJECT']],
         [`${env}-control-gateway`, ['SOORMA_ENVIRONMENT', 'SOORMA_HEALTH_PORT', 'SOORMA_PROJECT']],
         [`${env}-secrets-init`, []],
+        [`${env}-data-gateway`, ['SOORMA_ENVIRONMENT', 'SOORMA_HEALTH_PORT', 'SOORMA_PROJECT']],
+        [`${env}-backup`, ['PGPASSFILE']],
+        [`${env}-restore`, ['PGPASSFILE']],
       ]),
     ),
   };
@@ -204,7 +229,7 @@ describe('TC-EHA-079 / D-CG-EHA-23: the only environment variables are non-secre
 
   it('each environment service names its own environment and project', () => {
     for (const env of ENVIRONMENTS)
-      for (const r of ['db', 'migrate', 'control-gateway']) {
+      for (const r of ['db', 'migrate', 'control-gateway', 'data-gateway']) {
         const vars = services[`${env}-${r}`]?.environment ?? {};
         expect(vars.SOORMA_ENVIRONMENT, `${env}-${r}`).toBe(env);
         if (r !== 'db') expect(vars.SOORMA_PROJECT, `${env}-${r}`).toBe('p1');
@@ -248,7 +273,14 @@ describe('TC-EHA-089: no network spans two environments; only the edges are publ
     expect(members('org')).toEqual(['org-db', 'org-gateway', 'org-migrate']);
     for (const env of ENVIRONMENTS) {
       expect(members(env)).toEqual(
-        [`${env}-control-gateway`, `${env}-db`, `${env}-migrate`].sort(),
+        [
+          `${env}-control-gateway`,
+          `${env}-db`,
+          `${env}-migrate`,
+          `${env}-data-gateway`,
+          `${env}-backup`,
+          `${env}-restore`,
+        ].sort(),
       );
       expect(members(`org-internal-${env}`)).toEqual(
         [`${env}-control-gateway`, 'org-gateway'].sort(),
@@ -277,7 +309,7 @@ describe('TC-EHA-089: no network spans two environments; only the edges are publ
       if (role(name) === 'secrets-init') expect(services[name]?.network_mode, name).toBe('none');
   });
 
-  it('published: 127.0.0.1:8441, 8442 and 8443 only, each an edge; no store port', () => {
+  it('published: 127.0.0.1:8441 to 8445 only, each an edge; no store port', () => {
     const published = Object.entries(services).flatMap(([name, s]) =>
       (s.ports ?? []).map(
         (p) => `${name} ${p.host_ip ?? '0.0.0.0'}:${p.published ?? ''}->${p.target}`,
@@ -288,6 +320,8 @@ describe('TC-EHA-089: no network spans two environments; only the edges are publ
         'e-control-gateway 127.0.0.1:8442->8443',
         'e2-control-gateway 127.0.0.1:8443->8443',
         'org-gateway 127.0.0.1:8441->8443',
+        'e-data-gateway 127.0.0.1:8444->8443',
+        'e2-data-gateway 127.0.0.1:8445->8443',
       ].sort(),
     );
   });

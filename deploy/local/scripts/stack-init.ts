@@ -20,6 +20,11 @@
 //   log-pseudonym key, its database superuser password; and its caller key's
 //   PUBLIC half, derived as SPKI PEM, for org-gateway's internalCallers. A
 //   derived public key that no longer matches its private key refuses the run
+// - Each environment's S3 secrets (U6 D-ID-AC-05, 06, 08): its agent signing
+//   keys (Ed25519), each with its verify half `{env}-agent-verify-key-{n}`
+//   (SPKI PEM, mounted nowhere until U7; a half that no longer matches its key
+//   refuses the run, as the caller keys'), the bound's counter secret, and the
+//   data role's password
 // Secrets never pass through environment variables or arguments.
 import { createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -30,6 +35,13 @@ import { CA_CERT, ensureCertificates, SECRETS_DIR } from './stack-certs.ts';
 export const CONFIG = resolve(import.meta.dirname, '../config/tenancy.yaml');
 /** Secrets the stack needs that tenancy.yaml does not name: the database's own. */
 export const STACK_ONLY = ['org-db-superuser-password'] as const;
+
+/** An agent signing key's verify half: `{env}-agent-signing-key-{n}` to `{env}-agent-verify-key-{n}`. */
+export function verifyHalfOf(name: string): string {
+  const half = name.replace(/-agent-signing-key-(\d+)$/, '-agent-verify-key-$1');
+  if (half === name) throw new Error(`${name} is not named {env}-agent-signing-key-{n}`);
+  return half;
+}
 
 const key256 = (): string => randomBytes(32).toString('base64url');
 
@@ -91,10 +103,44 @@ export function stackInit(options: { configPath?: string; dir?: string } = {}): 
         throw new Error(`${name} does not match ${caller}: remove it and run stack:init again`);
     }
     const superuser = `${env.environment}-db-superuser-password`;
-    for (const name of [env.logPseudonym, env.databasePassword, env.migratorPassword, superuser])
+    // S3's own database role (U6 D-ID-AC-07, 08): its password, read by the
+    // store's init script by this name, as the superuser's is.
+    const data = `${env.environment}-db-data-password`;
+    for (const name of [
+      env.logPseudonym,
+      env.databasePassword,
+      env.migratorPassword,
+      superuser,
+      data,
+    ])
       write(name, `${key256()}\n`);
-    for (const name of [...env.controlGateway, ...env.migrator, ...env.callerPublic, superuser])
+    for (const name of [
+      ...env.controlGateway,
+      ...env.migrator,
+      ...env.callerPublic,
+      superuser,
+      data,
+    ])
       environmentNames.add(name);
+
+    // S3 (U6): the agent ring, each key's verify half, the counter secret.
+    const dg = env.dataGateway;
+    if (dg) {
+      for (const name of dg.agentKeys) {
+        write(name, ed25519());
+        const half = verifyHalfOf(name);
+        const spkiHalf = createPublicKey(createPrivateKey(readFileSync(join(dir, name)))).export({
+          format: 'pem',
+          type: 'spki',
+        });
+        if (!write(half, spkiHalf) && readFileSync(join(dir, half), 'utf8') !== spkiHalf)
+          throw new Error(`${half} does not match ${name}: remove it and run stack:init again`);
+        environmentNames.add(half);
+      }
+      write(dg.counter, `${key256()}\n`);
+      if (dg.databasePassword !== data) write(dg.databasePassword, `${key256()}\n`);
+      for (const name of dg.secrets) environmentNames.add(name);
+    }
   }
 
   const handled = new Set([

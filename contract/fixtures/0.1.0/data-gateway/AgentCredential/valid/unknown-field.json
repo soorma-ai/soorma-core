@@ -1,0 +1,8 @@
+{
+  "credential": "soorma_ac_eyJhbGciOiJFZDI1NTE5In0.e30.c2ln",
+  "agent": "a",
+  "environment": { "organization": "o", "project": "p", "environment": "e", "region": "r" },
+  "instance": "a-1",
+  "expiresAt": "2026-11-12T12:15:00Z",
+  "lineageEndsAt": "2026-11-13T12:00:00Z"
+}

@@ -5,10 +5,15 @@
 ## Comparison
 
 Every identifier is **case-sensitive and compared exactly**: no normalization, trimming, or
-case-folding. An identifier is unique within its scope (an environment for agents, instances, and
+case-folding. An identifier is unique within its scope (an environment for agents and
 credentials; an organization for human principals): global uniqueness is composed with scope,
 never allocated. An identifier is always a value, never interpolated into a query, path, or log
 without encoding.
+
+**An agent instance identifier is the agent's own assertion**, made at bootstrap: the platform
+records it and never enforces it unique. Two live credentials of one agent may assert the same
+instance identifier, as when a restarted instance bootstraps again under its old name while its
+earlier credential runs out.
 
 ## Syntax per kind (request inputs only)
 

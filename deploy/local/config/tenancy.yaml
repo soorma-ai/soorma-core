@@ -75,6 +75,21 @@ projects:
             host: org-gateway.soorma.internal
             port: 9443
             ca: stack-ca-cert
+        dataGateway:
+          edge: { port: 8443, tls: e-data-gateway-tls }
+          health: { port: 8080 }
+          database:
+            host: env-db.e.soorma.internal
+            port: 5432
+            name: soorma_env
+            user: soorma_env_data
+            password: e-db-data-password
+            ca: stack-ca-cert
+          keys:
+            signing: e-agent-signing-key-1
+            verify: [e-agent-signing-key-1]
+          bound:
+            counter: e-bootstrap-counter-secret
       - id: e2
         firstAdmin: h@example.com
         controlGateway:
@@ -99,3 +114,18 @@ projects:
             host: org-gateway.soorma.internal
             port: 9443
             ca: stack-ca-cert
+        dataGateway:
+          edge: { port: 8443, tls: e2-data-gateway-tls }
+          health: { port: 8080 }
+          database:
+            host: env-db.e2.soorma.internal
+            port: 5432
+            name: soorma_env
+            user: soorma_env_data
+            password: e2-db-data-password
+            ca: stack-ca-cert
+          keys:
+            signing: e2-agent-signing-key-1
+            verify: [e2-agent-signing-key-1]
+          bound:
+            counter: e2-bootstrap-counter-secret

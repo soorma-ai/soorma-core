@@ -15,18 +15,25 @@
 //    Retry-After 5 (no verify keys are loaded); a credential issued before the
 //    restart still passes O1 to O4, and can be ended. After S1 starts,
 //    issuance recovers on the next fetch, within the 30-second on-demand limit.
+//  Case 3 (U6 D-ID-AC-15; TC-AC-017): S3 never needs S1. With S1 stopped, the
+//    running e-data-gateway serves a bootstrap and a renewal; restarted while
+//    S1 is stopped, it becomes healthy and serves both again.
 //
-// It leaves S1 and both S2s running.
+// It leaves S1, both S2s, and both S3s running.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
+  agentCredentialOf,
+  bootstrapAgent,
   call,
   check,
   COMPOSE,
   docker,
   failed,
   PRINCIPAL,
+  registeredAgent,
+  renewAgent,
   SECRETS,
   type Reply,
 } from './stack-client.ts';
@@ -211,6 +218,27 @@ async function main(): Promise<void> {
     recovered2?.status === 200,
     `${recovered2?.status ?? 'none'} after ${Math.round((Date.now() - started) / 1000)} s`,
   );
+
+  // ---- Case 3: S3 with S1 stopped (U6 TC-AC-017). ----
+  console.log('Case 3: S3 serves bootstrap and renewal while S1 is stopped');
+  const admin = credentialOf(await issue(token, E));
+  check('set-up: agent:register granted', (await grant(admin)).status === 200);
+  const agent = `outage-${Date.now().toString(36)}`;
+  const secret = await registeredAgent(admin, 'e', agent);
+  check('set-up: an agent of E with a registration secret', secret !== '');
+  docker([...COMPOSE, 'stop', 'org-gateway']);
+  const booted3a = await bootstrapAgent('e', agent, secret, 'i-1');
+  check('(a) the running S3 serves a bootstrap', booted3a.status === 200, shown(booted3a));
+  const renewed3a = await renewAgent('e', agentCredentialOf(booted3a));
+  check('(a) and a renewal', renewed3a.status === 200, shown(renewed3a));
+  docker([...COMPOSE, 'restart', 'e-data-gateway']);
+  check('(b) S3 restarted without S1 is healthy', await waitHealthy('e-data-gateway', 120));
+  const booted3b = await bootstrapAgent('e', agent, secret, 'i-2');
+  check('(b) it serves a bootstrap', booted3b.status === 200, shown(booted3b));
+  const renewed3b = await renewAgent('e', agentCredentialOf(booted3b));
+  check('(b) and a renewal', renewed3b.status === 200, shown(renewed3b));
+  docker([...COMPOSE, 'start', 'org-gateway']);
+  check('S1 is healthy again', await waitHealthy('org-gateway', 120));
 
   if (failed() > 0) {
     console.error(`${failed()} outage check(s) failed.`);

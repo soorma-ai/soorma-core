@@ -8,11 +8,13 @@
 //   node tools/checks/run.ts breached
 //   node tools/checks/run.ts sql compare inject
 //   node tools/checks/run.ts secrets [--image <ref>]
+//   node tools/checks/run.ts image-packages --image <ref> [--forbid <names>] [--expect <names>]
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { breachedFindings, BREACHED_PATH, MANIFEST_PATH } from './breached.ts';
 import { codeFindings } from './code.ts';
+import { imagePackageFindings } from './image-packages.ts';
 import { imageFindings, repositoryFindings } from './secrets.ts';
 import { configurationFindings } from './configuration.ts';
 import { githubSettingsFindings, REPOSITORY, sbomPackageNames } from './github-settings.ts';
@@ -40,6 +42,15 @@ function imageArgument(): string | undefined {
   const i = process.argv.indexOf('--image');
   return i === -1 ? undefined : process.argv[i + 1];
 }
+
+/** An option's value from the command line: `--forbid a,b` gives ['a', 'b']. */
+function listArgument(option: string): string[] {
+  const i = process.argv.indexOf(option);
+  return i === -1 ? [] : (process.argv[i + 1] ?? '').split(',').filter((n) => n.length > 0);
+}
+
+/** The options that take a value, so their values are not read as check names. */
+const VALUE_OPTIONS = ['--image', '--forbid', '--expect'];
 
 const checks: Record<string, (ws: Workspace) => Finding[] | Promise<Finding[]>> = {
   register: (ws) =>
@@ -90,6 +101,16 @@ const checks: Record<string, (ws: Workspace) => Finding[] | Promise<Finding[]>> 
     return image === undefined ? repositoryFindings() : imageFindings(image);
   },
 
+  'image-packages': () => {
+    const image = imageArgument();
+    return image === undefined
+      ? [{ check: 'image-packages', location: '-', message: 'needs --image <ref>' }]
+      : imagePackageFindings(image, {
+          forbid: listArgument('--forbid'),
+          expect: listArgument('--expect'),
+        });
+  },
+
   breached: () =>
     breachedFindings(
       readFileSync(join(repoRoot, BREACHED_PATH)),
@@ -118,15 +139,15 @@ async function main(): Promise<void> {
   const image = imageArgument();
   const names = process.argv
     .slice(2)
-    .filter((a, i, all) => a !== '--image' && all[i - 1] !== '--image');
+    .filter((a, i, all) => !VALUE_OPTIONS.includes(a) && !VALUE_OPTIONS.includes(all[i - 1] ?? ''));
   const unknown = names.filter((n) => !(n in checks));
   if (
     names.length === 0 ||
     unknown.length > 0 ||
-    (image !== undefined && !names.includes('secrets'))
+    (image !== undefined && !names.includes('secrets') && !names.includes('image-packages'))
   ) {
     console.error(
-      `usage: node tools/checks/run.ts <${Object.keys(checks).join('|')}>... [--image <ref>]`,
+      `usage: node tools/checks/run.ts <${Object.keys(checks).join('|')}>... [--image <ref>] [--forbid <names>] [--expect <names>]`,
     );
     process.exit(2);
   }

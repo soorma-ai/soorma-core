@@ -20,6 +20,9 @@
 # - Environments E and E2 (U4): each its own secrets volume and copier, store,
 #   migrate service, network, and S2, on 127.0.0.1:8442 and 8443; S2 joins
 #   org-internal-{env} and does not wait for org-gateway
+# - Each environment's S3 (U6 Infrastructure Design §1): {env}-data-gateway on
+#   127.0.0.1:8444 (E) and 8445 (E2), on its own {env} network only, never
+#   org-internal-{env}; it waits for its migrate service, never for S1 or S2
 # - Every container: a non-root user, a read-only root file system, all
 #   capabilities dropped, no new privileges; the one exception is
 #   org-secrets-init (root, only CHOWN, DAC_OVERRIDE, FOWNER; no network;
@@ -89,6 +92,26 @@ x-control-gateway: &control-gateway
   cap_drop: [ALL]
   security_opt: ['no-new-privileges:true']
   image: soorma/control-gateway:local
+  command: ['dist/main.js']
+  configs:
+    - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+  tmpfs:
+    - /tmp
+  mem_limit: 256m
+  healthcheck:
+    test: ['CMD', '/nodejs/bin/node', 'dist/healthcheck.js']
+    interval: 5s
+    timeout: 3s
+    retries: 24
+  restart: unless-stopped
+
+# An environment's S3 (U6 Infrastructure Design §1, §8; D-ID-AC-01). As S2's,
+# with its own image; it never waits for org-gateway or the environment's S2.
+x-data-gateway: &data-gateway
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  image: soorma/data-gateway:local
   command: ['dist/main.js']
   configs:
     - { source: tenancy, target: /etc/soorma/tenancy.yaml }
@@ -260,9 +283,13 @@ services:
       - e-db-superuser-password
       - e-db-app-password
       - e-db-migrator-password
+      - e-db-data-password
       - e-signing-key-1
       - e-caller-key
       - e-log-pseudonym-key
+      - e-data-gateway-tls
+      - e-agent-signing-key-1
+      - e-bootstrap-counter-secret
 
   e-db:
     <<: *env-db
@@ -393,9 +420,37 @@ services:
           source: e-secrets,
           target: /run/secrets,
           read_only: true,
-          volume: { subpath: backup },
+          volume: { subpath: restore },
         }
     networks: [e]
+
+  # e's S3 (U6): its data-gateway/ secrets only; on network e only.
+  e-data-gateway:
+    <<: *data-gateway
+    # Built here once; e2-data-gateway runs the same image.
+    build:
+      context: ../..
+      dockerfile: services/data-gateway/Dockerfile
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e
+      SOORMA_HEALTH_PORT: '8080'
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: data-gateway },
+        }
+    ports:
+      - '127.0.0.1:8444:8443'
+    networks:
+      e:
+        aliases: [data-gateway.e.soorma.internal]
+    depends_on:
+      e-secrets-init: { condition: service_completed_successfully }
+      e-migrate: { condition: service_completed_successfully }
 
   # ---- Environment e2 (U4 Infrastructure Design; Q1 A: written out in full) ----
 
@@ -413,9 +468,13 @@ services:
       - e2-db-superuser-password
       - e2-db-app-password
       - e2-db-migrator-password
+      - e2-db-data-password
       - e2-signing-key-1
       - e2-caller-key
       - e2-log-pseudonym-key
+      - e2-data-gateway-tls
+      - e2-agent-signing-key-1
+      - e2-bootstrap-counter-secret
 
   e2-db:
     <<: *env-db
@@ -544,16 +603,40 @@ services:
           source: e2-secrets,
           target: /run/secrets,
           read_only: true,
-          volume: { subpath: backup },
+          volume: { subpath: restore },
         }
     networks: [e2]
+
+  # e2's S3 (U6): its data-gateway/ secrets only; on network e2 only.
+  e2-data-gateway:
+    <<: *data-gateway
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e2
+      SOORMA_HEALTH_PORT: '8080'
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: data-gateway },
+        }
+    ports:
+      - '127.0.0.1:8445:8443'
+    networks:
+      e2:
+        aliases: [data-gateway.e2.soorma.internal]
+    depends_on:
+      e2-secrets-init: { condition: service_completed_successfully }
+      e2-migrate: { condition: service_completed_successfully }
 
 networks:
   org: {}
   # One internal network per environment: environments share no network.
   org-internal-e: {}
   org-internal-e2: {}
-  # Each environment's own network: its store, migrate service, and S2.
+  # Each environment's own network: its store, migrate service, S2, and S3.
   e: {}
   e2: {}
 
@@ -589,6 +672,10 @@ secrets:
   e-db-superuser-password: { file: ./.secrets/e-db-superuser-password }
   e-db-app-password: { file: ./.secrets/e-db-app-password }
   e-db-migrator-password: { file: ./.secrets/e-db-migrator-password }
+  e-db-data-password: { file: ./.secrets/e-db-data-password }
+  e-data-gateway-tls: { file: ./.secrets/e-data-gateway-tls }
+  e-agent-signing-key-1: { file: ./.secrets/e-agent-signing-key-1 }
+  e-bootstrap-counter-secret: { file: ./.secrets/e-bootstrap-counter-secret }
   e-signing-key-1: { file: ./.secrets/e-signing-key-1 }
   e-caller-key: { file: ./.secrets/e-caller-key }
   e-caller-public-key: { file: ./.secrets/e-caller-public-key }
@@ -598,6 +685,10 @@ secrets:
   e2-db-superuser-password: { file: ./.secrets/e2-db-superuser-password }
   e2-db-app-password: { file: ./.secrets/e2-db-app-password }
   e2-db-migrator-password: { file: ./.secrets/e2-db-migrator-password }
+  e2-db-data-password: { file: ./.secrets/e2-db-data-password }
+  e2-data-gateway-tls: { file: ./.secrets/e2-data-gateway-tls }
+  e2-agent-signing-key-1: { file: ./.secrets/e2-agent-signing-key-1 }
+  e2-bootstrap-counter-secret: { file: ./.secrets/e2-bootstrap-counter-secret }
   e2-signing-key-1: { file: ./.secrets/e2-signing-key-1 }
   e2-caller-key: { file: ./.secrets/e2-caller-key }
   e2-caller-public-key: { file: ./.secrets/e2-caller-public-key }

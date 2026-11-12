@@ -18,7 +18,11 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@soorma/org-identity": "workspace:*",
+    "@soorma/jcs": "workspace:*",
     "@soorma/service-kit": "workspace:*"
+  },
+  "devDependencies": {
+    "@soorma/env-store": "workspace:*",
+    "@soorma/org-identity": "workspace:*"
   }
 }

@@ -38,6 +38,9 @@
       "path": "./packages/abuse-bound/tsconfig.build.json"
     },
     {
+      "path": "./packages/agent-identity/tsconfig.build.json"
+    },
+    {
       "path": "./packages/identity-resolution/tsconfig.build.json"
     },
     {
@@ -57,6 +60,9 @@
     },
     {
       "path": "./services/control-gateway/tsconfig.build.json"
+    },
+    {
+      "path": "./services/data-gateway/tsconfig.build.json"
     }
   ]
 }

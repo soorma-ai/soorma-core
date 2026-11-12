@@ -101,7 +101,7 @@ describe('TC-AR-057: the backup and restore services', () => {
         source: `${level(name)}-secrets`,
         target: '/run/secrets',
         read_only: true,
-        volume: { subpath: 'backup' },
+        volume: { subpath: name.endsWith('-restore') ? 'restore' : 'backup' },
       });
       // U5: and no other mount at all; the pgpass file is on a tmpfs.
       expect(withProfile[name]?.volumes, name).toHaveLength(1);

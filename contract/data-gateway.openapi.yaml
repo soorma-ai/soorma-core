@@ -1,0 +1,286 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# S3 data-gateway: an environment's data face for agent credentials (U6
+# agent-credentials). One environment per data-gateway, so no path or body
+# carries an environment: the endpoint names it. Neither operation carries an
+# envelope (GAP-INT-008, worked around: soorma-prd#27): bootstrap precedes any
+# credential, and renewal only replaces one. Shared definitions are referenced
+# from conventions/components.openapi.yaml, never copied. The written rules are
+# in conventions/*.md; revocation and lifetimes in conventions/credentials.md.
+openapi: 3.1.1
+info:
+  title: soorma data-gateway (S3)
+  version: 0.1.0
+  description: >-
+    An agent instance's credential: the bootstrap exchange of a registration
+    secret, and renewal. Pre-release (0.y.z): see conventions/pre-release.md.
+  license:
+    name: Apache 2.0
+    identifier: Apache-2.0
+paths:
+  /agent-credentials:
+    post:
+      operationId: exchangeBootstrap
+      summary: Exchange a registration secret for an agent credential
+      description: >-
+        An instance presents its logical agent's registration secret and asserts
+        an instance identifier (recorded, never verified). The secret must be an
+        active secret of that agent's registration in this environment, the
+        registration must be registered, and the agent must not be revoked.
+        Every failure is the same authentication_failed, so no cause can be told
+        apart. Attempts per agent are bounded (too_many_attempts). Names no
+        security scheme: a presented Authorization or Soorma-Delegation header
+        is malformed_request. Carries no envelope.
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapRequest'
+      responses:
+        '200':
+          description: The agent credential. Not cacheable.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCredential'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/AuthenticationRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /agent-credentials/current/renewal:
+    post:
+      operationId: renewAgentCredential
+      summary: Renew one's own agent credential
+      description: >-
+        A new token for the same credential: the same agent, environment, and
+        instance, with a later expiresAt, never past the credential's maximum
+        age. Refused once the credential or its agent is revoked. The
+        registration secret is not consulted. Schedule renewal from expiresAt;
+        once renewal answers credential_expired, bootstrap again (see
+        conventions/credentials.md). Takes no request body. Carries no envelope.
+      security:
+        - agentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      responses:
+        '200':
+          description: The renewed agent credential. Not cacheable.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCredential'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  schemas:
+    # Request side: closed, every string bounded.
+    BootstrapRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - agent
+        - secret
+        - instance
+      properties:
+        agent:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/LogicalAgentIdentifier'
+        secret:
+          $ref: '#/components/schemas/BootstrapMaterial'
+        instance:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/InstanceIdentifier'
+    BootstrapMaterial:
+      description: >-
+        The bootstrap material: a registration secret (soorma_rs_), the only type
+        accepted in this version. Its typed prefix declares its type, so the
+        schema checks only its syntax (conventions/credentials.md): material of
+        another type is refused as authentication_failed. Material, not a
+        credential.
+      type: string
+      minLength: 1
+      maxLength: 256
+      pattern: '^[A-Za-z0-9._~+/-]+=*$'
+
+    # Received side: open, identifiers as plain strings.
+    AgentCredential:
+      description: >-
+        The agent credential. credential is opaque: present it as
+        Authorization: Bearer, in this environment only. expiresAt is the
+        authority for when to renew.
+      type: object
+      additionalProperties: true
+      required:
+        - credential
+        - agent
+        - environment
+        - instance
+        - expiresAt
+      properties:
+        credential:
+          type: string
+        agent:
+          type: string
+        environment:
+          $ref: '#/components/schemas/EnvironmentReference'
+        instance:
+          type: string
+        expiresAt:
+          description: RFC 3339.
+          type: string
+    EnvironmentReference:
+      type: object
+      additionalProperties: true
+      required:
+        - organization
+        - project
+        - environment
+      properties:
+        organization:
+          type: string
+        project:
+          type: string
+        environment:
+          type: string
+
+  headers:
+    Soorma-Contract-Version:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Contract-Version'
+    Soorma-Request-Id:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Request-Id'
+    Retry-After:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Retry-After'
+    WWW-Authenticate:
+      description: Bearer, on a 401 (RFC 6750). Never on a 403.
+      required: true
+      schema:
+        type: string
+    Cache-Control:
+      description: no-store, on a response that carries a credential.
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: >-
+        malformed_request (a body on renewal, or a credential header on
+        bootstrap, included) or unsupported_contract_version.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    AuthenticationRefused:
+      description: >-
+        authentication_failed: one code for every cause of a failed bootstrap.
+        No WWW-Authenticate.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    CredentialRefused:
+      description: credential_refused or credential_expired.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWW-Authenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: payload_too_large. Request bodies are at most 16 KiB.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    TooManyAttempts:
+      description: too_many_attempts. Does not reveal whether the agent exists.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Unavailable:
+      description: unavailable. The request fails closed.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    InternalError:
+      description: internal_error, with no detail.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+
+  securitySchemes:
+    agentCredential:
+      $ref: 'conventions/components.openapi.yaml#/components/securitySchemes/agentCredential'

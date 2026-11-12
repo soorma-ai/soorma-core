@@ -35,6 +35,7 @@ export {
   insertRegistration,
   insertSecretUnderCap,
   MAX_ACTIVE_SECRETS,
+  registrationForBootstrap,
   type RegistrationRecord,
   type RegistrationWrite,
   type SecretRecord,

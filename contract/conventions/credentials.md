@@ -42,6 +42,22 @@ material, not credentials. **They go in a request body, never in `Authorization`
 most 256 characters. Their typed prefixes let secret scanners find them, and keep them from being
 taken for credentials.
 
+## Revocation and Lifetimes
+
+- **Revocation reaches every request within 60 seconds.** This is the platform's propagation
+  bound, set by the platform and not configurable per tenant. Past it, a surface that cannot read
+  revocation state denies the request with `unavailable`: it never accepts one on stale state
+- **An agent credential is valid for at most 15 minutes** from its bootstrap or its latest
+  renewal, and **renewal never extends it past 24 hours** from its bootstrap. **Both are upper
+  bounds only**: a shorter lifetime is always compatible, and either may change without a
+  breaking change
+- **A client therefore**:
+  1. **Schedules renewal from the response's `expiresAt`**, the authority for every
+     credential's expiry
+  2. **Bootstraps again when renewal answers `credential_expired`** at the end of the
+     credential's lifetime
+  3. **Never hard-codes either lifetime**
+
 ## Reserved: delegation
 
 **The `Soorma-Delegation` header is reserved** for a delegation credential presented beside an
