@@ -64,13 +64,18 @@ describe('TC-AC-085: checkAgentRequest runs the presenter, then verify, then O3,
     }
   });
 
-  it('revoked is credential_refused; an O3 read that cannot answer throws (unavailable)', async () => {
-    const revoked = checks({ revocation: () => Promise.resolve('revoked') });
-    expect(await checkAgentRequest(headers(['Authorization', `Bearer ${AC}`]), revoked.c)).toEqual({
-      accepted: false,
-      code: 'credential_refused',
-      reason: 'credential_revoked',
-    });
+  it('either granularity is credential_refused, the reason naming which; an O3 read that cannot answer throws', async () => {
+    for (const answer of ['credential_revoked', 'agent_revoked'] as const) {
+      const revoked = checks({ revocation: () => Promise.resolve(answer) });
+      expect(
+        await checkAgentRequest(headers(['Authorization', `Bearer ${AC}`]), revoked.c),
+      ).toEqual({
+        accepted: false,
+        code: 'credential_refused',
+        reason: answer,
+        context: expect.objectContaining({ agent: expect.any(String) }) as unknown,
+      });
+    }
     const down = checks({
       revocation: () => Promise.reject(new UnavailableError('down', 5)),
     });

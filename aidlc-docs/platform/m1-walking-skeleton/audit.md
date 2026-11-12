@@ -3326,3 +3326,37 @@ where these are implemented: bootstrap's check order and its one refusal, the si
 **Context**: CONSTRUCTION, U6 agent-credentials: Code Generation plan APPROVED.
 
 ---
+
+## Code Generation (U6 agent-credentials), Part 2: stop after Group 7
+**Timestamp**: 2026-11-12T17:43:55Z
+**User Input**: (none since the Part 2 approval; this entry records the planned stop)
+**AI Response**: "Groups 5, 6, and 7 committed, each through the full gate, pushed, and green: 474e301 (run 43262204859), 4b9aa91 (run 43264452527), bf07765 (run 43269826107). Stop conditions 1 to 10 held. No earlier unit's test changed in Groups 5 to 7. Decisions D-CG-AC-22 to 30 recorded in the plan (D-CG-AC-24: renewal reads revocation directly twice, through P1 at the check order's step 4 and again inside its transaction, D-AC-01). Reported to the user for review of S3's code, with every earlier-unit test change so far as before/after diffs with its class, and where each asked-for rule is implemented."
+**Context**: Code Generation Part 2, the planned stop after Step 28 for the user's review of S3's code
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: review of Groups 5 to 7
+**Timestamp**: 2026-11-12T18:20:46Z
+**User Input**: "Review of Groups 5 to 7: approved, with one fix before Group 8.
+
+I verified the commits, the three green runs (including S3's image checks), that no earlier unit's test changed in Groups 5 to 7, and the code for bootstrap's order and its one refusal, the single secret-record read, the bound, renewal's binding and expiry cap, and the agent key ring. D-CG-AC-24 to 29 are approved as recorded.
+
+Fix (BR-RN-03, BR-RF-AC-03): an agent-level revocation at renewal is logged as credential_revoked.
+
+SQL.revoked returns one combined boolean.
+packages/perimeter/src/agent.ts:76 hard-codes credential_revoked.
+The read in renewal's transaction (edge-handlers.ts:216) does the same.
+Required:
+
+The internal reason must distinguish credential_revoked (the cid) from agent_revoked (the agent), on both renewal reads and through the revocation cache. For example, the statement returns both granularities and the source answers which one.
+The response stays credential_refused (401). Bootstrap stays agent_revoked.
+TC-AC-025 asserts renewal.refused with code agent_revoked.
+TC-AC-009 keeps asserting credential_revoked.
+Add a case where both are revoked, asserting whichever precedence you pick, and record that precedence in the plan.
+This is all U6 code, so no earlier unit's test is affected. If an earlier unit's test does need changing, stop as usual.
+
+Process: commit it as its own fix, through the full gate, pushed and green. Commit the pending audit.md stop entry with it. Then continue with Groups 8 to 11. Stop when the PR needs merging, and record nothing as merged until GitHub shows it merged."
+**AI Response**: "Fixing the revocation reason first, as its own commit through the full gate, then continuing with Groups 8 to 11."
+**Context**: Code Generation Part 2, review of S3's code: approved with one fix
+
+---

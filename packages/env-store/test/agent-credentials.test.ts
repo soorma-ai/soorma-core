@@ -182,8 +182,8 @@ describe('TC-AC-080: S3’s role runs exactly its statements, and nothing else',
     const reg = await data.query(P4.registrationForBootstrap, [...E, agent]);
     expect(reg.rows[0]).toEqual({ state: 'registered', sponsor: 'h@example.com' });
     // Revocation at bootstrap (no cid yet), the credential, and its attribution.
-    const before = await data.query<{ revoked: boolean }>(P5.revoked, [...E, null, agent]);
-    expect(before.rows[0]!.revoked).toBe(false);
+    const before = await data.query(P5.revoked, [...E, null, agent]);
+    expect(before.rows[0]).toEqual({ credential_revoked: false, agent_revoked: false });
     const cid = await credential(E, agent, secret);
     await data.query(P7.insertRecord, [
       id(),
@@ -209,8 +209,8 @@ describe('TC-AC-080: S3’s role runs exactly its statements, and nothing else',
     // Renewal: the record, both granularities, the UPDATE (expires_at) with RETURNING.
     const rec = await data.query(P5.agentCredentialById, [cid, ...E]);
     expect(rec.rows[0]).toMatchObject({ agent, instance: 'i-1', secret });
-    const both = await data.query<{ revoked: boolean }>(P5.revoked, [...E, cid, agent]);
-    expect(both.rows[0]!.revoked).toBe(false);
+    const both = await data.query(P5.revoked, [...E, cid, agent]);
+    expect(both.rows[0]).toEqual({ credential_revoked: false, agent_revoked: false });
     const renewed = await data.query(P5.renewAgentCredential, [cid, ...E, agent, 'i-1', at(1500)]);
     expect(renewed.rowCount).toBe(1);
     // The failed-attempt batch insert, joined to registrations.
@@ -290,20 +290,22 @@ describe('TC-AC-078: revocation names targets in its own environment, and the di
     });
   });
 
-  it('answers revoked for a revoked credential, for a revoked agent, and not otherwise', async () => {
+  it('answers each granularity on its own: a revoked credential, a revoked agent, both, neither', async () => {
     const agent = `a-${id()}`;
     const { secret } = await registered(E, agent);
     const c1 = await credential(E, agent, secret);
     const c2 = await credential(E, agent, secret);
     const read = async (cid: string | null) =>
-      (await data.query<{ revoked: boolean }>(P5.revoked, [...E, cid, agent])).rows[0]!.revoked;
-    expect(await read(c1)).toBe(false);
+      (await data.query(P5.revoked, [...E, cid, agent])).rows[0] as Record<string, boolean>;
+    const none = { credential_revoked: false, agent_revoked: false };
+    expect(await read(c1)).toEqual(none);
     await seedCredentialRevocation(owner, E, c1, T0);
-    expect(await read(c1)).toBe(true);
-    expect(await read(c2)).toBe(false);
+    expect(await read(c1)).toEqual({ credential_revoked: true, agent_revoked: false });
+    expect(await read(c2)).toEqual(none);
     await seedAgentRevocation(owner, E, agent, T0);
-    expect(await read(c2)).toBe(true);
-    expect(await read(null)).toBe(true);
+    expect(await read(c2)).toEqual({ credential_revoked: false, agent_revoked: true });
+    expect(await read(c1)).toEqual({ credential_revoked: true, agent_revoked: true });
+    expect(await read(null)).toEqual({ credential_revoked: false, agent_revoked: true });
   });
 });
 
@@ -384,8 +386,8 @@ describe('TC-AC-033 (the store half): E’s statements never return or touch E2�
     expect(
       (await data.query(P5.renewAgentCredential, [c2, ...E, agent, 'i-1', at(1500)])).rowCount,
     ).toBe(0);
-    const revoked = await data.query<{ revoked: boolean }>(P5.revoked, [...E, c2, agent]);
-    expect(revoked.rows[0]!.revoked).toBe(false);
+    const revoked = await data.query(P5.revoked, [...E, c2, agent]);
+    expect(revoked.rows[0]).toEqual({ credential_revoked: false, agent_revoked: false });
     const c1 = await credential(E, agent, e.secret);
     expect((await data.query(P5.agentCredentialById, [c1, ...E])).rowCount).toBe(1);
   });

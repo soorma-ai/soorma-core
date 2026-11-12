@@ -45,10 +45,13 @@ export type AgentVerification =
       readonly reason: string;
     };
 
+/** O3's answer: not revoked, or which granularity revoked (BR-RN-03). */
+export type AgentRevocation = 'not_revoked' | 'credential_revoked' | 'agent_revoked';
+
 export interface AgentRequestChecks {
   verify(token: SecretText): Promise<AgentVerification>;
   /** O3 at both granularities. Throws when it cannot answer: the request is unavailable. */
-  revocation(context: CheckedAgentContext): Promise<'revoked' | 'not_revoked'>;
+  revocation(context: CheckedAgentContext): Promise<AgentRevocation>;
 }
 
 export type AgentCheck =
@@ -58,6 +61,8 @@ export type AgentCheck =
       readonly code: 'credential_refused' | 'credential_expired';
       /** For the security log only, never a response. */
       readonly reason: string;
+      /** Present once the token verified (an O3 refusal): whom the log names. */
+      readonly context?: CheckedAgentContext;
     };
 
 /** The presenter, O1, O2, O4, then O3 (D-AC-27). */
@@ -72,7 +77,14 @@ export async function checkAgentRequest(
     return { accepted: false, code: 'credential_refused', reason: 'presenter' };
   const verified = await checks.verify(asSecretText(presented));
   if (!verified.ok) return { accepted: false, code: verified.code, reason: verified.reason };
-  if ((await checks.revocation(verified.context)) === 'revoked')
-    return { accepted: false, code: 'credential_refused', reason: 'credential_revoked' };
+  // Either granularity is the same credential_refused; the reason says which (BR-RF-AC-03).
+  const revocation = await checks.revocation(verified.context);
+  if (revocation !== 'not_revoked')
+    return {
+      accepted: false,
+      code: 'credential_refused',
+      reason: revocation,
+      context: verified.context,
+    };
   return { accepted: true, context: verified.context };
 }

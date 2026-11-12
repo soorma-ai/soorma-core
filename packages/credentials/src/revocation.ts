@@ -7,9 +7,14 @@
 //   run in the caller's transaction. S3 uses it: both its operations write to
 //   the store anyway, so a cache would buy S3 no availability (D-AC-01). It
 //   writes no attribution record (GAP-INT-009, D-AC-17)
+// - The answer says which granularity revoked, for the security log
+//   (BR-RN-03; BR-RF-AC-03): `agent_revoked` takes precedence over
+//   `credential_revoked` when both hold, as the broader revocation, terminal
+//   for every lineage of the agent (D-CG-AC-31). A response never tells them
+//   apart: both are `credential_refused`
 // - The **fail-closed cache** over a source: a `not_revoked` answer is served
-//   while younger than the bound, counted from its read's issue; a `revoked`
-//   answer is terminal and kept; a failed read is never cached, and with no
+//   while younger than the bound, counted from its read's issue; a revoked
+//   answer (either granularity) is terminal and kept; a failed read is never cached, and with no
 //   answer younger than the bound the request is denied (`unavailable`).
 //   Concurrent misses for one key share one read; at most `max` entries,
 //   oldest first evicted, so eviction only causes a re-read. Modelled on U3's
@@ -27,7 +32,8 @@ export interface RevocationTarget {
   readonly agent: string;
 }
 
-export type RevocationAnswer = 'revoked' | 'not_revoked';
+/** Not revoked, or which granularity revoked: the agent's takes precedence. */
+export type RevocationAnswer = 'not_revoked' | 'credential_revoked' | 'agent_revoked';
 
 /** A read of revocation state. A failure rejects; the caller denies (fail closed). */
 export interface RevocationSource {
@@ -38,14 +44,19 @@ export interface RevocationSource {
 export function directRevocationSource(store: Queryable): RevocationSource {
   return {
     async isRevoked({ environment, cid, agent }): Promise<RevocationAnswer> {
-      const [row] = await store.query<{ revoked: boolean }>(SQL.revoked, [
-        environment.organization,
-        environment.project,
-        environment.environment,
-        cid ?? null,
-        agent,
-      ]);
-      return row?.revoked ? 'revoked' : 'not_revoked';
+      const [row] = await store.query<{ credential_revoked: boolean; agent_revoked: boolean }>(
+        SQL.revoked,
+        [
+          environment.organization,
+          environment.project,
+          environment.environment,
+          cid ?? null,
+          agent,
+        ],
+      );
+      if (row?.agent_revoked) return 'agent_revoked';
+      if (row?.credential_revoked) return 'credential_revoked';
+      return 'not_revoked';
     },
   };
 }
@@ -115,7 +126,8 @@ export function createRevocationCache(
       const key = cacheKey(target);
       const entry = entries.get(key);
       const now = clock.now().getTime();
-      if (entry && (entry.answer === 'revoked' || now - entry.issuedAt < ttl)) return entry.answer;
+      if (entry && (entry.answer !== 'not_revoked' || now - entry.issuedAt < ttl))
+        return entry.answer;
       try {
         return (await read(key, target)).answer;
       } catch {

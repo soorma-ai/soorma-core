@@ -22,6 +22,7 @@ import {
   BOOTSTRAP,
   claims,
   credentialFor,
+  dataStore,
   E,
   E2,
   flushAttempts,
@@ -237,6 +238,82 @@ describe('TC-AC-025: a revoked agent cannot bootstrap, and its credentials canno
     });
     expect(await failedAttempts(c.agent)).toMatchObject([{ reason: 'agent_revoked' }]);
   });
+
+  it('renewal logs agent_revoked, not credential_revoked (BR-RN-03; BR-RF-AC-03)', async () => {
+    const c = await credentialFor(g);
+    await seedAgentRevocation(g.owner, ENV, c.agent, g.clock.now());
+    expect(problem(await renew(g, c.credential))).toEqual({
+      status: 401,
+      code: 'credential_refused',
+    });
+    expect(g.log.named('renewal.refused').at(-1)).toMatchObject({
+      agent: c.agent,
+      code: 'agent_revoked',
+    });
+  });
+});
+
+describe('BR-RN-03: both granularities revoked, the agent’s takes precedence (D-CG-AC-31)', () => {
+  it('a revoked cid of a revoked agent: credential_refused, logged agent_revoked', async () => {
+    const c = await credentialFor(g);
+    await seedCredentialRevocation(g.owner, ENV, c.cid, g.clock.now());
+    await seedAgentRevocation(g.owner, ENV, c.agent, g.clock.now());
+    const r = await renew(g, c.credential);
+    expect(problem(r)).toEqual({ status: 401, code: 'credential_refused' });
+    assertProblem(r);
+    expect(g.log.named('renewal.refused').at(-1)).toMatchObject({ code: 'agent_revoked' });
+  });
+});
+
+describe('BR-RN-03: the read inside renewal’s transaction names the granularity too', () => {
+  // A revocation committed after P1's read is caught by the transaction's
+  // read (D-CG-AC-24). The hook seeds it right after P1's read, the only
+  // revocation read made through the store itself: the transaction's goes
+  // through its own client.
+  let hook: (() => Promise<void>) | undefined;
+  let store: ReturnType<typeof dataStore>;
+  let h: Gateway;
+  beforeAll(async () => {
+    store = dataStore(db);
+    const pool = store.pool;
+    const query = pool.query.bind(pool) as (...args: unknown[]) => Promise<unknown>;
+    pool.query = (async (...args: unknown[]) => {
+      const result = await query(...args);
+      if (typeof args[0] === 'string' && args[0].includes('agent_revocations') && hook) {
+        const run = hook;
+        hook = undefined;
+        await run();
+      }
+      return result;
+    }) as typeof pool.query;
+    h = await gateway(db, { store });
+  });
+  afterAll(async () => {
+    await h?.close();
+    await store?.close();
+  });
+
+  it.each([
+    ['the cid', 'credential_revoked'],
+    ['the agent', 'agent_revoked'],
+  ] as const)(
+    '%s revoked after P1’s read: credential_refused, logged %s, nothing written',
+    async (_n, reason) => {
+      const c = await credentialFor(h);
+      const before = (await rows(h, 'attribution_records', c.agent)).length;
+      hook = () =>
+        reason === 'agent_revoked'
+          ? seedAgentRevocation(h.owner, ENV, c.agent, h.clock.now())
+          : seedCredentialRevocation(h.owner, ENV, c.cid, h.clock.now());
+      expect(problem(await renew(h, c.credential))).toEqual({
+        status: 401,
+        code: 'credential_refused',
+      });
+      expect(hook).toBeUndefined();
+      expect(h.log.named('renewal.refused').at(-1)).toMatchObject({ code: reason });
+      expect((await rows(h, 'attribution_records', c.agent)).length).toBe(before);
+    },
+  );
 });
 
 describe('TC-AC-009: a revoked credential is refused at renewal, at once', () => {

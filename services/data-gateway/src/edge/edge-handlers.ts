@@ -71,7 +71,11 @@ type BootstrapRefusal =
 
 /** Why a renewal was refused after P1: the record, revocation, and the registration. */
 type RenewalRefusal =
-  'no_record' | 'record_mismatch' | 'credential_revoked' | 'registration_not_registered';
+  | 'no_record'
+  | 'record_mismatch'
+  | 'credential_revoked'
+  | 'agent_revoked'
+  | 'registration_not_registered';
 
 export class EdgeHandlers {
   private readonly rt: Runtime;
@@ -134,7 +138,8 @@ export class EdgeHandlers {
       withTransaction(this.rt.store, async (tx) => {
         const registration = await registrationForBootstrap(tx, environment, agent);
         if (registration?.state !== 'registered') return 'registration_not_registered' as const;
-        if ((await directRevocationSource(tx).isRevoked({ environment, agent })) === 'revoked')
+        // No cid yet, so only the agent can be revoked here.
+        if ((await directRevocationSource(tx).isRevoked({ environment, agent })) !== 'not_revoked')
           return 'agent_revoked' as const;
         await insertAgentCredential(tx, {
           cid,
@@ -193,7 +198,10 @@ export class EdgeHandlers {
         }),
     });
     if (!check.accepted) {
-      this.rt.log.agentEvent('renewal.refused', request.id, { code: check.reason });
+      this.rt.log.agentEvent('renewal.refused', request.id, {
+        ...(check.context ? { agent: check.context.agent, instance: check.context.instance } : {}),
+        code: check.reason,
+      });
       throw new ProblemError(check.code);
     }
     const { agent, instance, cid } = check.context;
@@ -212,8 +220,9 @@ export class EdgeHandlers {
     // order, so a bad token is refused before the store is needed; this one
     // keeps a revocation committed since then from being renewed past.
     const refused = await withTransaction(this.rt.store, async (tx) => {
+      // Which granularity revoked is the log's reason; the response is the same (BR-RN-03).
       const revoked = await directRevocationSource(tx).isRevoked({ environment, cid, agent });
-      if (revoked === 'revoked') return 'credential_revoked' as const;
+      if (revoked !== 'not_revoked') return revoked;
       const registration = await registrationForBootstrap(tx, environment, agent);
       if (registration?.state !== 'registered') return 'registration_not_registered' as const;
       const renewed = await renewAgentCredentialRecord(tx, {

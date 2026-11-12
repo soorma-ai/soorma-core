@@ -25,6 +25,7 @@ export {
   presentedAgentCredential,
   type AgentCheck,
   type AgentRequestChecks,
+  type AgentRevocation,
   type AgentVerification,
   type CheckedAgentContext,
 } from './agent.ts';

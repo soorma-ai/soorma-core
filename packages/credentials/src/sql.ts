@@ -67,17 +67,17 @@ export const SQL = {
      RETURNING expires_at, lineage_ends_at`,
   ),
   /**
-   * The direct revocation read (D-AC-01; NP-AC-04): revoked at either
-   * granularity. At bootstrap there is no cid yet: $4 is null and matches
-   * nothing. $1 to $3 the environment, $4 cid, $5 agent.
+   * The direct revocation read (D-AC-01; NP-AC-04): each granularity
+   * answered on its own, so the caller can tell which one revoked
+   * (BR-RN-03; BR-RF-AC-03). At bootstrap there is no cid yet: $4 is null
+   * and matches nothing. $1 to $3 the environment, $4 cid, $5 agent.
    */
   revoked: sql(
     `SELECT EXISTS (SELECT 1 FROM credential_revocations
                      WHERE organization = $1 AND project = $2 AND environment = $3
-                       AND credential = $4)
-         OR EXISTS (SELECT 1 FROM agent_revocations
+                       AND credential = $4) AS credential_revoked,
+            EXISTS (SELECT 1 FROM agent_revocations
                      WHERE organization = $1 AND project = $2 AND environment = $3
-                       AND agent = $5)
-         AS revoked`,
+                       AND agent = $5) AS agent_revoked`,
   ),
 };

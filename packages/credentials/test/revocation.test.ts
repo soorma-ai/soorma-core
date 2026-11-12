@@ -40,10 +40,10 @@ class StubSource implements RevocationSource {
     this.reads++;
     if (this.gate) await this.gate;
     if (this.down) throw new Error('store down');
+    // As the direct source: the agent's revocation takes precedence (D-CG-AC-31).
+    if (this.revoked.has(`${t.environment.environment}//${t.agent}`)) return 'agent_revoked';
     const key = `${t.environment.environment}/${t.cid ?? ''}/${t.agent}`;
-    return this.revoked.has(key) || this.revoked.has(`${t.environment.environment}//${t.agent}`)
-      ? 'revoked'
-      : 'not_revoked';
+    return this.revoked.has(key) ? 'credential_revoked' : 'not_revoked';
   }
 }
 
@@ -91,7 +91,7 @@ describe('TC-AC-054: B is 60 s from the one constant, and past it with the store
     clock.advance(59_999);
     expect(await cache.isRevoked(c1)).toBe('not_revoked'); // 139.999 s: still within B
     clock.advance(1);
-    expect(await cache.isRevoked(c1)).toBe('revoked'); // 140 s: re-read, refused from now on
+    expect(await cache.isRevoked(c1)).toBe('credential_revoked'); // 140 s: re-read, refused from now on
   });
 });
 
@@ -105,16 +105,35 @@ describe('TC-AC-015 (the P5 half): a revocation takes effect within B, and never
     clock.advance(54_999); // 99.999 s: the answer read at 40 s is 59.999 s old
     expect(await cache.isRevoked(c1)).toBe('not_revoked');
     clock.advance(1); // 100 s: within 60 s of the revocation (at 45 s)
-    expect(await cache.isRevoked(c1)).toBe('revoked');
+    expect(await cache.isRevoked(c1)).toBe('credential_revoked');
   });
 
   it('a revoked answer is terminal: kept with the store down, and long past B', async () => {
     const { clock, source, cache } = setup();
     source.revoked.add('e//a');
-    expect(await cache.isRevoked(c1)).toBe('revoked');
+    expect(await cache.isRevoked(c1)).toBe('agent_revoked');
     source.down = true;
     clock.advance(10 * PROPAGATION_BOUND_MS);
-    expect(await cache.isRevoked(c1)).toBe('revoked');
+    expect(await cache.isRevoked(c1)).toBe('agent_revoked');
+  });
+});
+
+describe('BR-RN-03: the answer says which granularity revoked, through the cache', () => {
+  it('a credential revocation, an agent revocation, and both (the agent’s takes precedence)', async () => {
+    const { source, cache } = setup();
+    const t = (cid: string, agent: string): RevocationTarget => ({ environment: E, cid, agent });
+    source.revoked.add('e/c7/a7');
+    source.revoked.add('e//a8');
+    source.revoked.add('e/c9/a9');
+    source.revoked.add('e//a9');
+    expect(await cache.isRevoked(t('c7', 'a7'))).toBe('credential_revoked');
+    expect(await cache.isRevoked(t('c8', 'a8'))).toBe('agent_revoked');
+    expect(await cache.isRevoked(t('c9', 'a9'))).toBe('agent_revoked');
+    // Kept as read: a cached answer keeps its granularity.
+    const before = source.reads;
+    expect(await cache.isRevoked(t('c7', 'a7'))).toBe('credential_revoked');
+    expect(await cache.isRevoked(t('c8', 'a8'))).toBe('agent_revoked');
+    expect(source.reads).toBe(before);
   });
 });
 
@@ -142,11 +161,11 @@ describe('TC-AC-065: bounded, misses shared, failures never cached, eviction nev
     const { source, cache } = setup(3);
     source.revoked.add('e/c0/a');
     const t = (n: number): RevocationTarget => ({ environment: E, cid: `c${n}`, agent: 'a' });
-    expect(await cache.isRevoked(t(0))).toBe('revoked');
+    expect(await cache.isRevoked(t(0))).toBe('credential_revoked');
     for (const n of [1, 2, 3]) await cache.isRevoked(t(n));
     expect(cache.size()).toBe(3);
     const before = source.reads;
-    expect(await cache.isRevoked(t(0))).toBe('revoked'); // evicted, so re-read
+    expect(await cache.isRevoked(t(0))).toBe('credential_revoked'); // evicted, so re-read
     expect(source.reads).toBe(before + 1);
   });
 
@@ -162,7 +181,9 @@ describe('TC-AC-034: the cache key includes the environment', () => {
   it("E2's revoked answer is never served for E", async () => {
     const { source, cache } = setup();
     source.revoked.add('e2/c1/a');
-    expect(await cache.isRevoked({ environment: E2, cid: 'c1', agent: 'a' })).toBe('revoked');
+    expect(await cache.isRevoked({ environment: E2, cid: 'c1', agent: 'a' })).toBe(
+      'credential_revoked',
+    );
     expect(await cache.isRevoked(c1)).toBe('not_revoked');
     expect(source.reads).toBe(2);
   });
