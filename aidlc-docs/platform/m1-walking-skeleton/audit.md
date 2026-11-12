@@ -3452,3 +3452,109 @@ Then stop. U7 (event-ingest, soorma-core#10) starts in a fresh session."
 **Context**: Code Generation (U6) approved; code PR merged; U6 close-out
 
 ---
+
+## Session Resumption: U7 event-transport (soorma-core#10)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: "Resume the AI-DLC initiative aidlc-docs/platform/m1-walking-skeleton in soorma-core, and start U7 event-transport (soorma-core#10).
+
+Before any stage:
+
+Resume per common/session-continuity.md. Confirm local dev equals origin/dev (aa8f6e5, which contains #23's merge 00a964b) and its CI run is green.
+Correct the unit's name. U7 is event-transport (unit-of-work.md §U7, #10's title). It builds S4 event-ingest. aidlc-state.md says "Next: U7 event-ingest"; fix that, and use the right names everywhere.
+Do Construction Phase Initialization, Unit Initialization (load the enabled extensions' rules) and the L1 Domain Coverage Gate. PRD gap classification is active. Log each in audit.md.
+Read every comment on #10 (nine, from U3, U4, U5 and U6) as U7's forward obligations. Put a table in the Functional Design plan mapping each obligation to where U7 meets it, and show it to me at the plan.
+One correction to those comments: the propagation bound is a code constant, PROPAGATION_BOUND_MS in packages/credentials (U6 NFR Design Q1; PF FR-012, "platform-set and not tenant-configurable"). It supersedes "from configuration" in U3's NFR Requirements comment and "the one configured bound" in U6's Functional Design comment.
+S4 passes this constant as the TTL to both U3's term cache and P5's revocation cache. There is no configuration key for it, and a test proves it.
+Read U6's code summary (construction/agent-credentials/code/code-summary.md) and its decisions. Reuse its patterns where they apply:
+P1's check order holds with the store down;
+the database role per deployable;
+the image's installed-packages check;
+the alert rules under the shared-name rule;
+the e2e journey.
+What U7 must deliver, from the design so far:
+
+S4 completes contract/event-ingest.openapi.yaml, and the contract is tagged after U7's Code Generation.
+U7 proves done when 3, 4, 6 and 7 by raw calls. The tests go after TC-AC-093 in e2e/agent-registration.test.ts, reusing A, B and their credentials.
+Several U3 obligations bear directly on U7:
+the step-1 body limit admits a maximum-size forwarding draft, with a test;
+the edge depth test uses S4's actual limit;
+the seal key ring is provisioned per environment and mounted only into S4;
+createEnvelopeAdmission(...).admit runs once per publish and per subscribe.
+Gaps: GAP-INT-003, GAP-INT-007 and GAP-AE-001 are still open with no new PRD tag, so keep their workarounds. Classify any new question the PRDs don't settle as technology or specification before resolving it.
+If U7 makes P7's envelope rule closed in both directions, U5's constructed record in services/control-gateway/test/registration.test.ts is affected. Classify that change under the standing rules.
+Standing rules (as for U6):
+
+Changes to an earlier unit's tests:
+required by the approved design, items added, nothing removed or reworded: proceed and record;
+strictly stronger (scans more, existing checks unchanged): proceed and record;
+anything else, including a changed helper that earlier assertions depend on: stop for me.
+Completion lists every change as a before/after diff with its class.
+Each commit group:
+the full checks and tests, including the image secret scan and test:e2e on a fresh stack;
+an image build for every deployable whose dependencies the group touches;
+the local stack when a deployable's runtime changes;
+then push, and wait for the CI run to pass before the next group.
+Start long gates in the background from the outset, and act on their completion as soon as you're notified.
+Stop when a PR needs merging. Record nothing as merged until GitHub shows it merged.
+Present each stage's standard two-option completion message, and wait for my approval.
+Begin with U7's Functional Design plan."
+**AI Response**: "Session resumed from aidlc-state.md: CONSTRUCTION; U1 to U6 complete (U6 Code Generation complete, #23 merged as 00a964b); next U7 event-transport (soorma-core#10). No PENDING PR checkpoint. soorma-core: local dev at aa8f6e5 = origin/dev (aa8f6e5); 00a964b is an ancestor of origin/dev; push run 43305868481 on aa8f6e5 completed success. Toolchain: Node v26.13.0, pnpm 12.18.0, Docker Engine 29.5.3, Compose 5.1.4. Re-intake check (session-continuity.md step 3): PRD Intake in the multi-PRD format; the brief is pinned; soorma-prd fetched: backlog/m1-walking-skeleton.md unchanged since the pin 0aad84a (its last commit is 0aad84a); tags unchanged (PF up to prd-platform-foundations-v1.3, ID prd-identity-v1.0); soorma-prd#13, #24, #25, #27, #28, #30 all OPEN. No re-intake trigger: re-intake not offered. Unit name corrected: U7 is event-transport (unit-of-work.md §U7; #10's title); it builds S4 event-ingest. aidlc-state.md's 'Next: U7 event-ingest' fixed. The same mislabel is in the heading of the U6 close-out comment on #10 (issuecomment-6835802654) and in the user's own words recorded at audit.md 2026-11-12T20:59:39Z (left verbatim, as audit input is never altered); the GitHub comment is not edited without the user's say."
+**Context**: CONSTRUCTION, U7 event-transport: session resumption and re-intake check (clean); unit name corrected.
+
+---
+
+## Construction Phase Initialization (re-run on resume)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: (none)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted: GitHub issues)]. prd-gap-classification.md loaded and active (## PRD Intake exists). Invariants read at prd-platform-foundations-v1.3 and prd-identity-v1.0: the text of references/platform/invariants.md is identical at both tags (diff empty)."
+**Context**: CONSTRUCTION: phase initialization re-run on resume.
+
+---
+
+## Unit Initialization and L1 Gate: Initial Assessment (U7 event-transport)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted)] (unit: event-transport). L1 gate, initial assessment, PRDs read at their tags (PF @ prd-platform-foundations-v1.3, ID @ prd-identity-v1.0). Applicable: PF §7b (the seven envelope fields, the stamped/asserted partition, the draft's client contract version, unknown-field preservation, the re-broadening record when load-bearing, the chain per hop with maxChainDepth) and §7b Recoverability (I4: scope, actor, chain, origin from the record alone); PF §7a Revocation State (read at both granularities on every request, readable by no principal) and Agent Credential (what it asserts, verified at S4); PF §6 rows Event namespace (environment), Envelope (in flight), Credential validation cache, Revocation state cache, Permission lookup cache, Agent credential, and the Events and Credentials isolation assertions; PF §8a rows Publish to an event namespace and Subscribe to an event namespace (event:publish, event:subscribe; intersection; standing set the ceiling); PF §8b O1 to O12 at event ingest (O12 applies), the origin table (autonomous first hop; propagated on an event-triggered hop), re-broadening (load-bearing only, local to its hop); PF §9 failure modes and NFR profile (revocation read on the hot path; availability bounded by the cache; the bound as the cache TTL); PF §17 Envelope and Namespacing Rules; PF FR-001 to FR-003, FR-005, FR-006, FR-012, FR-014, FR-015, FR-017, FR-018, FR-020, FR-021, FR-022, FR-025 (publish and subscribe attributed); ID §8b presenter matrix (event ingest refuses every human credential, by kind) and ID FR-023. Non-applicable: PF §7a Logical Agent Registration and Registration Secret writes (read only, through U5's agent-facts port), Permission Grant (no grant at S4), Human records (ID §7a: refused by kind, never read); PF §8a's other rows; PF FR-009 to FR-011 (S3's). Missing: 0. Inherited work-arounds stand, with no new tag: GAP-INT-003 (soorma-prd#13, Awaiting PRD: Event: live subscribers only, semantics unspecified, pre-release), GAP-INT-007 (soorma-prd#25: origin stamped at every first hop, an asserted origin rejected), GAP-AE-001 (soorma-prd#30: a non-declaring presenter forwarding an autonomous envelope denied). One question is put to the user for classification at the plan rather than decided (Q9: whether a synchronous attribution write makes E's store S4's availability floor, PF §9 Availability and OQ-12 against FR-025); the plan's other questions are assessed as technology."
+**Context**: CONSTRUCTION, U7 event-transport: Unit Initialization; L1 gate initial assessment (0 Missing).
+
+---
+
+## Forward Obligations Read (U7 event-transport)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: (none)
+**AI Response**: "Read soorma-core#10: the issue body and its nine comments (U3 Functional Design 6761897846, U3 NFR Requirements 6770628300, U3 NFR Design 6771752194, U3 correction 6778300031, U4 Functional Design 6786879701, U4 NFR Design 6789073655, U5 Functional Design 6808307067, U6 Functional Design 6814198317, U6 close-out 6835802654). The user's correction applied: the propagation bound is the code constant PROPAGATION_BOUND_MS in packages/credentials, superseding 'from configuration' (6770628300) and 'the one configured bound' (6814198317); S4 passes it as the TTL to U3's term cache and P5's revocation cache, with no configuration key, proven by a test. Read U6's code summary and decisions. Found while reading: contract/event-ingest.openapi.yaml does not exist yet (contract/test/components.test.ts references it only as a fixture path), so U7 creates it; U1's conventions leave the Delivery payload bound to U7 (envelope.md, pre-release.md; BR-DL-04); U3's admit takes the draft as its body, so publish's payload needs a body shape that keeps the check order (Q1); U3's Admitted.outcome carries no hop, so S4 derives it; P9 already loads sealKeys (loadSealKeys), and nothing provisions them yet; the seal keys, the agent verify halves and S4's role are Infrastructure Design's. Every obligation is mapped in the Functional Design plan."
+**Context**: CONSTRUCTION, U7 event-transport: obligations loaded before planning.
+
+---
+
+## Functional Design: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-12T22:09:27Z
+**User Input**: (none since the session's opening request)
+**AI Response**: "Functional Design plan written: construction/working/event-transport-functional-design-plan.md (git-ignored). It maps all nine obligation comments on #10 to where U7 meets them (OB-01 to OB-39), with the user's correction applied (PROPAGATION_BOUND_MS, a code constant, passed as the TTL to U3's term cache and P5's revocation cache, no configuration key, a test: P-06), and records the user's standing rules for U7 Code Generation verbatim in substance, with the earlier-unit test changes already foreseen and classified (TC-AC-093 keeps the agent credentials, class 1; U5's backup round trip gains e-event-ingest, class 1; U4's list items, class 1; CI steps, class 2; U5's constructed record, Q7). Proposed shapes: publish POST /events (202) and subscribe POST /subscriptions (200 text/event-stream); the stream; the check order per operation, with the store down. Proposals P-01 to P-27, P-05 (humanGrants at S4 grants nothing; no privilege on grants) flagged for review. Questions: Q1 the publish body and its check-order place (A a closed { draft, payload } wrapper through an additive admit option, recommended); Q2 the caller's own stamped envelope (A not returned, recommended); Q3 how a stream ends (A a final end event with a code, recommended); Q4 revocation on an open stream (A through P5's cache before every delivery and on a sweep every R: no Delivery after revocation + B, recommended); Q5 streams per lineage (A one, superseded, recommended); Q6 a slow subscriber (A end with overflow, recommended); Q7 P7's reverse rule (A closed both ways, with U5's constructedAgentOperation changed to exchangeBootstrap approved now as class 3, recommended); Q8 done when 6's credential (A a real E2 credential chained in the journey, plus the reverse, recommended); Q9 put to the user for classification: whether the synchronous attribution record may make E's store S4's availability floor (PF §9 Availability, §20 row 12 against FR-025) (B raise GAP-ET-001 and work around with A, recommended). Q1 to Q8 assessed as technology. Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design plan, awaiting answers.
+
+---
+
+## Functional Design: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-12T23:11:09Z
+**User Input**: "Answers to the Functional Design plan:
+
+Q1: A. U3's admit gains only the additive option, and every U3 test stays unchanged. Add new tests for the option.
+Q2: A.
+Q3: A.
+Q4: A.
+Q5: A, with one addition. State in the design how superseding works across S4 instances (it goes over E's fan-out channel). State its failure mode: if the supersede message is lost, the earlier stream still ends at its credential's exp, at most L. Test superseding on one instance, and state the cross-instance case as a residual if the M1 stack can't exercise it.
+Q6: A.
+Q7: A. I approve the class-3 change exactly as in the plan: operation: 'constructedAgentOperation' becomes 'exchangeBootstrap' in services/control-gateway/test/registration.test.ts, and nothing else in that file changes. If P7's writer turns out to require anything more of an exchangeBootstrap record (a target or a credential), stop.
+Q8: A.
+Q9: B, specification. PF §9 calls the bound "the outage window during which authorization continues". If every publish needs a synchronous write to the same store, that sentence would mean nothing for the data face. Before opening GAP-ET-001 on soorma-prd, check for an existing issue.
+Put both readings in the issue, citing PF @ prd-platform-foundations-v1.3: §9's Availability row and its revocation-bound row, §20 row 12, and FR-025.
+Name the options for the PRD to choose between: the store as the data face's availability floor; or attribution decoupled from it, for example buffered (option C).
+Work around it with A meanwhile. Record the residual, carry it to Build and Test, and register the gap in aidlc-state.md.
+P-01 to P-27: accepted as written, including P-05 (humanGrants grants nothing in M1).
+Unit name: yes, edit the heading of U6's close-out comment on #10 to say event-transport. Change nothing else in it.
+Then generate the Functional Design artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded. Q1 to Q8 technology, all A (Q1: an additive admit option only, every U3 test unchanged, new tests for the option; Q5 with the user's addition on superseding across instances over E's fan-out channel, its failure mode bounded by L, tested on one instance, the cross-instance case a residual if the M1 stack cannot exercise it; Q7 with the user's approval of exactly one class-3 change, conditional on P7 requiring nothing more of an exchangeBootstrap record). Q9 classified as specification by the user: GAP-ET-001 to be raised against PF @ prd-platform-foundations-v1.3 after checking for an existing issue, worked around with A. P-01 to P-27 accepted as written. Checking Q7's stop condition, then the gap, the comment heading, and the artifacts."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design plan answered.
+
+---
