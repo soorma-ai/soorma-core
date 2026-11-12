@@ -2719,3 +2719,26 @@ Wait for every check to pass, then report the PR link and the results, and stop.
 **Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate PENDING.
 
 ---
+
+## Construction Design PR Gate: Checks Green (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:41:55Z
+**User Input**: (none)
+**AI Response**: "soorma-core#20 (dev to main, head eb9ddb8) opened with Refs #8, #3 and the six reviewer flags. Every check passed: pull_request run 43128357670 (Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review), push run 43128347805 (Build, check, and test; Images and stack; Dependency review skipped on push), cla-assistant. The PR is open and mergeable. Reported to the user and stopped; the gate stays PENDING until the user reports the merge. aidlc-state.md records the PR number, uncommitted, so the PR's head is unchanged."
+**Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate PENDING, checks green.
+
+---
+
+## Construction Design PR Gate Approved (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:46:08Z
+**User Input**: "merged: #20 is merged as 1903711 (2026-11-12T00:44:32Z).
+
+Fast-forward dev to it, then mark the Construction Design gate approved in aidlc-state.md with that merge commit. Log this verbatim in audit.md.
+Commit with the pending PR-link edit on dev, push, and wait for the push run to pass.
+Then start Code Generation for U5, Part 1 only: write the plan and stop for my approval.
+Apply the standing rules recorded in the Functional Design plan: the three classes of change to earlier units' tests, and the pre-commit gate with the stack run and push-per-group.
+Include the backup services, the restore tests and the archive check.
+Group the evaluateHuman refactor (a change to U4's code) on its own, early, with U4's tests unchanged."
+**AI Response**: "Confirmed on GitHub before recording: soorma-core#20 state MERGED, mergedAt 2026-11-12T00:44:32Z, merge commit 1903711; origin/main at 1903711. dev fast-forwarded to 1903711. Construction Design PR gate marked APPROVED with 1903711. Committing with the pending PR-link edit, pushing, waiting for the push run; then Code Generation Part 1 (plan only), stopping for approval."
+**Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate APPROVED.
+
+---
