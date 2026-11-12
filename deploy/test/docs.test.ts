@@ -3,7 +3,8 @@
 // The operations notes (U4 Infrastructure Design §10; TC-EHA-081): S1's
 // signing-key rotation keeps "wait at least 5 minutes" at its step 2, with the
 // reason, so the note cannot drift silently from S2's 5-minute verify-key
-// refresh (NFR-EHA-08). S2's README keeps its three operations sections.
+// refresh (NFR-EHA-08). S2's README keeps its three operations sections, and
+// U5's backup and restore section (TC-AR-055).
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -59,5 +60,33 @@ describe("S2's README keeps its operations notes", () => {
       'When the organization level is down',
     ])
       expect(section(readme, heading), heading).toBeDefined();
+  });
+});
+
+describe("TC-AR-055: S2's README documents backup and restore (U5 NFR-AR-09)", () => {
+  const readme = read('services/control-gateway/README.md');
+  const text = section(readme, "Backing up and restoring the environment's store") ?? '';
+
+  it('has the section, with both commands', () => {
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain('pnpm stack:backup e');
+    expect(text).toContain('pnpm stack:restore e <file>');
+  });
+
+  it('says the dump contains human identifiers, where it goes, its mode, and never the repository', () => {
+    const flat = text.replace(/\s+/g, ' ');
+    expect(flat).toContain('A dump contains human identifiers');
+    expect(flat).toContain('deploy/local/.backups/');
+    expect(flat).toContain('git-ignored');
+    expect(flat).toContain('mode `0600`');
+    expect(flat).toContain('It never goes into the repository');
+  });
+
+  it('names how the password arrives, and the archive check', () => {
+    const flat = text.replace(/\s+/g, ' ');
+    expect(flat).toContain('PGPASSFILE');
+    expect(flat).toContain('verify-full');
+    expect(flat).toContain('`PGDMP`');
+    expect(flat).toContain('pg_restore --file=/dev/null');
   });
 });

@@ -39,3 +39,27 @@ describe('TC-AR-031: S2 and P4 import no evaluator or human-only class but P3', 
     expect(Object.keys(pkg.dependencies)).not.toContain('@soorma/authority');
   });
 });
+
+describe('TC-AR-046: nothing unassigned or commercial lands in core; the cap is a security bound (I8)', () => {
+  const contract = readFileSync(join(root, 'contract/control-gateway.openapi.yaml'), 'utf8');
+
+  it('no read surface for registrations or secrets, and no rotate, retire, suspend, or revoke', () => {
+    expect(contract).not.toMatch(/^\s+get:/m);
+    const paths = [...contract.matchAll(/^ {2}(\/[^:\s]*):\s*$/gm)].map((m) => m[1]);
+    for (const p of paths) expect(p).not.toMatch(/retire|rotate|suspend|revoke|sponsor/);
+  });
+
+  it('the cap is a platform constant, not configuration; no registration quota exists', async () => {
+    const { MAX_ACTIVE_SECRETS } = await import('@soorma/registry');
+    expect(MAX_ACTIVE_SECRETS).toBe(10);
+    const config = sources('packages/config/src')
+      .map((s) => s.text)
+      .join('\n');
+    expect(config).not.toMatch(/secret.*(cap|limit|max)|quota|maxRegistrations/i);
+    for (const { file, text } of [...s2, ...p4])
+      // Code, not prose: the cap's own comment says it is not a quota.
+      expect(text.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, ''), file).not.toMatch(
+        /quota|sponsorshipPolicy|maxRegistrations/i,
+      );
+  });
+});

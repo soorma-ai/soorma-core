@@ -2797,3 +2797,30 @@ Then stop. I'll merge #21 (or whatever number it gets) with you, and tell you wh
 **Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 2 resumes at Group 6.
 
 ---
+
+## Code Generation: Stop Condition 3 in Group 6 (U5 agent-registration)
+**Timestamp**: 2026-11-12T02:06:49Z
+**User Input**: (none)
+**AI Response**: "Group 6 in progress (env.sh copy backup 999; the four backup and restore services under the backup profile; backup-archive.ts, stack-backup.ts, stack-restore.ts; .gitignore and .dockerignore; db-test.ts prints TEST_DATABASE_CONTAINER; CI sets it; U4's compose-model test's env.sh copy list gains backup, class 1, D-CG-AR-19). The db-test round trip (TC-AR-058) found that NP-AR-09 (3)'s second negative test cannot be built: an archive truncated by one byte at the end passes pg_restore --list (exit 0), because --list reads only the header and table of contents; a full read (pg_restore --file=/dev/null) fails it (exit 1); an archive truncated to 200 bytes fails both; a prepended line fails the PGDMP check. With that expectation set aside, the rest of the round trip passed: restore into an empty database, equal rows, migrate applied nothing, the privilege checks held (probe reverted). Stop condition 3: not adapted silently. Q-CG-AR-1 written (A: a full read, recommended; B: keep --list and correct the test; C: both). Group 6 uncommitted; dev at 1d37bfb."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation stopped in Group 6 for Q-CG-AR-1.
+
+---
+
+## Code Generation: Q-CG-AR-1 Answered (U5 agent-registration)
+**Timestamp**: 2026-11-12T02:10:08Z
+**User Input**: "Q-CG-AR-1: A. After the PGDMP check, the archive check is a full read: pg_restore --file=/dev/null, with a non-zero exit deleting the file and failing the command. Both negative tests stay as written. Mark NP-AR-09 (3) as corrected in place (--list reads only the header and table of contents, as you showed), and record the decision as D-CG-AR-20.
+
+One addition (class 2). Because docker compose config leaves out services in an inactive profile, U4's per-service Compose-model rules don't currently reach the backup and restore services. U5's Compose-model test must render with --profile backup, and apply U4's per-service rules to those four services as well as U5's own checks:
+
+no secret-looking value or secret-named variable in environment;
+only their own level's volume, at their own subpath;
+networks within their environment.
+Record it with its diff.
+
+Then finish Group 6 with the full gate, including the manual backup and restore on a fresh stack. Push, wait for green, and continue through Group 9 as instructed."
+**Answers Recorded** (construction/working/agent-registration-code-generation-questions.md):
+- Q-CG-AR-1 — The archive check cannot catch a truncation at the end: A — a full read, pg_restore --file=/dev/null, after the PGDMP check; a non-zero exit deletes the file and fails; both negative tests as written; NP-AR-09 (3) corrected in place; D-CG-AR-20. With the user's class-2 addition, verbatim above: U5's Compose-model test renders with --profile backup and applies U4's per-service rules to the four backup and restore services, recorded with its diff (D-CG-AR-21)
+**AI Response**: "Applying A: checkArchive reads the whole archive (pg_restore --file=/dev/null) after the magic; NP-AR-09 (3) and NP-AR-08 corrected in place; D-CG-AR-20. U5's Compose-model test with --profile backup applying U4's per-service rules to the four services (D-CG-AR-21). Then Group 6's full gate with the manual backup and restore on a fresh stack, push, green, and on through Group 9."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation resumes in Group 6.
+
+---

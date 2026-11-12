@@ -252,7 +252,7 @@ password in the environment). **Verified by**:
    credential columns, no `DELETE`. **A dump that loses the `GRANT`s fails here**
 6. In a `finally`: drop A and B, and delete the temporary path; assert the path no longer exists
 
-**(2) The stack step, in CI's stack job**, after the smoke test: `stack:backup e`; check the file's
+**(2) The stack step, in CI's stack job** (*corrected in place at Code Generation, 2026-11-12, D-CG-AR-03: it runs in `e2e/agent-registration.test.ts` on a fresh stack, after the S1-stopped demonstration, not after the smoke test, because the smoke test spends H's one-time first authentication; it re-checks the registrations by issuing a secret and re-registering, there being no read surface*): `stack:backup e`; check the file's
 mode (`0600`), its directory's (`0700`), and that it is git-ignored; stop the `e` services and
 remove `e`'s store volume; start `env-db-e` alone, so its initialisation creates the roles and an
 **empty** database; `stack:restore e {file}`; **run `e-migrate` and assert it applies nothing**;
