@@ -2742,3 +2742,34 @@ Group the evaluateHuman refactor (a change to U4's code) on its own, early, with
 **Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate APPROVED.
 
 ---
+
+## Code Generation Part 1: Plan Presented for Approval (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:50:36Z
+**User Input**: (none; the instruction is logged in the gate approval entry)
+**AI Response**: "Committed the gate approval with the pending PR-link edit as 923bc16 and pushed (push run 43129729467). Loaded construction/code-generation.md; L1 matrix checked (32 Covered, 0 Missing). Wrote construction/working/agent-registration-code-generation-plan.md (git-ignored): the user's standing rules restated (three classes of change to earlier units' tests, with before/after diffs; the per-group gate: full checks and tests with db:test, image builds for every deployable whose dependencies the group touches, the local stack for every group, push and wait for CI per group; stop for merges); Step 0 bookkeeping; Group 1 the evaluateHuman refactor alone (evaluateHeld extracted; signature and results unchanged; human.test.ts untouched; a new held.test.ts); Group 2 P3's readHumanAuthority and checkRegistrationRequest, and P4's pure secret module and lock key; Group 3 migration 0002, P4's store functions and agent-facts source; Group 4 the contract and P1's six codes (S1 and S2 images); Group 5 S2's routes and tests; Group 6 backup and restore (env.sh, Compose services, scripts with the archive check, .gitignore, the db-test round trip through TEST_DATABASE_CONTAINER, alert rules); Group 7 a new test-only e2e workspace (done when 1; the stack round trip on a fresh stack; CI's two new steps); Group 8 READMEs, code summary, matrices; Group 9 the PR, not merged. Decisions D-CG-AR-01 to 12, notably D-CG-AR-02, 03 (e2e on a fresh stack, because the smoke test and the outage script each spend H's one-time first authentication; the stack round trip moves out of smoke.ts, a consistency fix to NP-AR-09 (2)) and D-CG-AR-04 (the db-test round trip reaches pg_dump through the test server's own container). Expected class-1 changes to U4's tests listed, with the Compose-model test's per-service rules flagged as a possible stop. Asking for approval."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1, approval prompt.
+
+---
+
+## Push Run Green (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:52:33Z
+**User Input**: (none)
+**AI Response**: "Push run 43129729467 (923bc16, the gate approval) passed: Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run. The Code Generation plan awaits the user's approval."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1, awaiting approval.
+
+---
+
+## Code Generation Part 1: Plan Approved (U5 agent-registration)
+**Timestamp**: 2026-11-12T01:02:26Z
+**User Input**: "Approved. Commit the Step 0 bookkeeping and start Part 2 with Group 1.
+
+Run each group through the full gate, push, and wait for green before the next, applying every stop condition. Stop and report after Group 5's push run is green, before the backup and e2e/ work, so I can review S2's two new routes.
+
+In that report, include:
+
+every change to an earlier unit's test so far, as before/after diffs with their class;
+where the ceiling, sponsor-or-Admin, cap-under-lock and once-only secret are implemented."
+**AI Response**: "Plan APPROVED (D-CG-AR-01 to 12 with it). Committing Step 0 (aidlc-state.md, audit.md) alone on dev, then Part 2 from Group 1, each group through the full gate, pushed, and green before the next; stopping after Group 5's push run is green, with every earlier-unit test change as a before/after diff with its class, and where the ceiling, sponsor-or-Admin, cap-under-lock, and once-only secret are implemented."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1 APPROVED; Part 2 starts.
+
+---
