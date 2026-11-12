@@ -3303,3 +3303,26 @@ Plan a stop after S3's group, before the stack and e2e/ work, so I can review S3
 **Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate APPROVED.
 
 ---
+
+## Code Generation Part 1: Plan Written, Approval Prompt (U6 agent-credentials)
+**Timestamp**: 2026-11-12T07:23:51Z
+**User Input**: (none)
+**AI Response**: "Code Generation Part 1 (code-generation.md Steps 1 to 6): L1 checked (34 Covered, 0 Missing). Plan written: construction/working/agent-credentials-code-generation-plan.md, the single source of truth for U6's Code Generation, with the user's standing rules (the three classes; the one approved class-3 change exactly; the gate with image, secret-scan, and installed-packages checks, the stack where a runtime changes, push and a passing run per group; stop for merges). Eleven groups: G1 P8's shared core alone (U2's API, tests, vectors unchanged; stop on any U2 test change); G2 the P8 manifest fix and S3's closure test (the data-gateway manifest walked, failing before the fix), image-packages, the two secret patterns; G3 the migrations 0003 and 0004, the data role in env-roles.sql with its password and pg_hba, the statement modules, P7's envelope-free list, and both privilege tests running the real statements (P8's statement() objects and S3's), before any S3 code, with a stack from fresh volumes; G4 P5's agent kind and cache; G5 the seam's agent half, agent-identity, P8's agent half, P1's checkAgentRequest; G6 the contract; G7 S3 with its image checks; a planned stop after G7 for the user's review of S3's code; G8 the stack; G9 e2e/; G10 docs and the record; G11 the PR. Decisions D-CG-AC-01 to 12; expected earlier-unit test changes listed with their classes; stop conditions 1 to 10; every TC-AC id 001 to 093 traced. Awaiting the user's approval of the whole plan before Part 2."
+**Context**: CONSTRUCTION, U6 agent-credentials: Code Generation Part 1, approval prompt.
+
+---
+
+## Code Generation Part 1: Plan Approved (U6 agent-credentials)
+**Timestamp**: 2026-11-12T07:25:58Z
+**User Input**: "Approved. Wait for push run 43174556890 (1b7a27c) to pass, then commit the Step 0 bookkeeping and start Part 2 with Group 1.
+
+One note for Step 12. Adding the data role to env-store's test harness changes a helper that U4's and U5's tests depend on. Record it with the evidence that their store and privilege tests pass with their files unchanged (behaviour the same). If any of them would need to change, that's class 3: stop.
+
+Run every group through the full gate, push, and wait for green, applying all ten stop conditions. Stop and report after Group 7's push run is green. In that report, include:
+
+every change to an earlier unit's test so far, as before/after diffs with their class;
+where these are implemented: bootstrap's check order and its one refusal, the single secret-record read, the bound, renewal's binding and expiry cap, the direct revocation read, and the agent key ring."
+**AI Response**: "Code Generation plan APPROVED (the whole plan and sequence). Recorded for Step 12: the harness change is evidenced by U4's and U5's store and privilege tests passing with their files unchanged; any needed change to them is class 3 and stops. Waiting for push run 43174556890 on 1b7a27c, then Step 0, then Part 2 from Group 1, every group through the full gate, pushed and green, under stop conditions 1 to 10; stopping and reporting after Group 7's push run is green, with every earlier-unit test change as before/after diffs with classes, and where bootstrap's check order and one refusal, the single secret-record read, the bound, renewal's binding and expiry cap, the direct revocation read, and the agent key ring are implemented."
+**Context**: CONSTRUCTION, U6 agent-credentials: Code Generation plan APPROVED.
+
+---
