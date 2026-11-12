@@ -17,6 +17,9 @@
 //    the old lineage stays refused
 //  - TC-AC-013: E's agent credential and E's secret are refused at E2's S3
 //
+// TC-AC-091 is U5's backup round trip in agent-registration.test.ts, run with
+// e-data-gateway stopped, removed, and restarted beside e-control-gateway.
+//
 // Run by `pnpm test:e2e` on a fresh stack; skipped otherwise.
 import { describe, expect, it } from 'vitest';
 import {
