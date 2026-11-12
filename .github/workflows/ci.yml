@@ -178,6 +178,11 @@ jobs:
           docker compose -f deploy/local/compose.yaml down -v
           pnpm stack:up
 
+      # Vitest needs the workspace built (as the test job builds before
+      # testing); this job otherwise builds only the images (D-CG-AR-24).
+      - name: Build the workspace, for e2e
+        run: pnpm run build
+
       - name: The e2e proofs (done when 1; backup and restore)
         run: pnpm test:e2e
 
