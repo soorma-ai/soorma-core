@@ -3558,3 +3558,41 @@ Then generate the Functional Design artifacts, and present the stage's standard 
 **Context**: CONSTRUCTION, U7 event-transport: Functional Design plan answered.
 
 ---
+
+## Functional Design: GAP-ET-001 Raised; Comment Heading Corrected (U7 event-transport)
+**Timestamp**: 2026-11-12T23:20:17Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "Q7's stop condition checked: P7's checkRecord requires of an exchangeBootstrap record only an agent actor (registration, instance, sponsor) and no envelope facts, and the store's CHECKs (0001 attribution_agent_actor, 0004 attribution_envelope_free_operations) require nothing more: no target, no credential. The condition does not fire. GAP-ET-001: checked soorma-prd's spec-gap issues first (#13, #24, #25, #27, #28, #30 open; #12, #14 closed): none covers it. Entry written at construction/event-transport/prd-gaps/specification-gaps.md, committed on dev as b05931e and pushed; soorma-prd#31 opened with the label spec-gap, the entry verbatim, pinned to b05931e, both readings and both options, citing PF @ prd-platform-foundations-v1.3 §9 (Availability and Revocation propagation bound rows), §20 row 12, FR-025. Status Open; worked around with A (D-ET-09); residual carried to Build and Test; registered in aidlc-state.md (Open count 6). U6's close-out comment on #10 (issuecomment-6835802654): its heading now reads 'forward obligations to U7 event-transport'; the body is otherwise byte-identical (a first edit added a trailing newline; corrected and verified by diff)."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design, specification gap raised; GitHub comment corrected.
+
+---
+
+## Functional Design: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-12T23:20:17Z
+**User Input**: (none)
+**AI Response**: "Functional Design artifacts generated in construction/event-transport/functional-design/: domain-entities.md; business-rules.md (D-ET-01 to 09 from Q1 to Q9, D-ET-10 to 36 from P-01 to P-27; rules BR-PR-ET, BR-CK, BR-EP, BR-BF, BR-PB, BR-SB, BR-SM, BR-FO, BR-SR, BR-AT-ET, BR-BND, BR-RF-ET, BR-PE-ET, BR-PK; contract changes; amendments, including the approved class-3 change; misuse cases; residuals; forward obligations); business-logic-model.md; l1-coverage-matrix.md (36 applicable rows Covered, 0 Missing; L1-26 on GAP-ET-001's work-around, L1-30 on GAP-INT-003's, L1-08 on GAP-INT-007's, L1-10 on GAP-AE-001's); invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; no finding). Notes marked in place: U3 business-rules §2 (Amendment from U7: the Body Form option), component-methods.md S4. Security baseline: no blocking finding. Presented the standard two-option completion message; next stage NFR Requirements."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design complete, awaiting approval.
+
+---
+
+## Functional Design Approval (U7 event-transport)
+**Timestamp**: 2026-11-12T23:36:12Z
+**User Input**: "Continue to Next Stage. Functional Design is approved.
+
+I verified:
+
+D-ET-01 to 09 against my answers, including the Q5 addition and the ordering rule for racing subscribes;
+the Q7 check against P7 and the store's CHECKs;
+the derived hop;
+the marked amendment to U3's business rules;
+soorma-prd#31 and its pinned gap entry;
+the heading-only edit on #10.
+Commit the artifacts with the state, audit and amendment notes on dev, push, and wait for green.
+
+U7 is the last unit, so there's no unit to post forward obligations to. Carry them in the unit's own record for Build and Test: GAP-ET-001's residual and the cross-instance supersede residual.
+
+Then start NFR Requirements."
+**AI Response**: "Functional Design approved and marked complete. U7's obligations for Build and Test (GAP-ET-001's residual; the cross-instance supersede residual) recorded in aidlc-state.md's Carried to Build and Test notes and in business-rules §17 and §18; no issue comment, as no later unit exists. Committing the artifacts, state, audit, and amendment notes on dev, pushing, and waiting for the run; then NFR Requirements."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design approved.
+
+---

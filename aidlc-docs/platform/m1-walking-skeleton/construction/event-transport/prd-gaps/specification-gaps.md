@@ -6,7 +6,7 @@ Gaps*. Intake-time gaps are in `inception/prd-intake/specification-gaps.md`.
 
 | ID | Status | Raised against | Resolved by | Issue |
 |---|---|---|---|---|
-| [GAP-ET-001](#gap-et-001-may-attribution-recording-make-the-store-the-data-faces-availability-floor) | **Open**; worked around in M1 (a synchronous record, fail closed) | PF @ `prd-platform-foundations-v1.3` | — | (being raised) |
+| [GAP-ET-001](#gap-et-001-may-attribution-recording-make-the-store-the-data-faces-availability-floor) | **Open**; worked around in M1 (a synchronous record, fail closed) | PF @ `prd-platform-foundations-v1.3` | — | [soorma-prd#31](https://github.com/soorma-ai/soorma-prd/issues/31) (open) |
 
 ---
 
@@ -20,7 +20,7 @@ user)
 bound* row; PF §20 *Decision Log*, row 12 (OQ-12); PF FR-025
 **Owner**: platform-foundations
 **Unit**: U7 (publish and subscribe at S4, event ingest)
-**Issue**: (being raised)
+**Issue**: [soorma-prd#31](https://github.com/soorma-ai/soorma-prd/issues/31), opened 2026-11-12 with this entry verbatim, pinned to `b05931e`
 **Resolved by**: —
 
 ### What the build needs
