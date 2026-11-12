@@ -73,6 +73,12 @@ importers:
         specifier: workspace:*
         version: link:../org-identity
 
+  packages/agent-identity:
+    dependencies:
+      '@soorma/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
+
   packages/attribution:
     dependencies:
       '@soorma/env-store':

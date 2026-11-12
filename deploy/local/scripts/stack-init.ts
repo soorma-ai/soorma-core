@@ -91,9 +91,24 @@ export function stackInit(options: { configPath?: string; dir?: string } = {}): 
         throw new Error(`${name} does not match ${caller}: remove it and run stack:init again`);
     }
     const superuser = `${env.environment}-db-superuser-password`;
-    for (const name of [env.logPseudonym, env.databasePassword, env.migratorPassword, superuser])
+    // S3's own database role (U6 D-ID-AC-07, 08): its password, read by the
+    // store's init script by this name, as the superuser's is.
+    const data = `${env.environment}-db-data-password`;
+    for (const name of [
+      env.logPseudonym,
+      env.databasePassword,
+      env.migratorPassword,
+      superuser,
+      data,
+    ])
       write(name, `${key256()}\n`);
-    for (const name of [...env.controlGateway, ...env.migrator, ...env.callerPublic, superuser])
+    for (const name of [
+      ...env.controlGateway,
+      ...env.migrator,
+      ...env.callerPublic,
+      superuser,
+      data,
+    ])
       environmentNames.add(name);
   }
 

@@ -5,6 +5,7 @@
 export {
   AttributionRecordError,
   checkRecord,
+  ENVELOPE_FREE_AGENT_OPERATIONS,
   recordAttribution,
   type Actor,
   type AttributionRecord,

@@ -260,6 +260,7 @@ services:
       - e-db-superuser-password
       - e-db-app-password
       - e-db-migrator-password
+      - e-db-data-password
       - e-signing-key-1
       - e-caller-key
       - e-log-pseudonym-key
@@ -413,6 +414,7 @@ services:
       - e2-db-superuser-password
       - e2-db-app-password
       - e2-db-migrator-password
+      - e2-db-data-password
       - e2-signing-key-1
       - e2-caller-key
       - e2-log-pseudonym-key
@@ -589,6 +591,7 @@ secrets:
   e-db-superuser-password: { file: ./.secrets/e-db-superuser-password }
   e-db-app-password: { file: ./.secrets/e-db-app-password }
   e-db-migrator-password: { file: ./.secrets/e-db-migrator-password }
+  e-db-data-password: { file: ./.secrets/e-db-data-password }
   e-signing-key-1: { file: ./.secrets/e-signing-key-1 }
   e-caller-key: { file: ./.secrets/e-caller-key }
   e-caller-public-key: { file: ./.secrets/e-caller-public-key }
@@ -598,6 +601,7 @@ secrets:
   e2-db-superuser-password: { file: ./.secrets/e2-db-superuser-password }
   e2-db-app-password: { file: ./.secrets/e2-db-app-password }
   e2-db-migrator-password: { file: ./.secrets/e2-db-migrator-password }
+  e2-db-data-password: { file: ./.secrets/e2-db-data-password }
   e2-signing-key-1: { file: ./.secrets/e2-signing-key-1 }
   e2-caller-key: { file: ./.secrets/e2-caller-key }
   e2-caller-public-key: { file: ./.secrets/e2-caller-public-key }

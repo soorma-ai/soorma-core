@@ -1,0 +1,23 @@
+{
+  "name": "@soorma/agent-identity",
+  "private": true,
+  "description": "P6's agent half: the identity-resolution seam over the registration secret",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@soorma/service-kit": "workspace:*"
+  }
+}

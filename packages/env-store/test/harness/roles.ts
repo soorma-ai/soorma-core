@@ -13,6 +13,8 @@ export const ENV_ROLES_SQL = resolve(
 );
 export const ENV_MIGRATOR = 'soorma_env_migrator';
 export const ENV_APP = 'soorma_env_app';
+/** S3's own role (U6 D-ID-AC-07): added beside the two; their uses are unchanged. */
+export const ENV_DATA = 'soorma_env_data';
 
 /** Runs env-roles.sql in the connected database, with the database name bound as the parameter. */
 export async function runEnvRolesSql(client: pg.ClientBase, database: string): Promise<void> {

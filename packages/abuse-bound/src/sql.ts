@@ -74,4 +74,23 @@ export const SQL = {
     `INSERT INTO failed_attempts (organization, principal, surface, at, refused_by_bound)
      SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::timestamptz[], $5::boolean[])`,
   ),
+
+  /**
+   * U6's failed bootstrap attempts (NP-AC-07; BR-FA-01, 02): a batch, joined to
+   * registrations, so an attempt on an agent that does not exist in E writes
+   * nothing: the statement decides existence, off the response path. Run by
+   * S3 as soorma_env_data (TC-AC-080 runs this object).
+   * $1 to $3 the environments, $4 agents, $5 times, $6 refused-by-bound, $7 reasons.
+   */
+  insertFailedBootstrapAttempts: statement(
+    `INSERT INTO failed_bootstrap_attempts
+       (organization, project, environment, agent, at, refused_by_bound, reason)
+     SELECT u.organization, u.project, u.environment, u.agent, u.at, u.refused_by_bound, u.reason
+       FROM unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::timestamptz[],
+                   $6::boolean[], $7::text[])
+            AS u(organization, project, environment, agent, at, refused_by_bound, reason)
+       JOIN registrations r
+         ON r.organization = u.organization AND r.project = u.project
+        AND r.environment = u.environment AND r.agent = u.agent`,
+  ),
 } as const;
