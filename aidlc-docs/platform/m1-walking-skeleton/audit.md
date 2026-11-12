@@ -2676,3 +2676,38 @@ Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-
 **Context**: CONSTRUCTION, U5 agent-registration: NFR Design APPROVED.
 
 ---
+
+## QA Construction Enrichment (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:51:23Z
+**User Input**: (none; carrying out the NFR Design approval's instruction: "run QA construction enrichment for U5 (qa-test-cases.md §2.6, including nfr-requirements/). Give a TC-AR id to every verification target in the four U5 design artifacts, and stop for review before the Construction Design PR gate")
+**AI Response**: "qa-test-cases.md §2 gates: extension enabled; both inception files present; no enrichment-delta.md yet (not idempotent-skipped); Functional Design present; sources functional-design/, nfr-requirements/ (the user's instruction), nfr-design/; no infrastructure-design/ (skipped). Enriched TC-AR-001 to 022 in place (a construction-pass sentence in each expected outcome; construction references; IDs and forward links unchanged; TC-AR-016 made refusal-by-kind so it needs no U6 credential; TC-AR-001, 002 read back through the response and the row, since there is no read surface). Added TC-AR-023 to 072 (50), each with forward link construction/agent-registration/code/, covering every verification target: the L1 matrix's 18 QA markers, the invariant matrix's (I1 to I5, and I6 to I10's contract check, packaging table, and review), NFR-AR-01 to 24, NP-AR-01 to 10 (including the archive validity check and its two negative tests, the restore round trip with migrate applying nothing and the privilege test re-run, and the Compose-model test of the backup services). test-case-index.md: 72 rows. enrichment-delta.md written (git-ignored; 22 modified, 50 added, none removed). Every QA marker in the matrices replaced by TC ids; nfr-requirements.md rows and nfr-design-patterns.md sections name their TC ids. Waiting for push run 43114570442 (c6da1ff) before posting the U6 obligation on #9; then presenting for review."
+**Context**: CONSTRUCTION, U5 agent-registration: QA construction enrichment generated.
+
+---
+
+## NFR Design Committed; U6 Obligation Posted; QA Enrichment Presented (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:52:58Z
+**User Input**: (none)
+**AI Response**: "Push run 43114570442 (c6da1ff) passed (Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run). Posted logical-components §7's U6 obligation on soorma-core#9: https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6809034256 (import parseRegistrationSecret and registrationSecretMatches from packages/registry; P6's agent half must not make S3 link org-identity; read through P4 on the four-column keys; U6's own bookkeeping table). Presenting QA construction enrichment for review, before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design closed out; QA enrichment awaiting review.
+
+---
+
+## QA Construction Enrichment Approval; Construction Design PR Gate (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:34:08Z
+**User Input**: "Approved: QA construction enrichment for U5. Log it verbatim in audit.md and mark it approved in aidlc-state.md. Commit the test cases, the matrices, the TC ids in nfr-requirements.md and nfr-design-patterns.md, state and audit on dev, and push.
+
+Construction Design PR gate: the branch is dev → main, as for U1 to U4.
+
+Open the PR. Its description should link #8 with Refs #8, #3 (no closing keyword) and flag for reviewers:
+the evaluateHuman refactor (D-AR-07);
+the FR-026 observation;
+the secret format and its unkeyed verifier;
+the cap as a security bound;
+the backup services and their secret handling;
+Infrastructure Design skipped and why.
+Wait for every check to pass, then report the PR link and the results, and stop. Don't record the gate approved: I'll merge it, and I'll tell you when."
+**AI Response**: "QA construction enrichment APPROVED. Committing the test cases, matrices, TC ids, state, and audit on dev and pushing. Construction Design PR gate (pr-checkpoint.md Section 5): branch dev to main, confirmed by the user. Writing the instructions file, recording the gate PENDING, opening the PR with Refs #8, #3 and the six reviewer flags, then waiting for every check; the gate is not recorded approved until the user says it is merged."
+**Context**: CONSTRUCTION, U5 agent-registration: QA enrichment APPROVED; Construction Design PR gate opened.
+
+---

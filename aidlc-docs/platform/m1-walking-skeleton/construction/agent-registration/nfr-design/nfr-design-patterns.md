@@ -53,6 +53,8 @@ are checksummed (U2 NFR-OI-18).
 - a row under E2's identity in E's store is invisible to every P4 read;
 - U2's `sql` check over `packages/registry/src/sql.ts`.
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-027, TC-AR-070, TC-AR-039, TC-AR-071.
+
 ## NP-AR-02: The Registration Secret Module (Q2 A; NFR-AR-01 to 05)
 
 **`packages/registry/src/registration-secret.ts`**, a pure module with no store access, the one
@@ -72,6 +74,8 @@ is passed to the security log, whose helper takes no secret type.
 **Meets**: NFR-AR-01 to 05; D-AR-16; SECURITY-12. **Verified by**: the format test over generated
 values; the test vector for the digest; one test per malformation (`parse` returns `invalid`);
 a constant-time review check; the `compare` check.
+
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-048, TC-AR-049, TC-AR-050, TC-AR-071.
 
 ## NP-AR-03: The Cap, Serialised Without `UPDATE` (Q1 A; NFR-AR-06, 07)
 
@@ -95,6 +99,8 @@ concurrent issuances: exactly 1 succeeds, 4 `secret_limit_reached`, 10 secrets a
 attribution record); a test that two different registrations issue concurrently without waiting
 on each other's lock (distinct keys); the key-derivation vector.
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-052, TC-AR-053.
+
 ## NP-AR-04: The Agent-Facts Statement (P-04; D-AR-19)
 
 P4's `AgentFactsSource.load(environment, agents)`, one statement through `statement()`:
@@ -114,6 +120,8 @@ call (U3 BR-AU-09). It is the primary key's index.
 agents); an E2 row with the same `agent` not returned for E; the result carries no snapshot or
 sponsor; TC-AE-040 re-run at Build and Test.
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-032, TC-AR-065.
+
 ## NP-AR-05: One Read, One Evaluator, in Code (P-05; D-AR-07)
 
 `packages/authority` (P3):
@@ -132,6 +140,8 @@ S2 imports these and nothing else that computes authority (BR-SP-07).
 `holdsAnyGrant` tests **unchanged and passing**; a counting `GrantSource` (one read per operation);
 a dependency test that S2 and P4 import no evaluator but these.
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-038, TC-AR-031.
+
 ## NP-AR-06: Each Operation's Transaction (P-06; D-AR-18, 26)
 
 | Operation | Before the transaction | In one `withTransaction` |
@@ -149,6 +159,8 @@ a dependency test that S2 and P4 import no evaluator but these.
 leaves no registration and no secret; two concurrent registrations of one `agent` write one row
 and one record; another constraint's violation is not mapped to `registration_exists`.
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-041, TC-AR-024, TC-AR-072.
+
 ## NP-AR-07: Routes, Responses, Events (P-07, P-08)
 
 - Two routes on S2's edge listener (U4 NP-EHA-12), each through U4's throttle, presenter,
@@ -164,6 +176,8 @@ and one record; another constraint's violation is not mapped to `registration_ex
 
 **Meets**: NFR-AR-04, 12, 14, 18, 19. **Verified by**: a header test; event capture per flow,
 asserting no value, digest, or principal identifier appears; U2's alert-file format test.
+
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-036, TC-AR-066, TC-AR-067.
 
 ## NP-AR-08: Backup and Restore (P-09 as corrected; Q3 A as corrected)
 
@@ -214,6 +228,8 @@ password in the environment). **Verified by**:
 - the docs test on the README section;
 - the mode test on a written dump (`0600`) and its directory (`0700`).
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-057, TC-AR-056, TC-AR-055.
+
 ## NP-AR-09: The Restore Test and the Archive Validity Check (Q4 A, with the user's additions)
 
 **(1) The data round trip, in the `pnpm db:test` harness** (runs in CI's test job):
@@ -252,10 +268,14 @@ check, and a valid archive truncated by one byte at the end fails `pg_restore --
 
 **Meets**: NFR-AR-10 and the user's additions; I4 (the resolution target survives a restore).
 
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-058, TC-AR-059, TC-AR-060.
+
 ## NP-AR-10: Identifiers and Time (P-12)
 
 Secret ids as U4's (NP-EHA-11). `registeredAt` and `issuedAt` from the `CLOCK` token (U4
 NP-EHA-13). The registration's `agent` is the client's (D-AR-02).
+
+**Test cases** (QA construction enrichment, 2026-11-11): TC-AR-048, TC-AR-069.
 
 ---
 
