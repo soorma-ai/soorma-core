@@ -2969,3 +2969,72 @@ Write the NFR Requirements plan, and stop for my answers."
 **Context**: CONSTRUCTION, U6 agent-credentials: Functional Design APPROVED.
 
 ---
+
+## Functional Design: Committed, Obligations Posted (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:08:14Z
+**User Input**: (none)
+**AI Response**: "Committed on dev as 3ba54bf (the Functional Design artifacts, the Application Design correction notes, the aidlc-state.md fix and approval, the audit); pushed; push run 43151870272 green (build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration). Posted business-rules §17's U7 obligations on soorma-core#10: https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6814198317 (wire P5's cache at S4 with the bound; agent verify keys only; checkAgentRequest with the cached source; revocation at either granularity within the bound; the reverse P7 rule stays U7's, under the standing rules). Link recorded in aidlc-state.md."
+**Context**: CONSTRUCTION, U6 agent-credentials: Functional Design committed and obligations posted.
+
+---
+
+## NFR Requirements: Plan Written, Awaiting Answers (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:08:14Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements plan written: construction/working/agent-credentials-nfr-requirements-plan.md (git-ignored). PF §9's profile carried forward (two latency classes; availability bounded by the cache at S4, the store being S3's floor because both operations write; throughput by request volume; per-environment isolation; one published bound). Proposals P-01 to P-17 (B < L <= M checked at start-up; S3 stateless; U4's throttle, body bound, and token time rules; 2^20 HMAC slots under a per-environment counter secret; B, L, M published in credentials.md; U2's failed-attempt writer; U4's key ring shape with rotation keeping verify halves for at least L; a bounded cache; named events and alert rules; no pruning; TLS 1.3; constant-time and CSPRNG; injected clocks; no new dependency). Questions, all technology: Q1 B (60 s recommended); Q2 L (15 minutes recommended); Q3 M (24 hours recommended); Q4 the bound's values (B: 60 live per 60 s, backoff from the 10th failure capped at 60 s, recommended); Q5 latency budgets (A: reported, not gated, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements plan, awaiting answers.
+
+---
+
+## NFR Requirements: Plan Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:13:04Z
+**User Input**: "Q1: B. Q2: A. Q3: B. Q4: B. Q5: A.
+
+P-01 to P-17: accepted, with one precision on P-08.
+
+B is published as the platform's bound (PF FR-012).
+L and M are published as upper bounds only. The contract states that clients:
+schedule renewal from the response's expiresAt;
+re-bootstrap when renewal answers credential_expired at the end of the credential's lifetime;
+never hard-code L or M.
+So L and M can change without a contract break. Note the same in the forward obligations for soorma-sdk's session, through the brief's consumer, without editing the brief.
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-requirements.md and tech-stack-decisions.md, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-nfr-requirements-plan.md):
+- Q1 — B, the propagation bound: B — 60 seconds
+- Q2 — L, the agent credential's lifetime: A — 15 minutes, as U4's human environment credential
+- Q3 — M, a lineage's maximum age: B — 24 hours
+- Q4 — The bootstrap bound's values: B — agent-tuned: at most 60 live attempts per agent in any 60 seconds; backoff from the 10th consecutive failure, doubling from 1 second, capped at 60 seconds; a success resets the backoff only
+- Q5 — Latency budgets: A — reported, not gated: the cache hit at most 0.1 ms p99 in process and a miss one indexed read; exchangeBootstrap and renewAgentCredential at most 200 ms p95 on the local stack; measured at Build and Test
+- P-01 to P-17: accepted, with the user's precision on P-08, verbatim above (B published as the platform's bound; L and M published as upper bounds only; the contract states that clients schedule renewal from expiresAt, re-bootstrap on credential_expired at the end of the lineage, and never hard-code L or M; the same noted in the forward obligations for soorma-sdk's session, through the brief's consumer, the brief not edited)
+**Classification** (prd-gap-classification.md Step 1): Q1 to Q5 all technology, as assessed. PF FR-012 and §9 fix that a finite, published, platform-set bound exists and that expiry denies; every value is left to technical design. B = 60 s < L = 15 min <= M = 24 h, so P-01's relations hold. No specification gap.
+**AI Response**: "Answers recorded; no contradiction or ambiguity found. Generating construction/agent-credentials/nfr-requirements/nfr-requirements.md and tech-stack-decisions.md; then stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements plan answered; generation.
+
+---
+
+## NFR Requirements: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:15:29Z
+**User Input**: (none; presenting for review as instructed)
+**AI Response**: "Generated construction/agent-credentials/nfr-requirements/nfr-requirements.md (PF §9 carried forward; NFR-AC-01 to 27: B = 60 s, L = 15 min, M = 24 h, B < L <= M at start-up; NFR-AC-05 the user's P-08 precision: B published as the platform's bound, L and M as upper bounds only, the contract stating the three client rules, so L and M can change without a contract break; the bound: 60 live per 60 s, backoff from the 10th failure capped at 60 s, 2^20 HMAC slots per environment, the lockout quantified at most 60 s after an attack stops; U2's writer; U4's throttle, body bound, token time rules, TLS; the agent key ring with rotation keeping verify halves at least 15 minutes; events and alert rules; latency reported, not gated; no pruning; no new dependency; obligations §4, including soorma-sdk's session through the brief's consumer, the brief not edited) and tech-stack-decisions.md (T-AC-01 to 07; no new dependency; NFR Design and Infrastructure Design both run). Consistency fix to Functional Design business-rules §13 (the published bound row), marked in place. Security baseline: no blocking finding (SECURITY-01 at rest, 03's log service, and 14 not applicable in M1 by the user's decisions; 02, 04, 07 N/A at this stage). Invariants: no finding. Nothing committed; stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements completion, approval prompt.
+
+---
+
+## NFR Requirements Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:19:07Z
+**User Input**: "Continue to Next Stage: NFR Requirements approved.
+
+Log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md.
+Commit the NFR Requirements artifacts, the Functional Design §13 fix, state and audit on dev, push, and wait for the push run to pass.
+Write the NFR Design plan, and stop for my answers. It should cover:
+the tables, as new migrations in env-store's sequence (0001 and 0002 untouched), including D-AC-33's check on attribution_records;
+the privileges;
+the cache's physical form;
+packages/agent-identity;
+P8 generalised over its subject;
+the agent key ring;
+the closure test."
+**AI Response**: "NFR Requirements APPROVED. Marking the stage approved; committing on dev (the NFR Requirements artifacts, the Functional Design §13 fix, the state, the audit), pushing, waiting for the push run; then writing the NFR Design plan covering the seven items named, and stopping for answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements APPROVED.
+
+---
