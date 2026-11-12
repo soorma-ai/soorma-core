@@ -3360,3 +3360,65 @@ Process: commit it as its own fix, through the full gate, pushed and green. Comm
 **Context**: Code Generation Part 2, review of S3's code: approved with one fix
 
 ---
+
+## Code Generation (U6 agent-credentials), Part 2: stop in Group 8 (alert rules)
+**Timestamp**: 2026-11-12T19:01:50Z
+**User Input**: (none since the review; this entry records a stop condition)
+**AI Response**: "The revocation-reason fix is committed as 0d3ad19 and green (run 43281976704). Group 8 is written and passes the full local gate without its alert rules (1422 tests; S1, S2, S3 images; smoke, outage with Case 3, and e2e on a fresh stack), uncommitted. Stopped before Step 31's alert rules: S3's events can join deploy/monitoring/alerts.yaml only by changing U4's monitoring.test.ts helper (the S1 and S2 event union, which its assertions depend on, and whose each-once check S3's NFR-AC-22 names contradict), and U2's alert format has no per-agent grouping for NFR-AC-23's rule. Stop condition 1; options reported to the user."
+**Context**: Code Generation Part 2, Group 8 Step 31; stop condition 1 (class 3)
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: decision on S3's alert rules
+**Timestamp**: 2026-11-12T19:13:03Z
+**User Input**: "Decision on S3's alert rules: option A (one alerts.yaml, as §12 says), amended as follows. Treat these as approved class-3 changes and record each one.
+
+U4's monitoring.test.ts: don't make the uniqueness check vacuous.
+Keep the assertion that S1's and S2's events are disjoint, exactly as it is.
+Add an assertion that S3's events overlapping S1's and S2's are exactly NFR-AC-22's four: credential.issued, credential.renewed, store.unavailable, throttle.refused.
+The expected events list is the deduplicated union. \"alerts.events lists each event once\" stays unchanged.
+Update the file header and the test title to name S3.
+U2's alerts.schema.json:
+groupBy gains \"agent\".
+A rule may take an optional codes list, the internal reasons it counts. When it's absent, a rule counts every occurrence, so existing rules are unchanged.
+Define both in alerts.yaml's header comment.
+S3's rules (NFR-AC-23):
+Bursts of bootstrap.refused grouped by agent.
+A revoked credential still being presented, threshold 1, grouped by agent:
+renewal.refused with codes: [agent_revoked, credential_revoked];
+bootstrap.refused with codes: [agent_revoked].
+bound.refused.
+Choose the burst thresholds to match U4's and record them.
+TC-AC-073 asserts the revoked-credential rules' codes, so they can't fire on expired or record_mismatch.
+U4's compose-model.test.ts: you may correct the two stale titles (\"the twelve services\", \"8441, 8442 and 8443 only\"). Change only the titles, and record it.
+Every other Group 8 change you listed is approved as classed. Run Group 8 through the full gate, push, and wait for green. Then continue with Groups 9 to 11, and stop when the PR needs merging."
+**AI Response**: "Applying option A as amended: the approved class-3 changes to U4's monitoring.test.ts and U2's alerts.schema.json, S3's four rules, the two title corrections, then Group 8 through the full gate."
+**Context**: Code Generation Part 2, Group 8 Step 31: approved class-3 changes for S3's alert rules
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: stop in Group 8 (U2's monitoring assertion)
+**Timestamp**: 2026-11-12T19:16:32Z
+**User Input**: (none since the decision on S3's alert rules; this entry records a stop condition)
+**AI Response**: "Applied the approved changes (U4's monitoring.test.ts as amended, U2's alerts.schema.json groupBy agent and optional codes, S3's four rules, the two title corrections). Group 8's full checks then failed one test: U2's services/org-gateway/test/monitoring.test.ts ('carry the rules NFR-OI-23 names, grouping humans by pseudonym, never by identifier') allows only none, pseudonym, environment, and code as any rule's groupBy, so the approved groupBy agent fails it. Changing that assertion was not among the approved changes: stop condition 1. Group 8 uncommitted; options reported to the user."
+**Context**: Code Generation Part 2, Group 8 Step 31; stop condition 1 (class 3)
+
+---
+
+## Code Generation (U6 agent-credentials), Part 2: decisions on U2's monitoring assertion and Group 9's e2e
+**Timestamp**: 2026-11-12T19:39:38Z
+**User Input**: "Decision 1: A approved. Grouping by agent is allowed only on rules for events S3 alone emits. Every other rule and panel keeps the four groupings. Record it as a class-3 change approved by me, with the diff.
+
+Decision 2:
+
+--no-file-parallelism is approved. It changes run order only. Record it.
+Done when 2 must chain from done when 1's real registrations, not seeded ones. TC-AC-093 is the brief's evidence for done when 2. Its precondition is done when 1's registrations and secrets, and its attribution records name sponsor H.
+Add TC-AC-093 as a new test in e2e/agent-registration.test.ts, directly after TC-AR-008. Use the A and B secrets and the state that test already holds.
+Put its calls in a U6 helper module (raw HTTPS to S3, no SDK) and keep it thin in U5's file.
+No existing U5 assertion or helper changes; this is an added test. Record the addition with its diff.
+Confirm that U5's later tests (TC-AR-043, 044, and the backup round trip 059, 056, 060) pass unchanged with the credential and attribution records now present. If any of them would need changing, stop.
+Seeding as the store's owner is approved for U6's other e2e cases (TC-AC-004, 005, and the revocation stack proofs), in U6's own e2e file, using U5's real secret generator, as D-CG-AC-10."
+**AI Response**: "Applying Decision 1 A to U2's monitoring test, then Group 8 through the full gate. Group 9 follows as decided."
+**Context**: Code Generation Part 2, Groups 8 and 9: approved class-3 change (U2's monitoring assertion), the e2e run order, and done when 2's placement
+
+---

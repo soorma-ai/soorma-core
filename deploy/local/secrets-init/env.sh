@@ -42,7 +42,18 @@ copy migrate 65532 \
 # by 65532 and unreadable by 999.
 copy backup 999 "$env-db-migrator-password" stack-ca-cert
 
+# {env}-restore (postgres, 999; U6 D-ID-AC-14): the migrator password and the CA
+# only, in its own subdirectory.
+copy restore 999 "$env-db-migrator-password" stack-ca-cert
+
 # {env}-control-gateway (distroless nonroot, 65532): never the migrator password.
 copy control-gateway 65532 \
   "$env-control-gateway-tls" stack-ca-cert "$env-db-app-password" \
   "$env-signing-key-1" "$env-caller-key" "$env-log-pseudonym-key"
+
+# {env}-data-gateway (distroless nonroot, 65532; U6 D-ID-AC-09): its own role's
+# password, never the app or migrator password; the agent ring, never the human
+# one; the bound's counter secret.
+copy data-gateway 65532 \
+  "$env-data-gateway-tls" stack-ca-cert "$env-db-data-password" \
+  "$env-agent-signing-key-1" "$env-bootstrap-counter-secret"

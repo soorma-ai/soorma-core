@@ -8,6 +8,12 @@
 # A rule fires when `event` occurs at least `threshold.count` times within
 # `threshold.windowMinutes`, counted per `groupBy` value. A human is grouped by
 # log pseudonym, never by identifier (NFR-OI-22).
+#
+# - `groupBy: agent` (U6): counted per logical agent, the event's `agent` field.
+#   S3 names agents, never a human (NFR-AC-22)
+# - `codes` (U6, optional): the internal reasons the rule counts, matched
+#   against the event's `code`. When it is absent, the rule counts every
+#   occurrence of `event`, so every rule written before U6 is unchanged
 version: 1
 
 # The named security events. Units add theirs here (shared-infrastructure.md).
@@ -37,6 +43,11 @@ events:
   - registration.refused
   - secret.issued
   - secret.refused
+  # Each environment's S3 (U6 NFR-AC-22). credential.issued, credential.renewed,
+  # store.unavailable, and throttle.refused are S2's names too, listed once above.
+  - bootstrap.refused
+  - renewal.refused
+  - bound.refused
 
 rules:
   - id: auth-failed-repeated
@@ -135,3 +146,36 @@ rules:
     threshold: { count: 20, windowMinutes: 15 }
     severity: warning
     description: A burst of one registration refusal reason across the environment.
+
+  # Each environment's S3 (U6 NFR-AC-23). Thresholds as U4's: a burst is 5 in
+  # 15 minutes (credential-refused-repeated); a single occurrence that matters is
+  # 1 in 15 minutes (grant-denied; auth-bound-refused for the bound).
+  - id: bootstrap-refused-repeated
+    event: bootstrap.refused
+    groupBy: agent
+    threshold: { count: 5, windowMinutes: 15 }
+    severity: warning
+    description: Repeated bootstrap refusals for one agent (guessing its secret, or a lockout attempt).
+
+  - id: revoked-credential-renewal
+    event: renewal.refused
+    groupBy: agent
+    codes: [agent_revoked, credential_revoked]
+    threshold: { count: 1, windowMinutes: 15 }
+    severity: warning
+    description: A revoked agent credential is still being presented for renewal.
+
+  - id: revoked-agent-bootstrap
+    event: bootstrap.refused
+    groupBy: agent
+    codes: [agent_revoked]
+    threshold: { count: 1, windowMinutes: 15 }
+    severity: warning
+    description: A revoked agent's registration secret is still being presented at bootstrap.
+
+  - id: bound-refused
+    event: bound.refused
+    groupBy: agent
+    threshold: { count: 1, windowMinutes: 15 }
+    severity: warning
+    description: The bootstrap bound refused attempts for an agent.

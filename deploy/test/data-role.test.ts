@@ -62,13 +62,12 @@ describe('D-ID-AC-07, 08: the files that create soorma_env_data and admit it', (
       expect(l).toMatch(/^hostssl\s+soorma_env\s+\S*soorma_env_data\S*\s+\S+\s+scram-sha-256$/);
   });
 
-  it('env.sh copies the password into db/ only (for the init script), in this group', () => {
+  it('env.sh copies the password into db/ (for the init script) and data-gateway/ only', () => {
     const script = readFileSync(join(local, 'secrets-init/env.sh'), 'utf8').replace(
       /\\\n\s*/g,
       ' ',
     );
     const lines = script.split('\n').filter((l) => l.includes('$env-db-data-password'));
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toMatch(/^copy db 999 /);
+    expect(lines.map((l) => l.split(' ')[1]).sort()).toEqual(['data-gateway', 'db']);
   });
 });

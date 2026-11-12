@@ -2,10 +2,11 @@
 //
 // The monitoring files as a whole (TC-EHA-087; U4 Infrastructure Design §9;
 // D-CG-EHA-17): both validate against their schemas; `events` is exactly the
-// union of every service's security events (S1's and S2's); every rule and
-// panel names one of them; U4's five rules carry §9's thresholds; and each S2
-// event has a panel grouped by environment. Nothing evaluates them in M1
-// (SECURITY-14, the user's decision).
+// union of every service's security events (S1's, S2's, and, since U6, S3's,
+// each name once); every rule and panel names one of them; U4's five rules
+// carry §9's thresholds; and each S2 event has a panel grouped by environment.
+// S1's and S2's events are disjoint; S3 shares exactly NFR-AC-22's four names
+// with them. Nothing evaluates them in M1 (SECURITY-14, the user's decision).
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -13,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { SECURITY_EVENTS as S1_EVENTS } from '../../services/org-gateway/src/security-log.ts';
 import { SECURITY_EVENTS as S2_EVENTS } from '../../services/control-gateway/src/security-log.ts';
+import { SECURITY_EVENTS as S3_EVENTS } from '../../services/data-gateway/src/security-log.ts';
 
 const dir = resolve(import.meta.dirname, '../monitoring');
 const load = (name: string): unknown => parse(readFileSync(join(dir, name), 'utf8')) as unknown;
@@ -36,6 +38,8 @@ interface Dashboard {
 const alerts = load('alerts.yaml') as Alerts;
 const dashboard = load('dashboard.yaml') as Dashboard;
 const union: string[] = [...S1_EVENTS, ...S2_EVENTS];
+/** Every service's events, each name once (U6: S3 shares four of S2's names). */
+const all: string[] = [...new Set([...union, ...S3_EVENTS])];
 
 describe('TC-EHA-087: the monitoring files validate, and name only defined events', () => {
   it('validate against their schemas', () => {
@@ -44,16 +48,19 @@ describe('TC-EHA-087: the monitoring files validate, and name only defined event
     expect(ajv.validate(schema('dashboard.schema.json'), dashboard), ajv.errorsText()).toBe(true);
   });
 
-  it("list exactly the union of S1's and S2's events, each once", () => {
+  it("list exactly the union of S1's, S2's, and S3's events, each once", () => {
     expect(new Set(union).size).toBe(union.length);
+    expect(S3_EVENTS.filter((e) => union.includes(e)).sort()).toEqual(
+      ['credential.issued', 'credential.renewed', 'store.unavailable', 'throttle.refused'].sort(),
+    );
     expect(new Set(alerts.events).size).toBe(alerts.events.length);
-    expect([...alerts.events].sort()).toEqual([...union].sort());
+    expect([...alerts.events].sort()).toEqual([...all].sort());
   });
 
   it('name only listed events, in every rule and panel', () => {
-    for (const rule of alerts.rules) expect(union, rule.id).toContain(rule.event);
+    for (const rule of alerts.rules) expect(all, rule.id).toContain(rule.event);
     for (const panel of dashboard.panels)
-      for (const event of panel.events) expect(union).toContain(event);
+      for (const event of panel.events) expect(all).toContain(event);
   });
 
   it("carry U4's five rules with §9's thresholds", () => {

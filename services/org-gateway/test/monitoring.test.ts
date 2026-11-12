@@ -7,6 +7,8 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { SECURITY_EVENTS } from '../src/security-log.ts';
+import { SECURITY_EVENTS as S2_EVENTS } from '../../control-gateway/src/security-log.ts';
+import { SECURITY_EVENTS as S3_EVENTS } from '../../data-gateway/src/security-log.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const dir = join(root, 'deploy/monitoring');
@@ -54,8 +56,16 @@ describe('the monitoring files', () => {
     expect(rule('auth.failed')).toMatchObject({ groupBy: 'pseudonym' });
     for (const event of ['auth.bound_refused', 'internal.call_refused', 'failed_attempt.dropped'])
       expect(rule(event)?.threshold.count).toBe(1);
+    // U6 (the user's decision): a logical agent is not a human, so only a rule
+    // for an event S3 alone emits may be grouped by agent.
+    const s3Only = (event: string): boolean =>
+      (S3_EVENTS as readonly string[]).includes(event) &&
+      !(SECURITY_EVENTS as readonly string[]).includes(event) &&
+      !(S2_EVENTS as readonly string[]).includes(event);
     const groupings = [
-      ...alerts.rules.map((r) => r.groupBy),
+      ...alerts.rules
+        .filter((r) => !(r.groupBy === 'agent' && s3Only(r.event)))
+        .map((r) => r.groupBy),
       ...dashboard.panels.map((p) => p.groupBy),
     ];
     expect(

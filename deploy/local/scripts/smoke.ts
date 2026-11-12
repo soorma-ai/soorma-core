@@ -30,19 +30,31 @@
 //     open E's store (E's own does); from inside network e, a credential
 //     resolves the same actor as from the host, and from org-internal-e, no
 //     credential is credential_refused
+// 11. S3 in E and E2 (U6; TC-AC-092, 090, 020, 031): each data-gateway
+//     healthy, published on its own loopback port only (8444, 8445), hardened,
+//     seeing exactly its own five secrets; an agent registered through S2
+//     bootstraps and renews at its environment's S3 over TLS 1.3, its
+//     credential naming that environment; E's agent credential is refused at
+//     E2's S3; the data role exists with U4's attributes, and S3's session runs
+//     as soorma_env_data over TLS 1.3 while S2's runs as soorma_env_app
 // The enrollment material is read from the handover file into the request
 // body only; it is never printed.
 import { readFileSync } from 'node:fs';
 import { connect } from 'node:net';
 import { join } from 'node:path';
 import {
+  agentCredentialOf,
+  bootstrapAgent,
   call,
   check,
   COMPOSE,
+  DATA_GATEWAY,
   docker,
   dockerWithInput,
   failed,
   PRINCIPAL,
+  registeredAgent,
+  renewAgent,
   SECRETS,
 } from './stack-client.ts';
 
@@ -264,6 +276,9 @@ async function main(): Promise<void> {
   // 10. What reaches E (U4).
   secrets.push(...(await reach()));
 
+  // 11. S3 in E and E2 (U6).
+  secrets.push(...(await dataGateways()));
+
   // 7. The logs.
   const logs = docker([
     ...COMPOSE,
@@ -275,6 +290,8 @@ async function main(): Promise<void> {
     'e2-control-gateway',
     'e-migrate',
     'e2-migrate',
+    'e-data-gateway',
+    'e2-data-gateway',
   ]);
   const leaked = [PRINCIPAL.principal, material, K, token, ...secrets].filter(
     (s) => s.length > 0 && logs.includes(s),
@@ -559,4 +576,156 @@ if (import.meta.main) {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;
   });
+}
+
+/** Section 11: S3 in E and E2 (U6). Returns the secrets and tokens it saw, for the log check. */
+async function dataGateways(): Promise<string[]> {
+  const seen: string[] = [];
+  const id = (service: string): string => docker([...COMPOSE, 'ps', '-q', service]);
+  for (const env of ['e', 'e2'] as const) {
+    const s3 = id(`${env}-data-gateway`);
+    check(
+      `${env}-data-gateway is healthy`,
+      docker(['inspect', '-f', '{{.State.Health.Status}}', s3]) === 'healthy',
+    );
+    const ports = docker(['inspect', '-f', '{{json .HostConfig.PortBindings}}', s3]);
+    check(
+      `${env}-data-gateway is published on 127.0.0.1:${DATA_GATEWAY[env]} only`,
+      ports === `{"8443/tcp":[{"HostIp":"127.0.0.1","HostPort":"${DATA_GATEWAY[env]}"}]}`,
+      ports,
+    );
+    const h = docker([
+      'inspect',
+      '-f',
+      '{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{.HostConfig.CapDrop}}|{{.HostConfig.SecurityOpt}}',
+      s3,
+    ]);
+    const [user, ro, caps, opts] = h.split('|');
+    check(
+      `${env}-data-gateway is hardened`,
+      !!user &&
+        user !== 'root' &&
+        user !== '0' &&
+        ro === 'true' &&
+        caps === '[ALL]' &&
+        opts === '[no-new-privileges:true]',
+      h,
+    );
+    const listing = docker([
+      'exec',
+      s3,
+      '/nodejs/bin/node',
+      '-e',
+      "const fs=require('fs');console.log(fs.readdirSync('/run/secrets').sort().map(n=>{const s=fs.statSync('/run/secrets/'+n);return n+':'+s.uid+':'+(s.mode&0o777).toString(8)}).join(' '))",
+    ]);
+    const expected = [
+      `${env}-agent-signing-key-1`,
+      `${env}-bootstrap-counter-secret`,
+      `${env}-data-gateway-tls`,
+      `${env}-db-data-password`,
+      'stack-ca-cert',
+    ]
+      .map((n) => `${n}:65532:400`)
+      .join(' ');
+    check(
+      `${env}-data-gateway sees exactly its own five secrets (no app or migrator password, no human ring), 65532, 0400`,
+      listing === expected,
+      listing,
+    );
+  }
+
+  // An agent per environment, registered through that environment's S2.
+  const signIn = await call('/sign-ins', { body: { principal: PRINCIPAL, secret: K } });
+  const signInToken =
+    signIn.status === 200
+      ? (JSON.parse(signIn.body) as { signIn: { token: string } }).signIn.token
+      : '';
+  const tokens: Record<'e' | 'e2', string> = { e: '', e2: '' };
+  for (const env of ['e', 'e2'] as const) {
+    const port = env === 'e' ? 8442 : 8443;
+    const issued = await call('/environment-credentials', { token: signInToken, port });
+    const credential =
+      issued.status === 200 ? (JSON.parse(issued.body) as { credential: string }).credential : '';
+    await call('/grants', {
+      token: credential,
+      port,
+      body: { target: PRINCIPAL, permissions: ['agent:register'] },
+    });
+    const agent = `smoke-${env}-${Date.now().toString(36)}`;
+    const secret = await registeredAgent(credential, env, agent);
+    check(`set-up: an agent registered in ${env}, with a secret`, secret !== '');
+    const booted = await bootstrapAgent(env, agent, secret);
+    const body =
+      booted.status === 200
+        ? (JSON.parse(booted.body) as { environment: { environment: string }; agent: string })
+        : undefined;
+    check(
+      `a bootstrap at ${env}'s S3, over TLS 1.3, naming ${env}`,
+      booted.status === 200 &&
+        booted.protocol === 'TLSv1.3' &&
+        body?.agent === agent &&
+        body.environment.environment === env,
+      `${booted.status} ${booted.protocol}`,
+    );
+    const token = agentCredentialOf(booted);
+    const renewed = await renewAgent(env, token);
+    check(`a renewal at ${env}'s S3`, renewed.status === 200, String(renewed.status));
+    tokens[env] = agentCredentialOf(renewed) || token;
+    seen.push(credential, secret, token, tokens[env]);
+    // TC-AC-090, right after the calls, while each pool holds a session (idle
+    // sessions close after 10 seconds).
+    const sql = (query: string): string =>
+      dockerWithInput(
+        [
+          ...COMPOSE,
+          'exec',
+          '-T',
+          `${env}-db`,
+          'psql',
+          '-X',
+          '-q',
+          '-At',
+          '-U',
+          'postgres',
+          '-d',
+          'soorma_env',
+        ],
+        query,
+      ).stdout;
+    check(
+      `${env}: soorma_env_data exists with U4's attributes`,
+      sql(
+        "SELECT rolcanlogin, rolsuper, rolcreatedb, rolcreaterole, rolinherit, rolreplication, rolbypassrls FROM pg_roles WHERE rolname = 'soorma_env_data';",
+      ) === 't|f|f|f|f|f|f',
+    );
+    const sessions = (service: string): string => {
+      const ip = docker([
+        'inspect',
+        '-f',
+        `{{(index .NetworkSettings.Networks "soorma-local_${env}").IPAddress}}`,
+        id(`${env}-${service}`),
+      ]);
+      return sql(
+        `SELECT DISTINCT a.usename || ':' || s.version FROM pg_stat_activity a JOIN pg_stat_ssl s USING (pid) WHERE a.client_addr = '${ip}' AND s.ssl;`,
+      );
+    };
+    check(
+      `${env}'s S3 connects as soorma_env_data over TLS 1.3`,
+      sessions('data-gateway') === 'soorma_env_data:TLSv1.3',
+      sessions('data-gateway'),
+    );
+    check(
+      `${env}'s S2 connects as soorma_env_app over TLS 1.3`,
+      sessions('control-gateway') === 'soorma_env_app:TLSv1.3',
+      sessions('control-gateway'),
+    );
+  }
+  const crossed = await renewAgent('e2', tokens.e);
+  check(
+    "E's agent credential is refused at E2's S3",
+    crossed.status === 401,
+    String(crossed.status),
+  );
+
+  return seen.filter((x) => x.length > 0);
 }

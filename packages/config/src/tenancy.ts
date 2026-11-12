@@ -738,6 +738,18 @@ export interface SecretNames {
     logPseudonym: string;
     databasePassword: string;
     migratorPassword: string;
+    /** The environment's S3 part (U6 D-ID-AC-05, 06, 09), when configured. */
+    dataGateway?: {
+      /** S3's secrets: its data-gateway/ subdirectory. */
+      secrets: string[];
+      tls: string;
+      /** E's agent ring: Ed25519 private keys, each with a derived verify half. */
+      agentKeys: string[];
+      /** The bound's counter secret (256 bits). */
+      counter: string;
+      /** soorma_env_data's password. */
+      databasePassword: string;
+    };
   }[];
 }
 
@@ -792,6 +804,23 @@ export function listSecrets(options: LoadOptions): SecretNames {
             logPseudonym: cg.keys.logPseudonym,
             databasePassword: cg.database.password,
             migratorPassword: cg.migrator.password,
+            ...(e.dataGateway
+              ? {
+                  dataGateway: {
+                    secrets: unique([
+                      e.dataGateway.edge.tls,
+                      e.dataGateway.database.ca,
+                      e.dataGateway.database.password,
+                      ...e.dataGateway.keys.verify,
+                      e.dataGateway.bound.counter,
+                    ]),
+                    tls: e.dataGateway.edge.tls,
+                    agentKeys: unique(e.dataGateway.keys.verify),
+                    counter: e.dataGateway.bound.counter,
+                    databasePassword: e.dataGateway.database.password,
+                  },
+                }
+              : {}),
           },
         ];
       }),
