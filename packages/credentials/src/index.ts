@@ -2,7 +2,9 @@
 //
 // @soorma/credentials (P5): an environment's own credentials, minted and
 // verified with its own key ring only (ID §6; PF §6), and their records. U4
-// builds the human environment credential; U6 adds the agent credential.
+// builds the human environment credential; U6 adds the agent credential, its
+// own key ring's use (D-AC-03), revocation reads and the fail-closed cache,
+// and the three constants B, L, M (NP-AC-01).
 export { loadEnvironmentKeyRing, type EnvironmentKeyRing } from './key-ring.ts';
 export {
   checkCredentialRecord,
@@ -23,3 +25,33 @@ export {
   type TokenRefusalReason,
   type TokenVerification,
 } from './token.ts';
+export {
+  AGENT_CREDENTIAL_LIFETIME_MS,
+  LINEAGE_MAX_AGE_MS,
+  PROPAGATION_BOUND_MS,
+} from './lifetimes.ts';
+export {
+  AGENT_CREDENTIAL_PREFIX,
+  AGENT_CREDENTIAL_TYP,
+  mintAgentCredential,
+  verifyAgentCredential,
+  type AgentCredentialClaims,
+  type AgentTokenVerification,
+} from './agent-token.ts';
+export {
+  insertAgentCredential,
+  lineageTimes,
+  readAgentCredential,
+  renewAgentCredentialRecord,
+  renewedExpiry,
+  wholeSeconds,
+  type AgentCredentialRecord,
+} from './agent-records.ts';
+export {
+  createRevocationCache,
+  directRevocationSource,
+  type RevocationAnswer,
+  type RevocationCacheOptions,
+  type RevocationSource,
+  type RevocationTarget,
+} from './revocation.ts';

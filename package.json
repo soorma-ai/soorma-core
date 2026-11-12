@@ -17,6 +17,7 @@
     "test:e2e": "SOORMA_E2E=1 vitest run e2e --silent=false",
     "test:perf:s2": "SOORMA_PERF=1 vitest run services/control-gateway/test/perf --silent=false",
     "bench:admit": "vitest bench --run --reporter=verbose packages/authority/bench",
+    "bench:revocation": "vitest bench --run --reporter=verbose packages/credentials/bench",
     "generate": "pnpm --filter @soorma/contract run generate",
     "check:generated": "pnpm --filter @soorma/contract run check:generated",
     "check:contract": "pnpm --filter @soorma/contract run check",
