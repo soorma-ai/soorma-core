@@ -5,7 +5,7 @@
 - **Project Type**: Greenfield
 - **Start Date**: 2026-10-05T02:24:31Z
 - **Milestone**: M1, Walking skeleton (from the slice brief; matches `aiprd-docs/build-sequence.md`)
-- **Current Stage**: CONSTRUCTION. **U5 `agent-registration` (soorma-core#8): Functional Design APPROVED (2026-11-11T22:06:11Z); NFR Requirements APPROVED (2026-11-11T22:27:32Z); NFR Design APPROVED (2026-11-11T22:45:47Z); Construction Design PR gate APPROVED (#20 merged as `1903711`); Code Generation Part 2: Groups 1 to 5 done, each push run green; reviewed and accepted by the user (2026-11-12T02:01:58Z; D-CG-AR-17 confirmed class 2); Groups 6 to 9 in progress, after the review stop. Q-CG-AR-1 (stop condition 3 in Group 6) answered A by the user: the archive check is a full read (D-CG-AR-20); U4's per-service Compose-model rules applied to the backup services (D-CG-AR-21, class 2). Group 6 `b2cc93a` + CI fix `a217d34` (D-CG-AR-23; run 43140929923 green); Group 7 `5819f6b` + CI fix `c4bda89` (D-CG-AR-24) (2026-11-12T01:59:10Z), before Group 6 (backup) and Group 7 (e2e/)**. U1 to U4 complete. Stage history is under *Stage Progress*
+- **Current Stage**: CONSTRUCTION. **U5 `agent-registration` (soorma-core#8): COMPLETE 2026-11-12T03:07:00Z** (Code Generation APPROVED; soorma-core#21 merged as `7f8d872`; #8 open until Build and Test). **Next: U6 `agent-credentials` (soorma-core#9), in a new session** (see *Next* below). U1 to U5 complete. Stage history is under *Stage Progress*
 - **Slice brief**: soorma-prd/backlog/m1-walking-skeleton.md (`soorma-core` column of *Repositories and sessions*)
 - **Requirements depth**: Comprehensive (irreversible core assignments, security boundary, a contract other sessions consume)
 
@@ -233,45 +233,88 @@ GitHub issues on soorma-core (the jira-tickets extension, adapted), created 2026
   - [x] Infrastructure Design: **SKIPPED** (decided at NFR Requirements: unkeyed verifier, no server-side key; no new deployable, store, network, or secret)
   - [x] QA construction enrichment: **APPROVED** 2026-11-12T00:34:08Z (generated 2026-11-11) (`inception/test-cases/agent-registration/`: TC-AR-001 to 022 enriched in place, **TC-AR-023 to 072 added** (50); `enrichment-delta.md` written, git-ignored). Sources: functional-design/, nfr-requirements/ (by the user's instruction), nfr-design/. Every verification target in the L1 and invariant matrices, nfr-requirements.md, and nfr-design-patterns.md now names its TC id
   - [x] Construction Design PR gate: **APPROVED** 2026-11-12T00:46:08Z (soorma-core#20 merged as `1903711`; every check green at `eb9ddb8`); recorded in `923bc16`, push run 43129729467 green
-  - [ ] Code Generation: Part 1 plan written 2026-11-12 (`construction/working/agent-registration-code-generation-plan.md`: Step 0 and Steps 1 to 29 in nine groups; Group 1 the `evaluateHuman` refactor alone with U4's tests unchanged; D-CG-AR-01 to 12; the user's standing rules; stop conditions 1 to 8). **Plan APPROVED** 2026-11-12T01:02:26Z. Part 2: Step 0 `cbed37e`; Group 1 `143f073` (the evaluateHuman refactor; U4's tests unchanged; run 43132470557); Group 2 `0a90d67` (run 43133270078); Group 3 `5b9ccc2` (run 43134373872); Group 4 `3e9e98f` (run 43135835915); Group 5 `167011c` (run 43137498916), every push run green. Earlier units' test changes so far: D-CG-AR-13 to 18 (class 1; D-CG-AR-17 part 2 class 2). **Stopped for review after Group 5** (2026-11-12T01:59:10Z), as the user asked
-- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3, U4. Current: U5. Remaining: U5 to U7
+  - [x] Code Generation: **APPROVED** 2026-11-12T03:07:00Z. soorma-core#21 merged as `7f8d872` (2026-11-12T03:05:04Z); every check green at `68e9e9b`. Part 1 plan written 2026-11-12 (`construction/working/agent-registration-code-generation-plan.md`: Step 0 and Steps 1 to 29 in nine groups; Group 1 the `evaluateHuman` refactor alone with U4's tests unchanged; D-CG-AR-01 to 12; the user's standing rules; stop conditions 1 to 8). **Plan APPROVED** 2026-11-12T01:02:26Z. Part 2: Step 0 `cbed37e`; Group 1 `143f073` (the evaluateHuman refactor; U4's tests unchanged; run 43132470557); Group 2 `0a90d67` (run 43133270078); Group 3 `5b9ccc2` (run 43134373872); Group 4 `3e9e98f` (run 43135835915); Group 5 `167011c` (run 43137498916), every push run green. Earlier units' test changes so far: D-CG-AR-13 to 18 (class 1; D-CG-AR-17 part 2 class 2). **Stopped for review after Group 5** (2026-11-12T01:59:10Z), as the user asked. Groups 1 to 5 reviewed and accepted by the user (2026-11-12T02:01:58Z; D-CG-AR-17 confirmed class 2); Groups 6 to 9 in progress, after the review stop. Q-CG-AR-1 (stop condition 3 in Group 6) answered A by the user: the archive check is a full read (D-CG-AR-20); U4's per-service Compose-model rules applied to the backup services (D-CG-AR-21, class 2). Group 6 `b2cc93a` + CI fix `a217d34` (D-CG-AR-23; run 43140929923 green); Group 7 `5819f6b` + CI fix `c4bda89` (D-CG-AR-24) (2026-11-12T01:59:10Z), before Group 6 (backup) and Group 7 (e2e/)**. U1 to U4 complete. Stage history is under *Stage Progress; Group 8 `68e9e9b` (run 43143924152 green); Group 9: **PR soorma-core#21** opened, every check green (pull_request run 43144696101: build, check, and test; images, stack smoke, the S1-stopped demonstration, and the e2e proofs; dependency review; cla-assistant), **not merged**. Completion presented 2026-11-12T03:03:03Z
+- **Unit U5 `agent-registration` (#8): COMPLETE** 2026-11-12T03:07:00Z. soorma-core#8 stays open until Build and Test, with a [completion comment](https://github.com/soorma-ai/soorma-core/issues/8#issuecomment-6813177498) linking #20 (design) and #21 (code), the open obligations, and TC-AR-061, 064, 065
+- [ ] Per unit: Functional Design, NFR Requirements, NFR Design, Infrastructure Design (EXECUTE; may skip per unit), Code Generation (EXECUTE). Done: U1, U2, U3, U4, U5. Next: U6. Remaining: U6, U7
 - [ ] Build and Test: EXECUTE
 
 ### 🟡 OPERATIONS PHASE
 - [ ] Operations: PLACEHOLDER
 
-**Session stop point** (2026-11-11T21:18:26Z): U4 `env-human-access` COMPLETE (Code Generation approved;
-soorma-core#19 merged as `95b96e5`; `dev` fast-forwarded to `main`). soorma-core#7 stays open until
-Build and Test, with a completion comment linking #18 (design) and #19 (code).
+**Session stop point** (2026-11-12T03:07:00Z): U5 `agent-registration` COMPLETE (Code Generation approved;
+soorma-core#21 merged as `7f8d872`; `dev` fast-forwarded to `main`). soorma-core#8 stays open until
+Build and Test, with a completion comment linking #20 (design) and #21 (code).
 
-**Next: U5 `agent-registration` (soorma-core#8), in a new session.** Start with:
+**Next: U6 `agent-credentials` (soorma-core#9), in a new session.** Start with:
 1. Session resumption (`common/session-continuity.md`); re-intake check: brief still at `0aad84a`,
    no new PF or ID tag, the gap issues' states (soorma-prd#24, #25, #27, #28, #30; #13 for
-   GAP-INT-003). U5 rests on GAP-INT-006's work-around (plane-declared identifiers only)
+   GAP-INT-003). U6 rests on GAP-INT-008's work-around (neither bootstrap nor renewal carries an
+   envelope, soorma-prd#27) and GAP-INT-009's (the internal revocation read writes no attribution
+   record, soorma-prd#28)
 2. Construction Phase Initialization (extension rules; `prd-gap-classification.md` active), then
-   Unit Initialization and the L1 gate's initial assessment for U5
-3. Read the forward obligations posted on soorma-core#8 (from U3's NFR Design, and U4's
-   Functional Design and NFR Design)
+   Unit Initialization and the L1 gate's initial assessment for U6
+3. Read the forward obligations posted on soorma-core#9 (seven comments: U3's Functional Design and
+   NFR Requirements; U4's Functional Design and NFR Design; U5's Functional Design, NFR
+   Requirements, and NFR Design), summarised below
 4. Toolchain: `node --version` 26.13.0, `pnpm --version` 12.18.0; Docker Engine 26 and Compose
-   2.26.0 for the stack. The database tests need `pnpm db:test` and the `TEST_DATABASE_URL` it
-   prints
+   2.26.0 or later for the stack. The database tests need `pnpm db:test` and both values it prints,
+   `TEST_DATABASE_URL` and `TEST_DATABASE_CONTAINER`. `pnpm test:e2e` runs on a fresh stack
+   (`down -v`, `stack:up`), and needs the workspace built
 
-**What U5 inherits from U4** (business-rules §17, logical-components §7, posted on soorma-core#8):
-- `registerAgent` and `issueRegistrationSecret` call **`evaluateHuman(agent:register)`** (P3); the
-  sponsor's held set is P4's human `GrantSource` (the same uncached read), recorded as the snapshot
-- Standing sets use P4's accepted identifiers (`ACCEPTED_PERMISSIONS`) and `unknown_permission`;
-  S2's presenter rules and check order apply to U5's operations
-- Registrations and secrets join **`env-store`'s one migration sequence**, with the three
-  environment columns on every table and the app role's privileges granted in the migration
-  (column-level where a row changes); P4's writes take the caller's `Tx` (`withTransaction`)
-- Each operation writes an attribution record through P7, human actor (operations `registerAgent`,
-  `issueRegistrationSecret`; target the registration)
-- **The gate**: build S1's and S2's images for any group reaching their dependencies; a new
-  workspace package a service reaches joins its Dockerfile's layers; each push run green before
-  the next group. A change to a U2 or U4 assertion stops generation, except as the user's standing
-  approval for U4 allowed (D-CG-EHA-29), which the user should confirm for U5
+**What U6 inherits** (posted on soorma-core#9):
+- **From U3**: the agent credential asserts organization, project, environment, logical agent, and
+  instance; S3 emits Problems through P1 and runs the shared assertion on every Problem (BR-PE-06);
+  **the propagation bound is one configured value** (M1-NFR-01), read by P5's revocation cache and
+  by U3's term cache as its TTL; U6 sets the value at its NFR Requirements
+- **From U4**: S3 refuses `soorma_ec_` and `soorma_si_` by kind, without verifying; P5
+  (`packages/credentials`) gains the agent kind and the propagation-bound revocation cache;
+  bootstrap and renewal write attribution records through P7 with an **agent actor** (logical agent,
+  instance, credential where presented, registration reference, **resolved sponsor**) and no chain,
+  origin, or re-broadening (no envelope, GAP-INT-008); U6's tables join `env-store`'s one migration
+  sequence with the three environment columns; NP-EHA-01's token shape is a working pattern for
+  `soorma_ac_` (U6's Functional Design decides); shared runtime from `packages/service-kit`; **S3
+  must not have `@soorma/org-identity` in its production dependency closure**
+- **From U5**: bootstrap names the registration by its `agent` and requires `state` = `registered`;
+  it **parses the secret record's `id` from the `soorma_rs_{id}.{secret}` value, loads that one
+  record** (`active`, of the named registration in E), and **compares in constant time** through
+  `registrationSecretMatches`; every failure (malformed value, unknown id, another registration or
+  environment, not active, mismatch) is the same refusal as an unknown secret, and nothing iterates a
+  registration's secrets; **import `parseRegistrationSecret` and `registrationSecretMatches` from
+  `packages/registry`**, never a copy; the verifier is unkeyed (no new secret for S3); nothing logs
+  the value or its digest; **P6's agent half must not make S3 link `org-identity`** (today
+  `packages/identity-resolution` depends on it: keep the agent half apart, or split the package);
+  read registrations and secrets through P4 on the four-column keys; the app role holds `SELECT` and
+  `INSERT` only on both tables, so U6's own per-secret bookkeeping is its own table
 - **Standing note (NFR-AE-16)** above applies to the first unit that changes a standing set,
   declaration, or autonomy, or suspends or retires an agent
+
+**The user's standing rules, carried over for U6's Code Generation** (set for U5, recorded verbatim
+in `audit.md` 2026-11-11T21:36:46Z; confirm at U6's plan):
+- **Changes to an earlier unit's tests (U1 to U5)**, in three classes: *required by the approved
+  design* (an item the design adds, nothing removed or reworded): proceed and record it; *strictly
+  stronger* (a negative check scanning more sources or values, the existing ones unchanged): proceed
+  and record it; **anything else (removed, relaxed, or replaced, such as a changed expected value):
+  stop for the user**. A changed test helper an earlier unit's assertions depend on is in the third
+  class unless shown to behave the same. The completion message lists every such change as a
+  before/after diff, with its reason
+- **The pre-commit gate, for each commit group**: the full checks and tests (with `db:test`); an
+  image build (and scan) for every deployable whose dependencies the group touches; when the group
+  changes a deployable's runtime, the local stack (`stack:init`, `up`, `smoke`, `down -v`), and
+  `test:e2e` on a fresh stack once it covers the unit
+- **Push after each group, and wait for its CI run to pass before the next.** Present completion
+  only when every check on the code PR passes
+- **When a PR needs merging, stop and tell the user.** Nothing is recorded as merged until GitHub
+  shows it merged
+
+**Carried to Build and Test** (from U5): TC-AR-061 (U5's residuals stated in the summary), TC-AR-064
+(p95 of `registerAgent` and `issueRegistrationSecret` on the running stack, reported, NFR-AR-15),
+TC-AR-065 (`pnpm bench:admit` with P4's agent-facts source, reported, NFR-AE-07); U5's residuals
+(no registration bound in M1; a lost volume without a backup loses every registration; a taken
+identifier learnable within E by a holder of `agent:register`; a registration made by mistake not
+removable in M1; each active secret a separate way in). **To the first hosted deployment**:
+replication, point-in-time recovery, off-host encrypted backups; registration bounds per sponsor or
+environment. **To the slice that builds ID FR-026**: classify its replacement rule's divergence from
+ID §3's Admin (business-rules §17).
 
 **Carried to Build and Test** (from U4): **p95 latency on the running stack** (NFR-EHA-15;
 TC-EHA-070), with the real S1 and TLS, against 300 ms (issuance, renewal) and 200 ms (ending,

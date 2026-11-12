@@ -2824,3 +2824,27 @@ Then finish Group 6 with the full gate, including the manual backup and restore 
 **Context**: CONSTRUCTION, U5 agent-registration: Code Generation resumes in Group 6.
 
 ---
+
+## Code Generation Part 2: Complete, Presented for Approval (U5 agent-registration)
+**Timestamp**: 2026-11-12T03:02:30Z
+**User Input**: (none; presenting completion as instructed, then stopping for the user's merge)
+**AI Response**: "Groups 6 to 9 done. Group 6 b2cc93a (backup and restore; the archive check a full read, D-CG-AR-20; U4's per-service rules applied by U5's test, D-CG-AR-21) with CI fix a217d34 (D-CG-AR-23; run 43140929923 green). Group 7 5819f6b (e2e/) with CI fix c4bda89 (D-CG-AR-24: the stack job builds the workspace before the e2e proofs; Vitest stops at start-up in an unbuilt checkout, predating U5; run 43143076297 green, the e2e proofs passing in CI). Group 8 68e9e9b (READMEs, TC-AR-046, 055, 067, code summary, matrices Implemented; run 43143924152 green). Group 9: PR soorma-core#21 dev to main, Refs #8, #3, not merged; every check green at 68e9e9b: Build, check, and test (runs 43143924152, 43144696101); Images, image secret scans, stack smoke test, and the S1-stopped demonstration (both runs; includes the e2e proofs); Dependency review (pull_request run); cla-assistant. Earlier units' test changes across U5: D-CG-AR-13 to 19, 21, and Group 8's additions; none in class 3. Left to Build and Test: TC-AR-061, 064, 065. Presenting the completion message and stopping; nothing is recorded as merged until GitHub shows it."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation completion, approval prompt.
+
+---
+
+## Code Generation Approval: #21 Merged (U5 agent-registration)
+**Timestamp**: 2026-11-12T03:07:00Z
+**User Input**: "merged: #21 is merged as 7f8d872 (2026-11-12T03:05:04Z). Code Generation for U5 is approved.
+
+Fast-forward dev. Mark Code Generation approved in aidlc-state.md with that merge commit, and log this verbatim in audit.md.
+Comment on soorma-core#8 with a completion note:
+links to #20 (design) and #21 (code);
+the open obligations and the three Build and Test test cases (TC-AR-061, 064, 065).
+Leave #8 open until Build and Test.
+Mark U5 done, with U6 agent-credentials (soorma-core#9) next in a new session, and a \"Start with:\" note as U4's had. It should list the U6 obligations on #9, and carry over the standing rules (the three classes of earlier-unit test changes, the gate with the stack run, push per group, and \"stop when a PR needs merging\").
+Commit on dev, push, and wait for the push run to pass. Then stop."
+**AI Response**: "Confirmed on GitHub before recording: soorma-core#21 state MERGED, mergedAt 2026-11-12T03:05:04Z, merge commit 7f8d872; origin/main at 7f8d872; dev fast-forwarded to it. Code Generation APPROVED with 7f8d872; U5 COMPLETE. Posting a completion comment on soorma-core#8 (links to #20 and #21; the open obligations; TC-AR-061, 064, 065), leaving #8 open until Build and Test. aidlc-state.md: U5 done; next U6 agent-credentials (soorma-core#9) in a new session, with a Start with note listing the obligations on #9 and carrying over the user's standing rules. Committing on dev, pushing, waiting for the push run; then stopping."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation APPROVED; unit complete.
+
+---
