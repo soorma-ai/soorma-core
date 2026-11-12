@@ -171,6 +171,15 @@ registration is also the agent's grant (PF §7a, agent-principal form); P4's gra
 human-only. See `construction/agent-registration/functional-design/business-rules.md` (D-AR-06,
 D-AR-07, D-AR-10).*
 
+*Corrected at U6 Functional Design (2026-11-12, plan Q1 A, Q3 A, Q8 A): **P6 is two packages**,
+`identity-resolution` (the human half, used by S1) and **`agent-identity`** (the agent half,
+used by S3), so S3 never links P10. **The env minting material is two key rings per
+environment**: the human environment credential's (S2) and the agent credential's (S3 signs; S4
+verifies only); neither deployable holds the other's signing key. **S3 reads revocation state
+directly** (its operations write to the store anyway); P5's fail-closed cache serves S4's
+per-request path, wired at U7. See `construction/agent-credentials/functional-design/business-rules.md`
+(D-AC-01, D-AC-03, D-AC-08).*
+
 ---
 
 ## Contract (`contract/`, Apache 2.0)

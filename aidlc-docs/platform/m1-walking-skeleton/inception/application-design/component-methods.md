@@ -190,3 +190,15 @@ P4 writes what S2 passes it (with the snapshot from P3's read). P4 adds the agen
 behind U3's port, replacing `getRegistration` for authority. A registration may hold several
 active secrets. See `construction/agent-registration/functional-design/business-rules.md`
 (D-AR-02, D-AR-04, D-AR-05, D-AR-07, D-AR-10, D-AR-19).*
+
+*Corrected at U6 Functional Design (2026-11-12, plan Q4 A, Q6 A, Q9 A; P-18): `exchangeBootstrap`
+takes `{ agent, secret, instance }`; the **endpoint names the environment**, so the body names
+none; the secret's typed prefix declares its material type. P1 adds **`checkAgentRequest`**
+(presentation, O1, O2, O4, then O3 through a revocation source the caller passes), returning the
+Checked Agent Context with the credential's `cid`. P5's `isRevoked` answers for **both
+granularities** (the credential's `cid`, the logical agent) and is read directly by S3 and through
+the cache by S4. P6's agent half `resolve` returns the registration reference and the secret
+record's id, deciding identity only. P8's `admit` keys on the **presented** agent identifier,
+known or not. Renewal keeps the credential's `cid` (the lineage) and never extends it past a
+maximum age. See `construction/agent-credentials/functional-design/business-rules.md` (D-AC-01,
+D-AC-02, D-AC-04, D-AC-06, D-AC-09, D-AC-14, D-AC-20, D-AC-27).*
