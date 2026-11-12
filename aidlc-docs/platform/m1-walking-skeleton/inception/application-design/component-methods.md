@@ -177,3 +177,16 @@ D-EHA-13, D-EHA-14).*
 *`credentials.mint` returns the token as `SecretText`, and `credentials.verify` takes it as
 `SecretText`. See `construction/env-human-access/nfr-design/logical-components.md` (§2) and
 `nfr-design-patterns.md` (NP-EHA-01, 06, 14, 15).*
+
+*Corrected at U5 Functional Design (2026-11-11, plan Q1 to Q6; P-03 with the user's condition):
+`registerAgent` takes a **client-chosen** `agent` (the "if the contract allows" settled; a taken
+one is `registration_exists`); `issueRegistrationSecret` names its registration in the body.
+P3 extracts **`evaluateHeld`** as the one evaluator of a human's held set (`evaluateHuman`
+becomes "read, then `evaluateHeld`", unchanged in signature and results) and adds
+**`readHumanAuthority`** (one read; `allows`, `exceeding`, `snapshot`) and the registration
+request check (human-only class; declaration ⊆ standing). **P4's `createRegistration` checks
+nothing itself**: the ceiling, the human-only class, and declaration ⊆ standing are P3's, and
+P4 writes what S2 passes it (with the snapshot from P3's read). P4 adds the agent-facts query
+behind U3's port, replacing `getRegistration` for authority. A registration may hold several
+active secrets. See `construction/agent-registration/functional-design/business-rules.md`
+(D-AR-02, D-AR-04, D-AR-05, D-AR-07, D-AR-10, D-AR-19).*

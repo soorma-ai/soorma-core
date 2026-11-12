@@ -2439,3 +2439,283 @@ the open obligations: specification gaps (Open and Awaiting PRD counted separate
 **Context**: CONSTRUCTION, U4 env-human-access: Code Generation Groups 7 and 8.
 
 ---
+
+## Code Generation Part 2: Completion Presented (U4 env-human-access)
+**Timestamp**: 2026-11-11T17:19:54Z
+**User Input**: (none; awaiting the user's approval)
+**AI Response**: "Group 8 committed as 0904091 and pushed. PR soorma-core#19 opened from dev to main (Refs #7, #3), not merged. Every check green: Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant (pull_request runs 43066205983 and 43066205997; push run 43066136709 also green). Presenting the Code Generation completion message for U4 with the PR link, check results, latency figures, every change to a U2 assertion (D-CG-EHA-16, Group 3's A7, D-CG-EHA-17, D-CG-EHA-28) as diffs with their design items, and the open obligations (specification gaps Open 5, Awaiting PRD 1; items carried to Build and Test and to the first hosted deployment). Asking: Request Changes, or Continue to Next Stage."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation completion, approval prompt.
+
+---
+
+## Code Generation Approval (U4 env-human-access)
+**Timestamp**: 2026-11-11T17:30:27Z
+**User Input**: "Continue: Code Generation for U4 approved. I've merged #19.
+
+Log this verbatim in audit.md, and mark Code Generation approved in aidlc-state.md with #19's merge commit.
+Correction to the latency: test:perf:s2 ran in-process with a stub S1, not on the local stack as NFR-EHA-15 and D-CG-EHA-10 say. Record the figures as in-process only. Carry a Build and Test obligation to measure p95 on the running stack, with real S1 and TLS, against the 300 ms and 200 ms targets.
+Comment on soorma-core#7 with a completion note linking #18 (design) and #19 (code), the open obligations, and the Build and Test items. Leave #7 open until Build and Test, as for U3.
+Update aidlc-state.md: U4 done; next is U5 agent-registration (soorma-core#8), in a new session, with a "Start with:" note as U3's handoff had.
+Commit on dev and push. Don't open a PR for the bookkeeping alone, unless pushing is blocked."
+**AI Response**: "Code Generation approved by the user. Checked #19 before recording its merge: GitHub reports soorma-core#19 open and not merged (state open, merged false, merged_at null; origin/main still at 1a19082, #18's merge). No merge commit exists to record, so nothing was marked, committed, pushed, or commented yet: pushing to dev now would also add commits to the open #19. Asking the user to confirm the merge before proceeding."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation approved; #19's merge not found.
+
+---
+
+## Code Generation Approval: #19 Merged (U4 env-human-access)
+**Timestamp**: 2026-11-11T21:17:54Z
+**User Input**: "merged"
+**AI Response**: "Confirmed on GitHub: soorma-core#19 merged 2026-11-11T21:16:53Z as 95b96e5; dev fast-forwarded to it. Carrying out the approval's instructions (the previous entry): Code Generation marked APPROVED in aidlc-state.md with 95b96e5; the latency figures recorded as in-process only (test:perf:s2 ran S2's edge in process over a test store with a stub S1, not on the local stack as NFR-EHA-15 and D-CG-EHA-10 say), with a Build and Test obligation to measure p95 on the running stack, with real S1 and TLS, against 300 ms (issuance, renewal) and 200 ms (ending, grantToHuman); a completion comment on soorma-core#7 linking #18 and #19, with the open obligations and the Build and Test items, #7 left open until Build and Test; U4 COMPLETE, next U5 agent-registration (soorma-core#8) in a new session, with a Start with note. Committing on dev and pushing; no PR for the bookkeeping."
+**Context**: CONSTRUCTION, U4 env-human-access: Code Generation APPROVED; unit complete.
+
+---
+
+## Session Resumption (U5 agent-registration)
+**Timestamp**: 2026-11-11T21:36:46Z
+**User Input**: "Resume the platform/m1-walking-skeleton initiative in soorma-core: start U5 agent-registration (soorma-core#8). Follow the Next note in aidlc-state.md: session resumption and the re-intake check, Construction Phase Initialization, Unit Initialization and the L1 gate, then the obligations on #8. Then write the Functional Design plan and stop for my answers.
+
+Standing rules for U5 Code Generation (record them in the plan):
+
+Changes to an earlier unit's tests (U1 to U4). Each assertion change falls into one of three classes:
+
+Class	Example	Handling
+Required by the approved design	An item the design adds, with nothing removed or reworded	Proceed, and record it
+Strictly stronger	A negative check scanning more sources or values, with the existing ones unchanged	Proceed, and record it
+Anything else: removed, relaxed or replaced	An expected value changed	Stop for me
+A changed test helper that an earlier unit's assertions depend on is in the third class, unless you show it behaves the same. The completion message lists every such change as a before/after diff, with its reason.
+
+The pre-commit gate, for each commit group:
+
+the full checks and tests;
+an image build for every deployable whose dependencies the group touches;
+when the group changes a deployable's runtime, the local stack (stack:init, up, smoke, down -v).
+Push after each group, and wait for its CI run to pass before the next. Present completion only when every check on the code PR passes.
+
+PRs. When a PR needs merging, stop and tell me. Don't record anything as merged until GitHub shows it merged."
+**AI Response**: "Read aidlc-state.md (U4 complete; next U5 agent-registration, soorma-core#8, with a Start with note). No PENDING PR checkpoint (pr-checkpoint Section 6): every gate is APPROVED. dev is level with origin/dev at 46595cc. Re-intake check (session-continuity.md item 3; prd-intake.md Step 9 triggers), against soorma-prd fetched at origin/main 6275cbd: (1) legacy format: no, `## PRD Intake` holds one `### PRD:` subsection per PRD; (2) no brief pin: no, pinned at 0aad84a; (3) brief changed: no, `git diff 0aad84a origin/main -- backlog/m1-walking-skeleton.md` is empty (the commits since touch findings and review files only); (4) gap answered: no, soorma-prd#13, #24, #25, #27, #28, #30 are all OPEN. No new tag: the newest are prd-platform-foundations-v1.3 and prd-identity-v1.0, as recorded. Re-intake is not offered. Toolchain: node v26.13.0, pnpm 12.18.0, Docker Engine 29.5.3, Compose v5.1.4 (the stack needs Engine 26 and Compose 2.26.0 or later: met)."
+**Context**: CONSTRUCTION, session resumption into U5 agent-registration; re-intake check clean.
+
+---
+
+## Construction Phase Initialization (re-run on resume)
+**Timestamp**: 2026-11-11T21:36:46Z
+**User Input**: (none; part of the resumption the user asked for)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline (security-baseline.md), soorma Platform Invariants (soorma-platform-invariants.md), PR Checkpoint (pr-checkpoint.md), QA Test Cases (qa-test-cases.md), JIRA Tickets, adapted to GitHub issues (jira-tickets.md)]. `## PRD Intake` exists, so inception/prd-gap-classification.md is loaded and active for every construction stage. Invariant text read at prd-platform-foundations-v1.3 and prd-identity-v1.0: identical (diff empty), so the Extension Configuration row stands."
+**Context**: CONSTRUCTION, Construction Phase Initialization.
+
+---
+
+## Unit Initialization and L1 Domain Coverage Gate, Initial Assessment (U5 agent-registration)
+**Timestamp**: 2026-11-11T21:36:46Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (GitHub issues)] (unit: agent-registration). L1 gate, initial assessment, from the PRD sources registered under `## PRD Intake`, each at its own tag. Applicable to U5: PF §7a Logical Agent Registration (eight attributes; state; retirement never deletes), Registration Secret (bound to one registration; independent lifecycle; issuer, v1.3), Permission Grant in its agent-principal form; PF FR-007, FR-008 (issuance), FR-013 (registrations never pruned), FR-016, FR-017 (the declaration), FR-018; PF §8a rows Register logical agent, Grant standing permissions at registration, Issue a registration secret; PF §8b Sponsorship and the re-broadening Declaration element; PF §10 failure modes (four rejections) and NFR profile (highest durability, read-your-writes, every operation attributed); PF §6 (one environment, unique within it); PF §7b Recoverability (sponsorship, two hops); ID §3 (Admin defined as a holder of grant:human and human:manage), ID FR-013, FR-022, FR-026 (issuer half), ID §7b Recoverability (human actor). Non-applicable: PF FR-008 rotation and retirement, suspend, resume and retire operations, registration and issuance by an agent, ID FR-026's deactivation half (ID FR-003 is absent). Missing: 0. One case to classify at Functional Design: who may issue a registration secret (PF §8a, §10: Admin or sponsoring Developer, read through ID §3's definition of Admin), plan Q1. Obligations read on soorma-core#8: U3 Functional Design (Registration View and agent GrantSource from P4; the human-only class imported from packages/authority; registrations never deleted), U3 NFR Design (one agent-facts query replaces both), U4 Functional Design (evaluateHuman(agent:register); the held set from P4's human GrantSource as the snapshot; BR-ACC and unknown_permission; BR-PR and the check order; attribution with a human actor), U4 NFR Design (env-store's one migration sequence with the three environment columns; the caller's Tx; P7 with CHECK constraints; SQL through service-kit's statement(); 128-bit ids)."
+**Context**: CONSTRUCTION, U5 agent-registration: Unit Initialization; L1 gate initial assessment (0 Missing).
+
+---
+
+## Functional Design Plan Presented (U5 agent-registration)
+**Timestamp**: 2026-11-11T21:38:59Z
+**User Input**: (none; the user asked to stop for answers once the plan is written)
+**AI Response**: "Wrote construction/working/agent-registration-functional-design-plan.md (git-ignored): the user's standing rules for U5 Code Generation recorded in it; what U5 designs; plan steps 1 to 11 (step 1 done); proposed operations (registerAgent POST /registrations, issueRegistrationSecret POST /registration-secrets), the registration's attributes, and the check order; P-01 to P-19 proposed without a question (notably P-03: one held-set read in P3 decides agent:register and the ceiling and yields the snapshot, keeping U4's obligation's intent but not its letter; P-08: standing permissions granted only at registration, a later standing grant not built and not classified now; P-14: no read surface, I8). Questions: Q1 who may issue a secret (classified as specified: agent:register and the sponsor or an Admin, Admin per ID §3; recommended A, no gap); Q2 identifier, client-chosen (recommended) or allocated; Q3 codes for the three registration rejections (recommended three new codes); Q4 several active secrets per registration (recommended yes); Q5 unknown or not-permitted registration on issuance (recommended A with Q2 A); Q6 standing set on the registration only (recommended). aidlc-state.md updated: U5 current, Functional Design awaiting answers. Stopping for the user's answers."
+**Context**: CONSTRUCTION, U5 agent-registration: Functional Design plan, awaiting answers.
+
+---
+
+## Functional Design Answers (U5 agent-registration)
+**Timestamp**: 2026-11-11T21:50:31Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A. Q6: A.
+
+Q1, an observation to record (not an M1 gap). ID @ prd-identity-v1.0 FR-026's replacement rule, \"a holder of agent:register and human:manage in E, or the agent's active sponsor\", doesn't match ID §3's Admin (grant:human and human:manage), which PF §8a's issuance rule uses. U5 builds issuance only, so R1 stands. Record the divergence in business-rules.md, under forward obligations, as something the slice that builds FR-026 must classify through prd-gap-classification.md. Don't resolve it here.
+
+P-01 to P-19: accepted, with one condition on P-03. The new P3 function must evaluate through the same code path as evaluateHuman, not a second implementation. For example, refactor evaluateHuman to take an already-read held set, and have both call it. One read, one evaluator. Record this as a D-AR decision, and note that it keeps U4's obligation in substance.
+
+P-08: a note. PF §8a's row is \"Grant standing permissions at registration\", so §10's Grant standing permissions is the same operation. Record P-08 as following PF §8a, with nothing deferred.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate the Functional Design artifacts, and stop for review."
+**Answers Recorded** (construction/working/agent-registration-functional-design-plan.md):
+- Q1 — Who may issue a registration secret: A — build R1, as specified, no gap: `agent:register` in E, and either the registration's sponsor or an Admin (a holder of `grant:human` and `human:manage` in E, ID §3). With the user's observation, verbatim above: ID FR-026's replacement rule (`agent:register` and `human:manage`, or the active sponsor) does not match ID §3's Admin; recorded under forward obligations for the slice that builds FR-026 to classify; not resolved here
+- Q2 — Who chooses a logical agent's identifier: A — the client chooses it (`agent`, required); a duplicate in E is `registration_exists` (409, pointer `/agent`), after authority
+- Q3 — Codes for the three registration rejections: A — three new codes with pointers, ordered, at most 10: `human_only_permission` (400, step 6), `declaration_outside_standing` (400, step 6), `exceeds_sponsor_ceiling` (403, step 9, after `agent:register`)
+- Q4 — More than one active secret per registration: A — yes; each issuance an independent active secret with its own record and issuer; bootstrap accepts any active one; a cap set at NFR Requirements
+- Q5 — Unknown or not-permitted registration on issuance: A — `unknown_registration` (400, pointer `/registration`) to any holder of `agent:register`; `forbidden` when it exists and the presenter is neither its sponsor nor an Admin
+- Q6 — Where the standing set is recorded: A — on the registration only; the registration is the agent's grant
+- P-01 to P-19: accepted; P-03 with the user's condition (one read, one evaluator: the new P3 function evaluates through evaluateHuman's code path, refactored to take an already-read held set; recorded as a D-AR decision keeping U4's obligation in substance); P-08 recorded as following PF §8a (§10's row is the same operation), nothing deferred
+**AI Response**: "All six answered; none deferred; no contradiction or ambiguity found. Classification (prd-gap-classification.md Step 1): Q1 specified, answered by ID §3 with PF §8a, §10, §11 (no gap; the FR-026 divergence recorded as a forward obligation, unclassified here by the user's instruction); Q2 to Q6 technology. No specification gap in U5, so no prd-gaps file. Generating domain-entities, business-rules, business-logic-model, l1-coverage-matrix, invariant-coverage-matrix."
+**Context**: CONSTRUCTION, U5 agent-registration: Functional Design answers recorded and classified.
+
+---
+
+## Functional Design Complete, Presented for Review (U5 agent-registration)
+**Timestamp**: 2026-11-11T21:57:10Z
+**User Input**: (none; the user asked to stop for review once the artifacts are generated)
+**AI Response**: "Generated construction/agent-registration/functional-design/: domain-entities.md; business-rules.md (D-AR-01 to 27; BR-PR-AR, BR-RQ, BR-SP, BR-RG, BR-SE, BR-AF, BR-AT-AR, BR-HA, BR-RF-AR; contract changes §13; amendments §14; misuse cases §15; residuals §16; forward obligations §17, including the user's FR-026 observation for the slice that builds it, unresolved); business-logic-model.md; l1-coverage-matrix.md (32 applicable rows Covered, 0 Missing; L1-17 and L1-31 on the GAP-INT-006 work-around); invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; I8 packaging table checked against PF §12, which also led to a refinement of D-AR-20: core's read of the snapshot is FR-025's grant-scoped attribution read, absent from M1). D-AR-07 records the user's condition on P-03 (one read, one evaluator: evaluateHeld extracted; evaluateHuman unchanged in signature and results; keeps U4's obligation in substance). D-AR-12 records P-08 as following PF §8a, nothing deferred. No specification gap; no prd-gaps file. Correction notes added to inception/application-design/component-methods.md and components.md. Security baseline: compliant or N/A (SECURITY-01, 03's log service, 14 carried as the user's earlier M1 decisions); no blocking finding. Invariants: no finding. Next-stage assessment: NFR Requirements and NFR Design execute; Infrastructure Design likely skip. Presenting the completion message: Request Changes, or Continue to Next Stage (NFR Requirements)."
+**Context**: CONSTRUCTION, U5 agent-registration: Functional Design completion, approval prompt.
+
+---
+
+## Functional Design Approval (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:06:11Z
+**User Input**: "Continue to Next Stage: Functional Design approved, with two additions.
+
+The secret names its own record. With several active secrets per registration (D-AR-04), bootstrap must not try every active secret: it's the only unauthenticated surface (PF §10).
+Add to §17's U5 NFR Requirements row: each soorma_rs_ value carries its secret record's id, so bootstrap looks up and checks exactly one record.
+The value is at least 256 random bits, so storing a fast hash is enough. Don't use a slow password hash.
+Add to the U6 row: bootstrap parses the id from the value, loads that one record (which must be active and belong to the named registration), and compares in constant time. A mismatch is the same refusal as an unknown secret.
+Infrastructure Design: decide at the end of NFR Requirements. If the verifier needs a server-side key (for example, HMAC with a per-environment key), that's a new secret delivered as a mounted file, and Infrastructure Design runs. Change the next-stage assessment to say so.
+Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md. Commit the Functional Design artifacts, the Application Design notes, state and audit on dev, and push; wait for the push run to pass. Post §17's obligations on soorma-core#9 and #10, and record the links. Then write the NFR Requirements plan and stop for my answers."
+**AI Response**: "Functional Design APPROVED. Additions applied: business-rules §17 U5 NFR Requirements row (the soorma_rs_ value carries its record's id; at least 256 random bits; a fast hash stored, no slow password hash; Infrastructure Design decided at the end of NFR Requirements, and it runs if the verifier needs a server-side key, a new mounted-file secret) and U6 row (parse the id, load that one record, active and of the named registration, constant-time compare; every mismatch the same refusal as an unknown secret; never iterate). Consistency notes, marked as added at approval: D-AR-16 and domain-entities (Registration Secret Value; verification material). Next-stage assessment changed: NFR Requirements executes; NFR Design executes; Infrastructure Design decided at the end of NFR Requirements. Marking the stage approved; committing on dev, pushing, waiting for the push run; then posting §17 on #9 and #10, and writing the NFR Requirements plan."
+**Context**: CONSTRUCTION, U5 agent-registration: Functional Design APPROVED.
+
+---
+
+## Functional Design Committed; Obligations Posted; NFR Requirements Plan (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:13:16Z
+**User Input**: (none; carrying out the approval's instructions)
+**AI Response**: "Committed the Functional Design artifacts, the Application Design notes, state and audit on dev as 5d8294f and pushed; push run 43108905552 passed (Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run). Posted business-rules §17's obligations: soorma-core#9 https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6808306600 (bootstrap by agent; any active secret; parse the id from the value, load that one record, active and of the named registration, constant-time compare, every mismatch the unknown-secret refusal, never iterate; state registered; sponsor through the registration; U6's own bookkeeping) and soorma-core#10 https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6808307067 (sponsor through the registration; upstream agents always resolve; new registrations visible at once). Loaded construction/nfr-requirements.md. Wrote construction/working/agent-registration-nfr-requirements-plan.md (git-ignored): PF §10's profile carried forward (no data-face property added; durability the highest; latency not a constraint); P-01 to P-12 proposed (value soorma_rs_{id}.{secret}, 128-bit id and 256-bit secret; a domain-separated SHA-256 if unkeyed; no-store; no latency target, p95 reported; S2's throttle unchanged; 16 KiB body bound; the cap held under concurrency; the agent-facts query on the unique key within U3's budget; security events and alert rules; no new dependency); questions Q1 verifier keyed or not (decides Infrastructure Design; recommended A, unkeyed, skip), Q2 checksum (recommended A, none), Q3 secrets cap (recommended A, 10, secret_limit_reached 409; a lifetime total in M1), Q4 durability (recommended A, documented backup and restore with a test; replication and PITR carried), Q5 registration bound (recommended A, none in M1, residual; B flagged against I8, since quotas are commercial). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U5 agent-registration: Functional Design closed out; NFR Requirements plan, awaiting answers.
+
+---
+
+## NFR Requirements Answers (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:17:08Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A.
+
+Q3's addition: record the cap of 10 in the I8 table as a security bound (each active secret is a separate way in, PF §7a's issuer as a lower bound on who knows it), not a tenant quota, with the same reasoning Q5 used for option B.
+
+Q4's addition: the documented pg_dump contains human identifiers (sponsors and attribution records). The backup writes to a git-ignored path with mode 0600, never into the repository, and the README says so. The restore test uses a temporary path and deletes it.
+
+P-01 to P-12: accepted, with one correction to P-07. A row lock (SELECT … FOR UPDATE or FOR SHARE) needs UPDATE privilege on the table, and D-AR-15 gives the app role none on registrations. State in P-07 that the cap is serialised per registration without UPDATE privilege: for example pg_advisory_xact_lock keyed on (environment, agent), with the physical form chosen at NFR Design. The concurrency test at the cap stays.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-requirements.md and tech-stack-decisions.md with Infrastructure Design marked skipped and why, and stop for review."
+**Answers Recorded** (construction/working/agent-registration-nfr-requirements-plan.md):
+- Q1 — Is the secret's stored verifier keyed: A — unkeyed, domain-separated SHA-256 (P-02); no new secret; Infrastructure Design skipped
+- Q2 — Does the value carry a checksum: A — no checksum; soorma_rs_{id}.{secret}
+- Q3 — Cap on active secrets per registration: A — 10, refused with secret_limit_reached (409, no errors[]) after authority and the registration check. With the user's addition, verbatim above: recorded in the I8 table as a security bound, not a tenant quota
+- Q4 — Highest durability on the local stack: A — U4's store guarantees plus a documented backup and restore with a test; replication, PITR, off-host backups carried. With the user's addition, verbatim above: the dump holds human identifiers; it is written to a git-ignored path with mode 0600, never into the repository, and the README says so; the restore test uses a temporary path and deletes it
+- Q5 — Is the number of registrations bounded: A — no bound in M1; accepted residual; per-sponsor or per-environment quotas carried to the first hosted deployment
+- P-01 to P-12: accepted; P-07 corrected by the user: the cap is serialised per registration without UPDATE privilege (a row lock needs it, and D-AR-15 grants none), for example pg_advisory_xact_lock keyed on (environment, agent), the physical form NFR Design's; the concurrency test at the cap stays
+**AI Response**: "All five answered; none deferred; no contradiction or ambiguity. Classification: all technology (prd-gap-classification.md Step 1); no PF §10 property is unmeetable, so no specification gap. Infrastructure Design: skipped (Q1 A: no server-side key; no new deployable, store, network, or secret). Generating nfr-requirements.md and tech-stack-decisions.md; adding the cap to the I8 table as a security bound."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements answers recorded and classified.
+
+---
+
+## NFR Requirements Complete, Presented for Review (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:19:30Z
+**User Input**: (none; the user asked to stop for review once the artifacts are generated)
+**AI Response**: "Generated construction/agent-registration/nfr-requirements/: nfr-requirements.md (PF §10 profile carried forward, no data-face property added; NFR-AR-01 to 24: the value soorma_rs_{id}.{secret}, 128-bit id, 256-bit secret, no checksum; unkeyed domain-separated SHA-256, never a slow hash; one encoding per value; nothing secret stored or logged, Cache-Control no-store; the cap of 10 with secret_limit_reached after the sponsor-or-Admin check, serialised per registration without UPDATE privilege (pg_advisory_xact_lock as the example; physical form NFR Design's) with the concurrency test at the cap; the cap recorded as a security bound (NFR-AR-24); U4's durability; documented pg_dump and pg_restore as the migrator role to git-ignored deploy/local/.backups/ with mode 0600, never in the repository, the README stating it holds human identifiers; the restore test on a temporary path, deleted; carried items; S2's throttle; no registration bound, residual; 16 KiB body; no latency target, p95 reported; the agent-facts statement within U3's budget; one transaction; INSERT and SELECT only for the app role; events and alert rules; no new dependency; injected clock) and tech-stack-decisions.md (T-AR-01 to 05; rejected options; Infrastructure Design SKIPPED with its reason). Consistency fixes to Functional Design, marked in place: secret_limit_reached in business-rules §10, §13, BR-SE-06, BR-RF-AR-03 and the code counts, and in domain-entities; the I8 table gains the cap as a security bound, not a tenant quota (the user's Q3 addition). Security: compliant or N/A, with the user's M1 decisions (SECURITY-01 at rest, 03's log service, 14) carried; SECURITY-12 noted: the secret is not password-class. Invariants: no finding. Presenting: Request Changes, or Continue to Next Stage (NFR Design)."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements completion, approval prompt.
+
+---
+
+## NFR Requirements Approval (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:27:32Z
+**User Input**: "Continue to Next Stage: NFR Requirements approved, with one addition to NFR-AR-09.
+
+The backup and restore get the migrator's password from its mounted secret file, never from PGPASSWORD or any environment variable or command-line argument. Use a pgpass file built inside the container from /run/secrets; an environment variable may hold only its path (PGPASSFILE). The commands run inside the environment's network, because the store isn't published: a one-shot Compose service (or run --rm) on {env} that mounts only the migrator's secret subpath. Add this to NFR-AR-09, and add to NFR-AR-10's test that the Compose-model test sees no password in that service's environment.
+
+Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md. Commit the NFR Requirements artifacts, the Functional Design consistency fixes, state and audit on dev, and push; wait for the push run to pass. Post the verifier obligation on soorma-core#9 and record the link. Then write the NFR Design plan and stop for my answers."
+**AI Response**: "NFR Requirements APPROVED. Addition applied to NFR-AR-09 (the password from the mounted secret file only, through a pgpass file built inside the container from /run/secrets, PGPASSFILE the only variable, its path; never PGPASSWORD, an environment variable, or an argument; a one-shot Compose service or run --rm on {env}'s network mounting only the migrator's secret subpath; mechanics NFR Design's) and NFR-AR-10 (the Compose-model test sees no password in the backup service's environment, and only the migrator's subpath mounted); tech-stack-decisions §4 notes the service adds no secret, store, or network, so Infrastructure Design stays skipped. Marking approved; committing on dev, pushing, waiting for the push run; then posting the verifier obligation on #9 and writing the NFR Design plan."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements APPROVED.
+
+---
+
+## NFR Requirements Committed; Obligation Posted; NFR Design Plan (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:33:08Z
+**User Input**: (none; carrying out the approval's instructions)
+**AI Response**: "Committed the NFR Requirements artifacts, the Functional Design consistency fixes, state and audit on dev as c0b222a and pushed; push run 43111942139 passed (Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run). Posted the verifier obligation on soorma-core#9: https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6808678348 (the value format; the unkeyed domain-separated SHA-256; one encoding per value; one record loaded, constant-time compare, one refusal; shared functions, their home decided at U5 NFR Design). Loaded construction/nfr-design.md. Wrote construction/working/agent-registration-nfr-design-plan.md (git-ignored): P-01 to P-09 proposed (migration 0002; the registrations table with the four-column primary key; registration_secrets with a foreign key over the four columns and a 32-byte digest CHECK; INSERT and SELECT only for the app role; the agent-facts statement over the primary key, without snapshot or sponsor; evaluateHeld, evaluateHuman over it, readHumanAuthority as frozen closures, checkRegistrationRequest; one transaction per operation, the held-set read before it; SecretText and no-store; events and three alert rules; the backup and restore services under a Compose profile mounting only the migrator's subpath, pgpass built in a tmpfs, PGPASSFILE only). Questions: Q1 the cap's serialisation (recommended A, pg_advisory_xact_lock over a domain-separated key; B a counter table with column UPDATE; C a slot column), Q2 the secret format's home (recommended A, packages/registry, with a U6 obligation not to link org-identity into S3), Q3 the dump's path out (recommended A, streamed to a host file opened 0600), Q4 the restore test (recommended A, the db:test round trip plus a CI stack step), Q5 set invariants as CHECK constraints (recommended A, flat-set <@, the human-only class never repeated in SQL). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Requirements closed out; NFR Design plan, awaiting answers.
+
+---
+
+## NFR Design Answers (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:38:59Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A.
+
+P-01 to P-09: accepted, with two corrections to P-09 and an addition to Q4.
+
+A dedicated secrets subdirectory for the backup service. env.sh owns migrate/ as uid 65532 with mode 0400, and the pinned PostgreSQL image runs as 999, so the backup container can't read it. The store also requires verify-full TLS.
+Add copy backup 999 \"$env-db-migrator-password\" stack-ca-cert to env.sh, and mount only that backup subpath.
+Connect with sslmode=verify-full and sslrootcert from /run/secrets.
+The Compose-model test checks the service mounts only backup/.
+Streaming needs -T. Backup runs docker compose run --rm -T (no terminal, so the custom-format dump isn't corrupted), and restore runs with stdin open. Diagnostics go to stderr, never into the dump. Test that a dump's checksum is stable across two consecutive runs on an unchanged store.
+Q4's addition. Restore into an empty database. Then run {env}-migrate and assert it applies nothing (the restored schema_migrations checksums match), and re-run the app-role privilege test against the restored store, so a dump that loses the GRANTs fails.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-design-patterns.md and logical-components.md, and stop for review."
+**Answers Recorded** (construction/working/agent-registration-nfr-design-plan.md):
+- Q1 — How the cap of 10 is serialised without UPDATE privilege: A — pg_advisory_xact_lock over the first 63 bits of a domain-separated SHA-256 of the registration's four columns, then count and insert
+- Q2 — Where the secret's format lives: A — packages/registry (a pure module); forward obligation to U6 that P6's agent half not make S3 link org-identity
+- Q3 — How the dump leaves the container: A — streamed: stdout to a host file opened 0600 in a 0700 directory; restore streams the file to stdin. With the user's correction, verbatim above: docker compose run --rm -T for backup, stdin open for restore; diagnostics to stderr only; a stable-checksum test across two consecutive runs on an unchanged store
+- Q4 — Where the restore test runs: A — both the db:test round trip and a CI stack step. With the user's addition, verbatim above: restore into an empty database; then {env}-migrate applies nothing (restored schema_migrations checksums match); the app-role privilege test re-run against the restored store
+- Q5 — Set invariants as CHECK constraints: A — standing <@ snapshot and declaration <@ standing, flat-set assumption recorded; the human-only class never in SQL
+- P-01 to P-09: accepted; P-09 corrected by the user: a dedicated backup/ subdirectory (env.sh: copy backup 999 \"$env-db-migrator-password\" stack-ca-cert), the service mounting only that subpath, the Compose-model test checking so; connecting with sslmode=verify-full and sslrootcert from /run/secrets
+**AI Response**: "All five answered; none deferred; all technology (prd-gap-classification.md Step 1); no specification gap. One finding to raise at review, not silently resolved: a custom-format pg_dump archive records its creation time in its header, so two consecutive dumps of an unchanged store differ byte for byte, and a checksum of the raw file cannot be stable; and PostgreSQL 18's plain SQL output carries a random \restrict key unless one is fixed. The design states the stability test over a normalised projection (the archive's SQL as pg_restore emits it with a fixed --restrict-key) and flags it for the user's decision. Generating nfr-design-patterns.md and logical-components.md."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design answers recorded and classified.
+
+---
+
+## NFR Design Complete, Presented for Review (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:41:58Z
+**User Input**: (none; the user asked to stop for review once the artifacts are generated)
+**AI Response**: "Generated construction/agent-registration/nfr-design/: nfr-design-patterns.md (NP-AR-01 the tables in migration 0002, four-column primary key, the secret's foreign key and 32-byte digest, flat-set <@ CHECKs with their assumption recorded, the human-only class never in SQL, app role SELECT and INSERT only; NP-AR-02 the secret module in packages/registry; NP-AR-03 the cap under pg_advisory_xact_lock over a domain-separated 63-bit key; NP-AR-04 the agent-facts statement without snapshot or sponsor; NP-AR-05 evaluateHeld, evaluateHuman unchanged, readHumanAuthority as frozen closures, checkRegistrationRequest; NP-AR-06 the transactions, registration_exists only on the primary-key constraint; NP-AR-07 routes, no-store, events, three alert rules; NP-AR-08 backup and restore: env.sh copy backup 999, services under the backup profile mounting only backup/, PGPASSFILE only, verify-full with the stack CA, run --rm -T, the file opened wx 0o600 in a 0700 directory, stdin streamed to restore, which refuses a non-empty database; NP-AR-09 the db:test round trip and the CI stack step, each restoring into an empty database, migrate applying nothing, the privilege test re-run; NP-AR-10 ids and time) and logical-components.md (S2's two routes; packages; tables; backup components and the Compose-model test's assertions; harness; forward obligations, including U6 importing the secret functions from registry and P6's agent half not linking org-identity). Finding raised for the user, not silently resolved: a custom-format archive records its creation time in its header, so two consecutive dumps differ byte for byte and a raw-file checksum cannot be stable; plain format carries a random \restrict key in PostgreSQL 18 unless fixed, and a fixed key defeats that protection. The checksum test is designed over a normalised projection (pg_restore --file=- with a fixed test --restrict-key, and pg_restore --list without its header), never executed, with a control showing a write changes it; the alternative (plain format with a fixed key, restored by psql) is stated. L1 and invariant matrices: targets noted, no status changed. Security and invariants: no blocking finding. Presenting: Request Changes, or Continue to Next Stage (QA construction enrichment)."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design completion, approval prompt.
+
+---
+
+## NFR Design Approval (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:45:47Z
+**User Input**: "Continue to Next Stage: NFR Design approved, with NP-AR-09 (3) replaced.
+
+You're right about the custom-format header timestamp. My checksum requirement was the wrong test, so drop it, along with the normalised-projection design. What it was meant to catch is a dump damaged in transit (a terminal, or diagnostics in the stream). Replace it with an archive validity check after each backup:
+
+the file begins with the custom-format magic bytes PGDMP;
+pg_restore --list parses it with exit 0.
+The round trip already proves the data survives. Keep the dump in custom format.
+
+Then log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md. Commit the NFR Design artifacts, the matrices, state and audit on dev, and push; wait for the push run to pass. Post §7's U6 obligation on soorma-core#9 and record the link. Then run QA construction enrichment for U5 (qa-test-cases.md §2.6, including nfr-requirements/). Give a TC-AR id to every verification target in the four U5 design artifacts, and stop for review before the Construction Design PR gate."
+**AI Response**: "NFR Design APPROVED. NP-AR-09 (3) replaced: the checksum test and the normalised projection dropped; an archive validity check after every backup (the first five bytes PGDMP; pg_restore --list through the backup image, no connection, exit 0, listing discarded); either failure deletes the file and fails; two negative tests (a prepended line; a one-byte truncation); custom format kept. NP-AR-08's backup row and host-script row, the header note, and logical-components §5 and §7 updated. Correction to aidlc-state.md made now: the U5 NFR Design and Infrastructure Design lines, added after c0b222a, had been inserted under U1's NFR Requirements line by a search that matched U1's first; moved under U5 (the pushed history was not affected). Committing on dev, pushing, waiting for the push run; then the U6 obligation on #9 and QA construction enrichment."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design APPROVED.
+
+---
+
+## QA Construction Enrichment (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:51:23Z
+**User Input**: (none; carrying out the NFR Design approval's instruction: "run QA construction enrichment for U5 (qa-test-cases.md §2.6, including nfr-requirements/). Give a TC-AR id to every verification target in the four U5 design artifacts, and stop for review before the Construction Design PR gate")
+**AI Response**: "qa-test-cases.md §2 gates: extension enabled; both inception files present; no enrichment-delta.md yet (not idempotent-skipped); Functional Design present; sources functional-design/, nfr-requirements/ (the user's instruction), nfr-design/; no infrastructure-design/ (skipped). Enriched TC-AR-001 to 022 in place (a construction-pass sentence in each expected outcome; construction references; IDs and forward links unchanged; TC-AR-016 made refusal-by-kind so it needs no U6 credential; TC-AR-001, 002 read back through the response and the row, since there is no read surface). Added TC-AR-023 to 072 (50), each with forward link construction/agent-registration/code/, covering every verification target: the L1 matrix's 18 QA markers, the invariant matrix's (I1 to I5, and I6 to I10's contract check, packaging table, and review), NFR-AR-01 to 24, NP-AR-01 to 10 (including the archive validity check and its two negative tests, the restore round trip with migrate applying nothing and the privilege test re-run, and the Compose-model test of the backup services). test-case-index.md: 72 rows. enrichment-delta.md written (git-ignored; 22 modified, 50 added, none removed). Every QA marker in the matrices replaced by TC ids; nfr-requirements.md rows and nfr-design-patterns.md sections name their TC ids. Waiting for push run 43114570442 (c6da1ff) before posting the U6 obligation on #9; then presenting for review."
+**Context**: CONSTRUCTION, U5 agent-registration: QA construction enrichment generated.
+
+---
+
+## NFR Design Committed; U6 Obligation Posted; QA Enrichment Presented (U5 agent-registration)
+**Timestamp**: 2026-11-11T22:52:58Z
+**User Input**: (none)
+**AI Response**: "Push run 43114570442 (c6da1ff) passed (Build, check, and test: success; Images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; Dependency review: skipped, as on every push run). Posted logical-components §7's U6 obligation on soorma-core#9: https://github.com/soorma-ai/soorma-core/issues/9#issuecomment-6809034256 (import parseRegistrationSecret and registrationSecretMatches from packages/registry; P6's agent half must not make S3 link org-identity; read through P4 on the four-column keys; U6's own bookkeeping table). Presenting QA construction enrichment for review, before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U5 agent-registration: NFR Design closed out; QA enrichment awaiting review.
+
+---
+
+## QA Construction Enrichment Approval; Construction Design PR Gate (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:34:08Z
+**User Input**: "Approved: QA construction enrichment for U5. Log it verbatim in audit.md and mark it approved in aidlc-state.md. Commit the test cases, the matrices, the TC ids in nfr-requirements.md and nfr-design-patterns.md, state and audit on dev, and push.
+
+Construction Design PR gate: the branch is dev → main, as for U1 to U4.
+
+Open the PR. Its description should link #8 with Refs #8, #3 (no closing keyword) and flag for reviewers:
+the evaluateHuman refactor (D-AR-07);
+the FR-026 observation;
+the secret format and its unkeyed verifier;
+the cap as a security bound;
+the backup services and their secret handling;
+Infrastructure Design skipped and why.
+Wait for every check to pass, then report the PR link and the results, and stop. Don't record the gate approved: I'll merge it, and I'll tell you when."
+**AI Response**: "QA construction enrichment APPROVED. Committing the test cases, matrices, TC ids, state, and audit on dev and pushing. Construction Design PR gate (pr-checkpoint.md Section 5): branch dev to main, confirmed by the user. Writing the instructions file, recording the gate PENDING, opening the PR with Refs #8, #3 and the six reviewer flags, then waiting for every check; the gate is not recorded approved until the user says it is merged."
+**Context**: CONSTRUCTION, U5 agent-registration: QA enrichment APPROVED; Construction Design PR gate opened.
+
+---
+
+## Construction Design PR Gate Opened (U5 agent-registration)
+**Timestamp**: 2026-11-12T00:35:04Z
+**User Input**: (none; the instruction is logged in the previous entry)
+**AI Response**: "QA enrichment committed as 6390370 and pushed. Construction Design PR gate (pr-checkpoint.md Section 5): artifacts validated (functional-design/ has five files; nfr-requirements/ and nfr-design/ present; infrastructure-design/ N/A, skipped). Instructions written to construction/working/agent-registration-design-pr-checkpoint-instructions.md (git-ignored). Gate recorded PENDING in aidlc-state.md, branch dev to main as the user confirmed. Committing this and opening the PR from dev to main with Refs #8, #3 (no closing keyword) and the six reviewer flags: the evaluateHuman refactor (D-AR-07); the FR-026 observation; the secret format and its unkeyed verifier; the cap as a security bound; the backup services and their secret handling; Infrastructure Design skipped and why. Then waiting for every check; the gate is not recorded approved until the user reports the merge."
+**Context**: CONSTRUCTION, U5 agent-registration: Construction Design PR gate PENDING.
+
+---
