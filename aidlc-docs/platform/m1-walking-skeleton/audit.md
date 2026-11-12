@@ -2773,3 +2773,27 @@ where the ceiling, sponsor-or-Admin, cap-under-lock and once-only secret are imp
 **Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 1 APPROVED; Part 2 starts.
 
 ---
+
+## Code Generation Part 2: Groups 1 to 5 Complete; Stopped for Review (U5 agent-registration)
+**Timestamp**: 2026-11-12T01:59:10Z
+**User Input**: (none; the stop the user asked for after Group 5's push run)
+**AI Response**: "Step 0 cbed37e. Group 1 143f073 (evaluateHeld extracted; evaluateHuman unchanged; human.test.ts untouched; run 43132470557 green). Group 2 0a90d67 (readHumanAuthority, checkRegistrationRequest; the secret module and lock key; run 43133270078 green). Group 3 5b9ccc2 (migration 0002; P4's store functions and agent-facts source; store tests; run 43134373872 green). Group 4 3e9e98f (the contract: two operations, six codes; the Problem table; S1 and S2 images; run 43135835915 green). Group 5 167011c (S2's two routes, events, panels; 36 S2 tests; run 43137498916 green). Each group passed the full local gate (every check, every test with db:test, pnpm audit), the image builds and scans for the deployables it touched, and the local stack (init, up, smoke, down -v). Earlier units' test changes, each recorded with its diff: D-CG-AR-13 (TC-EHA-068 migration list, class 1), D-CG-AR-14 (code-checks.test.ts import list, no assertion), D-CG-AR-15 (TC-EHA-024 operation list, class 1), D-CG-AR-16 (TC-EHA-022 contract paths, class 1), D-CG-AR-17 (NFR-EHA-19 event list, class 1; TC-EHA-053, 054 also running U5's flows through a new U5 helper, class 2), D-CG-AR-18 (TC-EHA-044 import list, class 1). None in class 3. Reporting to the user with diffs and implementation locations; stopping before Group 6."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 2 paused for review after Group 5.
+
+---
+
+## Code Generation: Group 5 Accepted; Continue (U5 agent-registration)
+**Timestamp**: 2026-11-12T02:01:58Z
+**User Input**: "Group 5 reviewed and accepted. D-CG-AR-17 is class 2, confirmed: U4's checks now scan more, and none is removed or relaxed.
+
+Continue with Groups 6 to 9 as planned. Push after each group, wait for green, and apply every stop condition. In Group 9, open the PR dev → main with Refs #8, #3, and leave it unmerged. Present completion only when every check on it is green, with:
+
+the PR link and the check results;
+every change to an earlier unit's test across U5, as before/after diffs with their class;
+the three test cases left to Build and Test;
+the open obligations.
+Then stop. I'll merge #21 (or whatever number it gets) with you, and tell you when."
+**AI Response**: "Group 5 accepted; D-CG-AR-17 confirmed class 2 by the user. Continuing with Groups 6 to 9, each through the full gate, pushed, and green before the next; the PR dev to main with Refs #8, #3, unmerged; completion only when every check on it is green."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation Part 2 resumes at Group 6.
+
+---
