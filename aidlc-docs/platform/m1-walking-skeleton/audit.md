@@ -2824,3 +2824,456 @@ Then finish Group 6 with the full gate, including the manual backup and restore 
 **Context**: CONSTRUCTION, U5 agent-registration: Code Generation resumes in Group 6.
 
 ---
+
+## Code Generation Part 2: Complete, Presented for Approval (U5 agent-registration)
+**Timestamp**: 2026-11-12T03:02:30Z
+**User Input**: (none; presenting completion as instructed, then stopping for the user's merge)
+**AI Response**: "Groups 6 to 9 done. Group 6 b2cc93a (backup and restore; the archive check a full read, D-CG-AR-20; U4's per-service rules applied by U5's test, D-CG-AR-21) with CI fix a217d34 (D-CG-AR-23; run 43140929923 green). Group 7 5819f6b (e2e/) with CI fix c4bda89 (D-CG-AR-24: the stack job builds the workspace before the e2e proofs; Vitest stops at start-up in an unbuilt checkout, predating U5; run 43143076297 green, the e2e proofs passing in CI). Group 8 68e9e9b (READMEs, TC-AR-046, 055, 067, code summary, matrices Implemented; run 43143924152 green). Group 9: PR soorma-core#21 dev to main, Refs #8, #3, not merged; every check green at 68e9e9b: Build, check, and test (runs 43143924152, 43144696101); Images, image secret scans, stack smoke test, and the S1-stopped demonstration (both runs; includes the e2e proofs); Dependency review (pull_request run); cla-assistant. Earlier units' test changes across U5: D-CG-AR-13 to 19, 21, and Group 8's additions; none in class 3. Left to Build and Test: TC-AR-061, 064, 065. Presenting the completion message and stopping; nothing is recorded as merged until GitHub shows it."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation completion, approval prompt.
+
+---
+
+## Code Generation Approval: #21 Merged (U5 agent-registration)
+**Timestamp**: 2026-11-12T03:07:00Z
+**User Input**: "merged: #21 is merged as 7f8d872 (2026-11-12T03:05:04Z). Code Generation for U5 is approved.
+
+Fast-forward dev. Mark Code Generation approved in aidlc-state.md with that merge commit, and log this verbatim in audit.md.
+Comment on soorma-core#8 with a completion note:
+links to #20 (design) and #21 (code);
+the open obligations and the three Build and Test test cases (TC-AR-061, 064, 065).
+Leave #8 open until Build and Test.
+Mark U5 done, with U6 agent-credentials (soorma-core#9) next in a new session, and a \"Start with:\" note as U4's had. It should list the U6 obligations on #9, and carry over the standing rules (the three classes of earlier-unit test changes, the gate with the stack run, push per group, and \"stop when a PR needs merging\").
+Commit on dev, push, and wait for the push run to pass. Then stop."
+**AI Response**: "Confirmed on GitHub before recording: soorma-core#21 state MERGED, mergedAt 2026-11-12T03:05:04Z, merge commit 7f8d872; origin/main at 7f8d872; dev fast-forwarded to it. Code Generation APPROVED with 7f8d872; U5 COMPLETE. Posting a completion comment on soorma-core#8 (links to #20 and #21; the open obligations; TC-AR-061, 064, 065), leaving #8 open until Build and Test. aidlc-state.md: U5 done; next U6 agent-credentials (soorma-core#9) in a new session, with a Start with note listing the obligations on #9 and carrying over the user's standing rules. Committing on dev, pushing, waiting for the push run; then stopping."
+**Context**: CONSTRUCTION, U5 agent-registration: Code Generation APPROVED; unit complete.
+
+---
+
+## Session Resumption: U6 agent-credentials (soorma-core#9)
+**Timestamp**: 2026-11-12T03:40:07Z
+**User Input**: "Resume the platform/m1-walking-skeleton initiative in soorma-core: start U6 agent-credentials (soorma-core#9). Follow the Next note in aidlc-state.md:
+
+session resumption and the re-intake check;
+Construction Phase Initialization, then Unit Initialization and the L1 gate;
+the obligations posted on #9.
+Then write the Functional Design plan and stop for my answers.
+
+The standing rules apply to U6, confirmed (record them in the plan):
+
+Changes to an earlier unit's tests (U1 to U5) fall into three classes:
+
+Class	Handling
+Required by the approved design: items added, nothing removed or reworded	Proceed, and record it
+Strictly stronger: scans more, with the existing checks unchanged	Proceed, and record it
+Anything else, including a changed helper that earlier assertions depend on	Stop for me
+Completion lists every change as a before/after diff with its class.
+
+The gate, for each commit group:
+
+the full checks and tests;
+an image build for every deployable whose dependencies the group touches;
+when a deployable's runtime changes, the local stack (stack:init, up, smoke, down -v);
+then push, and wait for the CI run to pass before the next group.
+Completion only when every check on the code PR passes.
+
+PRs. When a PR needs merging, stop and tell me. Record nothing as merged until GitHub shows it merged.
+
+U6 adds S3, the first deployable on the data face. Expect Infrastructure Design to run, and check U4's Compose-model rules against S3's services, including any under a profile."
+**AI Response**: "Session resumed from aidlc-state.md: CONSTRUCTION; U1 to U5 complete; next U6 agent-credentials (soorma-core#9). No PENDING PR checkpoint. soorma-core on dev at 86022c7, in step with origin/dev. Toolchain: Node v26.13.0, pnpm 12.18.0, Docker Engine 29.5.3, Compose 5.1.4. Re-intake check (session-continuity.md step 3): the PRD Intake section is in the multi-PRD format; the brief is pinned; soorma-prd fetched (origin/main 6275cbd): backlog/m1-walking-skeleton.md unchanged since the pin 0aad84a (no commit touches it); tags unchanged (PF up to prd-platform-foundations-v1.3, ID prd-identity-v1.0, both at 80dd7c9); soorma-prd#13, #24, #25, #27, #28, #30 all OPEN, none updated since the last session; no new spec-gap issue. No re-intake trigger: re-intake not offered."
+**Context**: CONSTRUCTION, U6 agent-credentials: session resumption and re-intake check (clean).
+
+---
+
+## Construction Phase Initialization (re-run on resume)
+**Timestamp**: 2026-11-12T03:40:07Z
+**User Input**: (none)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted: GitHub issues)]. prd-gap-classification.md loaded and active (## PRD Intake exists). Invariants read at prd-platform-foundations-v1.3 and prd-identity-v1.0: the text of references/platform/invariants.md is identical at both tags (both tags at 80dd7c9; diff empty)."
+**Context**: CONSTRUCTION: phase initialization re-run on resume.
+
+---
+
+## Unit Initialization and L1 Gate: Initial Assessment (U6 agent-credentials)
+**Timestamp**: 2026-11-12T03:40:07Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted)] (unit: agent-credentials). L1 gate, initial assessment, PRDs read at their tags (PF @ prd-platform-foundations-v1.3, ID @ prd-identity-v1.0). Applicable: PF §7a Agent Credential (asserts logical agent, environment, instance; short-lived, renewable; instance asserted, not verified), Revocation State (two granularities; environment-scoped; readable by no principal; terminal), Registration Secret (verification at exchange; lifecycle independent of any credential), Logical Agent Registration (read at bootstrap and renewal: state, environment, sponsor); PF §6 rows Agent credential (per instance), Credential revocation state, Registration secret, Logical agent, Instance and Credential identifiers, Credential validation cache, Revocation state cache, and the Credentials isolation assertion and the rejected global revocation list and shared minting material; PF §8a rows Exchange bootstrap material, Renew credential, Read revocation state; PF §8b O1 to O4 and O9 to O11 at S3, O12 not applicable to bootstrap or renewal (its own text), the Bootstrap and What-a-credential-asserts paragraphs; PF §9 operations, failure modes, NFR profile; PF §11 Acquire, Renew, Hold-and-present rows and Gateway Exposure; PF §17 revocation behaviour; PF FR-009 to FR-012, FR-025 (bootstrap and renewal attributed), FR-027; ID §8b presenter matrix and human-credential table (S3 refuses human credentials by kind), ID FR-023. Non-applicable: PF §7a Permission Grant and §7b envelope fields (no envelope at bootstrap or renewal, GAP-INT-008); PF §8a's other rows; ID §7a's human records (refused by kind at S3, never read). Missing: 0. Questions to classify at Functional Design, all assessed as technology: the renewal O3 read path, a credential lineage's maximum age, signing material per kind, the bootstrap material's presentation, the bootstrap refusal code, the abuse bound's key, instance identifier reuse, P6's agent half's package, the environment in the bootstrap request. Inherited work-arounds stand: GAP-INT-008 (soorma-prd#27), GAP-INT-009 (soorma-prd#28)."
+**Context**: CONSTRUCTION, U6 agent-credentials: Unit Initialization; L1 gate initial assessment (0 Missing).
+
+---
+
+## Forward Obligations Read (U6 agent-credentials)
+**Timestamp**: 2026-11-12T03:40:07Z
+**User Input**: (none)
+**AI Response**: "Read soorma-core#9: the issue body and its seven obligation comments (U3 Functional Design 6761897486, U3 NFR Requirements 6770627790, U4 Functional Design 6786879326, U4 NFR Design 6789073310, U5 Functional Design 6808306600, U5 NFR Requirements 6808678348, U5 NFR Design 6809034256). Found while reading the code: packages/abuse-bound (P8, which U6 extends per registration) declares @soorma/org-identity as a production dependency, used only by its test harness, so S3 linking P8 would put org-identity in S3's production closure, as U5 found for packages/identity-resolution. Recorded in the plan (P-03, Q8)."
+**Context**: CONSTRUCTION, U6 agent-credentials: obligations loaded before planning.
+
+---
+
+## Functional Design: Plan Written, Awaiting Answers (U6 agent-credentials)
+**Timestamp**: 2026-11-12T03:44:01Z
+**User Input**: (none)
+**AI Response**: "Functional Design plan written: construction/working/agent-credentials-functional-design-plan.md (git-ignored). It records the user's standing rules for U6 Code Generation as confirmed (the three classes of earlier-unit test changes, U1 to U5, each change listed as a before/after diff with its class; the per-group gate: the full checks and tests, an image build for every deployable whose dependencies the group touches, the local stack when a deployable's runtime changes, push and wait for CI before the next group; completion only when every check on the code PR passes; stop when a PR needs merging, nothing recorded as merged until GitHub shows it; Infrastructure Design to check U4's Compose-model rules against S3's services, rendering with every profile). Noted in the plan: the handoff also named each image's secret scan and test:e2e on a fresh stack; both are read as part of the full checks and tests unless the user says otherwise. Proposed shapes: exchangeBootstrap POST /agent-credentials (no scheme) and renewAgentCredential POST /agent-credentials/current/renewal (agentCredential); the Agent Credential (token and record; the lineage); Revocation State at two granularities; the check order. Proposals P-01 to P-23, P-05 (the lineage: renewal keeps the cid, so credential revocation reaches every renewal) flagged for review. Questions, all assessed as technology: Q1 renewal's O3 read path (A direct, recommended); Q2 a lineage's maximum age (A cap, recommended); Q3 a separate agent key ring (A, recommended); Q4 the bootstrap material and an unsupported type (A one secret field typed by its prefix, recommended); Q5 the refusal code (A widen authentication_failed, recommended); Q6 the bound's key (A U2's shape per environment, recommended); Q7 instance identifier reuse (A allowed, identifiers.md clarified, recommended); Q8 P6's agent half (A a new packages/agent-identity, recommended); Q9 the environment in the bootstrap request (A named by the endpoint, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: Functional Design plan, awaiting answers.
+
+---
+
+## Functional Design: Plan Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T03:49:24Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A. Q6: A. Q7: A. Q8: A. Q9: A.
+
+Q6's addition. Record the lockout residual: an outsider who knows an agent's identifier can stop its new instances from starting for the window, while running instances renew unaffected. Carry option B's mitigation to the first hosted deployment as a forward obligation: an attempt carrying a real secret id is counted against that secret record, so legitimate restarts aren't blocked.
+
+P-01 to P-23: accepted, with one precision for P-12. U4's obligation says the record \"states why\" it has no chain, origin or re-broadening. Make explicit how a reader knows that from the record alone: the operation (exchangeBootstrap, renewAgentCredential) is one that never carries an envelope (GAP-INT-008). Record that in BR-AT-AC, and in the L1 row for attribution.
+
+Housekeeping: yes, fix the garbled fragment at aidlc-state.md:236 in your next commit. The image secret scan and test:e2e on a fresh stack both stay part of \"the full checks and tests\".
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate the Functional Design artifacts, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-functional-design-plan.md):
+- Q1 — How renewal reads revocation state: A — directly, uncached, inside renewal's own transaction, at both granularities; the cache built and tested in P5 now and wired by U7 at S4; TC-AC-009, 010, 015 adjusted at enrichment
+- Q2 — A lineage's maximum age: A — yes; renewal never sets an expiry past the lineage's start plus a maximum age (value at NFR Requirements); the last token's renewal is credential_expired and the instance re-bootstraps
+- Q3 — Agent signing material: A — a separate agent key ring per environment; S3 holds the agent signing key only, S2 the human one only, S4 agent verify keys only; one new secret per environment; components.md correction note
+- Q4 — Bootstrap material and an unsupported type: A — one secret field typed by its prefix; the agent half accepts soorma_rs_ only; any other prefix is the one refusal, after the bound, recorded against the named registration
+- Q5 — The bootstrap refusal code: A — widen authentication_failed (403) to cover an agent instance at bootstrap
+- Q6 — The bootstrap bound's key: A — U2's shape per environment: keyed on the presented agent identifier, known or not, in fixed HMAC slots under a per-environment counter secret. With the user's addition, verbatim above: the lockout residual recorded; option B's mitigation (an attempt carrying a real secret id counted against that secret record) carried to the first hosted deployment as a forward obligation
+- Q7 — Instance identifier reuse: A — allowed; every bootstrap a new credential; identifiers.md clarified in place
+- Q8 — P6's agent half: A — a new package, packages/agent-identity; packages/identity-resolution unchanged; components.md correction note
+- Q9 — The environment in the bootstrap request: A — named by the endpoint; the body names none
+- P-01 to P-23: accepted, with the user's precision for P-12, verbatim above (BR-AT-AC and the L1 attribution row state that the operation is one that never carries an envelope, GAP-INT-008)
+- Gate: the image secret scan and test:e2e on a fresh stack stay part of the full checks and tests
+**Classification** (prd-gap-classification.md Step 1): Q1 to Q9 all technology, as assessed; no answer routes a specification gap. Q2 A: PF FR-010 states no lifetime for a lineage; a cap satisfies "never outlives revocation" and FR-010's renewal. Q7 A: PF FR-009 makes the instance identifier asserted, not verified; identifiers.md's uniqueness sentence is clarified, compatible. Q6's addition: a forward obligation to the first hosted deployment, not a gap. No prd-gaps file for U6.
+**AI Response**: "Answers recorded; no contradiction or ambiguity found. Generating Functional Design artifacts under construction/agent-credentials/functional-design/; then stopping for review. The garbled fragment in aidlc-state.md (U5's Code Generation line) is fixed now and goes in the next commit."
+**Context**: CONSTRUCTION, U6 agent-credentials: Functional Design plan answered; generation.
+
+---
+
+## Functional Design: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T03:57:07Z
+**User Input**: (none; presenting for review as instructed)
+**AI Response**: "Functional Design artifacts generated in construction/agent-credentials/functional-design/: domain-entities.md; business-rules.md (D-AC-01 to 34; BR-PR-AC, BQ, AB-AC, BS, CR-AC, RN, RV, RC, AT-AC, FA, RF-AC; contract changes §13; amendments §14; misuse §15; residuals §16, the user's lockout wording included; forward obligations §17, the user's secret-record mitigation to the first hosted deployment included); business-logic-model.md (both operations in check order; the lineage and cache timelines; done when 2; each TC-AC refusal); l1-coverage-matrix.md; invariant-coverage-matrix.md. The user's P-12 precision: BR-AT-AC-02 and L1-27 state that the record's operation (exchangeBootstrap, renewAgentCredential) is one that never carries an envelope (GAP-INT-008); made structural by D-AC-33 (P7's closed list of envelope-free agent operations, its writer refusing envelope facts on them; the other direction left to U7, which would affect U5's constructed record test and go through the standing rules). Checked: no U4 or U5 assertion changes from D-AC-33 (U4's record test writes exchangeBootstrap without an envelope; its refusal cases use grantToHuman). Correction notes added to inception/application-design/components.md (P6 two packages; two key rings per environment; S3 reads revocation directly) and component-methods.md. aidlc-state.md: the garbled fragment in U5's Code Generation line fixed (for the next commit); U6's Functional Design line updated. L1 gate (Functional Design): 34 applicable rows Covered, 0 Missing; L1-27, 29 on the GAP-INT-008 work-around, L1-28 on GAP-INT-009's. Invariants: I1 to I10 Covered, I11 N/A; no finding. Security baseline at this stage: compliant SECURITY-03, 05, 06, 08, 09, 11, 12, 13, 15; N/A 01, 02, 07, 10 (physical stores, networks, and dependencies are NFR Design's and Infrastructure Design's), 04 (no HTML), 14 (the user's decision, not applicable in M1); no blocking finding. Next-stage assessment: NFR Requirements, NFR Design, and Infrastructure Design all execute. Nothing committed; stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: Functional Design completion, approval prompt.
+
+---
+
+## Functional Design Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T03:59:45Z
+**User Input**: "Continue to Next Stage: Functional Design approved, D-AC-33 included.
+
+The store's repeat of D-AC-33 is a new migration in env-store's sequence. 0001 and 0002 stay untouched.
+The reverse rule stays U7's, under the standing rules.
+Then:
+
+Log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md.
+Commit the Functional Design artifacts, the Application Design notes, the state fix and the audit on dev, push, and wait for the push run to pass.
+Post §17's U7 obligations on soorma-core#10, and record the link.
+Write the NFR Requirements plan, and stop for my answers."
+**AI Response**: "Functional Design APPROVED, D-AC-33 included. Recorded in business-rules D-AC-33 and §17 (U6 NFR Design): the store's repeat of D-AC-33 is a new migration in env-store's sequence, with 0001 and 0002 untouched; the reverse rule stays U7's, under the standing rules. Marking the stage approved; committing on dev (the Functional Design artifacts, the Application Design notes, the aidlc-state.md fix, and the audit), pushing, waiting for the push run; then posting §17's U7 obligations on soorma-core#10 and writing the NFR Requirements plan."
+**Context**: CONSTRUCTION, U6 agent-credentials: Functional Design APPROVED.
+
+---
+
+## Functional Design: Committed, Obligations Posted (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:08:14Z
+**User Input**: (none)
+**AI Response**: "Committed on dev as 3ba54bf (the Functional Design artifacts, the Application Design correction notes, the aidlc-state.md fix and approval, the audit); pushed; push run 43151870272 green (build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration). Posted business-rules §17's U7 obligations on soorma-core#10: https://github.com/soorma-ai/soorma-core/issues/10#issuecomment-6814198317 (wire P5's cache at S4 with the bound; agent verify keys only; checkAgentRequest with the cached source; revocation at either granularity within the bound; the reverse P7 rule stays U7's, under the standing rules). Link recorded in aidlc-state.md."
+**Context**: CONSTRUCTION, U6 agent-credentials: Functional Design committed and obligations posted.
+
+---
+
+## NFR Requirements: Plan Written, Awaiting Answers (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:08:14Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements plan written: construction/working/agent-credentials-nfr-requirements-plan.md (git-ignored). PF §9's profile carried forward (two latency classes; availability bounded by the cache at S4, the store being S3's floor because both operations write; throughput by request volume; per-environment isolation; one published bound). Proposals P-01 to P-17 (B < L <= M checked at start-up; S3 stateless; U4's throttle, body bound, and token time rules; 2^20 HMAC slots under a per-environment counter secret; B, L, M published in credentials.md; U2's failed-attempt writer; U4's key ring shape with rotation keeping verify halves for at least L; a bounded cache; named events and alert rules; no pruning; TLS 1.3; constant-time and CSPRNG; injected clocks; no new dependency). Questions, all technology: Q1 B (60 s recommended); Q2 L (15 minutes recommended); Q3 M (24 hours recommended); Q4 the bound's values (B: 60 live per 60 s, backoff from the 10th failure capped at 60 s, recommended); Q5 latency budgets (A: reported, not gated, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements plan, awaiting answers.
+
+---
+
+## NFR Requirements: Plan Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:13:04Z
+**User Input**: "Q1: B. Q2: A. Q3: B. Q4: B. Q5: A.
+
+P-01 to P-17: accepted, with one precision on P-08.
+
+B is published as the platform's bound (PF FR-012).
+L and M are published as upper bounds only. The contract states that clients:
+schedule renewal from the response's expiresAt;
+re-bootstrap when renewal answers credential_expired at the end of the credential's lifetime;
+never hard-code L or M.
+So L and M can change without a contract break. Note the same in the forward obligations for soorma-sdk's session, through the brief's consumer, without editing the brief.
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-requirements.md and tech-stack-decisions.md, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-nfr-requirements-plan.md):
+- Q1 — B, the propagation bound: B — 60 seconds
+- Q2 — L, the agent credential's lifetime: A — 15 minutes, as U4's human environment credential
+- Q3 — M, a lineage's maximum age: B — 24 hours
+- Q4 — The bootstrap bound's values: B — agent-tuned: at most 60 live attempts per agent in any 60 seconds; backoff from the 10th consecutive failure, doubling from 1 second, capped at 60 seconds; a success resets the backoff only
+- Q5 — Latency budgets: A — reported, not gated: the cache hit at most 0.1 ms p99 in process and a miss one indexed read; exchangeBootstrap and renewAgentCredential at most 200 ms p95 on the local stack; measured at Build and Test
+- P-01 to P-17: accepted, with the user's precision on P-08, verbatim above (B published as the platform's bound; L and M published as upper bounds only; the contract states that clients schedule renewal from expiresAt, re-bootstrap on credential_expired at the end of the lineage, and never hard-code L or M; the same noted in the forward obligations for soorma-sdk's session, through the brief's consumer, the brief not edited)
+**Classification** (prd-gap-classification.md Step 1): Q1 to Q5 all technology, as assessed. PF FR-012 and §9 fix that a finite, published, platform-set bound exists and that expiry denies; every value is left to technical design. B = 60 s < L = 15 min <= M = 24 h, so P-01's relations hold. No specification gap.
+**AI Response**: "Answers recorded; no contradiction or ambiguity found. Generating construction/agent-credentials/nfr-requirements/nfr-requirements.md and tech-stack-decisions.md; then stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements plan answered; generation.
+
+---
+
+## NFR Requirements: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:15:29Z
+**User Input**: (none; presenting for review as instructed)
+**AI Response**: "Generated construction/agent-credentials/nfr-requirements/nfr-requirements.md (PF §9 carried forward; NFR-AC-01 to 27: B = 60 s, L = 15 min, M = 24 h, B < L <= M at start-up; NFR-AC-05 the user's P-08 precision: B published as the platform's bound, L and M as upper bounds only, the contract stating the three client rules, so L and M can change without a contract break; the bound: 60 live per 60 s, backoff from the 10th failure capped at 60 s, 2^20 HMAC slots per environment, the lockout quantified at most 60 s after an attack stops; U2's writer; U4's throttle, body bound, token time rules, TLS; the agent key ring with rotation keeping verify halves at least 15 minutes; events and alert rules; latency reported, not gated; no pruning; no new dependency; obligations §4, including soorma-sdk's session through the brief's consumer, the brief not edited) and tech-stack-decisions.md (T-AC-01 to 07; no new dependency; NFR Design and Infrastructure Design both run). Consistency fix to Functional Design business-rules §13 (the published bound row), marked in place. Security baseline: no blocking finding (SECURITY-01 at rest, 03's log service, and 14 not applicable in M1 by the user's decisions; 02, 04, 07 N/A at this stage). Invariants: no finding. Nothing committed; stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements completion, approval prompt.
+
+---
+
+## NFR Requirements Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:19:07Z
+**User Input**: "Continue to Next Stage: NFR Requirements approved.
+
+Log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md.
+Commit the NFR Requirements artifacts, the Functional Design §13 fix, state and audit on dev, push, and wait for the push run to pass.
+Write the NFR Design plan, and stop for my answers. It should cover:
+the tables, as new migrations in env-store's sequence (0001 and 0002 untouched), including D-AC-33's check on attribution_records;
+the privileges;
+the cache's physical form;
+packages/agent-identity;
+P8 generalised over its subject;
+the agent key ring;
+the closure test."
+**AI Response**: "NFR Requirements APPROVED. Marking the stage approved; committing on dev (the NFR Requirements artifacts, the Functional Design §13 fix, the state, the audit), pushing, waiting for the push run; then writing the NFR Design plan covering the seven items named, and stopping for answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements APPROVED.
+
+---
+
+## NFR Design: Plan Written, Awaiting Answers (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:23:03Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements committed on dev as add607f; pushed (run 43154023186). NFR Design plan written: construction/working/agent-credentials-nfr-design-plan.md (git-ignored), covering the seven items the user named. Proposals P-01 to P-23: migrations 0003_agent_credentials.sql (U6's tables and grants) and 0004_attribution_envelope_free.sql (D-AC-33's CHECK on attribution_records, alone), 0001 and 0002 untouched; agent_credentials with foreign keys and expires_at <= lineage_ends_at; attempt_slots in the env store with U2's columns and name; failed_bootstrap_attempts whose batch insert joins registrations; privileges (agent_credentials UPDATE (expires_at) only; revocation SELECT only; failed attempts INSERT only; no DELETE); a privilege test in U4's pattern; test-only seeding as the owner; the seam's agent half types and packages/agent-identity (one statement, parse and digest before the read); P8's agent slot key and values as parameters; the agent key ring on U4's loader unchanged; the agent token in its own module, U4's token.ts not refactored; kind separation tested; the cache in packages/credentials; S3's closure test; P8's manifest move with it; S3's composition; checkAgentRequest by callbacks. Found while planning: U3's term cache takes its TTL as a parameter and nothing yet supplies it, and a deployment-configured bound would be changeable by a self-hosting tenant, against PF FR-012's 'not tenant-configurable' (Q1). Questions, all technology: Q1 B, L, M as code constants (A, recommended; a consistency fix to NFR-AC-01, 04) or configuration; Q2 a new agent_credentials table (A, recommended); Q3 the cache per credential, read through (A, recommended) or a periodic snapshot; Q4 P8 generic core with U2's API and vectors kept (A, recommended) or a second implementation; Q5 two revocation tables with foreign keys (A, recommended); Q6 the closure test over the manifests and the built image (A, recommended). Stopping for the user's answers once the push run passes."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design plan, awaiting answers.
+
+---
+
+## NFR Requirements: Push Run Green (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:26:06Z
+**User Input**: (none)
+**AI Response**: "Push run 43154023186 on add607f passed: build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration (dependency review skipped on push). Recorded in aidlc-state.md. The NFR Design plan stands, awaiting the user's answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements commit verified green.
+
+---
+
+## NFR Design: Plan Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:28:25Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A. Q6: A.
+
+Q1: mark the consistency fixes to NFR-AC-01 and 04 in place, citing PF FR-012's \"platform-set and not tenant-configurable\" and its rejected alternative. U7 passes PROPAGATION_BOUND_MS to U3's term cache. Record that in the U7 obligations.
+
+Q6's addition (class 2): run the same installed-packages check on S2's image too. No @soorma/org-identity, in the image job beside S3's. S2's manifest test stays unchanged.
+
+P-01 to P-23: accepted.
+
+Before anything else: confirm push run 43154023186 (add607f) passed. If it failed, fix it on dev first and tell me.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-design-patterns.md and logical-components.md, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-nfr-design-plan.md):
+- Q1 — Where B, L, M live: A — constants in code in packages/credentials (PROPAGATION_BOUND_MS, AGENT_CREDENTIAL_LIFETIME_MS, LINEAGE_MAX_AGE_MS); the published values tested against them; NFR-AC-04 a unit test. With the user's addition, verbatim above: the consistency fixes to NFR-AC-01 and 04 marked in place citing PF FR-012's \"platform-set and not tenant-configurable\" and its rejected alternative; U7 passes PROPAGATION_BOUND_MS to U3's term cache, recorded in the U7 obligations
+- Q2 — The agent credential table: A — a new table, agent_credentials, in 0003; U4's credentials untouched
+- Q3 — The cache's physical form: A — per credential, read through, as U3's NP-04: one entry per (E, cid, agent), one statement over both granularities, age from the read's issue, concurrent misses share one read, at most 16,384 entries per instance, oldest evicted first
+- Q4 — P8 generalised: A — a generic core with U2's API kept (AbuseBound, slotOf, constants, FailedAttemptWriter unchanged in signature and behaviour; U2's tests and vectors unchanged; a change stops Code Generation, class 3)
+- Q5 — Revocation tables: A — two tables, credential_revocations (FK to agent_credentials) and agent_revocations (FK to registrations)
+- Q6 — The closure test's reach: A — the manifest walk and the built image's installed node_modules. With the user's addition (class 2), verbatim above: the same installed-packages check on S2's image (no @soorma/org-identity), in the image job beside S3's; S2's manifest test unchanged
+- P-01 to P-23: accepted
+**Classification** (prd-gap-classification.md Step 1): Q1 to Q6 all technology. Q1 A reads PF FR-012 ('platform-set and not tenant-configurable'; rejected: 'a tenant-configurable bound — relocates a safety property into configuration') more strictly than NFR-AC-01's wording did, for a self-hosted product where the deployer is typically the tenant (PF §6 *Deployment Note*); no gap.
+**Pre-check**: push run 43154023186 on add607f confirmed passed on GitHub before anything else (build, check, and test: success; images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; dependency review skipped on push).
+**AI Response**: "Answers recorded; no contradiction or ambiguity. Marking the NFR-AC-01 and 04 consistency fixes in place; generating nfr-design/nfr-design-patterns.md and logical-components.md; then stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design plan answered; generation.
+
+---
+
+## NFR Design: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:32:48Z
+**User Input**: (none; presenting for review as instructed)
+**AI Response**: "Generated construction/agent-credentials/nfr-design/nfr-design-patterns.md (NP-AC-01 the three numbers as code constants; 02 migrations 0003 and 0004, 0001 and 0002 untouched, D-AC-33's CHECK in 0004, TC-EHA-068's list gaining two names (class 1); 03 agent_credentials; 04 two revocation tables and the direct statement; 05 the per-credential cache; 06 privileges, their test beside TC-EHA-080, test-only seeding; 07 attempt_slots and failed_bootstrap_attempts in E's store, P8's generic core with U2's API kept; 08 the seam's agent half and packages/agent-identity; 09 the agent key ring on U4's loader and agent-token.ts, U4's token.ts not refactored; 10 closure in the manifests and the images, S2's image included (class 2, the user's addition), with a positive control on S1's image; 11 S3's composition and transactions; 12 two secret patterns, made at design and flagged (class 2); 13 identifiers and time) and logical-components.md (S3; packages; the store's additions; the constants; CI; doubles; forward obligations, U7 passing PROPAGATION_BOUND_MS to U3's term cache). Consistency fixes marked in place: NFR-AC-01, 04, the U7 row and the fixes note in nfr-requirements.md, the SECURITY-09 and 15 rows, tech-stack-decisions §3 and §4; Functional Design BR-RC-04, D-AC-18, L1-11's target; the matrices' NFR Design notes (no status change). Found while designing: U5's restore e2e stops e-control-gateway and e-db by name and gains e-data-gateway (class 1, at Code Generation). Security baseline: no blocking finding. Invariants: no finding. Nothing committed; stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design completion, approval prompt.
+
+---
+
+## NFR Design Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:42:09Z
+**User Input**: "Continue to Next Stage: NFR Design approved, with NP-AC-12 included. If a test fixture would trip the new patterns, use obviously fake values, never an exception in the check.
+
+Log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md.
+Commit the NFR Design artifacts, the in-place fixes and the matrices, plus state and audit, on dev. Push, and wait for the push run to pass.
+Write the Infrastructure Design plan, and stop for my answers. It must cover:
+S3 per environment (e-data-gateway, e2-data-gateway), with network, port per shared-infrastructure.md (8444 upward), health and migrations;
+the two new per-environment secrets (the agent key ring, and the bound's counter secret), delivered as mounted files only, through {env}-secrets-init with a data-gateway subdirectory;
+S4 at U7 getting the agent verify halves only;
+U4's Compose-model rules applied to S3, rendering with every profile;
+TC-AC-017, with S1 stopped;
+U5's backup e2e stop list gaining e-data-gateway;
+the README Operations notes for agent-key rotation, keeping the retired key's verify half for at least L."
+**AI Response**: "NFR Design APPROVED, NP-AC-12 included, with the user's condition recorded in NP-AC-12: a test fixture that would trip the new patterns uses obviously fake values, never an exception in the check. Marking the stage approved; committing on dev (the NFR Design artifacts, the in-place fixes, the matrices, state, audit), pushing, waiting for the push run; then writing the Infrastructure Design plan covering the seven items named, and stopping for answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design APPROVED.
+
+---
+
+## Infrastructure Design: Plan Written, Awaiting Answers (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:44:26Z
+**User Input**: (none)
+**AI Response**: "NFR Design committed on dev as 64c2f79; pushed (run 43156543236, in progress). Infrastructure Design plan written: construction/working/agent-credentials-infrastructure-design-plan.md (git-ignored), covering the seven items the user named. Proposals P-01 to P-22: e-data-gateway and e2-data-gateway on a *data-gateway anchor, edges 127.0.0.1:8444 (E) and 8445 (E2), U7 from 8446; each on its own {env} network only, never org-internal-{env}; {env}-data-gateway-tls; the loopback health listener; no dependency on org-gateway; {env}-migrate unchanged (S2's image); {env}-agent-signing-key-1 and {env}-bootstrap-counter-secret generated by stack:init, mounted files only, listed only on {env}-secrets-init, copied by env.sh into a new data-gateway/ subdirectory (never the migrator password, the human ring, the caller key); a dataGateway part in tenancy.yaml naming secrets only, no B, L, M; S4 at U7 the public halves only; U4's per-service rules over S3 plus U6's key-separation assertions; U4's Compose-model test's service and copy lists gaining data-gateway (class 1); a third stack:outage case for TC-AC-017 (class 1); U5's backup e2e stop, rm, and up lists gaining e-data-gateway (class 1); the README Operations rotation with 'wait at least 15 minutes', the counter secret's rotation, the lockout residual, the store outage, S1 stopped, the constants; alert rules; CI image checks and smoke additions. Questions, all technology: Q1 the public halves generated now (A, recommended); Q2 U4's Compose-model test rendering with every profile (A, class 2, recommended); Q3 S2's image keeps running {env}-migrate (A, recommended); Q4 no log-pseudonym key for S3 (A, recommended). Stopping for the user's answers once the push run passes."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design plan, awaiting answers.
+
+---
+
+## NFR Design: Push Run Green (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:48:50Z
+**User Input**: (none)
+**AI Response**: "Push run 43156543236 on 64c2f79 passed: build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration (dependency review skipped on push). Recorded in aidlc-state.md. The Infrastructure Design plan stands, awaiting the user's answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design commit verified green.
+
+---
+
+## Infrastructure Design: Plan Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:54:17Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A.
+
+Q2's caveat. Rendering U4's test with every profile now applies U4's rules to U5's backup services, which hold the migrator password by design. If any existing U4 rule fails on them, stop: an exception would relax an assertion (class 3). Report which rule, and don't add the exception.
+
+A new decision, D-ID-AC (least privilege, like FD Q3's separate key ring): S3 gets its own database role, soorma_env_data. It has only what S3 needs:
+
+SELECT on registrations, registration_secrets, credential_revocations and agent_revocations;
+SELECT, INSERT and UPDATE (expires_at) on agent_credentials;
+INSERT on attribution_records and failed_bootstrap_attempts;
+exactly P8's statements on attempt_slots;
+nothing on grants, credentials or schema_migrations, and no DELETE anywhere.
+Then:
+
+Create the role in env-roles.sql, and grant it in 0003. 0001 and 0002 stay untouched.
+Add a new secret, {env}-db-data-password, to data-gateway/ instead of {env}-db-app-password.
+tenancy.yaml's dataGateway.database names that role.
+The Compose-model test asserts S3 never gets the app password and S2 never gets the data password.
+Add a privilege test for the new role, beside U4's and U6's.
+Mark NFR Design's privilege section (NP-AC) as corrected in place.
+P-01 to P-22: accepted, with P-11 and P-13 changed as above.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate infrastructure-design.md and deployment-architecture.md, update shared-infrastructure.md, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-infrastructure-design-plan.md):
+- Q1 — When the agent keys' public halves are generated: A — now, by stack:init ({env}-agent-verify-key-1 beside {env}-agent-signing-key-1); nothing mounts it until U7
+- Q2 — How U4's Compose-model rules render with every profile: A — U4's test renders with every profile from now on (class 2). With the user's caveat, verbatim above: if an existing U4 rule fails on U5's backup services (which hold the migrator password by design), stop and report which rule; no exception added (that would be class 3)
+- Q3 — The image that runs {env}-migrate: A — S2's image, unchanged
+- Q4 — A log-pseudonym key for S3: A — none, with a test that S3's log lines name no human principal field
+- New decision D-ID-AC (the user's, verbatim above): S3's own database role, soorma_env_data, with only what S3 needs; created in env-roles.sql, granted in 0003 (0001, 0002 untouched); a new secret {env}-db-data-password in data-gateway/ instead of {env}-db-app-password; tenancy.yaml's dataGateway.database names the role; the Compose-model test asserts S3 never gets the app password and S2 never gets the data password; a privilege test for the new role beside U4's and U6's; NFR Design's privilege section (NP-AC-06) marked corrected in place
+- P-01 to P-22: accepted, with P-11 and P-13 changed as above
+**Classification** (prd-gap-classification.md Step 1): Q1 to Q4 and D-ID-AC all technology (the local stack's layout and least privilege, which no PRD specifies); no specification gap.
+**AI Response**: "Answers recorded. Checking the existing role setup (env-roles.sql, the store's init script and pg_hba, the test harness) before generating infrastructure-design.md and deployment-architecture.md, updating shared-infrastructure.md, and correcting NP-AC-06 in place."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design plan answered; generation.
+
+---
+
+## Infrastructure Design: Stopped on Q2's Caveat (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:55:46Z
+**User Input**: (none)
+**AI Response**: "Before generating, checked Q2's caveat by rendering the stack with every profile (docker compose --profile '*' config; config --profiles lists one profile, backup). U4's Compose-model rule TC-EHA-079 'each service mounts only its own level's volume, at its own subpath, read-only' (subpath = role(name)) FAILS for e-restore and e2-restore: their role is 'restore' and they mount the 'backup' subpath (U5 NP-AR-08; U5's backup.test.ts, D-CG-AR-21, asserts subpath 'backup' for all four). e-backup and e2-backup pass. Every other U4 rule holds or needs only items added (the service list, the {env} network's members, the allowlist with PGPASSFILE only: class 1). Stopped, as the user instructed; no exception added. Q5 written in the plan: A, a restore/ subdirectory for the restore services (a class-3 change to U5's expected subpath, approved only by the answer; recommended); B, U4's test without profiles and U6's own test with every profile. Nothing generated yet; D-ID-AC and the NP-AC-06 correction to be applied with the artifacts once Q5 is answered."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design stopped for Q5.
+
+---
+
+## Infrastructure Design: Q5 Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:58:40Z
+**User Input**: "Q5: A. This is my approval of exactly this class-3 change, and nothing wider:
+
+The restore services get their own restore/ subdirectory, which env.sh fills with the migrator password and the CA certificate.
+In deploy/test/backup.test.ts, the expected subpath for e-restore and e2-restore changes from backup to restore.
+Record it as a D-ID-AC decision with its before/after diff. U4's rule then holds for every service under every profile, so Q2 A goes ahead.
+
+Your D-ID-AC additions are accepted: the data-role password also in db/ for the init script, and the pg_hba line.
+
+Now apply everything recorded (Q1 to Q5, D-ID-AC, P-11 and P-13 as changed). Generate infrastructure-design.md and deployment-architecture.md, update shared-infrastructure.md, mark NP-AC-06 corrected in place, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-infrastructure-design-plan.md):
+- Q5 — Q2's caveat fired (U4's subpath rule fails on e-restore, e2-restore): A — the restore services get their own restore/ subdirectory, filled by env.sh with the migrator password and the CA certificate; in deploy/test/backup.test.ts the expected subpath for e-restore and e2-restore changes from backup to restore. **The user's explicit approval of exactly this class-3 change, and nothing wider**, recorded as a D-ID-AC decision with its before/after diff; Q2 A goes ahead
+- D-ID-AC additions accepted: {env}-db-data-password also copied into db/ for the store's init script; the soorma_env_data line in env-pg_hba.conf
+**Classification**: technology (the local stack's layout); no specification gap.
+**AI Response**: "Applying Q1 to Q5, D-ID-AC, and P-11 and P-13 as changed; generating infrastructure-design.md and deployment-architecture.md; updating shared-infrastructure.md; marking NP-AC-06 corrected in place; then stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design Q5 answered; generation.
+
+---
+
+## Infrastructure Design: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T05:02:36Z
+**User Input**: (none; presenting for review as instructed)
+**AI Response**: "Generated construction/agent-credentials/infrastructure-design/infrastructure-design.md (D-ID-AC-01 to 18; §1 to §19) and deployment-architecture.md (the stack after U6; start-up order; subdirectories and mounts; the three roles; S1 stopped; how U7 extends it); extended construction/shared-infrastructure.md (Runtime, Secrets, Stores, Networks, Configuration, Operations notes, Organization-level outage, CI). Applied: Q1 A (agent verify halves generated now, unmounted until U7); Q2 A (U4's Compose-model test renders with every profile, class 2; class-1 list additions; the caveat's finding and its resolution recorded in §13); Q3 A; Q4 A; Q5 A, the user's approved class-3 change exactly (D-ID-AC-14, with the compose.yaml and backup.test.ts before/after diffs, nothing wider); D-ID-AC-07 (soorma_env_data; grants in 0003, column-level on attempt_slots as P8's statements need; soorma_env_app nothing on U6's tables) and D-ID-AC-08 (the data password in db/ and data-gateway/, the pg_hba line); P-11, P-13 as changed. Corrected in place: NFR Design NP-AC-06 (grants to soorma_env_data; two privilege tests) and its SECURITY-06 row, logical-components §3; Functional Design D-AC-16, BR-CR-AC-05, BR-RV-05, §17's revocation-initiation row. Found and recorded: a local stack initialised before U6 lacks the new role, so 0003 fails until it is re-created once (README Operations; CI always fresh). Diagram widths validated. Security baseline: no blocking finding. Invariants: no finding. Nothing committed; stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design completion, approval prompt.
+
+---
+
+## Infrastructure Design Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T05:09:55Z
+**User Input**: "Continue: Infrastructure Design approved.
+
+One addition to the privilege test for soorma_env_data: besides the refusals, it must run P8's actual statements, the same statement() objects from packages/abuse-bound, as soorma_env_data, and succeed:
+
+admission;
+settling a success and a failure;
+the backoff update.
+Column-level grants for INSERT … ON CONFLICT DO UPDATE need UPDATE on every column it sets and SELECT on the columns it reads. The test proves the grants fit the statements, not just that forbidden ones are refused. Do the same for S3's own statements: bootstrap's writes, renewal's UPDATE (expires_at), and the revocation reads.
+
+Then:
+
+Log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md.
+Commit the Infrastructure Design artifacts, shared-infrastructure.md, the in-place fixes, state and audit on dev. Push, and wait for the push run to pass.
+Run QA construction enrichment for U6 (qa-test-cases.md §2.6, including nfr-requirements/). Give a TC-AC id to every verification target in the five U6 design artifacts, and stop for review before the Construction Design PR gate."
+**AI Response**: "Infrastructure Design APPROVED. The user's addition recorded in NFR Design NP-AC-06 and Infrastructure Design §5: soorma_env_data's privilege test runs P8's actual statement() objects from packages/abuse-bound (admission; settling a success and a failure; the backoff update) and S3's own statements (bootstrap's writes, renewal's UPDATE (expires_at), the revocation reads) as soorma_env_data and they succeed, proving the grants fit the statements, beside the refusals. Marking approved; committing on dev; pushing; waiting for the push run; then the QA construction enrichment, stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design APPROVED.
+
+---
+
+## QA Construction Enrichment: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T05:15:47Z
+**User Input**: (none; presenting for review before the Construction Design PR gate, as instructed)
+**AI Response**: "QA construction enrichment for U6 (qa-test-cases.md §2): inception specs present; no enrichment-delta.md existed. Sources: construction/agent-credentials/functional-design/, nfr-requirements/ (by the user's instruction), nfr-design/, infrastructure-design/. test-specs-narrative.md: TC-AC-001 to 022 enriched in place (a construction-pass outcome and references each; forward links unchanged); TC-AC-009, 010, 015 adjusted for D-AC-01 (renewal reads revocation directly; the bound's timeline tested in P5 and at S4 by U7); the fixtures record B = 60 s, L = 15 min, M = 24 h; TC-AC-023 to 093 added (71), each with the convention-based forward link to construction/agent-credentials/code/. test-case-index.md: 93 rows. enrichment-delta.md written (git-ignored): 22 modified, 71 added, none removed. Every verification target in the five U6 design artifacts with verification targets now names a TC-AC id: l1-coverage-matrix (every QA enrichment marker replaced; L1-11 and L1-26 gain theirs), invariant-coverage-matrix (I1 to I10), nfr-requirements (NFR-AC-01 to 27), nfr-design-patterns (a Test cases line per NP-AC-01 to 13), infrastructure-design (§20, D-ID-AC-01 to 18); business-logic-model §7's marker too. TC-AC-066, 067 are Build and Test's (reported). Nothing committed; stopping for review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U6 agent-credentials: QA construction enrichment, review.
+
+---
+
+## Infrastructure Design: Push Run Green (U6 agent-credentials)
+**Timestamp**: 2026-11-12T05:17:41Z
+**User Input**: (none)
+**AI Response**: "Push run 43159561380 on 7172d18 passed: build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration (dependency review skipped on push). Recorded in aidlc-state.md. The QA construction enrichment stands, awaiting the user's review before the Construction Design PR gate."
+**Context**: CONSTRUCTION, U6 agent-credentials: Infrastructure Design commit verified green.
+
+---
+
+## QA Construction Enrichment Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:01:35Z
+**User Input**: "Approved: QA construction enrichment for U6.
+
+First, confirm push run 43159561380 (7172d18) passed. If it failed, fix it on dev and tell me before going on.
+
+Then:
+
+Log my approval verbatim in audit.md, and mark it approved in aidlc-state.md.
+Commit the test cases, the matrices, and the TC ids in the design artifacts, plus state and audit, on dev, and push.
+Construction Design PR gate: dev → main, as for U1 to U5.
+
+Open the PR with Refs #9, #3 and no closing keyword. Flag for reviewers:
+S3 as the first data-face deployable, and its isolation (its own network, its own database role, no org-identity);
+the separate agent key ring;
+B, L and M as code constants (PF FR-012);
+the bootstrap bound and its lockout residual;
+the class-3 change to U5's backup.test.ts you were approved to make;
+Compose-model rendering with every profile;
+the older-local-stack note for soorma_env_data.
+Wait for every check to pass, then report the PR link and the results, and stop. Don't record the gate approved: I'll merge it, and tell you when."
+**AI Response**: "Confirmed on GitHub: push run 43159561380 on 7172d18 passed. QA construction enrichment APPROVED. Marking it approved; committing the test cases, the matrices, and the TC ids in the design artifacts, plus state and audit, on dev; pushing. Then the Construction Design PR gate: PR dev to main, Refs #9, #3, no closing keyword, with the seven reviewer flags; waiting for every check; reporting and stopping. The gate stays PENDING until the user merges and says so."
+**Context**: CONSTRUCTION, U6 agent-credentials: QA construction enrichment APPROVED; Construction Design PR gate starting.
+
+---
+
+## Construction Design PR Gate: Opened (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:02:43Z
+**User Input**: (none; the user's instruction at 2026-11-12T06:01:35Z)
+**AI Response**: "QA construction enrichment marked APPROVED. Construction Design PR gate (pr-checkpoint.md Section 5): branch dev, PR to main, as the user instructed (as for U1 to U5); instructions at construction/working/agent-credentials-design-pr-checkpoint-instructions.md and the body at agent-credentials-design-pr-body.md (both git-ignored); ## PR Checkpoint State gains 'Construction Design PR Gate — agent-credentials', Status PENDING. The PR description flags the seven items the user named (S3 and its isolation; the separate agent key ring; B, L, M as code constants; the bootstrap bound and its lockout residual; the approved class-3 change to U5's backup.test.ts with its diff; Compose-model rendering with every profile; the older-local-stack note for soorma_env_data), with Refs #9, #3 and no closing keyword. Committing on dev, pushing, opening the PR, waiting for every check. The gate is not recorded as approved until the user merges and says so."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate PENDING.
+
+---
+
+## Construction Design PR Gate: PR Opened (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:03:03Z
+**User Input**: (none)
+**AI Response**: "Opened soorma-core#22 (https://github.com/soorma-ai/soorma-core/pull/22), dev to main, title 'feat(construction): platform/m1-walking-skeleton — agent-credentials design complete', head b8ef618, body from construction/working/agent-credentials-design-pr-body.md: Refs #9, #3, no closing keyword (checked). Recording the PR number in aidlc-state.md and pushing; then waiting for every check on the PR's head. Status stays PENDING."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate, PR open.
+
+---
