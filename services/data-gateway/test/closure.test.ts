@@ -54,7 +54,12 @@ function sources(dir: string): string {
 describe('TC-AC-040: S3 never links the organization level or an evaluator', () => {
   it("S3's closure reaches the shared runtime, P5, and P8, and never P10 or P6's human half", () => {
     const s3 = closure('@soorma/data-gateway');
-    for (const p of ['@soorma/service-kit', '@soorma/credentials', '@soorma/abuse-bound'])
+    for (const p of [
+      '@soorma/service-kit',
+      '@soorma/credentials',
+      '@soorma/agent-identity',
+      '@soorma/abuse-bound',
+    ])
       expect(s3, p).toContain(p);
     expect(s3).not.toContain('@soorma/org-identity');
     expect(s3).not.toContain('@soorma/identity-resolution');

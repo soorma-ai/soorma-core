@@ -65,19 +65,35 @@ importers:
 
   packages/abuse-bound:
     dependencies:
+      '@soorma/jcs':
+        specifier: workspace:*
+        version: link:../jcs
       '@soorma/service-kit':
         specifier: workspace:*
         version: link:../service-kit
     devDependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
       '@soorma/org-identity':
         specifier: workspace:*
         version: link:../org-identity
 
   packages/agent-identity:
     dependencies:
+      '@soorma/identity-resolution-seam':
+        specifier: workspace:*
+        version: link:../../seams/identity-resolution
+      '@soorma/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@soorma/service-kit':
         specifier: workspace:*
         version: link:../service-kit
+    devDependencies:
+      '@soorma/env-store':
+        specifier: workspace:*
+        version: link:../env-store
 
   packages/attribution:
     dependencies:
@@ -365,6 +381,9 @@ importers:
       '@soorma/abuse-bound':
         specifier: workspace:*
         version: link:../../packages/abuse-bound
+      '@soorma/agent-identity':
+        specifier: workspace:*
+        version: link:../../packages/agent-identity
       '@soorma/attribution':
         specifier: workspace:*
         version: link:../../packages/attribution
@@ -380,6 +399,9 @@ importers:
       '@soorma/env-store':
         specifier: workspace:*
         version: link:../../packages/env-store
+      '@soorma/identity-resolution-seam':
+        specifier: workspace:*
+        version: link:../../seams/identity-resolution
       '@soorma/perimeter':
         specifier: workspace:*
         version: link:../../packages/perimeter

@@ -47,6 +47,12 @@
     },
     {
       "path": "../../seams/policy-decision/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/agent-identity/tsconfig.build.json"
+    },
+    {
+      "path": "../../seams/identity-resolution/tsconfig.build.json"
     }
   ]
 }

@@ -23,6 +23,9 @@
     },
     {
       "path": "../org-identity/tsconfig.build.json"
+    },
+    {
+      "path": "../jcs/tsconfig.build.json"
     }
   ]
 }

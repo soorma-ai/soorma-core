@@ -26,3 +26,12 @@ export {
 } from './failed-attempt-writer.ts';
 export { retryAfterFor, SlotBound, slotOfKey, type SlotLimits } from './slot-bound.ts';
 export { BatchWriter } from './batch-writer.ts';
+export {
+  AGENT_BOOTSTRAP_LIMITS,
+  AgentBound,
+  agentSlotKey,
+  FailedBootstrapAttemptWriter,
+  type AgentEnvironment,
+  type BootstrapFailureReason,
+  type FailedBootstrapAttempt,
+} from './agent-bound.ts';

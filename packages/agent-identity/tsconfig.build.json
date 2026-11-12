@@ -20,6 +20,12 @@
   "references": [
     {
       "path": "../service-kit/tsconfig.build.json"
+    },
+    {
+      "path": "../registry/tsconfig.build.json"
+    },
+    {
+      "path": "../../seams/identity-resolution/tsconfig.build.json"
     }
   ]
 }

@@ -12,11 +12,13 @@
   },
   "dependencies": {
     "@soorma/abuse-bound": "workspace:*",
+    "@soorma/agent-identity": "workspace:*",
     "@soorma/attribution": "workspace:*",
     "@soorma/config": "workspace:*",
     "@soorma/contract": "workspace:*",
     "@soorma/credentials": "workspace:*",
     "@soorma/env-store": "workspace:*",
+    "@soorma/identity-resolution-seam": "workspace:*",
     "@soorma/perimeter": "workspace:*",
     "@soorma/policy-decision-seam": "workspace:*",
     "@soorma/registry": "workspace:*",

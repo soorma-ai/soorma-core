@@ -50,3 +50,11 @@ export interface IdentityResolver {
     material: PresentedMaterial[T],
   ): Promise<Resolution>;
 }
+
+// The agent half (U6), beside the human half above, which is unchanged.
+export type {
+  AgentIdentityResolver,
+  AgentMaterialType,
+  AgentRegistrationReference,
+  AgentResolution,
+} from './agent.ts';

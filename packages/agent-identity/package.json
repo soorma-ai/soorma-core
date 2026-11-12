@@ -18,6 +18,11 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@soorma/identity-resolution-seam": "workspace:*",
+    "@soorma/registry": "workspace:*",
     "@soorma/service-kit": "workspace:*"
+  },
+  "devDependencies": {
+    "@soorma/env-store": "workspace:*"
   }
 }
