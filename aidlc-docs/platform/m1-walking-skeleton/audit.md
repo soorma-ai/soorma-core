@@ -3277,3 +3277,29 @@ Wait for every check to pass, then report the PR link and the results, and stop.
 **Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate, PR open.
 
 ---
+
+## Construction Design PR Gate: Checks Green, Stopped for the User's Merge (U6 agent-credentials)
+**Timestamp**: 2026-11-12T06:10:39Z
+**User Input**: (none)
+**AI Response**: "soorma-core#22 at 47d89b9: every check passed. pull_request run 43165428062: Build, check, and test (pass, 2m48s); Images, image secret scans, stack smoke test, and the S1-stopped demonstration (pass, 5m48s); Dependency review (pass, 8s). Push run 43165419300: Build, check, and test (pass, 1m57s); Images… (pass, 7m5s); Dependency review skipped on push. cla-assistant pass. State OPEN, mergeable, CLEAN. Stopping: the user merges and says so; the gate stays PENDING. The state and audit updates since 47d89b9 are not committed (committing would re-run the PR's checks)."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate PENDING, checks green.
+
+---
+
+## Construction Design PR Gate Approval: #22 Merged (U6 agent-credentials)
+**Timestamp**: 2026-11-12T07:20:36Z
+**User Input**: "merged: #22 is merged as 1c3fd7d (2026-11-12T07:18:34Z).
+
+Fast-forward dev. Mark the Construction Design gate approved in aidlc-state.md with that merge commit, and log this verbatim in audit.md.
+Commit with the pending note on dev, push, and wait for the push run to pass.
+Then start Code Generation for U6, Part 1 only: write the plan and stop for my approval. Apply the standing rules recorded in the Functional Design plan. In particular:
+Group 1, alone: P8's shared core, with U2's API, tests and vectors unchanged (stop on any U2 test change).
+A separate early group for the P8 manifest fix and S3's closure test.
+Migrations 0003 and 0004, with the data role in env-roles.sql, before any S3 code, with both privilege tests running the real statements.
+Then the packages (agent-identity, P5's agent kind and cache, P1's checkAgentRequest), the contract, S3, the stack, e2e/, and the docs.
+Each group runs the full gate, including the image and installed-packages checks and the stack where a runtime changes, then a push and a passing run.
+Plan a stop after S3's group, before the stack and e2e/ work, so I can review S3's code."
+**AI Response**: "Confirmed on GitHub before recording: soorma-core#22 state MERGED, mergedAt 2026-11-12T07:18:34Z, merge commit 1c3fd7d; origin/main at 1c3fd7d; dev fast-forwarded to it. Construction Design PR gate APPROVED with 1c3fd7d. Committing with the pending green-checks note on dev, pushing, waiting for the push run; then Code Generation Part 1 (the plan), stopping for approval."
+**Context**: CONSTRUCTION, U6 agent-credentials: Construction Design PR gate APPROVED.
+
+---
