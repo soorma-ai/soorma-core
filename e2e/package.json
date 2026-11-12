@@ -1,0 +1,10 @@
+{
+  "name": "@soorma/e2e",
+  "private": true,
+  "description": "Raw-call proofs of the done-when items on the local stack (U5: done when 1, and the backup and restore round trip)",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}

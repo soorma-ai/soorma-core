@@ -171,6 +171,16 @@ jobs:
       - name: The S1-stopped demonstration
         run: pnpm stack:outage
 
+      # U5 (D-CG-AR-02, 03): done when 1 and the backup and restore round trip,
+      # by raw calls, on a fresh stack: e2e/ makes the first authentication.
+      - name: Restart the stack from empty volumes, for e2e
+        run: |
+          docker compose -f deploy/local/compose.yaml down -v
+          pnpm stack:up
+
+      - name: The e2e proofs (done when 1; backup and restore)
+        run: pnpm test:e2e
+
       - name: Show the logs on failure
         if: failure()
         run: docker compose -f deploy/local/compose.yaml logs --no-color
