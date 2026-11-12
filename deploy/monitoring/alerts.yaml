@@ -109,3 +109,29 @@ rules:
     threshold: { count: 1, windowMinutes: 5 }
     severity: warning
     description: An environment's S2 refused requests at its limit on concurrent calls to S1.
+
+  # Each environment's S2, U5's registration operations (NFR-AR-19; NP-AR-07). The
+  # rule format has no reason filter, so attempted escalation (ceiling_exceeded,
+  # human_only_in_standing) and probing (registration_exists, unknown_registration,
+  # not_sponsor_or_admin) are caught as one human's repeated refusals, and a burst
+  # of one reason as a per-code rule.
+  - id: registration-refused-repeated
+    event: registration.refused
+    groupBy: pseudonym
+    threshold: { count: 5, windowMinutes: 15 }
+    severity: warning
+    description: Repeated refusals of one human's registrations (the ceiling, the human-only class, a taken identifier).
+
+  - id: secret-refused-repeated
+    event: secret.refused
+    groupBy: pseudonym
+    threshold: { count: 5, windowMinutes: 15 }
+    severity: warning
+    description: Repeated refusals of one human's secret issuance (not the sponsor or an Admin, an unknown registration, the cap).
+
+  - id: registration-refused-burst
+    event: registration.refused
+    groupBy: code
+    threshold: { count: 20, windowMinutes: 15 }
+    severity: warning
+    description: A burst of one registration refusal reason across the environment.

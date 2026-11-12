@@ -39,6 +39,8 @@ jobs:
           --health-interval 2s --health-timeout 2s --health-retries 30
     env:
       TEST_DATABASE_URL: postgres://postgres:ci-throwaway-test-database@127.0.0.1:5432/postgres
+      # The service's container, for the restore round trip's pg_dump and pg_restore (U5 D-CG-AR-04).
+      TEST_DATABASE_CONTAINER: ${{ job.services.postgres.id }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

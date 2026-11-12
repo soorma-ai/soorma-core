@@ -31,6 +31,8 @@
     "stack:down": "docker compose -f deploy/local/compose.yaml down",
     "stack:smoke": "node deploy/local/scripts/smoke.ts",
     "stack:outage": "node deploy/local/scripts/s1-outage.ts",
+    "stack:backup": "node deploy/local/scripts/stack-backup.ts",
+    "stack:restore": "node deploy/local/scripts/stack-restore.ts",
     "db:test": "node deploy/local/scripts/db-test.ts start",
     "db:test:stop": "node deploy/local/scripts/db-test.ts stop"
   },

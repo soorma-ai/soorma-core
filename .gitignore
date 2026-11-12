@@ -4,3 +4,5 @@ sbom/
 *.tsbuildinfo
 dist/
 deploy/local/.secrets/
+# U5: backups hold human identifiers (NFR-AR-09); never committed or copied into an image.
+deploy/local/.backups/

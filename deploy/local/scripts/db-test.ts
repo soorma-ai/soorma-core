@@ -4,7 +4,8 @@
 //
 //   pnpm db:test         start postgres (pinned by digest) on a random
 //                        loopback port, with tmpfs storage, and print
-//                        TEST_DATABASE_URL (its superuser)
+//                        TEST_DATABASE_URL (its superuser), and
+//                        TEST_DATABASE_CONTAINER (its container, U5)
 //   pnpm db:test:stop    remove it
 //
 // No TLS: TLS to the database is verified only by the stack smoke test. The
@@ -74,6 +75,8 @@ async function start(): Promise<void> {
         docker(['exec', CONTAINER, 'pg_isready', '-q', '-h', '127.0.0.1', '-U', 'postgres']);
         const port = docker(['port', CONTAINER, '5432/tcp']).split('\n')[0]!.split(':').pop()!;
         console.log(`TEST_DATABASE_URL=postgres://postgres:${password}@127.0.0.1:${port}/postgres`);
+        // The server's container, for tests that run its pg_dump and pg_restore (U5 D-CG-AR-04).
+        console.log(`TEST_DATABASE_CONTAINER=${CONTAINER}`);
         return;
       } catch {
         await new Promise((r) => setTimeout(r, 500));
