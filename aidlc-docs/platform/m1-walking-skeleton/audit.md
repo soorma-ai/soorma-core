@@ -3038,3 +3038,74 @@ the closure test."
 **Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements APPROVED.
 
 ---
+
+## NFR Design: Plan Written, Awaiting Answers (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:23:03Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements committed on dev as add607f; pushed (run 43154023186). NFR Design plan written: construction/working/agent-credentials-nfr-design-plan.md (git-ignored), covering the seven items the user named. Proposals P-01 to P-23: migrations 0003_agent_credentials.sql (U6's tables and grants) and 0004_attribution_envelope_free.sql (D-AC-33's CHECK on attribution_records, alone), 0001 and 0002 untouched; agent_credentials with foreign keys and expires_at <= lineage_ends_at; attempt_slots in the env store with U2's columns and name; failed_bootstrap_attempts whose batch insert joins registrations; privileges (agent_credentials UPDATE (expires_at) only; revocation SELECT only; failed attempts INSERT only; no DELETE); a privilege test in U4's pattern; test-only seeding as the owner; the seam's agent half types and packages/agent-identity (one statement, parse and digest before the read); P8's agent slot key and values as parameters; the agent key ring on U4's loader unchanged; the agent token in its own module, U4's token.ts not refactored; kind separation tested; the cache in packages/credentials; S3's closure test; P8's manifest move with it; S3's composition; checkAgentRequest by callbacks. Found while planning: U3's term cache takes its TTL as a parameter and nothing yet supplies it, and a deployment-configured bound would be changeable by a self-hosting tenant, against PF FR-012's 'not tenant-configurable' (Q1). Questions, all technology: Q1 B, L, M as code constants (A, recommended; a consistency fix to NFR-AC-01, 04) or configuration; Q2 a new agent_credentials table (A, recommended); Q3 the cache per credential, read through (A, recommended) or a periodic snapshot; Q4 P8 generic core with U2's API and vectors kept (A, recommended) or a second implementation; Q5 two revocation tables with foreign keys (A, recommended); Q6 the closure test over the manifests and the built image (A, recommended). Stopping for the user's answers once the push run passes."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design plan, awaiting answers.
+
+---
+
+## NFR Requirements: Push Run Green (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:26:06Z
+**User Input**: (none)
+**AI Response**: "Push run 43154023186 on add607f passed: build, check, and test; images, image secret scans, stack smoke test, and the S1-stopped demonstration (dependency review skipped on push). Recorded in aidlc-state.md. The NFR Design plan stands, awaiting the user's answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Requirements commit verified green.
+
+---
+
+## NFR Design: Plan Answered (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:28:25Z
+**User Input**: "Q1: A. Q2: A. Q3: A. Q4: A. Q5: A. Q6: A.
+
+Q1: mark the consistency fixes to NFR-AC-01 and 04 in place, citing PF FR-012's \"platform-set and not tenant-configurable\" and its rejected alternative. U7 passes PROPAGATION_BOUND_MS to U3's term cache. Record that in the U7 obligations.
+
+Q6's addition (class 2): run the same installed-packages check on S2's image too. No @soorma/org-identity, in the image job beside S3's. S2's manifest test stays unchanged.
+
+P-01 to P-23: accepted.
+
+Before anything else: confirm push run 43154023186 (add607f) passed. If it failed, fix it on dev first and tell me.
+
+Log the answers verbatim in audit.md, keyed by question ID. Classify them, generate nfr-design-patterns.md and logical-components.md, and stop for review."
+**Answers Recorded** (construction/working/agent-credentials-nfr-design-plan.md):
+- Q1 — Where B, L, M live: A — constants in code in packages/credentials (PROPAGATION_BOUND_MS, AGENT_CREDENTIAL_LIFETIME_MS, LINEAGE_MAX_AGE_MS); the published values tested against them; NFR-AC-04 a unit test. With the user's addition, verbatim above: the consistency fixes to NFR-AC-01 and 04 marked in place citing PF FR-012's \"platform-set and not tenant-configurable\" and its rejected alternative; U7 passes PROPAGATION_BOUND_MS to U3's term cache, recorded in the U7 obligations
+- Q2 — The agent credential table: A — a new table, agent_credentials, in 0003; U4's credentials untouched
+- Q3 — The cache's physical form: A — per credential, read through, as U3's NP-04: one entry per (E, cid, agent), one statement over both granularities, age from the read's issue, concurrent misses share one read, at most 16,384 entries per instance, oldest evicted first
+- Q4 — P8 generalised: A — a generic core with U2's API kept (AbuseBound, slotOf, constants, FailedAttemptWriter unchanged in signature and behaviour; U2's tests and vectors unchanged; a change stops Code Generation, class 3)
+- Q5 — Revocation tables: A — two tables, credential_revocations (FK to agent_credentials) and agent_revocations (FK to registrations)
+- Q6 — The closure test's reach: A — the manifest walk and the built image's installed node_modules. With the user's addition (class 2), verbatim above: the same installed-packages check on S2's image (no @soorma/org-identity), in the image job beside S3's; S2's manifest test unchanged
+- P-01 to P-23: accepted
+**Classification** (prd-gap-classification.md Step 1): Q1 to Q6 all technology. Q1 A reads PF FR-012 ('platform-set and not tenant-configurable'; rejected: 'a tenant-configurable bound — relocates a safety property into configuration') more strictly than NFR-AC-01's wording did, for a self-hosted product where the deployer is typically the tenant (PF §6 *Deployment Note*); no gap.
+**Pre-check**: push run 43154023186 on add607f confirmed passed on GitHub before anything else (build, check, and test: success; images, image secret scans, stack smoke test, and the S1-stopped demonstration: success; dependency review skipped on push).
+**AI Response**: "Answers recorded; no contradiction or ambiguity. Marking the NFR-AC-01 and 04 consistency fixes in place; generating nfr-design/nfr-design-patterns.md and logical-components.md; then stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design plan answered; generation.
+
+---
+
+## NFR Design: Complete, Presented for Review (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:32:48Z
+**User Input**: (none; presenting for review as instructed)
+**AI Response**: "Generated construction/agent-credentials/nfr-design/nfr-design-patterns.md (NP-AC-01 the three numbers as code constants; 02 migrations 0003 and 0004, 0001 and 0002 untouched, D-AC-33's CHECK in 0004, TC-EHA-068's list gaining two names (class 1); 03 agent_credentials; 04 two revocation tables and the direct statement; 05 the per-credential cache; 06 privileges, their test beside TC-EHA-080, test-only seeding; 07 attempt_slots and failed_bootstrap_attempts in E's store, P8's generic core with U2's API kept; 08 the seam's agent half and packages/agent-identity; 09 the agent key ring on U4's loader and agent-token.ts, U4's token.ts not refactored; 10 closure in the manifests and the images, S2's image included (class 2, the user's addition), with a positive control on S1's image; 11 S3's composition and transactions; 12 two secret patterns, made at design and flagged (class 2); 13 identifiers and time) and logical-components.md (S3; packages; the store's additions; the constants; CI; doubles; forward obligations, U7 passing PROPAGATION_BOUND_MS to U3's term cache). Consistency fixes marked in place: NFR-AC-01, 04, the U7 row and the fixes note in nfr-requirements.md, the SECURITY-09 and 15 rows, tech-stack-decisions §3 and §4; Functional Design BR-RC-04, D-AC-18, L1-11's target; the matrices' NFR Design notes (no status change). Found while designing: U5's restore e2e stops e-control-gateway and e-db by name and gains e-data-gateway (class 1, at Code Generation). Security baseline: no blocking finding. Invariants: no finding. Nothing committed; stopping for review."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design completion, approval prompt.
+
+---
+
+## NFR Design Approval (U6 agent-credentials)
+**Timestamp**: 2026-11-12T04:42:09Z
+**User Input**: "Continue to Next Stage: NFR Design approved, with NP-AC-12 included. If a test fixture would trip the new patterns, use obviously fake values, never an exception in the check.
+
+Log my approval verbatim in audit.md, and mark the stage approved in aidlc-state.md.
+Commit the NFR Design artifacts, the in-place fixes and the matrices, plus state and audit, on dev. Push, and wait for the push run to pass.
+Write the Infrastructure Design plan, and stop for my answers. It must cover:
+S3 per environment (e-data-gateway, e2-data-gateway), with network, port per shared-infrastructure.md (8444 upward), health and migrations;
+the two new per-environment secrets (the agent key ring, and the bound's counter secret), delivered as mounted files only, through {env}-secrets-init with a data-gateway subdirectory;
+S4 at U7 getting the agent verify halves only;
+U4's Compose-model rules applied to S3, rendering with every profile;
+TC-AC-017, with S1 stopped;
+U5's backup e2e stop list gaining e-data-gateway;
+the README Operations notes for agent-key rotation, keeping the retired key's verify half for at least L."
+**AI Response**: "NFR Design APPROVED, NP-AC-12 included, with the user's condition recorded in NP-AC-12: a test fixture that would trip the new patterns uses obviously fake values, never an exception in the check. Marking the stage approved; committing on dev (the NFR Design artifacts, the in-place fixes, the matrices, state, audit), pushing, waiting for the push run; then writing the Infrastructure Design plan covering the seven items named, and stopping for answers."
+**Context**: CONSTRUCTION, U6 agent-credentials: NFR Design APPROVED.
+
+---

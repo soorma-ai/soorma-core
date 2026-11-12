@@ -38,14 +38,14 @@ versions
 
 | Selection | Decided at |
 |---|---|
-| Table layouts, indexes, privileges, and the new migration carrying D-AC-33's CHECK; the cache's entry bound and code shape; `packages/agent-identity`'s interface; P8's generalisation; how B, L, M are configured and checked; the agent key ring's loading | U6 NFR Design |
-| S3's Compose services, network, port, health, and migrations; the two new secrets per environment and their delivery; the configuration files carrying B, L, M | U6 Infrastructure Design |
+| Table layouts, indexes, privileges, and the new migration carrying D-AC-33's CHECK; the cache's entry bound and code shape; `packages/agent-identity`'s interface; P8's generalisation; the three constants for B, L, M and their test (*consistency fix from NFR Design, Q1 A*: not configuration); the agent key ring's loading | U6 NFR Design |
+| S3's Compose services, network, port, health, and migrations; the two new secrets per environment and their delivery (B, L, M are code constants, not configuration: *consistency fix from NFR Design, Q1 A*) | U6 Infrastructure Design |
 
 ## 4. Stages for U6 After This One
 
 | Stage | Decision | Reason |
 |---|---|---|
-| NFR Design | **Run** | Tables, privileges, the new migration, the cache, the packages, the configuration and its start-up check |
+| NFR Design | **Run** | Tables, privileges, the new migrations, the cache, the packages, and the three constants with their test (*consistency fix from NFR Design, Q1 A*: constants, not configuration) |
 | Infrastructure Design | **Run** | A new deployable (S3, per environment) and two new secrets per environment (the agent key ring; the bound's counter secret); the user's rule: U4's Compose-model rules checked against S3's services, including any under a profile |
 | QA construction enrichment | **Run** after Infrastructure Design | qa-test-cases.md §2.6 |
 | Construction Design PR gate | **Run** after enrichment | pr-checkpoint.md Section 5 |

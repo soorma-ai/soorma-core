@@ -14,6 +14,13 @@ QA construction enrichment adds before the Construction Design PR gate.
 centre: per-environment credentials, revocation, and cache; raw-call enforcement at a new
 surface; the credential as the only identity input; the instance asserted, never verified.
 
+**Updated at NFR Design (2026-11-12)**: no status changed. I1's access paths gain their
+physical form (every new table with E's three columns; foreign keys keeping revocations and
+failed attempts within E; the cache key with E; one `attempt_slots` table and counter secret per
+environment; NP-AC-03 to 07). I4 gains `0004`'s CHECK (NP-AC-02). I5 and I8 gain the closure
+checks in the manifests and the images, S2's included (NP-AC-10). I7 gains the published numbers
+tested against the code constants (NP-AC-01).
+
 | Code | PRD Status | Applies to Unit | Code-Level Risk in This Unit | Implementation Target | Verification Target | Status |
 |---|---|---|---|---|---|---|
 | I1 Isolation | Addressed | **Yes** | A credential, revocation, slot, or failed-attempt read with no environment constraint; a cache key without E; a token verified with another environment's keys; one key ring shared across environments | **Access paths** (all in E's own store; every row with the three columns, every statement constrained on them, U4 D-EHA-29): the registration and secret read at bootstrap (BR-BS-03); the credential record write and read (BR-BS-06, BR-RN-02); revocation reads, direct and cached (BR-RV-03, BR-RC-04); the bound's slots (BR-AB-AC-05); failed attempts (BR-FA-01); attribution (U4's). Tokens: E's agent key ring only (BR-CR-AC-02) | TC-AC-013; TC-AC-020; *QA enrichment*: one test per access path that a principal of E cannot read, write, or be refused by anything of E2's (records, revocations, slots, failed attempts, cache entries) | Covered |

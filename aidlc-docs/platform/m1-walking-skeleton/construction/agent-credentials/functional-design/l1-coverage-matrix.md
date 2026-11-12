@@ -18,6 +18,18 @@ each marker with a test-case ID.
 L1-29 on **GAP-INT-008** (Open, soorma-prd#27), L1-28 on **GAP-INT-009** (Open, soorma-prd#28).
 **0 `Missing`.**
 
+**Updated at NFR Design (2026-11-12)**: implementation targets made concrete, no row's status
+changed. L1-01, L1-13, L1-17: `packages/credentials/src/agent-token.ts` (NP-AC-09). L1-02:
+`PROPAGATION_BOUND_MS`, `AGENT_CREDENTIAL_LIFETIME_MS`, `LINEAGE_MAX_AGE_MS`, code constants
+(NP-AC-01) and `agent_credentials`' `expires_at <= lineage_ends_at` (NP-AC-03). L1-04, L1-05,
+L1-06: `packages/agent-identity` over the seam's agent half (NP-AC-08). L1-07, L1-22:
+`agent_credentials` and its renew statement, the binding in its `WHERE` (NP-AC-03). L1-08 to
+L1-10, L1-14: `credential_revocations`, `agent_revocations` with foreign keys, `SELECT` only
+(NP-AC-04, 06). L1-11, L1-24: the per-credential cache in `revocation.ts` (NP-AC-05). L1-15:
+`attempt_slots` and `failed_bootstrap_attempts` in E's store, P8's `SlotBound` (NP-AC-07). L1-23:
+the agent key ring on U4's loader (NP-AC-09). L1-27: `0004`'s CHECK (NP-AC-02). L1-33: S3's
+manifest walk and the image check (NP-AC-10).
+
 ---
 
 ## Applicable to U6
@@ -34,7 +46,7 @@ L1-29 on **GAP-INT-008** (Open, soorma-prd#27), L1-28 on **GAP-INT-009** (Open, 
 | L1-08 | PF §7a *Revocation State*, FR-011: **two granularities**, credential and logical agent | D-AC-16; BR-RV-01 | P5 revocation state; the test fixture | TC-AC-009; *QA enrichment*: an agent-granularity revocation refuses renewal and bootstrap | Covered |
 | L1-09 | PF §7a: revocation state **environment-scoped, readable by no principal** | BR-RV-03, 04; BR-BS-07 | P5; no edge operation | TC-AC-018 | Covered |
 | L1-10 | PF FR-011: revocation is **terminal**; reinstatement is a new issuance | BR-RV-02; D-AC-14 | P5; the cache keeps `revoked` | *QA enrichment*: after a `cid` is revoked, a new bootstrap gives a new `cid` that works, and the old lineage stays refused | Covered |
-| L1-11 | PF FR-012, O3: read **on every request**; cached **at most one published bound**, then **deny**; the bound finite, published, platform-set, not tenant-configurable; **one value** (M1-NFR-01; NFR-AE-10) | D-AC-01, 18; BR-RC-01 to 05 | P5 cache (S4 wiring: U7); S3 direct reads | TC-AC-010; TC-AC-015 (adjusted at enrichment: P5 clock and outage tests, §5 of the business logic model) | Covered |
+| L1-11 | PF FR-012, O3: read **on every request**; cached **at most one published bound**, then **deny**; the bound finite, published, platform-set, not tenant-configurable; **one value** (M1-NFR-01; NFR-AE-10) | D-AC-01, 18; BR-RC-01 to 05 | P5 cache (S4 wiring: U7); S3 direct reads; **`PROPAGATION_BOUND_MS`, a code constant** (NFR Design NP-AC-01; not configuration, so not tenant-configurable) | TC-AC-010; TC-AC-015 (adjusted at enrichment: P5 clock and outage tests, §5 of the business logic model) | Covered |
 | L1-12 | PF §8a *Exchange bootstrap material*: data face, Gateway; **n/a to delegation** | D-AC-24; business-rules §12 | S3; `contract/data-gateway.openapi.yaml` | TC-AC-021 | Covered |
 | L1-13 | PF §8a *Renew credential*: a currently valid, unrevoked credential **for the same logical agent** | BR-RN-02, 08 | S3 renewal | TC-AC-016 | Covered |
 | L1-14 | PF §8a *Read revocation state*: **no principal; internal** | BR-RV-04; D-AC-16 | P5 only; no route | TC-AC-018 | Covered |
