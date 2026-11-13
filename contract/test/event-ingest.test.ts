@@ -247,6 +247,7 @@ describe('TC-ET-053: the contract’s statements on payloads and streams', () =>
     'I-JSON numbers are not required',
     'Payload strings must be well-formed Unicode',
     'Duplicate member names keep the last value',
+    'Object members are delivered in RFC 8785 order (sorted by name), not the order sent',
     'publish 256 KiB (262 144 bytes), subscribe 64 KiB (65 536 bytes)',
     "Clients should serialize drafts and payloads compact, without HTML-safe or other ASCII escaping (for example Go's `json.Encoder.SetEscapeHTML(false)`)",
     'Exactly one `end` event',

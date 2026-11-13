@@ -86,7 +86,7 @@ afterAll(async () => {
 });
 
 describe('TC-AC-076: migrations 0003 and 0004 apply after 0001 and 0002, which are unchanged', () => {
-  it('the store has applied all four, in order', async () => {
+  it('the store has applied every migration, in order', async () => {
     const su = await db.superuser();
     try {
       const { rows } = await su.query<{ version: string }>(

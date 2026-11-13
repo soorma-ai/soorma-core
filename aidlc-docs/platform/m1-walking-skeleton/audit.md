@@ -4062,3 +4062,98 @@ Then carry items 1, 2, 4 and 5 in Group 4 (and item 3 in Group 8), through the f
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 6.
 
 ---
+
+## Code Generation Part 2: Group 7, stop (the source-text parse and deep nesting)
+**Timestamp**: 2026-11-13T04:35:07Z
+**User Input**: (none)
+**AI Response**: "Stopped before completing Group 7, under the user's instruction on JSON.rawJSON in S4's runtime path. Group 6 pushed as 218a8df (CI running). S4 written in services/event-ingest (uncommitted); first test run 66 of 74 passing. Finding: JSON.parse with a reviver (NP-ET-05's parse 2, packages/jcs parseRawNumbers) overflows the stack between 2,000 and 4,000 levels of nesting on Node v26.13.0 (RangeError), while JSON.parse without a reviver survives 131,000 and JSON.stringify survives 65,000. A payload within P (64 KiB) can nest about 32,000 deep, so a well-formed, in-bound payload makes S4 answer internal_error, and NFR-ET-05 (U3's maximum-nesting test at each operation's actual limit, every walk surviving) fails at publish. JSON.rawJSON itself works; the reviver's source-text path does not survive the nesting the bounds admit. Options put to the user: A, an iterative source-text parser in packages/jcs that still makes every number with JSON.rawJSON (no fallback, no contract change); B, a published payload nesting bound checked before parse 2 (a contract change); C, mapping the RangeError to a refusal (a runtime-dependent limit). Recommended A. Also found, not blocking: the S4 tests' revocation seeding needs an agent_credentials row (a foreign key); TC-ET-030's no-key check matched S3's bootstrap-bound key 'bound' (the check is narrowed to S4's part and to ttl/propagation); Node 26's HTTP parser answers a request with two Authorization headers with a bare 400 before any service sees it (S1 to S4 alike; P1's tests cover two credentials on the raw header list); TC-ET-063 timed out, not yet diagnosed."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7; stop for the user's decision.
+
+---
+
+## Code Generation Part 2: Group 7, the user's decision at the stop
+**Timestamp**: 2026-11-13T04:44:18Z
+**User Input**: "The Group 7 stop: option A, approved, with these conditions.
+
+One parser. Replace the reviver inside parseRawNumbers with a parser that uses an explicit stack. Don't keep a reviver path for shallow input, and don't fall back to it. The startup self-check and the contract stay as they are.
+The same results as JSON.parse:
+Create members as own data properties, never by assignment, so __proto__ stays an ordinary own key and never sets the prototype.
+A duplicate key keeps its first position and takes the last value.
+Integer-like keys come out in JS order.
+Lone surrogates and every escape are kept exactly.
+Each number becomes JSON.rawJSON of its exact source text, e.g. -0, 1E400, 1e-7, and integers beyond 2^53.
+Comparison tests, with no new dependency:
+Use a fixed set of inputs covering everything in point 2, plus whitespace variants.
+Add a seeded random generator inside the test for shallow documents.
+For each input, assert the new parser and JSON.parse(text, rawReviver) give the same JSON.stringify output and the same key order.
+It only ever runs on text that JSON.parse has already accepted, so any throw would be a 500. Assert it accepts every input in the test set.
+Deep cases at publish's actual 256 KiB limit, for both arrays and objects. Also run TC-ET-052 (NFR-ET-05's test) through the whole publish path: accepted, the record written, the Delivery written to the stream. Time one 256 KiB parse and record it.
+Record it as a Code Generation decision that amends NP-ET-05. My approval of NP-ET-05 missed this problem.
+A known risk to register for soorma-sdk: S4 delivers payloads nested much deeper than common receiving parsers handle. Python's json fails at roughly 1,000 levels, and a TypeScript reviver at roughly 3,000. Hand it over at Build and Test. It doesn't block U7.
+The two-Authorization-header finding is wrong; fix the test and keep it.
+
+With headers given as a raw array, Node's http.request doesn't add Host, and Node's server answers 400 to an HTTP/1.1 request without Host. Plain Node answers 200 to two Authorization headers.
+Add 'host', <host:port> to twoCredentials, and expect 401 credential_refused from P1.
+Add an audit entry correcting the claim that it \"applies to S1 through S4\". Append it; don't edit the earlier entry.
+The other test fixes:
+
+The revocation seeding and the narrower check for the bound's configuration key are approved.
+TC-ET-063: find the cause before changing anything. A timeout when a second subscribe replaces the first on the same instance may be a real bug in the replacement logic. Don't raise the timeout to make it pass.
+U6's TC-AC-076 title: approved, class 3, title only: 'the store has applied all four, in order' becomes 'the store has applied every migration, in order'.
+
+Then finish Group 7 through the full gate once Group 6's CI (218a8df) is green. Stop at the planned review point after Group 7, as planned."
+**AI Response**: "Option A with the user's conditions: one iterative parser in parseRawNumbers, no reviver path; the comparison, deep, and whole-path tests; D-CG-ET-28 amending NP-ET-05; the soorma-sdk risk registered for Build and Test; the two-header test fixed with Host and kept, and a correcting entry; the seeding and the narrowed check; TC-ET-063 diagnosed before any change; TC-AC-076's title (class 3); then Group 7's full gate once 218a8df's CI is green, and the planned review stop."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
+
+---
+
+## Correction: the two-Authorization-header finding
+**Timestamp**: 2026-11-13T04:44:18Z
+**User Input**: (none; the user's correction above)
+**AI Response**: "The stop entry's claim that Node 26 answers two Authorization headers with a bare 400 'before any service sees it (S1 to S4 alike)' is wrong. With headers given as a raw array, Node's http.request adds no Host header, and Node's server answers 400 to an HTTP/1.1 request without Host. Plain Node answers 200 to a request carrying two Authorization headers and a Host. The finding is withdrawn; the S4 test sends Host and expects 401 credential_refused from P1."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7; correction of the earlier stop entry (left as written).
+
+---
+
+## Code Generation Part 2: Group 7, second stop (serializing deep payloads; the same-millisecond supersede)
+**Timestamp**: 2026-11-13T04:51:17Z
+**User Input**: (none)
+**AI Response**: "Group 6's CI run 43366240390 green (218a8df). Done, as the user decided: parseRawNumbers is one iterative parser (D-CG-ET-28, amending NP-ET-05), with packages/jcs/test/raw-json-parser.test.ts (fixed set, 2,000 seeded documents against JSON.parse with the raw reviver, deep cases at 256 KiB; U3's and Group 1's jcs tests unchanged; 105 jcs tests pass); one 256 KiB parse about 46 ms (arrays) and 18 ms (objects). The soorma-sdk risk registered for Build and Test. twoCredentials sends Host and expects 401 credential_refused (passes). The revocation seeding writes the credential record first; the bound-key check narrowed to S4's schema part and ttl/propagation everywhere. TC-AC-076's title changed, title only (class 3, approved). Stopped again on two findings. (1) JSON.stringify, once a value holds any JSON.rawJSON value anywhere, serializes recursively and overflows past 5,155 levels (arrays or objects; Node v26.13.0); without raw values it survives 131,071. S4 builds the Delivery frame with JSON.stringify (NP-ET-11), so a payload within P, nested deeper than about 5,000 and holding a number, is a 500 after its publish record is written. TC-ET-052 through the whole publish path, with a number at the bottom, fails this way for arrays (32,767 levels) and objects (10,922 levels). Options put to the user: A, an iterative serializer in packages/jcs giving JSON.stringify's output exactly with raw numbers by source text, used for the payload in the frame (no contract change); B, the payload delivered in its JCS form (keys sorted; a contract statement); C, a published payload nesting bound. Recommended A. (2) TC-ET-063 diagnosed, nothing changed: the order key is (openedAt in ms, a random 128-bit id); two subscribes of a lineage on one instance in the same millisecond are ordered by the random id, so the newer stream is ended superseded and the older kept about half the time, against BR-FO-04 (the earlier one ends). Six runs with the keys logged: every failure had the second id below the first. TC-ET-055's re-subscribe fails the same way. Proposed: a per-instance monotonic openedAt (the clock's milliseconds, or one more than this instance's last), so a later local subscribe always orders after; the cross-instance rule unchanged. S4's suite: 72 of 76 pass; the four failing are these two findings."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7; stop for the user's decision.
+
+---
+
+## Code Generation Part 2: Group 7, the user's decision at the second stop
+**Timestamp**: 2026-11-13T05:06:58Z
+**User Input**: "Finding 1: option B, not A.
+
+The contract already promises only that numbers arrive as written and that \"every other value is delivered equal in value, in compact form\" (envelope.md). Member order isn't promised, and integer-like keys are already reordered. So B needs a clarifying sentence, not a contract change.
+B reuses canonicalize, which is already free of recursion and tested at depth. It adds no serializer, and the payload's bytes are exactly the ones measured against P.
+How to build it:
+
+Build the frame by splicing: {\"envelope\": + JSON.stringify(envelope) + ,\"seal\": + JSON.stringify(seal) + ,\"payload\": + the payload's canonicalize(payload, { numbers: 'source' }) text + }.
+Build the frame before writing the record. A frame failure must never leave a record behind a 500. The order stays: the record, then the hand-off, then 202.
+Add to envelope.md's list: \"Object members are delivered in RFC 8785 order (sorted by name), not the order sent.\" Record the change as a Code Generation decision that amends NP-ET-11.
+Tests:
+
+Every Delivery frame parses with JSON.parse, and its payload equals what was published, numbers included, compared by walking the structure at depth.
+Run TC-ET-052 through the whole publish path at P, for arrays and for objects, with a number at the bottom: 202, the record written, the Delivery written to the stream.
+Add a test that a payload with keys out of order arrives sorted.
+Finding 2: the proposed fix is approved.
+
+On each instance, a new stream's openedAt is max(clock ms, last openedAt + 1). Record it as a Code Generation decision.
+TC-ET-063 and TC-ET-055's re-subscribe must pass on the fake clock with no timeout change.
+Move TC-ET-064's \"larger id wins\" tie-break to a two-instance test with the same openedAt. Update TC-ET-064's spec text to match.
+Then run the full Group 7 gate, commit, push, wait for green, and stop at the planned review point after Group 7 with the report the plan lists."
+**AI Response**: "Finding 1, option B: the frame spliced from JSON.stringify(envelope), JSON.stringify(seal), and the payload's canonicalize(payload, { numbers: 'source' }) text, built before the record; the order the record, the hand-off, 202; envelope.md's sentence; D-CG-ET-29 amending NP-ET-11; the three tests. Finding 2: openedAt = max(clock ms, last openedAt + 1) per instance, D-CG-ET-30; TC-ET-063 and TC-ET-055 on the fake clock with no timeout change; TC-ET-064's tie-break moved to two instances with the same openedAt, and its spec text updated. Then the full Group 7 gate, commit, push, green, and the planned review stop."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
+
+---
+
+## Code Generation Part 2: Group 7 (S4) through the gate
+**Timestamp**: 2026-11-13T05:43:28Z
+**User Input**: (none)
+**AI Response**: "Group 7 complete through the full gate. services/event-ingest: settings, scheduler, channel (port and in process), stream (writer, registry with the cap and superseding), edge (steps 2 to 4 through P1 with the verify-only ring and P5's cache; the parse step; admit once with the Body Form; the cap; the frame; the record; the hand-off or the stream), security log (with U3's port), throttle (the release at stream open), runtime (both caches' ttl PROPAGATION_BOUND_MS, injected factories; humanGrants empty), main (the JSON.rawJSON self-check first; drain), Dockerfile; CI steps for S4's image, scan, installed packages, no migrations, and the self-check in the image with its negative control. Decisions: D-CG-ET-29 (the frame spliced, the payload's JCS text, built before the record; envelope.md's member-order sentence), D-CG-ET-30 (openedAt per instance max(clock, last + 1)), D-CG-ET-31 (the supersede reply, so at most one stream of a lineage survives in any order; found by TC-ET-064 failing about half its runs: when the later-registered stream had the smaller key, both stayed open), D-CG-ET-32 (step 1's ingest.refused). TC-ET-064 moved to two instances, its spec text updated. Earlier-unit test change in this group: U6 TC-AC-076's title only (class 3, approved). The first two gate runs failed and were fixed, not worked around: U1's TC-WC-003 refused a hand-written 'Delivery' declaration (first an interface, then an alias) in S4's test helper; it now uses the generated type inline, and S4's end event is typed by the generated StreamEnd (@soorma/contract added as S4's dependency, as S1 to S3); one Prettier fix. Gate passed: every check; 1674 passed, 13 skipped; S1, S2, S3, S4 images with scans and installed-packages checks; S4 ships no migrations; the self-check passed in S4's image and refused there without JSON.rawJSON (ConfigurationError); smoke; outage; test:e2e (10 passed). S4 is not yet in the stack (Group 8)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
+
+---

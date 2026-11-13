@@ -1464,9 +1464,9 @@ pass of this extension records them.
 
 ### TC-ET-064 — Two racing subscribes leave exactly one stream
 
-**Context**: BR-FO-05, 07: the order key `(openedAt, id)` is total.
+**Context**: BR-FO-05, 07: the order key `(openedAt, id)` is total. *(Code Generation, D-CG-ET-30)*: on one instance, a new stream's `openedAt` is max(the clock's milliseconds, that instance's last `openedAt` + 1), so two streams of one instance never share an `openedAt`, and a later subscribe there always supersedes an earlier one (TC-ET-063). A tie is possible only across instances; the id decides it.
 
-**Scenario**: Two subscribes of one lineage are registered at once on two instances sharing a channel, with the same clock reading.
+**Scenario**: Two subscribes of one lineage are registered at once on two instances sharing a channel, with the same clock reading, so both streams have the same `openedAt`.
 
 **Preconditions**:
 - Two S4 runtimes over one channel; an injected clock
@@ -1475,7 +1475,7 @@ pass of this extension records them.
 1. Register both streams at the same `openedAt`
 2. Deliver both `supersede` messages
 
-**Expected outcome**: Exactly one stream survives: the one with the larger id.
+**Expected outcome**: Exactly one stream survives, on either instance: the one with the larger id; the other ends `superseded`. On one instance, two subscribes in the same clock millisecond are ordered by registration, and the later one survives.
 
 **Scope**: edge-boundary · **Priority**: Medium  
 **Source**: event-transport / M1-FR-11  

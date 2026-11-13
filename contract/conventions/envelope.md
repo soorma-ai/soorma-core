@@ -118,6 +118,7 @@ The payload is never read for meaning, and is delivered as it was published:
   delivered as written. A consumer that parses it into a double may lose precision
 - Every other value is delivered equal in value, in compact form: whitespace and the escaping of
   strings may differ from what was sent
+- **Object members are delivered in RFC 8785 order (sorted by name), not the order sent.**
 - **Payload strings must be well-formed Unicode.** A lone surrogate (an unpaired `\uD800` to
   `\uDFFF` escape) is refused with `malformed_request`, with a pointer to it
 - **Duplicate member names keep the last value.** An object with a member name repeated is

@@ -181,6 +181,33 @@ jobs:
           fi
           docker rm "$id" > /dev/null
 
+      # U7 NP-ET-18, D-CG-ET-10 (TC-ET-083, TC-ET-075): S4's image, its secret
+      # scan, and its installed packages: no organization-level code, no
+      # identity resolution, no agent identity, no abuse bound, and no
+      # migrations; then S4's JSON.rawJSON self-check, run in the image itself,
+      # and refusing there once JSON.rawJSON is removed.
+      - name: Build the S4 image
+        run: docker build -f services/event-ingest/Dockerfile -t soorma/event-ingest:local .
+
+      - name: Check the S4 image's file system for secrets
+        run: node tools/checks/run.ts secrets --image soorma/event-ingest:local
+
+      - name: Check the S4 image's installed packages
+        run: node tools/checks/run.ts image-packages --image soorma/event-ingest:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/agent-identity,@soorma/abuse-bound
+
+      - name: Check the S4 image ships no migrations
+        run: |
+          id=$(docker create soorma/event-ingest:local)
+          if docker export "$id" | tar -t | grep -E 'env-store/migrations/'; then
+            echo "S4's image holds env-store's migrations"; exit 1
+          fi
+          docker rm "$id" > /dev/null
+
+      - name: Run S4's JSON.rawJSON self-check in its image
+        run: |
+          docker run --rm soorma/event-ingest:local --input-type=module -e "const m = await import('/app/dist/raw-json-check.js'); m.checkRawJson(); console.log('S4 self-check passed in the image')"
+          docker run --rm soorma/event-ingest:local --input-type=module -e "delete JSON.rawJSON; const m = await import('/app/dist/raw-json-check.js'); try { m.checkRawJson(); process.exit(1); } catch (e) { console.log('without JSON.rawJSON: ' + e.name); }"
+
       # Throwaway secrets for this run only, generated on the runner.
       - name: Generate the stack's secrets
         run: pnpm stack:init
