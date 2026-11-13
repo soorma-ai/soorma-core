@@ -116,3 +116,21 @@ Then continue as planned. Show Run A in full and Run B with the image job skippe
 **Context**: CONSTRUCTION - Code Generation Part 2, before commit 1
 
 ---
+## Code Generation Part 2: the user's command-level checks, and the ci.yml header
+**Timestamp**: 2026-11-13T11:51:48Z
+**User Input**: "Progress reviewed. The code checks out: the linear reader keeps its contract, one export feeds both checks, the exit-code guard works, the skip script's 11 cases all decided correctly, and the memory runs are fine.
+
+Before commit 1, run the CLI against the real images. The gate so far skipped images.
+
+The four commands exactly as ci.yml has them, against the four local images. Each exits 0. Record each one's wall time.
+The negative controls, at the command level, with their exit codes:
+A planted secret. Build a throwaway image FROM soorma/event-ingest:local that adds a private key generated at runtime. Never write the key into the repo. Run S4's combined command: the secret is reported, exit 1. Then delete the image and the key.
+A forbidden package. Run S1's combined command with --forbid @soorma/org-identity instead of --expect: exit 1.
+An expected package missing. Run S2's combined command with --expect @soorma/org-identity: exit 1.
+A failed export. Use a nonexistent image reference: exit non-zero. Then show a truncated export failing through the exit-code guard, for example by killing docker export partway. If that isn't practical, say so and explain why the guard is still covered.
+Fix the ci.yml header comment. main is reached through pull requests whose run tested the merge result as of that run. main can move before the merge; point to the remaining risk recorded in aidlc-docs/tooling/ci-image-job/.
+Record the commands, times and exit codes in the code summary. Then finish Step 12 (the comparison) and continue: commit 1, Run A in full, commit 2 (aidlc-docs/ only) with Run B skipped, then the PR. Stop when it needs merging."
+**AI Response**: "This message arrived after commit 1 (4acb2f0) had been pushed; its push run 43419983338 was in progress. Said so plainly. The skip script was tested on 10 cases, not 11 (code summary lists them). Done now, all recorded in the code summary: the four commands extracted from ci.yml and run exactly: exit 0 each, wall times 7.03 s (S1), 6.92 s (S2), 7.49 s (S3), 7.47 s (S4). Negative controls: a planted secret (throwaway image FROM soorma/event-ingest:local, runtime ed25519 key in the session scratchpad, never in the repository; S4's exact command): 'holds a private key', exit 1; the image, the key and its build directory deleted. S1 with --forbid @soorma/org-identity: 'holds @soorma/org-identity', exit 1. S2 with --expect @soorma/org-identity: 'does not hold @soorma/org-identity', exit 1. A nonexistent image reference: 'docker create' failed, exit 1. A truncated export, practical and done: docker export killed (SIGTERM) about 1 s into S4's ~6 s export: 'docker export of soorma/event-ingest:local failed (exit 143): not scanned', exit 1, the container still removed. Step 12 had already been done before this message (identical on all four images). ci.yml's header comment and sbom-main's comment corrected: main is reached through pull requests whose run tested the merge result as of that run; main can move before the merge (Dependabot targets main); the remaining risk pointed to requirements.md. check:workflows, prettier, and workflows.test.ts (8 passed) pass. Plan: let run 43419983338 finish (it measures the same code), then commit the header fix and the records as a follow-up code commit; its full push run is Run A; then commit 2 (aidlc-docs only) for Run B skipped; then the PR."
+**Context**: CONSTRUCTION - Code Generation Part 2, between commit 1 and Run A
+
+---

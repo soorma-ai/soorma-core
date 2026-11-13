@@ -78,6 +78,27 @@ ed25519 key generated at run time at `/app/leak.pem` and
 **The export guard**: a fake `docker` on `PATH` wrote a valid partial tar, then exited 1. The
 combined command failed with `docker export of any failed (exit 1): not scanned`, exit 1.
 
+**The CLI against the real images, as the user listed** (after commit 1 had been pushed; recorded before the follow-up commit). The four commands were extracted from `ci.yml` and run exactly as written. Wall times are from `/usr/bin/time -p`:
+
+| Command (from `ci.yml`) | Exit | Wall time |
+|---|---|---|
+| `node tools/checks/run.ts secrets image-packages --image soorma/org-gateway:local --expect @soorma/org-identity` | 0 | 7.03 s |
+| `node tools/checks/run.ts secrets image-packages --image soorma/control-gateway:local --forbid @soorma/org-identity` | 0 | 6.92 s |
+| `node tools/checks/run.ts secrets image-packages --image soorma/data-gateway:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/authority` | 0 | 7.49 s |
+| `node tools/checks/run.ts secrets image-packages --image soorma/event-ingest:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/agent-identity,@soorma/abuse-bound` | 0 | 7.47 s |
+
+**The negative controls**, run at the command level:
+
+| Control | Command | Output | Exit |
+|---|---|---|---|
+| A planted secret | A throwaway image `FROM soorma/event-ingest:local` adding `/app/planted.pem`, an ed25519 key generated at run time in the session scratchpad, outside the repository; S4's exact command against it | `secrets: soorma/neg-secret:throwaway:/app/planted.pem: holds a private key` | 1 |
+| A forbidden package | S1's command with `--forbid @soorma/org-identity` instead of `--expect` | `image-packages: soorma/org-gateway:local: holds @soorma/org-identity` | 1 |
+| An expected package missing | S2's command with `--expect @soorma/org-identity` | `image-packages: soorma/control-gateway:local: does not hold @soorma/org-identity` | 1 |
+| A failed export: no such image | `--image soorma/no-such-image:none` | `Command failed: docker create soorma/no-such-image:none` | 1 |
+| A failed export: truncated | S4's exact command, with `docker export` killed (SIGTERM) about 1 s into its ~6 s export | `docker export of soorma/event-ingest:local failed (exit 143): not scanned` | 1 |
+
+After the planted-secret control, the throwaway image, the key and its build directory were deleted, and no key file entered the repository. After the truncated export, `docker rm` still ran: no container of the image was left.
+
 **The skip condition**: the `changes` step's script, taken from `ci.yml`, was run in a
 throwaway git repository:
 
@@ -111,7 +132,8 @@ Run: `SOORMA_TAR_COMPARE=<the four images> pnpm vitest run tools/test/tar-compar
 |---|---|---|---|
 | 43392989143 | `ae5f2f0` (before) | full run | image job 16m00s; 8 export checks of 76 to 80 s |
 | 43395738837 | `0095523` (before; `aidlc-docs/` only) | ran in full | image job 18m05s |
-| Run A (pending) | commit 1 | the full run, with this change | recorded in the next commit |
+| 43419983338 | `4acb2f0` (commit 1, push to `dev`) | full run, with this change | **green**. Image job **6m36s** (11:48:37 to 11:55:13 UTC). Builds: S1 33 s, S2 to S4 11 s each. One combined check per image, **2 to 3 s each** (S1 3 s, S2 3 s, S3 3 s, S4 2 s; before, two checks of about 77 s each). No-migrations checks 2 s each; S4 self-check 1 s; stack onward 4m48s. `changes` 4 s (decided to run); `sbom-main` and dependency review skipped |
+| Run A (pending) | commit 1b (the `ci.yml` header fix) | full run, on the final code | recorded in commit 2 |
 
 ## Security Compliance
 

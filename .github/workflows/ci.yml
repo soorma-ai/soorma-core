@@ -6,9 +6,11 @@
 #
 # #26: each image is exported and read once for both of its file-system checks;
 # the image job is skipped when every changed path is under aidlc-docs/; and a
-# push to main, reached only by pull requests whose run tested the merge
-# result, runs only the SBOM for main's commit (sbom-main). Why, and the
-# remaining risk: aidlc-docs/tooling/ci-image-job/.
+# push to main runs only the SBOM for main's commit (sbom-main). main is
+# reached through pull requests, whose run tested the merge result as of that
+# run; main can move before the merge (a Dependabot PR targets main), and that
+# merged tree is then untested. The decision and this remaining risk:
+# aidlc-docs/tooling/ci-image-job/inception/requirements/requirements.md.
 name: CI
 
 on:
@@ -296,8 +298,9 @@ jobs:
 
   # #26 (NFR-WC-18; SECURITY-10): a push to main keeps only the SBOM, for
   # main's exact commit. The steps up to the SBOM are the build job's, so the
-  # SBOM sees the same installed and built tree; no check or test runs here:
-  # the pull request's run tested the merge result.
+  # SBOM sees the same installed and built tree. No check or test runs here:
+  # the pull request's run tested the merge result as of that run (the
+  # remaining risk is recorded in aidlc-docs/tooling/ci-image-job/).
   sbom-main:
     name: SBOM for main's commit
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -4,7 +4,7 @@
 - **Project**: soorma-core: CI's image job, faster (soorma-core#26)
 - **Project Type**: Brownfield
 - **Start Date**: 2026-11-13T08:50:17Z
-- **Current Stage**: CONSTRUCTION - Code Generation Part 2: Steps 1 to 13 done, the local gate passed; commit 1 pushed, Run A pending
+- **Current Stage**: CONSTRUCTION - Code Generation Part 2: commit 1 (4acb2f0) green on run 43419983338 (image job 6m36s); commit 1b (ci.yml header fix) pushed, Run A pending
 - **Milestone**: none (no slice brief). Timing: before M1's Build and Test (platform/m1-walking-skeleton)
 - **Specification**: soorma-core#26 (the issue is the requirements)
 - **Requirements depth**: Minimal
