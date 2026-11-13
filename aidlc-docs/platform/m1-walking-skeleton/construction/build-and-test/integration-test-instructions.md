@@ -20,9 +20,9 @@ docker compose -f deploy/local/compose.yaml down -v
 pnpm stack:up
 ```
 
-`down -v` matters: without it the next scenario meets a stack whose first authentication is spent,
-and its set-up fails with 403 (seen once in this run, from a shell that did not run the `down`; the
-re-run on fresh volumes passed).
+`down -v` matters: H's enrollment material is single use, so a scenario that starts on a stack an
+earlier scenario used fails its set-up with a 403 at first authentication. Check the `down -v`'s exit
+code: in this stage's first run it failed silently and the outage scenario failed (*Runs*, below).
 
 ## Scenarios
 
@@ -45,7 +45,8 @@ identifier and no secret.
 | 3 | S3 serves bootstrap and renewal with S1 stopped, running and restarted | 8 |
 | 4 | S4 serves publish, subscribe, and delivery with S1 stopped, running and restarted | 11 |
 
-**Result: Pass, 40 checks.** This is U4's accepted residual, the organization-level outage
+**Result: one failed run (run 1), then four passing runs of 40 of 40 checks (runs 2, 5, 6, 7)** (the runs are below). This is
+U4's accepted residual, the organization-level outage
 (D-EHA-23), shown on the stack: during it, issuance, renewal, and `grantToHuman` are unavailable,
 while ending and the data face are unaffected.
 
@@ -72,6 +73,49 @@ The unit suite also runs each gateway's real edge over a real test store: the fl
 `services/*/test/`, the rotation tests TC-EHA-062 and 063 (NFR-EHA-08a, with S2's refresh clock
 controlled: they need a test clock, so they run in process), the Compose-model tests (TC-EHA-079),
 the privilege tests (TC-EHA-080 and each unit's), and the docs tests (TC-EHA-081). All passed.
+
+## Runs, Including the Failed One
+
+Every stack run of this stage, in order, on 2026-11-13. A failed run stays in the record.
+
+| # | Sequence | Smoke | Outage | e2e |
+|---|---|---|---|---|
+| 1 | `down -v`, init, up, smoke, `down -v`, up, outage | Pass, 106 | **FAIL: 30 of 40 failed; exit 1** | — |
+| 2 | `down -v`, up, outage | — | Pass, 40 of 40 | — |
+| 3 | `down -v`, up, `test:e2e` | — | — | Pass, 27 of 27 |
+| 4 | `down -v`, up, `test:perf:stack`, then `test:perf` (performance-test-instructions.md) | — | — | — (both passed) |
+| 5 to 7 | Run 1's sequence exactly, three times, every step's output and exit code captured, the stack's volumes recorded around each `down -v` | Pass, each | **Pass, 40 of 40, each** | — |
+| 8 | `down -v`, up, smoke, outage, **with no `down -v` between smoke and outage** (deliberate) | Pass | **FAIL: 30 of 40, the same 30 as run 1** | — |
+
+**Run 1's failure.** The outage script's first step, H's first authentication, was refused with 403.
+Every later failure followed from it: no sign-in, no credentials, no agents. The script's checks
+that need none of these passed (10).
+
+**Cause: established.** The outage script ran on a stack the smoke test had already used, because
+neither `down -v` in run 1 ran:
+
+- This session ran run 1 in zsh as `C="docker compose -f deploy/local/compose.yaml"; $C down -v
+  > /dev/null 2>&1`. zsh does not split an unquoted parameter into words, so it looked for one
+  command named `docker compose -f deploy/local/compose.yaml`: exit 127, *no such file or
+  directory*, with the output discarded and the exit code not checked. Shown afterwards with a
+  harmless subcommand (`$C version` exits 127; `${=C} version` prints 5.1.4)
+- The smoke test had made H's first authentication, so H was `active`. U2's D-OI-02: a
+  `firstAuthenticate` on an `active` principal fails with `authentication_failed`, which D-OI-13
+  makes a 403. S1 logged it as `auth.failed` with `authentication_failed`, and on its restarts in
+  the script, `config.enrollment_ignored` (H already active)
+- Run 8 reproduces it on purpose: on a stack the smoke test used, the outage script fails the same
+  30 checks, in the same order, starting with the same 403
+- Runs 5 to 7 reproduce run 1's sequence exactly with working `down -v`s. Each `down -v` exited 0,
+  and every volume the stack's containers mounted (nine) was gone after it. Each outage run passed
+  40 of 40, with the first authentication at 200
+
+So the 403 is S1 correctly refusing a repeat first authentication, not a defect, and not a
+specification gap. **CI is not exposed**: its `down -v` steps are plain `run:` lines, which fail
+the job on a non-zero exit, and each starts from a stack the step before stopped.
+
+Run 1's full output was overwritten by run 2, written to the same log path. It survives as printed
+in this stage's session, and its check list matches run 8's check for check. Runs 5 to 8 each wrote
+to their own directory.
 
 ## Cleanup
 

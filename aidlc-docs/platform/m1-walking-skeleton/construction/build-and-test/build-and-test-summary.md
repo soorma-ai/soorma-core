@@ -23,7 +23,7 @@ Details: `build-instructions.md`.
 |---|---|---|
 | Unit and in-process integration (`pnpm test`, with the test database) | **1707 passed, 0 failed**; 30 skipped, all of them stack or perf suites run below | `unit-test-instructions.md` |
 | Stack smoke test | **Pass**, 106 checks | `integration-test-instructions.md` |
-| The organization level stopped (`stack:outage`) | **Pass**, 40 checks in four cases | `integration-test-instructions.md` |
+| The organization level stopped (`stack:outage`) | **One failed run, then four passing** (40 of 40 each). Run 1 failed 30 of 40 at a 403 on first authentication; cause established: this session's `down -v` did not run (zsh exit 127, output discarded), so the script met a stack whose first authentication the smoke test had spent, and S1 refused the repeat as designed (U2 D-OI-02). Reproduced on purpose; run 1's exact sequence then passed three times. Not a defect; CI not exposed | `integration-test-instructions.md`, *Runs* |
 | E2E proofs on a fresh stack (`test:e2e`) | **27 of 27 passed** | `e2e-test-instructions.md` |
 | Performance | **All within target** (reported; TC-OI-059 gated and passed) | `performance-test-instructions.md` |
 | Contract | **Pass**; `contract-v0.1.0` peels to `c1e3d7f` | `contract-test-instructions.md` |
@@ -213,7 +213,7 @@ each closing comment cites is on `main`. The brief's own `Done` waits on soorma-
 | | |
 |---|---|
 | Build | **Success** |
-| All tests | **Pass** |
+| All tests | **Pass**, with one failed outage run in the record (run 1: this session's own setup, cause established, reproduced; see the outage row) |
 | L1 and invariant conformance | **Pass** (237 and 70 rows `Verified`) |
 | Open obligations | 0 deferred questions; specification gaps: **6 `Open`, 1 `Awaiting PRD`**, each worked around and recorded |
 | Ready for Operations | **Yes**. Operations is a placeholder in this workflow; the first hosted deployment carries the items listed above |

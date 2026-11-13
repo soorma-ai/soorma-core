@@ -51,7 +51,7 @@ produces a CycloneDX SBOM.
 | SECURITY-12 | Compliant | Argon2id; breached-list check; P (second factor) available; credentials short-lived; ending is a logout; secrets as mounted files only |
 | SECURITY-13 | Compliant | Checksummed migrations; append-only attribution records; pinned images and actions |
 | SECURITY-14 | **Not applicable in M1, by the user's decision** | Alert rules and the dashboard defined as files and validated (`deploy/monitoring/`); nothing evaluates them in M1 |
-| SECURITY-15 | Compliant | Fail closed: unreadable revocation past the bound denies; the organization-level outage is 503 per operation (`stack:outage`, 40 checks) |
+| SECURITY-15 | Compliant | Fail closed: unreadable revocation past the bound denies; the organization-level outage is 503 per operation (`stack:outage`: 40 of 40 in four runs; one earlier run failed at its set-up, from this session's own `down -v`, recorded in integration-test-instructions.md) |
 
 **The user's M1 decisions, restated**: SECURITY-01 at rest, SECURITY-03's centralized log service,
 and SECURITY-14 are not applicable in M1, because M1 is a local stack with no hosted deployment.
