@@ -3,7 +3,7 @@
 # `@soorma/service-kit`
 
 The organization-neutral runtime that the organization level (S1) and each environment's
-services (S2, and later the data and event services) share. Nothing in it knows about
+services (S2 to S4) share. Nothing in it knows about
 principals, material, credentials, or grants; those live in each level's own packages.
 
 It has two entry points:
