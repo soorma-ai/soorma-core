@@ -3842,3 +3842,65 @@ Then commit the artifacts with the marked consistency fixes, state and audit on 
 **Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate, PENDING.
 
 ---
+
+## Construction Design PR Gate: PR Open, Checks Green, Stopped for the Merge (U7 event-transport)
+**Timestamp**: 2026-11-13T01:57:20Z
+**User Input**: (none since the instruction of 2026-11-13T01:14:32Z)
+**AI Response**: "Push run 43345184867 on 9058b83 passed. Opened soorma-core#24 (dev to main, 'feat(construction): platform/m1-walking-skeleton — event-transport design complete', the description verbatim from event-transport-design-pr-body.md, Refs #10, #3). Every check on #24 passes at 9058b83: Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant. Mergeable. Stopped: the PR needs merging. Nothing recorded as merged; the gate stays PENDING until GitHub shows the merge and the user confirms."
+**Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate; awaiting the user's merge.
+
+---
+
+## Construction Design PR Gate Approval: #24 Merged (U7 event-transport)
+**Timestamp**: 2026-11-13T02:05:38Z
+**User Input**: "Confirm PR Approved. #24 is merged as merge commit 37ec632 on main (2026-11-13T02:04:20Z); I verified it on GitHub. Record the merge and the gate's approval, and fast-forward dev.
+
+I reviewed the Infrastructure Design correction (D-ID-ET-19 and §9) and the QA enrichment (TC-ET-001 to 092), and both are approved.
+
+Start Code Generation Part 1: write the plan, grouped into commits as for U6, with the stop conditions listed, and present it for my approval before writing any code.
+
+The plan must carry:
+
+Earlier units' tests: the approved class-3 U5 change, exactly as approved, with its stop condition. The class-1 changes already recorded: TC-AC-093 keeping the credentials, the e2e backup lists, U4's Compose lists, TC-EHA-068, and the registeredAgent parameter with its evidence.
+The memory measurement (TC-ET-088): above 460 MiB, stop; never raise the limit.
+The JSON.rawJSON start-up self-check, with no fallback.
+The contract tag contract-v0.1.0: pushed only after GitHub shows U7's code PR merged, and only with my go-ahead.
+Done when 3, 4, 6 and 7 in the e2e journey after TC-AC-093, by raw calls.
+The residuals carried to Build and Test.
+Standing rules:
+
+Earlier units' tests: the three classes, with every change listed as a before/after diff with its class at completion.
+The per-group gate: checks and tests, image builds, secret and installed-packages scans; the local stack when a runtime changes; test:e2e on a fresh stack; then push and wait for green.
+Stop when a PR needs merging."
+**AI Response**: "Verified on GitHub: soorma-core#24 MERGED as 37ec632 at 2026-11-13T02:04:20Z. dev fast-forwarded to 37ec632 and pushed; dev = origin/dev = origin/main. Construction Design PR gate for event-transport APPROVED. The QA construction enrichment and the Infrastructure Design correction approved by the user. Starting Code Generation Part 1: loading code-generation.md, writing the plan, presenting it before any code."
+**Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate approved; Code Generation Part 1 begins.
+
+---
+
+## Code Generation: Part 1 Plan Written, Approval Prompt (U7 event-transport)
+**Timestamp**: 2026-11-13T02:08:33Z
+**User Input**: (none since the gate's approval)
+**AI Response**: "Code Generation Part 1 plan written: construction/working/event-transport-code-generation-plan.md (git-ignored; Step 0 and Steps 1 to 34 in eleven groups; decisions D-CG-ET-01 to 15; stop conditions 1 to 15; every TC-ET id assigned, TC-ET-036 to Build and Test). It carries the user's items: the approved class-3 U5 change exactly, with its stop condition (stop 2); the class-1 changes (TC-AC-093's line, the backup e2e lists, U4's Compose lists, TC-EHA-068, registeredAgent's parameter with its evidence); the memory measurement TC-ET-088 (stop above 460 MiB, never raise: stop 9); the JSON.rawJSON self-check with no fallback (D-CG-ET-10, stop 6); the tag only after GitHub shows the code PR merged and with the user's go-ahead (D-CG-ET-14); done when 3, 4, 6, 7 after TC-AC-093 by raw calls (Group 9); the residuals carried to Build and Test; the standing rules. Found while planning: U1's contract/test/components.test.ts injects a fake event-ingest.openapi.yaml that U7 creates for real (stop 10 if any assertion changes); P9's tenancy.test.ts title 'with no sealKeys' goes stale while its assertion still passes (flagged: left unchanged unless the user approves a title-only class-3 change). Proposed: a planned stop after Group 7 for the user's review of S4's code (D-CG-ET-03). Asking for approval before any code."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 1, awaiting approval.
+
+---
+
+## Code Generation: Part 1 Plan Approved (U7 event-transport)
+**Timestamp**: 2026-11-13T02:12:24Z
+**User Input**: "The Code Generation plan is approved.
+
+Keep the review stop after Group 7. When you stop there, report:
+S4's check order, including with the store down;
+the Body Form path into admit;
+the parse step and the start-up self-check;
+the stream's lifecycle: revocation before each delivery and the sweep, exact expiry, supersede, overflow, and shutdown;
+the attribution record with hop;
+the throttle permit released when a stream opens;
+every earlier-unit test change, as a before/after diff with its class.
+The title-only change is approved now as class 3. P9's test "the U2 stack's tenancy.yaml still validates, with no sealKeys" becomes "the stack's tenancy.yaml still validates". Change only the title, and record it.
+The components.test.ts watch item: keep stop condition 10 as written.
+Commit Step 0 with #24's merge record, push, and wait for green. Then start Group 1."
+**AI Response**: "Plan approved. The review stop after Group 7 kept, with the user's seven report items recorded in the plan. A second approved class-3 change recorded: in packages/config/test/tenancy.test.ts, the title 'the U2 stack's tenancy.yaml still validates, with no sealKeys' becomes 'the stack's tenancy.yaml still validates', title only (applied in Group 8, when sealKeys is added). Stop condition 10 kept as written. Committing Step 0 with #24's merge record, pushing, waiting for green, then Group 1."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 1 approved.
+
+---
