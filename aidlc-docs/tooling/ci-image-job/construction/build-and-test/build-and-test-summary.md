@@ -29,7 +29,9 @@ The repository's usual gate, unchanged. CI runs the same steps:
 | Negative controls (secret, forbidden, expected missing, no image, truncated export) | each exit 1 |
 | Run A **43420953285** (`b09821a`, full) | green; image job **5m36s** (before: 16m00s, 43392989143) |
 | Run B **43421826526** (`cafdd99`, `aidlc-docs/` only) | green; image job **skipped** (`images=false`) |
-| PR | **#27**, dev to main, `Closes #26`; its run is checked before the merge |
+| Run C **43422377131** (PR #27, `8e47393`) | green; image job 6m25s |
+| Merge | **#27 merged** 2026-11-13T16:00:53Z as `596376c`; #26 closed automatically |
+| main's push run **43458369029** (`596376c`) | green; only `sbom-main` ran; `sbom-cyclonedx` kept (35,083 bytes) |
 
 ## Done When (#26)
 
@@ -38,12 +40,12 @@ The repository's usual gate, unchanged. CI runs the same steps:
       other path runs it in full (Run A)
 - [x] Planted-secret and forbidden-package negative controls fail: by the checks' own tests (the
       existing ones unchanged, plus `tools/test/image-scan.test.ts`) and at the command level
-- [ ] CI passes on the PR: #27's run, checked before the merge
+- [x] CI passes on the PR: run 43422377131
 
 ## Open Obligations
 
 - Specification gaps: **0 Open, 0 Awaiting PRD** (no PRD; #26 is the specification)
 - Slice brief *Proves*: not applicable (no slice brief)
-- After the merge: `sbom-main`'s first run on main, green, with the `sbom-cyclonedx` artifact
+- None. `sbom-main`'s first run on main was green, with the artifact kept (43458369029)
 - Follow-ups (not #26): Dependabot `target-branch: dev`; parallel image legs when a fifth
   service is added
