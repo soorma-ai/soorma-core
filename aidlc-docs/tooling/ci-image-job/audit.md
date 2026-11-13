@@ -148,3 +148,18 @@ Record the commands, times and exit codes in the code summary. Then finish Step 
 **Context**: CONSTRUCTION - Build and Test
 
 ---
+## Close-out: #27 merged
+**Timestamp**: 2026-11-13T16:13:10Z
+**User Input**: "#27 is merged: merge commit 596376c on main (head 8e47393), and #26 closed automatically.
+
+Verified after the merge: main's push run 43458369029 passed, with only \"SBOM for main's commit\" running and the sbom-cyclonedx artifact (35 KB) kept. The build, changed-files and image jobs were skipped, as designed.
+
+Close-out:
+
+Record the merge, run 43458369029 and the SBOM artifact in aidlc-docs/tooling/ci-image-job/ (the audit log, the state file, and the code summary's after-merge item). Mark the initiative complete.
+Fast-forward dev to origin/main (596376c), then commit the close-out on dev and push. It touches only aidlc-docs/, so its run should skip the image job; confirm that.
+Check that git status is clean and dev matches origin/dev. Then stop. This session is done."
+**AI Response**: "Verified on GitHub before recording: PR #27 MERGED 2026-11-13T16:00:53Z, merge commit 596376c; #26 CLOSED 2026-11-13T16:00:54Z; run 43458369029 (596376c, push, main) success, with only 'SBOM for main's commit' run and build, changes, image and dependency review skipped; artifact sbom-cyclonedx 35,083 bytes, expires 2027-02-11T16:00:57Z. Also recorded: Run C 43422377131 (PR #27 at 8e47393) green, image job 6m25s; commit 8e47393's push run 43422367762 skipped the image job. dev fast-forwarded to origin/main (596376c; origin/dev 8e47393 is its ancestor; the merge commit's tree equals 8e47393's). The code summary's after-merge item marked done; the Build and Test summary's done-when 4 and open obligations updated; the state file marks the initiative COMPLETE. Close-out committed on dev (aidlc-docs only) and pushed; its run is expected to skip the image job."
+**Context**: Close-out; initiative complete
+
+---

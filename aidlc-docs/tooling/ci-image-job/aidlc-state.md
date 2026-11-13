@@ -4,7 +4,7 @@
 - **Project**: soorma-core: CI's image job, faster (soorma-core#26)
 - **Project Type**: Brownfield
 - **Start Date**: 2026-11-13T08:50:17Z
-- **Current Stage**: CONSTRUCTION - Build and Test: PR #27 (dev to main, Closes #26) open; **waiting for the merge** (the user merges from the review session). Run A 43420953285 green (image job 5m36s); Run B 43421826526 green (image job skipped)
+- **Current Stage**: **COMPLETE** (2026-11-13). #27 merged as `596376c` on main (head `8e47393`), verified on GitHub; #26 closed. Main's push run 43458369029 green: only `sbom-main` ran, `sbom-cyclonedx` kept (35,083 bytes). Close-out committed on dev after a fast-forward to `596376c`
 - **Milestone**: none (no slice brief). Timing: before M1's Build and Test (platform/m1-walking-skeleton)
 - **Specification**: soorma-core#26 (the issue is the requirements)
 - **Requirements depth**: Minimal
@@ -55,4 +55,9 @@ None.
 - [ ] Infrastructure Design: SKIP (the job layout is in the code generation plan)
 - [x] Code Generation Part 1 (plan): APPROVED 2026-11-13T09:38:09Z, with the condition on Step 6 (20 local runs; stop at or above 3 MiB)
 - [x] Code Generation Part 2: Steps 1 to 17 done; commits 4acb2f0, b09821a, cafdd99 and this one; code summary construction/ci-image-job/code/code-summary.md
-- [x] Build and Test (minimal): construction/build-and-test/build-and-test-summary.md; the local gate, Run A, Run B, PR #27. Open: #27's run before the merge; sbom-main's first run on main after it
+- [x] Build and Test (minimal): construction/build-and-test/build-and-test-summary.md; the local gate, Run A 43420953285, Run B 43421826526, Run C 43422377131; #27 merged (`596376c`); main's run 43458369029 (sbom-main only) green
+
+### 🟡 OPERATIONS PHASE
+- [ ] Operations: placeholder, not applicable
+
+**Initiative complete.** Follow-ups, not part of #26: Dependabot `target-branch: dev`; parallel image legs when a fifth service is added
