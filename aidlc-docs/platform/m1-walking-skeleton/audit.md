@@ -4343,3 +4343,38 @@ soorma-sdk: yes, open a handover issue there, but only after #28 merges. Link th
 **Context**: CONSTRUCTION, Build and Test: the failed run put in the record.
 
 ---
+
+## Build and Test: #28 merged; the user's close-out instruction
+**Timestamp**: 2026-11-13T18:15:44Z
+**User Input**: "#28 is merged: merge commit 0b19457 on main (head 5276c23). main's push run passed, with only \"SBOM for main's commit\" running.
+
+The failed outage run: verified. The cause is established and shown deliberately, the three clean reproductions are recorded, and every place the result appeared is corrected.
+
+Close-out, in this order:
+
+Record the merge in audit.md and the state file. Fast-forward dev to origin/main (0b19457).
+Close #6, #7, #8, #9 and #10: approved by the user. Comment on each before closing it:
+the unit's code PR and merge commit;
+that everything carried to Build and Test is done;
+that its matrix rows are Verified;
+a link to build-and-test-summary.md at 0b19457, not at dev.
+Then close #3: approved. Its comment lists its five acceptance criteria, each with its evidence, and the brief's Proves items for soorma-core (1, 2, 3, 4, 6, 7) with their tests. It also states the specification gaps that remain: 6 Open, 1 Awaiting PRD, each listed with its tracking issue.
+Open the soorma-sdk handover issue on soorma-ai/soorma-sdk:
+Link soorma-sdk-handover.md at 0b19457, and give contract-v0.1.0 as the contract to build against.
+Say that soorma-sdk's scope comes from the slice brief, and the handover is input, not scope.
+Don't start any soorma-sdk work.
+Mark the initiative complete in the state file: Build and Test done. Operations is a placeholder and isn't run. Record the issue URLs.
+Commit the close-out on dev (docs only) and push. Its run should skip the image job; confirm that. Check that git status is clean and dev matches origin/dev.
+Then stop. M1 is complete for soorma-core."
+**AI Response**: "Verified on GitHub before recording: #28 MERGED at 2026-11-13T18:12:21Z, merge commit 0b1945709e59bdd322480f7ac6386660612a5c0c on main (head 5276c23); main's push run 43480341329 on 0b19457 succeeded. Build and Test approved by the user; Operations not run (placeholder). Next, in the user's order: dev fast-forwarded to 0b19457; comment on and close #6 to #10, then #3; open the soorma-sdk handover issue (no soorma-sdk work); mark the initiative complete; commit the close-out (docs only), push, confirm the image job skips, git status clean, dev = origin/dev; stop."
+**Context**: CONSTRUCTION, Build and Test: APPROVED; close-out.
+
+---
+
+## Build and Test close-out: issues closed; soorma-sdk handover issue; initiative complete
+**Timestamp**: 2026-11-13T18:17:50Z
+**User Input**: (none since the close-out instruction above)
+**AI Response**: "dev fast-forwarded to origin/main 0b19457. With the user's approval, commented on and closed, in order: #6 (issuecomment-6861240363), #7 (-6861242120), #8 (-6861244069), #9 (-6861245370), #10 (-6861247046). Each comment gives the unit's code PR and merge commit, that everything carried to Build and Test is done, that its matrix rows are Verified, and a link to build-and-test-summary.md at 0b1945709e59bdd322480f7ac6386660612a5c0c. Then #3 (issuecomment-6861254423): its five acceptance criteria with evidence, the Proves items 1, 2, 3, 4, 6, 7 with their tests, and the remaining gaps: Open 6 (GAP-INT-006 soorma-prd#24, GAP-INT-007 #25, GAP-INT-008 #27, GAP-INT-009 #28, GAP-AE-001 #30, GAP-ET-001 #31) and Awaiting PRD 1 (GAP-INT-003 #13). Opened soorma-ai/soorma-sdk#2: soorma-sdk-handover.md at 0b19457, contract-v0.1.0 as the contract to build against, soorma-sdk's scope from the slice brief with the handover as input, not scope; no soorma-sdk work started. State file: the initiative COMPLETE; Build and Test APPROVED; Operations a placeholder, not run; the issue URLs recorded. Next: commit the close-out on dev (docs only), push, confirm the push run skips the image job, git status clean, dev = origin/dev; stop. M1 is complete for soorma-core."
+**Context**: CONSTRUCTION, Build and Test: close-out. Initiative complete.
+
+---
