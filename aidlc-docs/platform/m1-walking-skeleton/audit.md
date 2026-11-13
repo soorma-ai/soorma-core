@@ -4046,3 +4046,11 @@ Then carry items 1, 2, 4 and 5 in Group 4 (and item 3 in Group 8), through the f
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 4.
 
 ---
+
+## Code Generation Part 2: Group 5 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T04:05:53Z
+**User Input**: (none)
+**AI Response**: "Group 4's push run 43361093400 green. Group 5 (P9): loadEventIngest, the EventIngest schema part, the shared-secret refusals for a seal key, an agent verify key, or the database password (another environment's part, another deployable's part, the organization level; the CA excepted) and the role refusal (any role but soorma_env_ingest), listSecrets' eventIngest entry. No earlier-unit test changed. New: event-ingest.test.ts (TC-ET-089; TC-ET-030's configuration half). Gate passed: every check; 1514 passed, 13 skipped; S1, S2, S3 images with scans and installed-packages checks; smoke; outage; test:e2e (10 passed)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 5.
+
+---

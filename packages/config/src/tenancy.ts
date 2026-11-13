@@ -42,6 +42,52 @@ export interface Environment {
   controlGateway?: ControlGatewayNames;
   /** The environment's S3 (U6 Infrastructure Design §6); only that S3 reads its secrets. */
   dataGateway?: DataGatewayNames;
+  /** The environment's S4 (U7 Infrastructure Design §6); only that S4 reads its secrets. */
+  eventIngest?: EventIngestNames;
+}
+
+/** S4's own database role (U7 D-ID-ET-04): its part may name no other. */
+export const EVENT_INGEST_ROLE = 'soorma_env_ingest';
+
+/** An environment's S4 part as configured: settings, and secrets by name (D-ID-ET-07). */
+export interface EventIngestNames {
+  edge: { port: number; tls: string };
+  health: { port: number };
+  database: {
+    host: string;
+    port: number;
+    name: string;
+    user: string;
+    password: string;
+    ca: string;
+  };
+  /** E's agent verify halves (SPKI), never a signing key (D-ID-ET-06). */
+  keys: { agentVerify: string[] };
+}
+
+/**
+ * S4's configuration, loaded for its own environment only (D-ID-ET-06, 07, 19),
+ * with the environment's seal keys. It holds no propagation bound: that is the
+ * code constant PROPAGATION_BOUND_MS (D-ET-15).
+ */
+export interface EventIngestConfiguration {
+  settings: {
+    organization: string;
+    project: string;
+    environment: string;
+    edge: { port: number };
+    health: { port: number };
+    database: { host: string; port: number; name: string; user: string };
+  };
+  secrets: {
+    edgeTls: Buffer;
+    databasePassword: string;
+    databaseCa: Buffer;
+    /** E's agent verify halves, by name, in configuration order. */
+    agentVerifyKeys: { name: string; pem: Buffer }[];
+    /** E's seal key ring (U3 NP-02), each key exactly 256 bits. */
+    sealKeys: SealKeys;
+  };
 }
 
 /** An environment's S3 part as configured: settings, and secrets by name (D-ID-AC-10). */
@@ -365,6 +411,39 @@ function readTenancy(configPath: string): { raw: RawTenancy; settings: Organizat
       });
     }
   }
+  // Each environment's S4 part (U7 D-ID-ET-19), checked as S3's: its seal keys
+  // (which only S4 reads), its agent verify halves, and its database password
+  // are shared with no other environment's part, no other deployable's part in
+  // its environment, and not with the organization level; and it connects as
+  // its own role only.
+  for (const [pi, project] of raw.projects.entries()) {
+    for (const [ei, env] of project.environments.entries()) {
+      const ig = env.eventIngest;
+      const at = `/projects/${pi}/environments/${ei}/eventIngest`;
+      const seal = (env.sealKeys?.keys ?? []).map((k) => k.secret);
+      if (!ig) {
+        if (seal.length > 0)
+          parts.push({
+            at: `/projects/${pi}/environments/${ei}/sealKeys`,
+            env: `${env.id} (eventIngest)`,
+            names: [...new Set(seal)],
+          });
+        continue;
+      }
+      for (const name of duplicates(ig.keys.agentVerify))
+        problems.push(`${at}/keys/agentVerify: ${name} is listed twice`);
+      if (ig.database.user !== EVENT_INGEST_ROLE)
+        problems.push(
+          `${at}/database/user: ${ig.database.user} is not S4's own role (${EVENT_INGEST_ROLE})`,
+        );
+      caNames.add(ig.database.ca);
+      parts.push({
+        at,
+        env: `${env.id} (eventIngest)`,
+        names: [...new Set([ig.edge.tls, ig.database.password, ...ig.keys.agentVerify, ...seal])],
+      });
+    }
+  }
   const organizationNames = new Set<string>([
     level.edge.tls,
     level.internal.tls,
@@ -684,6 +763,63 @@ export function loadDataGateway(
   };
 }
 
+/**
+ * An environment's S4 configuration at start-up (U7 D-ID-ET-06, 07, 19). Reads
+ * only that environment's S4 part, its agent verify halves, and its seal keys:
+ * never S2's, S3's, the migrator's, another environment's, or the organization
+ * level's secret. Every problem is collected, then start-up is refused.
+ */
+export function loadEventIngest(
+  options: LoadOptions,
+  where: { project: string; environment: string },
+): EventIngestConfiguration {
+  const { raw } = readTenancy(options.configPath);
+  const env = raw.projects
+    .find((p) => p.id === where.project)
+    ?.environments.find((e) => e.id === where.environment);
+  if (!env)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} is not configured`,
+    ]);
+  const ig = env.eventIngest;
+  if (!ig)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} has no eventIngest`,
+    ]);
+  if (!env.sealKeys)
+    throw new ConfigurationError([
+      `environment ${where.project}/${where.environment} has no sealKeys`,
+    ]);
+  const read = new SecretReader(options.secretsDir ?? DEFAULT_SECRETS_DIR);
+  const secrets = {
+    edgeTls: read.bytes(ig.edge.tls),
+    databasePassword: read.text(ig.database.password),
+    databaseCa: read.bytes(ig.database.ca),
+    agentVerifyKeys: ig.keys.agentVerify.map((name) => ({ name, pem: read.bytes(name) })),
+    sealKeys: {
+      current: env.sealKeys.current,
+      keys: env.sealKeys.keys.map((k) => ({ id: k.id, key: read.key(k.secret, true) })),
+    },
+  };
+  if (read.problems.length > 0) throw new ConfigurationError(read.problems);
+  return {
+    settings: {
+      organization: raw.organization,
+      project: where.project,
+      environment: env.id,
+      edge: { port: ig.edge.port },
+      health: { port: ig.health.port },
+      database: {
+        host: ig.database.host,
+        port: ig.database.port,
+        name: ig.database.name,
+        user: ig.database.user,
+      },
+    },
+    secrets,
+  };
+}
+
 /** {env}-migrate's configuration: the migrator password and the CA, nothing else. */
 export function loadEnvironmentMigrator(
   options: LoadOptions,
@@ -748,6 +884,18 @@ export interface SecretNames {
       /** The bound's counter secret (256 bits). */
       counter: string;
       /** soorma_env_data's password. */
+      databasePassword: string;
+    };
+    /** The environment's S4 part (U7 D-ID-ET-05, 06), when configured. */
+    eventIngest?: {
+      /** S4's secrets: its event-ingest/ subdirectory. */
+      secrets: string[];
+      tls: string;
+      /** E's agent verify halves (SPKI), each derived from S3's signing key. */
+      agentVerify: string[];
+      /** E's seal keys (256 bits each). */
+      sealKeys: string[];
+      /** soorma_env_ingest's password. */
       databasePassword: string;
     };
   }[];
@@ -818,6 +966,23 @@ export function listSecrets(options: LoadOptions): SecretNames {
                     agentKeys: unique(e.dataGateway.keys.verify),
                     counter: e.dataGateway.bound.counter,
                     databasePassword: e.dataGateway.database.password,
+                  },
+                }
+              : {}),
+            ...(e.eventIngest
+              ? {
+                  eventIngest: {
+                    secrets: unique([
+                      e.eventIngest.edge.tls,
+                      e.eventIngest.database.ca,
+                      e.eventIngest.database.password,
+                      ...e.eventIngest.keys.agentVerify,
+                      ...(e.sealKeys?.keys ?? []).map((k) => k.secret),
+                    ]),
+                    tls: e.eventIngest.edge.tls,
+                    agentVerify: unique(e.eventIngest.keys.agentVerify),
+                    sealKeys: unique((e.sealKeys?.keys ?? []).map((k) => k.secret)),
+                    databasePassword: e.eventIngest.database.password,
                   },
                 }
               : {}),
