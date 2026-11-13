@@ -3734,3 +3734,95 @@ the two-phase seal-key rotation in S4's README operations notes."
 **Context**: CONSTRUCTION, U7 event-transport: NFR Design approved.
 
 ---
+
+## NFR Design: Committed, Push Run Green (U7 event-transport)
+**Timestamp**: 2026-11-13T00:57:41Z
+**User Input**: (none)
+**AI Response**: "NFR Design committed on dev as 8289608 (artifacts, the marked consistency fixes, state, audit) and pushed; push run 43339554661 completed success."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design recorded.
+
+---
+
+## Infrastructure Design: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-13T00:57:41Z
+**User Input**: (none)
+**AI Response**: "Infrastructure Design plan written: construction/working/event-transport-infrastructure-design-plan.md (git-ignored). The user's eight handed-over items mapped (P-14, Q1, P-05 and P-06, P-06, P-02, P-11, P-12, P-13 with Q2). For item 2, measured: the local stack brought up (stack:init, stack:up), the smoke test run (passed), then down -v; docker stats: e-data-gateway 54.1 MiB idle and 54.3 MiB after the smoke test, e2-data-gateway 53.4 and 53.6, e-control-gateway 55.8 and 54.6, each against 256 MiB. S3 is the measured proxy; S4's baseline estimated at about 131 MiB (the entry point, both caches at their maximum, 64 maximum bodies parsed twice, 256 TLS sockets), about 387 MiB with the 256 MiB of stream buffers. Proposals P-01 to P-16. Questions, both technology: Q1 mem_limit (A 512m now, S4 measured at Code Generation under the worst case, the peak recorded, a stop above 90 %, recommended); Q2 the seal-key rotation overlap (A at least 24 hours, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design plan, awaiting answers.
+
+---
+
+## Infrastructure Design: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-13T01:02:48Z
+**User Input**: "Answers to the Infrastructure Design plan:
+
+Q1: A. The limit is 512m, recorded now. At Code Generation, measure S4 itself idle and under the stated worst case (256 stalled streams with full buffers plus 64 concurrent maximum-size publishes), and record the peak beside the limit. Above 90% (460 MiB), stop for me; don't raise the limit.
+Q2: A. The overlap is at least 24 hours, and the README states the consequence: once the old key is removed, envelopes sealed with it can't be forwarded.
+P-01 to P-16: accepted, including the stricter forbidden-package list.
+Generate the Infrastructure Design artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded; both technology. Q1 A: mem_limit 512m recorded; S4 measured at Code Generation idle and under the worst case, the peak recorded beside the limit; above 460 MiB, stop, never raise. Q2 A: an overlap of at least 24 hours, the README stating the consequence. P-01 to P-16 accepted, the stricter forbidden-package list included. Generating the artifacts."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design plan answered.
+
+---
+
+## Infrastructure Design: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-13T01:05:04Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "Infrastructure Design artifacts generated in construction/event-transport/infrastructure-design/: infrastructure-design.md (D-ID-ET-01 to 18; components to infrastructure; the image and its forbidden list; secrets, event-ingest/ holding exactly five files, the seal key and verify half nowhere else; the role soorma_env_ingest; tenancy.yaml's sealKeys and eventIngest parts; networks and ports 8446, 8447; mem_limit 512m with the Code Generation measurement and its stop; smoke; stack:outage Case 4; U5's backup e2e lists; S4's README Operations with the two-phase seal rotation, at least 24 hours, and its consequence; monitoring; the Compose-model rules, U4's list items only and U7's own test file asserting exactly one S4 per environment, no replicas, mem_limit 512m; CI; obligations; security and invariant compliance) and deployment-architecture.md. construction/shared-infrastructure.md extended (hardening, secrets, stores, networks, carried). NFR-ET-09 marked with the recorded number. Presented the standard two-option completion message; next stage Code Generation (after the QA construction enrichment and the Construction Design PR gate, per the enabled extensions)."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design complete, awaiting approval.
+
+---
+
+## Infrastructure Design: Changes Requested (U7 event-transport)
+**Timestamp**: 2026-11-13T01:08:49Z
+**User Input**: "Request Changes: one, to §9 Smoke (D-ID-ET-10). As written, S4's smoke test never makes S4 use its store, its agent verify key, or its seal key. A wrong database role or password, or a missing seal or verify key in E2's S4, would pass the smoke test. The e2e journey reaches E2's S4 only through a refusal.
+
+Match the depth U6 gave S3. Per environment, stack:smoke adds:
+
+A real round trip:
+an agent registered through that environment's S2, with event:publish and event:subscribe and autonomy declared, using the existing registeredAgent helper;
+bootstrapped at that environment's S3;
+it subscribes and publishes at that environment's S4 over TLS 1.3, and receives its own Delivery;
+check the Delivery's envelope scope and that the seal is present.
+Cross-environment refusal: E's agent credential is refused at E2's S4.
+Secrets: each S4 sees exactly its five secrets.
+Database role: S4's session runs as soorma_env_ingest. Check it right after that environment's round trip, as U6 did for S3 (the pool's 10-second idle timeout).
+Keep the existing checks: TLS, health, the 401 Problem, and the log scan.
+
+Everything else is approved as presented. Present the completion message again after the change."
+**AI Response**: "Applying the one change to §9 (D-ID-ET-10): per environment, a real round trip (registeredAgent through that environment's S2 with event:publish, event:subscribe and autonomy declared; bootstrapped at its S3; subscribe and publish at its S4 over TLS 1.3; its own Delivery received; the envelope's scope and the seal's presence checked); E's agent credential refused at E2's S4; each S4 sees exactly its five secrets; S4's session runs as soorma_env_ingest, checked right after that environment's round trip; the existing checks kept. Then the completion message again."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design, one change requested.
+
+---
+
+## Infrastructure Design: Change Applied, Presented Again (U7 event-transport)
+**Timestamp**: 2026-11-13T01:09:41Z
+**User Input**: (none since the change request)
+**AI Response**: "§9 Smoke rewritten at the depth U6 gave S3, as a new smoke.ts §12 (D-ID-ET-10 amended): per environment, health, loopback port, hardening; exactly five secrets, 65532, 0400; TLS 1.3; the 401 Problem with both headers (kept); set-up with H's credential at that environment's S2, a further grant of event:publish and event:subscribe (S3's agent:register grant unchanged), an agent registered through that S2 with both event permissions and autonomy declared using registeredAgent, bootstrapped at that environment's S3; subscribe and publish at that environment's S4 over TLS 1.3, its own Delivery received; the envelope's scope and the seal's presence checked; right after the round trip, soorma_env_ingest with U4's attributes and S4's session as soorma_env_ingest over TLS 1.3 (S3's and S2's roles still checked); after both environments, E's agent credential refused at E2's S4; the log scan extended to S4 and everything the smoke saw. Found while applying: registeredAgent registers with an empty standing set and no autonomy; it gains one optional parameter defaulting to today's exact body, so its existing callers (smoke.ts §11, s1-outage.ts, services/data-gateway/test/refusals.test.ts) send byte-identical requests: class 1 with evidence, as U6's D-CG-AC-17, a stop if any existing caller's check or test would change. §17 carries the diff. Presented the standard two-option completion message again."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design, change applied.
+
+---
+
+## Infrastructure Design: Correction, then Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T01:14:32Z
+**User Input**: "One correction, then Continue to Next Stage. Infrastructure Design is approved after it.
+
+§9's "Reach of each check" says a wrong seal key fails #7. It doesn't: a round trip seals and verifies with the same key, so E2's S4 holding E's seal key would still pass. And forwarded-context failures all share invalid_inbound_context, so a cross-environment forward can't tell it apart.
+
+Fix:
+
+Change the sentence to "a missing seal key fails #2 or #7".
+State that a seal key shared across environments is caught by S4's config part: loadEventIngest refuses a seal key, agent verify key or database password shared with another environment's part or with another deployable's part, as U6's dataGateway part does (D-CG-AC-27).
+Add that check to the design if it isn't already there, with a config test for each case.
+Then commit the artifacts with the marked consistency fixes, state and audit on dev, push, and wait for green. Go on to the QA test-case enrichment, then the Construction Design PR gate. Stop when that PR needs merging."
+**AI Response**: "Applying the correction to §9 and adding the shared-secret refusal to loadEventIngest (the design did not have it), with a config test per case; then Infrastructure Design approved, committed, pushed, CI awaited; then the QA construction enrichment and the Construction Design PR gate, stopping when the PR needs merging."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design correction and approval.
+
+---
+
+## Infrastructure Design Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T01:15:21Z
+**User Input**: (the correction and approval recorded at 2026-11-13T01:14:32Z)
+**AI Response**: "Correction applied: §9's reach now reads 'a missing seal key fails #2 or #7', with why a wrong one does not (one key seals and verifies a round trip; forwarded-context failures share invalid_inbound_context). The design did not have the shared-secret refusal: added as D-ID-ET-19 and in §6: loadEventIngest refuses a seal key, agent verify key, or database password also named by another environment's part, another deployable's part in the same environment, or the organization level (the CA excepted), and any database.user but soorma_env_ingest, as U6's dataGateway part (D-CG-AC-27); a config test per case (twelve shared-secret refusals and three roles, plus the local tenancy.yaml accepted). Infrastructure Design approved. Committing on dev, pushing, waiting for the run."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design approved.
+
+---
