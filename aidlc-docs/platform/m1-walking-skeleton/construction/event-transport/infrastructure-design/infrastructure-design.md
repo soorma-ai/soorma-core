@@ -352,3 +352,25 @@ If any assertion would need more than an item added, Code Generation stops (the 
 | I9 | Compliant: no tenant name in any file |
 | I10 | Compliant: one S4 per environment is a deployment fact, never an identity input |
 | I11 | N/A |
+
+## 20. Test Cases (assigned at QA construction enrichment, 2026-11-13)
+
+`inception/test-cases/event-transport/`:
+
+| Decision | Test cases |
+|---|---|
+| D-ID-ET-01, 02, 07, 14 | TC-ET-065 (the Compose model: one S4 per environment, no replicas, 512m, secrets, network, variables) |
+| D-ID-ET-03 | TC-ET-067 |
+| D-ID-ET-04 | TC-ET-082, TC-ET-081 |
+| D-ID-ET-05 | TC-ET-084 |
+| D-ID-ET-06 | TC-ET-065, TC-ET-085 (#2) |
+| D-ID-ET-08 | TC-ET-083 |
+| D-ID-ET-09 | TC-ET-068 |
+| D-ID-ET-10 | TC-ET-085 |
+| D-ID-ET-11 | TC-ET-022 |
+| D-ID-ET-12 | TC-ET-086 |
+| D-ID-ET-13, 18 | TC-ET-087 |
+| D-ID-ET-15 | TC-ET-069 |
+| D-ID-ET-16 | CI itself (every case above runs in it) |
+| D-ID-ET-17 | TC-ET-088 |
+| D-ID-ET-19 | TC-ET-089 |

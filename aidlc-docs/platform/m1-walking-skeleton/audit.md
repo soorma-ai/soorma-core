@@ -3826,3 +3826,19 @@ Then commit the artifacts with the marked consistency fixes, state and audit on 
 **Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design approved.
 
 ---
+
+## QA Construction Enrichment: Complete (U7 event-transport)
+**Timestamp**: 2026-11-13T01:21:56Z
+**User Input**: (the instruction of 2026-11-13T01:14:32Z: "Go on to the QA test-case enrichment, then the Construction Design PR gate. Stop when that PR needs merging.")
+**AI Response**: "QA construction enrichment for event-transport (gates checked: the extension enabled; the inception specs present; no enrichment-delta.md before). Sources: functional-design/, nfr-requirements/ (as for every unit since U1, F38), nfr-design/, infrastructure-design/. TC-ET-001 to 024 enriched in place (codes, paths, placement: done when 3, 4, 6, 7 after TC-AC-093; D-ET-08's real E2 credential; the stream's end codes; the record's columns; Case 4). TC-ET-025 to 092 added (68), covering every verification target: the L1 and invariant matrices' markers, NFR-ET-01 to 19, NP-ET-01 to 18 (the user's four payload tests TC-ET-071, 072, 073, 049; jcs's mode 074; the start-up check 075; duplicates 076; the Body Form 077), and D-ID-ET-01 to 19 (the Compose model 065, the seal key 084, the smoke at S3's depth 085, the backup lists 086, the README 087, the memory measurement 088, the shared-secret refusals 089); U6's handed timelines TC-ET-028, 029. Index updated (92 cases); enrichment-delta.md written (git-ignored). Every QA enrichment marker replaced by TC ids; test-case sections added to nfr-design-patterns.md and infrastructure-design.md (§20)."
+**Context**: CONSTRUCTION, U7 event-transport: QA construction enrichment complete (a distinct step, announced).
+
+---
+
+## Construction Design PR Gate: Opened (U7 event-transport)
+**Timestamp**: 2026-11-13T01:21:56Z
+**User Input**: (the same instruction)
+**AI Response**: "Construction Design PR gate for event-transport: git repository present; branch dev, PR to main (the user's standing instruction, as for U1 to U6). Instructions and the PR description written (construction/working/event-transport-design-pr-checkpoint-instructions.md, event-transport-design-pr-body.md; git-ignored); aidlc-state.md PR Checkpoint State: PENDING. Committing on dev after the run for 25479cb passes, pushing, waiting for that run, then opening the PR and stopping when it needs merging."
+**Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate, PENDING.
+
+---

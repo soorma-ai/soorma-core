@@ -151,3 +151,30 @@ Marked in place, *Consistency fix from NFR Design (2026-11-13)*:
 - Functional Design domain-entities: *Delivery* (numbers as written)
 - Functional Design invariant-coverage-matrix: I9 (the row's wording)
 - NFR Requirements: NFR-ET-02 (how P is measured)
+
+---
+
+## Test Cases (assigned at QA construction enrichment, 2026-11-13)
+
+`inception/test-cases/event-transport/`:
+
+| Pattern | Test cases |
+|---|---|
+| NP-ET-01 | TC-ET-083 (closure), TC-ET-089 (configuration) |
+| NP-ET-02 | TC-ET-030 |
+| NP-ET-03 | TC-ET-043 |
+| NP-ET-04 | TC-ET-050, TC-ET-070 |
+| NP-ET-05 | TC-ET-071, 072, 073, 049 (the user's four), TC-ET-074, 075, 076, 047 |
+| NP-ET-06 | TC-ET-077, TC-ET-025 |
+| NP-ET-07 | TC-ET-078 |
+| NP-ET-08 | TC-ET-062, TC-ET-039 |
+| NP-ET-09 | TC-ET-055, 062, 063, 064 |
+| NP-ET-10 | TC-ET-079, 056, 057 |
+| NP-ET-11 | TC-ET-080 |
+| NP-ET-12 | TC-ET-054, TC-ET-016, TC-ET-017 |
+| NP-ET-13 | TC-ET-061, TC-ET-055 |
+| NP-ET-14 | TC-ET-042, TC-ET-081, TC-ET-034 |
+| NP-ET-15 | TC-ET-082 |
+| NP-ET-16 | TC-ET-069, TC-ET-068 |
+| NP-ET-17 | TC-ET-060 |
+| NP-ET-18 | TC-ET-083, TC-ET-085 (the e2e helpers through the smoke and journey) |
