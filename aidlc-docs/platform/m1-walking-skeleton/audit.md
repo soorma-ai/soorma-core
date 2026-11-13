@@ -4054,3 +4054,11 @@ Then carry items 1, 2, 4 and 5 in Group 4 (and item 3 in Group 8), through the f
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 5.
 
 ---
+
+## Code Generation Part 2: Group 6 (the contract)
+**Timestamp**: 2026-11-13T04:32:40Z
+**User Input**: (none)
+**AI Response**: "Group 5's push run 43363257136 green. Group 6 (business-rules §14): contract/event-ingest.openapi.yaml (publish POST /events 202; subscribe POST /subscriptions 200 text/event-stream, its events named in x-soorma-events: delivery the shared Delivery by reference, end a StreamEnd; PublishRequest, SubscribeRequest closed, the draft by reference; StreamEnd, StreamEndCode an open set: credential_expired, credential_refused, unavailable, superseded, overflow; agentCredential only). envelope.md: the draft's place on S4; The Delivery: P 64 KiB on JCS with numbers by source text, numbers as written, I-JSON not required, well-formed strings, duplicates keep the last value, S4's body limits and their guarantee, compact JSON recommended; a new The stream section; two rows in Rules checked in code. errors.md: steps 5 and 6 for the body form; payload_too_large widened, and its detail now states the pointer /payload that admit returns for a payload over P (D-CG-ET-27). pre-release.md: statement 2 no resumption; the 'not set' line replaced by the bound. CHANGELOG: every change compatible. U1's tooling gains the fourth surface (class 1, items added): SURFACES, generate-types, sides.ts, the package export. Fixtures, generated types, contract/test/event-ingest.test.ts (TC-ET-024, 038, 045, 053). No earlier-unit test changed; U1's components.test.ts and conventions test pass unedited (stop condition 10 not met). Gate passed: every check; 1549 passed, 13 skipped; S1, S2, S3 images with scans and installed-packages checks; smoke; outage; test:e2e (10 passed). The errors.md detail edit was made after the gate's format and test stages; format:check, check:generated, check:contract, lint, the contract's 323 tests, and the contract build re-run on it, all passing."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 6.
+
+---

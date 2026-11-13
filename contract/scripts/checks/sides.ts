@@ -40,6 +40,8 @@ export const requestSide: readonly string[] = [
   'control-gateway.openapi.yaml#/components/schemas/RegistrationSecretRequest',
   'data-gateway.openapi.yaml#/components/schemas/BootstrapRequest',
   'data-gateway.openapi.yaml#/components/schemas/BootstrapMaterial',
+  'event-ingest.openapi.yaml#/components/schemas/PublishRequest',
+  'event-ingest.openapi.yaml#/components/schemas/SubscribeRequest',
 ];
 
 export const receivedSide: readonly string[] = [
@@ -74,6 +76,8 @@ export const receivedSide: readonly string[] = [
   'control-gateway.openapi.yaml#/components/schemas/RegistrationSecret',
   'data-gateway.openapi.yaml#/components/schemas/AgentCredential',
   'data-gateway.openapi.yaml#/components/schemas/EnvironmentReference',
+  'event-ingest.openapi.yaml#/components/schemas/StreamEnd',
+  'event-ingest.openapi.yaml#/components/schemas/StreamEndCode',
 ];
 
 /**
