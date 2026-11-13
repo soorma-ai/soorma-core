@@ -150,7 +150,7 @@ Delivery payload bound, both set at NFR Requirements.
 | BR-FO-05 | **Superseding across instances**: the instance registering the new stream then sends a `supersede` message on E's channel with the `cid` and the new stream's order key (its opening time and id). Each instance in E that holds an open stream of that `cid` **ordered before** the new one ends it `superseded`. The order key is total, so two racing subscribes of one lineage leave exactly the later-ordered one open | D-ET-05, the user's addition |
 | BR-FO-06 | **Failure mode**: if a `supersede` message is lost, the earlier stream stays open and still ends at its own credential's `exp`, **at most L later**. Until then the lineage has two streams, and each Delivery reaches both | D-ET-05, the user's addition |
 | BR-FO-07 | Order keys come from each instance's clock: with skew between instances, the stream that survives a race may be the earlier one in real time; at most one survives either way | D-ET-05 |
-| BR-FO-08 | **Verification**: superseding is tested on one instance (BR-FO-04), and in process on two instances sharing one channel if the channel's design allows it (NFR Design). If the M1 stack runs one S4 per environment, **the cross-instance case is not exercised on the stack, and is a stated residual** (§17) | D-ET-05, the user's addition |
+| BR-FO-08 | **Verification**: superseding is tested on one instance (BR-FO-04), and in process on two instances sharing one channel if the channel's design allows it (NFR Design). If the M1 stack runs one S4 per environment, **the cross-instance case is not exercised on the stack, and is a stated residual** (§17) | D-ET-05, the user's addition; *consistency fix from NFR Requirements (2026-11-13, Q3 A)*: the channel is in process and **M1 runs exactly one S4 per environment** (NFR-ET-13), so the two-instance test shares one channel object in process, and the cross-instance residual stands |
 
 ## 8. Revocation and Expiry on an Open Stream (BR-SR)
 
@@ -241,6 +241,7 @@ open code widened.
 | **`payload_too_large` widened**: "or a publish's `payload` exceeds the Delivery payload bound" | `conventions/errors.md` | Compatible: an open code's scope widened, its meaning kept |
 | **The Delivery payload bound P** published (D-ET-27), measured on the JCS serialization | `conventions/envelope.md` (*The Delivery*); `pre-release.md` (the "not set in this version" line replaced) | Compatible: a value the conventions left to U7 |
 | **The stream**: one `end` event, its open codes, heartbeats, no resumption (`Last-Event-ID` ignored), at most one stream per lineage (a later subscribe supersedes) | `conventions/envelope.md` (*The Delivery*) or a new section; `pre-release.md` statement 2 (no resumption) | Compatible: states behaviour of a new surface |
+| **Compact JSON recommended** (*Consistency fix from NFR Requirements, 2026-11-13, Q2*): clients should serialize drafts and payloads "compact, without HTML-safe or other ASCII escaping (for example Go's `json.Encoder.SetEscapeHTML(false)`)"; the step-1 limits guarantee only NFR-ET-04's shape | `conventions/envelope.md` | Compatible: a statement |
 | The tag `contract-v0.1.0` on `main` | after U7's code PR merges (D-ET-33) | — |
 
 ## 15. Amendments and Corrections
@@ -285,6 +286,11 @@ open code widened.
 - **Live only (GAP-INT-003)**: a subscriber offline, superseded, overflowed, or on an instance
   that misses a channel message loses those events
 - **Every subscriber in E receives everything published in E** (no topics, A-2)
+- *Consistency fix from NFR Requirements (2026-11-13)*: **pretty-printing deeply nested unknown
+  fields can exceed the step-1 limits** (Q2: only NFR-ET-04's shape is guaranteed; `envelope.md`
+  recommends compact JSON); **PF §9's *Throughput* row is not demonstrated for S4 in M1** (Q3:
+  exactly one S4 per environment), carried to Build and Test and to the first hosted deployment
+  with the distributed channel
 
 ## 18. Forward Obligations
 

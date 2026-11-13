@@ -3596,3 +3596,66 @@ Then start NFR Requirements."
 **Context**: CONSTRUCTION, U7 event-transport: Functional Design approved.
 
 ---
+
+## Functional Design: Committed, Push Run Green (U7 event-transport)
+**Timestamp**: 2026-11-12T23:49:56Z
+**User Input**: (none)
+**AI Response**: "Functional Design committed on dev as a7d7804 (artifacts, state, audit, amendment notes) and pushed; push run 43330262892 completed success. No obligations posted: U7 is the last unit; its Build and Test obligations are in aidlc-state.md and business-rules §17, §18."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design recorded.
+
+---
+
+## NFR Requirements: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-12T23:49:56Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements plan written: construction/working/event-transport-nfr-requirements-plan.md (git-ignored). PF §9's profile carried forward (Step 1.5); the Availability row marked as met by the revocation read and not, in M1, by new publishes and subscribes (GAP-ET-001's work-around). Proposals P-01 to P-16. Questions, all assessed as technology: Q1 the Delivery payload bound P (A 64 KiB, recommended); Q2 the step-1 limits (A subscribe 64 KiB, publish 256 KiB, recommended); Q3 the fan-out channel (A in process, one S4 per environment, behind a port, recommended); Q4 R and the heartbeat (A 1 s and 15 s, recommended); Q5 the open-stream cap and send buffer (A 256 streams, 1 MiB, 5 s grace, recommended); Q6 latency reported (A 200 ms p95 publish and open, 250 ms publish to delivery, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements plan, awaiting answers.
+
+---
+
+## NFR Requirements: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-13T00:13:38Z
+**User Input**: "Answers to the NFR Requirements plan:
+
+Q1: A (64 KiB).
+Q2: A (subscribe 64 KiB, publish 256 KiB), with a precise guarantee.
+A forwarded envelope's unknown fields have no nesting limit; only the 16 KiB size and maxChainDepth bound it. Indentation grows with depth, so no limit admits every indented maximum-size draft.
+State the guarantee in the NFR: any maximum-size forwarding draft shaped like a real stamped envelope, meaning a chain of up to 32 entries, the defined fields, and a flat unknown field padding the envelope to 16 384 bytes in JCS. It is serialized with every non-ASCII character escaped as \uXXXX and indented with 2 spaces. For publish, add a maximum payload serialized the same way.
+P-15's test sends exactly that shape for both operations. The limit plus one byte is payload_too_large.
+Record as a residual that pretty-printing deeply nested unknown fields can exceed the limit. envelope.md recommends compact JSON (a statement, compatible).
+Q3: A, with the consequence stated.
+M1 runs exactly one S4 per environment, so PF §9's Throughput row is not demonstrated for S4 in M1.
+Record that as a residual carried to Build and Test and to the first hosted deployment, with the distributed channel.
+Infrastructure Design adds a Compose-model assertion that each environment has exactly one S4 service and no replicas.
+Q4: A.
+Q5: A. Infrastructure Design sizes S4's container memory for the 256 MiB worst case of stream buffers plus its baseline. Record the number.
+Q6: A.
+P-01 to P-16: accepted.
+Generate the NFR Requirements artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded; all technology. Q1 A (P = 64 KiB); Q2 A with the user's precise guarantee (a maximum-size forwarding draft shaped like a real stamped envelope, 32 chain entries, the defined fields, a flat unknown field padding to 16 384 JCS bytes, every non-ASCII character escaped, 2-space indentation; for publish a maximum payload serialized the same way; P-15's test sends exactly that shape; the limit + 1 byte is payload_too_large; the deeply nested pretty-printing residual; envelope.md recommends compact JSON); Q3 A with its consequence (exactly one S4 per environment; PF §9's Throughput row not demonstrated for S4 in M1, a residual to Build and Test and the first hosted deployment; an Infrastructure Design Compose-model assertion of exactly one S4 service and no replicas per environment); Q4 A; Q5 A with the memory sizing at Infrastructure Design (the number recorded there); Q6 A; P-01 to P-16 accepted. Generating the artifacts."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements plan answered.
+
+---
+
+## NFR Requirements: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-13T00:15:57Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "NFR Requirements artifacts generated in construction/event-transport/nfr-requirements/: nfr-requirements.md (PF §9's profile carried forward, the Availability row met by the revocation read and not by new operations in M1 per GAP-ET-001, the Throughput row per instance only; NFR-ET-01 to 24; residuals §4; obligations to NFR Design, Infrastructure Design, Build and Test; security and invariant compliance) and tech-stack-decisions.md (T-ET-01 to 05: NestJS on Fastify; SSE on the raw reply; the channel in house and in process behind a port; packages/jcs for the payload; the rest unchanged; no new dependency). NFR-ET-04 states the user's guarantee exactly, with why it fits (escaping at most triples non-ASCII bytes: envelope at most 49 152 bytes plus about 2 KB of indentation; payload at most 196 608 plus indentation). Consistency fixes marked in Functional Design: business-rules §14 (compact JSON recommended), BR-FO-08, §17 (the two new residuals); l1-coverage-matrix L1-29. The two new residuals added to aidlc-state.md's Carried to Build and Test (from U7). Presented the standard two-option completion message; next stage NFR Design."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements complete, awaiting approval.
+
+---
+
+## NFR Requirements Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T00:21:13Z
+**User Input**: "Continue to Next Stage. NFR Requirements are approved, with one addition.
+
+NFR-ET-04's guarantee assumes ASCII is unchanged. Common serializers escape some ASCII by default: Go's encoding/json writes <, >, & as <, >, & (6×), and some write / as \/.
+
+Add this to §4's indentation residual.
+Add to NFR-ET-06's recommendation: "compact, without HTML-safe or other ASCII escaping (for example Go's json.Encoder.SetEscapeHTML(false))".
+NFR-ET-04's guarantee and the limits are unchanged.
+Commit the artifacts with the marked Functional Design consistency fixes, state and audit on dev, push, and wait for green. Then start NFR Design."
+**AI Response**: "NFR Requirements approved with the user's addition: §4's residual names ASCII escaping by common serializers (Go's encoding/json writes <, >, & as <, >, &, six times the bytes; some write / as \/); NFR-ET-06's recommendation reads 'compact, without HTML-safe or other ASCII escaping (for example Go's json.Encoder.SetEscapeHTML(false))'; NFR-ET-04 and the limits unchanged. Committing on dev, pushing, waiting for the run; then NFR Design."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements approved.
+
+---
