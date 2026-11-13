@@ -4193,3 +4193,11 @@ Then Groups 8 to 11 as planned, each through the full gate. Stop when the code P
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 8.
 
 ---
+
+## Code Generation Part 2: Group 9 (e2e) through the gate
+**Timestamp**: 2026-11-13T07:07:21Z
+**User Input**: (none)
+**AI Response**: "Group 8's push run 43379960906 green (aed1ba0). Group 9: e2e/event-transport-support.ts (raw HTTPS publish and subscribe through stack-client, an SSE reader, seeding for U7's own file only, sealing with the stack's own seal key for the cases S4 cannot produce). In e2e/agent-registration.test.ts: TC-AC-093's one line (D-CG-ET-12: a Map beside secrets, and one set per instance inside the existing loop; no assertion changed; class 1) and done when 3, 4, 6, 7 after TC-AC-093, chained from U5's and U6's real A, B, their secrets and credentials (TC-ET-001; 002, 003, 004; 006 with a real E2 credential and the reverse; 007), B's stream opened in the first and read in each. e2e/event-transport.test.ts: TC-ET-005, 009, 014, 015, 017, 018, 020, 023, 028, 031, 037, 039, 040, 041, 048, 071, 072, 090. One fix before the gate: three assertions had counted the S3 bootstrap's own record; they now read S4's records only. Gate passed: every check; 1699 passed; S1 to S4 images; the self-check in S4's image; smoke; outage; test:e2e 27 passed (3 files)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 9.
+
+---

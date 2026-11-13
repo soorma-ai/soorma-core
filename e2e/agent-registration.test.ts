@@ -10,6 +10,10 @@
 //     each
 //  2. Every rejection, by raw call (TC-AR-043), and the same credential from
 //     inside E's network (TC-AR-044)
+//  2a. Done when 2 (U6, TC-AC-093): A and B bootstrap and renew at S3; then
+//     done when 3, 4, 6, 7 (U7, D-ET-34): B subscribes and A publishes at E's
+//     S4, the Delivery and the publish record read; a credential of E2 at E,
+//     and E's at E2, refused; a draft setting a stamped field refused
 //  3. Backup and restore (TC-AR-059, 056, 060 on the real dump; D-CG-AR-03):
 //     back up e, empty e's store, restore into it, e-migrate applies nothing,
 //     the app role's privileges hold, S2 back up; the registrations survived
@@ -23,8 +27,23 @@ import { describe, expect, it } from 'vitest';
 import { ARCHIVE_MAGIC } from '../deploy/local/scripts/backup-archive.ts';
 import { backup } from '../deploy/local/scripts/stack-backup.ts';
 import { restore } from '../deploy/local/scripts/stack-restore.ts';
-import { doneWhenTwo } from './agent-credentials-support.ts';
 import {
+  agentCredentialOf,
+  bootstrapAgent,
+  claims,
+  doneWhenTwo,
+} from './agent-credentials-support.ts';
+import {
+  deliveries,
+  draft,
+  publishAt,
+  records,
+  subscribeAt,
+  type EventStream,
+} from './event-transport-support.ts';
+import { registeredAgent } from '../deploy/local/scripts/stack-client.ts';
+import {
+  call,
   code,
   COMPOSE,
   docker,
@@ -40,11 +59,15 @@ import {
 const HELD = ['agent:register', 'event:publish', 'event:subscribe', 'grant:human', 'human:manage'];
 const A = `a-${Date.now().toString(36)}`;
 const B = `b-${Date.now().toString(36)}`;
+/** E2's S2 on the host's loopback. */
+const E2_S2 = 8443;
 
 let K = '';
 let credential = '';
 /** Done when 1's secrets, kept for done when 2 (U6 TC-AC-093). */
 const secrets = new Map<string, string>();
+/** Done when 2's agent credentials, kept for done when 3, 4, 6, 7 (U7 D-CG-ET-12). */
+const credentials = new Map<string, string>();
 
 /** psql as the store's superuser, over the container's local socket (peer). */
 const sql = (statement: string): string =>
@@ -121,6 +144,7 @@ describe.skipIf(!E2E)('U5 agent-registration on the local stack', () => {
       { agent: B, secret: secrets.get(B) ?? '', instance: 'b-1' },
     ]);
     for (const [i, agent] of [A, B].entries()) {
+      credentials.set(agent, (json(proof.renewals[i]!) as { credential: string }).credential);
       for (const r of [proof.bootstraps[i]!, proof.renewals[i]!]) {
         expect(r.status, r.body).toBe(200);
         expect(r.protocol).toBe('TLSv1.3');
@@ -143,6 +167,128 @@ describe.skipIf(!E2E)('U5 agent-registration on the local stack', () => {
         `${B}:renewAgentCredential`,
       ].sort(),
     );
+  });
+
+  // U7 (D-ET-34): done when 3, 4, 6, 7 chain from done when 2's real agent
+  // credentials (A's instance a-1, B's b-1), by raw calls at E's S4
+  // (event-transport-support.ts). B's stream opens in the first and is read in
+  // each; it is closed after done when 7.
+  let stream: EventStream | undefined;
+  const PAYLOAD = { order: 42, lines: ['tea', 'scones'], note: 'done when 3' };
+
+  it('TC-ET-001: done when 3, B subscribed receives A’s Delivery', async () => {
+    stream = await subscribeAt('e', credentials.get(B) ?? '');
+    expect(stream.status).toBe(200);
+    expect(stream.protocol).toBe('TLSv1.3');
+    expect(stream.contentType).toBe('text/event-stream; charset=utf-8');
+    const published = await publishAt('e', credentials.get(A) ?? '', PAYLOAD);
+    expect(published.status, published.body).toBe(202);
+    expect(published.body).toBe('');
+    expect(await stream.until(() => deliveries(stream!).length === 1)).toBe(true);
+    const [d] = deliveries(stream);
+    expect(
+      Object.keys(d!)
+        .filter((k) => k !== 'raw')
+        .sort(),
+    ).toEqual(['envelope', 'payload', 'seal']);
+    expect(d!.payload).toEqual(PAYLOAD);
+  });
+
+  it('TC-ET-002, 003, 004: done when 4, the envelope stamped and the publish attributed', () => {
+    const [d] = deliveries(stream!);
+    const env = d!.envelope;
+    expect(env.scope).toEqual({ organization: 'o1', project: 'p1', environment: 'e' });
+    expect(env.originMode).toBe('autonomous');
+    expect(env.actorChain).toEqual([{ agent: A, instance: 'a-1' }]);
+    expect(env).not.toHaveProperty('reBroadening');
+    expect(env).not.toHaveProperty('delegatingPrincipal');
+    expect(env.envelopeVersion).toBe(1);
+    // TC-ET-003: the trace context A asserted, and no tracestate since A sent none.
+    expect(env.traceContext).toEqual(draft().traceContext);
+    expect(d!.seal.length).toBeGreaterThan(0);
+    // TC-ET-004: the publish record.
+    const [record] = records('e', A, 'publish');
+    expect(record).toMatchObject({
+      organization: 'o1',
+      project: 'p1',
+      environment: 'e',
+      actor_kind: 'agent',
+      registration: A,
+      instance: 'a-1',
+      sponsor: PRINCIPAL.principal,
+      credential_kind: 'agentCredential',
+      credential_id: claims(credentials.get(A) ?? '').cid,
+      chain: [{ agent: A, instance: 'a-1' }],
+      origin: { originMode: 'autonomous' },
+      rebroadening_load_bearing: false,
+      rebroadening_hop: null,
+    });
+  });
+
+  it('TC-ET-006: done when 6, a credential of E2 publishes nothing at E, and E’s nothing at E2', async () => {
+    // H, in E2: an environment credential, agent:register and event:publish, A
+    // registered there, a secret, an instance bootstrapped at E2's S3.
+    const signIn = await call('/sign-ins', { body: { principal: PRINCIPAL, secret: K } });
+    const token = (json(signIn) as { signIn: { token: string } }).signIn.token;
+    const issued = await call('/environment-credentials', { token, port: E2_S2 });
+    expect(issued.status).toBe(200);
+    const e2 = (json(issued) as { credential: string }).credential;
+    const granted = await call('/grants', {
+      token: e2,
+      port: E2_S2,
+      body: { target: PRINCIPAL, permissions: ['agent:register', 'event:publish'] },
+    });
+    expect(granted.status).toBe(200);
+    const secret = await registeredAgent(e2, 'e2', A, {
+      standingPermissions: ['event:publish'],
+      autonomyDeclared: true,
+    });
+    expect(secret).not.toBe('');
+    const booted = await bootstrapAgent('e2', A, secret, 'a-1');
+    expect(booted.status).toBe(200);
+    const fromE2 = agentCredentialOf(booted);
+    const before = stream!.events.length;
+    const atE = await publishAt('e', fromE2, { from: 'e2' });
+    expect({ status: atE.status, code: code(atE) }).toEqual({
+      status: 401,
+      code: 'credential_refused',
+    });
+    const atE2 = await publishAt('e2', credentials.get(A) ?? '', { from: 'e' });
+    expect({ status: atE2.status, code: code(atE2) }).toEqual({
+      status: 401,
+      code: 'credential_refused',
+    });
+    await new Promise((r) => setTimeout(r, 1000));
+    expect(stream!.events.length).toBe(before);
+  });
+
+  it('TC-ET-007: done when 7, a draft setting a stamped field is refused, naming it', async () => {
+    const before = stream!.events.length;
+    for (const field of [
+      'envelopeVersion',
+      'scope',
+      'originMode',
+      'delegatingPrincipal',
+      'actorChain',
+      'reBroadening',
+    ]) {
+      const r = await publishAt(
+        'e',
+        credentials.get(A) ?? '',
+        { field },
+        { ...draft(), [field]: 1 },
+      );
+      expect({ status: r.status, code: code(r) }, field).toEqual({
+        status: 400,
+        code: 'stamped_field_set',
+      });
+      expect((json(r) as { errors: { pointer: string }[] }).errors[0]?.pointer).toBe(
+        `/draft/${field}`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+    expect(stream!.events.length).toBe(before);
+    stream!.close();
   });
 
   it('TC-AR-043: every rejection holds for a raw call to the stack', async () => {
