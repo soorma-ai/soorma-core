@@ -118,6 +118,8 @@ describe('TC-EHA-068: environment migrations are locked, checksummed, and run as
           '0002_registrations',
           '0003_agent_credentials',
           '0004_attribution_envelope_free',
+          '0005_attribution_envelope_bearing',
+          '0006_event_ingest_role',
         ]);
       } finally {
         await a.end();
@@ -203,7 +205,7 @@ describe('TC-EHA-047 (the store half): CHECK constraints refuse an inconsistent 
     try {
       await insert(app, human);
       await insert(app, { actor_kind: 'configuration' });
-      await insert(app, agent);
+      await insert(app, { ...agent, operation: 'exchangeBootstrap' });
       await insert(app, { ...agent, ...envelope });
       await insert(app, {
         ...agent,

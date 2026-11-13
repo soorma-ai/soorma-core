@@ -349,7 +349,7 @@ describe('TC-AR-007, 040: attribution, and the sponsor recoverable from the reco
         id,
         recordedAt: g.clock.now(),
         environment: { organization: 'o1', project: 'p1', environment: 'e' },
-        operation: 'constructedAgentOperation',
+        operation: 'exchangeBootstrap',
         actor: { kind: 'agent', registration: a, instance: 'i1', sponsor: h.principal },
       }),
     );

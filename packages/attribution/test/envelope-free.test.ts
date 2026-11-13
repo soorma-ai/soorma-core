@@ -60,8 +60,8 @@ describe('TC-AC-036: an envelope-free operation’s record carries no envelope',
     },
   );
 
-  it('other agent operations are unaffected, with or without an envelope (U7 decides)', () => {
+  it('other agent operations carry an envelope (U7 D-ET-07, the reverse rule)', () => {
     expect(() => checkRecord(record('publish', { envelope }))).not.toThrow();
-    expect(() => checkRecord(record('constructedAgentOperation'))).not.toThrow();
+    expect(() => checkRecord(record('constructedAgentOperation'))).toThrow(AttributionRecordError);
   });
 });

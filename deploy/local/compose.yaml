@@ -284,6 +284,7 @@ services:
       - e-db-app-password
       - e-db-migrator-password
       - e-db-data-password
+      - e-db-ingest-password
       - e-signing-key-1
       - e-caller-key
       - e-log-pseudonym-key
@@ -469,6 +470,7 @@ services:
       - e2-db-app-password
       - e2-db-migrator-password
       - e2-db-data-password
+      - e2-db-ingest-password
       - e2-signing-key-1
       - e2-caller-key
       - e2-log-pseudonym-key
@@ -673,6 +675,7 @@ secrets:
   e-db-app-password: { file: ./.secrets/e-db-app-password }
   e-db-migrator-password: { file: ./.secrets/e-db-migrator-password }
   e-db-data-password: { file: ./.secrets/e-db-data-password }
+  e-db-ingest-password: { file: ./.secrets/e-db-ingest-password }
   e-data-gateway-tls: { file: ./.secrets/e-data-gateway-tls }
   e-agent-signing-key-1: { file: ./.secrets/e-agent-signing-key-1 }
   e-bootstrap-counter-secret: { file: ./.secrets/e-bootstrap-counter-secret }
@@ -686,6 +689,7 @@ secrets:
   e2-db-app-password: { file: ./.secrets/e2-db-app-password }
   e2-db-migrator-password: { file: ./.secrets/e2-db-migrator-password }
   e2-db-data-password: { file: ./.secrets/e2-db-data-password }
+  e2-db-ingest-password: { file: ./.secrets/e2-db-ingest-password }
   e2-data-gateway-tls: { file: ./.secrets/e2-data-gateway-tls }
   e2-agent-signing-key-1: { file: ./.secrets/e2-agent-signing-key-1 }
   e2-bootstrap-counter-secret: { file: ./.secrets/e2-bootstrap-counter-secret }

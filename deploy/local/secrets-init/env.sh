@@ -31,7 +31,7 @@ find /out -mindepth 1 -delete
 # The environment store (postgres, 999).
 copy db 999 \
   "$env-db-tls" "$env-db-superuser-password" "$env-db-app-password" \
-  "$env-db-migrator-password" "$env-db-data-password"
+  "$env-db-migrator-password" "$env-db-data-password" "$env-db-ingest-password"
 
 # {env}-migrate (distroless nonroot, 65532): the migrator password and the CA only.
 copy migrate 65532 \

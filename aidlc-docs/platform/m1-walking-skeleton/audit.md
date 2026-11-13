@@ -3975,3 +3975,74 @@ Wait for Group 1's CI run to pass, then carry these in Group 2 through the full 
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 3.
 
 ---
+
+## Code Generation Part 2: Stop Before Group 4 (stop condition 1) (U7 event-transport)
+**Timestamp**: 2026-11-13T03:21:33Z
+**User Input**: (none)
+**AI Response**: "Group 3 committed and pushed as cde6b98 (its run in progress). Before writing Group 4, read every earlier-unit test the reverse rule (P7's writer and the 0005 CHECK, D-ET-07) reaches. Beyond the approved U5 change, two more need a changed assertion or value, so class 3: stop condition 1. (1) U6, packages/attribution/test/envelope-free.test.ts, 'other agent operations are unaffected, with or without an envelope (U7 decides)': expects checkRecord of an agent record for 'constructedAgentOperation' with no envelope not to throw; the reverse rule refuses it. (2) U4, packages/env-store/test/store.test.ts, TC-EHA-047 store half, 'accepts a consistent record of each actor kind': inserts an agent row with operation 'grantToHuman' and no chain; the 0005 CHECK refuses it. Also foreseen for Group 8, so it can be decided now: (3) U6, deploy/test/data-gateway.test.ts, 'agent signing keys only in data-gateway/; verify halves listed and copied nowhere (until U7)': U7 lists and copies the verify halves into event-ingest/ (D-ID-ET-06). No Group 4 code written. Diffs and options put to the user."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 4 (class-3 test changes).
+
+---
+
+## Code Generation Part 2: Stop Resolved, Three Class-3 Changes Approved (U7 event-transport)
+**Timestamp**: 2026-11-13T03:24:41Z
+**User Input**: "Option A: all three approved as class 3, with one addition to item 3.
+
+envelope-free.test.ts: approved exactly as shown.
+TC-EHA-047: approved exactly as shown. If any refusal case's expected constraint name changes, stop.
+data-gateway.test.ts: approved as shown, plus a check that matches your own wording, "listed only on {env}-secrets-init".
+In the rendered model, no service other than {env}-secrets-init lists any *-agent-verify-key-* secret.
+In each environment's copies, every verify-key name starts with that environment's own ${env}-.
+The signing-key rule stays exactly as it is. Confirm the final form against the rendered model in Group 8, and stop if it differs from this.
+Record all three with their diffs. Every other earlier-unit test stays unchanged; otherwise stop. Wait for Group 3's CI run to pass, then continue with Group 4."
+**AI Response**: "Recorded as D-CG-ET-23 with the three diffs: (1) U6 envelope-free.test.ts, exactly as shown; (2) U4 store.test.ts TC-EHA-047, exactly as shown, a stop if any refusal case's expected constraint name changes; (3) U6 deploy/test/data-gateway.test.ts, as shown plus the user's two checks (no service but {env}-secrets-init lists any agent verify key in the rendered model; every verify-key name in an environment's copies starts with that environment's own prefix), the signing-key rule exactly as it is, the final form confirmed against the rendered model in Group 8, a stop if it differs. Every other earlier-unit test unchanged, otherwise stop. Group 4 after Group 3's run is green."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, three class-3 changes approved.
+
+---
+
+## Code Generation Part 2: Stop Before Group 4, a Fourth Class-3 Change (U7 event-transport)
+**Timestamp**: 2026-11-13T03:25:11Z
+**User Input**: (none since the approval of three class-3 changes)
+**AI Response**: "While starting Group 4, found a fourth earlier-unit test the reverse rule reaches, missed in the first search: U6, packages/env-store/test/agent-credentials.test.ts, TC-AC-036 store half, 'accepts both operations as an agent with no envelope, and leaves other operations alone', which inserts an agent record for 'constructedAgentOperation' with no chain as the owner; the 0005 CHECK refuses it. Then searched every test that writes attribution records (constructedAgentOperation appears only in the three files already known plus this one; restore.test.ts writes a human record; S3's tests write only exchangeBootstrap and renewAgentCredential): the list is now complete at four. Stop condition 1. No Group 4 code written. A diff put to the user."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 4 again.
+
+---
+
+## Code Generation Part 2: Items 4 and 5 Approved; a Sweep Asked For (U7 event-transport)
+**Timestamp**: 2026-11-13T03:28:03Z
+**User Input**: "Item 4: approved exactly as shown, class 3.
+
+Item 5, one more, found in review. It doesn't fail, so no stop condition catches it.
+
+U4's packages/attribution/test/record.test.ts, case "refuses an agent actor without a sponsor", uses the default operation grantToHuman with no envelope, and asserts only AttributionRecordError.
+Under the reverse rule it is refused for the missing envelope too, so it would still pass if the sponsor check were removed.
+Approved as class 3:
+
+-    ['an agent actor without a sponsor', base({ ...agent, sponsor: '' })],
++    ['an agent actor without a sponsor', base({ ...agent, sponsor: '' }, { operation: 'exchangeBootstrap' })],
+With that, the missing sponsor is its only cause.
+Before Group 4's gate, sweep for the same hazard. Look at every earlier-unit refusal test that writes or checks an agent attribution record and asserts only an error type or rejects, without a constraint name or message. List each one with the reason it is refused after 0005 and the reverse rule.
+
+If the refusal still has a single cause, no change.
+If it now has two causes, stop with the proposed one-value fix, as above.
+Then carry items 1, 2, 4 and 5 in Group 4 (and item 3 in Group 8), through the full gate. Push, and wait for green."
+**AI Response**: "Items 4 and 5 recorded as approved class-3 changes (D-CG-ET-24), exactly as shown. Sweeping every earlier-unit refusal test that writes or checks an agent attribution record and asserts only an error type or a rejection, listing each with its cause after 0005 and the reverse rule; a stop with a one-value fix for any with two causes."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, before Group 4.
+
+---
+
+## Code Generation Part 2: The Sweep, No Further Change (U7 event-transport)
+**Timestamp**: 2026-11-13T03:28:39Z
+**User Input**: (none)
+**AI Response**: "Swept every earlier-unit refusal test that writes or checks an agent attribution record and asserts only an error type or a rejection, without a constraint name or message. After 0005 and the reverse rule, each has one cause: (a) U4 record.test.ts TC-EHA-047 writer half: 'a human actor with an envelope' (a human actor carries no envelope; the reverse rule binds agents only); 'a configuration actor with an envelope' (likewise); 'an agent actor without a sponsor' (two causes before item 5; with item 5's exchangeBootstrap, one: the sponsor); 'a hop without load-bearing', 'load-bearing with no hop', 'a hop outside the chain' (each an agent record with an envelope, so the reverse rule is met; one cause: the re-broadening rule). (b) U6 envelope-free.test.ts: exchangeBootstrap and renewAgentCredential with an envelope (envelope-free ops are exempt from the reverse rule; one cause); the same by a human (the reverse rule binds agents only; one cause); item 1's new assertion (one cause: the reverse rule). Named-constraint cases, checked too: U4 store.test.ts TC-EHA-047 store half, 'an agent actor without a sponsor' fails attribution_agent_actor and the new attribution_envelope_bearing_operations, and PostgreSQL reports CHECK failures in name order, so the expected name is unchanged (the gate confirms); every other case has a chain or a non-agent actor. U6 agent-credentials.test.ts TC-AC-036 refusals: exchangeBootstrap with a chain and renewAgentCredential by a human each fail only attribution_envelope_free_operations. Unrelated: credentials agent-records.test.ts (a lineage constraint on agent_credentials) and e2e privilege refusals (permission denied). No two-cause case: no further change."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, the sweep before Group 4.
+
+---
+
+## Code Generation Part 2: Group 4 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T03:45:43Z
+**User Input**: (none)
+**AI Response**: "Group 3's push run 43358300877 green. Group 4: P7's ENVELOPE_BEARING_AGENT_OPERATIONS and the reverse rule in checkRecord; 0005_attribution_envelope_bearing.sql (the CHECK attribution_envelope_bearing_operations, alone); 0006_event_ingest_role.sql (column-level SELECT on registrations' eight columns, SELECT on the two revocation tables, INSERT on attribution_records); soorma_env_ingest in env-roles.sql, the init script, env-pg_hba.conf; {env}-db-ingest-password in stack:init, env.sh's db/, each {env}-secrets-init; P4's sponsorForRecord. Earlier-unit test changes applied exactly as approved (D-CG-ET-25): U5 registration.test.ts; U6 envelope-free.test.ts; U4 store.test.ts (every refusal case kept its constraint name); U6 agent-credentials.test.ts; U4 record.test.ts (Prettier wrapped items 4 and 5 over several lines, tokens unchanged); class 1: TC-EHA-068's list, TC-AC-076's list, U4's copier list, the harness's role. Flagged, not changed: TC-AC-076's title 'applied all four' is stale with six listed. New: envelope-bearing.test.ts (TC-ET-042), ingest-role.test.ts (TC-ET-081, 082). Gate from fresh volumes passed: 1490 passed, 13 skipped; S2 and S3 images, scans, installed-packages checks; smoke; outage; test:e2e (10 passed)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 4.
+
+---

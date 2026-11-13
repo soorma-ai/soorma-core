@@ -106,12 +106,15 @@ export function stackInit(options: { configPath?: string; dir?: string } = {}): 
     // S3's own database role (U6 D-ID-AC-07, 08): its password, read by the
     // store's init script by this name, as the superuser's is.
     const data = `${env.environment}-db-data-password`;
+    // S4's own database role (U7 D-ID-ET-04), likewise.
+    const ingest = `${env.environment}-db-ingest-password`;
     for (const name of [
       env.logPseudonym,
       env.databasePassword,
       env.migratorPassword,
       superuser,
       data,
+      ingest,
     ])
       write(name, `${key256()}\n`);
     for (const name of [
@@ -120,6 +123,7 @@ export function stackInit(options: { configPath?: string; dir?: string } = {}): 
       ...env.callerPublic,
       superuser,
       data,
+      ingest,
     ])
       environmentNames.add(name);
 
