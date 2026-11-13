@@ -3935,3 +3935,35 @@ Carry it in Group 1, run the gate, push, and wait for green."
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 1.
 
 ---
+
+## Code Generation Part 2: Stop Before Group 2 (stop conditions 3, 12) (U7 event-transport)
+**Timestamp**: 2026-11-13T02:42:05Z
+**User Input**: (none)
+**AI Response**: "Group 1 committed and pushed as 1719b3c (its run in progress). Before writing Group 2, read U3's tests against the Body Form's design; three of them conflict with the user's condition that every U3 test stays unchanged, so no Group 2 code is written. (1) packages/authority/test/admission.test.ts, TC-AE-031: a compile-time assertion that its list of codes is exactly every RefusalCode (P2's closed union); the Body Form's bound returns payload_too_large, which is not a RefusalCode. (2) packages/authority/test/structure.test.ts, TC-AE-039 step 1: 'no service imports P2' (no file under services/*/src imports @soorma/envelope); NP-ET-03's allowlist has S4 import loadSealKeyRing from @soorma/envelope. (3) The same test pins packages/authority/package.json's dependencies to exactly @soorma/envelope and @soorma/policy-decision-seam; measuring the payload in authority with jcs's source mode would add @soorma/jcs. Options put to the user, with recommendations."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 2.
+
+---
+
+## Code Generation Part 2: Stop Resolved (Group 2) (U7 event-transport)
+**Timestamp**: 2026-11-13T02:49:03Z
+**User Input**: "Good stop. Answers:
+
+A. Add payload_too_large to P2's RefusalCode, and the one item to TC-AE-031's list. It's class 1 (required by the approved Body Form, an item added, nothing removed), and I approve it as the single exception to my "every U3 test unchanged" condition. Record it with its diff. Every other U3 test stays unchanged; otherwise stop.
+The recommendation: @soorma/authority re-exports loadSealKeyRing and the SealKeyRing type (additive). S4 imports nothing from @soorma/envelope, and TC-AE-039 stays unchanged. Mark NP-ET-03's allowlist as a consistency fix: from @soorma/authority only, createEnvelopeAdmission, createCachingAgentFacts, loadSealKeyRing, and types.
+The recommendation: the Body Form's member bound takes a measure function from the caller, and authority's manifest is unchanged.
+In authority's own tests, a stub measure covers the ordering, the pointer, and the limit plus one byte.
+S4's composition supplies jcs's source-mode measure. S4's bound tests (the large number at the limit, and TC-ET-071, 072, 073) assert that, so a wrong measure would fail there.
+Record the decision in the plan.
+Wait for Group 1's CI run to pass, then carry these in Group 2 through the full gate, push, and wait for green."
+**AI Response**: "Recorded as D-CG-ET-18 (payload_too_large in P2's RefusalCode; TC-AE-031's list gains that one item, class 1, the user's single approved exception to 'every U3 test unchanged'; every other U3 test unchanged, otherwise stop), D-CG-ET-19 (authority re-exports loadSealKeyRing and SealKeyRing; S4 imports nothing from @soorma/envelope; TC-AE-039 unchanged; NP-ET-03 marked), D-CG-ET-20 (the Body Form's member bound takes a caller-supplied measure; authority's manifest unchanged; a stub measure in authority's tests for the ordering, the pointer, and the limit plus one byte; S4 supplies jcs's source-mode measure, asserted by S4's bound tests; NP-ET-06 marked). Group 2 after Group 1's run is green."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, the Group 2 stop resolved by the user.
+
+---
+
+## Code Generation Part 2: Group 2 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T03:00:26Z
+**User Input**: (none)
+**AI Response**: "Group 1's push run 43353830147 green. Group 2: P2 gains payload_too_large in RefusalCode and the reasons member_invalid and member_too_large, and exports byPointer; P3's EnvelopeRequest gains the optional Body Form (the draft's member; required members; a caller-supplied measure and bound), step 5 and step 6 as BR-BF-03 to 05; @soorma/authority re-exports loadSealKeyRing, SealKeyRingError, SealKeyInput, SealKeyRing (D-CG-ET-19); authority's manifest unchanged. The one U3 test change, the user's approved exception (D-CG-ET-18): TC-AE-031's codes list gains 'payload_too_large'. Every other U3 test unedited. New: body-form.test.ts. Gate passed: every check; 1472 tests passed, 13 skipped; S2's image, secret scan, installed-packages check; stack smoke; outage; test:e2e on a fresh stack (10 passed); down -v."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 2.
+
+---

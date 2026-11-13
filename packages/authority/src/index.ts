@@ -14,6 +14,9 @@ export {
   type AdmissionDependencies,
   type AdmissionResult,
   type Admitted,
+  type BodyForm,
+  type BodyFormMember,
+  type MemberMeasure,
   type CheckedAgentContext,
   type EnvelopeAdmission,
   type EnvelopeRefusedEvent,
@@ -52,3 +55,11 @@ export {
 } from './human.ts';
 export { checkRegistrationRequest, type RegistrationRequestCheck } from './registration.ts';
 export { resolveOrigin, type Origin } from './origin.ts';
+// U7 (D-CG-ET-19): the seal ring's loader, re-exported so S4 builds the entry
+// point's key ring without importing P2 (TC-AE-039: no service imports P2).
+export {
+  loadSealKeyRing,
+  SealKeyRingError,
+  type SealKeyInput,
+  type SealKeyRing,
+} from '@soorma/envelope';
