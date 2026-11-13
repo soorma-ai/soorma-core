@@ -3,14 +3,24 @@
 // S4's edge on real listeners: TC-ET-061 (the throttle, and a stream holds no
 // permit), TC-ET-055 (the open-stream cap), TC-ET-059 (the stream outlives the
 // server's ordinary timeouts), TC-ET-068 (the logs name events, never a
-// secret, a token, a seal, an envelope, a payload, a trace value, or a human).
-import { connect, type Socket } from 'node:net';
-import { Semaphore, type Timers } from '@soorma/service-kit';
+// secret, a token, a seal, an envelope, a payload, a trace value, or a human),
+// TC-ET-067 (TLS 1.3 at the edge, streams included; TLS 1.3, verify-full, to
+// the store).
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { request as httpsRequest } from 'node:https';
+import { connect, type AddressInfo, type Socket } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { TLSSocket } from 'node:tls';
+import { poolConfig, Semaphore, type Timers } from '@soorma/service-kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   testEnvDatabase,
   type TestEnvDatabase,
 } from '../../../packages/env-store/test/harness/database.ts';
+import { createEdgeApp } from '../src/apps.ts';
+import { storeSettings } from '../src/main.ts';
 import { SECURITY_EVENTS } from '../src/security-log.ts';
 import { MAX_STREAMS } from '../src/settings.ts';
 import {
@@ -239,5 +249,130 @@ describe('TC-ET-068: S4’s logs carry no secret, token, seal, envelope, payload
     } finally {
       await g.close();
     }
+  });
+});
+
+describe('TC-ET-067: TLS 1.3 at S4’s edge, streams included, and to its store', () => {
+  let dir: string;
+  let g: Ingest;
+  beforeAll(async () => {
+    g = await ingest(db);
+    dir = mkdtempSync(join(tmpdir(), 'soorma-tls-'));
+    execFileSync(
+      'openssl',
+      [
+        'req',
+        '-x509',
+        '-newkey',
+        'ec',
+        '-pkeyopt',
+        'ec_paramgen_curve:P-256',
+        '-nodes',
+        '-keyout',
+        join(dir, 'key.pem'),
+        '-out',
+        join(dir, 'cert.pem'),
+        '-days',
+        '1',
+        '-subj',
+        '/CN=localhost',
+        '-addext',
+        'subjectAltName=DNS:localhost,IP:127.0.0.1',
+      ],
+      { stdio: 'ignore' },
+    );
+  });
+  afterAll(async () => {
+    await g?.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  function call(
+    port: number,
+    path: string,
+    ca: Buffer,
+    options: { maxVersion?: 'TLSv1.2' | 'TLSv1.3'; credential?: string; body?: string } = {},
+  ): Promise<{ status: number; protocol: string | null; type: string | undefined }> {
+    return new Promise((resolve, reject) => {
+      const req = httpsRequest(
+        {
+          host: '127.0.0.1',
+          servername: 'localhost',
+          port,
+          path,
+          method: 'POST',
+          ca,
+          agent: false,
+          ...(options.maxVersion ? { maxVersion: options.maxVersion } : {}),
+          headers: {
+            'content-type': 'application/json',
+            ...(options.credential ? { authorization: `Bearer ${options.credential}` } : {}),
+          },
+        },
+        (res) => {
+          const protocol = (res.socket as TLSSocket).getProtocol();
+          // A stream: its head is enough; the connection is then closed.
+          resolve({ status: res.statusCode ?? 0, protocol, type: res.headers['content-type'] });
+          res.destroy();
+        },
+      );
+      req.on('error', reject);
+      req.end(options.body);
+    });
+  }
+
+  it('the edge serves TLS 1.3, streams included, and refuses TLS 1.2', async () => {
+    const pem = Buffer.concat([
+      readFileSync(join(dir, 'key.pem')),
+      readFileSync(join(dir, 'cert.pem')),
+    ]);
+    const app = await createEdgeApp(g.runtime, { pem });
+    try {
+      await app.listen(0, '127.0.0.1');
+      const port = (app.getHttpServer().address() as AddressInfo).port;
+      const ca = readFileSync(join(dir, 'cert.pem'));
+      expect(await call(port, '/events', ca)).toMatchObject({ status: 401, protocol: 'TLSv1.3' });
+      await expect(call(port, '/events', ca, { maxVersion: 'TLSv1.2' })).rejects.toThrow();
+      const b = await agentWith(g, SUBSCRIBER);
+      expect(
+        await call(port, '/subscriptions', ca, {
+          credential: b.token,
+          body: JSON.stringify({ draft: draft() }),
+        }),
+      ).toEqual({ status: 200, protocol: 'TLSv1.3', type: 'text/event-stream; charset=utf-8' });
+    } finally {
+      g.runtime.streams.endAll('unavailable');
+      g.scheduler.advance(10_000);
+      await app.close();
+    }
+  });
+
+  it('the store connection is S4’s own role over TLS 1.3, verify-full against the stack CA', () => {
+    const ca = Buffer.from('CA');
+    const settings = storeSettings(
+      {
+        organization: 'o1',
+        project: 'p1',
+        environment: 'e',
+        edge: { port: 8443 },
+        health: { port: 8080 },
+        database: {
+          host: 'env-db.e.soorma.internal',
+          port: 5432,
+          name: 'soorma_env',
+          user: 'soorma_env_ingest',
+        },
+      },
+      {
+        edgeTls: Buffer.from('TLS'),
+        databasePassword: 'ingest-e',
+        databaseCa: ca,
+        agentVerifyKeys: [],
+        sealKeys: { current: 's1', keys: [] },
+      },
+    );
+    expect(settings.user).toBe('soorma_env_ingest');
+    const pool = poolConfig(settings);
+    expect(pool.ssl).toMatchObject({ rejectUnauthorized: true, minVersion: 'TLSv1.3', ca });
   });
 });

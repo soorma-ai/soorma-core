@@ -248,8 +248,17 @@ r.on('error',(e)=>console.log(JSON.stringify({status:0,code:e.code})));r.end(JSO
       ).toBeGreaterThan(0);
 
       // Empty e's store: remove its volume, and start the store alone.
-      docker([...COMPOSE, 'stop', 'e-control-gateway', 'e-data-gateway', 'e-db']);
-      docker([...COMPOSE, 'rm', '-f', 'e-control-gateway', 'e-data-gateway', 'e-db', 'e-migrate']);
+      docker([...COMPOSE, 'stop', 'e-control-gateway', 'e-data-gateway', 'e-event-ingest', 'e-db']);
+      docker([
+        ...COMPOSE,
+        'rm',
+        '-f',
+        'e-control-gateway',
+        'e-data-gateway',
+        'e-event-ingest',
+        'e-db',
+        'e-migrate',
+      ]);
       docker(['volume', 'rm', 'soorma-local_e-db-data']);
       docker([...COMPOSE, 'up', '-d', '--wait', 'e-db']);
       expect(sql("SELECT count(*) FROM pg_tables WHERE schemaname = 'public'")).toBe('0');
@@ -278,7 +287,15 @@ r.on('error',(e)=>console.log(JSON.stringify({status:0,code:e.code})));r.end(JSO
         );
 
       // S2 back; a new credential from a new sign-in; the registrations survived.
-      docker([...COMPOSE, 'up', '-d', '--wait', 'e-control-gateway', 'e-data-gateway']);
+      docker([
+        ...COMPOSE,
+        'up',
+        '-d',
+        '--wait',
+        'e-control-gateway',
+        'e-data-gateway',
+        'e-event-ingest',
+      ]);
       const fresh = await environmentCredential(K);
       expect((await post('/registration-secrets', fresh, { registration: A })).status).toBe(200);
       const again = await post('/registrations', fresh, { agent: B, standingPermissions: [] });

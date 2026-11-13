@@ -57,3 +57,9 @@ copy control-gateway 65532 \
 copy data-gateway 65532 \
   "$env-data-gateway-tls" stack-ca-cert "$env-db-data-password" \
   "$env-agent-signing-key-1" "$env-bootstrap-counter-secret"
+
+# {env}-event-ingest (distroless nonroot, 65532; U7 D-ID-ET-06): its own role's
+# password; the agent verify half and the seal ring, never a signing key.
+copy event-ingest 65532 \
+  "$env-event-ingest-tls" stack-ca-cert "$env-db-ingest-password" \
+  "$env-agent-verify-key-1" "$env-seal-key-1"

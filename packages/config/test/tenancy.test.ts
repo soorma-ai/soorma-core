@@ -351,7 +351,7 @@ describe("TC-AE-033 step 1: an environment's seal keys, in the seed keys' shape 
     ).toBeGreaterThan(0);
   });
 
-  it("the U2 stack's tenancy.yaml still validates, with no sealKeys", () => {
+  it("the stack's tenancy.yaml still validates", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const stack = join(here, '../../../deploy/local/config/tenancy.yaml');
     expect(loadSettings({ configPath: stack }).environments.length).toBeGreaterThan(0);

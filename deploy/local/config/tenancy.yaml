@@ -2,7 +2,8 @@
 #
 # The local stack's tenancy (Infrastructure Design §3; D-CG-OI-12): one
 # organization, one project, two environments, and their first Admin; each
-# environment's S2 part (U4 Infrastructure Design §3). It
+# environment's S2 part (U4 Infrastructure Design §3), S3 part (U6), and S4
+# part with its seal key ring (U7). It
 # holds no secret: each secret is named here and read from /run/secrets.
 # `pnpm stack:init` generates every named secret into deploy/local/.secrets/.
 organization: o1
@@ -53,6 +54,11 @@ projects:
     environments:
       - id: e
         firstAdmin: h@example.com
+        # The environment's seal key ring (U7 D-ID-ET-05): read only by its S4.
+        sealKeys:
+          current: s1
+          keys:
+            - { id: s1, secret: e-seal-key-1 }
         controlGateway:
           edge: { port: 8443, tls: e-control-gateway-tls }
           health: { port: 8080 }
@@ -90,8 +96,27 @@ projects:
             verify: [e-agent-signing-key-1]
           bound:
             counter: e-bootstrap-counter-secret
+        # The environment's S4 (U7 Infrastructure Design §6): its own role, the
+        # agent verify halves only, no time value.
+        eventIngest:
+          edge: { port: 8443, tls: e-event-ingest-tls }
+          health: { port: 8080 }
+          database:
+            host: env-db.e.soorma.internal
+            port: 5432
+            name: soorma_env
+            user: soorma_env_ingest
+            password: e-db-ingest-password
+            ca: stack-ca-cert
+          keys:
+            agentVerify: [e-agent-verify-key-1]
       - id: e2
         firstAdmin: h@example.com
+        # The environment's seal key ring (U7 D-ID-ET-05): read only by its S4.
+        sealKeys:
+          current: s1
+          keys:
+            - { id: s1, secret: e2-seal-key-1 }
         controlGateway:
           edge: { port: 8443, tls: e2-control-gateway-tls }
           health: { port: 8080 }
@@ -129,3 +154,17 @@ projects:
             verify: [e2-agent-signing-key-1]
           bound:
             counter: e2-bootstrap-counter-secret
+        # The environment's S4 (U7 Infrastructure Design §6): its own role, the
+        # agent verify halves only, no time value.
+        eventIngest:
+          edge: { port: 8443, tls: e2-event-ingest-tls }
+          health: { port: 8080 }
+          database:
+            host: env-db.e2.soorma.internal
+            port: 5432
+            name: soorma_env
+            user: soorma_env_ingest
+            password: e2-db-ingest-password
+            ca: stack-ca-cert
+          keys:
+            agentVerify: [e2-agent-verify-key-1]

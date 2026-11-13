@@ -15,6 +15,7 @@ import { parse } from 'yaml';
 import { SECURITY_EVENTS as S1_EVENTS } from '../../services/org-gateway/src/security-log.ts';
 import { SECURITY_EVENTS as S2_EVENTS } from '../../services/control-gateway/src/security-log.ts';
 import { SECURITY_EVENTS as S3_EVENTS } from '../../services/data-gateway/src/security-log.ts';
+import { SECURITY_EVENTS as S4_EVENTS } from '../../services/event-ingest/src/security-log.ts';
 
 const dir = resolve(import.meta.dirname, '../monitoring');
 const load = (name: string): unknown => parse(readFileSync(join(dir, name), 'utf8')) as unknown;
@@ -39,7 +40,7 @@ const alerts = load('alerts.yaml') as Alerts;
 const dashboard = load('dashboard.yaml') as Dashboard;
 const union: string[] = [...S1_EVENTS, ...S2_EVENTS];
 /** Every service's events, each name once (U6: S3 shares four of S2's names). */
-const all: string[] = [...new Set([...union, ...S3_EVENTS])];
+const all: string[] = [...new Set([...union, ...S3_EVENTS, ...S4_EVENTS])];
 
 describe('TC-EHA-087: the monitoring files validate, and name only defined events', () => {
   it('validate against their schemas', () => {
@@ -52,6 +53,10 @@ describe('TC-EHA-087: the monitoring files validate, and name only defined event
     expect(new Set(union).size).toBe(union.length);
     expect(S3_EVENTS.filter((e) => union.includes(e)).sort()).toEqual(
       ['credential.issued', 'credential.renewed', 'store.unavailable', 'throttle.refused'].sort(),
+    );
+    // U7: S4 shares exactly store.unavailable and throttle.refused with S1 to S3.
+    expect(S4_EVENTS.filter((e) => [...union, ...S3_EVENTS].includes(e)).sort()).toEqual(
+      ['store.unavailable', 'throttle.refused'].sort(),
     );
     expect(new Set(alerts.events).size).toBe(alerts.events.length);
     expect([...alerts.events].sort()).toEqual([...all].sort());

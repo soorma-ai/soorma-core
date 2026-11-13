@@ -4157,3 +4157,39 @@ Then run the full Group 7 gate, commit, push, wait for green, and stop at the pl
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
 
 ---
+
+## Code Generation Part 2: the review stop after Group 7
+**Timestamp**: 2026-11-13T05:58:08Z
+**User Input**: (none)
+**AI Response**: "Group 7's push run 43373880589 green (f76380a). Stopped at the planned review of S4's code (Step 22, D-CG-ET-03), with the report the plan lists: the check order with the store down; the Body Form path into admit; the parse step and the start-up self-check; the stream's lifecycle; the attribution record with hop; the throttle permit at stream open; every earlier-unit test change so far as a before/after diff with its class. Group 8 not started."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, review stop after Group 7.
+
+---
+
+## Code Generation Part 2: the user's review of Group 7
+**Timestamp**: 2026-11-13T06:03:38Z
+**User Input**: "The Group 7 review: approved. Continue with Group 8.
+
+Checked: CI 43373880589 passed on f76380a. The frame is built before the record, with the payload in canonical form. openedAt never repeats or goes back on an instance. The supersede reply (D-CG-ET-31) leaves exactly one stream; record it as enforcing BR-FO-05/07, not changing them. The check order, the throttle release, hop and the self-check all match your report. The list of earlier-unit test changes matches what I approved.
+For Group 8:
+
+Item 3, the U6 deploy/test/data-gateway.test.ts change, exactly as approved:
+the verify halves only in event-ingest/ and listed on {env}-secrets-init;
+no service other than {env}-secrets-init lists any *-agent-verify-key-*;
+verify-key names in each environment's copies start with ${env}-;
+the signing-key rule unchanged.
+S4's memory peak (D-ID-ET-17) at the worst case: 256 streams open on one S4, each held near its 1 MiB buffer by a subscriber that isn't reading, while publishes continue. Record the peak against mem_limit: 512m. Above 460 MiB, stop.
+Record a known risk for after M1: with several S4 instances, clock skew between them can let an older stream win a supersede. The agent's new stream ends superseded and the old one runs until its credential expires. M1 runs one S4 per environment, so it doesn't arise there. Add it to the residuals in U7's business rules (§17/§18), not to Build and Test's obligations.
+Then Groups 8 to 11 as planned, each through the full gate. Stop when the code PR is ready to merge."
+**AI Response**: "Group 7 approved. D-CG-ET-31 recorded as enforcing BR-FO-05/07, not changing them. Group 8: item 3 exactly as approved; S4's memory peak at the worst case (256 streams, each near its 1 MiB buffer, a non-reading subscriber, publishes continuing), recorded against mem_limit 512m, a stop above 460 MiB; the post-M1 clock-skew supersede risk in business-rules §17/§18. Then Groups 8 to 11, each through the full gate; stop when the code PR is ready to merge."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, review after Group 7 approved; Group 8 begins.
+
+---
+
+## Code Generation Part 2: Group 8 (the stack) through the gate
+**Timestamp**: 2026-11-13T06:37:08Z
+**User Input**: (none)
+**AI Response**: "Group 8 complete through the full gate. The stack: e-event-ingest and e2-event-ingest in compose.yaml (an *event-ingest anchor, mem_limit 512m, 127.0.0.1:8446 and 8447, their own network only, no replicas); each environment's tenancy.yaml part gains sealKeys and eventIngest; stack:init writes {env}-seal-key-1 (never overwriting), stack:certs {env}-event-ingest-tls; env.sh copies S4's five secrets; each {env}-secrets-init lists them. Smoke §12 at S3's depth (every check passed in E and E2: health, port, hardening and the memory limit, the five secrets, TLS 1.2 refused, the 401 Problem, a registered agent's own round trip with its scoped, sealed Delivery, soorma_env_ingest's attributes and S4's session as it over TLS 1.3, E's credential refused at E2's S4, the log scan); stack:outage Case 4 (S4 serves the round trip with S1 stopped, running and restarted). S4's alert rules (D-CG-ET-34); U7's own tests: deploy/test/event-ingest.test.ts (TC-ET-065), stack-init-ingest.test.ts (TC-ET-084), event-ingest-monitoring.test.ts (TC-ET-069), the in-process TLS test (TC-ET-067). **S4's memory (TC-ET-088; D-CG-ET-33)**: idle 67.6 MiB; the worst case (256 stalled streams each about 0.99 MiB unread, then three waves of 64 concurrent 256 KiB publishes) peaked at 396.9 MiB, 77.5 % of mem_limit 512m, under the 460 MiB stop; no overflow; the limit unchanged. The post-M1 clock-skew supersede risk added to business-rules §17 and §18 (the user's). Earlier-unit test changes: P9 tenancy.test.ts title only (class 3, approved); U6 deploy/test/data-gateway.test.ts item 3 (class 3, approved; its per-environment reading recorded in D-CG-ET-34 and confirmed against the rendered model); U4 compose-model.test.ts (class 1, items added); U4 deploy/test/monitoring.test.ts (class 1: S4's events in the union, the overlap pinned); U5's backup round trip (class 1, e-event-ingest in three lists); stack-client.ts registeredAgent's optional parameter (class 1, with evidence: §11, Cases 3 and the S3 tests pass unchanged). Two stale U4 titles flagged, not changed. Gate passed: every check; 1699 passed, 13 skipped; S1 to S4 images with scans and installed-packages checks; the self-check in S4's image; smoke; outage; test:e2e (10 passed)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 8.
+
+---

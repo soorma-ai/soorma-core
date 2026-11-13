@@ -22,9 +22,12 @@
 //   derived public key that no longer matches its private key refuses the run
 // - Each environment's S3 secrets (U6 D-ID-AC-05, 06, 08): its agent signing
 //   keys (Ed25519), each with its verify half `{env}-agent-verify-key-{n}`
-//   (SPKI PEM, mounted nowhere until U7; a half that no longer matches its key
+//   (SPKI PEM, mounted only into S4's event-ingest/ since U7; a half that no longer matches its key
 //   refuses the run, as the caller keys'), the bound's counter secret, and the
 //   data role's password
+// - Each environment's S4 secrets (U7 D-ID-ET-04, 05): its seal keys
+//   `{env}-seal-key-{n}` (256 bits, base64url) and the ingest role's password;
+//   its agent verify halves are S3's, now mounted into S4's subdirectory
 // Secrets never pass through environment variables or arguments.
 import { createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -144,6 +147,15 @@ export function stackInit(options: { configPath?: string; dir?: string } = {}): 
       write(dg.counter, `${key256()}\n`);
       if (dg.databasePassword !== data) write(dg.databasePassword, `${key256()}\n`);
       for (const name of dg.secrets) environmentNames.add(name);
+    }
+
+    // S4 (U7 D-ID-ET-05, 06): the seal key ring, 256 CSPRNG bits each,
+    // base64url, never overwritten; its verify halves are S3's, written above.
+    const ig = env.eventIngest;
+    if (ig) {
+      for (const name of ig.sealKeys) write(name, `${key256()}\n`);
+      if (ig.databasePassword !== ingest) write(ig.databasePassword, `${key256()}\n`);
+      for (const name of ig.secrets) environmentNames.add(name);
     }
   }
 
