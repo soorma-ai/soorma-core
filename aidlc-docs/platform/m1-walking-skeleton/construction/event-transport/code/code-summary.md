@@ -173,7 +173,7 @@ TC-AC-076's list: **class 1**; its title: **class 3, approved, title only** (the
 
 ### U4 `deploy/test/compose-model.test.ts`
 
-**Class 1**: items added only (D-ID-ET-14). Its title "published: 127.0.0.1:8441 to 8445 only" is now stale; flagged, not changed.
+**Class 1**: items added only (D-ID-ET-14). Its title: **class 3, approved by the user at the close-out (2026-11-13), title only**; the diff after the list items.
 
 ```diff
 +                'event-ingest',
@@ -188,6 +188,13 @@ TC-AC-076's list: **class 1**; its title: **class 3, approved, title only** (the
 +          `${env}-event-ingest`,
 +        'e-event-ingest 127.0.0.1:8446->8443',
 +        'e2-event-ingest 127.0.0.1:8447->8443',
+```
+
+The title (close-out):
+
+```diff
+-  it('published: 127.0.0.1:8441 to 8445 only, each an edge; no store port', () => {
++  it('published: 127.0.0.1:8441 to 8447 only, each an edge; no store port', () => {
 ```
 
 ### U6 `deploy/test/data-gateway.test.ts`
@@ -226,7 +233,7 @@ TC-AC-076's list: **class 1**; its title: **class 3, approved, title only** (the
 
 ### U4 `deploy/test/monitoring.test.ts`
 
-**Class 1**: S4's events joined to the union; S4's overlap pinned. Its title naming S1's to S3's events is now stale; flagged, not changed.
+**Class 1**: S4's events joined to the union; S4's overlap pinned. Its title: **class 3, approved by the user at the close-out (2026-11-13), title only**; the diff after the items.
 
 ```diff
 +import { SECURITY_EVENTS as S4_EVENTS } from '../../services/event-ingest/src/security-log.ts';
@@ -236,6 +243,13 @@ TC-AC-076's list: **class 1**; its title: **class 3, approved, title only** (the
 +    expect(S4_EVENTS.filter((e) => [...union, ...S3_EVENTS].includes(e)).sort()).toEqual(
 +      ['store.unavailable', 'throttle.refused'].sort(),
 +    );
+```
+
+The title (close-out):
+
+```diff
+-  it("list exactly the union of S1's, S2's, and S3's events, each once", () => {
++  it("list exactly the union of S1's to S4's events, each once", () => {
 ```
 
 ### U3 `packages/config/test/tenancy.test.ts`

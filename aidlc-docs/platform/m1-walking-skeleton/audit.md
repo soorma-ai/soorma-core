@@ -4209,3 +4209,48 @@ Then Groups 8 to 11 as planned, each through the full gate. Stop when the code P
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 10.
 
 ---
+
+## Code Generation Part 2: Group 11, the code PR (stop for the merge)
+**Timestamp**: 2026-11-13T08:13:24Z
+**User Input**: (none)
+**AI Response**: "Group 10's push run 43386853866 green (ce4b43b). Opened soorma-core#25 from dev to main (Refs #10, #3). Every check passed: Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant. GitHub: OPEN, MERGEABLE, CLEAN. Stopped for the merge (the user's standing rule). Nothing is recorded as merged. The tag contract-v0.1.0 waits for GitHub to show #25 merged and for the user's go-ahead."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 11; stop for the merge.
+
+---
+
+## Code Generation: the user's close-out instruction; #25 merged
+**Timestamp**: 2026-11-13T08:22:22Z
+**User Input**: "#25 is merged: merge commit c1e3d7f on main (head ce4b43b).
+
+Close-out, in this order:
+
+Record the merge in audit.md (after the uncommitted stop entry) and in the state file: U7 Code Generation complete, code PR #25 merged as c1e3d7f.
+Bring dev up to origin/main (fast-forward to c1e3d7f).
+Tag contract-v0.1.0: the user's go-ahead, given.
+Make it an annotated tag on main's merge commit c1e3d7f, not on dev or any close-out commit: git tag -a contract-v0.1.0 c1e3d7f -m \"Wire contract 0.1.0 (U1 to U7, M1 walking skeleton)\", then git push origin contract-v0.1.0.
+Check that git ls-remote --tags origin contract-v0.1.0 resolves to c1e3d7f.
+Record it in the audit log and the state file.
+Where the docs say \"unreleased: contract-v0.1.0 is not tagged\", leave the historical decision records as they are, and note the tag in the state file only.
+Two title-only changes, approved now as class 3. Change the titles only; keep each assertion and list.
+U4's Compose-model test: \"published: 127.0.0.1:8441 to 8445 only\" becomes \"published: 127.0.0.1:8441 to 8447 only\".
+U4's monitoring test: replace \"S1's, S2's, and S3's events\" with \"S1's to S4's events\".
+Add both to the code summary's list of earlier-unit test changes as before/after diffs.
+Commit the close-out on dev and push. Run the fast checks plus the two affected deploy test files, and wait for CI to pass.
+Comment on #10. Issues #3 to #10 stay open until Build and Test. The comment states:
+the code is merged as c1e3d7f;
+contract-v0.1.0 is tagged on c1e3d7f;
+the close-out commit;
+what is carried to Build and Test: TC-ET-036, the residuals in §17 and §18, and the handover to soorma-sdk.
+Then stop and report. Build and Test starts in a new session."
+**AI Response**: "Verified on GitHub before recording: #25 MERGED at 2026-11-13T08:16:52Z, merge commit c1e3d7f3a71eddb0a2bce8e7d27fd736181c667d on main (parents 37ec632 and ce4b43b); no contract-v0.1.0 tag existed. **U7 Code Generation complete; code PR #25 merged as c1e3d7f.** Next, in the user's order: dev fast-forwarded to c1e3d7f; the annotated tag on c1e3d7f, pushed and checked; the two title-only changes (class 3, approved) with their diffs in the code summary; the close-out commit, checks, CI; the comment on #10; stop."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation complete; close-out.
+
+---
+
+## Code Generation close-out: dev fast-forwarded; contract-v0.1.0 tagged; two titles
+**Timestamp**: 2026-11-13T08:23:13Z
+**User Input**: (none; the user's close-out instruction above)
+**AI Response**: "dev fast-forwarded to origin/main, c1e3d7f. With the user's go-ahead: git tag -a contract-v0.1.0 c1e3d7f -m 'Wire contract 0.1.0 (U1 to U7, M1 walking skeleton)', pushed; git ls-remote --tags origin shows refs/tags/contract-v0.1.0 (the tag object fb4b3ca) peeling to c1e3d7f3a71eddb0a2bce8e7d27fd736181c667d (refs/tags/contract-v0.1.0^{}). The docs that call 0.1.0 unreleased are left as historical decision records; the state file records the tag. Two title-only changes, class 3, approved at the close-out, each assertion and list unchanged: U4 deploy/test/compose-model.test.ts 'published: 127.0.0.1:8441 to 8445 only' to '... 8441 to 8447 only'; U4 deploy/test/monitoring.test.ts \"S1's, S2's, and S3's events\" to \"S1's to S4's events\"; both added to the code summary as before/after diffs."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation close-out.
+
+---
