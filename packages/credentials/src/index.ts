@@ -5,7 +5,12 @@
 // builds the human environment credential; U6 adds the agent credential, its
 // own key ring's use (D-AC-03), revocation reads and the fail-closed cache,
 // and the three constants B, L, M (NP-AC-01).
-export { loadEnvironmentKeyRing, type EnvironmentKeyRing } from './key-ring.ts';
+export {
+  loadEnvironmentKeyRing,
+  loadVerifyKeyRing,
+  type EnvironmentKeyRing,
+  type VerifyKeyRing,
+} from './key-ring.ts';
 export {
   checkCredentialRecord,
   endCredential,

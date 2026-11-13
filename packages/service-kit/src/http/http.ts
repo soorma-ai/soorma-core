@@ -3,7 +3,9 @@
 // The Fastify instance under each NestJS listener (U2 P-07, P-08), shared by
 // every service (U4 NP-EHA-12, 15):
 // - TLS 1.3 only, from the configured key and certificate (one PEM file)
-// - request bodies at most 16 KiB (NFR-OI-27); larger is payload_too_large
+// - request bodies at most 16 KiB (NFR-OI-27); larger is payload_too_large.
+//   U7 (NP-ET-04): an optional map gives named routes their own limit, applied
+//   as each route registers; every other path keeps 16 KiB
 // - every body kept as raw bytes: S1 parses JSON itself, after the earlier
 //   checks of the check order, and the internal listener hashes the exact
 //   bytes (P-06)
@@ -31,7 +33,12 @@ export interface ListenerTls {
   pem: Buffer;
 }
 
-export function createAdapter(tls?: ListenerTls): FastifyAdapter {
+/** U7 (NP-ET-04): per-route body limits, in bytes, by exact route path. */
+export interface AdapterOptions {
+  readonly routeBodyLimits?: Readonly<Record<string, number>>;
+}
+
+export function createAdapter(tls?: ListenerTls, options: AdapterOptions = {}): FastifyAdapter {
   const adapter = new FastifyAdapter({
     bodyLimit: BODY_LIMIT,
     genReqId: () => randomUUID(),
@@ -40,6 +47,11 @@ export function createAdapter(tls?: ListenerTls): FastifyAdapter {
     ...(tls ? { https: { key: tls.pem, cert: tls.pem, minVersion: 'TLSv1.3' as const } } : {}),
   });
   const fastify = adapter.getInstance();
+  const limits = options.routeBodyLimits ?? {};
+  fastify.addHook('onRoute', (route) => {
+    const limit = Object.hasOwn(limits, route.url) ? limits[route.url] : undefined;
+    if (limit !== undefined) route.bodyLimit = limit;
+  });
   fastify.removeAllContentTypeParsers();
   fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_request, body, done) => {
     done(null, body);

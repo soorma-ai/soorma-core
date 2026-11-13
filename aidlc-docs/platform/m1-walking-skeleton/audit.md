@@ -3967,3 +3967,11 @@ Wait for Group 1's CI run to pass, then carry these in Group 2 through the full 
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 2.
 
 ---
+
+## Code Generation Part 2: Group 3 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T03:20:24Z
+**User Input**: (none)
+**AI Response**: "Group 2's push run 43356004674 green. Group 3: P5's VerifyKeyRing and loadVerifyKeyRing (SPKI verify halves; a private key, a repeated key, none, a non-Ed25519 key, a non-key refused), verifyAgentCredential taking the wider type; service-kit's createAdapter gains optional per-route body limits. No earlier-unit test changed (stop condition 4 held). New: verify-ring.test.ts (TC-ET-078), route-limits.test.ts (TC-ET-070). Gate passed: every check; 1478 passed, 13 skipped; S1, S2, S3 images with secret scans and installed-packages checks; smoke; outage; test:e2e (10 passed); down -v."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 3.
+
+---
