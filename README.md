@@ -66,8 +66,8 @@ One journey runs through all four services. It is M1's definition of done:
    `Delivery` carries an envelope with `e`'s scope, origin `autonomous`, and the actor chain `[A]`,
    all stamped and sealed by S4.
 5. **The boundary holds.** A credential from `e2` publishes nothing at `e`, and one from `e`
-   nothing at `e2`. A
-   draft that tries to set a platform-stamped field is refused, naming the field.
+   nothing at `e2`. A draft that tries to set a platform-stamped field is refused, naming the
+   field.
 
 The executable version of this journey is
 [`e2e/agent-registration.test.ts`](e2e/agent-registration.test.ts): raw HTTPS calls, one step
@@ -132,6 +132,7 @@ works once, so on a stack that a smoke or e2e run already used, the run fails at
 with a 403:
 
 ```sh
+pnpm stack:init                               # once per clone; never overwrites a secret
 pnpm run build                                # the e2e tests import the built workspace
 pnpm stack:down -v && pnpm stack:up           # fresh volumes, every time
 pnpm test:e2e                                 # the M1 journey, then credential and event edge cases
@@ -139,7 +140,8 @@ pnpm stack:down -v
 ```
 
 `pnpm stack:outage` demonstrates the environments working while the organization level is
-stopped. It also needs a fresh stack.
+stopped. It also needs a fresh stack, and `pnpm stack:init` once per clone first (it never
+overwrites a secret).
 
 ### Checks and measurements
 
