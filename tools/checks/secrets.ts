@@ -6,11 +6,12 @@
 //
 //   node tools/checks/run.ts secrets                   the tracked files
 //   node tools/checks/run.ts secrets --image <ref>     an image's exported file system
+//                                                      (one export, one pass: image-scan.ts)
 //
 // Patterns are shaped like the real thing (full length), so a placeholder in
 // a test (`soorma_em_x`) does not match. Labelled test fixtures are listed in
 // FIXTURE_PATHS; deploy/local/.secrets/ is git-ignored and never tracked.
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { walkTar } from './tar.ts';
@@ -74,15 +75,4 @@ export async function tarFindings(stream: AsyncIterable<Buffer>): Promise<Findin
     if (file.content) findings.push(...textFindings(file.name, file.content.toString('latin1')));
   });
   return findings;
-}
-
-export async function imageFindings(image: string): Promise<Finding[]> {
-  const id = execFileSync('docker', ['create', image], { encoding: 'utf8' }).trim();
-  try {
-    const exported = spawn('docker', ['export', id], { stdio: ['ignore', 'pipe', 'inherit'] });
-    const findings = await tarFindings(exported.stdout as AsyncIterable<Buffer>);
-    return findings.map((f) => ({ ...f, location: `${image}:/${f.location}` }));
-  } finally {
-    execFileSync('docker', ['rm', id], { stdio: 'ignore' });
-  }
 }

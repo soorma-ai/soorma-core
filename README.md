@@ -72,11 +72,14 @@ and [`services/control-gateway/README.md`](services/control-gateway/README.md); 
 Engine 26 and Docker Compose 2.26.0 or later, which `pnpm stack:up` checks.
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of these
-on every push and pull request, against a PostgreSQL service container; builds
-the S1 and S2 images, scans their file systems for secrets, runs the stack smoke
-test, and, on a fresh stack, the S1-stopped demonstration;
-keeps a CycloneDX SBOM of each build; and reviews dependency changes on pull
-requests.
+on every push to `dev` and every pull request, against a PostgreSQL service
+container; keeps a CycloneDX SBOM of each build; and reviews dependency changes
+on pull requests. Its image job builds the four images (S1 to S4), checks each
+image's file system for secrets and its installed packages in one pass over one
+export, then runs the stack smoke test, the S1-stopped demonstration, and the
+e2e proofs, each on a fresh stack. The image job is skipped when every changed
+path is under `aidlc-docs/`. A push to `main`, reached only through pull
+requests, keeps only the SBOM of `main`'s commit.
 
 ## Licence
 

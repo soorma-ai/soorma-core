@@ -317,7 +317,7 @@ describe('TC-EHA-089: no network spans two environments; only the edges are publ
       if (role(name) === 'secrets-init') expect(services[name]?.network_mode, name).toBe('none');
   });
 
-  it('published: 127.0.0.1:8441 to 8445 only, each an edge; no store port', () => {
+  it('published: 127.0.0.1:8441 to 8447 only, each an edge; no store port', () => {
     const published = Object.entries(services).flatMap(([name, s]) =>
       (s.ports ?? []).map(
         (p) => `${name} ${p.host_ip ?? '0.0.0.0'}:${p.published ?? ''}->${p.target}`,

@@ -49,7 +49,7 @@ describe('TC-EHA-087: the monitoring files validate, and name only defined event
     expect(ajv.validate(schema('dashboard.schema.json'), dashboard), ajv.errorsText()).toBe(true);
   });
 
-  it("list exactly the union of S1's, S2's, and S3's events, each once", () => {
+  it("list exactly the union of S1's to S4's events, each once", () => {
     expect(new Set(union).size).toBe(union.length);
     expect(S3_EVENTS.filter((e) => union.includes(e)).sort()).toEqual(
       ['credential.issued', 'credential.renewed', 'store.unavailable', 'throttle.refused'].sort(),

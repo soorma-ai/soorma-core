@@ -3,6 +3,14 @@
 # soorma-core CI (T-14; NFR-WC-12, 17, 18, 20; M1-TECH-04; SECURITY-10, 13).
 # Every action is pinned by commit SHA, with its release tag in a comment.
 # Permissions default to read-only; no job widens them.
+#
+# #26: each image is exported and read once for both of its file-system checks;
+# the image job is skipped when every changed path is under aidlc-docs/; and a
+# push to main runs only the SBOM for main's commit (sbom-main). main is
+# reached through pull requests, whose run tested the merge result as of that
+# run; main can move before the merge (a Dependabot PR targets main), and that
+# merged tree is then untested. The decision and this remaining risk:
+# aidlc-docs/tooling/ci-image-job/inception/requirements/requirements.md.
 name: CI
 
 on:
@@ -20,6 +28,7 @@ concurrency:
 jobs:
   build:
     name: Build, check, and test
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-24.04
     # The package and service tests' database (Q-CG-2 A; D-CG-OI-15): the same
     # pinned PostgreSQL as the stack, without TLS. The harness creates the
@@ -117,8 +126,54 @@ jobs:
           path: sbom/soorma-core.cdx.json
           if-no-files-found: error
 
+  # #26: does the image job run? It is skipped only when the diff can be
+  # computed, is not empty, and every path in it is under aidlc-docs/ (no
+  # image, stack script, or e2e test reads them; .dockerignore excludes them).
+  # Anything else runs it: a new branch, a force-push whose base is gone, an
+  # empty diff, a path git quotes, either side of a rename. If this job fails,
+  # the image job is skipped as its dependant and the workflow fails.
+  changes:
+    name: Changed files (does the image job run?)
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    outputs:
+      images: ${{ steps.diff.outputs.images }}
+    steps:
+      - name: Check out, with history for the diff
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # A push compares with the commit before it; a pull request, its base
+      # with GitHub's test merge commit. Commit SHAs only, through env.
+      - name: Decide whether the image job runs
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          base="$PUSH_BEFORE"
+          if [ "$EVENT" = pull_request ]; then base="$PR_BASE"; fi
+          images=true
+          if [ -n "$base" ] && [ "$base" != 0000000000000000000000000000000000000000 ] \
+            && files=$(git diff --name-only --no-renames "$base" "$HEAD_SHA" --); then
+            echo "Changed files, $base..$HEAD_SHA:"
+            printf '%s\n' "$files"
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qv '^aidlc-docs/'; then
+              images=false
+            fi
+          else
+            echo "The diff could not be computed: the image job runs."
+          fi
+          echo "images=$images" | tee -a "$GITHUB_OUTPUT"
+
   image-and-stack:
     name: Images, image secret scans, stack smoke test, and the S1-stopped demonstration
+    needs: changes
+    if: needs.changes.outputs.images == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Check out
@@ -141,25 +196,21 @@ jobs:
       - name: Build the S1 image
         run: docker build -f services/org-gateway/Dockerfile -t soorma/org-gateway:local .
 
-      - name: Check the image's file system for secrets
-        run: node tools/checks/run.ts secrets --image soorma/org-gateway:local
-
-      # U6 NP-AC-10 (TC-AC-083): the positive control. S1 links P10, so the
+      # One export, read once, for both checks (#26): the secret patterns, and
+      # U6 NP-AC-10 (TC-AC-083), the positive control. S1 links P10, so the
       # installed-packages check must find it here, or it proves nothing.
-      - name: Check the S1 image holds @soorma/org-identity (the positive control)
-        run: node tools/checks/run.ts image-packages --image soorma/org-gateway:local --expect @soorma/org-identity
+      - name: Check the S1 image's file system for secrets, and that it holds @soorma/org-identity (the positive control)
+        run: node tools/checks/run.ts secrets image-packages --image soorma/org-gateway:local --expect @soorma/org-identity
 
       # U4 Infrastructure Design §2, §12; TC-EHA-088.
       - name: Build the S2 image
         run: docker build -f services/control-gateway/Dockerfile -t soorma/control-gateway:local .
 
-      - name: Check the S2 image's file system for secrets
-        run: node tools/checks/run.ts secrets --image soorma/control-gateway:local
-
-      # U6 NP-AC-10, the user's addition (TC-AC-083): S2's installed packages
-      # hold no organization-level code. S2's manifest test is unchanged.
-      - name: Check the S2 image's installed packages
-        run: node tools/checks/run.ts image-packages --image soorma/control-gateway:local --forbid @soorma/org-identity
+      # The secret scan and, in the same pass (#26), U6 NP-AC-10, the user's
+      # addition (TC-AC-083): S2's installed packages hold no
+      # organization-level code. S2's manifest test is unchanged.
+      - name: Check the S2 image's file system for secrets, and its installed packages
+        run: node tools/checks/run.ts secrets image-packages --image soorma/control-gateway:local --forbid @soorma/org-identity
 
       # U6 Infrastructure Design §3, §17 (D-ID-AC-01, 18; TC-AC-083): S3's image,
       # its secret scan, and its installed packages: no organization-level code,
@@ -167,11 +218,8 @@ jobs:
       - name: Build the S3 image
         run: docker build -f services/data-gateway/Dockerfile -t soorma/data-gateway:local .
 
-      - name: Check the S3 image's file system for secrets
-        run: node tools/checks/run.ts secrets --image soorma/data-gateway:local
-
-      - name: Check the S3 image's installed packages
-        run: node tools/checks/run.ts image-packages --image soorma/data-gateway:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/authority
+      - name: Check the S3 image's file system for secrets, and its installed packages
+        run: node tools/checks/run.ts secrets image-packages --image soorma/data-gateway:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/authority
 
       - name: Check the S3 image ships no migrations
         run: |
@@ -189,11 +237,8 @@ jobs:
       - name: Build the S4 image
         run: docker build -f services/event-ingest/Dockerfile -t soorma/event-ingest:local .
 
-      - name: Check the S4 image's file system for secrets
-        run: node tools/checks/run.ts secrets --image soorma/event-ingest:local
-
-      - name: Check the S4 image's installed packages
-        run: node tools/checks/run.ts image-packages --image soorma/event-ingest:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/agent-identity,@soorma/abuse-bound
+      - name: Check the S4 image's file system for secrets, and its installed packages
+        run: node tools/checks/run.ts secrets image-packages --image soorma/event-ingest:local --forbid @soorma/org-identity,@soorma/identity-resolution,@soorma/agent-identity,@soorma/abuse-bound
 
       - name: Check the S4 image ships no migrations
         run: |
@@ -250,6 +295,54 @@ jobs:
       - name: Stop the stack
         if: always()
         run: docker compose -f deploy/local/compose.yaml down -v
+
+  # #26 (NFR-WC-18; SECURITY-10): a push to main keeps only the SBOM, for
+  # main's exact commit. The steps up to the SBOM are the build job's, so the
+  # SBOM sees the same installed and built tree. No check or test runs here:
+  # the pull request's run tested the merge result as of that run (the
+  # remaining risk is recorded in aidlc-docs/tooling/ci-image-job/).
+  sbom-main:
+    name: SBOM for main's commit
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node from .node-version
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Prepare the SBOM directory
+        run: mkdir -p sbom
+
+      - name: Generate the SBOM (CycloneDX JSON)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom/soorma-core.cdx.json
+          upload-artifact: false
+
+      - name: Keep the SBOM
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom-cyclonedx
+          path: sbom/soorma-core.cdx.json
+          if-no-files-found: error
 
   dependency-review:
     name: Dependency review
