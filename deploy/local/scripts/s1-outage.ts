@@ -18,8 +18,13 @@
 //  Case 3 (U6 D-ID-AC-15; TC-AC-017): S3 never needs S1. With S1 stopped, the
 //    running e-data-gateway serves a bootstrap and a renewal; restarted while
 //    S1 is stopped, it becomes healthy and serves both again.
+//  Case 4 (U7 D-ID-ET-11; TC-ET-022): S4 never needs S1. With S1 stopped,
+//    the running e-event-ingest serves a subscribe, a publish, and the
+//    Delivery; restarted while S1 is stopped, it becomes healthy and serves
+//    the round trip again. Its agents are registered through S2 before S1
+//    stops, and bootstrapped at S3 after (not a done-when proof)
 //
-// It leaves S1, both S2s, and both S3s running.
+// It leaves S1, both S2s, both S3s, and both S4s running.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -32,9 +37,11 @@ import {
   docker,
   failed,
   PRINCIPAL,
+  publishAt,
   registeredAgent,
   renewAgent,
   SECRETS,
+  subscribeAt,
   type Reply,
 } from './stack-client.ts';
 
@@ -237,6 +244,53 @@ async function main(): Promise<void> {
   check('(b) it serves a bootstrap', booted3b.status === 200, shown(booted3b));
   const renewed3b = await renewAgent('e', agentCredentialOf(booted3b));
   check('(b) and a renewal', renewed3b.status === 200, shown(renewed3b));
+  docker([...COMPOSE, 'start', 'org-gateway']);
+  check('S1 is healthy again', await waitHealthy('org-gateway', 120));
+
+  // ---- Case 4: S4 with S1 stopped (U7 D-ID-ET-11; TC-ET-022). ----
+  console.log('Case 4: S4 serves publish, subscribe, and delivery while S1 is stopped');
+  const admin4 = credentialOf(await issue(token, E));
+  const eventGrant = await call('/grants', {
+    token: admin4,
+    port: E,
+    body: { target: PRINCIPAL, permissions: ['event:publish', 'event:subscribe'] },
+  });
+  check('set-up: event:publish and event:subscribe granted', eventGrant.status === 200);
+  const pubAgent = `outage-a-${Date.now().toString(36)}`;
+  const subAgent = `outage-b-${Date.now().toString(36)}`;
+  const pubSecret = await registeredAgent(admin4, 'e', pubAgent, {
+    standingPermissions: ['event:publish'],
+    autonomyDeclared: true,
+  });
+  const subSecret = await registeredAgent(admin4, 'e', subAgent, {
+    standingPermissions: ['event:subscribe'],
+    autonomyDeclared: true,
+  });
+  check(
+    'set-up: A (publish) and B (subscribe) registered in E',
+    pubSecret !== '' && subSecret !== '',
+  );
+  docker([...COMPOSE, 'stop', 'org-gateway']);
+  // The credentials come from S3, which never needs S1 (Case 3).
+  const a = agentCredentialOf(await bootstrapAgent('e', pubAgent, pubSecret, 'i-1'));
+  const b = agentCredentialOf(await bootstrapAgent('e', subAgent, subSecret, 'i-1'));
+  check('set-up: A and B bootstrapped at S3 with S1 stopped', a !== '' && b !== '');
+  const roundTrip = async (label: string): Promise<void> => {
+    const stream = await subscribeAt('e', b);
+    check(`${label} B subscribes`, stream.status === 200, String(stream.status));
+    const marker = `outage-${label}-${Date.now().toString(36)}`;
+    const published = await publishAt('e', a, { marker });
+    check(`${label} A publishes`, published.status === 202, shown(published));
+    const arrived = await stream.until(() =>
+      stream.events.some((e) => e.event === 'delivery' && e.data.includes(marker)),
+    );
+    stream.close();
+    check(`${label} B receives the Delivery`, arrived);
+  };
+  await roundTrip('(a)');
+  docker([...COMPOSE, 'restart', 'e-event-ingest']);
+  check('(b) S4 restarted without S1 is healthy', await waitHealthy('e-event-ingest', 120));
+  await roundTrip('(b)');
   docker([...COMPOSE, 'start', 'org-gateway']);
   check('S1 is healthy again', await waitHealthy('org-gateway', 120));
 

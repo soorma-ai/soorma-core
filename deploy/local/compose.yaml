@@ -23,6 +23,9 @@
 # - Each environment's S3 (U6 Infrastructure Design §1): {env}-data-gateway on
 #   127.0.0.1:8444 (E) and 8445 (E2), on its own {env} network only, never
 #   org-internal-{env}; it waits for its migrate service, never for S1 or S2
+# - Each environment's S4 (U7 Infrastructure Design §1, §7, §8): exactly one
+#   {env}-event-ingest, on 127.0.0.1:8446 (E) and 8447 (E2), on its own {env}
+#   network only; mem_limit 512m, the recorded number (D-ID-ET-17); no replicas
 # - Every container: a non-root user, a read-only root file system, all
 #   capabilities dropped, no new privileges; the one exception is
 #   org-secrets-init (root, only CHOWN, DAC_OVERRIDE, FOWNER; no network;
@@ -118,6 +121,27 @@ x-data-gateway: &data-gateway
   tmpfs:
     - /tmp
   mem_limit: 256m
+  healthcheck:
+    test: ['CMD', '/nodejs/bin/node', 'dist/healthcheck.js']
+    interval: 5s
+    timeout: 3s
+    retries: 24
+  restart: unless-stopped
+
+# An environment's S4 (U7 Infrastructure Design §1, §8; D-ID-ET-01, 17). As
+# S3's, with its own image and memory: 256 streams of 1 MiB buffers at most.
+# It never waits for org-gateway, the environment's S2, or its S3.
+x-event-ingest: &event-ingest
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  image: soorma/event-ingest:local
+  command: ['dist/main.js']
+  configs:
+    - { source: tenancy, target: /etc/soorma/tenancy.yaml }
+  tmpfs:
+    - /tmp
+  mem_limit: 512m
   healthcheck:
     test: ['CMD', '/nodejs/bin/node', 'dist/healthcheck.js']
     interval: 5s
@@ -284,12 +308,16 @@ services:
       - e-db-app-password
       - e-db-migrator-password
       - e-db-data-password
+      - e-db-ingest-password
       - e-signing-key-1
       - e-caller-key
       - e-log-pseudonym-key
       - e-data-gateway-tls
       - e-agent-signing-key-1
       - e-bootstrap-counter-secret
+      - e-event-ingest-tls
+      - e-agent-verify-key-1
+      - e-seal-key-1
 
   e-db:
     <<: *env-db
@@ -452,6 +480,34 @@ services:
       e-secrets-init: { condition: service_completed_successfully }
       e-migrate: { condition: service_completed_successfully }
 
+  # e's S4 (U7): its event-ingest/ secrets only; on network e only.
+  e-event-ingest:
+    <<: *event-ingest
+    # Built here once; e2-event-ingest runs the same image.
+    build:
+      context: ../..
+      dockerfile: services/event-ingest/Dockerfile
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e
+      SOORMA_HEALTH_PORT: '8080'
+    volumes:
+      - {
+          type: volume,
+          source: e-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: event-ingest },
+        }
+    ports:
+      - '127.0.0.1:8446:8443'
+    networks:
+      e:
+        aliases: [event-ingest.e.soorma.internal]
+    depends_on:
+      e-secrets-init: { condition: service_completed_successfully }
+      e-migrate: { condition: service_completed_successfully }
+
   # ---- Environment e2 (U4 Infrastructure Design; Q1 A: written out in full) ----
 
   # Environment e2's one-shot secrets copy: it alone sees e2's secret files.
@@ -469,12 +525,16 @@ services:
       - e2-db-app-password
       - e2-db-migrator-password
       - e2-db-data-password
+      - e2-db-ingest-password
       - e2-signing-key-1
       - e2-caller-key
       - e2-log-pseudonym-key
       - e2-data-gateway-tls
       - e2-agent-signing-key-1
       - e2-bootstrap-counter-secret
+      - e2-event-ingest-tls
+      - e2-agent-verify-key-1
+      - e2-seal-key-1
 
   e2-db:
     <<: *env-db
@@ -631,12 +691,36 @@ services:
       e2-secrets-init: { condition: service_completed_successfully }
       e2-migrate: { condition: service_completed_successfully }
 
+  # e2's S4 (U7): its event-ingest/ secrets only; on network e2 only.
+  e2-event-ingest:
+    <<: *event-ingest
+    environment:
+      SOORMA_PROJECT: p1
+      SOORMA_ENVIRONMENT: e2
+      SOORMA_HEALTH_PORT: '8080'
+    volumes:
+      - {
+          type: volume,
+          source: e2-secrets,
+          target: /run/secrets,
+          read_only: true,
+          volume: { subpath: event-ingest },
+        }
+    ports:
+      - '127.0.0.1:8447:8443'
+    networks:
+      e2:
+        aliases: [event-ingest.e2.soorma.internal]
+    depends_on:
+      e2-secrets-init: { condition: service_completed_successfully }
+      e2-migrate: { condition: service_completed_successfully }
+
 networks:
   org: {}
   # One internal network per environment: environments share no network.
   org-internal-e: {}
   org-internal-e2: {}
-  # Each environment's own network: its store, migrate service, S2, and S3.
+  # Each environment's own network: its store, migrate service, S2, S3, and S4.
   e: {}
   e2: {}
 
@@ -673,9 +757,13 @@ secrets:
   e-db-app-password: { file: ./.secrets/e-db-app-password }
   e-db-migrator-password: { file: ./.secrets/e-db-migrator-password }
   e-db-data-password: { file: ./.secrets/e-db-data-password }
+  e-db-ingest-password: { file: ./.secrets/e-db-ingest-password }
   e-data-gateway-tls: { file: ./.secrets/e-data-gateway-tls }
   e-agent-signing-key-1: { file: ./.secrets/e-agent-signing-key-1 }
   e-bootstrap-counter-secret: { file: ./.secrets/e-bootstrap-counter-secret }
+  e-event-ingest-tls: { file: ./.secrets/e-event-ingest-tls }
+  e-agent-verify-key-1: { file: ./.secrets/e-agent-verify-key-1 }
+  e-seal-key-1: { file: ./.secrets/e-seal-key-1 }
   e-signing-key-1: { file: ./.secrets/e-signing-key-1 }
   e-caller-key: { file: ./.secrets/e-caller-key }
   e-caller-public-key: { file: ./.secrets/e-caller-public-key }
@@ -686,9 +774,13 @@ secrets:
   e2-db-app-password: { file: ./.secrets/e2-db-app-password }
   e2-db-migrator-password: { file: ./.secrets/e2-db-migrator-password }
   e2-db-data-password: { file: ./.secrets/e2-db-data-password }
+  e2-db-ingest-password: { file: ./.secrets/e2-db-ingest-password }
   e2-data-gateway-tls: { file: ./.secrets/e2-data-gateway-tls }
   e2-agent-signing-key-1: { file: ./.secrets/e2-agent-signing-key-1 }
   e2-bootstrap-counter-secret: { file: ./.secrets/e2-bootstrap-counter-secret }
+  e2-event-ingest-tls: { file: ./.secrets/e2-event-ingest-tls }
+  e2-agent-verify-key-1: { file: ./.secrets/e2-agent-verify-key-1 }
+  e2-seal-key-1: { file: ./.secrets/e2-seal-key-1 }
   e2-signing-key-1: { file: ./.secrets/e2-signing-key-1 }
   e2-caller-key: { file: ./.secrets/e2-caller-key }
   e2-caller-public-key: { file: ./.secrets/e2-caller-public-key }

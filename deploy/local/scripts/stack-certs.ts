@@ -39,7 +39,7 @@ export const LEAVES: readonly { secret: string; names: string[]; ips: string[] }
     ips: ['127.0.0.1'],
   },
   { secret: 'org-db-tls', names: ['org-db.soorma.internal'], ips: [] },
-  // Each environment's S2 and store (U4 Infrastructure Design §5), and S3 (U6).
+  // Each environment's S2 and store (U4 Infrastructure Design §5), S3 (U6), and S4 (U7).
   ...['e', 'e2'].flatMap((env) => [
     {
       secret: `${env}-control-gateway-tls`,
@@ -51,6 +51,12 @@ export const LEAVES: readonly { secret: string; names: string[]; ips: string[] }
     {
       secret: `${env}-data-gateway-tls`,
       names: [`data-gateway.${env}.soorma.internal`, 'localhost'],
+      ips: ['127.0.0.1'],
+    },
+    // Each environment's S4 (U7 D-ID-ET-03).
+    {
+      secret: `${env}-event-ingest-tls`,
+      names: [`event-ingest.${env}.soorma.internal`, 'localhost'],
       ips: ['127.0.0.1'],
     },
   ]),

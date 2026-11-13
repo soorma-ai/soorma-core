@@ -146,6 +146,22 @@ export async function registrationForBootstrap(
   return row ? { state: row.state, sponsor: row.sponsor } : undefined;
 }
 
+/**
+ * U7's sponsor for an agent's attribution record (D-ET-18), as of the write:
+ * run inside the record's transaction by S4 as soorma_env_ingest.
+ */
+export async function sponsorForRecord(
+  store: Queryable,
+  environment: EnvironmentRef,
+  agent: string,
+): Promise<string | undefined> {
+  const [row] = await store.query<{ sponsor: string }>(SQL.sponsorForRecord, [
+    ...environmentParams(environment),
+    agent,
+  ]);
+  return row?.sponsor;
+}
+
 export interface SecretRecord {
   readonly id: string;
   readonly environment: EnvironmentRef;

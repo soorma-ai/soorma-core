@@ -87,16 +87,35 @@ describe('TC-AC-087: S3’s secrets, roles, and networks are separated as design
   );
 
   it.each(ENVIRONMENTS)(
-    '%s: agent signing keys only in data-gateway/; verify halves listed and copied nowhere (until U7)',
+    '%s: agent signing keys only in data-gateway/; verify halves only in event-ingest/ (U7)',
     (env) => {
       for (const [dir, names] of Object.entries(copies(env))) {
         for (const n of names) {
           if (/-agent-signing-key-/.test(n)) expect(dir, n).toBe('data-gateway');
-          expect(n, dir).not.toMatch(/-agent-verify-key-/);
+          if (/-agent-verify-key-/.test(n)) expect(dir, n).toBe('event-ingest');
+          // U7 (the user's): every verify-key name in this environment's copies is its own.
+          if (/-agent-verify-key-/.test(n)) expect(n.startsWith(`${env}-`), n).toBe(true);
         }
       }
-      const listed = run([...compose, 'config', '--format', 'json']);
-      expect(listed).not.toMatch(/agent-verify-key/);
+      const listed = JSON.parse(run([...compose, 'config', '--format', 'json'])) as {
+        services: Record<string, { secrets?: { source: string }[] }>;
+      };
+      const verifyKeys = (name: string): string[] =>
+        (listed.services[name]?.secrets ?? [])
+          .map((x) => x.source)
+          .filter((x) => /agent-verify-key/.test(x));
+      expect(verifyKeys(`${env}-secrets-init`)).toEqual([`${env}-agent-verify-key-1`]);
+      // U7 (the user's): no service other than {env}-secrets-init lists any of
+      // this environment's verify keys; another environment's copier lists only
+      // its own environment's; every other service lists none.
+      for (const name of Object.keys(listed.services)) {
+        if (name === `${env}-secrets-init`) continue;
+        const other = ENVIRONMENTS.find((o) => o !== env && name === `${o}-secrets-init`);
+        if (other)
+          for (const k of verifyKeys(name))
+            expect(k.startsWith(`${other}-`), `${name} ${k}`).toBe(true);
+        else expect(verifyKeys(name), name).toEqual([]);
+      }
     },
   );
 

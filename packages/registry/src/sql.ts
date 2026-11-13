@@ -84,4 +84,15 @@ export const SQL = {
     `SELECT state, sponsor FROM registrations
       WHERE organization = $1 AND project = $2 AND environment = $3 AND agent = $4`,
   ),
+
+  /**
+   * U7's publish and subscribe records (D-ET-18; D-CG-ET-09): the sponsor,
+   * resolved from the registration inside the record's own transaction. Run by
+   * S4 as soorma_env_ingest, whose SELECT on registrations is column-level.
+   * $1 to $3 the environment, $4 agent.
+   */
+  sponsorForRecord: sql(
+    `SELECT sponsor FROM registrations
+      WHERE organization = $1 AND project = $2 AND environment = $3 AND agent = $4`,
+  ),
 };

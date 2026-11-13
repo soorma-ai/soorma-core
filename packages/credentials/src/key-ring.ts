@@ -12,11 +12,18 @@
 import { createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto';
 import { KeyMaterialError, thumbprint, type SecretBytes } from '@soorma/service-kit';
 
-export interface EnvironmentKeyRing {
-  readonly signingKey: KeyObject;
-  readonly signingKid: string;
+/**
+ * The verify half of a ring (U7 NP-ET-07): what S4 holds for E's agent
+ * credentials, with no signing key (D-AC-03). An EnvironmentKeyRing is one.
+ */
+export interface VerifyKeyRing {
   readonly kids: readonly string[];
   verifyKey(kid: string): KeyObject | undefined;
+}
+
+export interface EnvironmentKeyRing extends VerifyKeyRing {
+  readonly signingKey: KeyObject;
+  readonly signingKid: string;
 }
 
 function privateEd25519(pem: SecretBytes, name: string, problems: string[]): KeyObject | undefined {
@@ -63,6 +70,56 @@ export function loadEnvironmentKeyRing(input: {
   return Object.freeze({
     signingKey: key,
     signingKid: kid,
+    kids: Object.freeze([...keys.keys()]),
+    verifyKey: (k: string) => keys.get(k),
+  });
+}
+
+/**
+ * A verify-only ring from SPKI public keys (U7 NP-ET-07): S4's agent ring,
+ * from `stack:init`'s `{env}-agent-verify-key-{n}`. Start-up fails closed on
+ * an empty list, a key that is not an Ed25519 public key in SPKI PEM, a
+ * private key (S4 must never hold a signing key), and two entries holding
+ * one key.
+ */
+export function loadVerifyKeyRing(input: {
+  verify: readonly { name: string; pem: SecretBytes }[];
+}): VerifyKeyRing {
+  const problems: string[] = [];
+  const keys = new Map<string, KeyObject>();
+  for (const { name, pem } of input.verify) {
+    let isPrivate = false;
+    try {
+      createPrivateKey(pem);
+      isPrivate = true;
+    } catch {
+      // Not a private key: expected.
+    }
+    if (isPrivate) {
+      problems.push(`${name} is a private key; only verify halves are accepted`);
+      continue;
+    }
+    let key: KeyObject;
+    try {
+      key = createPublicKey(pem);
+    } catch {
+      problems.push(`${name} is not a PEM public key`);
+      continue;
+    }
+    if (key.asymmetricKeyType !== 'ed25519') {
+      problems.push(`${name} is not an Ed25519 key`);
+      continue;
+    }
+    const kid = thumbprint(key);
+    if (keys.has(kid)) {
+      problems.push(`verify key ${name} repeats a key already configured (kid ${kid})`);
+      continue;
+    }
+    keys.set(kid, key);
+  }
+  if (input.verify.length === 0) problems.push('no verify key is configured');
+  if (problems.length > 0) throw new KeyMaterialError(problems);
+  return Object.freeze({
     kids: Object.freeze([...keys.keys()]),
     verifyKey: (k: string) => keys.get(k),
   });

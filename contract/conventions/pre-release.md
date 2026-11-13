@@ -9,7 +9,8 @@ These hold for contract version `0.1.0`.
    envelope compatibility policy from this version on
 2. **Event delivery semantics are unspecified at this version.** Delivery reaches **live
    subscribers only**, with **no durability, ordering, redelivery, or acknowledgement** promised.
-   Do not rely on observed behaviour
+   Do not rely on observed behaviour. **A stream is not resumable**: a Delivery accepted while no
+   stream was open is not delivered later
 3. **The bootstrap exchange and credential renewal carry no envelope**
 4. **The accepted permission identifiers may widen in a compatible version.** In this version,
    only the plane-declared identifiers are accepted
@@ -24,5 +25,6 @@ These hold for contract version `0.1.0`.
    request whose origin is `autonomous`, including one forwarding an autonomous envelope.**
    Allowing it later would be additive
 
-**The Delivery payload bound is not set in this version of the conventions.** It is set by the
-event transport unit, and published with it.
+**The Delivery payload bound is 64 KiB** (65 536 bytes), measured on the payload's RFC 8785
+(JCS) serialization with each number counted by its source text. Payload numbers are delivered
+exactly as written. See [envelope.md](envelope.md) _The Delivery_ and _The stream_.

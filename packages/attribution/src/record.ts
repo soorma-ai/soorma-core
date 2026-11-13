@@ -70,13 +70,24 @@ export class AttributionRecordError extends Error {
  * The agent operations that never carry an envelope (U6 D-AC-33; BR-AT-AC-02;
  * GAP-INT-008): a record for one of them is an agent's, with no chain,
  * origin, or re-broadening outcome, and its operation states why. The store's
- * attribution_envelope_free_operations CHECK (env-store 0004) repeats it. The
- * reverse rule (an agent record for any other operation must carry envelope
- * facts) is U7's, which defines the envelope-bearing operations.
+ * attribution_envelope_free_operations CHECK (env-store 0004) repeats it.
+ * U7 (D-ET-07) closes the rule the other way: an agent record for any other
+ * operation carries envelope facts (env-store 0005 repeats it).
  */
 export const ENVELOPE_FREE_AGENT_OPERATIONS: readonly string[] = Object.freeze([
   'exchangeBootstrap',
   'renewAgentCredential',
+]);
+
+/**
+ * The agent operations that carry an envelope (U7 D-ET-07; BR-AT-ET-06):
+ * S4's publish and subscribe. With the envelope-free list, P7's rule is
+ * closed both ways: an agent record for an operation outside the
+ * envelope-free list carries envelope facts.
+ */
+export const ENVELOPE_BEARING_AGENT_OPERATIONS: readonly string[] = Object.freeze([
+  'publish',
+  'subscribe',
 ]);
 
 /** BR-AT-05, as the store's CHECK constraints repeat it. */
@@ -90,6 +101,14 @@ export function checkRecord(record: AttributionRecord): void {
         `${record.operation} never carries an envelope: no chain, origin, or re-broadening`,
       );
   }
+  if (
+    actor.kind === 'agent' &&
+    !envelope &&
+    !ENVELOPE_FREE_AGENT_OPERATIONS.includes(record.operation)
+  )
+    throw new AttributionRecordError(
+      `an agent record for ${record.operation} carries envelope facts: chain, origin, and re-broadening`,
+    );
   if (actor.kind !== 'agent' && envelope)
     throw new AttributionRecordError(
       `a ${actor.kind} actor carries no chain, origin, or re-broadening`,

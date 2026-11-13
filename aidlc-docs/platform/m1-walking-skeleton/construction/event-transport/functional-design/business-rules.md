@@ -281,6 +281,15 @@ open code widened.
   cross-instance path (BR-FO-05) is not exercised on the stack; it is tested in process only if
   the channel's design allows two instances on one channel. A lost `supersede` leaves two
   streams of one lineage for at most L
+- *Added at Code Generation (the user, 2026-11-13, at the Group 7 review)*: **after M1, clock skew
+  between S4 instances can let an older stream win a supersede**. With several S4 instances in
+  an environment, order keys come from each instance's clock (BR-FO-07): an agent's new stream,
+  opened at an instance whose clock is behind, can be ordered before its old stream, so the new
+  stream ends `superseded` and the old one runs until its credential expires (at most L).
+  D-CG-ET-31's reply enforces BR-FO-05/07 (exactly one survives) and does not change which one.
+  **M1 runs one S4 per environment**, where an instance's own order is monotonic (D-CG-ET-30), so
+  it does not arise in M1. A known risk for the first deployment with several S4 instances, not a
+  Build and Test obligation
 - **The connection's close after revocation lags deliveries by up to R** (BR-SR-04)
 - **A stream's authority is fixed at open** (D-ET-21): sound in M1 (NFR-AE-16), and bounded by L
 - **Live only (GAP-INT-003)**: a subscriber offline, superseded, overflowed, or on an instance
@@ -298,7 +307,7 @@ open code widened.
 |---|---|
 | **Build and Test** | GAP-ET-001's residual (§17), reported as an `Open` gap; the cross-instance supersede residual if it stands; TC-ET-016 and 017 and U6's TC-AC-009, 010, 015 timelines at S4; S4's p95 on the running stack (NFR Requirements' budget, reported); the contract tag after the merge |
 | **soorma-sdk** (the brief's consumer; the brief is not edited) | The bodies `{ draft, payload }` and `{ draft }`; publish `202` with no body; the stream's `delivery` and `end` events and the open end codes; renew, then subscribe again before `exp` (the new stream supersedes the old); no resumption; live only |
-| **The first hosted deployment** | Per-agent publish and stream limits; a multi-instance channel that exercises cross-instance superseding |
+| **The first hosted deployment** | Per-agent publish and stream limits; a multi-instance channel that exercises cross-instance superseding; **the clock-skew supersede risk (§17)**: with several S4 instances, an agent's new stream can lose a supersede to its old one, which runs until its credential expires |
 | **The unit that first changes a standing set, a declaration, or autonomy, or suspends or retires an agent** (NFR-AE-16, extended) | Account for open streams as well as U3's term cache: a stream's authority is fixed at open |
 | **GAP-ET-001's answer** | If the PRD chooses decoupled attribution, S4's record path (D-ET-09) changes; the contract's codes do not |
 

@@ -37,6 +37,15 @@
 //     credential naming that environment; E's agent credential is refused at
 //     E2's S3; the data role exists with U4's attributes, and S3's session runs
 //     as soorma_env_data over TLS 1.3 while S2's runs as soorma_env_app
+// 12. S4 in E and E2 (U7 D-ID-ET-10; TC-ET-085), at S3's depth: each
+//     event-ingest healthy, published on its own loopback port only (8446,
+//     8447), hardened, seeing exactly its own five secrets; a refused publish
+//     is a Problem; an agent registered through S2 with event:publish and
+//     event:subscribe and autonomy declared, bootstrapped at S3, subscribes and
+//     publishes at its environment's S4 over TLS 1.3 and receives its own
+//     Delivery, scoped to that environment and sealed; the ingest role exists
+//     with U4's attributes and S4's session runs as soorma_env_ingest over TLS
+//     1.3; E's agent credential is refused at E2's S4
 // The enrollment material is read from the handover file into the request
 // body only; it is never printed.
 import { readFileSync } from 'node:fs';
@@ -50,12 +59,15 @@ import {
   COMPOSE,
   DATA_GATEWAY,
   docker,
+  EVENT_INGEST,
   dockerWithInput,
   failed,
   PRINCIPAL,
+  publishAt,
   registeredAgent,
   renewAgent,
   SECRETS,
+  subscribeAt,
 } from './stack-client.ts';
 
 const K = `smoke ${Date.now().toString(36)} lantern garden`;
@@ -279,6 +291,9 @@ async function main(): Promise<void> {
   // 11. S3 in E and E2 (U6).
   secrets.push(...(await dataGateways()));
 
+  // 12. S4 in E and E2 (U7).
+  secrets.push(...(await eventIngests()));
+
   // 7. The logs.
   const logs = docker([
     ...COMPOSE,
@@ -292,6 +307,8 @@ async function main(): Promise<void> {
     'e2-migrate',
     'e-data-gateway',
     'e2-data-gateway',
+    'e-event-ingest',
+    'e2-event-ingest',
   ]);
   const leaked = [PRINCIPAL.principal, material, K, token, ...secrets].filter(
     (s) => s.length > 0 && logs.includes(s),
@@ -723,6 +740,221 @@ async function dataGateways(): Promise<string[]> {
   const crossed = await renewAgent('e2', tokens.e);
   check(
     "E's agent credential is refused at E2's S3",
+    crossed.status === 401,
+    String(crossed.status),
+  );
+
+  return seen.filter((x) => x.length > 0);
+}
+
+/** Section 12: S4 in E and E2 (U7). Returns the secrets, tokens, and seals it saw, for the log check. */
+async function eventIngests(): Promise<string[]> {
+  const seen: string[] = [];
+  const id = (service: string): string => docker([...COMPOSE, 'ps', '-q', service]);
+  const sql = (env: 'e' | 'e2', query: string): string =>
+    dockerWithInput(
+      [
+        ...COMPOSE,
+        'exec',
+        '-T',
+        `${env}-db`,
+        'psql',
+        '-X',
+        '-q',
+        '-At',
+        '-U',
+        'postgres',
+        '-d',
+        'soorma_env',
+      ],
+      query,
+    ).stdout;
+  const sessions = (env: 'e' | 'e2', service: string): string => {
+    const ip = docker([
+      'inspect',
+      '-f',
+      `{{(index .NetworkSettings.Networks "soorma-local_${env}").IPAddress}}`,
+      id(`${env}-${service}`),
+    ]);
+    return sql(
+      env,
+      `SELECT DISTINCT a.usename || ':' || s.version FROM pg_stat_activity a JOIN pg_stat_ssl s USING (pid) WHERE a.client_addr = '${ip}' AND s.ssl;`,
+    );
+  };
+
+  for (const env of ['e', 'e2'] as const) {
+    const s4 = id(`${env}-event-ingest`);
+    check(
+      `${env}-event-ingest is healthy`,
+      docker(['inspect', '-f', '{{.State.Health.Status}}', s4]) === 'healthy',
+    );
+    const ports = docker(['inspect', '-f', '{{json .HostConfig.PortBindings}}', s4]);
+    check(
+      `${env}-event-ingest is published on 127.0.0.1:${EVENT_INGEST[env]} only`,
+      ports === `{"8443/tcp":[{"HostIp":"127.0.0.1","HostPort":"${EVENT_INGEST[env]}"}]}`,
+      ports,
+    );
+    const h = docker([
+      'inspect',
+      '-f',
+      '{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{.HostConfig.CapDrop}}|{{.HostConfig.SecurityOpt}}|{{.HostConfig.Memory}}',
+      s4,
+    ]);
+    const [user, ro, caps, opts, memory] = h.split('|');
+    check(
+      `${env}-event-ingest is hardened, with its 512m memory limit`,
+      !!user &&
+        user !== 'root' &&
+        user !== '0' &&
+        ro === 'true' &&
+        caps === '[ALL]' &&
+        opts === '[no-new-privileges:true]' &&
+        memory === String(512 * 1024 * 1024),
+      h,
+    );
+    const listing = docker([
+      'exec',
+      s4,
+      '/nodejs/bin/node',
+      '-e',
+      "const fs=require('fs');console.log(fs.readdirSync('/run/secrets').sort().map(n=>{const s=fs.statSync('/run/secrets/'+n);return n+':'+s.uid+':'+(s.mode&0o777).toString(8)}).join(' '))",
+    ]);
+    const expected = [
+      `${env}-agent-verify-key-1`,
+      `${env}-db-ingest-password`,
+      `${env}-event-ingest-tls`,
+      `${env}-seal-key-1`,
+      'stack-ca-cert',
+    ]
+      .map((n) => `${n}:65532:400`)
+      .join(' ');
+    check(
+      `${env}-event-ingest sees exactly its own five secrets (no signing key, no other role's password), 65532, 0400`,
+      listing === expected,
+      listing,
+    );
+    check(
+      `${env}'s S4 refuses TLS 1.2`,
+      await refused(call('/events', { port: EVENT_INGEST[env], maxVersion: 'TLSv1.2' })),
+    );
+    const anonymous = await publishAt(env, '', { smoke: true });
+    let problem: { code?: unknown; instance?: unknown } = {};
+    try {
+      problem = JSON.parse(anonymous.body) as typeof problem;
+    } catch {
+      // checked below
+    }
+    check(
+      `a publish with no credential at ${env}'s S4 is 401 credential_refused, a Problem with the Soorma headers, over TLS 1.3`,
+      anonymous.status === 401 &&
+        anonymous.protocol === 'TLSv1.3' &&
+        problem.code === 'credential_refused' &&
+        anonymous.headers['soorma-contract-version'] === '0.1.0' &&
+        typeof anonymous.headers['soorma-request-id'] === 'string' &&
+        problem.instance === `urn:soorma:request:${String(anonymous.headers['soorma-request-id'])}`,
+      `${anonymous.status} ${anonymous.protocol}`,
+    );
+  }
+
+  // An agent per environment with event:publish and event:subscribe, autonomy declared.
+  const signIn = await call('/sign-ins', { body: { principal: PRINCIPAL, secret: K } });
+  const signInToken =
+    signIn.status === 200
+      ? (JSON.parse(signIn.body) as { signIn: { token: string } }).signIn.token
+      : '';
+  const tokens: Record<'e' | 'e2', string> = { e: '', e2: '' };
+  for (const env of ['e', 'e2'] as const) {
+    const port = env === 'e' ? 8442 : 8443;
+    const issued = await call('/environment-credentials', { token: signInToken, port });
+    const credential =
+      issued.status === 200 ? (JSON.parse(issued.body) as { credential: string }).credential : '';
+    const granted = await call('/grants', {
+      token: credential,
+      port,
+      body: { target: PRINCIPAL, permissions: ['event:publish', 'event:subscribe'] },
+    });
+    check(`set-up: event:publish and event:subscribe granted in ${env}`, granted.status === 200);
+    const agent = `smoke-ei-${env}-${Date.now().toString(36)}`;
+    const secret = await registeredAgent(credential, env, agent, {
+      standingPermissions: ['event:publish', 'event:subscribe'],
+      autonomyDeclared: true,
+    });
+    check(
+      `set-up: an agent registered in ${env} with event permissions and autonomy`,
+      secret !== '',
+    );
+    const booted = await bootstrapAgent(env, agent, secret);
+    check(`set-up: bootstrapped at ${env}'s S3`, booted.status === 200, String(booted.status));
+    const token = agentCredentialOf(booted);
+    tokens[env] = token;
+    seen.push(credential, secret, token);
+
+    // The round trip at this environment's S4.
+    const stream = await subscribeAt(env, token);
+    check(
+      `a subscribe at ${env}'s S4 opens a stream, over TLS 1.3`,
+      stream.status === 200 &&
+        stream.protocol === 'TLSv1.3' &&
+        stream.contentType === 'text/event-stream; charset=utf-8',
+      `${stream.status} ${stream.protocol} ${stream.contentType}`,
+    );
+    const marker = `smoke-payload-${env}-${Date.now().toString(36)}`;
+    const published = await publishAt(env, token, { marker });
+    check(
+      `a publish at ${env}'s S4 is 202, with no body`,
+      published.status === 202 && published.body === '',
+      String(published.status),
+    );
+    const arrived = await stream.until(() => stream.events.some((e) => e.event === 'delivery'));
+    stream.close();
+    const delivery = arrived
+      ? (JSON.parse(stream.events.find((e) => e.event === 'delivery')!.data) as {
+          envelope: { scope: Record<string, string>; actorChain: { agent: string }[] };
+          seal: string;
+          payload: { marker?: string };
+        })
+      : undefined;
+    check(
+      `the agent receives its own Delivery at ${env}'s S4`,
+      delivery?.payload.marker === marker,
+    );
+    check(
+      `the Delivery is scoped to ${env} and sealed`,
+      delivery?.envelope.scope.organization === 'o1' &&
+        delivery.envelope.scope.project === 'p1' &&
+        delivery.envelope.scope.environment === env &&
+        delivery.envelope.actorChain[0]?.agent === agent &&
+        typeof delivery.seal === 'string' &&
+        delivery.seal.length > 0,
+    );
+    seen.push(marker, delivery?.seal ?? '');
+
+    // The role, right after the round trip, while S4's pool holds a session.
+    check(
+      `${env}: soorma_env_ingest exists with U4's attributes`,
+      sql(
+        env,
+        "SELECT rolcanlogin, rolsuper, rolcreatedb, rolcreaterole, rolinherit, rolreplication, rolbypassrls FROM pg_roles WHERE rolname = 'soorma_env_ingest';",
+      ) === 't|f|f|f|f|f|f',
+    );
+    check(
+      `${env}'s S4 connects as soorma_env_ingest over TLS 1.3`,
+      sessions(env, 'event-ingest') === 'soorma_env_ingest:TLSv1.3',
+      sessions(env, 'event-ingest'),
+    );
+    // §11 checks S3's and S2's roles strictly; here, any session either holds
+    // (idle sessions close after 10 seconds) is still its own role, never S4's.
+    const s3 = sessions(env, 'data-gateway');
+    const s2 = sessions(env, 'control-gateway');
+    check(
+      `${env}'s S3 still connects as soorma_env_data, and S2 as soorma_env_app`,
+      ['', 'soorma_env_data:TLSv1.3'].includes(s3) && ['', 'soorma_env_app:TLSv1.3'].includes(s2),
+      `${s3} ${s2}`,
+    );
+  }
+  const crossed = await publishAt('e2', tokens.e, { crossed: true });
+  check(
+    "E's agent credential is refused at E2's S4",
     crossed.status === 401,
     String(crossed.status),
   );

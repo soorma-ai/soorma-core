@@ -31,7 +31,7 @@ find /out -mindepth 1 -delete
 # The environment store (postgres, 999).
 copy db 999 \
   "$env-db-tls" "$env-db-superuser-password" "$env-db-app-password" \
-  "$env-db-migrator-password" "$env-db-data-password"
+  "$env-db-migrator-password" "$env-db-data-password" "$env-db-ingest-password"
 
 # {env}-migrate (distroless nonroot, 65532): the migrator password and the CA only.
 copy migrate 65532 \
@@ -57,3 +57,9 @@ copy control-gateway 65532 \
 copy data-gateway 65532 \
   "$env-data-gateway-tls" stack-ca-cert "$env-db-data-password" \
   "$env-agent-signing-key-1" "$env-bootstrap-counter-secret"
+
+# {env}-event-ingest (distroless nonroot, 65532; U7 D-ID-ET-06): its own role's
+# password; the agent verify half and the seal ring, never a signing key.
+copy event-ingest 65532 \
+  "$env-event-ingest-tls" stack-ca-cert "$env-db-ingest-password" \
+  "$env-agent-verify-key-1" "$env-seal-key-1"

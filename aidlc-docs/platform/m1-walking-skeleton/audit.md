@@ -3842,3 +3842,370 @@ Then commit the artifacts with the marked consistency fixes, state and audit on 
 **Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate, PENDING.
 
 ---
+
+## Construction Design PR Gate: PR Open, Checks Green, Stopped for the Merge (U7 event-transport)
+**Timestamp**: 2026-11-13T01:57:20Z
+**User Input**: (none since the instruction of 2026-11-13T01:14:32Z)
+**AI Response**: "Push run 43345184867 on 9058b83 passed. Opened soorma-core#24 (dev to main, 'feat(construction): platform/m1-walking-skeleton — event-transport design complete', the description verbatim from event-transport-design-pr-body.md, Refs #10, #3). Every check on #24 passes at 9058b83: Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant. Mergeable. Stopped: the PR needs merging. Nothing recorded as merged; the gate stays PENDING until GitHub shows the merge and the user confirms."
+**Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate; awaiting the user's merge.
+
+---
+
+## Construction Design PR Gate Approval: #24 Merged (U7 event-transport)
+**Timestamp**: 2026-11-13T02:05:38Z
+**User Input**: "Confirm PR Approved. #24 is merged as merge commit 37ec632 on main (2026-11-13T02:04:20Z); I verified it on GitHub. Record the merge and the gate's approval, and fast-forward dev.
+
+I reviewed the Infrastructure Design correction (D-ID-ET-19 and §9) and the QA enrichment (TC-ET-001 to 092), and both are approved.
+
+Start Code Generation Part 1: write the plan, grouped into commits as for U6, with the stop conditions listed, and present it for my approval before writing any code.
+
+The plan must carry:
+
+Earlier units' tests: the approved class-3 U5 change, exactly as approved, with its stop condition. The class-1 changes already recorded: TC-AC-093 keeping the credentials, the e2e backup lists, U4's Compose lists, TC-EHA-068, and the registeredAgent parameter with its evidence.
+The memory measurement (TC-ET-088): above 460 MiB, stop; never raise the limit.
+The JSON.rawJSON start-up self-check, with no fallback.
+The contract tag contract-v0.1.0: pushed only after GitHub shows U7's code PR merged, and only with my go-ahead.
+Done when 3, 4, 6 and 7 in the e2e journey after TC-AC-093, by raw calls.
+The residuals carried to Build and Test.
+Standing rules:
+
+Earlier units' tests: the three classes, with every change listed as a before/after diff with its class at completion.
+The per-group gate: checks and tests, image builds, secret and installed-packages scans; the local stack when a runtime changes; test:e2e on a fresh stack; then push and wait for green.
+Stop when a PR needs merging."
+**AI Response**: "Verified on GitHub: soorma-core#24 MERGED as 37ec632 at 2026-11-13T02:04:20Z. dev fast-forwarded to 37ec632 and pushed; dev = origin/dev = origin/main. Construction Design PR gate for event-transport APPROVED. The QA construction enrichment and the Infrastructure Design correction approved by the user. Starting Code Generation Part 1: loading code-generation.md, writing the plan, presenting it before any code."
+**Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate approved; Code Generation Part 1 begins.
+
+---
+
+## Code Generation: Part 1 Plan Written, Approval Prompt (U7 event-transport)
+**Timestamp**: 2026-11-13T02:08:33Z
+**User Input**: (none since the gate's approval)
+**AI Response**: "Code Generation Part 1 plan written: construction/working/event-transport-code-generation-plan.md (git-ignored; Step 0 and Steps 1 to 34 in eleven groups; decisions D-CG-ET-01 to 15; stop conditions 1 to 15; every TC-ET id assigned, TC-ET-036 to Build and Test). It carries the user's items: the approved class-3 U5 change exactly, with its stop condition (stop 2); the class-1 changes (TC-AC-093's line, the backup e2e lists, U4's Compose lists, TC-EHA-068, registeredAgent's parameter with its evidence); the memory measurement TC-ET-088 (stop above 460 MiB, never raise: stop 9); the JSON.rawJSON self-check with no fallback (D-CG-ET-10, stop 6); the tag only after GitHub shows the code PR merged and with the user's go-ahead (D-CG-ET-14); done when 3, 4, 6, 7 after TC-AC-093 by raw calls (Group 9); the residuals carried to Build and Test; the standing rules. Found while planning: U1's contract/test/components.test.ts injects a fake event-ingest.openapi.yaml that U7 creates for real (stop 10 if any assertion changes); P9's tenancy.test.ts title 'with no sealKeys' goes stale while its assertion still passes (flagged: left unchanged unless the user approves a title-only class-3 change). Proposed: a planned stop after Group 7 for the user's review of S4's code (D-CG-ET-03). Asking for approval before any code."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 1, awaiting approval.
+
+---
+
+## Code Generation: Part 1 Plan Approved (U7 event-transport)
+**Timestamp**: 2026-11-13T02:12:24Z
+**User Input**: "The Code Generation plan is approved.
+
+Keep the review stop after Group 7. When you stop there, report:
+S4's check order, including with the store down;
+the Body Form path into admit;
+the parse step and the start-up self-check;
+the stream's lifecycle: revocation before each delivery and the sweep, exact expiry, supersede, overflow, and shutdown;
+the attribution record with hop;
+the throttle permit released when a stream opens;
+every earlier-unit test change, as a before/after diff with its class.
+The title-only change is approved now as class 3. P9's test "the U2 stack's tenancy.yaml still validates, with no sealKeys" becomes "the stack's tenancy.yaml still validates". Change only the title, and record it.
+The components.test.ts watch item: keep stop condition 10 as written.
+Commit Step 0 with #24's merge record, push, and wait for green. Then start Group 1."
+**AI Response**: "Plan approved. The review stop after Group 7 kept, with the user's seven report items recorded in the plan. A second approved class-3 change recorded: in packages/config/test/tenancy.test.ts, the title 'the U2 stack's tenancy.yaml still validates, with no sealKeys' becomes 'the stack's tenancy.yaml still validates', title only (applied in Group 8, when sealKeys is added). Stop condition 10 kept as written. Committing Step 0 with #24's merge record, pushing, waiting for green, then Group 1."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 1 approved.
+
+---
+
+## Code Generation Part 2: Stop Before Group 1 (stop condition 12) (U7 event-transport)
+**Timestamp**: 2026-11-13T02:13:05Z
+**User Input**: (none since the plan's approval)
+**AI Response**: "Step 0 committed and pushed as 0df0754 (its run in progress). Before writing Group 1, checked NP-ET-05's premise for packages/jcs's default mode ('a raw JSON value is not a plain object, so it is refused as today'; TC-ET-074: 'Default mode: the raw value refused, as before'). It is false: JSON.rawJSON returns a frozen, null-prototype object with one key, rawJSON, which canonicalize's isPlainObject accepts, so today's default mode serializes it as an object: canonicalize(parsed {\"n\":12345678901234567890} with raw numbers) gave {\"n\":{\"rawJSON\":\"12345678901234567890\"}}. The rule cannot be built as written ('unchanged' and 'refused' cannot both hold): stop condition 12. No Group 1 code written. Options put to the user: A) the default mode refuses a raw JSON value (one addition, for an input only the payload path produces; every other case and every U3 test unchanged; TC-ET-074 as written; NP-ET-05's wording corrected), recommended; B) the default mode truly unchanged (a raw value canonicalizes as an object with a rawJSON member), TC-ET-074's default-mode expectation amended, and a test that no raw value reaches the envelope path."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 1 (stop condition 12).
+
+---
+
+## Code Generation Part 2: Stop Resolved, Option A (U7 event-transport)
+**Timestamp**: 2026-11-13T02:15:01Z
+**User Input**: "Good stop. Option A.
+
+I confirmed it: JSON.rawJSON returns a frozen null-prototype object, and isPlainObject accepts null prototypes, so the default mode would canonicalize it as {"rawJSON":"…"}. The approved wording was wrong.
+
+canonicalize's default mode refuses any value for which JSON.isRawJSON is true, with CanonicalizationError and a pointer. Every other input behaves exactly as today, and every U3 jcs and authority test stays unchanged; otherwise stop.
+Mark NP-ET-05's wording as a consistency fix ("the default mode refuses a raw value; otherwise unchanged"), and record the decision in the plan.
+TC-ET-074 stands as written. Add one test case: a raw value nested inside an object or array is refused in default mode, with its pointer.
+Carry it in Group 1, run the gate, push, and wait for green."
+**AI Response**: "Option A recorded as D-CG-ET-16: the default mode refuses any value for which JSON.isRawJSON is true, with CanonicalizationError and a pointer; every other input as today; every U3 jcs and authority test unchanged, or stop. NP-ET-05 marked with the consistency fix. TC-ET-093 added (a raw value nested in an object or an array refused in default mode, with its pointer); TC-ET-074 as written. Carried in Group 1."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stop condition 12 resolved by the user (option A).
+
+---
+
+## Code Generation Part 2: Group 1 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T02:40:41Z
+**User Input**: (none)
+**AI Response**: "Step 0's push run 43350490922 green. Group 1 (packages/jcs: raw-json.ts declaring JSON.rawJSON, JSON.isRawJSON and the reviver's context once; parseRawNumbers; canonicalize's { numbers: 'source' }; the default mode refusing a raw value, D-CG-ET-16; CanonicalizationError.pointer; README). U3's canonicalize.test.ts unedited: its TC-AE-037 failed once on the first draft (an eager pointer join, quadratic in depth); the code was fixed, the test untouched (D-CG-ET-17). Gate passed: build, lint, format, every check, 1456 tests passed and 13 skipped with db:test, audit; S1, S2, S3 images with secret scans and installed-packages checks; stack init, up, smoke; fresh up, outage; fresh up, test:e2e (10 passed); down -v. Committing and pushing."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 1.
+
+---
+
+## Code Generation Part 2: Stop Before Group 2 (stop conditions 3, 12) (U7 event-transport)
+**Timestamp**: 2026-11-13T02:42:05Z
+**User Input**: (none)
+**AI Response**: "Group 1 committed and pushed as 1719b3c (its run in progress). Before writing Group 2, read U3's tests against the Body Form's design; three of them conflict with the user's condition that every U3 test stays unchanged, so no Group 2 code is written. (1) packages/authority/test/admission.test.ts, TC-AE-031: a compile-time assertion that its list of codes is exactly every RefusalCode (P2's closed union); the Body Form's bound returns payload_too_large, which is not a RefusalCode. (2) packages/authority/test/structure.test.ts, TC-AE-039 step 1: 'no service imports P2' (no file under services/*/src imports @soorma/envelope); NP-ET-03's allowlist has S4 import loadSealKeyRing from @soorma/envelope. (3) The same test pins packages/authority/package.json's dependencies to exactly @soorma/envelope and @soorma/policy-decision-seam; measuring the payload in authority with jcs's source mode would add @soorma/jcs. Options put to the user, with recommendations."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 2.
+
+---
+
+## Code Generation Part 2: Stop Resolved (Group 2) (U7 event-transport)
+**Timestamp**: 2026-11-13T02:49:03Z
+**User Input**: "Good stop. Answers:
+
+A. Add payload_too_large to P2's RefusalCode, and the one item to TC-AE-031's list. It's class 1 (required by the approved Body Form, an item added, nothing removed), and I approve it as the single exception to my "every U3 test unchanged" condition. Record it with its diff. Every other U3 test stays unchanged; otherwise stop.
+The recommendation: @soorma/authority re-exports loadSealKeyRing and the SealKeyRing type (additive). S4 imports nothing from @soorma/envelope, and TC-AE-039 stays unchanged. Mark NP-ET-03's allowlist as a consistency fix: from @soorma/authority only, createEnvelopeAdmission, createCachingAgentFacts, loadSealKeyRing, and types.
+The recommendation: the Body Form's member bound takes a measure function from the caller, and authority's manifest is unchanged.
+In authority's own tests, a stub measure covers the ordering, the pointer, and the limit plus one byte.
+S4's composition supplies jcs's source-mode measure. S4's bound tests (the large number at the limit, and TC-ET-071, 072, 073) assert that, so a wrong measure would fail there.
+Record the decision in the plan.
+Wait for Group 1's CI run to pass, then carry these in Group 2 through the full gate, push, and wait for green."
+**AI Response**: "Recorded as D-CG-ET-18 (payload_too_large in P2's RefusalCode; TC-AE-031's list gains that one item, class 1, the user's single approved exception to 'every U3 test unchanged'; every other U3 test unchanged, otherwise stop), D-CG-ET-19 (authority re-exports loadSealKeyRing and SealKeyRing; S4 imports nothing from @soorma/envelope; TC-AE-039 unchanged; NP-ET-03 marked), D-CG-ET-20 (the Body Form's member bound takes a caller-supplied measure; authority's manifest unchanged; a stub measure in authority's tests for the ordering, the pointer, and the limit plus one byte; S4 supplies jcs's source-mode measure, asserted by S4's bound tests; NP-ET-06 marked). Group 2 after Group 1's run is green."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, the Group 2 stop resolved by the user.
+
+---
+
+## Code Generation Part 2: Group 2 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T03:00:26Z
+**User Input**: (none)
+**AI Response**: "Group 1's push run 43353830147 green. Group 2: P2 gains payload_too_large in RefusalCode and the reasons member_invalid and member_too_large, and exports byPointer; P3's EnvelopeRequest gains the optional Body Form (the draft's member; required members; a caller-supplied measure and bound), step 5 and step 6 as BR-BF-03 to 05; @soorma/authority re-exports loadSealKeyRing, SealKeyRingError, SealKeyInput, SealKeyRing (D-CG-ET-19); authority's manifest unchanged. The one U3 test change, the user's approved exception (D-CG-ET-18): TC-AE-031's codes list gains 'payload_too_large'. Every other U3 test unedited. New: body-form.test.ts. Gate passed: every check; 1472 tests passed, 13 skipped; S2's image, secret scan, installed-packages check; stack smoke; outage; test:e2e on a fresh stack (10 passed); down -v."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 2.
+
+---
+
+## Code Generation Part 2: Group 3 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T03:20:24Z
+**User Input**: (none)
+**AI Response**: "Group 2's push run 43356004674 green. Group 3: P5's VerifyKeyRing and loadVerifyKeyRing (SPKI verify halves; a private key, a repeated key, none, a non-Ed25519 key, a non-key refused), verifyAgentCredential taking the wider type; service-kit's createAdapter gains optional per-route body limits. No earlier-unit test changed (stop condition 4 held). New: verify-ring.test.ts (TC-ET-078), route-limits.test.ts (TC-ET-070). Gate passed: every check; 1478 passed, 13 skipped; S1, S2, S3 images with secret scans and installed-packages checks; smoke; outage; test:e2e (10 passed); down -v."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 3.
+
+---
+
+## Code Generation Part 2: Stop Before Group 4 (stop condition 1) (U7 event-transport)
+**Timestamp**: 2026-11-13T03:21:33Z
+**User Input**: (none)
+**AI Response**: "Group 3 committed and pushed as cde6b98 (its run in progress). Before writing Group 4, read every earlier-unit test the reverse rule (P7's writer and the 0005 CHECK, D-ET-07) reaches. Beyond the approved U5 change, two more need a changed assertion or value, so class 3: stop condition 1. (1) U6, packages/attribution/test/envelope-free.test.ts, 'other agent operations are unaffected, with or without an envelope (U7 decides)': expects checkRecord of an agent record for 'constructedAgentOperation' with no envelope not to throw; the reverse rule refuses it. (2) U4, packages/env-store/test/store.test.ts, TC-EHA-047 store half, 'accepts a consistent record of each actor kind': inserts an agent row with operation 'grantToHuman' and no chain; the 0005 CHECK refuses it. Also foreseen for Group 8, so it can be decided now: (3) U6, deploy/test/data-gateway.test.ts, 'agent signing keys only in data-gateway/; verify halves listed and copied nowhere (until U7)': U7 lists and copies the verify halves into event-ingest/ (D-ID-ET-06). No Group 4 code written. Diffs and options put to the user."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 4 (class-3 test changes).
+
+---
+
+## Code Generation Part 2: Stop Resolved, Three Class-3 Changes Approved (U7 event-transport)
+**Timestamp**: 2026-11-13T03:24:41Z
+**User Input**: "Option A: all three approved as class 3, with one addition to item 3.
+
+envelope-free.test.ts: approved exactly as shown.
+TC-EHA-047: approved exactly as shown. If any refusal case's expected constraint name changes, stop.
+data-gateway.test.ts: approved as shown, plus a check that matches your own wording, "listed only on {env}-secrets-init".
+In the rendered model, no service other than {env}-secrets-init lists any *-agent-verify-key-* secret.
+In each environment's copies, every verify-key name starts with that environment's own ${env}-.
+The signing-key rule stays exactly as it is. Confirm the final form against the rendered model in Group 8, and stop if it differs from this.
+Record all three with their diffs. Every other earlier-unit test stays unchanged; otherwise stop. Wait for Group 3's CI run to pass, then continue with Group 4."
+**AI Response**: "Recorded as D-CG-ET-23 with the three diffs: (1) U6 envelope-free.test.ts, exactly as shown; (2) U4 store.test.ts TC-EHA-047, exactly as shown, a stop if any refusal case's expected constraint name changes; (3) U6 deploy/test/data-gateway.test.ts, as shown plus the user's two checks (no service but {env}-secrets-init lists any agent verify key in the rendered model; every verify-key name in an environment's copies starts with that environment's own prefix), the signing-key rule exactly as it is, the final form confirmed against the rendered model in Group 8, a stop if it differs. Every other earlier-unit test unchanged, otherwise stop. Group 4 after Group 3's run is green."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, three class-3 changes approved.
+
+---
+
+## Code Generation Part 2: Stop Before Group 4, a Fourth Class-3 Change (U7 event-transport)
+**Timestamp**: 2026-11-13T03:25:11Z
+**User Input**: (none since the approval of three class-3 changes)
+**AI Response**: "While starting Group 4, found a fourth earlier-unit test the reverse rule reaches, missed in the first search: U6, packages/env-store/test/agent-credentials.test.ts, TC-AC-036 store half, 'accepts both operations as an agent with no envelope, and leaves other operations alone', which inserts an agent record for 'constructedAgentOperation' with no chain as the owner; the 0005 CHECK refuses it. Then searched every test that writes attribution records (constructedAgentOperation appears only in the three files already known plus this one; restore.test.ts writes a human record; S3's tests write only exchangeBootstrap and renewAgentCredential): the list is now complete at four. Stop condition 1. No Group 4 code written. A diff put to the user."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 4 again.
+
+---
+
+## Code Generation Part 2: Items 4 and 5 Approved; a Sweep Asked For (U7 event-transport)
+**Timestamp**: 2026-11-13T03:28:03Z
+**User Input**: "Item 4: approved exactly as shown, class 3.
+
+Item 5, one more, found in review. It doesn't fail, so no stop condition catches it.
+
+U4's packages/attribution/test/record.test.ts, case "refuses an agent actor without a sponsor", uses the default operation grantToHuman with no envelope, and asserts only AttributionRecordError.
+Under the reverse rule it is refused for the missing envelope too, so it would still pass if the sponsor check were removed.
+Approved as class 3:
+
+-    ['an agent actor without a sponsor', base({ ...agent, sponsor: '' })],
++    ['an agent actor without a sponsor', base({ ...agent, sponsor: '' }, { operation: 'exchangeBootstrap' })],
+With that, the missing sponsor is its only cause.
+Before Group 4's gate, sweep for the same hazard. Look at every earlier-unit refusal test that writes or checks an agent attribution record and asserts only an error type or rejects, without a constraint name or message. List each one with the reason it is refused after 0005 and the reverse rule.
+
+If the refusal still has a single cause, no change.
+If it now has two causes, stop with the proposed one-value fix, as above.
+Then carry items 1, 2, 4 and 5 in Group 4 (and item 3 in Group 8), through the full gate. Push, and wait for green."
+**AI Response**: "Items 4 and 5 recorded as approved class-3 changes (D-CG-ET-24), exactly as shown. Sweeping every earlier-unit refusal test that writes or checks an agent attribution record and asserts only an error type or a rejection, listing each with its cause after 0005 and the reverse rule; a stop with a one-value fix for any with two causes."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, before Group 4.
+
+---
+
+## Code Generation Part 2: The Sweep, No Further Change (U7 event-transport)
+**Timestamp**: 2026-11-13T03:28:39Z
+**User Input**: (none)
+**AI Response**: "Swept every earlier-unit refusal test that writes or checks an agent attribution record and asserts only an error type or a rejection, without a constraint name or message. After 0005 and the reverse rule, each has one cause: (a) U4 record.test.ts TC-EHA-047 writer half: 'a human actor with an envelope' (a human actor carries no envelope; the reverse rule binds agents only); 'a configuration actor with an envelope' (likewise); 'an agent actor without a sponsor' (two causes before item 5; with item 5's exchangeBootstrap, one: the sponsor); 'a hop without load-bearing', 'load-bearing with no hop', 'a hop outside the chain' (each an agent record with an envelope, so the reverse rule is met; one cause: the re-broadening rule). (b) U6 envelope-free.test.ts: exchangeBootstrap and renewAgentCredential with an envelope (envelope-free ops are exempt from the reverse rule; one cause); the same by a human (the reverse rule binds agents only; one cause); item 1's new assertion (one cause: the reverse rule). Named-constraint cases, checked too: U4 store.test.ts TC-EHA-047 store half, 'an agent actor without a sponsor' fails attribution_agent_actor and the new attribution_envelope_bearing_operations, and PostgreSQL reports CHECK failures in name order, so the expected name is unchanged (the gate confirms); every other case has a chain or a non-agent actor. U6 agent-credentials.test.ts TC-AC-036 refusals: exchangeBootstrap with a chain and renewAgentCredential by a human each fail only attribution_envelope_free_operations. Unrelated: credentials agent-records.test.ts (a lineage constraint on agent_credentials) and e2e privilege refusals (permission denied). No two-cause case: no further change."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, the sweep before Group 4.
+
+---
+
+## Code Generation Part 2: Group 4 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T03:45:43Z
+**User Input**: (none)
+**AI Response**: "Group 3's push run 43358300877 green. Group 4: P7's ENVELOPE_BEARING_AGENT_OPERATIONS and the reverse rule in checkRecord; 0005_attribution_envelope_bearing.sql (the CHECK attribution_envelope_bearing_operations, alone); 0006_event_ingest_role.sql (column-level SELECT on registrations' eight columns, SELECT on the two revocation tables, INSERT on attribution_records); soorma_env_ingest in env-roles.sql, the init script, env-pg_hba.conf; {env}-db-ingest-password in stack:init, env.sh's db/, each {env}-secrets-init; P4's sponsorForRecord. Earlier-unit test changes applied exactly as approved (D-CG-ET-25): U5 registration.test.ts; U6 envelope-free.test.ts; U4 store.test.ts (every refusal case kept its constraint name); U6 agent-credentials.test.ts; U4 record.test.ts (Prettier wrapped items 4 and 5 over several lines, tokens unchanged); class 1: TC-EHA-068's list, TC-AC-076's list, U4's copier list, the harness's role. Flagged, not changed: TC-AC-076's title 'applied all four' is stale with six listed. New: envelope-bearing.test.ts (TC-ET-042), ingest-role.test.ts (TC-ET-081, 082). Gate from fresh volumes passed: 1490 passed, 13 skipped; S2 and S3 images, scans, installed-packages checks; smoke; outage; test:e2e (10 passed)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 4.
+
+---
+
+## Code Generation Part 2: Group 5 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T04:05:53Z
+**User Input**: (none)
+**AI Response**: "Group 4's push run 43361093400 green. Group 5 (P9): loadEventIngest, the EventIngest schema part, the shared-secret refusals for a seal key, an agent verify key, or the database password (another environment's part, another deployable's part, the organization level; the CA excepted) and the role refusal (any role but soorma_env_ingest), listSecrets' eventIngest entry. No earlier-unit test changed. New: event-ingest.test.ts (TC-ET-089; TC-ET-030's configuration half). Gate passed: every check; 1514 passed, 13 skipped; S1, S2, S3 images with scans and installed-packages checks; smoke; outage; test:e2e (10 passed)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 5.
+
+---
+
+## Code Generation Part 2: Group 6 (the contract)
+**Timestamp**: 2026-11-13T04:32:40Z
+**User Input**: (none)
+**AI Response**: "Group 5's push run 43363257136 green. Group 6 (business-rules §14): contract/event-ingest.openapi.yaml (publish POST /events 202; subscribe POST /subscriptions 200 text/event-stream, its events named in x-soorma-events: delivery the shared Delivery by reference, end a StreamEnd; PublishRequest, SubscribeRequest closed, the draft by reference; StreamEnd, StreamEndCode an open set: credential_expired, credential_refused, unavailable, superseded, overflow; agentCredential only). envelope.md: the draft's place on S4; The Delivery: P 64 KiB on JCS with numbers by source text, numbers as written, I-JSON not required, well-formed strings, duplicates keep the last value, S4's body limits and their guarantee, compact JSON recommended; a new The stream section; two rows in Rules checked in code. errors.md: steps 5 and 6 for the body form; payload_too_large widened, and its detail now states the pointer /payload that admit returns for a payload over P (D-CG-ET-27). pre-release.md: statement 2 no resumption; the 'not set' line replaced by the bound. CHANGELOG: every change compatible. U1's tooling gains the fourth surface (class 1, items added): SURFACES, generate-types, sides.ts, the package export. Fixtures, generated types, contract/test/event-ingest.test.ts (TC-ET-024, 038, 045, 053). No earlier-unit test changed; U1's components.test.ts and conventions test pass unedited (stop condition 10 not met). Gate passed: every check; 1549 passed, 13 skipped; S1, S2, S3 images with scans and installed-packages checks; smoke; outage; test:e2e (10 passed). The errors.md detail edit was made after the gate's format and test stages; format:check, check:generated, check:contract, lint, the contract's 323 tests, and the contract build re-run on it, all passing."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 6.
+
+---
+
+## Code Generation Part 2: Group 7, stop (the source-text parse and deep nesting)
+**Timestamp**: 2026-11-13T04:35:07Z
+**User Input**: (none)
+**AI Response**: "Stopped before completing Group 7, under the user's instruction on JSON.rawJSON in S4's runtime path. Group 6 pushed as 218a8df (CI running). S4 written in services/event-ingest (uncommitted); first test run 66 of 74 passing. Finding: JSON.parse with a reviver (NP-ET-05's parse 2, packages/jcs parseRawNumbers) overflows the stack between 2,000 and 4,000 levels of nesting on Node v26.13.0 (RangeError), while JSON.parse without a reviver survives 131,000 and JSON.stringify survives 65,000. A payload within P (64 KiB) can nest about 32,000 deep, so a well-formed, in-bound payload makes S4 answer internal_error, and NFR-ET-05 (U3's maximum-nesting test at each operation's actual limit, every walk surviving) fails at publish. JSON.rawJSON itself works; the reviver's source-text path does not survive the nesting the bounds admit. Options put to the user: A, an iterative source-text parser in packages/jcs that still makes every number with JSON.rawJSON (no fallback, no contract change); B, a published payload nesting bound checked before parse 2 (a contract change); C, mapping the RangeError to a refusal (a runtime-dependent limit). Recommended A. Also found, not blocking: the S4 tests' revocation seeding needs an agent_credentials row (a foreign key); TC-ET-030's no-key check matched S3's bootstrap-bound key 'bound' (the check is narrowed to S4's part and to ttl/propagation); Node 26's HTTP parser answers a request with two Authorization headers with a bare 400 before any service sees it (S1 to S4 alike; P1's tests cover two credentials on the raw header list); TC-ET-063 timed out, not yet diagnosed."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7; stop for the user's decision.
+
+---
+
+## Code Generation Part 2: Group 7, the user's decision at the stop
+**Timestamp**: 2026-11-13T04:44:18Z
+**User Input**: "The Group 7 stop: option A, approved, with these conditions.
+
+One parser. Replace the reviver inside parseRawNumbers with a parser that uses an explicit stack. Don't keep a reviver path for shallow input, and don't fall back to it. The startup self-check and the contract stay as they are.
+The same results as JSON.parse:
+Create members as own data properties, never by assignment, so __proto__ stays an ordinary own key and never sets the prototype.
+A duplicate key keeps its first position and takes the last value.
+Integer-like keys come out in JS order.
+Lone surrogates and every escape are kept exactly.
+Each number becomes JSON.rawJSON of its exact source text, e.g. -0, 1E400, 1e-7, and integers beyond 2^53.
+Comparison tests, with no new dependency:
+Use a fixed set of inputs covering everything in point 2, plus whitespace variants.
+Add a seeded random generator inside the test for shallow documents.
+For each input, assert the new parser and JSON.parse(text, rawReviver) give the same JSON.stringify output and the same key order.
+It only ever runs on text that JSON.parse has already accepted, so any throw would be a 500. Assert it accepts every input in the test set.
+Deep cases at publish's actual 256 KiB limit, for both arrays and objects. Also run TC-ET-052 (NFR-ET-05's test) through the whole publish path: accepted, the record written, the Delivery written to the stream. Time one 256 KiB parse and record it.
+Record it as a Code Generation decision that amends NP-ET-05. My approval of NP-ET-05 missed this problem.
+A known risk to register for soorma-sdk: S4 delivers payloads nested much deeper than common receiving parsers handle. Python's json fails at roughly 1,000 levels, and a TypeScript reviver at roughly 3,000. Hand it over at Build and Test. It doesn't block U7.
+The two-Authorization-header finding is wrong; fix the test and keep it.
+
+With headers given as a raw array, Node's http.request doesn't add Host, and Node's server answers 400 to an HTTP/1.1 request without Host. Plain Node answers 200 to two Authorization headers.
+Add 'host', <host:port> to twoCredentials, and expect 401 credential_refused from P1.
+Add an audit entry correcting the claim that it \"applies to S1 through S4\". Append it; don't edit the earlier entry.
+The other test fixes:
+
+The revocation seeding and the narrower check for the bound's configuration key are approved.
+TC-ET-063: find the cause before changing anything. A timeout when a second subscribe replaces the first on the same instance may be a real bug in the replacement logic. Don't raise the timeout to make it pass.
+U6's TC-AC-076 title: approved, class 3, title only: 'the store has applied all four, in order' becomes 'the store has applied every migration, in order'.
+
+Then finish Group 7 through the full gate once Group 6's CI (218a8df) is green. Stop at the planned review point after Group 7, as planned."
+**AI Response**: "Option A with the user's conditions: one iterative parser in parseRawNumbers, no reviver path; the comparison, deep, and whole-path tests; D-CG-ET-28 amending NP-ET-05; the soorma-sdk risk registered for Build and Test; the two-header test fixed with Host and kept, and a correcting entry; the seeding and the narrowed check; TC-ET-063 diagnosed before any change; TC-AC-076's title (class 3); then Group 7's full gate once 218a8df's CI is green, and the planned review stop."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
+
+---
+
+## Correction: the two-Authorization-header finding
+**Timestamp**: 2026-11-13T04:44:18Z
+**User Input**: (none; the user's correction above)
+**AI Response**: "The stop entry's claim that Node 26 answers two Authorization headers with a bare 400 'before any service sees it (S1 to S4 alike)' is wrong. With headers given as a raw array, Node's http.request adds no Host header, and Node's server answers 400 to an HTTP/1.1 request without Host. Plain Node answers 200 to a request carrying two Authorization headers and a Host. The finding is withdrawn; the S4 test sends Host and expects 401 credential_refused from P1."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7; correction of the earlier stop entry (left as written).
+
+---
+
+## Code Generation Part 2: Group 7, second stop (serializing deep payloads; the same-millisecond supersede)
+**Timestamp**: 2026-11-13T04:51:17Z
+**User Input**: (none)
+**AI Response**: "Group 6's CI run 43366240390 green (218a8df). Done, as the user decided: parseRawNumbers is one iterative parser (D-CG-ET-28, amending NP-ET-05), with packages/jcs/test/raw-json-parser.test.ts (fixed set, 2,000 seeded documents against JSON.parse with the raw reviver, deep cases at 256 KiB; U3's and Group 1's jcs tests unchanged; 105 jcs tests pass); one 256 KiB parse about 46 ms (arrays) and 18 ms (objects). The soorma-sdk risk registered for Build and Test. twoCredentials sends Host and expects 401 credential_refused (passes). The revocation seeding writes the credential record first; the bound-key check narrowed to S4's schema part and ttl/propagation everywhere. TC-AC-076's title changed, title only (class 3, approved). Stopped again on two findings. (1) JSON.stringify, once a value holds any JSON.rawJSON value anywhere, serializes recursively and overflows past 5,155 levels (arrays or objects; Node v26.13.0); without raw values it survives 131,071. S4 builds the Delivery frame with JSON.stringify (NP-ET-11), so a payload within P, nested deeper than about 5,000 and holding a number, is a 500 after its publish record is written. TC-ET-052 through the whole publish path, with a number at the bottom, fails this way for arrays (32,767 levels) and objects (10,922 levels). Options put to the user: A, an iterative serializer in packages/jcs giving JSON.stringify's output exactly with raw numbers by source text, used for the payload in the frame (no contract change); B, the payload delivered in its JCS form (keys sorted; a contract statement); C, a published payload nesting bound. Recommended A. (2) TC-ET-063 diagnosed, nothing changed: the order key is (openedAt in ms, a random 128-bit id); two subscribes of a lineage on one instance in the same millisecond are ordered by the random id, so the newer stream is ended superseded and the older kept about half the time, against BR-FO-04 (the earlier one ends). Six runs with the keys logged: every failure had the second id below the first. TC-ET-055's re-subscribe fails the same way. Proposed: a per-instance monotonic openedAt (the clock's milliseconds, or one more than this instance's last), so a later local subscribe always orders after; the cross-instance rule unchanged. S4's suite: 72 of 76 pass; the four failing are these two findings."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7; stop for the user's decision.
+
+---
+
+## Code Generation Part 2: Group 7, the user's decision at the second stop
+**Timestamp**: 2026-11-13T05:06:58Z
+**User Input**: "Finding 1: option B, not A.
+
+The contract already promises only that numbers arrive as written and that \"every other value is delivered equal in value, in compact form\" (envelope.md). Member order isn't promised, and integer-like keys are already reordered. So B needs a clarifying sentence, not a contract change.
+B reuses canonicalize, which is already free of recursion and tested at depth. It adds no serializer, and the payload's bytes are exactly the ones measured against P.
+How to build it:
+
+Build the frame by splicing: {\"envelope\": + JSON.stringify(envelope) + ,\"seal\": + JSON.stringify(seal) + ,\"payload\": + the payload's canonicalize(payload, { numbers: 'source' }) text + }.
+Build the frame before writing the record. A frame failure must never leave a record behind a 500. The order stays: the record, then the hand-off, then 202.
+Add to envelope.md's list: \"Object members are delivered in RFC 8785 order (sorted by name), not the order sent.\" Record the change as a Code Generation decision that amends NP-ET-11.
+Tests:
+
+Every Delivery frame parses with JSON.parse, and its payload equals what was published, numbers included, compared by walking the structure at depth.
+Run TC-ET-052 through the whole publish path at P, for arrays and for objects, with a number at the bottom: 202, the record written, the Delivery written to the stream.
+Add a test that a payload with keys out of order arrives sorted.
+Finding 2: the proposed fix is approved.
+
+On each instance, a new stream's openedAt is max(clock ms, last openedAt + 1). Record it as a Code Generation decision.
+TC-ET-063 and TC-ET-055's re-subscribe must pass on the fake clock with no timeout change.
+Move TC-ET-064's \"larger id wins\" tie-break to a two-instance test with the same openedAt. Update TC-ET-064's spec text to match.
+Then run the full Group 7 gate, commit, push, wait for green, and stop at the planned review point after Group 7 with the report the plan lists."
+**AI Response**: "Finding 1, option B: the frame spliced from JSON.stringify(envelope), JSON.stringify(seal), and the payload's canonicalize(payload, { numbers: 'source' }) text, built before the record; the order the record, the hand-off, 202; envelope.md's sentence; D-CG-ET-29 amending NP-ET-11; the three tests. Finding 2: openedAt = max(clock ms, last openedAt + 1) per instance, D-CG-ET-30; TC-ET-063 and TC-ET-055 on the fake clock with no timeout change; TC-ET-064's tie-break moved to two instances with the same openedAt, and its spec text updated. Then the full Group 7 gate, commit, push, green, and the planned review stop."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
+
+---
+
+## Code Generation Part 2: Group 7 (S4) through the gate
+**Timestamp**: 2026-11-13T05:43:28Z
+**User Input**: (none)
+**AI Response**: "Group 7 complete through the full gate. services/event-ingest: settings, scheduler, channel (port and in process), stream (writer, registry with the cap and superseding), edge (steps 2 to 4 through P1 with the verify-only ring and P5's cache; the parse step; admit once with the Body Form; the cap; the frame; the record; the hand-off or the stream), security log (with U3's port), throttle (the release at stream open), runtime (both caches' ttl PROPAGATION_BOUND_MS, injected factories; humanGrants empty), main (the JSON.rawJSON self-check first; drain), Dockerfile; CI steps for S4's image, scan, installed packages, no migrations, and the self-check in the image with its negative control. Decisions: D-CG-ET-29 (the frame spliced, the payload's JCS text, built before the record; envelope.md's member-order sentence), D-CG-ET-30 (openedAt per instance max(clock, last + 1)), D-CG-ET-31 (the supersede reply, so at most one stream of a lineage survives in any order; found by TC-ET-064 failing about half its runs: when the later-registered stream had the smaller key, both stayed open), D-CG-ET-32 (step 1's ingest.refused). TC-ET-064 moved to two instances, its spec text updated. Earlier-unit test change in this group: U6 TC-AC-076's title only (class 3, approved). The first two gate runs failed and were fixed, not worked around: U1's TC-WC-003 refused a hand-written 'Delivery' declaration (first an interface, then an alias) in S4's test helper; it now uses the generated type inline, and S4's end event is typed by the generated StreamEnd (@soorma/contract added as S4's dependency, as S1 to S3); one Prettier fix. Gate passed: every check; 1674 passed, 13 skipped; S1, S2, S3, S4 images with scans and installed-packages checks; S4 ships no migrations; the self-check passed in S4's image and refused there without JSON.rawJSON (ConfigurationError); smoke; outage; test:e2e (10 passed). S4 is not yet in the stack (Group 8)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 7.
+
+---
+
+## Code Generation Part 2: the review stop after Group 7
+**Timestamp**: 2026-11-13T05:58:08Z
+**User Input**: (none)
+**AI Response**: "Group 7's push run 43373880589 green (f76380a). Stopped at the planned review of S4's code (Step 22, D-CG-ET-03), with the report the plan lists: the check order with the store down; the Body Form path into admit; the parse step and the start-up self-check; the stream's lifecycle; the attribution record with hop; the throttle permit at stream open; every earlier-unit test change so far as a before/after diff with its class. Group 8 not started."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, review stop after Group 7.
+
+---
+
+## Code Generation Part 2: the user's review of Group 7
+**Timestamp**: 2026-11-13T06:03:38Z
+**User Input**: "The Group 7 review: approved. Continue with Group 8.
+
+Checked: CI 43373880589 passed on f76380a. The frame is built before the record, with the payload in canonical form. openedAt never repeats or goes back on an instance. The supersede reply (D-CG-ET-31) leaves exactly one stream; record it as enforcing BR-FO-05/07, not changing them. The check order, the throttle release, hop and the self-check all match your report. The list of earlier-unit test changes matches what I approved.
+For Group 8:
+
+Item 3, the U6 deploy/test/data-gateway.test.ts change, exactly as approved:
+the verify halves only in event-ingest/ and listed on {env}-secrets-init;
+no service other than {env}-secrets-init lists any *-agent-verify-key-*;
+verify-key names in each environment's copies start with ${env}-;
+the signing-key rule unchanged.
+S4's memory peak (D-ID-ET-17) at the worst case: 256 streams open on one S4, each held near its 1 MiB buffer by a subscriber that isn't reading, while publishes continue. Record the peak against mem_limit: 512m. Above 460 MiB, stop.
+Record a known risk for after M1: with several S4 instances, clock skew between them can let an older stream win a supersede. The agent's new stream ends superseded and the old one runs until its credential expires. M1 runs one S4 per environment, so it doesn't arise there. Add it to the residuals in U7's business rules (§17/§18), not to Build and Test's obligations.
+Then Groups 8 to 11 as planned, each through the full gate. Stop when the code PR is ready to merge."
+**AI Response**: "Group 7 approved. D-CG-ET-31 recorded as enforcing BR-FO-05/07, not changing them. Group 8: item 3 exactly as approved; S4's memory peak at the worst case (256 streams, each near its 1 MiB buffer, a non-reading subscriber, publishes continuing), recorded against mem_limit 512m, a stop above 460 MiB; the post-M1 clock-skew supersede risk in business-rules §17/§18. Then Groups 8 to 11, each through the full gate; stop when the code PR is ready to merge."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, review after Group 7 approved; Group 8 begins.
+
+---
+
+## Code Generation Part 2: Group 8 (the stack) through the gate
+**Timestamp**: 2026-11-13T06:37:08Z
+**User Input**: (none)
+**AI Response**: "Group 8 complete through the full gate. The stack: e-event-ingest and e2-event-ingest in compose.yaml (an *event-ingest anchor, mem_limit 512m, 127.0.0.1:8446 and 8447, their own network only, no replicas); each environment's tenancy.yaml part gains sealKeys and eventIngest; stack:init writes {env}-seal-key-1 (never overwriting), stack:certs {env}-event-ingest-tls; env.sh copies S4's five secrets; each {env}-secrets-init lists them. Smoke §12 at S3's depth (every check passed in E and E2: health, port, hardening and the memory limit, the five secrets, TLS 1.2 refused, the 401 Problem, a registered agent's own round trip with its scoped, sealed Delivery, soorma_env_ingest's attributes and S4's session as it over TLS 1.3, E's credential refused at E2's S4, the log scan); stack:outage Case 4 (S4 serves the round trip with S1 stopped, running and restarted). S4's alert rules (D-CG-ET-34); U7's own tests: deploy/test/event-ingest.test.ts (TC-ET-065), stack-init-ingest.test.ts (TC-ET-084), event-ingest-monitoring.test.ts (TC-ET-069), the in-process TLS test (TC-ET-067). **S4's memory (TC-ET-088; D-CG-ET-33)**: idle 67.6 MiB; the worst case (256 stalled streams each about 0.99 MiB unread, then three waves of 64 concurrent 256 KiB publishes) peaked at 396.9 MiB, 77.5 % of mem_limit 512m, under the 460 MiB stop; no overflow; the limit unchanged. The post-M1 clock-skew supersede risk added to business-rules §17 and §18 (the user's). Earlier-unit test changes: P9 tenancy.test.ts title only (class 3, approved); U6 deploy/test/data-gateway.test.ts item 3 (class 3, approved; its per-environment reading recorded in D-CG-ET-34 and confirmed against the rendered model); U4 compose-model.test.ts (class 1, items added); U4 deploy/test/monitoring.test.ts (class 1: S4's events in the union, the overlap pinned); U5's backup round trip (class 1, e-event-ingest in three lists); stack-client.ts registeredAgent's optional parameter (class 1, with evidence: §11, Cases 3 and the S3 tests pass unchanged). Two stale U4 titles flagged, not changed. Gate passed: every check; 1699 passed, 13 skipped; S1 to S4 images with scans and installed-packages checks; the self-check in S4's image; smoke; outage; test:e2e (10 passed)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 8.
+
+---
+
+## Code Generation Part 2: Group 9 (e2e) through the gate
+**Timestamp**: 2026-11-13T07:07:21Z
+**User Input**: (none)
+**AI Response**: "Group 8's push run 43379960906 green (aed1ba0). Group 9: e2e/event-transport-support.ts (raw HTTPS publish and subscribe through stack-client, an SSE reader, seeding for U7's own file only, sealing with the stack's own seal key for the cases S4 cannot produce). In e2e/agent-registration.test.ts: TC-AC-093's one line (D-CG-ET-12: a Map beside secrets, and one set per instance inside the existing loop; no assertion changed; class 1) and done when 3, 4, 6, 7 after TC-AC-093, chained from U5's and U6's real A, B, their secrets and credentials (TC-ET-001; 002, 003, 004; 006 with a real E2 credential and the reverse; 007), B's stream opened in the first and read in each. e2e/event-transport.test.ts: TC-ET-005, 009, 014, 015, 017, 018, 020, 023, 028, 031, 037, 039, 040, 041, 048, 071, 072, 090. One fix before the gate: three assertions had counted the S3 bootstrap's own record; they now read S4's records only. Gate passed: every check; 1699 passed; S1 to S4 images; the self-check in S4's image; smoke; outage; test:e2e 27 passed (3 files)."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 9.
+
+---
+
+## Code Generation Part 2: Group 10 (documentation and the record) through the gate
+**Timestamp**: 2026-11-13T07:35:31Z
+**User Input**: (none)
+**AI Response**: "Group 9's push run 43383471413 green (19101e7). Group 10: services/event-ingest/README.md (Operations: the seal rotation's three steps, 'wait at least 24 hours', the consequence of removing the old key, the verify-key step in step with S3's, the store down, S1 down, one S4 per environment, the fixed values, the upgrade to U7) and its docs test (TC-ET-087, the values tied to the constants); construction/event-transport/code/code-summary.md (groups, where the rules are, S4's memory, every earlier-unit test and script change since 37ec632 with its git diff and class, the TC cross-check: every TC-ET id 001 to 093 named by a test, a stack proof, or Build and Test, 036 left to Build and Test; security and invariant compliance); the L1 matrix (36 rows) and the invariant matrix (I1 to I10) Implemented; the I8 packaging table re-checked (TC-ET-046: no topic, durability, redelivery, or acknowledgement code; S4's image holds no seeding path, test fixture, or migration of soorma's own); U3's business rules: a consistency note on TC-AE-031's one approved item; TC-ET-028 named in its tests' titles. Gate passed: every check; 1704 passed; S1 to S4 images; the self-check in S4's image; smoke; outage; test:e2e 27 passed."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 10.
+
+---

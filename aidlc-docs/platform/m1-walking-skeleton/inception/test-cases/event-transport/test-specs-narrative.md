@@ -1464,9 +1464,9 @@ pass of this extension records them.
 
 ### TC-ET-064 — Two racing subscribes leave exactly one stream
 
-**Context**: BR-FO-05, 07: the order key `(openedAt, id)` is total.
+**Context**: BR-FO-05, 07: the order key `(openedAt, id)` is total. *(Code Generation, D-CG-ET-30)*: on one instance, a new stream's `openedAt` is max(the clock's milliseconds, that instance's last `openedAt` + 1), so two streams of one instance never share an `openedAt`, and a later subscribe there always supersedes an earlier one (TC-ET-063). A tie is possible only across instances; the id decides it.
 
-**Scenario**: Two subscribes of one lineage are registered at once on two instances sharing a channel, with the same clock reading.
+**Scenario**: Two subscribes of one lineage are registered at once on two instances sharing a channel, with the same clock reading, so both streams have the same `openedAt`.
 
 **Preconditions**:
 - Two S4 runtimes over one channel; an injected clock
@@ -1475,7 +1475,7 @@ pass of this extension records them.
 1. Register both streams at the same `openedAt`
 2. Deliver both `supersede` messages
 
-**Expected outcome**: Exactly one stream survives: the one with the larger id.
+**Expected outcome**: Exactly one stream survives, on either instance: the one with the larger id; the other ends `superseded`. On one instance, two subscribes in the same clock millisecond are ordered by registration, and the later one survives.
 
 **Scope**: edge-boundary · **Priority**: Medium  
 **Source**: event-transport / M1-FR-11  
@@ -2101,5 +2101,28 @@ pass of this extension records them.
 **Source**: event-transport / M1-FR-11  
 **Construction artifacts**: `aidlc-docs/platform/m1-walking-skeleton/construction/event-transport/code/`  
 **Technical references**: `construction/event-transport/functional-design/business-rules.md` (D-ET-02)
+
+---
+
+### TC-ET-093 — A raw value nested in an object or an array is refused in default mode
+
+**Context**: D-CG-ET-16, the user's option A at Code Generation: `canonicalize`'s default mode refuses any value for which `JSON.isRawJSON` is true. A raw value is a frozen, null-prototype object, which the default mode would otherwise have canonicalized as `{"rawJSON":"…"}`.
+
+**Scenario**: Values holding raw numbers at depth are canonicalized in the default mode.
+
+**Preconditions**:
+- `packages/jcs`
+
+**Steps**:
+1. Canonicalize `{ "a": { "b": <raw 12345678901234567890> } }` in the default mode
+2. Canonicalize `[1, [2, <raw 3>]]` in the default mode
+3. Canonicalize the same two values in `{ numbers: 'source' }` mode, with every number raw
+
+**Expected outcome**: Steps 1 and 2 throw `CanonicalizationError`, with `pointer` `/a/b` and `/1/1`. Step 3 canonicalizes both, numbers as their source text.
+
+**Scope**: negative · **Priority**: High  
+**Source**: event-transport / M1-FR-01  
+**Construction artifacts**: `aidlc-docs/platform/m1-walking-skeleton/construction/event-transport/code/`  
+**Technical references**: `construction/event-transport/nfr-design/nfr-design-patterns.md` (NP-ET-05, consistency fix)
 
 ---

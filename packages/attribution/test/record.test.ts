@@ -151,7 +151,10 @@ describe('TC-EHA-047 (the writer half): an inconsistent record is refused before
   it.each([
     ['a human actor with an envelope', base(human, { envelope })],
     ['a configuration actor with an envelope', base({ kind: 'configuration' }, { envelope })],
-    ['an agent actor without a sponsor', base({ ...agent, sponsor: '' })],
+    [
+      'an agent actor without a sponsor',
+      base({ ...agent, sponsor: '' }, { operation: 'exchangeBootstrap' }),
+    ],
     [
       'a hop without load-bearing',
       base(agent, { envelope: { ...envelope, reBroadening: { loadBearing: false, hop: 0 } } }),

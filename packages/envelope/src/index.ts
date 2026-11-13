@@ -24,6 +24,7 @@ export {
   type VerifiedInbound,
 } from './inbound.ts';
 export {
+  byPointer,
   isObject,
   ok,
   own,

@@ -86,7 +86,7 @@ afterAll(async () => {
 });
 
 describe('TC-AC-076: migrations 0003 and 0004 apply after 0001 and 0002, which are unchanged', () => {
-  it('the store has applied all four, in order', async () => {
+  it('the store has applied every migration, in order', async () => {
     const su = await db.superuser();
     try {
       const { rows } = await su.query<{ version: string }>(
@@ -97,6 +97,8 @@ describe('TC-AC-076: migrations 0003 and 0004 apply after 0001 and 0002, which a
         '0002_registrations',
         '0003_agent_credentials',
         '0004_attribution_envelope_free',
+        '0005_attribution_envelope_bearing',
+        '0006_event_ingest_role',
       ]);
     } finally {
       await su.end();
@@ -340,11 +342,16 @@ describe('TC-AC-036 (the store half): an envelope-free operation’s record carr
     ).rejects.toMatchObject({ code: '23514', constraint: 'attribution_envelope_free_operations' });
   });
 
-  it('accepts both operations as an agent with no envelope, and leaves other operations alone', async () => {
+  it('accepts both operations as an agent with no envelope; another agent operation carries one (U7 D-ET-07)', async () => {
     await owner.query(P7.insertRecord, row('exchangeBootstrap', 'agent', null));
     await owner.query(P7.insertRecord, row('renewAgentCredential', 'agent', null));
     await owner.query(P7.insertRecord, row('publish', 'agent', JSON.stringify([{}])));
-    await owner.query(P7.insertRecord, row('constructedAgentOperation', 'agent', null));
+    await expect(
+      owner.query(P7.insertRecord, row('constructedAgentOperation', 'agent', null)),
+    ).rejects.toMatchObject({
+      code: '23514',
+      constraint: 'attribution_envelope_bearing_operations',
+    });
   });
 });
 

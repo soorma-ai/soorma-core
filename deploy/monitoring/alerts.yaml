@@ -48,6 +48,15 @@ events:
   - bootstrap.refused
   - renewal.refused
   - bound.refused
+  # Each environment's S4 (U7 NP-ET-16). store.unavailable and throttle.refused
+  # are S2's and S3's names too, listed once above.
+  - event.published
+  - stream.opened
+  - stream.ended
+  - stream.revoked
+  - stream.overflow
+  - ingest.refused
+  - envelope.refused
 
 rules:
   - id: auth-failed-repeated
@@ -179,3 +188,34 @@ rules:
     threshold: { count: 1, windowMinutes: 15 }
     severity: warning
     description: The bootstrap bound refused attempts for an agent.
+
+  # Each environment's S4 (U7 NP-ET-16; Infrastructure Design §13). None is
+  # grouped by agent or by a human. stream.revoked's window is U6's for a
+  # revoked credential (1 in 15 minutes).
+  - id: stream-revoked
+    event: stream.revoked
+    groupBy: environment
+    threshold: { count: 1, windowMinutes: 15 }
+    severity: warning
+    description: An open stream was ended because its credential or its agent was revoked.
+
+  - id: stream-overflow
+    event: stream.overflow
+    groupBy: environment
+    threshold: { count: 5, windowMinutes: 5 }
+    severity: warning
+    description: Streams ended because their subscribers fell more than 1 MiB behind.
+
+  - id: ingest-refused-burst
+    event: ingest.refused
+    groupBy: code
+    threshold: { count: 20, windowMinutes: 5 }
+    severity: warning
+    description: A burst of publishes or subscribes refused at S4's steps 1 to 4 or the body form.
+
+  - id: envelope-refused-burst
+    event: envelope.refused
+    groupBy: code
+    threshold: { count: 20, windowMinutes: 5 }
+    severity: warning
+    description: A burst of publishes or subscribes refused by admit (steps 5 to 10).

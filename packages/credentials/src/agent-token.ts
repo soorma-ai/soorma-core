@@ -21,7 +21,7 @@
 import { errors, jwtVerify, SignJWT, type JWTPayload } from 'jose';
 import type { EnvironmentRef } from '@soorma/policy-decision-seam';
 import { asSecretText, type SecretText } from '@soorma/service-kit';
-import type { EnvironmentKeyRing } from './key-ring.ts';
+import type { EnvironmentKeyRing, VerifyKeyRing } from './key-ring.ts';
 import { IAT_AHEAD_SECONDS, type TokenRefusalReason, type TokenVerification } from './token.ts';
 
 export const AGENT_CREDENTIAL_PREFIX = 'soorma_ac_';
@@ -121,7 +121,7 @@ const refused = (reason: TokenRefusalReason): AgentTokenVerification => ({
  */
 export async function verifyAgentCredential(
   token: SecretText,
-  ring: EnvironmentKeyRing,
+  ring: VerifyKeyRing,
   environment: EnvironmentRef,
   now: Date,
 ): Promise<AgentTokenVerification> {

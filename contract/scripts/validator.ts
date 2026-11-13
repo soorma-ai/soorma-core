@@ -38,7 +38,7 @@ export type ContractSchema =
   | SurfaceSchema;
 
 /** The surface documents whose definitions can be validated. */
-export const SURFACES = ['org-gateway', 'control-gateway', 'data-gateway'] as const;
+export const SURFACES = ['org-gateway', 'control-gateway', 'data-gateway', 'event-ingest'] as const;
 export type Surface = (typeof SURFACES)[number];
 
 /** A definition in a surface document's `components.schemas`, as `{surface}#{name}`. */

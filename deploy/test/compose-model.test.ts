@@ -89,6 +89,7 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
                 'control-gateway',
                 'data-gateway',
                 'db',
+                'event-ingest',
                 'migrate',
                 'restore',
                 'secrets-init',
@@ -129,6 +130,7 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
           `${env}-control-gateway-tls`,
           `${env}-db-app-password`,
           `${env}-db-data-password`,
+          `${env}-db-ingest-password`,
           `${env}-db-migrator-password`,
           `${env}-db-superuser-password`,
           `${env}-db-tls`,
@@ -137,6 +139,9 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
           `${env}-data-gateway-tls`,
           `${env}-agent-signing-key-1`,
           `${env}-bootstrap-counter-secret`,
+          `${env}-event-ingest-tls`,
+          `${env}-agent-verify-key-1`,
+          `${env}-seal-key-1`,
         ].sort(),
       );
       for (const n of names) expect(n === 'stack-ca-cert' || n.startsWith(`${env}-`), n).toBe(true);
@@ -171,6 +176,7 @@ describe('TC-EHA-079: secrets are mounted files only, and never cross a level', 
         'control-gateway',
         'data-gateway',
         'db',
+        'event-ingest',
         'migrate',
         'restore',
       ]);
@@ -196,6 +202,7 @@ describe('TC-EHA-079 / D-CG-EHA-23: the only environment variables are non-secre
         [`${env}-control-gateway`, ['SOORMA_ENVIRONMENT', 'SOORMA_HEALTH_PORT', 'SOORMA_PROJECT']],
         [`${env}-secrets-init`, []],
         [`${env}-data-gateway`, ['SOORMA_ENVIRONMENT', 'SOORMA_HEALTH_PORT', 'SOORMA_PROJECT']],
+        [`${env}-event-ingest`, ['SOORMA_ENVIRONMENT', 'SOORMA_HEALTH_PORT', 'SOORMA_PROJECT']],
         [`${env}-backup`, ['PGPASSFILE']],
         [`${env}-restore`, ['PGPASSFILE']],
       ]),
@@ -229,7 +236,7 @@ describe('TC-EHA-079 / D-CG-EHA-23: the only environment variables are non-secre
 
   it('each environment service names its own environment and project', () => {
     for (const env of ENVIRONMENTS)
-      for (const r of ['db', 'migrate', 'control-gateway', 'data-gateway']) {
+      for (const r of ['db', 'migrate', 'control-gateway', 'data-gateway', 'event-ingest']) {
         const vars = services[`${env}-${r}`]?.environment ?? {};
         expect(vars.SOORMA_ENVIRONMENT, `${env}-${r}`).toBe(env);
         if (r !== 'db') expect(vars.SOORMA_PROJECT, `${env}-${r}`).toBe('p1');
@@ -278,6 +285,7 @@ describe('TC-EHA-089: no network spans two environments; only the edges are publ
           `${env}-db`,
           `${env}-migrate`,
           `${env}-data-gateway`,
+          `${env}-event-ingest`,
           `${env}-backup`,
           `${env}-restore`,
         ].sort(),
@@ -322,6 +330,8 @@ describe('TC-EHA-089: no network spans two environments; only the edges are publ
         'org-gateway 127.0.0.1:8441->8443',
         'e-data-gateway 127.0.0.1:8444->8443',
         'e2-data-gateway 127.0.0.1:8445->8443',
+        'e-event-ingest 127.0.0.1:8446->8443',
+        'e2-event-ingest 127.0.0.1:8447->8443',
       ].sort(),
     );
   });

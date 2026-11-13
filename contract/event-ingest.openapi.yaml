@@ -1,0 +1,277 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# S4 event-ingest: an environment's data face for events (U7 event-transport).
+# One environment per event-ingest, so no path or body carries an environment:
+# the endpoint names it. Both operations are envelope-bearing: each body carries
+# a draft in its `draft` member (conventions/envelope.md). Shared definitions
+# are referenced from conventions/components.openapi.yaml, never copied. The
+# Delivery payload bound, the stream's events, and the stream's end are in
+# conventions/envelope.md (The Delivery; The stream); the check order for these
+# bodies in conventions/errors.md.
+openapi: 3.1.1
+info:
+  title: soorma event-ingest (S4)
+  version: 0.1.0
+  description: >-
+    Publish an event to an environment, and subscribe to the events published
+    in it. Pre-release (0.y.z): see conventions/pre-release.md. Event delivery
+    semantics are unspecified at this version: live subscribers only, with no
+    durability, ordering, redelivery, or acknowledgement promised.
+  license:
+    name: Apache 2.0
+    identifier: Apache-2.0
+paths:
+  /events:
+    post:
+      operationId: publish
+      summary: Publish an event
+      description: >-
+        An agent instance publishes a payload with a draft. The platform stamps
+        and seals the envelope, records the publish, and offers one Delivery to
+        each stream open in this environment at that moment, the publisher's own
+        included. 202 means accepted for live delivery; it promises no delivery.
+        Requires event:publish. The payload is never read for meaning; it is
+        bounded by the Delivery payload bound (conventions/envelope.md).
+      security:
+        - agentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '202':
+          description: Accepted for live delivery. No body.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /subscriptions:
+    post:
+      operationId: subscribe
+      summary: Subscribe to the events published in this environment
+      description: >-
+        An agent instance opens a stream with a draft. The platform records the
+        subscribe, then answers 200 with a text/event-stream: a delivery event
+        for every Delivery accepted in this environment after the stream opened,
+        and one final end event. At most one stream is open per credential
+        lineage: a later subscribe supersedes it. A stream is not resumable.
+        Requires event:subscribe. The subscribe's own envelope enters no
+        Delivery.
+      security:
+        - agentCredential: []
+      parameters:
+        - $ref: 'conventions/components.openapi.yaml#/components/parameters/SoormaContractVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '200':
+          description: >-
+            The stream, as server-sent events. Each delivery event's data is one
+            Delivery; heartbeats are comment lines; the stream ends with exactly
+            one end event, whose data is a StreamEnd, unless the connection is
+            already gone. After the 200 no Problem is sent: the end event is the
+            only signal. No event carries an id, and Last-Event-ID is ignored.
+          headers:
+            Soorma-Contract-Version:
+              $ref: '#/components/headers/Soorma-Contract-Version'
+            Soorma-Request-Id:
+              $ref: '#/components/headers/Soorma-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              x-soorma-events:
+                delivery:
+                  $ref: 'conventions/components.openapi.yaml#/components/schemas/Delivery'
+                end:
+                  $ref: '#/components/schemas/StreamEnd'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/CredentialRefused'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  schemas:
+    # Request side: closed, every string bounded.
+    PublishRequest:
+      description: >-
+        A publish, with the draft and the payload. Nothing else.
+      type: object
+      additionalProperties: false
+      required:
+        - draft
+        - payload
+      properties:
+        draft:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/Draft'
+        payload:
+          description: >-
+            Any JSON value, opaque to the platform, at most the Delivery payload
+            bound (64 KiB on its JCS serialization, each number counted by its
+            source text). Its numbers are delivered exactly as written.
+    SubscribeRequest:
+      description: A subscribe, with the draft only. Nothing else.
+      type: object
+      additionalProperties: false
+      required:
+        - draft
+      properties:
+        draft:
+          $ref: 'conventions/components.openapi.yaml#/components/schemas/Draft'
+
+    # Received side: open, codes an open set.
+    StreamEnd:
+      description: >-
+        The data of a stream's one end event. Open to unknown fields.
+      type: object
+      additionalProperties: true
+      required:
+        - code
+      properties:
+        code:
+          $ref: '#/components/schemas/StreamEndCode'
+    StreamEndCode:
+      description: >-
+        Why a stream ended. An open set: tolerate codes you do not know.
+        credential_expired, credential_refused, and unavailable mean what they
+        mean on a request; superseded: a later subscribe of the same credential
+        lineage opened a stream; overflow: the stream's send buffer was full.
+        Subscribe again to receive further events.
+      anyOf:
+        - enum:
+            - credential_expired
+            - credential_refused
+            - unavailable
+            - superseded
+            - overflow
+        - type: string
+
+  headers:
+    Soorma-Contract-Version:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Contract-Version'
+    Soorma-Request-Id:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Soorma-Request-Id'
+    Retry-After:
+      $ref: 'conventions/components.openapi.yaml#/components/headers/Retry-After'
+    WWW-Authenticate:
+      description: Bearer, on a 401 (RFC 6750). Never on a 403.
+      required: true
+      schema:
+        type: string
+    Cache-Control:
+      description: no-store, on the stream.
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: >-
+        malformed_request, unsupported_contract_version, stamped_field_set,
+        unknown_field, invalid_inbound_context, chain_too_deep, or
+        envelope_too_large.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    CredentialRefused:
+      description: credential_refused or credential_expired.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWW-Authenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Forbidden:
+      description: forbidden (authority denied). No WWW-Authenticate.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: >-
+        payload_too_large: the body exceeds its operation's limit (publish 256
+        KiB, subscribe 64 KiB), or a publish's payload exceeds the Delivery
+        payload bound (64 KiB), whose errors[] has the one pointer /payload.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    Unavailable:
+      description: unavailable. The request fails closed.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+    InternalError:
+      description: internal_error, with no detail.
+      headers:
+        Soorma-Contract-Version:
+          $ref: '#/components/headers/Soorma-Contract-Version'
+        Soorma-Request-Id:
+          $ref: '#/components/headers/Soorma-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'conventions/components.openapi.yaml#/components/schemas/Problem'
+
+  securitySchemes:
+    agentCredential:
+      $ref: 'conventions/components.openapi.yaml#/components/securitySchemes/agentCredential'

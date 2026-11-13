@@ -59,6 +59,16 @@ BEGIN
       NULL; -- created by a concurrent run
     END;
   END IF;
+  -- S4's own role (U7 D-ID-ET-04): least privilege per deployable. Its table
+  -- grants are in env-store's 0006 only.
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'soorma_env_ingest') THEN
+    BEGIN
+      CREATE ROLE soorma_env_ingest
+        LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+    EXCEPTION WHEN duplicate_object OR unique_violation THEN
+      NULL; -- created by a concurrent run
+    END;
+  END IF;
 END
 $roles$;
 
@@ -73,6 +83,7 @@ BEGIN
   EXECUTE format('REVOKE ALL ON DATABASE %I FROM PUBLIC', target);
   EXECUTE format('GRANT CONNECT ON DATABASE %I TO soorma_env_migrator, soorma_env_app', target);
   EXECUTE format('GRANT CONNECT ON DATABASE %I TO soorma_env_data', target);
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO soorma_env_ingest', target);
 END
 $database$;
 
@@ -83,5 +94,6 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO soorma_env_migrator;
 GRANT USAGE ON SCHEMA public TO soorma_env_app;
 GRANT USAGE ON SCHEMA public TO soorma_env_data;
+GRANT USAGE ON SCHEMA public TO soorma_env_ingest;
 
 COMMIT;

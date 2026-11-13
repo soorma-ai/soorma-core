@@ -387,6 +387,7 @@ describe('TC-AE-031 step 2, BR-RF-03: every code admit can return is in P1’s t
     'forbidden',
     'unavailable',
     'envelope_too_large',
+    'payload_too_large',
     'internal_error',
   ] as const satisfies readonly RefusalCode[];
   // Compile-time: the list is every RefusalCode.

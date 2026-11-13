@@ -7,6 +7,7 @@ export { ContractValidator, type ContractValidatorOptions } from './contract-val
 export {
   BODY_LIMIT,
   createAdapter,
+  type AdapterOptions,
   ProblemFilter,
   type ProblemFilterOptions,
   rawBody,

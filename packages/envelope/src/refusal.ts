@@ -16,6 +16,8 @@ export type RefusalCode =
   | 'forbidden'
   | 'unavailable'
   | 'envelope_too_large'
+  // U7 (D-CG-ET-18): a Body Form member over its bound, at step 6
+  | 'payload_too_large'
   | 'internal_error';
 
 /** The internal reasons, a closed list (business-rules §10). */
@@ -30,6 +32,9 @@ export type RefusalReason =
   | 'unknown_field'
   | 'schema'
   | 'trace_context'
+  // Step 6, a Body Form member (U7 D-CG-ET-18, 20): not measurable, or over its bound
+  | 'member_invalid'
+  | 'member_too_large'
   // Step 7
   | 'jcs_invalid'
   | 'inbound_too_large'

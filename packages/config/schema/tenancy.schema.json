@@ -93,6 +93,9 @@
         },
         "dataGateway": {
           "$ref": "#/$defs/DataGateway"
+        },
+        "eventIngest": {
+          "$ref": "#/$defs/EventIngest"
         }
       }
     },
@@ -519,6 +522,78 @@
           "properties": {
             "counter": {
               "$ref": "#/$defs/SecretName"
+            }
+          }
+        }
+      }
+    },
+    "EventIngest": {
+      "description": "An environment's S4 event-ingest (U7 Infrastructure Design \u00a76; D-ID-ET-07). It names secrets only; each is read from the secrets directory by that environment's own S4, with the environment's sealKeys. It has no field for the propagation bound or any other time value: that is a code constant (D-ET-15).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge", "health", "database", "keys"],
+      "properties": {
+        "edge": {
+          "$ref": "#/$defs/Listener"
+        },
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["port"],
+          "properties": {
+            "port": {
+              "$ref": "#/$defs/Port"
+            }
+          }
+        },
+        "database": {
+          "description": "S4 connects as its own role, soorma_env_ingest (D-ID-ET-04), never as S2's, S3's, or the migrator's.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host", "port", "name", "user", "password", "ca"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253,
+              "pattern": "^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$"
+            },
+            "port": {
+              "$ref": "#/$defs/Port"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z_][a-z0-9_]*$"
+            },
+            "password": {
+              "$ref": "#/$defs/SecretName"
+            },
+            "ca": {
+              "$ref": "#/$defs/SecretName"
+            }
+          }
+        },
+        "keys": {
+          "description": "E's agent verify halves (D-ID-ET-06): each names an Ed25519 public key in SPKI PEM. S4 holds no signing key.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agentVerify"],
+          "properties": {
+            "agentVerify": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/SecretName"
+              }
             }
           }
         }
