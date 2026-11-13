@@ -57,6 +57,8 @@ answered with `text/event-stream`). The exact method and path are Functional Des
 Re-subscribing with a renewed credential is a new stream; overlap handling is Functional
 Design's (plan Q4 note).
 
+*Corrected at U7 Functional Design (2026-11-12, plan Q1 to Q6)*: `publish` is `POST /events` with a closed body `{ draft, payload }`, answered `202` with no body; `subscribe` is `POST /subscriptions` with `{ draft }`, answered `200` `text/event-stream` with `delivery` events and one final `end` event (`{ code }`). **At most one stream per credential lineage in E**: a later subscribe supersedes the earlier stream, across instances through E's fan-out channel. Neither operation returns its own stamped envelope. See `construction/event-transport/functional-design/business-rules.md` (D-ET-01 to 06).
+
 ---
 
 ## 2. Internal Interfaces (`packages/`, `seams/`)

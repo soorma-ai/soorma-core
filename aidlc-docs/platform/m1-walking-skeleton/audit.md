@@ -3422,3 +3422,423 @@ Seeding as the store's owner is approved for U6's other e2e cases (TC-AC-004, 00
 **Context**: Code Generation Part 2, Groups 8 and 9: approved class-3 change (U2's monitoring assertion), the e2e run order, and done when 2's placement
 
 ---
+
+## Code Generation (U6 agent-credentials), Part 2: complete; the code PR awaits the user's merge
+**Timestamp**: 2026-11-12T20:52:35Z
+**User Input**: (none since the decisions on U2's monitoring assertion and Group 9; this entry records the completion prompt)
+**AI Response**: "Groups 8, 9, 10 committed and green: 78410e9 (run 43295281707), 4a2dad9 (run 43297851804), 5700650 (run 43300044942). The code PR soorma-core#23 (dev to main, Refs #9, #3) is open; every check passes (Build, check, and test; Images, image secret scans, stack smoke test, and the S1-stopped demonstration; Dependency review; cla-assistant); mergeable. Presented the standardized completion message (Request Changes / Continue to Next Stage). Stopped for the user's merge; nothing recorded as merged."
+**Context**: Code Generation Part 2, Step 38; the merge is the user's
+
+---
+
+## Code Generation (U6 agent-credentials): approved; the code PR merged
+**Timestamp**: 2026-11-12T20:59:39Z
+**User Input**: "PR #23 is merged: merge commit 00a964b on main (2026-11-12T20:58:00Z). I verified it on GitHub. Continue to Next Stage.
+
+I reviewed Groups 8 to 10 against my decisions, and they're applied as approved. The line added inside TC-AR-008 (secrets.set(...)) is accepted: it captures a value, changes no assertion, and is recorded in the code summary.
+
+U6 close-out, then stop:
+
+Record the merge (00a964b) and my response in audit.md and aidlc-state.md, and mark U6's Code Generation complete. Commit on dev and push. That's bookkeeping only, so no PR is needed now; it rides with U7's design PR.
+Keep soorma-core#9 open until Build and Test. Post a comment on #9 listing what U6 carries to Build and Test: TC-AC-066 and 067, the on-stack p95 for S3, and anything else in the code summary marked for Build and Test.
+Post U6's forward obligations to U7 on soorma-core#10:
+E2E: done when 3 to 7 are appended to the same ordered e2e/agent-registration.test.ts journey after TC-AC-093, reusing the agents and credentials it holds. Seeding is for non-done when cases only. test:e2e runs one file at a time.
+Ports: U7's S4 takes 8446 upward.
+Monitoring: S4's events join alerts.yaml under the same shared-name rule, and only S3-only events may group by agent.
+Attribution and revocation: U7 reads revocation at the propagation bound through P5's fail-closed cache, and records envelope-carrying attribution, as U6's design hands over.
+The standing rules: the three classes of earlier-unit test change, the per-group gate, and stopping when a PR needs merging.
+Then stop. U7 (event-ingest, soorma-core#10) starts in a fresh session."
+**AI Response**: "Verified on GitHub: soorma-core#23 MERGED as 00a964b at 2026-11-12T20:58:00Z; dev fast-forwarded to it. U6 Code Generation marked complete in aidlc-state.md. Commenting on #9 (carried to Build and Test; #9 stays open) and #10 (U6's forward obligations to U7), committing the bookkeeping on dev, and stopping; U7 starts in a fresh session."
+**Context**: Code Generation (U6) approved; code PR merged; U6 close-out
+
+---
+
+## Session Resumption: U7 event-transport (soorma-core#10)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: "Resume the AI-DLC initiative aidlc-docs/platform/m1-walking-skeleton in soorma-core, and start U7 event-transport (soorma-core#10).
+
+Before any stage:
+
+Resume per common/session-continuity.md. Confirm local dev equals origin/dev (aa8f6e5, which contains #23's merge 00a964b) and its CI run is green.
+Correct the unit's name. U7 is event-transport (unit-of-work.md §U7, #10's title). It builds S4 event-ingest. aidlc-state.md says "Next: U7 event-ingest"; fix that, and use the right names everywhere.
+Do Construction Phase Initialization, Unit Initialization (load the enabled extensions' rules) and the L1 Domain Coverage Gate. PRD gap classification is active. Log each in audit.md.
+Read every comment on #10 (nine, from U3, U4, U5 and U6) as U7's forward obligations. Put a table in the Functional Design plan mapping each obligation to where U7 meets it, and show it to me at the plan.
+One correction to those comments: the propagation bound is a code constant, PROPAGATION_BOUND_MS in packages/credentials (U6 NFR Design Q1; PF FR-012, "platform-set and not tenant-configurable"). It supersedes "from configuration" in U3's NFR Requirements comment and "the one configured bound" in U6's Functional Design comment.
+S4 passes this constant as the TTL to both U3's term cache and P5's revocation cache. There is no configuration key for it, and a test proves it.
+Read U6's code summary (construction/agent-credentials/code/code-summary.md) and its decisions. Reuse its patterns where they apply:
+P1's check order holds with the store down;
+the database role per deployable;
+the image's installed-packages check;
+the alert rules under the shared-name rule;
+the e2e journey.
+What U7 must deliver, from the design so far:
+
+S4 completes contract/event-ingest.openapi.yaml, and the contract is tagged after U7's Code Generation.
+U7 proves done when 3, 4, 6 and 7 by raw calls. The tests go after TC-AC-093 in e2e/agent-registration.test.ts, reusing A, B and their credentials.
+Several U3 obligations bear directly on U7:
+the step-1 body limit admits a maximum-size forwarding draft, with a test;
+the edge depth test uses S4's actual limit;
+the seal key ring is provisioned per environment and mounted only into S4;
+createEnvelopeAdmission(...).admit runs once per publish and per subscribe.
+Gaps: GAP-INT-003, GAP-INT-007 and GAP-AE-001 are still open with no new PRD tag, so keep their workarounds. Classify any new question the PRDs don't settle as technology or specification before resolving it.
+If U7 makes P7's envelope rule closed in both directions, U5's constructed record in services/control-gateway/test/registration.test.ts is affected. Classify that change under the standing rules.
+Standing rules (as for U6):
+
+Changes to an earlier unit's tests:
+required by the approved design, items added, nothing removed or reworded: proceed and record;
+strictly stronger (scans more, existing checks unchanged): proceed and record;
+anything else, including a changed helper that earlier assertions depend on: stop for me.
+Completion lists every change as a before/after diff with its class.
+Each commit group:
+the full checks and tests, including the image secret scan and test:e2e on a fresh stack;
+an image build for every deployable whose dependencies the group touches;
+the local stack when a deployable's runtime changes;
+then push, and wait for the CI run to pass before the next group.
+Start long gates in the background from the outset, and act on their completion as soon as you're notified.
+Stop when a PR needs merging. Record nothing as merged until GitHub shows it merged.
+Present each stage's standard two-option completion message, and wait for my approval.
+Begin with U7's Functional Design plan."
+**AI Response**: "Session resumed from aidlc-state.md: CONSTRUCTION; U1 to U6 complete (U6 Code Generation complete, #23 merged as 00a964b); next U7 event-transport (soorma-core#10). No PENDING PR checkpoint. soorma-core: local dev at aa8f6e5 = origin/dev (aa8f6e5); 00a964b is an ancestor of origin/dev; push run 43305868481 on aa8f6e5 completed success. Toolchain: Node v26.13.0, pnpm 12.18.0, Docker Engine 29.5.3, Compose 5.1.4. Re-intake check (session-continuity.md step 3): PRD Intake in the multi-PRD format; the brief is pinned; soorma-prd fetched: backlog/m1-walking-skeleton.md unchanged since the pin 0aad84a (its last commit is 0aad84a); tags unchanged (PF up to prd-platform-foundations-v1.3, ID prd-identity-v1.0); soorma-prd#13, #24, #25, #27, #28, #30 all OPEN. No re-intake trigger: re-intake not offered. Unit name corrected: U7 is event-transport (unit-of-work.md §U7; #10's title); it builds S4 event-ingest. aidlc-state.md's 'Next: U7 event-ingest' fixed. The same mislabel is in the heading of the U6 close-out comment on #10 (issuecomment-6835802654) and in the user's own words recorded at audit.md 2026-11-12T20:59:39Z (left verbatim, as audit input is never altered); the GitHub comment is not edited without the user's say."
+**Context**: CONSTRUCTION, U7 event-transport: session resumption and re-intake check (clean); unit name corrected.
+
+---
+
+## Construction Phase Initialization (re-run on resume)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: (none)
+**AI Response**: "Construction Phase Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted: GitHub issues)]. prd-gap-classification.md loaded and active (## PRD Intake exists). Invariants read at prd-platform-foundations-v1.3 and prd-identity-v1.0: the text of references/platform/invariants.md is identical at both tags (diff empty)."
+**Context**: CONSTRUCTION: phase initialization re-run on resume.
+
+---
+
+## Unit Initialization and L1 Gate: Initial Assessment (U7 event-transport)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: (none)
+**AI Response**: "Unit Initialization: loaded extension rules for [Security Baseline, soorma Platform Invariants, PR Checkpoint, QA Test Cases, JIRA Tickets (adapted)] (unit: event-transport). L1 gate, initial assessment, PRDs read at their tags (PF @ prd-platform-foundations-v1.3, ID @ prd-identity-v1.0). Applicable: PF §7b (the seven envelope fields, the stamped/asserted partition, the draft's client contract version, unknown-field preservation, the re-broadening record when load-bearing, the chain per hop with maxChainDepth) and §7b Recoverability (I4: scope, actor, chain, origin from the record alone); PF §7a Revocation State (read at both granularities on every request, readable by no principal) and Agent Credential (what it asserts, verified at S4); PF §6 rows Event namespace (environment), Envelope (in flight), Credential validation cache, Revocation state cache, Permission lookup cache, Agent credential, and the Events and Credentials isolation assertions; PF §8a rows Publish to an event namespace and Subscribe to an event namespace (event:publish, event:subscribe; intersection; standing set the ceiling); PF §8b O1 to O12 at event ingest (O12 applies), the origin table (autonomous first hop; propagated on an event-triggered hop), re-broadening (load-bearing only, local to its hop); PF §9 failure modes and NFR profile (revocation read on the hot path; availability bounded by the cache; the bound as the cache TTL); PF §17 Envelope and Namespacing Rules; PF FR-001 to FR-003, FR-005, FR-006, FR-012, FR-014, FR-015, FR-017, FR-018, FR-020, FR-021, FR-022, FR-025 (publish and subscribe attributed); ID §8b presenter matrix (event ingest refuses every human credential, by kind) and ID FR-023. Non-applicable: PF §7a Logical Agent Registration and Registration Secret writes (read only, through U5's agent-facts port), Permission Grant (no grant at S4), Human records (ID §7a: refused by kind, never read); PF §8a's other rows; PF FR-009 to FR-011 (S3's). Missing: 0. Inherited work-arounds stand, with no new tag: GAP-INT-003 (soorma-prd#13, Awaiting PRD: Event: live subscribers only, semantics unspecified, pre-release), GAP-INT-007 (soorma-prd#25: origin stamped at every first hop, an asserted origin rejected), GAP-AE-001 (soorma-prd#30: a non-declaring presenter forwarding an autonomous envelope denied). One question is put to the user for classification at the plan rather than decided (Q9: whether a synchronous attribution write makes E's store S4's availability floor, PF §9 Availability and OQ-12 against FR-025); the plan's other questions are assessed as technology."
+**Context**: CONSTRUCTION, U7 event-transport: Unit Initialization; L1 gate initial assessment (0 Missing).
+
+---
+
+## Forward Obligations Read (U7 event-transport)
+**Timestamp**: 2026-11-12T22:03:40Z
+**User Input**: (none)
+**AI Response**: "Read soorma-core#10: the issue body and its nine comments (U3 Functional Design 6761897846, U3 NFR Requirements 6770628300, U3 NFR Design 6771752194, U3 correction 6778300031, U4 Functional Design 6786879701, U4 NFR Design 6789073655, U5 Functional Design 6808307067, U6 Functional Design 6814198317, U6 close-out 6835802654). The user's correction applied: the propagation bound is the code constant PROPAGATION_BOUND_MS in packages/credentials, superseding 'from configuration' (6770628300) and 'the one configured bound' (6814198317); S4 passes it as the TTL to U3's term cache and P5's revocation cache, with no configuration key, proven by a test. Read U6's code summary and decisions. Found while reading: contract/event-ingest.openapi.yaml does not exist yet (contract/test/components.test.ts references it only as a fixture path), so U7 creates it; U1's conventions leave the Delivery payload bound to U7 (envelope.md, pre-release.md; BR-DL-04); U3's admit takes the draft as its body, so publish's payload needs a body shape that keeps the check order (Q1); U3's Admitted.outcome carries no hop, so S4 derives it; P9 already loads sealKeys (loadSealKeys), and nothing provisions them yet; the seal keys, the agent verify halves and S4's role are Infrastructure Design's. Every obligation is mapped in the Functional Design plan."
+**Context**: CONSTRUCTION, U7 event-transport: obligations loaded before planning.
+
+---
+
+## Functional Design: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-12T22:09:27Z
+**User Input**: (none since the session's opening request)
+**AI Response**: "Functional Design plan written: construction/working/event-transport-functional-design-plan.md (git-ignored). It maps all nine obligation comments on #10 to where U7 meets them (OB-01 to OB-39), with the user's correction applied (PROPAGATION_BOUND_MS, a code constant, passed as the TTL to U3's term cache and P5's revocation cache, no configuration key, a test: P-06), and records the user's standing rules for U7 Code Generation verbatim in substance, with the earlier-unit test changes already foreseen and classified (TC-AC-093 keeps the agent credentials, class 1; U5's backup round trip gains e-event-ingest, class 1; U4's list items, class 1; CI steps, class 2; U5's constructed record, Q7). Proposed shapes: publish POST /events (202) and subscribe POST /subscriptions (200 text/event-stream); the stream; the check order per operation, with the store down. Proposals P-01 to P-27, P-05 (humanGrants at S4 grants nothing; no privilege on grants) flagged for review. Questions: Q1 the publish body and its check-order place (A a closed { draft, payload } wrapper through an additive admit option, recommended); Q2 the caller's own stamped envelope (A not returned, recommended); Q3 how a stream ends (A a final end event with a code, recommended); Q4 revocation on an open stream (A through P5's cache before every delivery and on a sweep every R: no Delivery after revocation + B, recommended); Q5 streams per lineage (A one, superseded, recommended); Q6 a slow subscriber (A end with overflow, recommended); Q7 P7's reverse rule (A closed both ways, with U5's constructedAgentOperation changed to exchangeBootstrap approved now as class 3, recommended); Q8 done when 6's credential (A a real E2 credential chained in the journey, plus the reverse, recommended); Q9 put to the user for classification: whether the synchronous attribution record may make E's store S4's availability floor (PF §9 Availability, §20 row 12 against FR-025) (B raise GAP-ET-001 and work around with A, recommended). Q1 to Q8 assessed as technology. Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design plan, awaiting answers.
+
+---
+
+## Functional Design: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-12T23:11:09Z
+**User Input**: "Answers to the Functional Design plan:
+
+Q1: A. U3's admit gains only the additive option, and every U3 test stays unchanged. Add new tests for the option.
+Q2: A.
+Q3: A.
+Q4: A.
+Q5: A, with one addition. State in the design how superseding works across S4 instances (it goes over E's fan-out channel). State its failure mode: if the supersede message is lost, the earlier stream still ends at its credential's exp, at most L. Test superseding on one instance, and state the cross-instance case as a residual if the M1 stack can't exercise it.
+Q6: A.
+Q7: A. I approve the class-3 change exactly as in the plan: operation: 'constructedAgentOperation' becomes 'exchangeBootstrap' in services/control-gateway/test/registration.test.ts, and nothing else in that file changes. If P7's writer turns out to require anything more of an exchangeBootstrap record (a target or a credential), stop.
+Q8: A.
+Q9: B, specification. PF §9 calls the bound "the outage window during which authorization continues". If every publish needs a synchronous write to the same store, that sentence would mean nothing for the data face. Before opening GAP-ET-001 on soorma-prd, check for an existing issue.
+Put both readings in the issue, citing PF @ prd-platform-foundations-v1.3: §9's Availability row and its revocation-bound row, §20 row 12, and FR-025.
+Name the options for the PRD to choose between: the store as the data face's availability floor; or attribution decoupled from it, for example buffered (option C).
+Work around it with A meanwhile. Record the residual, carry it to Build and Test, and register the gap in aidlc-state.md.
+P-01 to P-27: accepted as written, including P-05 (humanGrants grants nothing in M1).
+Unit name: yes, edit the heading of U6's close-out comment on #10 to say event-transport. Change nothing else in it.
+Then generate the Functional Design artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded. Q1 to Q8 technology, all A (Q1: an additive admit option only, every U3 test unchanged, new tests for the option; Q5 with the user's addition on superseding across instances over E's fan-out channel, its failure mode bounded by L, tested on one instance, the cross-instance case a residual if the M1 stack cannot exercise it; Q7 with the user's approval of exactly one class-3 change, conditional on P7 requiring nothing more of an exchangeBootstrap record). Q9 classified as specification by the user: GAP-ET-001 to be raised against PF @ prd-platform-foundations-v1.3 after checking for an existing issue, worked around with A. P-01 to P-27 accepted as written. Checking Q7's stop condition, then the gap, the comment heading, and the artifacts."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design plan answered.
+
+---
+
+## Functional Design: GAP-ET-001 Raised; Comment Heading Corrected (U7 event-transport)
+**Timestamp**: 2026-11-12T23:20:17Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "Q7's stop condition checked: P7's checkRecord requires of an exchangeBootstrap record only an agent actor (registration, instance, sponsor) and no envelope facts, and the store's CHECKs (0001 attribution_agent_actor, 0004 attribution_envelope_free_operations) require nothing more: no target, no credential. The condition does not fire. GAP-ET-001: checked soorma-prd's spec-gap issues first (#13, #24, #25, #27, #28, #30 open; #12, #14 closed): none covers it. Entry written at construction/event-transport/prd-gaps/specification-gaps.md, committed on dev as b05931e and pushed; soorma-prd#31 opened with the label spec-gap, the entry verbatim, pinned to b05931e, both readings and both options, citing PF @ prd-platform-foundations-v1.3 §9 (Availability and Revocation propagation bound rows), §20 row 12, FR-025. Status Open; worked around with A (D-ET-09); residual carried to Build and Test; registered in aidlc-state.md (Open count 6). U6's close-out comment on #10 (issuecomment-6835802654): its heading now reads 'forward obligations to U7 event-transport'; the body is otherwise byte-identical (a first edit added a trailing newline; corrected and verified by diff)."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design, specification gap raised; GitHub comment corrected.
+
+---
+
+## Functional Design: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-12T23:20:17Z
+**User Input**: (none)
+**AI Response**: "Functional Design artifacts generated in construction/event-transport/functional-design/: domain-entities.md; business-rules.md (D-ET-01 to 09 from Q1 to Q9, D-ET-10 to 36 from P-01 to P-27; rules BR-PR-ET, BR-CK, BR-EP, BR-BF, BR-PB, BR-SB, BR-SM, BR-FO, BR-SR, BR-AT-ET, BR-BND, BR-RF-ET, BR-PE-ET, BR-PK; contract changes; amendments, including the approved class-3 change; misuse cases; residuals; forward obligations); business-logic-model.md; l1-coverage-matrix.md (36 applicable rows Covered, 0 Missing; L1-26 on GAP-ET-001's work-around, L1-30 on GAP-INT-003's, L1-08 on GAP-INT-007's, L1-10 on GAP-AE-001's); invariant-coverage-matrix.md (I1 to I10 Covered, I11 N/A; no finding). Notes marked in place: U3 business-rules §2 (Amendment from U7: the Body Form option), component-methods.md S4. Security baseline: no blocking finding. Presented the standard two-option completion message; next stage NFR Requirements."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design complete, awaiting approval.
+
+---
+
+## Functional Design Approval (U7 event-transport)
+**Timestamp**: 2026-11-12T23:36:12Z
+**User Input**: "Continue to Next Stage. Functional Design is approved.
+
+I verified:
+
+D-ET-01 to 09 against my answers, including the Q5 addition and the ordering rule for racing subscribes;
+the Q7 check against P7 and the store's CHECKs;
+the derived hop;
+the marked amendment to U3's business rules;
+soorma-prd#31 and its pinned gap entry;
+the heading-only edit on #10.
+Commit the artifacts with the state, audit and amendment notes on dev, push, and wait for green.
+
+U7 is the last unit, so there's no unit to post forward obligations to. Carry them in the unit's own record for Build and Test: GAP-ET-001's residual and the cross-instance supersede residual.
+
+Then start NFR Requirements."
+**AI Response**: "Functional Design approved and marked complete. U7's obligations for Build and Test (GAP-ET-001's residual; the cross-instance supersede residual) recorded in aidlc-state.md's Carried to Build and Test notes and in business-rules §17 and §18; no issue comment, as no later unit exists. Committing the artifacts, state, audit, and amendment notes on dev, pushing, and waiting for the run; then NFR Requirements."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design approved.
+
+---
+
+## Functional Design: Committed, Push Run Green (U7 event-transport)
+**Timestamp**: 2026-11-12T23:49:56Z
+**User Input**: (none)
+**AI Response**: "Functional Design committed on dev as a7d7804 (artifacts, state, audit, amendment notes) and pushed; push run 43330262892 completed success. No obligations posted: U7 is the last unit; its Build and Test obligations are in aidlc-state.md and business-rules §17, §18."
+**Context**: CONSTRUCTION, U7 event-transport: Functional Design recorded.
+
+---
+
+## NFR Requirements: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-12T23:49:56Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements plan written: construction/working/event-transport-nfr-requirements-plan.md (git-ignored). PF §9's profile carried forward (Step 1.5); the Availability row marked as met by the revocation read and not, in M1, by new publishes and subscribes (GAP-ET-001's work-around). Proposals P-01 to P-16. Questions, all assessed as technology: Q1 the Delivery payload bound P (A 64 KiB, recommended); Q2 the step-1 limits (A subscribe 64 KiB, publish 256 KiB, recommended); Q3 the fan-out channel (A in process, one S4 per environment, behind a port, recommended); Q4 R and the heartbeat (A 1 s and 15 s, recommended); Q5 the open-stream cap and send buffer (A 256 streams, 1 MiB, 5 s grace, recommended); Q6 latency reported (A 200 ms p95 publish and open, 250 ms publish to delivery, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements plan, awaiting answers.
+
+---
+
+## NFR Requirements: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-13T00:13:38Z
+**User Input**: "Answers to the NFR Requirements plan:
+
+Q1: A (64 KiB).
+Q2: A (subscribe 64 KiB, publish 256 KiB), with a precise guarantee.
+A forwarded envelope's unknown fields have no nesting limit; only the 16 KiB size and maxChainDepth bound it. Indentation grows with depth, so no limit admits every indented maximum-size draft.
+State the guarantee in the NFR: any maximum-size forwarding draft shaped like a real stamped envelope, meaning a chain of up to 32 entries, the defined fields, and a flat unknown field padding the envelope to 16 384 bytes in JCS. It is serialized with every non-ASCII character escaped as \uXXXX and indented with 2 spaces. For publish, add a maximum payload serialized the same way.
+P-15's test sends exactly that shape for both operations. The limit plus one byte is payload_too_large.
+Record as a residual that pretty-printing deeply nested unknown fields can exceed the limit. envelope.md recommends compact JSON (a statement, compatible).
+Q3: A, with the consequence stated.
+M1 runs exactly one S4 per environment, so PF §9's Throughput row is not demonstrated for S4 in M1.
+Record that as a residual carried to Build and Test and to the first hosted deployment, with the distributed channel.
+Infrastructure Design adds a Compose-model assertion that each environment has exactly one S4 service and no replicas.
+Q4: A.
+Q5: A. Infrastructure Design sizes S4's container memory for the 256 MiB worst case of stream buffers plus its baseline. Record the number.
+Q6: A.
+P-01 to P-16: accepted.
+Generate the NFR Requirements artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded; all technology. Q1 A (P = 64 KiB); Q2 A with the user's precise guarantee (a maximum-size forwarding draft shaped like a real stamped envelope, 32 chain entries, the defined fields, a flat unknown field padding to 16 384 JCS bytes, every non-ASCII character escaped, 2-space indentation; for publish a maximum payload serialized the same way; P-15's test sends exactly that shape; the limit + 1 byte is payload_too_large; the deeply nested pretty-printing residual; envelope.md recommends compact JSON); Q3 A with its consequence (exactly one S4 per environment; PF §9's Throughput row not demonstrated for S4 in M1, a residual to Build and Test and the first hosted deployment; an Infrastructure Design Compose-model assertion of exactly one S4 service and no replicas per environment); Q4 A; Q5 A with the memory sizing at Infrastructure Design (the number recorded there); Q6 A; P-01 to P-16 accepted. Generating the artifacts."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements plan answered.
+
+---
+
+## NFR Requirements: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-13T00:15:57Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "NFR Requirements artifacts generated in construction/event-transport/nfr-requirements/: nfr-requirements.md (PF §9's profile carried forward, the Availability row met by the revocation read and not by new operations in M1 per GAP-ET-001, the Throughput row per instance only; NFR-ET-01 to 24; residuals §4; obligations to NFR Design, Infrastructure Design, Build and Test; security and invariant compliance) and tech-stack-decisions.md (T-ET-01 to 05: NestJS on Fastify; SSE on the raw reply; the channel in house and in process behind a port; packages/jcs for the payload; the rest unchanged; no new dependency). NFR-ET-04 states the user's guarantee exactly, with why it fits (escaping at most triples non-ASCII bytes: envelope at most 49 152 bytes plus about 2 KB of indentation; payload at most 196 608 plus indentation). Consistency fixes marked in Functional Design: business-rules §14 (compact JSON recommended), BR-FO-08, §17 (the two new residuals); l1-coverage-matrix L1-29. The two new residuals added to aidlc-state.md's Carried to Build and Test (from U7). Presented the standard two-option completion message; next stage NFR Design."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements complete, awaiting approval.
+
+---
+
+## NFR Requirements Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T00:21:13Z
+**User Input**: "Continue to Next Stage. NFR Requirements are approved, with one addition.
+
+NFR-ET-04's guarantee assumes ASCII is unchanged. Common serializers escape some ASCII by default: Go's encoding/json writes <, >, & as <, >, & (6×), and some write / as \/.
+
+Add this to §4's indentation residual.
+Add to NFR-ET-06's recommendation: "compact, without HTML-safe or other ASCII escaping (for example Go's json.Encoder.SetEscapeHTML(false))".
+NFR-ET-04's guarantee and the limits are unchanged.
+Commit the artifacts with the marked Functional Design consistency fixes, state and audit on dev, push, and wait for green. Then start NFR Design."
+**AI Response**: "NFR Requirements approved with the user's addition: §4's residual names ASCII escaping by common serializers (Go's encoding/json writes <, >, & as <, >, &, six times the bytes; some write / as \/); NFR-ET-06's recommendation reads 'compact, without HTML-safe or other ASCII escaping (for example Go's json.Encoder.SetEscapeHTML(false))'; NFR-ET-04 and the limits unchanged. Committing on dev, pushing, waiting for the run; then NFR Design."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements approved.
+
+---
+
+## NFR Requirements: Committed, Push Run Green (U7 event-transport)
+**Timestamp**: 2026-11-13T00:34:53Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements committed on dev as 6d9fcc7 (artifacts, the marked Functional Design consistency fixes, state, audit) and pushed; push run 43336407440 completed success."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements recorded.
+
+---
+
+## NFR Design: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-13T00:34:53Z
+**User Input**: (none)
+**AI Response**: "NFR Design plan written: construction/working/event-transport-nfr-design-plan.md (git-ignored). Found while planning: service-kit's adapter sets one 16 KiB body limit per Fastify instance; P5 has no verify-only key ring (verifyAgentCredential takes an EnvironmentKeyRing that requires a signing key and private PEMs, while S4 holds SPKI verify halves); BR-EP-03's import rule needs the two construction helpers U3's NFR Design named (createCachingAgentFacts, loadSealKeyRing); credential.refused already has an alert rule grouped by human pseudonym; a JSON number beyond a double's precision would reach subscribers changed; the throttle releases a permit in onResponse, which for a stream fires at its end. Proposals P-01 to P-18 (P-14's alert rules flagged). Questions, all technology: Q1 the body limits (A per route through an additive createAdapter option, recommended); Q2 the Body Form's shape (A a field on each request, recommended); Q3 S4's privilege on registrations (A column-level SELECT, recommended); Q4 the payload's fidelity (C I-JSON enforced: refuse a number with more precision than its double, or a payload JCS cannot serialize, verified feasible with Node 26's JSON.parse source-text access, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design plan, awaiting answers.
+
+---
+
+## NFR Design: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-13T00:39:18Z
+**User Input**: "Answers to the NFR Design plan:
+
+Q1: A. Q2: A. Q3: A.
+Q4: X, numbers delivered exactly, with nothing refused for precision.
+Option C would refuse 64-bit integer IDs above 2^53, which are common in Python, Go and Java payloads. Its precision check also reads the payload beyond its bound, against the I9 row's "never inspected beyond its bound".
+Node 26 has JSON.rawJSON as well as source-text access. I checked on this machine: JSON.parse(text, (k, v, ctx) => typeof v === 'number' ? JSON.rawJSON(ctx.source) : v), then JSON.stringify, emits 12345678901234567890 unchanged.
+So:
+In the payload subtree only, number values are carried by their source text and serialized exactly. Every other value is delivered equal in value, compact.
+The payload bound is still measured on its JCS form, with numbers counted by their source text. Decide how packages/jcs measures that, and record it.
+A payload JCS cannot serialize (a lone surrogate) is malformed_request with a pointer.
+Duplicate member names keep the last value, and the contract says so.
+The contract states that payload numbers are delivered as written. It does not require I-JSON numbers.
+Tests:
+an integer above 2^53;
+a long decimal and an exponent form, delivered exactly;
+the lone surrogate refused;
+the bound measured with a large number at the limit.
+The I9 row stays "never inspected beyond its bound and its JSON well-formedness".
+Show the parse step's design in the NFR Design artifacts. If JSON.rawJSON turns out not to be usable in S4's runtime path, stop and tell me rather than falling back.
+P-01 to P-18: accepted, including P-14's thresholds.
+Generate the NFR Design artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded; all technology. Q1 A, Q2 A, Q3 A; Q4 X as the user specified (payload numbers carried by their source text through JSON.rawJSON and serialized exactly; the bound on JCS with numbers counted by their source text, the measurement decided and recorded; a lone surrogate malformed_request with a pointer; duplicates keep the last value, stated; the contract states numbers are delivered as written and does not require I-JSON numbers; four tests; the I9 row's wording kept; the parse step's design shown; stop rather than fall back if JSON.rawJSON is unusable in S4's runtime path). P-01 to P-18 accepted, P-14's thresholds included. Checking JSON.rawJSON in S4's runtime path before generating."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design plan answered.
+
+---
+
+## NFR Design: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-13T00:42:33Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "Checked the user's Q4 condition before generating: in S4's pinned runtime image (gcr.io/distroless/nodejs26-debian13, Node v26.13.0, S3's digest), JSON.parse with a reviver returning JSON.rawJSON(context.source) for numbers, then JSON.stringify, returned {\"id\":12345678901234567890,\"d\":0.10000000000000000555,\"e\":1E+400,\"x\":-0} unchanged, and a 60 000-digit number round-tripped exactly; JSON.isRawJSON true. TypeScript 6.0.3's lib and @types/node 26.6.6 declare neither JSON.rawJSON nor the reviver's context: recorded, and handled by one type declaration in packages/jcs and a start-up check in S4 that refuses to start without them; no fallback. Not a runtime unusability, so not stopped; flagged to the user. NFR Design artifacts generated in construction/event-transport/nfr-design/: nfr-design-patterns.md (NP-ET-01 to 18; NP-ET-05's parse step in detail: two parses of one text, the draft as today and the payload with raw numbers; packages/jcs's canonicalize gains { numbers: 'source' }, default unchanged, and CanonicalizationError a pointer; the refusal and delivery table; the user's four tests plus the jcs mode and the start-up check; I9's wording; the contract statements) and logical-components.md (S4's components, the additive changes to earlier units' packages with their tests unchanged except the recorded ones, the stream's states). Consistency fixes marked in Functional Design (BR-EP-03 allowlist, BR-BF-06, §14, domain-entities Delivery, invariant matrix I9) and NFR Requirements (NFR-ET-02). Presented the standard two-option completion message; next stage Infrastructure Design."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design complete, awaiting approval.
+
+---
+
+## NFR Design Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T00:45:07Z
+**User Input**: "Continue to Next Stage. NFR Design is approved.
+
+The type-declaration gap for JSON.rawJSON is not a stop. Declaring the types once in packages/jcs with the start-up self-check and no fallback is right.
+
+Commit the artifacts with the marked consistency fixes, state and audit on dev, push, and wait for green. Then start Infrastructure Design.
+
+The items already handed to it:
+
+a Compose-model assertion of exactly one S4 per environment, with no replicas;
+S4's container memory sized for 256 MiB of stream buffers plus the measured baseline, with the number recorded;
+the seal key ring per environment, generated by stack:init, never overwritten, and mounted only into that environment's S4;
+E's agent verify halves listed on {env}-secrets-init and copied only into S4's own subdirectory;
+ports 8446 and 8447;
+stack:outage with S1 stopped;
+the backup e2e lists gaining e-event-ingest;
+the two-phase seal-key rotation in S4's README operations notes."
+**AI Response**: "NFR Design approved; the JSON.rawJSON type-declaration handling confirmed by the user. Committing on dev, pushing, waiting for the run; then Infrastructure Design with the eight handed-over items."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design approved.
+
+---
+
+## NFR Design: Committed, Push Run Green (U7 event-transport)
+**Timestamp**: 2026-11-13T00:57:41Z
+**User Input**: (none)
+**AI Response**: "NFR Design committed on dev as 8289608 (artifacts, the marked consistency fixes, state, audit) and pushed; push run 43339554661 completed success."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design recorded.
+
+---
+
+## Infrastructure Design: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-13T00:57:41Z
+**User Input**: (none)
+**AI Response**: "Infrastructure Design plan written: construction/working/event-transport-infrastructure-design-plan.md (git-ignored). The user's eight handed-over items mapped (P-14, Q1, P-05 and P-06, P-06, P-02, P-11, P-12, P-13 with Q2). For item 2, measured: the local stack brought up (stack:init, stack:up), the smoke test run (passed), then down -v; docker stats: e-data-gateway 54.1 MiB idle and 54.3 MiB after the smoke test, e2-data-gateway 53.4 and 53.6, e-control-gateway 55.8 and 54.6, each against 256 MiB. S3 is the measured proxy; S4's baseline estimated at about 131 MiB (the entry point, both caches at their maximum, 64 maximum bodies parsed twice, 256 TLS sockets), about 387 MiB with the 256 MiB of stream buffers. Proposals P-01 to P-16. Questions, both technology: Q1 mem_limit (A 512m now, S4 measured at Code Generation under the worst case, the peak recorded, a stop above 90 %, recommended); Q2 the seal-key rotation overlap (A at least 24 hours, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design plan, awaiting answers.
+
+---
+
+## Infrastructure Design: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-13T01:02:48Z
+**User Input**: "Answers to the Infrastructure Design plan:
+
+Q1: A. The limit is 512m, recorded now. At Code Generation, measure S4 itself idle and under the stated worst case (256 stalled streams with full buffers plus 64 concurrent maximum-size publishes), and record the peak beside the limit. Above 90% (460 MiB), stop for me; don't raise the limit.
+Q2: A. The overlap is at least 24 hours, and the README states the consequence: once the old key is removed, envelopes sealed with it can't be forwarded.
+P-01 to P-16: accepted, including the stricter forbidden-package list.
+Generate the Infrastructure Design artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded; both technology. Q1 A: mem_limit 512m recorded; S4 measured at Code Generation idle and under the worst case, the peak recorded beside the limit; above 460 MiB, stop, never raise. Q2 A: an overlap of at least 24 hours, the README stating the consequence. P-01 to P-16 accepted, the stricter forbidden-package list included. Generating the artifacts."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design plan answered.
+
+---
+
+## Infrastructure Design: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-13T01:05:04Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "Infrastructure Design artifacts generated in construction/event-transport/infrastructure-design/: infrastructure-design.md (D-ID-ET-01 to 18; components to infrastructure; the image and its forbidden list; secrets, event-ingest/ holding exactly five files, the seal key and verify half nowhere else; the role soorma_env_ingest; tenancy.yaml's sealKeys and eventIngest parts; networks and ports 8446, 8447; mem_limit 512m with the Code Generation measurement and its stop; smoke; stack:outage Case 4; U5's backup e2e lists; S4's README Operations with the two-phase seal rotation, at least 24 hours, and its consequence; monitoring; the Compose-model rules, U4's list items only and U7's own test file asserting exactly one S4 per environment, no replicas, mem_limit 512m; CI; obligations; security and invariant compliance) and deployment-architecture.md. construction/shared-infrastructure.md extended (hardening, secrets, stores, networks, carried). NFR-ET-09 marked with the recorded number. Presented the standard two-option completion message; next stage Code Generation (after the QA construction enrichment and the Construction Design PR gate, per the enabled extensions)."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design complete, awaiting approval.
+
+---
+
+## Infrastructure Design: Changes Requested (U7 event-transport)
+**Timestamp**: 2026-11-13T01:08:49Z
+**User Input**: "Request Changes: one, to §9 Smoke (D-ID-ET-10). As written, S4's smoke test never makes S4 use its store, its agent verify key, or its seal key. A wrong database role or password, or a missing seal or verify key in E2's S4, would pass the smoke test. The e2e journey reaches E2's S4 only through a refusal.
+
+Match the depth U6 gave S3. Per environment, stack:smoke adds:
+
+A real round trip:
+an agent registered through that environment's S2, with event:publish and event:subscribe and autonomy declared, using the existing registeredAgent helper;
+bootstrapped at that environment's S3;
+it subscribes and publishes at that environment's S4 over TLS 1.3, and receives its own Delivery;
+check the Delivery's envelope scope and that the seal is present.
+Cross-environment refusal: E's agent credential is refused at E2's S4.
+Secrets: each S4 sees exactly its five secrets.
+Database role: S4's session runs as soorma_env_ingest. Check it right after that environment's round trip, as U6 did for S3 (the pool's 10-second idle timeout).
+Keep the existing checks: TLS, health, the 401 Problem, and the log scan.
+
+Everything else is approved as presented. Present the completion message again after the change."
+**AI Response**: "Applying the one change to §9 (D-ID-ET-10): per environment, a real round trip (registeredAgent through that environment's S2 with event:publish, event:subscribe and autonomy declared; bootstrapped at its S3; subscribe and publish at its S4 over TLS 1.3; its own Delivery received; the envelope's scope and the seal's presence checked); E's agent credential refused at E2's S4; each S4 sees exactly its five secrets; S4's session runs as soorma_env_ingest, checked right after that environment's round trip; the existing checks kept. Then the completion message again."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design, one change requested.
+
+---
+
+## Infrastructure Design: Change Applied, Presented Again (U7 event-transport)
+**Timestamp**: 2026-11-13T01:09:41Z
+**User Input**: (none since the change request)
+**AI Response**: "§9 Smoke rewritten at the depth U6 gave S3, as a new smoke.ts §12 (D-ID-ET-10 amended): per environment, health, loopback port, hardening; exactly five secrets, 65532, 0400; TLS 1.3; the 401 Problem with both headers (kept); set-up with H's credential at that environment's S2, a further grant of event:publish and event:subscribe (S3's agent:register grant unchanged), an agent registered through that S2 with both event permissions and autonomy declared using registeredAgent, bootstrapped at that environment's S3; subscribe and publish at that environment's S4 over TLS 1.3, its own Delivery received; the envelope's scope and the seal's presence checked; right after the round trip, soorma_env_ingest with U4's attributes and S4's session as soorma_env_ingest over TLS 1.3 (S3's and S2's roles still checked); after both environments, E's agent credential refused at E2's S4; the log scan extended to S4 and everything the smoke saw. Found while applying: registeredAgent registers with an empty standing set and no autonomy; it gains one optional parameter defaulting to today's exact body, so its existing callers (smoke.ts §11, s1-outage.ts, services/data-gateway/test/refusals.test.ts) send byte-identical requests: class 1 with evidence, as U6's D-CG-AC-17, a stop if any existing caller's check or test would change. §17 carries the diff. Presented the standard two-option completion message again."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design, change applied.
+
+---
+
+## Infrastructure Design: Correction, then Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T01:14:32Z
+**User Input**: "One correction, then Continue to Next Stage. Infrastructure Design is approved after it.
+
+§9's "Reach of each check" says a wrong seal key fails #7. It doesn't: a round trip seals and verifies with the same key, so E2's S4 holding E's seal key would still pass. And forwarded-context failures all share invalid_inbound_context, so a cross-environment forward can't tell it apart.
+
+Fix:
+
+Change the sentence to "a missing seal key fails #2 or #7".
+State that a seal key shared across environments is caught by S4's config part: loadEventIngest refuses a seal key, agent verify key or database password shared with another environment's part or with another deployable's part, as U6's dataGateway part does (D-CG-AC-27).
+Add that check to the design if it isn't already there, with a config test for each case.
+Then commit the artifacts with the marked consistency fixes, state and audit on dev, push, and wait for green. Go on to the QA test-case enrichment, then the Construction Design PR gate. Stop when that PR needs merging."
+**AI Response**: "Applying the correction to §9 and adding the shared-secret refusal to loadEventIngest (the design did not have it), with a config test per case; then Infrastructure Design approved, committed, pushed, CI awaited; then the QA construction enrichment and the Construction Design PR gate, stopping when the PR needs merging."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design correction and approval.
+
+---
+
+## Infrastructure Design Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T01:15:21Z
+**User Input**: (the correction and approval recorded at 2026-11-13T01:14:32Z)
+**AI Response**: "Correction applied: §9's reach now reads 'a missing seal key fails #2 or #7', with why a wrong one does not (one key seals and verifies a round trip; forwarded-context failures share invalid_inbound_context). The design did not have the shared-secret refusal: added as D-ID-ET-19 and in §6: loadEventIngest refuses a seal key, agent verify key, or database password also named by another environment's part, another deployable's part in the same environment, or the organization level (the CA excepted), and any database.user but soorma_env_ingest, as U6's dataGateway part (D-CG-AC-27); a config test per case (twelve shared-secret refusals and three roles, plus the local tenancy.yaml accepted). Infrastructure Design approved. Committing on dev, pushing, waiting for the run."
+**Context**: CONSTRUCTION, U7 event-transport: Infrastructure Design approved.
+
+---
+
+## QA Construction Enrichment: Complete (U7 event-transport)
+**Timestamp**: 2026-11-13T01:21:56Z
+**User Input**: (the instruction of 2026-11-13T01:14:32Z: "Go on to the QA test-case enrichment, then the Construction Design PR gate. Stop when that PR needs merging.")
+**AI Response**: "QA construction enrichment for event-transport (gates checked: the extension enabled; the inception specs present; no enrichment-delta.md before). Sources: functional-design/, nfr-requirements/ (as for every unit since U1, F38), nfr-design/, infrastructure-design/. TC-ET-001 to 024 enriched in place (codes, paths, placement: done when 3, 4, 6, 7 after TC-AC-093; D-ET-08's real E2 credential; the stream's end codes; the record's columns; Case 4). TC-ET-025 to 092 added (68), covering every verification target: the L1 and invariant matrices' markers, NFR-ET-01 to 19, NP-ET-01 to 18 (the user's four payload tests TC-ET-071, 072, 073, 049; jcs's mode 074; the start-up check 075; duplicates 076; the Body Form 077), and D-ID-ET-01 to 19 (the Compose model 065, the seal key 084, the smoke at S3's depth 085, the backup lists 086, the README 087, the memory measurement 088, the shared-secret refusals 089); U6's handed timelines TC-ET-028, 029. Index updated (92 cases); enrichment-delta.md written (git-ignored). Every QA enrichment marker replaced by TC ids; test-case sections added to nfr-design-patterns.md and infrastructure-design.md (§20)."
+**Context**: CONSTRUCTION, U7 event-transport: QA construction enrichment complete (a distinct step, announced).
+
+---
+
+## Construction Design PR Gate: Opened (U7 event-transport)
+**Timestamp**: 2026-11-13T01:21:56Z
+**User Input**: (the same instruction)
+**AI Response**: "Construction Design PR gate for event-transport: git repository present; branch dev, PR to main (the user's standing instruction, as for U1 to U6). Instructions and the PR description written (construction/working/event-transport-design-pr-checkpoint-instructions.md, event-transport-design-pr-body.md; git-ignored); aidlc-state.md PR Checkpoint State: PENDING. Committing on dev after the run for 25479cb passes, pushing, waiting for that run, then opening the PR and stopping when it needs merging."
+**Context**: CONSTRUCTION, U7 event-transport: Construction Design PR gate, PENDING.
+
+---
