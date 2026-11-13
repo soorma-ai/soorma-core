@@ -4,7 +4,7 @@
 - **Project**: soorma-core: CI's image job, faster (soorma-core#26)
 - **Project Type**: Brownfield
 - **Start Date**: 2026-11-13T08:50:17Z
-- **Current Stage**: CONSTRUCTION - Code Generation Part 2: Run A 43420953285 (b09821a) green, image job 5m36s; commit 2 (aidlc-docs only) pushed, Run B pending
+- **Current Stage**: CONSTRUCTION - Build and Test: PR #27 (dev to main, Closes #26) open; **waiting for the merge** (the user merges from the review session). Run A 43420953285 green (image job 5m36s); Run B 43421826526 green (image job skipped)
 - **Milestone**: none (no slice brief). Timing: before M1's Build and Test (platform/m1-walking-skeleton)
 - **Specification**: soorma-core#26 (the issue is the requirements)
 - **Requirements depth**: Minimal
@@ -54,5 +54,5 @@ None.
 - [ ] NFR Design: SKIP
 - [ ] Infrastructure Design: SKIP (the job layout is in the code generation plan)
 - [x] Code Generation Part 1 (plan): APPROVED 2026-11-13T09:38:09Z, with the condition on Step 6 (20 local runs; stop at or above 3 MiB)
-- [ ] Code Generation Part 2: pending the user's approval of the plan
-- [ ] Build and Test (the gate, push runs, the PR)
+- [x] Code Generation Part 2: Steps 1 to 17 done; commits 4acb2f0, b09821a, cafdd99 and this one; code summary construction/ci-image-job/code/code-summary.md
+- [x] Build and Test (minimal): construction/build-and-test/build-and-test-summary.md; the local gate, Run A, Run B, PR #27. Open: #27's run before the merge; sbom-main's first run on main after it

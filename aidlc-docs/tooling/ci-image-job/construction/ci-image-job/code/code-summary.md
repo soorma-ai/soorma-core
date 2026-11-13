@@ -134,7 +134,8 @@ Run: `SOORMA_TAR_COMPARE=<the four images> pnpm vitest run tools/test/tar-compar
 | 43395738837 | `0095523` (before; `aidlc-docs/` only) | ran in full | image job 18m05s |
 | 43419983338 | `4acb2f0` (commit 1, push to `dev`) | full run, with this change | **green**. Image job **6m36s** (11:48:37 to 11:55:13 UTC). Builds: S1 33 s, S2 to S4 11 s each. One combined check per image, **2 to 3 s each** (S1 3 s, S2 3 s, S3 3 s, S4 2 s; before, two checks of about 77 s each). No-migrations checks 2 s each; S4 self-check 1 s; stack onward 4m48s. `changes` 4 s (decided to run); `sbom-main` and dependency review skipped |
 | **Run A: 43420953285** | `b09821a` (commit 1b, the `ci.yml` header fix; push to `dev`) | full run, on the final code | **green**. Image job **5m36s** (11:56:00 to 12:01:36 UTC), against 16m00s (43392989143) and 18m05s (43395738837). Builds: S1 27 s, S2 to S4 7 s each. One combined check per image, **about 1 s each** (S1, S2, S3, S4). No-migrations checks 1 s each; stack onward about 4m17s. Workflow wall time 5m47s. `changes` decided to run (code changed); `sbom-main` and dependency review skipped |
-| Run B (pending) | commit 2 (`aidlc-docs/` only) | the image job skipped | recorded in the next commit |
+| **Run B: 43421826526** | `cafdd99` (commit 2, `aidlc-docs/` only; push to `dev`) | the image job skipped | **green**. `changes` listed only `aidlc-docs/tooling/ci-image-job/{aidlc-state.md, audit.md, construction/ci-image-job/code/code-summary.md}` for `b09821a..cafdd99`, then `images=false`. The image job was reported **skipped**; the build job ran (2m38s) |
+| Run C | the PR #27 run | full, on the final head | checked before the merge (the review session) |
 
 ## Security Compliance
 

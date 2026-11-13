@@ -141,3 +141,10 @@ Record the commands, times and exit codes in the code summary. Then finish Step 
 **Context**: CONSTRUCTION - Code Generation Part 2, Step 14 done
 
 ---
+## Build and Test: Run B, and PR #27
+**Timestamp**: 2026-11-13T12:06:15Z
+**User Input**: (none)
+**AI Response**: "Run B = 43421826526 (cafdd99, aidlc-docs only), green: the changes job listed only the three aidlc-docs/tooling/ci-image-job/ files for b09821a..cafdd99 and output images=false; the image job reported skipped; the build job ran. Opened PR #27 (dev to main), body with the measurements and run IDs, the SBOM decision and remaining risk, why scope item 2 is not done, Closes #26, and the Claude Code line. Wrote construction/build-and-test/build-and-test-summary.md (minimal): done-when 1 to 3 met; 4 (CI passes on the PR) is checked before the merge; specification gaps 0 Open, 0 Awaiting PRD; Proves not applicable (no slice brief); sbom-main's first run is after the merge. This commit is aidlc-docs only: its push run should skip the image job; the PR's run is full (the PR's diff includes code). Then stop: #27 needs merging, from the user's review session."
+**Context**: CONSTRUCTION - Build and Test
+
+---
