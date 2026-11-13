@@ -2103,3 +2103,26 @@ pass of this extension records them.
 **Technical references**: `construction/event-transport/functional-design/business-rules.md` (D-ET-02)
 
 ---
+
+### TC-ET-093 — A raw value nested in an object or an array is refused in default mode
+
+**Context**: D-CG-ET-16, the user's option A at Code Generation: `canonicalize`'s default mode refuses any value for which `JSON.isRawJSON` is true. A raw value is a frozen, null-prototype object, which the default mode would otherwise have canonicalized as `{"rawJSON":"…"}`.
+
+**Scenario**: Values holding raw numbers at depth are canonicalized in the default mode.
+
+**Preconditions**:
+- `packages/jcs`
+
+**Steps**:
+1. Canonicalize `{ "a": { "b": <raw 12345678901234567890> } }` in the default mode
+2. Canonicalize `[1, [2, <raw 3>]]` in the default mode
+3. Canonicalize the same two values in `{ numbers: 'source' }` mode, with every number raw
+
+**Expected outcome**: Steps 1 and 2 throw `CanonicalizationError`, with `pointer` `/a/b` and `/1/1`. Step 3 canonicalizes both, numbers as their source text.
+
+**Scope**: negative · **Priority**: High  
+**Source**: event-transport / M1-FR-01  
+**Construction artifacts**: `aidlc-docs/platform/m1-walking-skeleton/construction/event-transport/code/`  
+**Technical references**: `construction/event-transport/nfr-design/nfr-design-patterns.md` (NP-ET-05, consistency fix)
+
+---

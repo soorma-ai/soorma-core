@@ -2,7 +2,7 @@
 
 Unit abbreviation: ET = event-transport
 
-Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 92 test cases, comprehensive scope (TC-ET-001 to 024 at inception; TC-ET-025 to 092 added at the construction pass, 2026-11-13).
+Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 93 test cases, comprehensive scope (TC-ET-001 to 024 at inception; TC-ET-025 to 092 added at the construction pass, 2026-11-13; TC-ET-093 added at Code Generation, D-CG-ET-16).
 
 | Test Case ID | Title | Source | Scope | Priority |
 |---|---|---|---|---|
@@ -98,3 +98,4 @@ Canonical source: [test-specs-narrative.md](test-specs-narrative.md). 92 test ca
 | TC-ET-090 | An envelope sealed in E2 is refused when forwarded in E | event-transport / M1-FR-10 | negative | High |
 | TC-ET-091 | `humanGrants` grants nothing at S4 | event-transport / M1-FR-08 | edge-boundary | Low |
 | TC-ET-092 | Neither operation returns its own hop's envelope | event-transport / M1-FR-11 | happy-path | Medium |
+| TC-ET-093 | A raw value nested in an object or an array is refused in default mode | event-transport / M1-FR-01 | negative | High |

@@ -89,9 +89,13 @@ parseRawNumbers(text) =
 ### How `packages/jcs` measures the payload
 
 **Decision (the user asked for it to be decided and recorded)**: `canonicalize` gains one option,
-`{ numbers: 'source' }`. **Default (`'value'`) is unchanged**: a raw JSON value is not a plain
-object, so it is refused as today, and the envelope, the seal, and every existing caller and
-test behave exactly as before. With `'source'`:
+`{ numbers: 'source' }`. *Consistency fix from Code Generation (2026-11-13, D-CG-ET-16, the user's
+option A)*: **the default mode refuses a raw value; otherwise unchanged**. The approved wording
+("a raw JSON value is not a plain object, so it is refused as today") was wrong: `JSON.rawJSON`
+returns a frozen, null-prototype object, which `isPlainObject` accepts, so today's default mode
+would have canonicalized it as `{"rawJSON":"…"}`. The default mode now refuses any value for
+which `JSON.isRawJSON` is true, with `CanonicalizationError` and a pointer; every other input,
+and every U3 test, is as before. With `'source'`:
 
 | Value | Written as |
 |---|---|
@@ -164,7 +168,7 @@ Marked in place, *Consistency fix from NFR Design (2026-11-13)*:
 | NP-ET-02 | TC-ET-030 |
 | NP-ET-03 | TC-ET-043 |
 | NP-ET-04 | TC-ET-050, TC-ET-070 |
-| NP-ET-05 | TC-ET-071, 072, 073, 049 (the user's four), TC-ET-074, 075, 076, 047 |
+| NP-ET-05 | TC-ET-071, 072, 073, 049 (the user's four), TC-ET-074, 075, 076, 047, TC-ET-093 (added at Code Generation) |
 | NP-ET-06 | TC-ET-077, TC-ET-025 |
 | NP-ET-07 | TC-ET-078 |
 | NP-ET-08 | TC-ET-062, TC-ET-039 |

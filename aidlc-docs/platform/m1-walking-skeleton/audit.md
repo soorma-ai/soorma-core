@@ -3904,3 +3904,34 @@ Commit Step 0 with #24's merge record, push, and wait for green. Then start Grou
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 1 approved.
 
 ---
+
+## Code Generation Part 2: Stop Before Group 1 (stop condition 12) (U7 event-transport)
+**Timestamp**: 2026-11-13T02:13:05Z
+**User Input**: (none since the plan's approval)
+**AI Response**: "Step 0 committed and pushed as 0df0754 (its run in progress). Before writing Group 1, checked NP-ET-05's premise for packages/jcs's default mode ('a raw JSON value is not a plain object, so it is refused as today'; TC-ET-074: 'Default mode: the raw value refused, as before'). It is false: JSON.rawJSON returns a frozen, null-prototype object with one key, rawJSON, which canonicalize's isPlainObject accepts, so today's default mode serializes it as an object: canonicalize(parsed {\"n\":12345678901234567890} with raw numbers) gave {\"n\":{\"rawJSON\":\"12345678901234567890\"}}. The rule cannot be built as written ('unchanged' and 'refused' cannot both hold): stop condition 12. No Group 1 code written. Options put to the user: A) the default mode refuses a raw JSON value (one addition, for an input only the payload path produces; every other case and every U3 test unchanged; TC-ET-074 as written; NP-ET-05's wording corrected), recommended; B) the default mode truly unchanged (a raw value canonicalizes as an object with a rawJSON member), TC-ET-074's default-mode expectation amended, and a test that no raw value reaches the envelope path."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stopped before Group 1 (stop condition 12).
+
+---
+
+## Code Generation Part 2: Stop Resolved, Option A (U7 event-transport)
+**Timestamp**: 2026-11-13T02:15:01Z
+**User Input**: "Good stop. Option A.
+
+I confirmed it: JSON.rawJSON returns a frozen null-prototype object, and isPlainObject accepts null prototypes, so the default mode would canonicalize it as {"rawJSON":"…"}. The approved wording was wrong.
+
+canonicalize's default mode refuses any value for which JSON.isRawJSON is true, with CanonicalizationError and a pointer. Every other input behaves exactly as today, and every U3 jcs and authority test stays unchanged; otherwise stop.
+Mark NP-ET-05's wording as a consistency fix ("the default mode refuses a raw value; otherwise unchanged"), and record the decision in the plan.
+TC-ET-074 stands as written. Add one test case: a raw value nested inside an object or array is refused in default mode, with its pointer.
+Carry it in Group 1, run the gate, push, and wait for green."
+**AI Response**: "Option A recorded as D-CG-ET-16: the default mode refuses any value for which JSON.isRawJSON is true, with CanonicalizationError and a pointer; every other input as today; every U3 jcs and authority test unchanged, or stop. NP-ET-05 marked with the consistency fix. TC-ET-093 added (a raw value nested in an object or an array refused in default mode, with its pointer); TC-ET-074 as written. Carried in Group 1."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, stop condition 12 resolved by the user (option A).
+
+---
+
+## Code Generation Part 2: Group 1 Gate Passed (U7 event-transport)
+**Timestamp**: 2026-11-13T02:40:41Z
+**User Input**: (none)
+**AI Response**: "Step 0's push run 43350490922 green. Group 1 (packages/jcs: raw-json.ts declaring JSON.rawJSON, JSON.isRawJSON and the reviver's context once; parseRawNumbers; canonicalize's { numbers: 'source' }; the default mode refusing a raw value, D-CG-ET-16; CanonicalizationError.pointer; README). U3's canonicalize.test.ts unedited: its TC-AE-037 failed once on the first draft (an eager pointer join, quadratic in depth); the code was fixed, the test untouched (D-CG-ET-17). Gate passed: build, lint, format, every check, 1456 tests passed and 13 skipped with db:test, audit; S1, S2, S3 images with secret scans and installed-packages checks; stack init, up, smoke; fresh up, outage; fresh up, test:e2e (10 passed); down -v. Committing and pushing."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 1.
+
+---
