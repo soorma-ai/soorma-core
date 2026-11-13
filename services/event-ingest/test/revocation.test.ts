@@ -53,7 +53,7 @@ async function fresh(options: Parameters<typeof ingest>[1] = {}): Promise<Ingest
 const sameButId = (r: Response): string =>
   r.text.replace(/urn:soorma:request:[0-9a-f-]+/, 'urn:soorma:request:*');
 
-describe('TC-ET-014 and 028: revocation reaches a publish within B, at either granularity', () => {
+describe('TC-ET-014, TC-ET-028: revocation reaches a publish within B, at either granularity', () => {
   it('at 30 s the cached answer may serve; from 60 s after the read, credential_refused', async () => {
     const g = await fresh();
     const a1 = await agentWith(g, PUBLISHER);

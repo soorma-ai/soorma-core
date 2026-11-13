@@ -4201,3 +4201,11 @@ Then Groups 8 to 11 as planned, each through the full gate. Stop when the code P
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 9.
 
 ---
+
+## Code Generation Part 2: Group 10 (documentation and the record) through the gate
+**Timestamp**: 2026-11-13T07:35:31Z
+**User Input**: (none)
+**AI Response**: "Group 9's push run 43383471413 green (19101e7). Group 10: services/event-ingest/README.md (Operations: the seal rotation's three steps, 'wait at least 24 hours', the consequence of removing the old key, the verify-key step in step with S3's, the store down, S1 down, one S4 per environment, the fixed values, the upgrade to U7) and its docs test (TC-ET-087, the values tied to the constants); construction/event-transport/code/code-summary.md (groups, where the rules are, S4's memory, every earlier-unit test and script change since 37ec632 with its git diff and class, the TC cross-check: every TC-ET id 001 to 093 named by a test, a stack proof, or Build and Test, 036 left to Build and Test; security and invariant compliance); the L1 matrix (36 rows) and the invariant matrix (I1 to I10) Implemented; the I8 packaging table re-checked (TC-ET-046: no topic, durability, redelivery, or acknowledgement code; S4's image holds no seeding path, test fixture, or migration of soorma's own); U3's business rules: a consistency note on TC-AE-031's one approved item; TC-ET-028 named in its tests' titles. Gate passed: every check; 1704 passed; S1 to S4 images; the self-check in S4's image; smoke; outage; test:e2e 27 passed."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation Part 2, Group 10.
+
+---

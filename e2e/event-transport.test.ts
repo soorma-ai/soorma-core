@@ -356,7 +356,7 @@ describe.skipIf(!E2E)('U7 event-transport on the local stack', () => {
     ).toBe(1);
   });
 
-  it('TC-ET-014, 017, 028, 031: revocation reaches a publish and an open stream within B, at either granularity', async () => {
+  it('TC-ET-014, 017, TC-ET-028, 031: revocation reaches a publish and an open stream within B, at either granularity', async () => {
     const byCid = await seededInstance('e', name('rc'), { standing: BOTH });
     const byAgent = await seededInstance('e', name('ra'), { standing: BOTH });
     const streams = [await subscribeAt('e', byCid.token), await subscribeAt('e', byAgent.token)];
