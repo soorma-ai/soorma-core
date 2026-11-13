@@ -9,13 +9,17 @@
 //   node tools/checks/run.ts sql compare inject
 //   node tools/checks/run.ts secrets [--image <ref>]
 //   node tools/checks/run.ts image-packages --image <ref> [--forbid <names>] [--expect <names>]
+//   node tools/checks/run.ts secrets image-packages --image <ref> [--forbid <names>] [--expect <names>]
+//
+// With --image, the image is exported and read once for every image check
+// named (#26; image-scan.ts); each check's findings are printed as before.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { breachedFindings, BREACHED_PATH, MANIFEST_PATH } from './breached.ts';
 import { codeFindings } from './code.ts';
-import { imagePackageFindings } from './image-packages.ts';
-import { imageFindings, repositoryFindings } from './secrets.ts';
+import { imageScanFindings, type ImageScanFindings } from './image-scan.ts';
+import { repositoryFindings } from './secrets.ts';
 import { configurationFindings } from './configuration.ts';
 import { githubSettingsFindings, REPOSITORY, sbomPackageNames } from './github-settings.ts';
 import { fromPnpmLicences, licenceFindings, parseLicenceExceptions } from './licence.ts';
@@ -51,6 +55,14 @@ function listArgument(option: string): string[] {
 
 /** The options that take a value, so their values are not read as check names. */
 const VALUE_OPTIONS = ['--image', '--forbid', '--expect'];
+
+/** `--forbid` and `--expect` on the command line. */
+function packageQuery(): { forbid: string[]; expect: string[] } {
+  return { forbid: listArgument('--forbid'), expect: listArgument('--expect') };
+}
+
+/** The one export and pass for `--image`, made in main() before the checks read it. */
+let imageScan: ImageScanFindings | undefined;
 
 const checks: Record<string, (ws: Workspace) => Finding[] | Promise<Finding[]>> = {
   register: (ws) =>
@@ -96,19 +108,16 @@ const checks: Record<string, (ws: Workspace) => Finding[] | Promise<Finding[]>> 
   sql: () => codeFindings('sql'),
   compare: () => codeFindings('compare'),
   inject: () => codeFindings('inject'),
-  secrets: () => {
-    const image = imageArgument();
-    return image === undefined ? repositoryFindings() : imageFindings(image);
-  },
+  secrets: () => (imageArgument() === undefined ? repositoryFindings() : imageScan!.secrets),
 
   'image-packages': () => {
     const image = imageArgument();
-    return image === undefined
-      ? [{ check: 'image-packages', location: '-', message: 'needs --image <ref>' }]
-      : imagePackageFindings(image, {
-          forbid: listArgument('--forbid'),
-          expect: listArgument('--expect'),
-        });
+    if (image === undefined)
+      return [{ check: 'image-packages', location: '-', message: 'needs --image <ref>' }];
+    const query = packageQuery();
+    return query.forbid.length + query.expect.length === 0
+      ? [{ check: 'image-packages', location: image, message: 'names no package to check' }]
+      : imageScan!.packages;
   },
 
   breached: () =>
@@ -150,6 +159,18 @@ async function main(): Promise<void> {
       `usage: node tools/checks/run.ts <${Object.keys(checks).join('|')}>... [--image <ref>] [--forbid <names>] [--expect <names>]`,
     );
     process.exit(2);
+  }
+  if (image !== undefined) {
+    const query = packageQuery();
+    const secrets = names.includes('secrets');
+    const packages =
+      names.includes('image-packages') && query.forbid.length + query.expect.length > 0
+        ? query
+        : undefined;
+    imageScan =
+      secrets || packages
+        ? await imageScanFindings(image, { secrets, packages })
+        : { secrets: [], packages: [] };
   }
   const workspace = loadWorkspace();
   const findings: Finding[] = [];

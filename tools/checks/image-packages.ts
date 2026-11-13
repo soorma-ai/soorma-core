@@ -11,9 +11,9 @@
 // or when any package.json in the image names it. --forbid fails on a held
 // package (S2: no @soorma/org-identity; S3: no @soorma/org-identity or
 // @soorma/identity-resolution). --expect fails on one not held: S1's image is
-// the positive control, so the check is never vacuous.
-import { execFileSync, spawn } from 'node:child_process';
-import { walkTar, type TarFile } from './tar.ts';
+// the positive control, so the check is never vacuous. The image is exported
+// and read once, with the secret scan, by image-scan.ts (#26).
+import type { TarFile } from './tar.ts';
 import type { Finding } from './workspace.ts';
 
 export interface PackageQuery {
@@ -57,25 +57,4 @@ export function packageFindings(
       .filter((n) => !held.has(n))
       .map((n) => ({ check: 'image-packages', location: image, message: `does not hold ${n}` })),
   ];
-}
-
-export async function imagePackageFindings(image: string, query: PackageQuery): Promise<Finding[]> {
-  if (query.forbid.length + query.expect.length === 0)
-    return [{ check: 'image-packages', location: image, message: 'names no package to check' }];
-  const id = execFileSync('docker', ['create', image], { encoding: 'utf8' }).trim();
-  try {
-    const files: TarFile[] = [];
-    const exported = spawn('docker', ['export', id], { stdio: ['ignore', 'pipe', 'inherit'] });
-    await walkTar(exported.stdout as AsyncIterable<Buffer>, (file) =>
-      files.push({
-        name: file.name,
-        size: file.size,
-        // Only package.json content is read; every other file is a name.
-        content: /(^|\/)package\.json$/.test(file.name) ? file.content : undefined,
-      }),
-    );
-    return packageFindings(image, files, query);
-  } finally {
-    execFileSync('docker', ['rm', id], { stdio: 'ignore' });
-  }
 }
