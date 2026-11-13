@@ -25,7 +25,7 @@ Everything here is enforced by the platform's perimeter; nothing depends on a cl
 
 ## Using it
 
-**From another language**: take the schemas at a tag (`contract-v0.1.0` once published) and
+**From another language**: take the schemas at a tag (the first is `contract-v0.1.0`) and
 generate your own types. Never share generated types by hand. Treat received identifiers as opaque
 strings, keep unknown fields, and accept unknown enumeration values and error codes.
 

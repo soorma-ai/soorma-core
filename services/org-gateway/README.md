@@ -27,7 +27,7 @@ to start otherwise), Node 26.13.0, pnpm 12.18.0, and the OpenSSL CLI.
 ```sh
 pnpm install --frozen-lockfile
 pnpm stack:init     # every secret, into deploy/local/.secrets/ (mode 0600; never overwritten)
-pnpm stack:up       # build the images, migrate the stores, start S1 and each environment's S2
+pnpm stack:up       # build the images, migrate the stores, start S1, and S2 to S4 in each environment
 pnpm stack:smoke    # optional: the smoke test CI runs
 pnpm stack:down     # pnpm stack:down -v also removes the store's data and the secret copies
 ```
