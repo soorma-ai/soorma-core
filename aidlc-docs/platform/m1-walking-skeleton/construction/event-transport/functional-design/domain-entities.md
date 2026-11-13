@@ -96,7 +96,7 @@ one (D-ET-02).
 ## Delivery (value, U1's, as S4 sends it)
 
 `{ envelope, seal, payload }`: the publish's Stamped Envelope and Seal, exactly as `admit`
-returned them, and the publish's payload, equal as JSON to what the publisher sent (D-ET-19).
+returned them, and the publish's payload, equal as JSON to what the publisher sent (D-ET-19). *Consistency fix from NFR Design (2026-11-13)*: **the payload's numbers exactly as written** (carried by their source text), every other value equal in value, compact (NP-ET-05).
 **One Delivery per accepted publish, the same for every stream**: no stream's own hop is stamped
 into it. Bounded: the envelope at most 16 KiB (JCS), the seal, the payload at most the Delivery
 payload bound.

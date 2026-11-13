@@ -3659,3 +3659,78 @@ Commit the artifacts with the marked Functional Design consistency fixes, state 
 **Context**: CONSTRUCTION, U7 event-transport: NFR Requirements approved.
 
 ---
+
+## NFR Requirements: Committed, Push Run Green (U7 event-transport)
+**Timestamp**: 2026-11-13T00:34:53Z
+**User Input**: (none)
+**AI Response**: "NFR Requirements committed on dev as 6d9fcc7 (artifacts, the marked Functional Design consistency fixes, state, audit) and pushed; push run 43336407440 completed success."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Requirements recorded.
+
+---
+
+## NFR Design: Plan Written, Awaiting Answers (U7 event-transport)
+**Timestamp**: 2026-11-13T00:34:53Z
+**User Input**: (none)
+**AI Response**: "NFR Design plan written: construction/working/event-transport-nfr-design-plan.md (git-ignored). Found while planning: service-kit's adapter sets one 16 KiB body limit per Fastify instance; P5 has no verify-only key ring (verifyAgentCredential takes an EnvironmentKeyRing that requires a signing key and private PEMs, while S4 holds SPKI verify halves); BR-EP-03's import rule needs the two construction helpers U3's NFR Design named (createCachingAgentFacts, loadSealKeyRing); credential.refused already has an alert rule grouped by human pseudonym; a JSON number beyond a double's precision would reach subscribers changed; the throttle releases a permit in onResponse, which for a stream fires at its end. Proposals P-01 to P-18 (P-14's alert rules flagged). Questions, all technology: Q1 the body limits (A per route through an additive createAdapter option, recommended); Q2 the Body Form's shape (A a field on each request, recommended); Q3 S4's privilege on registrations (A column-level SELECT, recommended); Q4 the payload's fidelity (C I-JSON enforced: refuse a number with more precision than its double, or a payload JCS cannot serialize, verified feasible with Node 26's JSON.parse source-text access, recommended). Stopping for the user's answers."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design plan, awaiting answers.
+
+---
+
+## NFR Design: Plan Answered (U7 event-transport)
+**Timestamp**: 2026-11-13T00:39:18Z
+**User Input**: "Answers to the NFR Design plan:
+
+Q1: A. Q2: A. Q3: A.
+Q4: X, numbers delivered exactly, with nothing refused for precision.
+Option C would refuse 64-bit integer IDs above 2^53, which are common in Python, Go and Java payloads. Its precision check also reads the payload beyond its bound, against the I9 row's "never inspected beyond its bound".
+Node 26 has JSON.rawJSON as well as source-text access. I checked on this machine: JSON.parse(text, (k, v, ctx) => typeof v === 'number' ? JSON.rawJSON(ctx.source) : v), then JSON.stringify, emits 12345678901234567890 unchanged.
+So:
+In the payload subtree only, number values are carried by their source text and serialized exactly. Every other value is delivered equal in value, compact.
+The payload bound is still measured on its JCS form, with numbers counted by their source text. Decide how packages/jcs measures that, and record it.
+A payload JCS cannot serialize (a lone surrogate) is malformed_request with a pointer.
+Duplicate member names keep the last value, and the contract says so.
+The contract states that payload numbers are delivered as written. It does not require I-JSON numbers.
+Tests:
+an integer above 2^53;
+a long decimal and an exponent form, delivered exactly;
+the lone surrogate refused;
+the bound measured with a large number at the limit.
+The I9 row stays "never inspected beyond its bound and its JSON well-formedness".
+Show the parse step's design in the NFR Design artifacts. If JSON.rawJSON turns out not to be usable in S4's runtime path, stop and tell me rather than falling back.
+P-01 to P-18: accepted, including P-14's thresholds.
+Generate the NFR Design artifacts, and present the stage's standard completion message."
+**AI Response**: "Answers recorded; all technology. Q1 A, Q2 A, Q3 A; Q4 X as the user specified (payload numbers carried by their source text through JSON.rawJSON and serialized exactly; the bound on JCS with numbers counted by their source text, the measurement decided and recorded; a lone surrogate malformed_request with a pointer; duplicates keep the last value, stated; the contract states numbers are delivered as written and does not require I-JSON numbers; four tests; the I9 row's wording kept; the parse step's design shown; stop rather than fall back if JSON.rawJSON is unusable in S4's runtime path). P-01 to P-18 accepted, P-14's thresholds included. Checking JSON.rawJSON in S4's runtime path before generating."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design plan answered.
+
+---
+
+## NFR Design: Complete, Presented for Review (U7 event-transport)
+**Timestamp**: 2026-11-13T00:42:33Z
+**User Input**: (none since the plan's answers)
+**AI Response**: "Checked the user's Q4 condition before generating: in S4's pinned runtime image (gcr.io/distroless/nodejs26-debian13, Node v26.13.0, S3's digest), JSON.parse with a reviver returning JSON.rawJSON(context.source) for numbers, then JSON.stringify, returned {\"id\":12345678901234567890,\"d\":0.10000000000000000555,\"e\":1E+400,\"x\":-0} unchanged, and a 60 000-digit number round-tripped exactly; JSON.isRawJSON true. TypeScript 6.0.3's lib and @types/node 26.6.6 declare neither JSON.rawJSON nor the reviver's context: recorded, and handled by one type declaration in packages/jcs and a start-up check in S4 that refuses to start without them; no fallback. Not a runtime unusability, so not stopped; flagged to the user. NFR Design artifacts generated in construction/event-transport/nfr-design/: nfr-design-patterns.md (NP-ET-01 to 18; NP-ET-05's parse step in detail: two parses of one text, the draft as today and the payload with raw numbers; packages/jcs's canonicalize gains { numbers: 'source' }, default unchanged, and CanonicalizationError a pointer; the refusal and delivery table; the user's four tests plus the jcs mode and the start-up check; I9's wording; the contract statements) and logical-components.md (S4's components, the additive changes to earlier units' packages with their tests unchanged except the recorded ones, the stream's states). Consistency fixes marked in Functional Design (BR-EP-03 allowlist, BR-BF-06, §14, domain-entities Delivery, invariant matrix I9) and NFR Requirements (NFR-ET-02). Presented the standard two-option completion message; next stage Infrastructure Design."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design complete, awaiting approval.
+
+---
+
+## NFR Design Approval (U7 event-transport)
+**Timestamp**: 2026-11-13T00:45:07Z
+**User Input**: "Continue to Next Stage. NFR Design is approved.
+
+The type-declaration gap for JSON.rawJSON is not a stop. Declaring the types once in packages/jcs with the start-up self-check and no fallback is right.
+
+Commit the artifacts with the marked consistency fixes, state and audit on dev, push, and wait for green. Then start Infrastructure Design.
+
+The items already handed to it:
+
+a Compose-model assertion of exactly one S4 per environment, with no replicas;
+S4's container memory sized for 256 MiB of stream buffers plus the measured baseline, with the number recorded;
+the seal key ring per environment, generated by stack:init, never overwritten, and mounted only into that environment's S4;
+E's agent verify halves listed on {env}-secrets-init and copied only into S4's own subdirectory;
+ports 8446 and 8447;
+stack:outage with S1 stopped;
+the backup e2e lists gaining e-event-ingest;
+the two-phase seal-key rotation in S4's README operations notes."
+**AI Response**: "NFR Design approved; the JSON.rawJSON type-declaration handling confirmed by the user. Committing on dev, pushing, waiting for the run; then Infrastructure Design with the eight handed-over items."
+**Context**: CONSTRUCTION, U7 event-transport: NFR Design approved.
+
+---
