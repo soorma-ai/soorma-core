@@ -4254,3 +4254,25 @@ Then stop and report. Build and Test starts in a new session."
 **Context**: CONSTRUCTION, U7 event-transport: Code Generation close-out.
 
 ---
+
+## Code Generation close-out: the comment on #10; stop
+**Timestamp**: 2026-11-13T08:41:26Z
+**User Input**: (none)
+**AI Response**: "The close-out's push run 43392989143 green (ae5f2f0). Commented on #10 (issuecomment-6848211836): the code merged as c1e3d7f; contract-v0.1.0 tagged on c1e3d7f; the close-out commit ae5f2f0; carried to Build and Test: TC-ET-036, the residuals in business-rules §17 and §18, the handover to soorma-sdk. Issues #3 to #10 stay open until Build and Test. Stopped; Build and Test starts in a new session. This entry is uncommitted, to be committed with that session's first commit."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation closed out; stop.
+
+---
+
+## Code Generation close-out: the user's instruction on #26
+**Timestamp**: 2026-11-13T08:45:21Z
+**User Input**: "The close-out is verified. CI passed on ae5f2f0, the #10 comment is right, and the tag peels to c1e3d7f.
+
+One change: commit the remaining audit entry now, not at Build and Test. A separate session works on #26 (making CI's image job faster) on dev next, before M1's Build and Test. It needs a clean working tree.
+
+Append one audit entry recording my instruction: \"#26 runs before Build and Test, in its own session and its own initiative (aidlc-docs/tooling/ci-image-job/)\". Add the same as one line in the state file's next-step note for Build and Test.
+Commit both, with the pending entry, on dev (docs only), and push. Wait for CI to pass.
+Check that git status is clean and dev matches origin/dev. Then stop. This session is done."
+**AI Response**: "Recorded the user's instruction: #26 runs before Build and Test, in its own session and its own initiative (aidlc-docs/tooling/ci-image-job/). The same line added to the state file's next-step note for Build and Test. The pending entry and this one committed now on dev (docs only), pushed; then CI, a clean working tree, and dev matching origin/dev; then this session stops."
+**Context**: CONSTRUCTION, U7 event-transport: Code Generation closed out; the order of the next work.
+
+---
