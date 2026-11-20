@@ -11,9 +11,15 @@ permissions:
 
 jobs:
   cla-assistant:
+    # Required check: this job's name, "cla-assistant", is a required status
+    # check on main in ruleset 26326736. Renaming the job blocks every pull
+    # request into main until the ruleset is updated in the same change.
+    #
     # The CLA assistant records signatures by committing to
-    # signatures/version1/cla.json (contents), comments on and labels the pull
-    # request (pull-requests), sets the CLA commit status (statuses), and
+    # signatures/version1/cla.json on the cla-signatures branch (contents),
+    # not on main: main only takes pull requests (ruleset 26326736), so a
+    # direct commit there is rejected (#37). It also comments on and labels the
+    # pull request (pull-requests), sets the CLA commit status (statuses), and
     # re-runs its own check on a "recheck" comment (actions).
     permissions:
       actions: write
@@ -33,7 +39,7 @@ jobs:
         with:
           path-to-signatures: 'signatures/version1/cla.json'
           path-to-document: 'https://github.com/soorma-ai/soorma-core/blob/main/CLA.md'
-          branch: 'main'
+          branch: 'cla-signatures'
           allowlist: 'gnulib,soorma-bot,dependabot[bot],*[bot]'
           custom-notsigned-prcomment: >
             Thank you for your contribution. Before it can be merged, please read

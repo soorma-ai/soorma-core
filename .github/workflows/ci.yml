@@ -26,6 +26,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Required check: this job's name, "Build, check, and test", is a required
+  # status check on main in ruleset 26326736. Renaming the job blocks every
+  # pull request into main until the ruleset is updated in the same change.
   build:
     name: Build, check, and test
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
@@ -170,6 +173,10 @@ jobs:
           fi
           echo "images=$images" | tee -a "$GITHUB_OUTPUT"
 
+  # Required check: this job's name, "Images, image secret scans, stack smoke
+  # test, and the S1-stopped demonstration", is a required status check on
+  # main in ruleset 26326736. Renaming the job blocks every pull request into
+  # main until the ruleset is updated in the same change.
   image-and-stack:
     name: Images, image secret scans, stack smoke test, and the S1-stopped demonstration
     needs: changes
@@ -344,6 +351,9 @@ jobs:
           path: sbom/soorma-core.cdx.json
           if-no-files-found: error
 
+  # Required check: this job's name, "Dependency review", is a required status
+  # check on main in ruleset 26326736. Renaming the job blocks every pull
+  # request into main until the ruleset is updated in the same change.
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'

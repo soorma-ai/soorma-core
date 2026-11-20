@@ -2,7 +2,8 @@
 
 **Version 1.0** — in effect from 6 September 2026.
 
-Signatures against this version are recorded in `signatures/version1/cla.json`.
+Signatures against this version are recorded in `signatures/version1/cla.json`
+on this repository's `cla-signatures` branch ([view the file](https://github.com/soorma-ai/soorma-core/blob/cla-signatures/signatures/version1/cla.json)).
 If the text of this Agreement changes materially the version is incremented and
 signatures are collected afresh.
 
@@ -98,7 +99,8 @@ agreement by posting a comment on Your pull request containing exactly:
 > I have read the CLA Document and I hereby sign the CLA
 
 Your GitHub username, the pull request, and the date are recorded in
-`signatures/version1/cla.json` in this repository. You need only do this once;
+`signatures/version1/cla.json` on this repository's `cla-signatures` branch
+([view the file](https://github.com/soorma-ai/soorma-core/blob/cla-signatures/signatures/version1/cla.json)). You need only do this once;
 subsequent contributions are covered by the same signature.
 
 If You would prefer to sign a physical or PDF copy instead, contact
