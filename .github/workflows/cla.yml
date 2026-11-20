@@ -40,7 +40,7 @@ jobs:
           path-to-signatures: 'signatures/version1/cla.json'
           path-to-document: 'https://github.com/soorma-ai/soorma-core/blob/main/CLA.md'
           branch: 'cla-signatures'
-          allowlist: 'gnulib,soorma-bot,dependabot[bot],*[bot]'
+          allowlist: 'soorma-bot,dependabot[bot],*[bot]'
           custom-notsigned-prcomment: >
             Thank you for your contribution. Before it can be merged, please read
             and sign our [Contributor License Agreement](https://github.com/soorma-ai/soorma-core/blob/main/CLA.md).
