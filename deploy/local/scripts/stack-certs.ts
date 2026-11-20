@@ -11,7 +11,9 @@
 //   nothing else. Its key stays in deploy/local/.secrets/ (0600), never in a
 //   container, so U4 to U7 can issue their own certificates from it
 // - Leaves: ECDSA P-256, serverAuth, valid 90 days, one PEM per service
-//   holding its key and certificate
+//   holding its key and certificate; each carries a Subject and an Authority
+//   Key Identifier, which strict X.509 verification requires (Python 3.13+'s
+//   default context; deploy/test/stack-certs.test.ts)
 // - Callers pass the CA explicitly (curl --cacert deploy/local/.secrets/
 //   stack-ca.pem); it is never installed in the system trust store
 import { execFileSync } from 'node:child_process';
@@ -135,6 +137,8 @@ export function issueLeaf(
         'keyUsage = critical, digitalSignature',
         'extendedKeyUsage = serverAuth',
         `subjectAltName = ${san}`,
+        'subjectKeyIdentifier = hash',
+        'authorityKeyIdentifier = keyid, issuer',
       ].join('\n'),
     );
     openssl([
