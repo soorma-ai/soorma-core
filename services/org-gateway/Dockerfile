@@ -4,9 +4,10 @@
 # Build from the repository root:
 #   docker build -f services/org-gateway/Dockerfile -t soorma/org-gateway .
 #
-# - Both images pinned by digest, each the newest past the 7-day cooldown:
-#     node:26.13.0, pushed 2026-10-29 (docker-library/repo-info 7d6f332)
-#     distroless nodejs26-debian13:nonroot, uploaded 2026-10-31
+# - Both images pinned by digest, each past the 7-day cooldown, and the same
+#   in all four service images (deploy/test/base-image-pin.test.ts):
+#     node:26.13.1, pushed 2026-11-11 (docker-library/repo-info c45273f)
+#     distroless nodejs26-debian13:nonroot, uploaded 2026-11-12 (gcr.io)
 # - Explicit COPY paths only; .dockerignore keeps out everything else,
 #   deploy/local/.secrets/ above all
 # - pnpm deploy --prod: the service and its production dependencies only

@@ -22,15 +22,26 @@ updates:
       default-days: 7
     open-pull-requests-limit: 5
 
-  # The pinned images (D-CG-OI-10; NFR-OI-26): the S1 build and run stages,
-  # in the Dockerfile, and the org store, in the Compose file.
+  # The pinned images (D-CG-OI-10; NFR-OI-26): the build and run stages of
+  # all four service Dockerfiles, S1 to S4, here, and the stores, in the
+  # Compose file below. The four share one build pin and one runtime pin
+  # (deploy/test/base-image-pin.test.ts), so the group puts every directory's
+  # update into one pull request, which moves all four together.
   - package-ecosystem: docker
-    directory: /services/org-gateway
+    directories:
+      - /services/org-gateway
+      - /services/control-gateway
+      - /services/data-gateway
+      - /services/event-ingest
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+    groups:
+      service-base-images:
+        patterns:
+          - '*'
 
   # A postgres bump here needs the companion edit by hand: the same reference
   # in ci.yml's test database service and db-test.ts's POSTGRES_IMAGE, which

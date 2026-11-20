@@ -127,7 +127,7 @@ thumbprint), that appears twice within one environment or in more than one envir
 | `src/healthcheck.ts`  | The Compose healthcheck (the image has no shell)                             |
 | `src/edge/`           | The five operations, in U1's check order                                     |
 | `src/internal/`       | The internal listener and its signed-request check                           |
-| `Dockerfile`          | The image: built on `node:26.13.0`, run on distroless, both pinned by digest |
+| `Dockerfile`          | The image: built on `node:26.13.1`, run on distroless, both pinned by digest |
 | `test/`, `test/perf/` | Tests; the latency and timing measurements (`pnpm test:perf`)                |
 
 The domain lives in the workspace packages: `@soorma/org-identity` (principals, material,

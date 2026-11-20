@@ -125,7 +125,7 @@ The store's roles are created when it first starts, so a store initialised befor
 | `src/channel/`       | The fan-out channel: the port, and the in-process channel M1 runs                                              |
 | `src/throttle.ts`    | The request limit, released when a stream opens                                                                |
 | `src/healthcheck.ts` | The Compose healthcheck (the image has no shell)                                                               |
-| `Dockerfile`         | The image: built on `node:26.13.0`, run on distroless, both pinned by digest; S4's closure only                |
+| `Dockerfile`         | The image: built on `node:26.13.1`, run on distroless, both pinned by digest; S4's closure only                |
 | `test/`              | Tests                                                                                                          |
 
 The domain lives in the workspace packages: `@soorma/authority` (P3, the entry point),

@@ -151,7 +151,7 @@ is opened. **It never goes into the repository.** Delete a dump when you no long
 | `src/org-level.ts`    | The calls to S1's internal listener: signed, over TLS 1.3, to the local CA only                  |
 | `src/verify-keys.ts`  | S1's verify keys: fetched every 5 minutes, and on an unknown key at most once every 30 seconds   |
 | `src/throttle.ts`     | The request limit                                                                                |
-| `Dockerfile`          | The image: built on `node:26.13.0`, run on distroless, both pinned by digest; no `org-identity`  |
+| `Dockerfile`          | The image: built on `node:26.13.1`, run on distroless, both pinned by digest; no `org-identity`  |
 | `test/`, `test/perf/` | Tests; the latency measurements (`pnpm test:perf:s2`)                                            |
 
 The domain lives in the workspace packages: [`@soorma/credentials`](../../packages/credentials/README.md)
