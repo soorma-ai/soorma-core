@@ -4378,3 +4378,16 @@ Then stop. M1 is complete for soorma-core."
 **Context**: CONSTRUCTION, Build and Test: close-out. Initiative complete.
 
 ---
+
+## After the initiative: the README rewrite (PR #29)
+**Timestamp**: 2026-11-13T20:37:40Z
+**User Input** (first message): "yes, do a review of README and make it appropriate and clean. There is also lot of documentation added as part of M1 build, so lets link them together for readability. I'd like new developers landing on soorma-core get a good sense of what they can do with current progress."
+**User Input** (second message): "The README rewrite is reviewed, and it's good. It explains both failures up front, the journey matches the e2e test, pnpm stack:down -v does pass -v (checked on pnpm 12.18.0), the ports match Compose, and nothing links to a private repo. Two small fixes before I merge #29:
+
+\"Run the end-to-end proofs\": a newcomer who jumps straight to that section on a fresh clone misses pnpm stack:init. Add it to the code block as the first stack step, commented # once per clone; never overwrites (or similar). Give \"Run the stack\" (the stack:outage line) the same note.
+The M1 journey, step 5: join the line that breaks after \"A\" (\"…nothing at e2. A / draft that tries…\") back into one sentence.
+Run Prettier and the tests that read README files, then commit on dev and push. Wait for #29's checks to go green, then stop. I'll merge from my review session."
+**AI Response**: "Commit 8f890f1: README.md rewritten for new developers (the status after M1; what runs today: the four services, their faces and local edges, and the M1 journey with its executable version in e2e/agent-registration.test.ts; getting started: the test database with both TEST_DATABASE_URL and TEST_DATABASE_CONTAINER, the local stack, the e2e proofs on a fresh stack, the checks, and what each measurement needs; a repository map and a package table; a documentation map linking the contract and its conventions, the service READMEs, the soorma-sdk handover, and M1's requirements, design, and Build and Test records; what is not built yet), with no link to a private repository; one stale line each corrected in services/org-gateway/README.md, contract/README.md, and packages/service-kit/README.md. Commit b7f580f: the user's two fixes (pnpm stack:init as the first step of the e2e block and in the stack:outage note; the journey's step 5 one sentence). Prettier passes; the tests that read README files pass (66); all 77 relative links resolve. PR #29 (dev to main), every check green at b7f580f; merged by the user as ea960122233c59814233663678285d45399120e6 (verified on GitHub, 2026-11-13T20:16:13Z; main's run on ea96012 succeeded); dev fast-forwarded to ea96012."
+**Context**: After the M1 initiative's completion: repository documentation, outside any AI-DLC stage.
+
+---
