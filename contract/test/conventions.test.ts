@@ -215,6 +215,28 @@ describe('TC-WC-022 and 028: identifiers and versioning', () => {
   });
 });
 
+describe('soorma-core revisions and renewal: the +core.N tags; a token issued before a renewal', () => {
+  it('versioning.md defines +core.N, its order, and what a revision may change', () => {
+    for (const statement of [
+      'A tag `contract-v{version}+core.N` names the same contract version at soorma-core revision N',
+      'The tag that first publishes a version is revision 0',
+      '`contract-v0.1.0` is revision 0 of `0.1.0`, and `contract-v0.1.0+core.1` is revision 1',
+      'SemVer ignores build metadata when ordering versions, so it ranks every revision of a version equal; N gives their order',
+      'A client declares the version alone, such as `0.1.0`, never with its `+core.N`',
+      'A `+core.N` revision may change in `contract/` only text that clarifies behaviour the version already has',
+      "Any change to a schema; to an operation's path, method, parameters, security, request, or responses; to the accepted versions; or to a fixture needs a new contract version",
+    ])
+      expect(versioning).toContain(statement);
+  });
+
+  it('credentials.md states that a token issued before a renewal stays valid, and renews', () => {
+    expect(credentials).toContain('Renewal returns a new token for the same agent credential');
+    expect(credentials).toContain(
+      'A token issued before a renewal stays valid until its own `expiresAt` unless the credential or its agent is revoked, and renewing with it is accepted',
+    );
+  });
+});
+
 describe('TC-WC-029: the remaining pre-release and trust statements', () => {
   it.each([
     [preRelease, 'The accepted permission identifiers may widen in a compatible version'],

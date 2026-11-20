@@ -11,6 +11,20 @@ whole contract: the envelope and Delivery schemas, these conventions, and the su
 The **envelope version** (`envelopeVersion`, an integer, `1`) is the envelope's own version. It
 is distinct from the contract version.
 
+## soorma-core revisions: `+core.N`
+
+A tag `contract-v{version}+core.N` names **the same contract version at soorma-core revision
+N**. **The tag that first publishes a version is revision 0**: `contract-v0.1.0` is revision 0 of
+`0.1.0`, and `contract-v0.1.0+core.1` is revision 1. **SemVer ignores build metadata when
+ordering versions**, so it ranks every revision of a version equal; **N gives their order**. A
+client declares the version alone, such as `0.1.0`, never with its `+core.N`.
+
+**A `+core.N` revision may change in `contract/` only text that clarifies behaviour the version
+already has**: the conventions, the descriptions in the surface documents, and the generated
+types' comments that follow from them. **Any change to a schema; to an operation's path,
+method, parameters, security, request, or responses; to the accepted versions; or to a fixture
+needs a new contract version.**
+
 ## The client contract version
 
 A client declares the contract version it was built against:

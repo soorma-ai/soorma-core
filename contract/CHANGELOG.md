@@ -36,7 +36,7 @@ per fixture, in exactly this form:
 - **An automated OpenAPI diff is added with the first change after `contract-v0.1.0` is tagged**,
   once a second contract version exists to compare against (NFR-WC-03)
 
-## 0.1.0 (unreleased; to be tagged `contract-v0.1.0` after the surface units)
+## 0.1.0 (tagged `contract-v0.1.0` on `c1e3d7f`)
 
 The baseline. Every element is new, so each is classified **compatible (initial)**. The fixtures
 in `fixtures/0.1.0/` are the baseline every later version is tested against.
@@ -136,3 +136,26 @@ is merged.
 
 New fixtures under `fixtures/0.1.0/event-ingest/`. No fixture classifications: no existing
 fixture's outcome has changed.
+
+## 0.1.0+core.N: soorma-core revisions of 0.1.0
+
+`contract-v0.1.0+core.N` is contract version `0.1.0` at soorma-core revision N, and
+`contract-v0.1.0` is revision 0 ([conventions/versioning.md](conventions/versioning.md)). A
+revision changes nothing on the wire: clients declare `0.1.0`, and the accepted set stays
+`{0.1.0}`. The automated OpenAPI diff carried forward above still waits for a second contract
+version.
+
+### `+core.1`
+
+No contract change. `README.md`'s wording only: a tag's schemas are taken "(the first is
+`contract-v0.1.0`)" instead of "(`contract-v0.1.0` once published)".
+
+### `+core.2`
+
+| Change                                                                                                                                                                                                                                                                                                                                                                                                                                        | Classification                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `credentials.md`, _Revocation and Lifetimes_, and `renewAgentCredential`'s description in `data-gateway.openapi.yaml` (with its comment in `generated/data-gateway.ts`): renewal returns a new token for the same agent credential; a token issued before a renewal stays valid until its own `expiresAt` unless the credential or its agent is revoked, and renewing with it is accepted. 0.1.0 has behaved this way since `contract-v0.1.0` | Clarification of behaviour 0.1.0 already has; no wire change |
+| `versioning.md`, a new _soorma-core revisions_ section: what a `+core.N` tag names, that revision 0 is the tag that first publishes a version, that N orders revisions because SemVer ignores build metadata, and that a revision may change only clarifying text                                                                                                                                                                             | Clarification; no wire change                                |
+| This changelog's _0.1.0_ heading: 0.1.0 was tagged `contract-v0.1.0` on `c1e3d7f`, no longer "unreleased"                                                                                                                                                                                                                                                                                                                                     | Clarification; no wire change                                |
+
+No fixture classifications: no fixture changed.

@@ -51,6 +51,10 @@ taken for credentials.
   renewal, and **renewal never extends it past 24 hours** from its bootstrap. **Both are upper
   bounds only**: a shorter lifetime is always compatible, and either may change without a
   breaking change
+- **Renewal returns a new token for the same agent credential**: the same agent, environment,
+  and instance, with a later `expiresAt`. **A token issued before a renewal stays valid until
+  its own `expiresAt` unless the credential or its agent is revoked, and renewing with it is
+  accepted**
 - **A client therefore**:
   1. **Schedules renewal from the response's `expiresAt`**, the authority for every
      credential's expiry
