@@ -115,7 +115,7 @@ The store's roles are created when it first starts, so a store initialised befor
 | `src/healthcheck.ts` | The Compose healthcheck (the image has no shell)                                                         |
 | `src/edge/`          | The two operations, in the check order                                                                   |
 | `src/throttle.ts`    | The request limit                                                                                        |
-| `Dockerfile`         | The image: built on `node:26.13.0`, run on distroless, both pinned by digest; S3's closure only          |
+| `Dockerfile`         | The image: built on `node:26.13.1`, run on distroless, both pinned by digest; S3's closure only          |
 | `test/`              | Tests                                                                                                    |
 
 The domain lives in the workspace packages: `@soorma/credentials` (P5),

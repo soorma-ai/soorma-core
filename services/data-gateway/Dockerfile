@@ -13,7 +13,7 @@
 # - No migrations: env-store's migrations/ is never copied, so none can ship.
 #   {env}-migrate (S2's image) applies 0003 and 0004 (D-ID-AC-04)
 
-FROM node:26.13.0@sha256:6d2c7d5d074bf72f81ddc252b4fbb5d625bc028eeda49cb4b8c2ff8eda1ee617 AS build
+FROM node:26.13.1@sha256:e18c3ccdf7d71619990b0e85639f506e2028a95410999cab24cc373cbd10e0ac AS build
 WORKDIR /src
 RUN npm install --global --ignore-scripts pnpm@12.18.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.build.json ./
@@ -55,7 +55,7 @@ COPY services/data-gateway/src/ services/data-gateway/src/
 RUN pnpm exec tsc -b services/data-gateway/tsconfig.build.json \
  && pnpm --filter @soorma/data-gateway deploy --prod --legacy /out
 
-FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:33c86a63859efc2ebd88ea0a355863582ec6f1220d048de62baffb2584e709b3
+FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:1d736cf8b5716c07a245301f92717143215d248fd55771ee1936ef4b3302e531
 WORKDIR /app
 COPY --from=build /out/ /app/
 ENV NODE_ENV=production \

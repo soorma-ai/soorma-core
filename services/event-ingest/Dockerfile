@@ -4,9 +4,9 @@
 # repository root:
 #   docker build -f services/event-ingest/Dockerfile -t soorma/event-ingest .
 #
-# - Both images pinned by digest, the same as S1's to S3's. The runtime image
-#   is the one S4's JSON.rawJSON self-check was run in at NFR Design; S4
-#   runs the same check at every start, and refuses to start without it
+# - Both images pinned by digest, the same as S1's to S3's. S4's
+#   JSON.rawJSON self-check, first run in the runtime image at NFR Design,
+#   runs at every start, so S4 refuses to start on a runtime without it
 # - Explicit COPY paths only, for exactly S4's production closure;
 #   .dockerignore keeps out everything else, deploy/local/.secrets/ above all
 # - pnpm deploy --prod: the service and its production dependencies only.
@@ -15,7 +15,7 @@
 # - No migrations: env-store's migrations/ is never copied, so none can ship.
 #   {env}-migrate (S2's image) applies 0005 and 0006
 
-FROM node:26.13.0@sha256:6d2c7d5d074bf72f81ddc252b4fbb5d625bc028eeda49cb4b8c2ff8eda1ee617 AS build
+FROM node:26.13.1@sha256:e18c3ccdf7d71619990b0e85639f506e2028a95410999cab24cc373cbd10e0ac AS build
 WORKDIR /src
 RUN npm install --global --ignore-scripts pnpm@12.18.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.build.json ./
@@ -57,7 +57,7 @@ COPY services/event-ingest/src/ services/event-ingest/src/
 RUN pnpm exec tsc -b services/event-ingest/tsconfig.build.json \
  && pnpm --filter @soorma/event-ingest deploy --prod --legacy /out
 
-FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:33c86a63859efc2ebd88ea0a355863582ec6f1220d048de62baffb2584e709b3
+FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:1d736cf8b5716c07a245301f92717143215d248fd55771ee1936ef4b3302e531
 WORKDIR /app
 COPY --from=build /out/ /app/
 ENV NODE_ENV=production \
