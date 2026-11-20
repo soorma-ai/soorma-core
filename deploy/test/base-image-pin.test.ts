@@ -4,9 +4,10 @@
 // (D-CG-OI-10; NFR-OI-26): S1 to S4's Dockerfiles name the identical
 // digest-pinned `node` build stage and distroless runtime stage.
 //
-// Dependabot's docker entry covers all four directories and groups their
-// updates into one pull request (.github/dependabot.yml). This test fails if
-// a bump, or a hand edit, moves some Dockerfiles and not the others.
+// Dependabot's docker entry covers all four directories and groups updates by
+// dependency name (.github/dependabot.yml): a node bump is one pull request
+// across all four Dockerfiles, and a distroless bump another. This test fails
+// if a bump, or a hand edit, moves some Dockerfiles and not the others.
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';

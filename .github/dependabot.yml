@@ -25,8 +25,9 @@ updates:
   # The pinned images (D-CG-OI-10; NFR-OI-26): the build and run stages of
   # all four service Dockerfiles, S1 to S4, here, and the stores, in the
   # Compose file below. The four share one build pin and one runtime pin
-  # (deploy/test/base-image-pin.test.ts), so the group puts every directory's
-  # update into one pull request, which moves all four together.
+  # (deploy/test/base-image-pin.test.ts). The group, by dependency name,
+  # makes each image's bump one pull request across all four Dockerfiles: a
+  # node bump is one pull request, and a distroless bump another.
   - package-ecosystem: docker
     directories:
       - /services/org-gateway
@@ -40,6 +41,7 @@ updates:
     open-pull-requests-limit: 5
     groups:
       service-base-images:
+        group-by: dependency-name
         patterns:
           - '*'
 
