@@ -32,6 +32,9 @@ updates:
       default-days: 7
     open-pull-requests-limit: 5
 
+  # A postgres bump here needs the companion edit by hand: the same reference
+  # in ci.yml's test database service and db-test.ts's POSTGRES_IMAGE, which
+  # Dependabot cannot update. deploy/test/postgres-pin.test.ts enforces it.
   - package-ecosystem: docker-compose
     directory: /deploy/local
     schedule:

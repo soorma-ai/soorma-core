@@ -152,14 +152,18 @@ describe('TC-AR-057: the backup and restore services', () => {
     }
   });
 
-  it('U5: hardened, as the pinned PostgreSQL image, user 999', () => {
+  // T-AR-04: pg_dump and pg_restore come from the image the server runs, so
+  // the tools always match the server's version; that image is digest-pinned.
+  it("U5: hardened, as its environment's pinned PostgreSQL image (T-AR-04), user 999", () => {
     for (const name of BACKUP) {
       const s = withProfile[name]!;
       expect(s.user, name).toBe('999:999');
       expect(s.read_only, name).toBe(true);
       expect(s.cap_drop, name).toEqual(['ALL']);
       expect(s.security_opt, name).toEqual(['no-new-privileges:true']);
-      expect(s.image, name).toMatch(/^postgres:18\.4@sha256:[0-9a-f]{64}$/);
+      const server = withProfile[`${level(name)}-db`]?.image;
+      expect(server, `${level(name)}-db`).toMatch(/^postgres:[^@\s]+@sha256:[0-9a-f]{64}$/);
+      expect(s.image, name).toBe(server);
     }
   });
 

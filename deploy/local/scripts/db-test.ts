@@ -18,9 +18,15 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-/** postgres 18.4, pinned by its image index digest (D-CG-OI-10; pushed 2026-08-06). */
+/**
+ * postgres 18.6, pinned by its image index digest (D-CG-OI-10). The digest first
+ * appears for the 18.6 tag in docker-library/repo-info 28c8c98 (2026-11-06),
+ * past the 7-day cooldown. Dependabot cannot update this pin or ci.yml's
+ * service image: the guard test (deploy/test/postgres-pin.test.ts) holds both
+ * to the Compose file's.
+ */
 export const POSTGRES_IMAGE =
-  'postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636';
+  'postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42';
 export const CONTAINER = 'soorma-db-test';
 
 function docker(args: string[]): string {
