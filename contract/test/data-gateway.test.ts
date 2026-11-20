@@ -53,6 +53,9 @@ describe('TC-AC-021: S3 operations are defined in the contract and validated aga
       expect(Object.keys(doc.paths[path] as Json)).toEqual(['post']);
     expect(op(BOOTSTRAP).operationId).toBe('exchangeBootstrap');
     expect(op(RENEWAL).operationId).toBe('renewAgentCredential');
+    expect(op(RENEWAL).description).toContain(
+      'A token issued before a renewal stays valid until its own expiresAt unless the credential or its agent is revoked, and renewing with it is accepted.',
+    );
   });
 
   it('bootstrap names no security scheme; renewal names agentCredential only', () => {

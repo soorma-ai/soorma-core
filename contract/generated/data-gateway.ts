@@ -34,7 +34,7 @@ export interface paths {
         put?: never;
         /**
          * Renew one's own agent credential
-         * @description A new token for the same credential: the same agent, environment, and instance, with a later expiresAt, never past the credential's maximum age. Refused once the credential or its agent is revoked. The registration secret is not consulted. Schedule renewal from expiresAt; once renewal answers credential_expired, bootstrap again (see conventions/credentials.md). Takes no request body. Carries no envelope.
+         * @description A new token for the same credential: the same agent, environment, and instance, with a later expiresAt, never past the credential's maximum age. Refused once the credential or its agent is revoked. A token issued before a renewal stays valid until its own expiresAt unless the credential or its agent is revoked, and renewing with it is accepted. The registration secret is not consulted. Schedule renewal from expiresAt; once renewal answers credential_expired, bootstrap again (see conventions/credentials.md). Takes no request body. Carries no envelope.
          */
         post: operations["renewAgentCredential"];
         delete?: never;
