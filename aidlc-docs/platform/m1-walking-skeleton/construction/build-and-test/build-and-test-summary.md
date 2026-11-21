@@ -217,3 +217,4 @@ each closing comment cites is on `main`. The brief's own `Done` waits on soorma-
 | L1 and invariant conformance | **Pass** (237 and 70 rows `Verified`) |
 | Open obligations | 0 deferred questions; specification gaps: **6 `Open`, 1 `Awaiting PRD`**, each worked around and recorded |
 | Ready for Operations | **Yes**. Operations is a placeholder in this workflow; the first hosted deployment carries the items listed above |
+
